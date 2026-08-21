@@ -43,33 +43,27 @@ export default async function CatalogoTramitesPage() {
       </div>
 
       <SectionHelp>
-        Cada tarjeta es un <strong>tipo de trámite</strong> (el procedimiento oficial: qué es, qué se
-        necesita para radicarlo y por qué pasos avanza). Los números de abajo son los expedientes de ese
-        trámite: cuántos están <strong>activos</strong> ahora mismo, cuántos ya quedaron{" "}
-        <strong>aprobados</strong> y cuántos <strong>negados/rechazados</strong>. Si ves la etiqueta{" "}
-        <strong>SUIT</strong>, ese trámite además está inscrito en el Sistema Único de Información de
-        Trámites del Gobierno; el enlace lleva a su ficha oficial. Entra a un trámite para ver el detalle
-        completo y, desde ahí, iniciar un expediente nuevo.
+        Entra a un trámite para ver el detalle completo y, desde ahí, iniciar un expediente nuevo.
       </SectionHelp>
 
-      <nav className="flex flex-wrap gap-2" aria-label="Ir a una categoría">
+      <nav className="flex flex-wrap gap-3" aria-label="Ir a una categoría">
         {secciones.map(({ cat, items }) => (
           <a
             key={cat.id}
             href={`#cat-${cat.id}`}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition hover:brightness-95 ${cat.clases.badge}`}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition hover:brightness-95 ${cat.clases.badge}`}
           >
-            <span aria-hidden>{cat.emoji}</span>
+            <span className="text-2xl leading-none" aria-hidden>{cat.emoji}</span>
             {cat.etiqueta}
             <span className="opacity-60">({items.length})</span>
           </a>
         ))}
       </nav>
 
-      <div className="space-y-10">
+      <div className="space-y-4">
         {secciones.map(({ cat, items }) => (
-          <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-20">
-            <div className="mb-3 flex items-center gap-2.5 border-b border-stone-200 pb-2">
+          <details key={cat.id} id={`cat-${cat.id}`} open className="scroll-mt-20 group">
+            <summary className="flex cursor-pointer list-none items-center gap-2.5 border-b border-stone-200 pb-2 [&::-webkit-details-marker]:hidden">
               <span
                 className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-base ${cat.clases.icono}`}
                 aria-hidden
@@ -78,9 +72,17 @@ export default async function CatalogoTramitesPage() {
               </span>
               <h2 className="text-base font-semibold text-stone-900">{cat.etiqueta}</h2>
               <span className="text-sm text-stone-400">({items.length})</span>
-            </div>
+              <svg
+                className="ml-auto h-4 w-4 flex-none text-stone-400 transition-transform group-open:rotate-180"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {items.map((t) => (
                 <TarjetaTramite
                   key={t.id}
@@ -90,7 +92,7 @@ export default async function CatalogoTramitesPage() {
                 />
               ))}
             </div>
-          </section>
+          </details>
         ))}
       </div>
     </div>
