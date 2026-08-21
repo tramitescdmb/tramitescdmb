@@ -1,55 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { buildStoragePath, uploadDocumento } from "@/lib/storage";
+
+type ArchivoInput = { path: string; nombre: string; mimeType: string; tamanoBytes: number };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-  const form = await req.formData();
-  const pasoNumeroRaw = form.get("pasoNumero");
-  const pasoNumero = pasoNumeroRaw ? Number(pasoNumeroRaw) : null;
-  const descripcion = String(form.get("descripcion") || "").trim() || null;
-  const files = form.getAll("archivo");
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
-  let subidos = 0;
-  for (const file of files) {
-    if (file instanceof File && file.size > 0) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const path = buildStoragePath(id, file.name);
-      await uploadDocumento(path, buffer, file.type || "application/octet-stream");
-      await db.expedienteDocumento.create({
-        data: {
-          expedienteId: id,
-          pasoNumero,
-          nombre: file.name,
-          descripcion,
-          storagePath: path,
-          mimeType: file.type || "application/octet-stream",
-          tamanoBytes: file.size,
-          subidoPorId: session.userId,
-        },
-      });
-      subidos++;
-    }
+  const pasoNumero: number | null = body.pasoNumero ?? null;
+  const descripcion: string | null = body.descripcion?.trim() || null;
+  const archivos: ArchivoInput[] = Array.isArray(body.archivos) ? body.archivos : [];
+
+  const validos = archivos.filter((a) => a?.path && a?.nombre);
+  if (validos.length === 0) {
+    return NextResponse.json({ error: "No hay archivos para guardar." }, { status: 400 });
   }
 
-  if (subidos > 0) {
-    await db.expedienteEvento.create({
-      data: {
-        expedienteId: id,
-        tipo: "DOCUMENTO_SUBIDO",
-        descripcion: `${session.nombre} adjuntó ${subidos} documento${subidos === 1 ? "" : "s"}${
-          pasoNumero ? ` en el paso ${pasoNumero}` : ""
-        }.`,
-        pasoNumero,
-        usuarioId: session.userId,
-      },
-    });
-    await db.expediente.update({ where: { id }, data: { fechaUltimoMovimiento: new Date() } });
-  }
+  await db.expedienteDocumento.createMany({
+    data: validos.map((a) => ({
+      expedienteId: id,
+      pasoNumero,
+      nombre: a.nombre,
+      descripcion,
+      storagePath: a.path,
+      mimeType: a.mimeType || "application/octet-stream",
+      tamanoBytes: a.tamanoBytes || 0,
+      subidoPorId: session.userId,
+    })),
+  });
 
-  return NextResponse.redirect(new URL(`/expedientes/${id}`, req.url), { status: 303 });
+  await db.expedienteEvento.create({
+    data: {
+      expedienteId: id,
+      tipo: "DOCUMENTO_SUBIDO",
+      descripcion: `${session.nombre} adjuntó ${validos.length} documento${validos.length === 1 ? "" : "s"}${
+        pasoNumero ? ` en el paso ${pasoNumero}` : ""
+      }.`,
+      pasoNumero,
+      usuarioId: session.userId,
+    },
+  });
+  await db.expediente.update({ where: { id }, data: { fechaUltimoMovimiento: new Date() } });
+
+  return NextResponse.json({ ok: true });
 }

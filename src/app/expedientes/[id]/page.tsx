@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { EventoIcono } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
+import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 
 const ESTADOS = [
   "RADICADO",
@@ -121,31 +122,7 @@ export default async function ExpedienteDetallePage({
 
               {/* Subir documento de este paso */}
               <div className="mt-4 border-t border-gray-100 pt-4">
-                <form
-                  action={`/api/expedientes/${expediente.id}/documentos`}
-                  method="post"
-                  encType="multipart/form-data"
-                  className="flex flex-wrap items-end gap-3"
-                >
-                  <input type="hidden" name="pasoNumero" value={pasoActual.numero} />
-                  <Field
-                    label="Adjuntar documento de este paso"
-                    help="Ej: el informe técnico, el auto firmado, la resolución — lo que este paso genere."
-                  >
-                    <input
-                      type="file"
-                      name="archivo"
-                      multiple
-                      className="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-cdmb-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cdmb-700 hover:file:bg-cdmb-100"
-                    />
-                  </Field>
-                  <button
-                    type="submit"
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Subir
-                  </button>
-                </form>
+                <SubirDocumentoPasoForm expedienteId={expediente.id} pasoNumero={pasoActual.numero} />
               </div>
 
               {/* Acciones para avanzar */}
