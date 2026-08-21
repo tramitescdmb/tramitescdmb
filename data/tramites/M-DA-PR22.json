@@ -8,29 +8,130 @@
   "slug": "licencia-ambiental-global",
   "archivoFuente": "M-DA-PR22 version 11.pdf",
   "objeto": "Establecer la secuencia de actividades y responsabilidades necesarias para la evaluación de Licencias Ambientales de proyectos, obras o actividades que lo requieran, en lo que compete a la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB, como autoridad ambiental dentro de su área de jurisdicción.",
+  "resumen": "Este trámite evalúa y otorga la Licencia Ambiental de proyectos, obras o actividades que la requieran dentro de la jurisdicción de la CDMB.",
   "alcance": "Aplica a todas las solicitudes de Licencia Ambiental para proyectos, obras o actividades que la requieran, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Grupo de Evaluación para la Sostenibilidad tienen la autoridad y responsabilidad de modificar y hacer cumplir el respectivo procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Documento de Diagnóstico Ambiental de Alternativas (DAA), que debe incluir: objetivo, alcance y descripción del proyecto; descripción de las alternativas de localización con su caracterización ambiental y del entorno social y económico; información sobre compatibilidad con el POT; identificación y análisis comparativo de riesgos y recursos requeridos por cada alternativa; identificación de comunidades y mecanismos de información; análisis costo-beneficio ambiental de las alternativas; y selección y justificación de la alternativa escogida", "obligatorio": true, "notas": "Solo si la CDMB determina que el proyecto requiere presentar DAA (actividad 1 del procedimiento)" },
-    { "orden": 2, "nombre": "Copia del registro correspondiente expedido por la Unidad de Planeación Minero Energética (UPME)", "obligatorio": false, "notas": "Solo proyectos hidroeléctricos, en el marco del DAA" },
-    { "orden": 3, "nombre": "Copia del documento de identificación del solicitante", "obligatorio": true, "notas": "Para el trámite de DAA" },
-    { "orden": 4, "nombre": "Certificado de existencia y representación legal", "obligatorio": false, "notas": "Para el trámite de DAA; solo personas jurídicas" },
-    { "orden": 5, "nombre": "Formulario Único Nacional de Solicitud de Licencia Ambiental", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Estudio de Impacto Ambiental (EIA), conforme al artículo 2.2.2.3.5.1 del Decreto 1076 de 2015", "obligatorio": true, "notas": null },
-    { "orden": 7, "nombre": "Planos que soportan el EIA, conforme al Modelo de Almacenamiento Geográfico (Geodatabase) de la Resolución 2182 de 2016", "obligatorio": true, "notas": null },
-    { "orden": 8, "nombre": "Costo estimado de inversión y operación del proyecto", "obligatorio": true, "notas": null },
-    { "orden": 9, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
-    { "orden": 10, "nombre": "Documento de identificación o certificado de existencia y representación legal", "obligatorio": true, "notas": "El certificado de existencia y representación legal aplica solo para personas jurídicas" },
-    { "orden": 11, "nombre": "Registro Único Tributario (RUT)", "obligatorio": true, "notas": "Solo personas jurídicas" },
-    { "orden": 12, "nombre": "Certificación del Ministerio del Interior sobre presencia o no de comunidades étnicas y de existencia de territorios colectivos en el área de influencia del proyecto", "obligatorio": true, "notas": null },
-    { "orden": 13, "nombre": "Copia de la radicación del documento exigido por el ICANH (Ley 1185 de 2008)", "obligatorio": true, "notas": null },
-    { "orden": 14, "nombre": "Formato de Verificación Preliminar de Documentación (VPD) que conforma la solicitud de licencia ambiental, aprobado por la autoridad ambiental", "obligatorio": true, "notas": null },
-    { "orden": 15, "nombre": "Copia del título minero y/o contrato de concesión minera debidamente otorgado e inscrito en el Registro Minero Nacional", "obligatorio": false, "notas": "Solo proyectos mineros" },
-    { "orden": 16, "nombre": "Estudios sobre las condiciones del modo de transporte desde el sitio de explotación de carbón hasta el puerto de embarque (Decreto 3083 de 2017)", "obligatorio": false, "notas": "Solo proyectos mineros de carbón" },
-    { "orden": 17, "nombre": "Copia del contrato respectivo suscrito con la Agencia Nacional de Hidrocarburos (ANH)", "obligatorio": false, "notas": "Solo proyectos de hidrocarburos" },
-    { "orden": 18, "nombre": "Concepto y/o formato de la ANH que haga constar si la actividad de estimulación hidráulica se ejecutará en un yacimiento convencional o no convencional", "obligatorio": false, "notas": "Solo proyectos de exploración y/o explotación de hidrocarburos que requieran estimulación hidráulica en los pozos" },
-    { "orden": 19, "nombre": "Documentación relacionada en la Circular No. 8201-2-2378 del 02 de diciembre de 2019 del Ministerio de Ambiente y Desarrollo Sostenible", "obligatorio": false, "notas": "Solo si se requiere intervención de especies de la flora silvestre con veda nacional o regional" },
-    { "orden": 20, "nombre": "Constancia de pago para la prestación del servicio de evaluación de la licencia ambiental", "obligatorio": true, "notas": "Se remite al usuario únicamente cuando haya allegado toda la documentación anteriormente enunciada" }
+    {
+      "orden": 1,
+      "nombre": "Documento de Diagnóstico Ambiental de Alternativas (DAA), que debe incluir: objetivo, alcance y descripción del proyecto; descripción de las alternativas de localización con su caracterización ambiental y del entorno social y económico; información sobre compatibilidad con el POT; identificación y análisis comparativo de riesgos y recursos requeridos por cada alternativa; identificación de comunidades y mecanismos de información; análisis costo-beneficio ambiental de las alternativas; y selección y justificación de la alternativa escogida",
+      "obligatorio": true,
+      "notas": "Solo si la CDMB determina que el proyecto requiere presentar DAA (actividad 1 del procedimiento)"
+    },
+    {
+      "orden": 2,
+      "nombre": "Copia del registro correspondiente expedido por la Unidad de Planeación Minero Energética (UPME)",
+      "obligatorio": false,
+      "notas": "Solo proyectos hidroeléctricos, en el marco del DAA"
+    },
+    {
+      "orden": 3,
+      "nombre": "Copia del documento de identificación del solicitante",
+      "obligatorio": true,
+      "notas": "Para el trámite de DAA"
+    },
+    {
+      "orden": 4,
+      "nombre": "Certificado de existencia y representación legal",
+      "obligatorio": false,
+      "notas": "Para el trámite de DAA; solo personas jurídicas"
+    },
+    {
+      "orden": 5,
+      "nombre": "Formulario Único Nacional de Solicitud de Licencia Ambiental",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Estudio de Impacto Ambiental (EIA), conforme al artículo 2.2.2.3.5.1 del Decreto 1076 de 2015",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Planos que soportan el EIA, conforme al Modelo de Almacenamiento Geográfico (Geodatabase) de la Resolución 2182 de 2016",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Costo estimado de inversión y operación del proyecto",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 9,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por medio de apoderado"
+    },
+    {
+      "orden": 10,
+      "nombre": "Documento de identificación o certificado de existencia y representación legal",
+      "obligatorio": true,
+      "notas": "El certificado de existencia y representación legal aplica solo para personas jurídicas"
+    },
+    {
+      "orden": 11,
+      "nombre": "Registro Único Tributario (RUT)",
+      "obligatorio": true,
+      "notas": "Solo personas jurídicas"
+    },
+    {
+      "orden": 12,
+      "nombre": "Certificación del Ministerio del Interior sobre presencia o no de comunidades étnicas y de existencia de territorios colectivos en el área de influencia del proyecto",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 13,
+      "nombre": "Copia de la radicación del documento exigido por el ICANH (Ley 1185 de 2008)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 14,
+      "nombre": "Formato de Verificación Preliminar de Documentación (VPD) que conforma la solicitud de licencia ambiental, aprobado por la autoridad ambiental",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 15,
+      "nombre": "Copia del título minero y/o contrato de concesión minera debidamente otorgado e inscrito en el Registro Minero Nacional",
+      "obligatorio": false,
+      "notas": "Solo proyectos mineros"
+    },
+    {
+      "orden": 16,
+      "nombre": "Estudios sobre las condiciones del modo de transporte desde el sitio de explotación de carbón hasta el puerto de embarque (Decreto 3083 de 2017)",
+      "obligatorio": false,
+      "notas": "Solo proyectos mineros de carbón"
+    },
+    {
+      "orden": 17,
+      "nombre": "Copia del contrato respectivo suscrito con la Agencia Nacional de Hidrocarburos (ANH)",
+      "obligatorio": false,
+      "notas": "Solo proyectos de hidrocarburos"
+    },
+    {
+      "orden": 18,
+      "nombre": "Concepto y/o formato de la ANH que haga constar si la actividad de estimulación hidráulica se ejecutará en un yacimiento convencional o no convencional",
+      "obligatorio": false,
+      "notas": "Solo proyectos de exploración y/o explotación de hidrocarburos que requieran estimulación hidráulica en los pozos"
+    },
+    {
+      "orden": 19,
+      "nombre": "Documentación relacionada en la Circular No. 8201-2-2378 del 02 de diciembre de 2019 del Ministerio de Ambiente y Desarrollo Sostenible",
+      "obligatorio": false,
+      "notas": "Solo si se requiere intervención de especies de la flora silvestre con veda nacional o regional"
+    },
+    {
+      "orden": 20,
+      "nombre": "Constancia de pago para la prestación del servicio de evaluación de la licencia ambiental",
+      "obligatorio": true,
+      "notas": "Se remite al usuario únicamente cuando haya allegado toda la documentación anteriormente enunciada"
+    }
   ],
   "flujos": [
     {
@@ -42,22 +143,43 @@
           "numero": 1,
           "titulo": "RADICAR, RECIBIR, REVISAR LA SOLICITUD SOBRE EXIGIBILIDAD DEL DAA",
           "descripcion": "Para determinar la exigibilidad del Diagnóstico Ambiental de Alternativas (DAA): el usuario realiza consulta mediante la ventanilla de radicación y/o cualquier canal de atención sobre la exigencia del trámite de DAA para el proyecto a desarrollar. El coordinador del Grupo de Evaluación para la Sostenibilidad designa un profesional para dar trámite a la solicitud, quien resuelve y da respuesta al radicado de entrada mediante oficio, informando al usuario si su proyecto requiere presentar el DAA (según el artículo 2.2.2.3.4.2 del Decreto 1076 de 2015), adjuntando los términos de referencia para su elaboración en caso de requerirse. En caso de no requerir presentación de DAA, se procede directamente con la instrucción 11 del presente procedimiento (solicitud de Licencia Ambiental).",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Profesional técnico y jurídico responsables de evaluación del trámite de Licencia Ambiental – SEYCA"],
-          "documentos": ["Radicado de entrada enviado por el interesado a la CDMB", "Documentos anexos", "Radicado de salida CDMB notificando la exigibilidad o no de presentación del DAA", "SIC con soporte y trazabilidad"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Profesional técnico y jurídico responsables de evaluación del trámite de Licencia Ambiental – SEYCA"
+          ],
+          "documentos": [
+            "Radicado de entrada enviado por el interesado a la CDMB",
+            "Documentos anexos",
+            "Radicado de salida CDMB notificando la exigibilidad o no de presentación del DAA",
+            "SIC con soporte y trazabilidad"
+          ],
           "tiempo": "15 días",
           "tiempoDias": 15,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "El proyecto requiere presentar DAA", "siguientePaso": 2 },
-            { "respuesta": "El proyecto no requiere presentar DAA", "siguientePaso": 11 }
+            {
+              "respuesta": "El proyecto requiere presentar DAA",
+              "siguientePaso": 2
+            },
+            {
+              "respuesta": "El proyecto no requiere presentar DAA",
+              "siguientePaso": 11
+            }
           ]
         },
         {
           "numero": 2,
           "titulo": "RADICAR, REVISAR Y VERIFICAR LA DOCUMENTACIÓN PRELIMINAR DE DAA",
           "descripcion": "En caso de requerirse DAA, el usuario debe presentar, mediante cualquier canal habilitado por la CDMB, en formato digital y físico, la documentación exigida en el artículo 2.2.2.3.4.3 del Decreto 1076 de 2015: (1) objetivo, alcance y descripción del proyecto; (2) descripción general de las alternativas de localización, caracterizando ambientalmente el área de interés e identificando áreas de manejo especial y las características del entorno social y económico de cada alternativa; (3) información sobre compatibilidad con los usos del suelo del POT (sin perjuicio del Decreto 2201 de 2003); (4) identificación y análisis comparativo de riesgos y efectos sobre el medio ambiente y de los recursos naturales requeridos por cada alternativa; (5) identificación de comunidades y de los mecanismos utilizados para informarles; (6) análisis costo-beneficio ambiental de las alternativas; (7) selección y justificación de la alternativa escogida; (8) para proyectos hidroeléctricos, copia del registro expedido por la UPME (en este caso se suspenden los términos de decisión mientras dicha entidad emite su concepto técnico sobre el potencial energético). Adicionalmente, conforme al artículo 2.2.2.3.6.1 del Decreto 1076 de 2015, debe adjuntar copia del documento de identificación y, si es persona jurídica, certificado de existencia y representación legal.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["Radicado de entrada enviado por el interesado a la CDMB", "Documento que corresponde al DAA y sus respectivos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "Radicado de entrada enviado por el interesado a la CDMB",
+            "Documento que corresponde al DAA y sus respectivos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -67,8 +189,21 @@
           "numero": 3,
           "titulo": "VERIFICAR LOS REQUISITOS EXIGIDOS PARA DAR CONTINUIDAD AL DAA",
           "descripcion": "Cuando el usuario allegue la información a la CDMB por los canales oficiales, el funcionario de atención remite el documento DAA con sus anexos (físico y digital) al encargado de la ventanilla de la Coordinación del Grupo de Evaluación para la Sostenibilidad, quien lo entrega al coordinador; este designa a un profesional técnico y jurídico responsable, según el tipo de proyecto, para la revisión preliminar mediante el formato de lista de chequeo E-GE-FO02 Control de Procesos, estableciendo si la información cumple o no con los requisitos. Si los requisitos están completos, el profesional solicita la liquidación de pago por evaluación ambiental y la envía al usuario para su pago; el usuario debe allegar el comprobante de pago en un término no mayor a treinta (30) días, tras lo cual se abre el expediente y número SINCA del DAA, asignado a un equipo profesional según el tipo de proyecto. Si los requisitos están incompletos, se remite requerimiento de información al usuario, otorgando un plazo de treinta (30) días; si el usuario no aporta la información en dicho término o la remite incompleta, se emite Auto de desistimiento (Art. 17, Ley 1437 de 2011) y se notifica al usuario; si la presenta completa dentro del plazo, se continúa con el trámite de pago descrito.",
-          "responsables": ["Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de Ventanilla de trámites ambientales", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesionales designados de evaluación del trámite de Licencia Ambiental – SEYCA"],
-          "documentos": ["Formato E-GE-FO02 Control de procesos", "Liquidación emitida por la CDMB para la evaluación del trámite ambiental", "Radicado de salida CDMB emitiendo respectiva liquidación y formas de pago", "Factura pago del trámite ambiental CDMB", "Apertura de expediente en físico", "Radicado de salida CDMB Requerimiento de información", "Auto de desistimiento firmado y numerado (si aplica)"],
+          "responsables": [
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesionales designados de evaluación del trámite de Licencia Ambiental – SEYCA"
+          ],
+          "documentos": [
+            "Formato E-GE-FO02 Control de procesos",
+            "Liquidación emitida por la CDMB para la evaluación del trámite ambiental",
+            "Radicado de salida CDMB emitiendo respectiva liquidación y formas de pago",
+            "Factura pago del trámite ambiental CDMB",
+            "Apertura de expediente en físico",
+            "Radicado de salida CDMB Requerimiento de información",
+            "Auto de desistimiento firmado y numerado (si aplica)"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -78,8 +213,20 @@
           "numero": 4,
           "titulo": "ELABORAR AUTO DE INICIO DE TRÁMITE Y NOTIFICACIÓN AL USUARIO (DAA)",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. El profesional jurídico asignado por la Subdirección de Evaluación y Control Ambiental – SEYCA proyecta el Auto de Inicio de Trámite de Evaluación de DAA, el cual debe ser firmado por los encargados y el Secretario General. Una vez firmado, el Secretario General remite el expediente a la oficina de notificaciones para notificar el Auto de inicio, de forma que cobre ejecutoria (Ley 1437 de 2011), y se ordena su publicación en el GDI (Ley 99/93). Surtida la notificación, el servidor responsable actualiza la etapa en el SINCA.",
-          "responsables": ["Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Subdirector de SEYCA", "Secretario general", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["SIC con soporte y trazabilidad", "Auto de inicio firmado y numerado", "Constancia de Notificación personal o edicto", "Registro del documento en GDI"],
+          "responsables": [
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Subdirector de SEYCA",
+            "Secretario general",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "SIC con soporte y trazabilidad",
+            "Auto de inicio firmado y numerado",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en GDI"
+          ],
           "tiempo": "1 día (elaboración y firma del Auto) + 15 días (notificación total)",
           "tiempoDias": 15,
           "esDecision": false,
@@ -89,8 +236,19 @@
           "numero": 5,
           "titulo": "EVALUAR LA DOCUMENTACIÓN Y VISITA TÉCNICA (DAA)",
           "descripcion": "La oficina de notificaciones remite el expediente al Grupo de Evaluación para la Sostenibilidad, donde el coordinador designa al equipo profesional encargado de evaluar la documentación presentada, verificando que la constancia de pago se encuentre en el expediente y que la información cumpla los requisitos del estudio y el manual de evaluación para el DAA. Si se considera necesario, el equipo profesional practica visita técnica, dejando constancia en el formato de Hoja de Visita Institucional (con registro fotográfico), previa notificación al interesado mediante comunicación oficial. Nota: si aplica, la visita técnica debe realizarse dentro de los treinta (30) días hábiles siguientes a la publicación del Auto de Inicio.",
-          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Secretario general", "Servidor responsable de la publicación del área de Gestión documental"],
-          "documentos": ["Memorando designación equipo evaluador", "SIC con soportes y trazabilidad", "Radicado de salida CDMB notificación de la visita", "Hoja de Visita Institucional", "Registro fotográfico"],
+          "responsables": [
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Secretario general",
+            "Servidor responsable de la publicación del área de Gestión documental"
+          ],
+          "documentos": [
+            "Memorando designación equipo evaluador",
+            "SIC con soportes y trazabilidad",
+            "Radicado de salida CDMB notificación de la visita",
+            "Hoja de Visita Institucional",
+            "Registro fotográfico"
+          ],
           "tiempo": "15 días",
           "tiempoDias": 15,
           "esDecision": false,
@@ -100,36 +258,77 @@
           "numero": 6,
           "titulo": "¿REQUIERE INFORMACIÓN ADICIONAL? (DAA)",
           "descripcion": "El servidor responsable adscrito a la coordinación de evaluación determina, en tres (3) días hábiles, si se requiere o no solicitar información adicional por única vez. Si no se requiere información adicional, el equipo profesional continúa con la actividad 8. Si se requiere, se realiza en los tres (3) días la reunión de solicitud de información adicional, indicando la documentación a anexar, y se otorga un plazo de un (1) mes calendario al usuario, prorrogable a solicitud del mismo por única vez (Art. 2.2.2.3.6.1, Decreto 1076 de 2015). La reunión debe notificarse al usuario mediante oficio y debe asistir al menos el solicitante (o representante legal/apoderado) y un delegado de la autoridad ambiental (numeral 4, Art. 2.2.2.3.6.1).",
-          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["Radicado de salida CDMB programación de reunión de información adicional", "Acta de Reunión de información adicional firmada", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Profesional jurídico designado por el coordinador",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Subdirector de SEYCA",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "Radicado de salida CDMB programación de reunión de información adicional",
+            "Acta de Reunión de información adicional firmada",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": "3 días",
           "tiempoDias": 3,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "No requiere información adicional", "siguientePaso": 8 },
-            { "respuesta": "Sí requiere información adicional", "siguientePaso": 7 }
+            {
+              "respuesta": "No requiere información adicional",
+              "siguientePaso": 8
+            },
+            {
+              "respuesta": "Sí requiere información adicional",
+              "siguientePaso": 7
+            }
           ]
         },
         {
           "numero": 7,
           "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL? (DAA)",
           "descripcion": "Si el interesado presenta la información adicional dentro del plazo otorgado (un mes calendario, prorrogable una vez), el equipo profesional continúa con la actividad 8. Si no la presenta, el equipo profesional emite concepto técnico en un término de ocho (8) días y lo remite al encargado de jurídica para que emita el Acto administrativo que ordena el archivo de la solicitud, devolviendo la totalidad de la documentación. La CDMB notifica al usuario (Arts. 67 y 68, Ley 1437 de 2011) en un plazo de cinco (5) días; el usuario cuenta con cinco (5) días para notificarse. De no ser posible, se notifica por aviso a los diez (10) días de emitido el acto, publicado por cinco (5) días (Art. 69, Ley 1437 de 2011).",
-          "responsables": ["Equipo profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de la publicación del área de Gestión documental", "Oficina de notificaciones"],
-          "documentos": ["Radicado de entrada enviado por el interesado a la CDMB", "Acto administrativo que ordena el archivo de la solicitud", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Equipo profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Profesional jurídico designado por el coordinador",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Subdirector de SEYCA",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Oficina de notificaciones"
+          ],
+          "documentos": [
+            "Radicado de entrada enviado por el interesado a la CDMB",
+            "Acto administrativo que ordena el archivo de la solicitud",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Sí presentó la información adicional", "siguientePaso": 8 },
-            { "respuesta": "No presentó la información adicional", "siguientePaso": null, "resultado": "ARCHIVADO" }
+            {
+              "respuesta": "Sí presentó la información adicional",
+              "siguientePaso": 8
+            },
+            {
+              "respuesta": "No presentó la información adicional",
+              "siguientePaso": null,
+              "resultado": "ARCHIVADO"
+            }
           ]
         },
         {
           "numero": 8,
           "titulo": "EMITIR INFORME TÉCNICO DEL DAA",
           "descripcion": "Una vez presentada la información adicional, o en caso de no haberse requerido, el equipo profesional responsable emite el informe técnico conforme al artículo 2.2.2.3.4.4 del Decreto 1076 de 2015 y lo entrega al responsable de la Coordinación del Grupo de Evaluación para la Sostenibilidad, quien da el visto bueno y asigna número consecutivo, ordenando continuar con la instrucción 9. La emisión se realiza dentro de los diez (10) días hábiles siguientes, cargando el informe y soportes en el SINCA.",
-          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad"],
-          "documentos": ["Informe técnico", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Informe técnico",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -139,8 +338,22 @@
           "numero": 9,
           "titulo": "ELABORAR, COMUNICAR Y PUBLICAR AUTO DE REUNIDA LA INFORMACIÓN (DAA)",
           "descripcion": "Con sustento en el Informe Técnico, el profesional en derecho designado por el responsable de la Coordinación del Grupo de Evaluación para la Sostenibilidad proyecta el Auto por el cual se declara reunida la información. Una vez firmado y numerado, se remite a la oficina de notificaciones para su notificación y publicación en el boletín ambiental GDI (Art. 71, Ley 99 de 1993; Ley 1437 de 2011), devolviendo posteriormente el expediente a la Subdirección de Evaluación y Control Ambiental.",
-          "responsables": ["Servidor público responsable de notificación", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Subdirector de SEYCA", "Secretario general", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["SIC con soportes y trazabilidad", "Auto de reunida la información firmado y numerado", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de notificación y publicación"],
+          "responsables": [
+            "Servidor público responsable de notificación",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Subdirector de SEYCA",
+            "Secretario general",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "SIC con soportes y trazabilidad",
+            "Auto de reunida la información firmado y numerado",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en GDI",
+            "Constancia de notificación y publicación"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -150,22 +363,51 @@
           "numero": 10,
           "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR LA RESOLUCIÓN QUE ELIGE LA ALTERNATIVA (DAA)",
           "descripcion": "El profesional en derecho asignado por el responsable de la Coordinación del Grupo de Evaluación para la Sostenibilidad proyecta la Resolución que elige la alternativa viable y entrega los términos de referencia para la elaboración del Estudio de Impacto Ambiental (EIA), o el Acto administrativo que da por terminado el trámite y ordena la devolución de documentos cuando el DAA no cumple los requisitos o criterios del manual (numerales 6 y 7 y parágrafo del Art. 2.2.2.3.6.1, y parágrafo 1 del Art. 2.2.2.3.4.4, Decreto 1076 de 2015). Una vez firmada y numerada, se remite a notificaciones, se elabora constancia de ejecutoria y se publica en el boletín ambiental GDI (Arts. 70 y 71, Ley 99 de 1993; Ley 1437 de 2011); posteriormente se devuelve el expediente a la Subdirección de Evaluación y Control Ambiental. Surtida la notificación, el servidor responsable actualiza la etapa en el SIC. Contra el acto administrativo procede recurso de reposición, que de interponerse es remitido por notificaciones al grupo de trámites ambientales de la coordinación de evaluación de SEYCA para resolverlo de fondo (Ley 1437 de 2011). Nota: cuando el DAA no cumple los requisitos mínimos del Manual de Evaluación de Estudios Ambientales, la entidad da por terminado el trámite mediante acto administrativo, y el solicitante podrá presentar una nueva solicitud.",
-          "responsables": ["Dirección General", "Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Oficina de notificaciones"],
-          "documentos": ["SIC con soportes y trazabilidad", "Resolución que elige la alternativa del DAA o da por terminado el trámite", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de notificación y publicación"],
+          "responsables": [
+            "Dirección General",
+            "Secretario general",
+            "Subdirector de SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Oficina de notificaciones"
+          ],
+          "documentos": [
+            "SIC con soportes y trazabilidad",
+            "Resolución que elige la alternativa del DAA o da por terminado el trámite",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en GDI",
+            "Constancia de notificación y publicación"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Elige la alternativa viable y entrega términos de referencia para el EIA", "siguientePaso": 11, "resultado": "ALTERNATIVA_ELEGIDA" },
-            { "respuesta": "Da por terminado el trámite (el DAA no cumple los requisitos o criterios del manual)", "siguientePaso": null, "resultado": "TERMINADO" }
+            {
+              "respuesta": "Elige la alternativa viable y entrega términos de referencia para el EIA",
+              "siguientePaso": 11,
+              "resultado": "ALTERNATIVA_ELEGIDA"
+            },
+            {
+              "respuesta": "Da por terminado el trámite (el DAA no cumple los requisitos o criterios del manual)",
+              "siguientePaso": null,
+              "resultado": "TERMINADO"
+            }
           ]
         },
         {
           "numero": 11,
           "titulo": "RECIBIR, RADICAR LA SOLICITUD DE LICENCIA AMBIENTAL",
           "descripcion": "En los casos en que no se requiera pronunciamiento sobre la exigibilidad del DAA, o una vez surtido dicho procedimiento, el interesado allega por los canales oficiales la documentación requerida para el trámite de licenciamiento ambiental, según competencia de la Corporación y conforme al artículo 2.2.2.3.2.3 del Decreto 1076 de 2015. El EIA debe cumplir el artículo 2.2.2.3.5.1 del mismo decreto. La solicitud debe presentarse en formato digital y físico, debidamente organizada y foliada (Art. 2.2.2.3.6.2), acompañada del Formulario Único de Licencia Ambiental, los planos que soportan el EIA (Resolución 2182 de 2016) y la demás documentación descrita en el listado de requisitos del trámite.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["Radicado de entrada enviado por el interesado a la CDMB", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "Radicado de entrada enviado por el interesado a la CDMB",
+            "Documentos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -175,8 +417,19 @@
           "numero": 12,
           "titulo": "REVISAR LA DOCUMENTACIÓN (LICENCIA AMBIENTAL)",
           "descripcion": "Cuando el usuario allegue la información por los canales oficiales, el funcionario de atención remite el documento con sus anexos al encargado de la ventanilla de la Coordinación del Grupo de Evaluación para la Sostenibilidad, quien lo entrega al coordinador; este asigna a un profesional técnico y jurídico, según el tipo de proyecto, para la revisión preliminar mediante el formato VPD (Verificación Preliminar de Requisitos Mínimos) del MADS, estableciendo si la información cumple los requisitos (a excepción de la constancia de pago). Si la documentación está incompleta, se devuelve física y digitalmente, realizando una reunión informativa donde se identifican los requisitos faltantes, firmada por el solicitante en el formato VPD. Si está completa, el profesional solicita la liquidación de pago por evaluación ambiental al funcionario de ventanilla, quien la genera y entrega; el profesional envía la liquidación y forma de pago al usuario, quien debe allegar el comprobante en un término no mayor a treinta (30) días.",
-          "responsables": ["Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional técnico y jurídico encargado de la revisión de documentación del trámite de LA - SEYCA", "Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["Formato de Verificación Preliminar de Documentación de LA", "Liquidación emitida por la CDMB para la evaluación del trámite ambiental", "Radicado de salida CDMB remitiendo la liquidación y formas de pago", "Factura pago del trámite ambiental CDMB", "SIC con soportes y trazabilidad", "Apertura de expediente en físico"],
+          "responsables": [
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional técnico y jurídico encargado de la revisión de documentación del trámite de LA - SEYCA",
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "Formato de Verificación Preliminar de Documentación de LA",
+            "Liquidación emitida por la CDMB para la evaluación del trámite ambiental",
+            "Radicado de salida CDMB remitiendo la liquidación y formas de pago",
+            "Factura pago del trámite ambiental CDMB",
+            "SIC con soportes y trazabilidad",
+            "Apertura de expediente en físico"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -186,8 +439,24 @@
           "numero": 13,
           "titulo": "ELABORAR AUTO DE INICIO DE TRÁMITE Y NOTIFICACIÓN AL USUARIO (LICENCIA AMBIENTAL)",
           "descripcion": "El usuario remite la factura de pago al funcionario de ventanilla, quien la entrega al profesional designado para anexarla al expediente físico y solicitar la apertura de número SINCA y expediente para el trámite de LA. Nota: si no se remite el comprobante de pago, se emite Auto de desistimiento del trámite, que es notificado. Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica; el profesional jurídico asignado proyecta el Auto de inicio, firmado por el Secretario General. El Secretario General remite el expediente a notificaciones para notificar el Auto de inicio, de forma que cobre ejecutoria (Ley 1437 de 2011), y se publica en el GDI (Ley 99/93); en caso de requerirse notificación por aviso, se realiza conforme al artículo 69 de la Ley 1437 de 2011, por cinco (5) días. Surtida la notificación, el servidor responsable actualiza la etapa en el SINCA. Notificado y publicado el acto, el expediente es devuelto por notificaciones mediante memorando a la Subdirección de Evaluación y Control Ambiental, donde el coordinador designa el equipo profesional que evaluará la documentación.",
-          "responsables": ["Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor público de Notificaciones", "Servidor público responsable de la publicación en el GDI", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de Ventanilla de trámites ambientales", "Oficina de notificaciones"],
-          "documentos": ["SIC con soporte y trazabilidad", "Auto de inicio firmado y numerado", "Memorando", "Registro del documento en GDI", "Constancia de Notificación personal o edicto"],
+          "responsables": [
+            "Secretario general",
+            "Subdirector de SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Servidor público de Notificaciones",
+            "Servidor público responsable de la publicación en el GDI",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Oficina de notificaciones"
+          ],
+          "documentos": [
+            "SIC con soporte y trazabilidad",
+            "Auto de inicio firmado y numerado",
+            "Memorando",
+            "Registro del documento en GDI",
+            "Constancia de Notificación personal o edicto"
+          ],
           "tiempo": "1 día (elaboración y firma del Auto) + 15 días (notificación total)",
           "tiempoDias": 15,
           "esDecision": false,
@@ -197,8 +466,18 @@
           "numero": 14,
           "titulo": "EVALUAR LA DOCUMENTACIÓN Y VISITA TÉCNICA (LICENCIA AMBIENTAL)",
           "descripcion": "Paralelamente a la notificación del auto de inicio, el equipo profesional designado por el coordinador procede a fijar la fecha de la visita técnica cuando la naturaleza del proyecto lo requiera, y realiza la evaluación del EIA presentado y sus anexos. Si se considera necesario, practica visita técnica, dejando constancia en el formato de Hoja de Visita Institucional (con registro fotográfico), previa notificación al interesado; si se requieren permisos menores, estos deben cumplir los lineamientos previos establecidos para cada trámite. Nota: si aplica, la visita técnica debe realizarse dentro de los veinte (20) días hábiles siguientes a la publicación del Auto de Inicio.",
-          "responsables": ["Coordinador del grupo de Evaluación para la sostenibilidad", "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["Memorando de designación del equipo evaluador", "SIC con soportes y trazabilidad", "Radicado de salida CDMB notificación de la visita", "Hoja de visita institucional", "Registro fotográfico"],
+          "responsables": [
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "Memorando de designación del equipo evaluador",
+            "SIC con soportes y trazabilidad",
+            "Radicado de salida CDMB notificación de la visita",
+            "Hoja de visita institucional",
+            "Registro fotográfico"
+          ],
           "tiempo": "20 días",
           "tiempoDias": 20,
           "esDecision": false,
@@ -208,36 +487,80 @@
           "numero": 15,
           "titulo": "¿REQUIERE INFORMACIÓN ADICIONAL? (LICENCIA AMBIENTAL)",
           "descripcion": "El servidor responsable adscrito a la coordinación de evaluación determina, en diez (10) días hábiles, si se requiere o no solicitar información adicional por única vez. Si no se requiere, el equipo profesional procede a extender consulta de información a otras entidades, en caso de ser necesario (Art. 2.2.2.3.6.3, Decreto 1076 de 2015). Si se requiere, se programa y ejecuta una reunión de solicitud de información adicional, indicando la documentación a anexar, otorgando un plazo de un (1) mes calendario, prorrogable por única vez a solicitud del usuario (Art. 2.2.2.3.6.3); la entidad cuenta con diez (10) días para ello. La reunión debe notificarse mediante oficio y asistir al menos el solicitante (o representante legal/apoderado) y un delegado de la autoridad ambiental (numeral 2, Art. 2.2.2.3.6.3). Toda decisión adoptada se notifica verbalmente, dejando constancia en acta; procede recurso de reposición, resuelto de plano en la misma reunión. La inasistencia del solicitante no impide su realización, salvo justa causa.",
-          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Secretaria de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["Radicado de salida CDMB programación de reunión de información adicional", "Acta de Reunión de información adicional firmada", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Profesional jurídico designado por el coordinador",
+            "Secretaria de SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Subdirector de SEYCA",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "Radicado de salida CDMB programación de reunión de información adicional",
+            "Acta de Reunión de información adicional firmada",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "No requiere información adicional", "siguientePaso": 17 },
-            { "respuesta": "Sí requiere información adicional", "siguientePaso": 16 }
+            {
+              "respuesta": "No requiere información adicional",
+              "siguientePaso": 17
+            },
+            {
+              "respuesta": "Sí requiere información adicional",
+              "siguientePaso": 16
+            }
           ]
         },
         {
           "numero": 16,
           "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL? (LICENCIA AMBIENTAL)",
           "descripcion": "Si el interesado presenta la información adicional, el equipo profesional procede a extender consulta de información a otras entidades, en caso de requerirse (Art. 2.2.2.3.6.3, Decreto 1076 de 2015); estas entidades cuentan con veinte (20) días hábiles para remitir la información requerida. Si no presenta información adicional, el equipo profesional remite al encargado de jurídica para que emita el Acto administrativo que ordena el archivo de la solicitud y la devolución de la totalidad de la documentación (numeral 3, Art. 2.2.2.3.6.3). La CDMB notifica al usuario (Arts. 67 y 68, Ley 1437 de 2011) en un plazo de cinco (5) días; el usuario cuenta con cinco (5) días para notificarse; de no ser posible, se notifica por aviso a los diez (10) días de emitido el acto, publicado por cinco (5) días (Art. 69, Ley 1437 de 2011).",
-          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
-          "documentos": ["Radicado de entrada CDMB enviado por el interesado", "Radicado de salida CDMB consulta de información a otras entidades", "Acto administrativo que ordena el archivo de la solicitud y realiza devolución de la totalidad de documentación", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA",
+            "Profesional jurídico designado por el coordinador",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Subdirector de SEYCA",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"
+          ],
+          "documentos": [
+            "Radicado de entrada CDMB enviado por el interesado",
+            "Radicado de salida CDMB consulta de información a otras entidades",
+            "Acto administrativo que ordena el archivo de la solicitud y realiza devolución de la totalidad de documentación",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Sí presentó la información adicional", "siguientePaso": 17 },
-            { "respuesta": "No presentó la información adicional", "siguientePaso": null, "resultado": "ARCHIVADO" }
+            {
+              "respuesta": "Sí presentó la información adicional",
+              "siguientePaso": 17
+            },
+            {
+              "respuesta": "No presentó la información adicional",
+              "siguientePaso": null,
+              "resultado": "ARCHIVADO"
+            }
           ]
         },
         {
           "numero": 17,
           "titulo": "EMITIR Y REVISAR INFORME TÉCNICO (LICENCIA AMBIENTAL)",
           "descripcion": "Una vez recibida la información adicional requerida, tanto del interesado como de otras autoridades o entidades (si fue necesario), el equipo profesional designado emite el informe técnico de evaluación del trámite ambiental en un término no mayor a quince (15) días. Un profesional designado por el coordinador revisa si el informe presenta inconsistencias técnicas, solicitando explicación y corrección al equipo que realizó la visita si es necesario; posteriormente, el Coordinador de Evaluación para la Sostenibilidad de SEYCA revisa el informe, otorga visto bueno y asigna número consecutivo. Mediante el SINCA se hace cambio de etapa, se entrega el expediente físico junto con el informe técnico cargado en el SIC, y se remite al área jurídica de la Subdirección de Evaluación y Control Ambiental.",
-          "responsables": ["Grupo profesional de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Grupo de Evaluación para la sostenibilidad"],
-          "documentos": ["Informe técnico", "SIC con soportes y trazabilidad"],
+          "responsables": [
+            "Grupo profesional de la Coordinación de Evaluación para la sostenibilidad",
+            "Coordinador de Grupo de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Informe técnico",
+            "SIC con soportes y trazabilidad"
+          ],
           "tiempo": "15 días",
           "tiempoDias": 15,
           "esDecision": false,
@@ -247,8 +570,22 @@
           "numero": 18,
           "titulo": "ELABORAR Y PUBLICAR EL AUTO DE REUNIDA LA INFORMACIÓN (LICENCIA AMBIENTAL)",
           "descripcion": "Recibido el expediente junto con el concepto técnico, el profesional jurídico asignado por el responsable de la Coordinación del Grupo de Evaluación para la Sostenibilidad proyecta el Auto que declara reunida la información. Una vez firmado y numerado, se remite a notificaciones para su notificación, elaborando constancia de ejecutoria; se comunica al usuario y se devuelve el expediente a la Subdirección de Evaluación y Control Ambiental.",
-          "responsables": ["Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Subdirector de SEYCA", "Secretario general", "Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor público responsable de notificación", "Servidor público responsable de publicación GDI"],
-          "documentos": ["Auto reunida información, notificado y publicado", "SIC con soportes y trazabilidad", "Constancia de notificación personal o edicto", "Constancia de publicación en el GDI"],
+          "responsables": [
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Subdirector de SEYCA",
+            "Secretario general",
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor público responsable de notificación",
+            "Servidor público responsable de publicación GDI"
+          ],
+          "documentos": [
+            "Auto reunida información, notificado y publicado",
+            "SIC con soportes y trazabilidad",
+            "Constancia de notificación personal o edicto",
+            "Constancia de publicación en el GDI"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -258,22 +595,64 @@
           "numero": 19,
           "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR RESOLUCIÓN QUE OTORGA O NIEGA LA LICENCIA AMBIENTAL",
           "descripcion": "Publicado el auto de reunida la información, el profesional jurídico designado proyecta, en un término no mayor a tres (3) días, la Resolución que determina: (A) Otorgar la Licencia Ambiental, si el informe técnico determina su viabilidad (Art. 2.2.2.3.6.6, Decreto 1076 de 2015; Arts. 70 y 71, Ley 99 de 1993); o (B) Negar la Licencia Ambiental, si el informe técnico determina que no procede (parágrafo 4, Art. 2.2.2.3.6.3, Decreto 1076 de 2015). Con la revisión y visto bueno del Coordinador de Evaluación para la Sostenibilidad y el Subdirector de SEYCA, se remite a la Dirección General para firma y aprobación, previa revisión del Asesor de Dirección General. Se notifica y publica en el boletín ambiental GDI (Arts. 70 y 71, Ley 99 de 1993; Ley 1437 de 2011); la CDMB notifica al usuario (Arts. 67 y 68, Ley 1437 de 2011) en un plazo de cinco (5) días, quien cuenta con cinco (5) días para notificarse; de no ser posible, se notifica por aviso publicado por cinco (5) días (Art. 69, Ley 1437 de 2011). Nota: cuando se niega, la entidad da por terminado el trámite y el solicitante podrá presentar una nueva solicitud.",
-          "responsables": ["Dirección General", "Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor público responsable de notificación", "Servidor público responsable de la publicación"],
-          "documentos": ["SIC con soportes y trazabilidad", "Resolución que otorga o niega el trámite ambiental", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de publicación", "Constancia de ejecutoria"],
+          "responsables": [
+            "Dirección General",
+            "Secretario general",
+            "Subdirector de SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Servidor público responsable de notificación",
+            "Servidor público responsable de la publicación"
+          ],
+          "documentos": [
+            "SIC con soportes y trazabilidad",
+            "Resolución que otorga o niega el trámite ambiental",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en GDI",
+            "Constancia de publicación",
+            "Constancia de ejecutoria"
+          ],
           "tiempo": "3 días",
           "tiempoDias": 3,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga la Licencia Ambiental", "siguientePaso": 20, "resultado": "APROBADO" },
-            { "respuesta": "Niega la Licencia Ambiental", "siguientePaso": 20, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga la Licencia Ambiental",
+              "siguientePaso": 20,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega la Licencia Ambiental",
+              "siguientePaso": 20,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 20,
           "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR RESOLUCIÓN QUE RESUELVE RECURSO DE REPOSICIÓN",
           "descripcion": "Contra el acto administrativo que decide sobre el trámite ambiental procede recurso de reposición, que debe interponerse en un término no mayor a diez (10) días contados desde la notificación de la instrucción 19. Si el interesado presenta recurso contra la resolución que otorga o niega la licencia, el responsable de la oficina de notificaciones remite el expediente junto con el recurso al Coordinador del Grupo de Evaluación para la Sostenibilidad de SEYCA, para que sea resuelto de fondo (Ley 1437 de 2011). El Coordinador designa al profesional jurídico que da respuesta mediante la elaboración de la Resolución; una vez firmada, se envía a notificación y publicación (Ley 1437 de 2011; Ley 99 de 1993). Nota: el término para resolver los recursos es de dos (2) meses (Art. 86, Ley 1437 de 2011). Si no se presenta recurso, se continúa directamente con la instrucción 21.",
-          "responsables": ["Dirección General", "Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Oficina de notificaciones"],
-          "documentos": ["Resolución que resuelve el recurso", "SIC con soportes y trazabilidad", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de publicación", "Constancia de ejecutoria"],
+          "responsables": [
+            "Dirección General",
+            "Secretario general",
+            "Subdirector de SEYCA",
+            "Coordinador del grupo de Evaluación para la sostenibilidad",
+            "Profesional jurídico designado por el coordinador",
+            "Servidor responsable de la publicación del área de Gestión documental",
+            "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención",
+            "Oficina de notificaciones"
+          ],
+          "documentos": [
+            "Resolución que resuelve el recurso",
+            "SIC con soportes y trazabilidad",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en GDI",
+            "Constancia de publicación",
+            "Constancia de ejecutoria"
+          ],
           "tiempo": "2 meses (solo si se interpone recurso de reposición)",
           "tiempoDias": 60,
           "esDecision": false,
@@ -283,8 +662,17 @@
           "numero": 21,
           "titulo": "ENVIAR EXPEDIENTE A SEGUIMIENTO",
           "descripcion": "Una vez notificada y ejecutoriada la resolución que resuelve el recurso presentado, o notificada la resolución que otorga o niega la licencia ambiental cuando no se presentó recurso de reposición, el responsable de la oficina de notificaciones devuelve el expediente a SEYCA, específicamente al Coordinador de Seguimiento Ambiental, para que designe a un profesional que realice seguimiento a la licencia otorgada, o se archive el expediente en caso de haber sido negada.",
-          "responsables": ["Responsable oficina de notificaciones", "Subdirector SEYCA", "Servidor público de archivo SEYCA", "Profesional responsable de seguimiento del trámite de Licencia Ambiental – SEYCA"],
-          "documentos": ["Memorando", "SINCA SIC con soportes y trazabilidad", "Expediente en físico"],
+          "responsables": [
+            "Responsable oficina de notificaciones",
+            "Subdirector SEYCA",
+            "Servidor público de archivo SEYCA",
+            "Profesional responsable de seguimiento del trámite de Licencia Ambiental – SEYCA"
+          ],
+          "documentos": [
+            "Memorando",
+            "SINCA SIC con soportes y trazabilidad",
+            "Expediente en físico"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,

@@ -9,6 +9,25 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
+// Configuración de apariencia (logos del header/footer institucional) — fila
+// única "singleton", igual patrón que el proyecto Negocios Verdes
+// (configuracion_sitio): logo propio + los 3 sellos oficiales de gov.co.
+// ---------------------------------------------------------------------------
+
+model ConfiguracionSitio {
+  id               String   @id @default("singleton")
+  logoUrl          String? // logo de la CDMB, header + footer
+  logoPath         String?
+  logoGovcoUrl     String? // franja azul superior
+  logoGovcoPath    String?
+  logoColombiaUrl  String? // franja azul del footer
+  logoColombiaPath String?
+  logoPotenciaUrl  String? // "Colombia Potencia de la Vida", franja del footer
+  logoPotenciaPath String?
+  updatedAt        DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
 // Usuarios internos (funcionarios CDMB)
 // ---------------------------------------------------------------------------
 
@@ -47,6 +66,37 @@ model Usuario {
   expedientesAsignados Expediente[]      @relation("ResponsableActual")
   documentos           ExpedienteDocumento[]
   eventos              ExpedienteEvento[]
+  registrosAuditoria   RegistroAuditoria[]
+}
+
+// ---------------------------------------------------------------------------
+// Auditoría del sistema (distinta de ExpedienteEvento, que es la bitácora de
+// UN expediente) — acciones a nivel de cuenta: logins, gestión de usuarios,
+// cambios de configuración. Solo lectura desde /auditoria (solo ADMIN).
+// ---------------------------------------------------------------------------
+
+enum TipoAuditoria {
+  LOGIN_EXITOSO
+  LOGIN_FALLIDO
+  USUARIO_CREADO
+  USUARIO_ACTIVADO
+  USUARIO_DESACTIVADO
+  CONFIGURACION_ACTUALIZADA
+}
+
+model RegistroAuditoria {
+  id           String         @id @default(cuid())
+  tipo         TipoAuditoria
+  descripcion  String         @db.Text
+  usuarioId    String? // quién hizo la acción; null si el login fallido no correspondía a ningún usuario real
+  emailIntento String? // correo usado en un intento de login (exitoso o no), aunque no exista el usuario
+  createdAt    DateTime       @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([tipo])
+  @@index([usuarioId])
+  @@index([createdAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +114,7 @@ model TramiteTipo {
   slug                      String   @unique
   archivoFuente             String
   objeto                    String   @db.Text
+  resumen                   String?  @db.Text // frase natural "Este trámite..." para la UI (objeto es la redacción formal del PDF)
   alcance                   String   @db.Text
   autoridadResponsabilidad  String   @db.Text
   activo                    Boolean  @default(true)
@@ -157,10 +208,17 @@ model Expediente {
   municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
 
   // Ubicación del predio/proyecto tomada en campo (mapa OSM) — opcional, no todo trámite la necesita.
-  ubicacionLat    Float? // WGS84
-  ubicacionLon    Float? // WGS84
-  ubicacionPlanaX Float? // MAGNA-SIRGAS Origen-Nacional (EPSG:9377), calculada a partir de lat/lon — ver src/lib/coordenadas.ts
-  ubicacionPlanaY Float?
+  // Se puede cargar desde cualquiera de las 3 representaciones (elipsoidal/plana/cartesiana);
+  // lat/lon (WGS84) es la que manda internamente, las demás se recalculan siempre en el
+  // servidor a partir de ella — ver src/lib/coordenadas.ts.
+  ubicacionLat         Float? // elipsoidal WGS84
+  ubicacionLon         Float? // elipsoidal WGS84
+  ubicacionAltura      Float? // metros sobre el elipsoide
+  ubicacionPlanaX      Float? // MAGNA-SIRGAS Origen-Nacional (EPSG:9377)
+  ubicacionPlanaY      Float?
+  ubicacionCartesianaX Float? // ECEF geocéntrica (mismo elipsoide GRS80)
+  ubicacionCartesianaY Float?
+  ubicacionCartesianaZ Float?
 
   estado           EstadoExpediente @default(RADICADO)
   pasoActualNumero Int              @default(1)

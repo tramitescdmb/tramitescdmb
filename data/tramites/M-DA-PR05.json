@@ -8,34 +8,160 @@
   "slug": "permiso-vertimientos",
   "archivoFuente": "M-DA-PR05 version 13.pdf",
   "objeto": "Identificar el marco técnico y jurídico para el procedimiento de evaluación del trámite ambiental de Vertimientos.",
+  "resumen": "Este trámite autoriza a personas naturales o jurídicas a verter aguas residuales a fuentes hídricas superficiales o al suelo, dentro del área de la CDMB.",
   "alcance": "Aplica para toda persona natural o jurídica cuya actividad o servicio genere vertimientos a las aguas superficiales, o al suelo del área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
   "autoridadResponsabilidad": "El Subdirector del proceso de SEYCA, el Coordinador de Evaluación para la sostenibilidad y el Coordinador de Seguimiento para la Sostenibilidad, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al proceso de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Formulario Único Nacional de Permiso de Vertimientos", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal", "obligatorio": true, "notas": "Solo personas jurídicas" },
-    { "orden": 3, "nombre": "Copia de la cédula de ciudadanía", "obligatorio": true, "notas": "Solo personas naturales" },
-    { "orden": 4, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
-    { "orden": 5, "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Nombre y localización del predio, proyecto, obra o actividad", "obligatorio": true, "notas": null },
-    { "orden": 7, "nombre": "Costo del proyecto, obra o actividad", "obligatorio": true, "notas": null },
-    { "orden": 8, "nombre": "Fuente de abastecimiento de agua y cuenca hidrográfica a la que pertenece", "obligatorio": true, "notas": null },
-    { "orden": 9, "nombre": "Características de las actividades que generan el vertimiento", "obligatorio": true, "notas": null },
-    { "orden": 10, "nombre": "Plano de origen, cantidad y localización georreferenciada de las descargas al cuerpo de agua o al suelo (análogo 100x70 cm y copia digital)", "obligatorio": true, "notas": null },
-    { "orden": 11, "nombre": "Nombre de la fuente receptora del vertimiento y cuenca hidrográfica a la que pertenece", "obligatorio": true, "notas": null },
-    { "orden": 12, "nombre": "Caudal de la descarga (litros/s)", "obligatorio": true, "notas": null },
-    { "orden": 13, "nombre": "Frecuencia de la descarga (días/mes)", "obligatorio": true, "notas": null },
-    { "orden": 14, "nombre": "Tiempo de la descarga (horas/día)", "obligatorio": true, "notas": null },
-    { "orden": 15, "nombre": "Tipo de flujo de la descarga (continuo o intermitente)", "obligatorio": true, "notas": null },
-    { "orden": 16, "nombre": "Caracterización actual del vertimiento existente o estado final previsto del vertimiento proyectado", "obligatorio": true, "notas": "Conforme a la norma de vertimientos vigente" },
-    { "orden": 17, "nombre": "Ubicación, descripción de operación del sistema, memorias técnicas, diseños de ingeniería (conceptual y básica), planos de detalle y condiciones de eficiencia del sistema de tratamiento", "obligatorio": true, "notas": null },
-    { "orden": 18, "nombre": "Concepto sobre el uso del suelo expedido por la autoridad municipal competente", "obligatorio": true, "notas": null },
-    { "orden": 19, "nombre": "Plan de Gestión del Riesgo para el manejo del vertimiento", "obligatorio": true, "notas": null },
-    { "orden": 20, "nombre": "Plan de Contingencia para prevención y control de derrames", "obligatorio": false, "notas": "Cuando a ello hubiere lugar" },
-    { "orden": 21, "nombre": "Evaluación ambiental del vertimiento", "obligatorio": true, "notas": null },
-    { "orden": 22, "nombre": "Manual de operaciones y mantenimiento de las unidades del sistema de tratamiento", "obligatorio": true, "notas": null },
-    { "orden": 23, "nombre": "Autorización de notificación por correo electrónico", "obligatorio": false, "notas": "Solo si el usuario lo autoriza" },
-    { "orden": 24, "nombre": "Información adicional para vertimiento al suelo — agua residual doméstica tratada: infiltración, sistema y área de disposición, plan de cierre y abandono", "obligatorio": false, "notas": "Solo si la solicitud es de vertimiento al suelo, ARD" },
-    { "orden": 25, "nombre": "Información adicional para vertimiento al suelo — agua residual no doméstica tratada: línea base del suelo y del agua subterránea, sistema y área de disposición, plan de monitoreo, plan de cierre y abandono", "obligatorio": false, "notas": "Solo si la solicitud es de vertimiento al suelo, ARnD" }
+    {
+      "orden": 1,
+      "nombre": "Formulario Único Nacional de Permiso de Vertimientos",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal",
+      "obligatorio": true,
+      "notas": "Solo personas jurídicas"
+    },
+    {
+      "orden": 3,
+      "nombre": "Copia de la cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Solo personas naturales"
+    },
+    {
+      "orden": 4,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por medio de apoderado"
+    },
+    {
+      "orden": 5,
+      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Nombre y localización del predio, proyecto, obra o actividad",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Costo del proyecto, obra o actividad",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Fuente de abastecimiento de agua y cuenca hidrográfica a la que pertenece",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 9,
+      "nombre": "Características de las actividades que generan el vertimiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 10,
+      "nombre": "Plano de origen, cantidad y localización georreferenciada de las descargas al cuerpo de agua o al suelo (análogo 100x70 cm y copia digital)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 11,
+      "nombre": "Nombre de la fuente receptora del vertimiento y cuenca hidrográfica a la que pertenece",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 12,
+      "nombre": "Caudal de la descarga (litros/s)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 13,
+      "nombre": "Frecuencia de la descarga (días/mes)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 14,
+      "nombre": "Tiempo de la descarga (horas/día)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 15,
+      "nombre": "Tipo de flujo de la descarga (continuo o intermitente)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 16,
+      "nombre": "Caracterización actual del vertimiento existente o estado final previsto del vertimiento proyectado",
+      "obligatorio": true,
+      "notas": "Conforme a la norma de vertimientos vigente"
+    },
+    {
+      "orden": 17,
+      "nombre": "Ubicación, descripción de operación del sistema, memorias técnicas, diseños de ingeniería (conceptual y básica), planos de detalle y condiciones de eficiencia del sistema de tratamiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 18,
+      "nombre": "Concepto sobre el uso del suelo expedido por la autoridad municipal competente",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 19,
+      "nombre": "Plan de Gestión del Riesgo para el manejo del vertimiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 20,
+      "nombre": "Plan de Contingencia para prevención y control de derrames",
+      "obligatorio": false,
+      "notas": "Cuando a ello hubiere lugar"
+    },
+    {
+      "orden": 21,
+      "nombre": "Evaluación ambiental del vertimiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 22,
+      "nombre": "Manual de operaciones y mantenimiento de las unidades del sistema de tratamiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 23,
+      "nombre": "Autorización de notificación por correo electrónico",
+      "obligatorio": false,
+      "notas": "Solo si el usuario lo autoriza"
+    },
+    {
+      "orden": 24,
+      "nombre": "Información adicional para vertimiento al suelo — agua residual doméstica tratada: infiltración, sistema y área de disposición, plan de cierre y abandono",
+      "obligatorio": false,
+      "notas": "Solo si la solicitud es de vertimiento al suelo, ARD"
+    },
+    {
+      "orden": 25,
+      "nombre": "Información adicional para vertimiento al suelo — agua residual no doméstica tratada: línea base del suelo y del agua subterránea, sistema y área de disposición, plan de monitoreo, plan de cierre y abandono",
+      "obligatorio": false,
+      "notas": "Solo si la solicitud es de vertimiento al suelo, ARnD"
+    }
   ],
   "flujos": [
     {
@@ -47,8 +173,15 @@
           "numero": 1,
           "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD",
           "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para verificación con base en el Formulario Único Nacional de Permiso de Vertimiento (FUN). Se revisa el orden e identidad de los 24 documentos/requisitos del listado. Si los requisitos están completos: el funcionario de ventanilla liquida la evaluación ambiental, el usuario paga en tesorería (o canal virtual) y entrega la documentación para que se asigne número de solicitud en el SINCA, número de expediente y profesional/técnico responsable. Si no están completos: se devuelve inmediatamente la documentación. El servidor responsable actualiza la etapa en el SINCA.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o canales de atención"],
-          "documentos": ["Solicitud del usuario radicada", "Formulario Único Nacional de Permiso de Vertimientos", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales",
+            "Servidor responsable de correspondencia y/o canales de atención"
+          ],
+          "documentos": [
+            "Solicitud del usuario radicada",
+            "Formulario Único Nacional de Permiso de Vertimientos",
+            "Documentos anexos"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -58,8 +191,14 @@
           "numero": 2,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos solicitan por oficio la información faltante, con plazo máximo de un (1) mes. Vencido el plazo sin respuesta, se decreta desistimiento tácito y archivo del expediente (Art. 17 Ley 1437 de 2011), notificado personalmente, con recurso de reposición.",
-          "responsables": ["Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Solicitud de trámite del usuario y documentos soporte", "Formato Control de Procesos (E-GE-FO02)", "Oficio al usuario"],
+          "responsables": [
+            "Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Solicitud de trámite del usuario y documentos soporte",
+            "Formato Control de Procesos (E-GE-FO02)",
+            "Oficio al usuario"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -69,8 +208,16 @@
           "numero": 3,
           "titulo": "ELABORAR AUTO DE INICIO DE TRÁMITE",
           "descripcion": "El profesional jurídico asignado procede a realizar el Auto de Inicio, que ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El acto administrativo y la citación se trasladan al Secretario General para su firma. Cuando la información esté completa, se expide el auto de iniciación de trámite, que debe subirse al SINCA dejando trazabilidad.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la Coordinación de Evaluación para la sostenibilidad", "Secretario General", "Secretaria del despacho de la Secretaría General"],
-          "documentos": ["Auto de Inicio firmado y numerado", "SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la Coordinación de Evaluación para la sostenibilidad",
+            "Secretario General",
+            "Secretaria del despacho de la Secretaría General"
+          ],
+          "documentos": [
+            "Auto de Inicio firmado y numerado",
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -80,8 +227,18 @@
           "numero": 4,
           "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR VISITA",
           "descripcion": "El Secretario General, una vez firmado, remite el expediente a la oficina de notificaciones para notificar el Auto de inicio del trámite, de forma que cobre ejecutoria (Ley 1437 de 2011), y se ordena su publicación en el GDI (Ley 99/93). Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de la visita, quien verifica el pago de costos de trámite y agenda fecha y hora de la inspección ocular según el programador de visitas.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Servidor responsable de notificar", "Servidor responsable de la publicación (Gestión Documental)"],
-          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de Evaluación y Control Ambiental",
+            "Servidor responsable de notificar",
+            "Servidor responsable de la publicación (Gestión Documental)"
+          ],
+          "documentos": [
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en la Web",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -91,8 +248,14 @@
           "numero": 5,
           "titulo": "REALIZAR VISITA TÉCNICA",
           "descripcion": "Verificada la notificación del auto de inicio, el responsable de la coordinación de Evaluación designa al funcionario técnico para el estudio de la solicitud y práctica de las visitas técnicas necesarias, dejando constancia en el formato de Hoja de Visita Institucional (con registro fotográfico). Si se requiere información adicional se solicita por comunicación y se suspenden en el SINCA los términos del trámite; si no, se continúa a la actividad 8. Las visitas y el estudio deben realizarse dentro de los 30 días hábiles siguientes a la publicación del Auto de Inicio.",
-          "responsables": ["Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Servidor técnico responsable"],
-          "documentos": ["Hoja de Visita Institucional", "Registro fotográfico"],
+          "responsables": [
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Servidor técnico responsable"
+          ],
+          "documentos": [
+            "Hoja de Visita Institucional",
+            "Registro fotográfico"
+          ],
           "tiempo": "30 días hábiles (máximo, desde publicación del Auto de Inicio)",
           "tiempoDias": 30,
           "esDecision": false,
@@ -102,8 +265,17 @@
           "numero": 6,
           "titulo": "ELABORAR Y ENVIAR COMUNICACIÓN SOLICITANDO INFORMACIÓN ADICIONAL",
           "descripcion": "El servidor responsable de la coordinación de evaluación envía comunicación al usuario solicitando la información que considere necesaria para continuar el trámite, otorgando plazo de un (1) mes calendario, prorrogable por una única vez y por el mismo plazo.",
-          "responsables": ["Servidor técnico responsable", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirectora de SEYCA", "Secretaria de SEYCA", "Servidor de Correspondencia"],
-          "documentos": ["SINCA con soportes y trazabilidad", "Comunicación enviada"],
+          "responsables": [
+            "Servidor técnico responsable",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirectora de SEYCA",
+            "Secretaria de SEYCA",
+            "Servidor de Correspondencia"
+          ],
+          "documentos": [
+            "SINCA con soportes y trazabilidad",
+            "Comunicación enviada"
+          ],
           "tiempo": "3 días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -113,22 +285,40 @@
           "numero": 7,
           "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL?",
           "descripcion": "Si el interesado presentó la información adicional, se continúa a la actividad 8, activando los tiempos en el SINCA. Si no la presentó, el servidor técnico responsable remite el expediente al responsable de la coordinación de Evaluación para que se realice el archivo definitivo por desistimiento tácito de la solicitud.",
-          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Sí presentó la información", "siguientePaso": 8 },
-            { "respuesta": "No presentó la información", "siguientePaso": null, "resultado": "DESISTIDO" }
+            {
+              "respuesta": "Sí presentó la información",
+              "siguientePaso": 8
+            },
+            {
+              "respuesta": "No presentó la información",
+              "siguientePaso": null,
+              "resultado": "DESISTIDO"
+            }
           ]
         },
         {
           "numero": 8,
           "titulo": "EMITIR INFORME TÉCNICO",
           "descripcion": "El servidor técnico responsable del trámite emite el informe técnico y lo entrega al responsable de la coordinación de Evaluación para que este ordene la elaboración del Auto de trámite por el cual se declara reunida toda la información. La emisión se realiza dentro de los ocho (8) días hábiles siguientes a la realización de las visitas y al aporte de información adicional, cargando el informe y soportes en el SINCA.",
-          "responsables": ["Servidor técnico responsable del trámite", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["Informe Técnico", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Informe Técnico",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "8 días hábiles",
           "tiempoDias": 8,
           "esDecision": false,
@@ -138,8 +328,15 @@
           "numero": 9,
           "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
           "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias técnicas, solicita explicación y corrección al técnico que realizó la visita. Posteriormente da el visto bueno al informe y le asigna número consecutivo. Mediante el SINCA se hace cambio de etapa y se entrega el expediente físico junto con el informe técnico al área Jurídica de la Subdirección de Evaluación y Control Ambiental.",
-          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
-          "documentos": ["Aplicativo SINCA", "Concepto Técnico", "Memorando Interno"],
+          "responsables": [
+            "Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad",
+            "Coordinador de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Aplicativo SINCA",
+            "Concepto Técnico",
+            "Memorando Interno"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -149,8 +346,14 @@
           "numero": 10,
           "titulo": "ELABORAR AUTO DE TRÁMITE DE REUNIDA TODA LA INFORMACIÓN",
           "descripcion": "Con sustento en el Informe Técnico, el profesional en derecho asignado elabora el Auto por medio del cual se declara reunida toda la información necesaria para decidir el trámite de permiso de vertimientos. Una vez proyectado, remite la actuación para revisión y firmas del Profesional jurídico, Coordinador del Grupo de Evaluación y el Secretario General. Se numera el acto administrativo y se traslada a la oficina de Notificaciones.",
-          "responsables": ["Profesional en derecho", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soporte y trazabilidad", "Auto de trámite de reunida toda la información"],
+          "responsables": [
+            "Profesional en derecho",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soporte y trazabilidad",
+            "Auto de trámite de reunida toda la información"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -160,8 +363,16 @@
           "numero": 11,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "Una vez emitido el auto que declaró reunida toda la información, se traslada a la oficina de Notificaciones para su notificación y publicación en el GDI (Ley 99/93). Si el usuario autorizó notificación por correo electrónico, se notifica por ese medio. Si el interesado no comparece a la CDMB, se notifica por aviso fijado por cinco (5) días hábiles (Art. 69, Ley 1437 de 2011).",
-          "responsables": ["Profesional en derecho", "Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación"],
-          "documentos": ["Constancia de notificación personal o edicto", "SINCA con soporte y trazabilidad", "Página web"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de notificar",
+            "Servidor de Gestión documental encargado de la publicación"
+          ],
+          "documentos": [
+            "Constancia de notificación personal o edicto",
+            "SINCA con soporte y trazabilidad",
+            "Página web"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -171,22 +382,46 @@
           "numero": 12,
           "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DEL PERMISO DE VERTIMIENTOS",
           "descripcion": "Con base en el informe que determina la viabilidad técnica, el profesional en derecho proyecta la resolución que otorga o niega el permiso, numerada y publicada. Con revisión y visto bueno del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para firma y aprobación, previa revisión del Asesor de Dirección General. La proyección se realiza en un término no mayor de 20 días hábiles desde el Auto de trámite de Reunida toda la Información.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Dirección General"],
-          "documentos": ["SINCA con soportes y trazabilidad", "Resolución firmada y numerada que otorga/niega el permiso de vertimientos"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de Evaluación y Control Ambiental",
+            "Dirección General"
+          ],
+          "documentos": [
+            "SINCA con soportes y trazabilidad",
+            "Resolución firmada y numerada que otorga/niega el permiso de vertimientos"
+          ],
           "tiempo": "15 días (proyección no mayor a 20 días hábiles)",
           "tiempoDias": 15,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Aprueba el permiso", "siguientePaso": 13, "resultado": "APROBADO" },
-            { "respuesta": "Niega el permiso", "siguientePaso": 13, "resultado": "NEGADO" }
+            {
+              "respuesta": "Aprueba el permiso",
+              "siguientePaso": 13,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el permiso",
+              "siguientePaso": 13,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 13,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "Una vez emitida la resolución que aprueba o niega el permiso, el profesional en derecho remite la actuación a la oficina de Notificaciones para su notificación y publicación en el GDI. Si el usuario autorizó notificación por correo electrónico se notifica por ese medio; si no comparece, se notifica por aviso fijado por cinco (5) días hábiles.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación"],
-          "documentos": ["Constancia de notificación personal o edicto", "SINCA con soporte y trazabilidad", "Página web"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de notificar",
+            "Servidor de Gestión documental encargado de la publicación"
+          ],
+          "documentos": [
+            "Constancia de notificación personal o edicto",
+            "SINCA con soporte y trazabilidad",
+            "Página web"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -196,8 +431,13 @@
           "numero": 14,
           "titulo": "REMITIR EXPEDIENTE AL GRUPO DE SEGUIMIENTO PARA LA SOSTENIBILIDAD",
           "descripcion": "Se remite el expediente al Grupo de Seguimiento para la Sostenibilidad, para que verifique mediante acciones de seguimiento las obligaciones contenidas en el Acto Administrativo que decide sobre el trámite.",
-          "responsables": ["Grupo de Seguimiento para la Sostenibilidad", "Funcionario o Contratista encargado de Gestión documental"],
-          "documentos": ["Informe de Seguimiento"],
+          "responsables": [
+            "Grupo de Seguimiento para la Sostenibilidad",
+            "Funcionario o Contratista encargado de Gestión documental"
+          ],
+          "documentos": [
+            "Informe de Seguimiento"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -214,8 +454,15 @@
           "numero": 1,
           "titulo": "RECIBIR Y RADICAR LA SOLICITUD DE RENOVACIÓN",
           "descripcion": "Dentro del primer trimestre del último año de vigencia del permiso, el usuario debe radicar la solicitud de renovación adjuntando solo la caracterización actual del vertimiento si no hay cambios en la actividad generadora. Si hay cambios, debe presentar toda la documentación inicial (Art. 2.2.3.3.5.2, Decreto 1076 de 2015). El radicado se carga en el SINCA en la acción \"Archivar Documentos\", numeral 18 \"Renovación de permiso\", para actualizar automáticamente el estado del trámite. TÉRMINO: el usuario debe presentar la solicitud dentro del primer trimestre del último año de vigencia del permiso.",
-          "responsables": ["Servidor responsable de correspondencia y/o canales de atención", "Grupo de Seguimiento para la Sostenibilidad"],
-          "documentos": ["Solicitud del usuario radicado", "Formulario Único Nacional de Permiso de Vertimientos", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de correspondencia y/o canales de atención",
+            "Grupo de Seguimiento para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Solicitud del usuario radicado",
+            "Formulario Único Nacional de Permiso de Vertimientos",
+            "Documentos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -225,8 +472,12 @@
           "numero": 2,
           "titulo": "ELABORAR INFORME CONSOLIDADO DE CUMPLIMIENTO DEL ACTO ADMINISTRATIVO QUE OTORGA LA RENOVACIÓN",
           "descripcion": "La Coordinación de Seguimiento para la Sostenibilidad elabora y presenta informe donde se evidencie el cumplimiento del Acto Administrativo que otorga el permiso de vertimiento, y remite el informe a la Coordinación de Evaluación para la Sostenibilidad.",
-          "responsables": ["Grupo de Seguimiento para la Sostenibilidad"],
-          "documentos": ["Informe técnico de cumplimiento de obligaciones del acto administrativo que otorgó el permiso de vertimientos"],
+          "responsables": [
+            "Grupo de Seguimiento para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Informe técnico de cumplimiento de obligaciones del acto administrativo que otorgó el permiso de vertimientos"
+          ],
           "tiempo": "15 días",
           "tiempoDias": 15,
           "esDecision": false,
@@ -236,8 +487,13 @@
           "numero": 3,
           "titulo": "LIQUIDAR Y SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la sostenibilidad al área técnica. Los profesionales técnicos y jurídicos solicitan por oficio la información faltante, con plazo máximo de un (1) mes; vencido sin respuesta se decreta desistimiento tácito y archivo. Si los requisitos están completos: el funcionario de ventanilla liquida la evaluación ambiental, el usuario paga y entrega la documentación para asignación del expediente al profesional de la Coordinación de Evaluación para la Sostenibilidad.",
-          "responsables": ["Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Solicitud de trámite del usuario y documentos soporte", "Oficio al usuario"],
+          "responsables": [
+            "Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Solicitud de trámite del usuario y documentos soporte",
+            "Oficio al usuario"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -247,8 +503,16 @@
           "numero": 4,
           "titulo": "ELABORAR AUTO DE INICIO DE RENOVACIÓN DE PERMISO DE VERTIMIENTOS",
           "descripcion": "El profesional jurídico asignado elabora el Auto de Inicio que ordena la visita técnica de inspección ocular por parte de SEYCA. El acto administrativo y la citación se trasladan al Secretario General para su firma. Cuando la información esté completa se expide el auto, que debe subirse al SINCA dejando trazabilidad.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la Coordinación de Evaluación para la sostenibilidad", "Secretario General", "Secretaria del despacho de la Secretaría General"],
-          "documentos": ["Auto de Inicio firmado y numerado", "SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la Coordinación de Evaluación para la sostenibilidad",
+            "Secretario General",
+            "Secretaria del despacho de la Secretaría General"
+          ],
+          "documentos": [
+            "Auto de Inicio firmado y numerado",
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -258,8 +522,18 @@
           "numero": 5,
           "titulo": "NOTIFICAR EL AUTO DE INICIO DE RENOVACIÓN Y PROGRAMAR VISITA",
           "descripcion": "El Secretario General remite el expediente a la oficina de notificaciones para notificar el Auto de inicio de renovación, de forma que cobre ejecutoria, y se ordena su publicación en el GDI. Surtida la notificación, el expediente retorna al funcionario de SEYCA, quien verifica el pago de costos de trámite y agenda fecha y hora de la inspección ocular.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Servidor responsable de notificar", "Servidor responsable de la publicación"],
-          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de Evaluación y Control Ambiental",
+            "Servidor responsable de notificar",
+            "Servidor responsable de la publicación"
+          ],
+          "documentos": [
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en la Web",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "1 día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -269,8 +543,14 @@
           "numero": 6,
           "titulo": "REALIZAR VISITA TÉCNICA",
           "descripcion": "Verificada la notificación, el responsable de la coordinación de Evaluación designa al funcionario técnico para el estudio y práctica de visitas técnicas, dejando constancia en la Hoja de Visita Institucional (con registro fotográfico). Si se requiere información adicional se solicita y se suspenden los términos en el SINCA; si no, se continúa a la actividad 10. Las visitas deben realizarse dentro de los 30 días hábiles siguientes a la publicación del Auto de Inicio.",
-          "responsables": ["Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Servidor técnico responsable"],
-          "documentos": ["Hoja de Visita Institucional", "Registro fotográfico"],
+          "responsables": [
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Servidor técnico responsable"
+          ],
+          "documentos": [
+            "Hoja de Visita Institucional",
+            "Registro fotográfico"
+          ],
           "tiempo": "30 días hábiles (máximo, desde publicación del Auto de Inicio)",
           "tiempoDias": 30,
           "esDecision": false,
@@ -280,8 +560,17 @@
           "numero": 7,
           "titulo": "ELABORAR Y ENVIAR COMUNICACIÓN SOLICITANDO INFORMACIÓN ADICIONAL",
           "descripcion": "El servidor responsable adscrito a la coordinación de Evaluación envía comunicación al usuario solicitando la información que considere necesaria, otorgando plazo de un (1) mes calendario, prorrogable por única vez y por el mismo plazo.",
-          "responsables": ["Servidor técnico responsable", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirectora de SEYCA", "Secretaria de SEYCA", "Servidor de Correspondencia"],
-          "documentos": ["SINCA con soportes y trazabilidad", "Comunicación enviada"],
+          "responsables": [
+            "Servidor técnico responsable",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirectora de SEYCA",
+            "Secretaria de SEYCA",
+            "Servidor de Correspondencia"
+          ],
+          "documentos": [
+            "SINCA con soportes y trazabilidad",
+            "Comunicación enviada"
+          ],
           "tiempo": "3 días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -291,22 +580,40 @@
           "numero": 8,
           "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL?",
           "descripcion": "Si el interesado presentó la información adicional, se continúa a la actividad 10, activando los tiempos en el SINCA. Si no la presentó, el servidor técnico responsable remite el expediente al responsable de la coordinación de Evaluación para que se realice el archivo definitivo por desistimiento tácito de la solicitud.",
-          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Sí presentó la información", "siguientePaso": 9 },
-            { "respuesta": "No presentó la información", "siguientePaso": null, "resultado": "DESISTIDO" }
+            {
+              "respuesta": "Sí presentó la información",
+              "siguientePaso": 9
+            },
+            {
+              "respuesta": "No presentó la información",
+              "siguientePaso": null,
+              "resultado": "DESISTIDO"
+            }
           ]
         },
         {
           "numero": 9,
           "titulo": "EMITIR INFORME TÉCNICO",
           "descripcion": "El servidor técnico responsable emite el informe técnico y lo entrega al responsable de la coordinación de Evaluación para que ordene la elaboración del Auto de trámite de reunida toda la información. NOTA: la renovación queda supeditada a la verificación del cumplimiento de la norma de vertimiento mediante caracterización y al cumplimiento de las obligaciones de la resolución que otorgó el permiso, verificadas y reportadas por el Grupo de Seguimiento para la Sostenibilidad. Se emite dentro de los ocho (8) días hábiles siguientes a las visitas y al aporte de información adicional.",
-          "responsables": ["Servidor técnico responsable del trámite", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["Informe Técnico", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Informe Técnico",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "8 días hábiles",
           "tiempoDias": 8,
           "esDecision": false,
@@ -316,8 +623,15 @@
           "numero": 10,
           "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
           "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si hay inconsistencias técnicas, solicita explicación y corrección al técnico. Da el visto bueno y asigna número consecutivo. Mediante el SINCA se hace cambio de etapa y se entrega el expediente físico con el informe técnico al área Jurídica.",
-          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
-          "documentos": ["Aplicativo SINCA", "Concepto Técnico", "Memorando Interno"],
+          "responsables": [
+            "Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad",
+            "Coordinador de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Aplicativo SINCA",
+            "Concepto Técnico",
+            "Memorando Interno"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -327,8 +641,14 @@
           "numero": 11,
           "titulo": "ELABORAR AUTO DE TRÁMITE DE REUNIDA TODA LA INFORMACIÓN",
           "descripcion": "Con sustento en el Informe Técnico, el profesional en derecho elabora el Auto por el cual se declara reunida toda la información necesaria para decidir el trámite. Remite la actuación para revisión y firmas del Profesional jurídico, Coordinador del Grupo de Evaluación y el Secretario General. Se numera el acto administrativo y se traslada a Notificaciones.",
-          "responsables": ["Profesional en derecho", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soporte y trazabilidad", "Auto de trámite de reunida toda la información"],
+          "responsables": [
+            "Profesional en derecho",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soporte y trazabilidad",
+            "Auto de trámite de reunida toda la información"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -338,8 +658,16 @@
           "numero": 12,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "Una vez emitido el auto que declaró reunida toda la información, se traslada a Notificaciones para su notificación y publicación en el GDI. Si el usuario autorizó notificación por correo electrónico se notifica por ese medio; si no comparece, se notifica por aviso fijado por cinco (5) días hábiles.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación"],
-          "documentos": ["Constancia de notificación personal o edicto", "SINCA con soporte y trazabilidad", "Página web"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de notificar",
+            "Servidor de Gestión documental encargado de la publicación"
+          ],
+          "documentos": [
+            "Constancia de notificación personal o edicto",
+            "SINCA con soporte y trazabilidad",
+            "Página web"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -349,22 +677,46 @@
           "numero": 13,
           "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DE LA RENOVACIÓN DEL PERMISO",
           "descripcion": "Si el informe técnico determina la viabilidad o no de otorgar la renovación, el profesional en derecho proyecta la resolución que otorga o niega la misma, numerada y publicada. Con revisión y visto bueno del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a Dirección General para firma y aprobación, previa revisión del Asesor de Dirección General. Término no mayor a 20 días hábiles desde el Auto de Reunida toda la Información.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Dirección General"],
-          "documentos": ["SINCA con soportes y trazabilidad", "Resolución firmada y numerada que otorga/niega la renovación"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de Evaluación y Control Ambiental",
+            "Dirección General"
+          ],
+          "documentos": [
+            "SINCA con soportes y trazabilidad",
+            "Resolución firmada y numerada que otorga/niega la renovación"
+          ],
           "tiempo": "15 días (proyección no mayor a 20 días hábiles)",
           "tiempoDias": 15,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Aprueba la renovación", "siguientePaso": 14, "resultado": "APROBADO" },
-            { "respuesta": "Niega la renovación", "siguientePaso": 14, "resultado": "NEGADO" }
+            {
+              "respuesta": "Aprueba la renovación",
+              "siguientePaso": 14,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega la renovación",
+              "siguientePaso": 14,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 14,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "Una vez emitida la resolución que aprueba o niega la renovación, el profesional en derecho remite la actuación a Notificaciones para su notificación y publicación en el GDI. Si el usuario autorizó notificación por correo electrónico se notifica por ese medio; si no comparece, se notifica por aviso fijado por cinco (5) días hábiles.",
-          "responsables": ["Profesional en derecho", "Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación"],
-          "documentos": ["Constancia de notificación personal o edicto", "SINCA con soporte y trazabilidad", "Página web"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable de notificar",
+            "Servidor de Gestión documental encargado de la publicación"
+          ],
+          "documentos": [
+            "Constancia de notificación personal o edicto",
+            "SINCA con soporte y trazabilidad",
+            "Página web"
+          ],
           "tiempo": "2 días",
           "tiempoDias": 2,
           "esDecision": false,
@@ -374,8 +726,12 @@
           "numero": 15,
           "titulo": "REMITIR EXPEDIENTE AL GRUPO DE SEGUIMIENTO PARA SOSTENIBILIDAD",
           "descripcion": "Se remite el expediente al Grupo de Seguimiento para la Sostenibilidad, para que verifique mediante acciones de seguimiento las obligaciones contenidas en el Acto Administrativo que decide sobre el trámite.",
-          "responsables": ["Grupo de Seguimiento para la Sostenibilidad"],
-          "documentos": ["Informe de Seguimiento"],
+          "responsables": [
+            "Grupo de Seguimiento para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Informe de Seguimiento"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

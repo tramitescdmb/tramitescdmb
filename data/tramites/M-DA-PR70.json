@@ -8,17 +8,58 @@
   "slug": "registro-plantaciones-forestales-protectoras-productoras",
   "archivoFuente": "M-DA-PR70 version 1.pdf",
   "objeto": "Atender las solicitudes de los usuarios que requieren registrar plantaciones forestales protectoras - productoras y protectoras, de sombrío o plantación asociada a cultivos agrícolas, conforme a lo establecido en el Decreto 1076 de 2015 y el Decreto 1532 de 2019.",
+  "resumen": "Este trámite registra plantaciones forestales protectoras, productoras o asociadas a cultivos agrícolas.",
   "alcance": "Aplica para toda persona natural o jurídica que requiera el registro de plantaciones forestales protectoras - productoras y protectoras de sombrío o plantación asociada a cultivos agrícolas, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB. Nota informativa: las personas que cuenten con el Certificado de Incentivo Forestal no deben registrarse, según el artículo 2.2.1.1.12.1 del Decreto 1532 de 2019.",
   "autoridadResponsabilidad": "El Director General de la CDMB, el Subdirector de Evaluación y Control Ambiental - SEYCA, la Secretaría General y los Coordinadores respectivos, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA, la Secretaría General y el Asesor de Dirección General son los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Formulario Único Nacional de Registro de plantaciones forestales protectoras-productoras y protectoras, de sombríos o plantación asociada a cultivos agrícolas, debidamente diligenciado", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Carta de solicitud", "obligatorio": true, "notas": null },
-    { "orden": 3, "nombre": "Certificado de existencia y representación legal (fecha de expedición no superior a 30 días calendario previos a la solicitud del registro) y fotocopia del documento de identificación del representante legal", "obligatorio": true, "notas": "Solo personas jurídicas" },
-    { "orden": 4, "nombre": "Fotocopia de la cédula de ciudadanía", "obligatorio": true, "notas": "Solo personas naturales" },
-    { "orden": 5, "nombre": "Certificado de tradición y libertad del predio, con fecha de expedición no superior a 30 días calendario previos a la fecha de solicitud del registro", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Mapa de localización que permita identificar la ruta de acceso al predio y las coordenadas para georreferenciación del área de plantación", "obligatorio": true, "notas": null },
-    { "orden": 7, "nombre": "Comprobante de pago de los costos de evaluación", "obligatorio": true, "notas": null },
-    { "orden": 8, "nombre": "Informe técnico de aprovechamiento, presentado dos (2) meses antes de iniciar las actividades de cosecha", "obligatorio": false, "notas": "Solo si el interesado desea aprovechar un porcentaje de la producción, comercializar la madera u obtener un subproducto no maderable" }
+    {
+      "orden": 1,
+      "nombre": "Formulario Único Nacional de Registro de plantaciones forestales protectoras-productoras y protectoras, de sombríos o plantación asociada a cultivos agrícolas, debidamente diligenciado",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Carta de solicitud",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Certificado de existencia y representación legal (fecha de expedición no superior a 30 días calendario previos a la solicitud del registro) y fotocopia del documento de identificación del representante legal",
+      "obligatorio": true,
+      "notas": "Solo personas jurídicas"
+    },
+    {
+      "orden": 4,
+      "nombre": "Fotocopia de la cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Solo personas naturales"
+    },
+    {
+      "orden": 5,
+      "nombre": "Certificado de tradición y libertad del predio, con fecha de expedición no superior a 30 días calendario previos a la fecha de solicitud del registro",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Mapa de localización que permita identificar la ruta de acceso al predio y las coordenadas para georreferenciación del área de plantación",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Comprobante de pago de los costos de evaluación",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Informe técnico de aprovechamiento, presentado dos (2) meses antes de iniciar las actividades de cosecha",
+      "obligatorio": false,
+      "notas": "Solo si el interesado desea aprovechar un porcentaje de la producción, comercializar la madera u obtener un subproducto no maderable"
+    }
   ],
   "flujos": [
     {
@@ -30,8 +71,20 @@
           "numero": 1,
           "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
           "descripcion": "El interesado en adelantar el trámite de registro de plantaciones forestales protectoras-productoras y protectoras, de sombríos o plantación asociada a cultivos agrícolas, radica en la oficina de correspondencia de la CDMB, anexando el Formulario Único Nacional de solicitud y registro debidamente diligenciado, la documentación requerida en el FUN, y el comprobante de pago de los costos de evaluación. El interesado podrá aprovechar un porcentaje de la producción y comercializar la madera u obtener un subproducto no maderable si lo desea, para lo cual deberá presentar un informe técnico dos (2) meses antes de iniciar las actividades de cosecha. Nota 1: si la persona natural o jurídica ya cuenta con registro, se procede a actualizarlo en el sistema de información de la CDMB. Si los requisitos están completos, el funcionario genera la liquidación por concepto de evaluación ambiental; el usuario paga en tesorería o por los canales virtuales establecidos, Tesorería expide la factura, y el usuario entrega la documentación para que se le asigne número de solicitud en el SINCA, número de expediente, y el profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos los requisitos, se devuelve inmediatamente la documentación aportada. Nota 2: si al realizar la visita el profesional/técnico identifica que es necesario, se procede a ajustar los servicios cobrados al usuario.",
-          "responsables": ["Personal asistencial de Radicación de la Correspondencia y/o responsables de los diferentes canales de atención", "Profesional Técnico de la Subdirección de Evaluación para la Sostenibilidad"],
-          "documentos": ["Formulario Único Nacional de Registro de plantaciones forestales con sus respectivos documentos anexos", "Carta de solicitud", "Persona jurídica: certificado de existencia y representación legal y fotocopia de identificación del representante legal", "Persona natural: fotocopia de la cédula de ciudadanía", "Certificado de tradición y libertad", "Mapa de localización y coordenadas de georreferenciación del área de plantación", "Recibo de pago", "Registro en el sistema corporativo de la entidad"],
+          "responsables": [
+            "Personal asistencial de Radicación de la Correspondencia y/o responsables de los diferentes canales de atención",
+            "Profesional Técnico de la Subdirección de Evaluación para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Formulario Único Nacional de Registro de plantaciones forestales con sus respectivos documentos anexos",
+            "Carta de solicitud",
+            "Persona jurídica: certificado de existencia y representación legal y fotocopia de identificación del representante legal",
+            "Persona natural: fotocopia de la cédula de ciudadanía",
+            "Certificado de tradición y libertad",
+            "Mapa de localización y coordenadas de georreferenciación del área de plantación",
+            "Recibo de pago",
+            "Registro en el sistema corporativo de la entidad"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -41,8 +94,14 @@
           "numero": 2,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental solicitan mediante oficio dirigido al usuario la información faltante, otorgando un plazo máximo de un (1) mes. Vencido este plazo sin que se allegue la información solicitada, se decreta el desistimiento tácito y el archivo del expediente (Art. 17, Ley 1437 de 2011), mediante acto administrativo que se notifica personalmente, contra el cual únicamente procede recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
-          "responsables": ["Coordinación de Evaluación para la Sostenibilidad", "Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Oficio solicitando información adicional", "Acto administrativo de desistimiento tácito (si se requiere)"],
+          "responsables": [
+            "Coordinación de Evaluación para la Sostenibilidad",
+            "Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Oficio solicitando información adicional",
+            "Acto administrativo de desistimiento tácito (si se requiere)"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -52,8 +111,14 @@
           "numero": 3,
           "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
           "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental elabora el Auto de Inicio, el cual ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
-          "responsables": ["Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental", "Secretaría General"],
-          "documentos": ["Auto de inicio del trámite administrativo ambiental", "Aplicativo SINCA"],
+          "responsables": [
+            "Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental",
+            "Secretaría General"
+          ],
+          "documentos": [
+            "Auto de inicio del trámite administrativo ambiental",
+            "Aplicativo SINCA"
+          ],
           "tiempo": "5 días",
           "tiempoDias": 5,
           "esDecision": false,
@@ -63,8 +128,14 @@
           "numero": 4,
           "titulo": "REALIZAR VISITA Y ELABORAR INFORME TÉCNICO",
           "descripcion": "El servidor público del grupo SEYCA asignado para la visita realiza la inspección al sitio y verifica lo allegado en la solicitud; adicionalmente revisa la compatibilidad con los instrumentos de planificación territorial (EOT, POT, PGOF), que sirven de base para emitir el respectivo concepto técnico, especificando las razones por las cuales se considera otorgar o negar el registro. Nota 4: para el registro de plantaciones forestales protectoras-productoras y protectoras se debe verificar en el sitio de visita que la plantación se encuentre en áreas de protección.",
-          "responsables": ["Profesional adscrito al grupo de Evaluación para la Sostenibilidad", "Profesional de Evaluación Ambiental", "Coordinador de Evaluación para la Sostenibilidad"],
-          "documentos": ["Concepto técnico"],
+          "responsables": [
+            "Profesional adscrito al grupo de Evaluación para la Sostenibilidad",
+            "Profesional de Evaluación Ambiental",
+            "Coordinador de Evaluación para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Concepto técnico"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -74,8 +145,14 @@
           "numero": 5,
           "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
           "descripcion": "El Coordinador de Evaluación revisa el Informe Técnico de Registro de Plantaciones y los aplicativos SINCA. Si el informe presenta inconsistencias de carácter técnico, se solicita explicación y corrección al profesional o técnico que realizó la visita; de lo contrario, se da visto bueno al informe y se le asigna número consecutivo al concepto. Mediante el SINCA se hace cambio de etapa, y por cuaderno se entrega el expediente físico junto con el informe técnico debidamente cargado a la plataforma, como soporte para facilitar el trabajo del jurídico en la proyección de la Resolución. El Coordinador de Evaluación cuenta con tres (3) días para la revisión y visto bueno respectivo.",
-          "responsables": ["Profesional o técnico del Grupo de Evaluación para la Sostenibilidad", "Coordinador de Evaluación para la Sostenibilidad"],
-          "documentos": ["Aplicativo SINCA", "Informe Técnico de Registro de Plantaciones"],
+          "responsables": [
+            "Profesional o técnico del Grupo de Evaluación para la Sostenibilidad",
+            "Coordinador de Evaluación para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Aplicativo SINCA",
+            "Informe Técnico de Registro de Plantaciones"
+          ],
           "tiempo": "3 días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -85,22 +162,47 @@
           "numero": 6,
           "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DEL REGISTRO DE PLANTACIONES",
           "descripcion": "Una vez remitido el Informe Técnico de Registro de Plantaciones junto con el expediente, el profesional designado del Grupo de Abogados adscrito a SEYCA proyecta la Resolución. Con la revisión y visto bueno del Coordinador de Evaluación y el Subdirector de SEYCA, se envía a la Dirección General para la respectiva firma y aprobación del Acto Administrativo que otorga o niega el registro, previa revisión del Asesor de Dirección General. Nota 5: al Registro de Plantaciones debidamente otorgado se le asigna un número de registro por parte de la autoridad ambiental, en cumplimiento del artículo 2.2.1.1.12.4.",
-          "responsables": ["Profesional jurídico y/o judicante", "Coordinador de Evaluación para la Sostenibilidad", "Subdirector de SEYCA", "Asesor de la Dirección General", "Director General"],
-          "documentos": ["Expediente", "Aplicativo SINCA", "Resolución de aprobación o negación"],
+          "responsables": [
+            "Profesional jurídico y/o judicante",
+            "Coordinador de Evaluación para la Sostenibilidad",
+            "Subdirector de SEYCA",
+            "Asesor de la Dirección General",
+            "Director General"
+          ],
+          "documentos": [
+            "Expediente",
+            "Aplicativo SINCA",
+            "Resolución de aprobación o negación"
+          ],
           "tiempo": "5 días",
           "tiempoDias": 5,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga el registro de plantaciones", "siguientePaso": 7, "resultado": "APROBADO" },
-            { "respuesta": "Niega el registro de plantaciones", "siguientePaso": 7, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga el registro de plantaciones",
+              "siguientePaso": 7,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el registro de plantaciones",
+              "siguientePaso": 7,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 7,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "La oficina de notificaciones cita al usuario para comunicarle la resolución de aprobación o negación del trámite de Registro de Plantaciones. Se le informa que cuenta con diez (10) días hábiles para presentar los recursos de ley (Arts. 67 y 76, Ley 1437 de 2011). Si el usuario autorizó notificación por correo electrónico, se notifica por ese medio. Si no se interponen recursos, se declara ejecutoriada la Resolución. En caso de interponerse recurso, el expediente se devuelve a la Coordinación de Evaluación para la Sostenibilidad para revisión técnica y emisión del concepto técnico que sirva de fundamento para resolver el recurso de reposición; se entrega al jurídico adscrito a SEYCA para que profiera la decisión y proyecte la resolución que lo resuelva, en un plazo de dos (2) meses. Resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión correspondiente, se notifica personalmente al usuario y se declara ejecutoriada la Resolución. Si el interesado no comparece a la CDMB para notificarse de la resolución, se notifica por aviso fijado durante cinco (5) días hábiles (Art. 69, Ley 1437 de 2011).",
-          "responsables": ["Personal asistencial de la Oficina de Notificaciones", "Servidor público adscrito al grupo de evaluación ambiental"],
-          "documentos": ["Resolución de aprobación o negación de Registro de plantaciones", "Constancia de notificación (Personal y/o edicto)", "Aplicativo SINCA"],
+          "responsables": [
+            "Personal asistencial de la Oficina de Notificaciones",
+            "Servidor público adscrito al grupo de evaluación ambiental"
+          ],
+          "documentos": [
+            "Resolución de aprobación o negación de Registro de plantaciones",
+            "Constancia de notificación (Personal y/o edicto)",
+            "Aplicativo SINCA"
+          ],
           "tiempo": "10 días",
           "tiempoDias": 10,
           "esDecision": false,

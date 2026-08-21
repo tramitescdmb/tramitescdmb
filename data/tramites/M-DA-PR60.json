@@ -8,16 +8,52 @@
   "slug": "manejo-disposicion-rcd",
   "archivoFuente": "M-DA-PR60 version 5.pdf",
   "objeto": "Establecer el procedimiento para el registro y seguimiento a la gestión integral de los residuos generados en las actividades de construcción y demolición en los municipios de la jurisdicción, según lo establecido por la Resolución No. 0472 de 2017 del Ministerio de Ambiente y Desarrollo Sostenible y adoptada por la CDMB mediante la Resolución No. 703 del 8 de agosto de 2018.",
+  "resumen": "Este trámite registra y hace seguimiento a la gestión de los residuos de construcción y demolición (RCD) en los municipios de la jurisdicción.",
   "alcance": "Aplica para toda persona natural o jurídica localizada en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB, cuya actividad o servicio genere, recolecte, transporte, almacene, aproveche y disponga residuos de construcción y demolición – RCD de las obras civiles o de otras actividades conexas.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y las Coordinaciones vigentes de SEYCA serán los responsables de hacer cumplir las disposiciones establecidas en la Resolución MADS No. 0472 del 28 de febrero de 2017, establecidas en este procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Formato Anexo IV de la Resolución 0472 de 2017 de Minambiente", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal", "obligatorio": false, "notas": "Solo personas jurídicas" },
-    { "orden": 3, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
-    { "orden": 4, "nombre": "Acreditación sobre el predio: Certificado de libertad y tradición del propietario (no mayor a 3 meses), o prueba de tenencia con autorización del propietario y certificado de libertad y tradición (tenedor)", "obligatorio": true, "notas": null },
-    { "orden": 5, "nombre": "Nombre y localización del predio, proyecto, obra o actividad", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Concepto de uso del suelo emitido por la oficina de Planeación municipal, que certifique que la actividad a desarrollar está permitida en el predio seleccionado", "obligatorio": true, "notas": null },
-    { "orden": 7, "nombre": "Copia de los permisos, licencias y demás autorizaciones ambientales a que haya lugar para el desarrollo de la actividad solicitada", "obligatorio": true, "notas": null }
+    {
+      "orden": 1,
+      "nombre": "Formato Anexo IV de la Resolución 0472 de 2017 de Minambiente",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal",
+      "obligatorio": false,
+      "notas": "Solo personas jurídicas"
+    },
+    {
+      "orden": 3,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por medio de apoderado"
+    },
+    {
+      "orden": 4,
+      "nombre": "Acreditación sobre el predio: Certificado de libertad y tradición del propietario (no mayor a 3 meses), o prueba de tenencia con autorización del propietario y certificado de libertad y tradición (tenedor)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 5,
+      "nombre": "Nombre y localización del predio, proyecto, obra o actividad",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Concepto de uso del suelo emitido por la oficina de Planeación municipal, que certifique que la actividad a desarrollar está permitida en el predio seleccionado",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Copia de los permisos, licencias y demás autorizaciones ambientales a que haya lugar para el desarrollo de la actividad solicitada",
+      "obligatorio": true,
+      "notas": null
+    }
   ],
   "flujos": [
     {
@@ -29,8 +65,14 @@
           "numero": 1,
           "titulo": "RECEPCIONAR Y REVISAR LA SOLICITUD RCD",
           "descripcion": "El gestor RCD solicita la inscripción ante la CDMB, adjuntando los soportes requeridos por la Resolución 0472 de 2017, y radica la solicitud en la ventanilla de correspondencia. El Servidor responsable de Correspondencia registra la solicitud en el Sistema de Información Corporativo (SIC), previa verificación de los 7 requisitos: Formato Anexo IV de la Resolución 0472 de 2017 de Minambiente; Certificado de Existencia y Representación Legal (si es persona jurídica) con cédula del representante legal; poder si actúa por apoderado; acreditación sobre el predio (certificado de libertad y tradición del propietario, o prueba de tenencia y autorización del propietario); nombre y localización del predio, proyecto, obra o actividad; concepto de uso del suelo emitido por la oficina de Planeación municipal que certifique compatibilidad con la actividad; y copia de los permisos, licencias y demás autorizaciones ambientales a que haya lugar.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["Solicitud radicada del Usuario", "Formato Anexo IV de la Resolución 0472 de 2017 de Minambiente", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "Solicitud radicada del Usuario",
+            "Formato Anexo IV de la Resolución 0472 de 2017 de Minambiente",
+            "Documentos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -40,8 +82,14 @@
           "numero": 2,
           "titulo": "REMITIR SOLICITUD Y ASIGNACIÓN DE RESPONSABLE",
           "descripcion": "El servidor responsable de la ventanilla de trámites ambientales remite la solicitud al técnico o profesional de la Coordinación de Evaluación Ambiental.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["Solicitud radicada del Usuario", "Formato IV de la Resolución 0472 de 2017", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "Solicitud radicada del Usuario",
+            "Formato IV de la Resolución 0472 de 2017",
+            "Documentos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -51,8 +99,12 @@
           "numero": 3,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Una vez revisados los documentos, si se requiere complementar, aclarar o corregir información, el profesional técnico envía comunicación al usuario precisando los detalles y solicitando la información y/o documentos faltantes, otorgando un plazo de diez (10) días hábiles para el recibo de la documentación restante. Transcurridos los diez (10) días hábiles desde el envío de la comunicación sin que se allegue la documentación, y sin exceder un término de un (1) mes desde el requerimiento, se procede al archivo definitivo de la actuación (Art. 17 del Código de Procedimiento Administrativo y de lo Contencioso Administrativo). Si la documentación requerida se allega dentro del término, se procede a programar la visita.",
-          "responsables": ["Servidor técnico competente"],
-          "documentos": ["Comunicación enviada al usuario"],
+          "responsables": [
+            "Servidor técnico competente"
+          ],
+          "documentos": [
+            "Comunicación enviada al usuario"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -62,8 +114,12 @@
           "numero": 4,
           "titulo": "REALIZAR VISITA",
           "descripcion": "Si la información está completa y correcta, se procede a realizar la visita, con el fin de verificar si se requiere trámite o permiso ambiental sobre el uso o aprovechamiento de los recursos naturales.",
-          "responsables": ["Funcionario asignado"],
-          "documentos": ["Hoja de Visita"],
+          "responsables": [
+            "Funcionario asignado"
+          ],
+          "documentos": [
+            "Hoja de Visita"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -73,8 +129,14 @@
           "numero": 5,
           "titulo": "PROYECTAR Y FIRMAR RESPUESTA",
           "descripcion": "Una vez realizada la visita, y verificado que la información está completa y cumple con la normatividad ambiental, el funcionario asignado elabora el oficio para comunicar al usuario la aprobación (y los compromisos adquiridos con la entidad) o el rechazo de su solicitud de inscripción. El oficio es revisado por el Coordinador de Evaluación para la Sostenibilidad y firmado por el Subdirector de Evaluación y Control Ambiental, para su posterior radicación y envío por correspondencia.",
-          "responsables": ["Funcionario asignado", "Coordinador de Evaluación Ambiental", "Subdirector de Evaluación y Control Ambiental"],
-          "documentos": ["Comunicación enviada al usuario"],
+          "responsables": [
+            "Funcionario asignado",
+            "Coordinador de Evaluación Ambiental",
+            "Subdirector de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Comunicación enviada al usuario"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -84,8 +146,15 @@
           "numero": 6,
           "titulo": "CREAR GESTOR EN EL SINCA",
           "descripcion": "Cuando la solicitud del usuario es aprobada, el funcionario responsable de la ventanilla de trámites ambientales crea el GESTOR en el Sistema de Información de Normalización y Calidad Ambiental (SINCA), cuyos expedientes se identifican con el código GE (Manejo y disposición de residuos de construcción y demolición). El funcionario responsable carga toda la información asociada al gestor y asigna el estado \"Aprobado\" en la etapa \"Seguimiento y control\" del SINCA.",
-          "responsables": ["Funcionario asignado", "Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["SINCA", "Documentos presentados por el solicitante", "Comunicación enviada al usuario"],
+          "responsables": [
+            "Funcionario asignado",
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "SINCA",
+            "Documentos presentados por el solicitante",
+            "Comunicación enviada al usuario"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -95,8 +164,15 @@
           "numero": 7,
           "titulo": "PROYECTAR Y PUBLICAR LA INSCRIPCIÓN",
           "descripcion": "Otorgada la aprobación de la inscripción como Gestor de RCD, el funcionario asignado proyecta memorando firmado por el Coordinador de Evaluación Ambiental para solicitar al área encargada la publicación en la página web de la entidad; el profesional responsable procede a la inscripción del Gestor RCD publicando el Anexo IV de la Resolución 0472 correspondiente al trámite.",
-          "responsables": ["Coordinador de Evaluación Ambiental", "Funcionario Encargado"],
-          "documentos": ["Viabilidad de gestor de RCD", "Memorando de la coordinación de Evaluación", "Anexo IV de la Resolución 0472"],
+          "responsables": [
+            "Coordinador de Evaluación Ambiental",
+            "Funcionario Encargado"
+          ],
+          "documentos": [
+            "Viabilidad de gestor de RCD",
+            "Memorando de la coordinación de Evaluación",
+            "Anexo IV de la Resolución 0472"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -106,8 +182,16 @@
           "numero": 8,
           "titulo": "REALIZAR SEGUIMIENTO Y CONTROL",
           "descripcion": "El gestor RCD debe presentar a la Coordinación de Seguimiento y Control Ambiental, según su actividad: (a) para sitios de disposición final de RCD, el documento del artículo 12 de la Resolución 472 de 2017 (flujo de procesos con los RCD, acciones de control de dispersión de partículas y obras de drenaje/sedimentos, estabilidad geotécnica, barreras de impacto visual, instrumentos de pesaje calibrados, cerramiento perimetral, valla informativa, y actividades de clausura y posclausura), con una antelación de 90 días calendario al inicio de las actividades del sitio, anexando copia de permisos/licencias y de la certificación de compatibilidad de uso del suelo (POT/PBOT/EOT); además el reporte de la cantidad de RCD dispuestos en el año inmediatamente anterior, a presentar en el primer trimestre de cada año; (b) para puntos limpios y plantas de aprovechamiento, copia del documento del artículo 10 de la Resolución 472 de 2017 (flujo de procesos, obras de drenaje y control de sedimentos, instrumentos de pesaje calibrados, barreras de impacto visual, acciones contra dispersión de partículas, separación de RCD según el Anexo I), dentro de los 30 días calendario siguientes al inicio de actividades, anexando también permisos/licencias y certificación de compatibilidad de uso del suelo.",
-          "responsables": ["Gestores", "Coordinación de Seguimiento y Control Ambiental", "Funcionario asignado para la verificación"],
-          "documentos": ["Formato del anexo III de la Resolución 0472 de 2017", "Hoja de Visita", "Informe Técnico"],
+          "responsables": [
+            "Gestores",
+            "Coordinación de Seguimiento y Control Ambiental",
+            "Funcionario asignado para la verificación"
+          ],
+          "documentos": [
+            "Formato del anexo III de la Resolución 0472 de 2017",
+            "Hoja de Visita",
+            "Informe Técnico"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -124,8 +208,14 @@
           "numero": 1,
           "titulo": "RECIBIR EL PROGRAMA DE MANEJO AMBIENTAL DE RCD",
           "descripcion": "El gran generador de RCD formula y presenta la solicitud del Programa de Manejo Ambiental de RCD, radicándola en la ventanilla de correspondencia con treinta (30) días de antelación al inicio de las obras. El Servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del Sistema de Información Corporativo (SIC), y el servidor responsable de la ventanilla de trámites la asigna a la Coordinación de Seguimiento y Control Ambiental. Requisitos: Formato Anexo I de la Resolución 0472 de 2017; Certificado de Existencia y Representación Legal (si es persona jurídica, no mayor a 3 meses) con cédula del representante legal; poder si actúa por apoderado; acreditación sobre el predio (certificado de libertad y tradición del propietario, o prueba de tenencia y autorización del propietario); nombre y localización del predio, proyecto, obra o actividad; uso de suelo del predio; licencia de construcción; y licencia de intervención y ocupación del espacio público.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales"],
-          "documentos": ["Solicitud del Usuario radicado", "Formato anexo I de la Resolución 0472 de 2017 (competencia Regional)", "Documentos anexos"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
+          "documentos": [
+            "Solicitud del Usuario radicado",
+            "Formato anexo I de la Resolución 0472 de 2017 (competencia Regional)",
+            "Documentos anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -135,7 +225,9 @@
           "numero": 2,
           "titulo": "REMITIR LA SOLICITUD Y ASIGNACIÓN DE RESPONSABLE",
           "descripcion": "El servidor responsable de la ventanilla de correspondencia remite la solicitud a la Coordinación de Seguimiento y Control Ambiental.",
-          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales"],
+          "responsables": [
+            "Servidor responsable de Ventanilla de trámites ambientales"
+          ],
           "documentos": [],
           "tiempo": null,
           "tiempoDias": null,
@@ -146,8 +238,14 @@
           "numero": 3,
           "titulo": "REALIZAR VISITA",
           "descripcion": "La Coordinación de Seguimiento y Control Ambiental analiza la necesidad de programar visita y, en caso de requerirse, designa al funcionario, con el fin de verificar el Programa de Manejo Ambiental.",
-          "responsables": ["Coordinación de seguimiento y control ambiental", "Funcionario asignado para la visita"],
-          "documentos": ["Hoja de Visita", "Informe Técnico"],
+          "responsables": [
+            "Coordinación de seguimiento y control ambiental",
+            "Funcionario asignado para la visita"
+          ],
+          "documentos": [
+            "Hoja de Visita",
+            "Informe Técnico"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -157,8 +255,14 @@
           "numero": 4,
           "titulo": "CREAR GENERADOR EN EL SINCA",
           "descripcion": "Una vez realizada la visita de verificación al Programa de Manejo Ambiental, el funcionario responsable crea el GENERADOR en el Sistema de Información de Normalización y Calidad Ambiental (SINCA), cuyos expedientes se identifican con el código GE (Manejo y disposición de residuos de construcción y demolición).",
-          "responsables": ["Funcionario asignado"],
-          "documentos": ["SINCA", "Documentos presentados por el solicitante", "Comunicación enviada al usuario"],
+          "responsables": [
+            "Funcionario asignado"
+          ],
+          "documentos": [
+            "SINCA",
+            "Documentos presentados por el solicitante",
+            "Comunicación enviada al usuario"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -168,8 +272,12 @@
           "numero": 5,
           "titulo": "RECIBIR EL INFORME DE IMPLEMENTACIÓN DEL PROGRAMA DE MANEJO AMBIENTAL",
           "descripcion": "El gran generador debe radicar el reporte de implementación del Programa de Manejo Ambiental de RCD con sus respectivos soportes, dentro de los 45 días calendario siguientes a la fecha de terminación de la obra. El Servidor responsable de Correspondencia lo asigna a la Coordinación de Seguimiento y Control Ambiental.",
-          "responsables": ["Generadores"],
-          "documentos": ["Informe de implementación del Programa de Manejo Ambiental"],
+          "responsables": [
+            "Generadores"
+          ],
+          "documentos": [
+            "Informe de implementación del Programa de Manejo Ambiental"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -179,8 +287,13 @@
           "numero": 6,
           "titulo": "REALIZAR VISITA DE SEGUIMIENTO",
           "descripcion": "La Coordinación de Seguimiento y Control Ambiental analiza la necesidad de programar visita y, en caso de requerirse, designa al funcionario, con el fin de verificar lo propuesto en el Informe de Implementación del Programa de Manejo Ambiental.",
-          "responsables": ["Coordinación de seguimiento y control ambiental"],
-          "documentos": ["Hoja de Visita", "Informe Técnico"],
+          "responsables": [
+            "Coordinación de seguimiento y control ambiental"
+          ],
+          "documentos": [
+            "Hoja de Visita",
+            "Informe Técnico"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

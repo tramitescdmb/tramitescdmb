@@ -8,23 +8,94 @@
   "slug": "inscripcion-gestores-acu",
   "archivoFuente": "M-DA-PR62 version   1.pdf",
   "objeto": "Establecer el procedimiento para la inscripción ante la CDMB de las personas que realizan actividades de recolección, transporte, tratamiento y/o aprovechamiento de ACU dentro del marco de la gestión y cumpliendo con los requerimientos de la normatividad vigente.",
+  "resumen": "Este trámite inscribe a quienes recolectan, transportan, tratan o aprovechan Aceites de Cocina Usados (ACU).",
   "alcance": "Aplica a todas las personas que realicen recolección, transporte, tratamiento y/o aprovechamiento de Aceites de Cocina Usados (ACU) en el área de jurisdicción de la CDMB, conformada por los municipios de Bucaramanga, Floridablanca, Girón, Piedecuesta, Lebrija, Rionegro, El Playón, Matanza, Charta, Suratá, Tona, California y Vetas, que deben cumplir con las disposiciones establecidas en la Resolución MADS No. 316 del 01 de marzo de 2018.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador de Control y Seguimiento Ambiental serán los responsables de velar por el cumplimiento de lo dispuesto en el presente procedimiento y las disposiciones establecidas en la Resolución MADS No. 316 del 01 de marzo de 2018. El Equipo de la Coordinación de Control y Seguimiento Ambiental será el encargado de aplicar este procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Nombre o razón social", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Número de identificación o Nit", "obligatorio": true, "notas": null },
-    { "orden": 3, "nombre": "Representante Legal", "obligatorio": true, "notas": null },
-    { "orden": 4, "nombre": "Número telefónico de contacto", "obligatorio": true, "notas": null },
-    { "orden": 5, "nombre": "Dirección oficina principal", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Actividad ejecutada (recolección, transporte, tratamiento y/o tipo de aprovechamiento realizado con el ACU)", "obligatorio": true, "notas": null },
-    { "orden": 7, "nombre": "Dirección de la planta de aprovechamiento", "obligatorio": true, "notas": null },
-    { "orden": 8, "nombre": "Municipio o distrito, departamento", "obligatorio": true, "notas": null },
-    { "orden": 9, "nombre": "Capacidad de recolección de ACU en Kg/mes del gestor", "obligatorio": true, "notas": null },
-    { "orden": 10, "nombre": "Capacidad de transporte de ACU en kg/mes del gestor", "obligatorio": true, "notas": null },
-    { "orden": 11, "nombre": "Capacidad de almacenamiento de ACU en kg/mes del gestor", "obligatorio": true, "notas": null },
-    { "orden": 12, "nombre": "Capacidad de tratamiento y/o aprovechamiento de ACU en kg/mes del gestor", "obligatorio": true, "notas": null },
-    { "orden": 13, "nombre": "Descripción de actividad y proceso ejecutado (tipo de aprovechamiento realizado con el ACU)", "obligatorio": true, "notas": null },
-    { "orden": 14, "nombre": "Número y fecha de los actos administrativos que otorgan los permisos y autorizaciones ambientales que amparan el desarrollo de la actividad", "obligatorio": true, "notas": null }
+    {
+      "orden": 1,
+      "nombre": "Nombre o razón social",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Número de identificación o Nit",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Representante Legal",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 4,
+      "nombre": "Número telefónico de contacto",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 5,
+      "nombre": "Dirección oficina principal",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Actividad ejecutada (recolección, transporte, tratamiento y/o tipo de aprovechamiento realizado con el ACU)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Dirección de la planta de aprovechamiento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Municipio o distrito, departamento",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 9,
+      "nombre": "Capacidad de recolección de ACU en Kg/mes del gestor",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 10,
+      "nombre": "Capacidad de transporte de ACU en kg/mes del gestor",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 11,
+      "nombre": "Capacidad de almacenamiento de ACU en kg/mes del gestor",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 12,
+      "nombre": "Capacidad de tratamiento y/o aprovechamiento de ACU en kg/mes del gestor",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 13,
+      "nombre": "Descripción de actividad y proceso ejecutado (tipo de aprovechamiento realizado con el ACU)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 14,
+      "nombre": "Número y fecha de los actos administrativos que otorgan los permisos y autorizaciones ambientales que amparan el desarrollo de la actividad",
+      "obligatorio": true,
+      "notas": null
+    }
   ],
   "flujos": [
     {
@@ -36,8 +107,14 @@
           "numero": 1,
           "titulo": "RADICAR SOLICITUD DE INSCRIPCIÓN",
           "descripcion": "El gestor de Aceites de Cocina Usados (ACU) presenta la siguiente documentación: nombre o razón social, número de identificación o Nit, representante legal, número telefónico de contacto, dirección oficina principal, actividad ejecutada (recolección, transporte, tratamiento y/o tipo de aprovechamiento realizado con el ACU), dirección de la planta de aprovechamiento, municipio o distrito, departamento, capacidad de recolección/transporte/almacenamiento/tratamiento o aprovechamiento de ACU en Kg/mes del gestor, descripción de actividad y proceso ejecutado, y número y fecha de los actos administrativos que otorgan los permisos y autorizaciones ambientales que amparan el desarrollo de la actividad.",
-          "responsables": ["Gestor de Aceites de Cocina Usados", "Funcionario de la oficina de correspondencia"],
-          "documentos": ["Oficio de solicitud", "Documentación y/o anexos de soporte"],
+          "responsables": [
+            "Gestor de Aceites de Cocina Usados",
+            "Funcionario de la oficina de correspondencia"
+          ],
+          "documentos": [
+            "Oficio de solicitud",
+            "Documentación y/o anexos de soporte"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -47,8 +124,12 @@
           "numero": 2,
           "titulo": "CREAR LA SOLICITUD Y EXPEDIENTE EN EL SINCA",
           "descripcion": "El funcionario y/o contratista del Grupo de Seguimiento y Control de la Subdirección de Evaluación y Control Ambiental asignado para la solicitud crea la solicitud y asigna el expediente en el Sistema de Información de Normatización y Calidad Ambiental SINCA. El expediente para este tipo de solicitudes se identificará con las siglas AR (Aceites - Recolectores).",
-          "responsables": ["Funcionario y/o contratista asignado para la solicitud"],
-          "documentos": ["SINCA"],
+          "responsables": [
+            "Funcionario y/o contratista asignado para la solicitud"
+          ],
+          "documentos": [
+            "SINCA"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -58,8 +139,14 @@
           "numero": 3,
           "titulo": "ENTREGAR LOS REPORTES ANUALES",
           "descripcion": "El gestor de Aceites de Cocina Usados (ACU) debe presentar dentro de los primeros quince (15) días del mes de enero de cada año, la siguiente información: nombre o razón social, número de identificación o NIT, representante legal, actividad realizada por el gestor, listado de los generadores industriales, comerciales y de servicios de ACU a los que se les recoge ACU con indicación de los kilogramos totales, y kilogramos totales de ACU recolectados, transportados, tratados y/o aprovechados durante el periodo correspondiente. Es una obligación periódica anual del gestor ya inscrito, no un paso único del trámite de inscripción.",
-          "responsables": ["Gestor de Aceites de Cocina Usados", "Funcionario de la oficina de correspondencia"],
-          "documentos": ["Oficio de solicitud", "Documentación y/o anexos de soporte"],
+          "responsables": [
+            "Gestor de Aceites de Cocina Usados",
+            "Funcionario de la oficina de correspondencia"
+          ],
+          "documentos": [
+            "Oficio de solicitud",
+            "Documentación y/o anexos de soporte"
+          ],
           "tiempo": "15 días (primeros 15 días del mes de enero de cada año)",
           "tiempoDias": 15,
           "esDecision": false,
@@ -69,8 +156,12 @@
           "numero": 4,
           "titulo": "ANEXAR INFORMACIÓN AL EXPEDIENTE",
           "descripcion": "El funcionario y/o contratista del Grupo de Seguimiento y Control de la Subdirección de Evaluación y Control Ambiental asignado para la solicitud anexa la información en físico al expediente y diligencia los datos técnicos sobre la gestión de Aceites de Cocina Usados (ACU) en el Sistema de Información de Normatización y Calidad Ambiental SINCA.",
-          "responsables": ["Funcionario y/o contratista asignado para la solicitud"],
-          "documentos": ["SINCA"],
+          "responsables": [
+            "Funcionario y/o contratista asignado para la solicitud"
+          ],
+          "documentos": [
+            "SINCA"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

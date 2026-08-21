@@ -42,6 +42,7 @@ type TramiteJson = {
   slug: string;
   archivoFuente: string;
   objeto: string;
+  resumen?: string;
   alcance: string;
   autoridadResponsabilidad: string;
   documentosRequeridos: DocumentoRequeridoJson[];
@@ -72,6 +73,7 @@ async function seedTramites() {
         slug: t.slug,
         archivoFuente: t.archivoFuente,
         objeto: t.objeto,
+        resumen: t.resumen ?? null,
         alcance: t.alcance,
         autoridadResponsabilidad: t.autoridadResponsabilidad,
       },
@@ -84,6 +86,7 @@ async function seedTramites() {
         slug: t.slug,
         archivoFuente: t.archivoFuente,
         objeto: t.objeto,
+        resumen: t.resumen ?? null,
         alcance: t.alcance,
         autoridadResponsabilidad: t.autoridadResponsabilidad,
       },
@@ -176,9 +179,19 @@ async function seedAdmin() {
   console.log("=== Guarda esta contraseña, no se volverá a mostrar ===\n");
 }
 
+async function seedConfiguracionSitio() {
+  await db.configuracionSitio.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton" },
+    update: {},
+  });
+  console.log("Configuración del sitio (fila singleton) lista.");
+}
+
 async function main() {
   await seedTramites();
   await seedCargos();
+  await seedConfiguracionSitio();
   await seedAdmin();
 }
 

@@ -1,4 +1,5 @@
 import { IconMail, IconLock } from "@/components/icons";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 const ERRORES: Record<string, string> = {
   "Correo y contraseña son obligatorios.": "Correo y contraseña son obligatorios.",
@@ -12,14 +13,20 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const error = params.error ? ERRORES[params.error] ?? params.error : null;
+  const config = await getConfiguracionSitio();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
+    <div className="flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-8 shadow-sm">
         <div className="mb-6 text-center">
-          <span className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cdmb-600 text-lg font-bold text-white">
-            C
-          </span>
+          {config.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={config.logoUrl} alt="CDMB" className="mx-auto mb-3 h-10 w-auto" />
+          ) : (
+            <span className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cdmb-600 text-lg font-bold text-white">
+              C
+            </span>
+          )}
           <h1 className="text-lg font-semibold text-stone-900">Trámites CDMB</h1>
           <p className="text-sm text-stone-500">Ingresa con tu cuenta institucional</p>
         </div>

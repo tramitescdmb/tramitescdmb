@@ -8,6 +8,7 @@
   "slug": "salvoconducto-renovacion",
   "archivoFuente": "M-DA-PR59 version  1.pdf",
   "objeto": "Expedir un documento que respalde el transporte (tipo renovación) legal de especímenes de la diversidad biológica en el territorio nacional.",
+  "resumen": "Este trámite renueva el salvoconducto para transportar especímenes de la biodiversidad.",
   "alcance": "A todas las personas que requieren transportar especímenes de la diversidad biológica en el territorio nacional.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y la Coordinación de Control y Seguimiento Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Funcionarios de la Subdirección de Evaluación y Control Ambiental serán el responsable de cumplir el procedimiento.",
   "documentosRequeridos": [],
@@ -21,8 +22,12 @@
           "numero": 1,
           "titulo": "REALIZAR REGISTRO EN LA PLATAFORMA VITAL CON RESPECTO A LA SOLICITUD DE RENOVACIÓN",
           "descripcion": "El usuario acreditado (registrado) diligenciará la solicitud para la expedición de SUNL desde la URL http://vital.anla.gov.co/ventanillasilpa (INGRESO VITAL). Ver Guía de usuario en el sitio de Fedemaderas (GUIA-REGISTRO-DE-USUARIOS-Y-SOLICITUD-DE-SUNL-EN-VITAL).",
-          "responsables": ["Usuario"],
-          "documentos": ["Registro de solicitud"],
+          "responsables": [
+            "Usuario"
+          ],
+          "documentos": [
+            "Registro de solicitud"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -32,8 +37,12 @@
           "numero": 2,
           "titulo": "ASIGNAR SOLICITUD",
           "descripcion": "Una vez realizada la solicitud por el usuario, esta será asignada a través del sistema de correspondencia por parte del coordinador de control y seguimiento ambiental al servidor a cargo de este trámite para que sean realizados los demás pasos.",
-          "responsables": ["Coordinador de Control y Seguimiento Ambiental / servidor delegado"],
-          "documentos": ["Correspondencia"],
+          "responsables": [
+            "Coordinador de Control y Seguimiento Ambiental / servidor delegado"
+          ],
+          "documentos": [
+            "Correspondencia"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -43,8 +52,14 @@
           "numero": 3,
           "titulo": "LIQUIDAR EL TRÁMITE",
           "descripcion": "El usuario se acercará a la entidad, el servidor responsable de liquidar efectúa la respectiva liquidación por el valor correspondiente y verifica que el usuario haya cancelado la respectiva factura que generó la oficina de cartera, solicitando copia del recibo de caja o evidencia de pago del trámite.",
-          "responsables": ["Servidor Designado para el trámite", "Servidor responsable de la facturación"],
-          "documentos": ["Recibo de pago (Nro. radicado VITAL)", "Sistema de liquidación y facturación (SIC)"],
+          "responsables": [
+            "Servidor Designado para el trámite",
+            "Servidor responsable de la facturación"
+          ],
+          "documentos": [
+            "Recibo de pago (Nro. radicado VITAL)",
+            "Sistema de liquidación y facturación (SIC)"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -54,22 +69,41 @@
           "numero": 4,
           "titulo": "REALIZAR REVISIÓN DE SOLICITUD DE RENOVACIÓN DE SUNL",
           "descripcion": "Una vez el usuario ha cancelado la factura, entrega copia del recibo de pago al servidor encargado del trámite. El servidor designado revisará el expediente sujeto de solicitud de renovación del SUNL. De encontrar motivo alguno para declinar la aprobación de la renovación se aplicará en el sistema de SUNL 'RECHAZO', y esta deberá ser informada por medio de oficio al usuario con copia al expediente, dándose por terminado el proceso. De lo contrario se continuará con el trámite.",
-          "responsables": ["Servidor Designado para el trámite"],
-          "documentos": ["Recibo de pago de la factura", "Correspondencia", "SUNL a renovación", "Carpeta de expediente"],
+          "responsables": [
+            "Servidor Designado para el trámite"
+          ],
+          "documentos": [
+            "Recibo de pago de la factura",
+            "Correspondencia",
+            "SUNL a renovación",
+            "Carpeta de expediente"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "No se encuentra motivo para declinar la renovación", "siguientePaso": 5 },
-            { "respuesta": "Se encuentra motivo para declinar la renovación", "siguientePaso": null, "resultado": "RECHAZADO" }
+            {
+              "respuesta": "No se encuentra motivo para declinar la renovación",
+              "siguientePaso": 5
+            },
+            {
+              "respuesta": "Se encuentra motivo para declinar la renovación",
+              "siguientePaso": null,
+              "resultado": "RECHAZADO"
+            }
           ]
         },
         {
           "numero": 5,
           "titulo": "REALIZAR EL DILIGENCIAMIENTO DEL SALVOCONDUCTO",
           "descripcion": "Diligenciamiento del salvoconducto respecto a las especies y cantidades aprobadas en el anterior SUNL mediante la plataforma VITAL - SUNL.",
-          "responsables": ["Servidor Designado para el trámite"],
-          "documentos": ["Salvoconducto Único Nacional para la movilización de especímenes de la diversidad biológica", "Plataforma VITAL"],
+          "responsables": [
+            "Servidor Designado para el trámite"
+          ],
+          "documentos": [
+            "Salvoconducto Único Nacional para la movilización de especímenes de la diversidad biológica",
+            "Plataforma VITAL"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -79,8 +113,14 @@
           "numero": 6,
           "titulo": "ENTREGAR EL SUNL AL USUARIO",
           "descripcion": "Una vez impreso el salvoconducto por medio del SUNL, se elaborará un oficio de entrega de SUNL al usuario solicitante, apoderado y/o autorizado, donde deberán firmar el servidor designado, el coordinador de Control y seguimiento ambiental y el usuario solicitante (anexar copia al expediente). Se descargará por informativa la solicitud de correspondencia siempre y cuando se suban los documentos digitales (oficio y salvoconducto).",
-          "responsables": ["Coordinador de Control y seguimiento ambiental", "Servidor Designado para el trámite"],
-          "documentos": ["Carpeta de expediente", "Correspondencia"],
+          "responsables": [
+            "Coordinador de Control y seguimiento ambiental",
+            "Servidor Designado para el trámite"
+          ],
+          "documentos": [
+            "Carpeta de expediente",
+            "Correspondencia"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

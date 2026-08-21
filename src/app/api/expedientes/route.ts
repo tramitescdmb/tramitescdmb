@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generarNumeroExpediente } from "@/lib/expedientes";
 import { esMunicipioValido } from "@/lib/municipios";
-import { latLonAPlanas, esLatLonValido } from "@/lib/coordenadas";
+import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 
 type DocumentoInput = {
   path: string;
@@ -68,17 +68,30 @@ export async function POST(req: NextRequest) {
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
   const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);
 
-  // Las planas nunca se confían del cliente — se recalculan aquí a partir de lat/lon.
-  let ubicacionLat: number | null = null;
-  let ubicacionLon: number | null = null;
-  let ubicacionPlanaX: number | null = null;
-  let ubicacionPlanaY: number | null = null;
+  // Las planas y cartesianas nunca se confían del cliente — se recalculan aquí a partir de lat/lon,
+  // que es la única representación que viaja del formulario (ver MapaUbicacion.tsx).
+  let datosUbicacion: Record<string, number | null> = {
+    ubicacionLat: null,
+    ubicacionLon: null,
+    ubicacionAltura: null,
+    ubicacionPlanaX: null,
+    ubicacionPlanaY: null,
+    ubicacionCartesianaX: null,
+    ubicacionCartesianaY: null,
+    ubicacionCartesianaZ: null,
+  };
   if (ubicacion?.lat != null && ubicacion?.lon != null && esLatLonValido(ubicacion.lat, ubicacion.lon)) {
-    ubicacionLat = ubicacion.lat;
-    ubicacionLon = ubicacion.lon;
-    const planas = latLonAPlanas(ubicacion.lat, ubicacion.lon);
-    ubicacionPlanaX = planas.x;
-    ubicacionPlanaY = planas.y;
+    const c = desdeLatLon(ubicacion.lat, ubicacion.lon);
+    datosUbicacion = {
+      ubicacionLat: c.lat,
+      ubicacionLon: c.lon,
+      ubicacionAltura: c.altura,
+      ubicacionPlanaX: c.planaX,
+      ubicacionPlanaY: c.planaY,
+      ubicacionCartesianaX: c.cartesianaX,
+      ubicacionCartesianaY: c.cartesianaY,
+      ubicacionCartesianaZ: c.cartesianaZ,
+    };
   }
 
   const expediente = await db.expediente.create({
@@ -94,10 +107,7 @@ export async function POST(req: NextRequest) {
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
       municipio,
-      ubicacionLat,
-      ubicacionLon,
-      ubicacionPlanaX,
-      ubicacionPlanaY,
+      ...datosUbicacion,
       estado: "RADICADO",
       pasoActualNumero: primerPaso,
       createdById: session.userId,

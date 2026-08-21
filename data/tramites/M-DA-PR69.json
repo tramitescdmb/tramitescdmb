@@ -8,19 +8,70 @@
   "slug": "libro-operaciones-forestales-en-linea",
   "archivoFuente": "M-DA-PR69 version 2.pdf",
   "objeto": "Establecer el Libro de Operaciones Forestales en Línea (LOFL), el cual será registrado exclusivamente en la plataforma de la Ventanilla Integral de Trámites Ambientales en Línea (VITAL) o como lo determine el Ministerio de Ambiente y Desarrollo Sostenible - MADS, en el área de jurisdicción de la CDMB, con el objetivo de ejercer el control de la movilización, procesamiento y comercialización de los recursos naturales renovables que conlleve a la gestión eficaz y respuesta oportuna al usuario.",
+  "resumen": "Este trámite habilita el Libro de Operaciones Forestales en Línea para controlar la movilización y comercialización de productos forestales.",
   "alcance": "Aplica para todas las empresas e industrias forestales que realicen las actividades de Empresas de transformación primaria de productos forestales, Empresas de transformación secundaria de productos forestales o de productos terminados, Empresas de comercialización forestal, Empresas de comercialización y transformación secundaria de productos forestales y Empresas forestales integradas.",
   "autoridadResponsabilidad": "El Director General de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB, el Subdirector de Evaluación y Control Ambiental - SEYCA, Secretaría General y los Coordinadores respectivos, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA, Secretaría General, Asesor de Dirección General, serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Formulario Único Nacional de Solicitud de Registro del LOFL (Art. 6, Anexo 2, Resolución 1971 de 2019)", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Carta de solicitud", "obligatorio": true, "notas": null },
-    { "orden": 3, "nombre": "Cédula de ciudadanía", "obligatorio": true, "notas": "Si el solicitante es persona natural" },
-    { "orden": 4, "nombre": "Certificado de existencia y representación legal", "obligatorio": true, "notas": "Si el solicitante es persona jurídica (sociedades o corporaciones); expedido dentro de los 3 meses anteriores a la solicitud" },
-    { "orden": 5, "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. máx. 3 meses), prueba de tenencia (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)", "obligatorio": true, "notas": null },
-    { "orden": 6, "nombre": "Autorización del propietario del predio", "obligatorio": false, "notas": "Cuando se requiera, si el solicitante es tenedor" },
-    { "orden": 7, "nombre": "Copia del Certificado de Cámara de Comercio", "obligatorio": true, "notas": "Expedido dentro de los 3 meses anteriores a la solicitud" },
-    { "orden": 8, "nombre": "Certificado de Uso del Suelo emitido por la Autoridad Competente", "obligatorio": true, "notas": "Expedido dentro de los 3 meses anteriores a la solicitud" },
-    { "orden": 9, "nombre": "Copia del libro de operaciones (rayado, pasta dura, tamaño oficio, foliado) con el inventario actual de productos en el predio", "obligatorio": true, "notas": null },
-    { "orden": 10, "nombre": "Pantallazo del registro en la plataforma VITAL", "obligatorio": true, "notas": "Solicitud de activación de usuario ante la autoridad ambiental" }
+    {
+      "orden": 1,
+      "nombre": "Formulario Único Nacional de Solicitud de Registro del LOFL (Art. 6, Anexo 2, Resolución 1971 de 2019)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Carta de solicitud",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Si el solicitante es persona natural"
+    },
+    {
+      "orden": 4,
+      "nombre": "Certificado de existencia y representación legal",
+      "obligatorio": true,
+      "notas": "Si el solicitante es persona jurídica (sociedades o corporaciones); expedido dentro de los 3 meses anteriores a la solicitud"
+    },
+    {
+      "orden": 5,
+      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. máx. 3 meses), prueba de tenencia (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Autorización del propietario del predio",
+      "obligatorio": false,
+      "notas": "Cuando se requiera, si el solicitante es tenedor"
+    },
+    {
+      "orden": 7,
+      "nombre": "Copia del Certificado de Cámara de Comercio",
+      "obligatorio": true,
+      "notas": "Expedido dentro de los 3 meses anteriores a la solicitud"
+    },
+    {
+      "orden": 8,
+      "nombre": "Certificado de Uso del Suelo emitido por la Autoridad Competente",
+      "obligatorio": true,
+      "notas": "Expedido dentro de los 3 meses anteriores a la solicitud"
+    },
+    {
+      "orden": 9,
+      "nombre": "Copia del libro de operaciones (rayado, pasta dura, tamaño oficio, foliado) con el inventario actual de productos en el predio",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 10,
+      "nombre": "Pantallazo del registro en la plataforma VITAL",
+      "obligatorio": true,
+      "notas": "Solicitud de activación de usuario ante la autoridad ambiental"
+    }
   ],
   "flujos": [
     {
@@ -32,8 +83,22 @@
           "numero": 1,
           "titulo": "RECIBIR, REVISAR, RADICAR LA SOLICITUD DEL USUARIO Y APERTURA DE EXPEDIENTE",
           "descripcion": "Se recibe la solicitud del propietario o representante legal de la empresa forestal interesada en adelantar el registro del Libro de Operaciones Forestales en Línea, acompañada de la documentación, en la ventanilla de radicación y/o cualquier canal de atención. Se revisa el orden e identidad de los requisitos: si es persona natural, cédula de ciudadanía; si es persona jurídica (sociedades o corporaciones), certificado de existencia y representación legal (expedido dentro de los 3 meses anteriores); acreditación sobre el predio según sea propietario (Certificado de Libertad y Tradición, exp. máx. 3 meses), tenedor (prueba de tenencia y autorización del propietario) o poseedor (Certificado Extra-juicio); copia del Certificado de Cámara de Comercio (exp. máx. 3 meses); Certificado de Uso del Suelo emitido por la autoridad competente (exp. máx. 3 meses); y copia del libro de operaciones rayado, pasta dura, tamaño oficio, foliado (inventario actual de productos en el predio). Las empresas que solicitan el registro por primera vez deben inscribirse como usuario en la plataforma VITAL, obtener usuario y contraseña, activar el módulo LOFL y solicitar a la autoridad ambiental la activación del usuario (anexando pantallazo de la solicitud); esto puede hacerse en línea o de forma presencial si no hay acceso a internet o conocimiento del aplicativo. Las empresas forestales que ya cuentan con registro ante la Corporación (código EM) deben inscribirse como usuario, sucursal o sede, solicitar la activación de usuario y realizar el cargue de la documentación e inventario de productos; las que tengan sucursales o sedes deben registrar el LOFL con cada Autoridad Ambiental donde desarrollen su actividad. Si los requisitos están completos, la autoridad ambiental asigna un técnico para verificar la información, se asigna número de expediente en el SINCA y se asigna profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad; si no están completos, el coordinador de evaluación devuelve la solicitud en línea a la empresa forestal con la documentación aportada. El servidor responsable actualiza la etapa en el SINCA y la información en el módulo LOFL.",
-          "responsables": ["Personal asistencial de Radicación de la Correspondencia y/o responsables de los diferentes canales de atención", "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)"],
-          "documentos": ["Formulario Único Nacional de Solicitud de Registro del LOFL (Art 6, Anexo 2, Resol. 1971 de 2019)", "Carta de Solicitud", "Cédula de Ciudadanía", "Certificado de existencia y representación", "Certificado de Libertad y Tradición", "Autorización de Propietario (si se requiere)", "Copia del Certificado de Cámara de Comercio", "Certificado de Uso del Suelo emitido por la Autoridad Competente", "Copia del libro de operaciones (inventario actual de los productos en el predio)", "Pantallazo del Registro en la Plataforma VITAL"],
+          "responsables": [
+            "Personal asistencial de Radicación de la Correspondencia y/o responsables de los diferentes canales de atención",
+            "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)"
+          ],
+          "documentos": [
+            "Formulario Único Nacional de Solicitud de Registro del LOFL (Art 6, Anexo 2, Resol. 1971 de 2019)",
+            "Carta de Solicitud",
+            "Cédula de Ciudadanía",
+            "Certificado de existencia y representación",
+            "Certificado de Libertad y Tradición",
+            "Autorización de Propietario (si se requiere)",
+            "Copia del Certificado de Cámara de Comercio",
+            "Certificado de Uso del Suelo emitido por la Autoridad Competente",
+            "Copia del libro de operaciones (inventario actual de los productos en el predio)",
+            "Pantallazo del Registro en la Plataforma VITAL"
+          ],
           "tiempo": "Cinco (5) días hábiles",
           "tiempoDias": 5,
           "esDecision": false,
@@ -43,8 +108,13 @@
           "numero": 2,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, incorporando el paso a paso para la creación de usuario y contraseña en la plataforma VITAL, con plazo máximo de un (1) mes. Vencido este plazo sin que se allegue la información solicitada, se niega el registro mediante oficio, se archiva el expediente y se notifica al usuario vía correo electrónico.",
-          "responsables": ["Coordinación de Evaluación para la Sostenibilidad", "Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Oficio solicitando información adicional"],
+          "responsables": [
+            "Coordinación de Evaluación para la Sostenibilidad",
+            "Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Oficio solicitando información adicional"
+          ],
           "tiempo": "Treinta (30) días",
           "tiempoDias": 30,
           "esDecision": false,
@@ -54,8 +124,15 @@
           "numero": 3,
           "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR INFORME TÉCNICO",
           "descripcion": "El profesional técnico encargado agenda fecha y realiza visita a la empresa forestal, una vez cumplidos los requisitos y el diligenciamiento de los formularios en VITAL, para verificar la información de la solicitud y el inventario inicial, dentro de los cinco (5) días hábiles siguientes a la radicación de la solicitud en VITAL; se verifica el inventario inicial y se explica al usuario cómo realizar los reportes en VITAL. Con base en la información suministrada por la empresa y la obtenida en la visita de verificación, el profesional técnico registra el Libro de Operaciones Forestales en Línea (LOFL) en VITAL, en un plazo máximo de tres (3) días hábiles desde la visita. Si el Profesional Técnico requiere realizar visita para la actualización del LOFL, tendrá un término de diez (10) días hábiles para el mismo, verificando el inventario inicial y explicando al usuario los reportes en la plataforma.",
-          "responsables": ["Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)", "Técnico adscrito a la Subdirección de Evaluación y Control Ambiental (Rol Técnico)"],
-          "documentos": ["Registro de Acta de Visita de Inspección Ocular", "Informe técnico", "Registro en la plataforma LOFL"],
+          "responsables": [
+            "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)",
+            "Técnico adscrito a la Subdirección de Evaluación y Control Ambiental (Rol Técnico)"
+          ],
+          "documentos": [
+            "Registro de Acta de Visita de Inspección Ocular",
+            "Informe técnico",
+            "Registro en la plataforma LOFL"
+          ],
           "tiempo": "Diez (10) días hábiles",
           "tiempoDias": 10,
           "esDecision": false,
@@ -65,22 +142,41 @@
           "numero": 4,
           "titulo": "REGISTRAR INFORME TÉCNICO Y APROBACIÓN O NEGACIÓN DEL MISMO EN LA PLATAFORMA VITAL",
           "descripcion": "El profesional encargado de la visita de inspección ocular registra la información del informe técnico en la plataforma VITAL y descarga el Registro del Libro de Operaciones Forestales en Línea (LOFL) suministrado por VITAL. El coordinador evalúa la información suministrada por el técnico y determina si se aprueba o niega el registro, y se notifica a los solicitantes a través de la plataforma. El personal técnico imprime el registro y suministra la información al SINCA asignado a la empresa. Una vez la empresa forestal cumpla con lo establecido, se expide el registro del LOFL, consultable e imprimible en el Módulo de Registro del Libro de Operaciones.",
-          "responsables": ["Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)", "Técnico adscrito a la Subdirección de Evaluación y Control Ambiental (Rol Técnico)", "Personal de Notificaciones"],
-          "documentos": ["Registro de la Plataforma VITAL"],
+          "responsables": [
+            "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)",
+            "Técnico adscrito a la Subdirección de Evaluación y Control Ambiental (Rol Técnico)",
+            "Personal de Notificaciones"
+          ],
+          "documentos": [
+            "Registro de la Plataforma VITAL"
+          ],
           "tiempo": "Tres (3) días hábiles",
           "tiempoDias": 3,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Aprueba el registro", "siguientePaso": 5, "resultado": "APROBADO" },
-            { "respuesta": "Niega el registro", "siguientePaso": 5, "resultado": "NEGADO" }
+            {
+              "respuesta": "Aprueba el registro",
+              "siguientePaso": 5,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el registro",
+              "siguientePaso": 5,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 5,
           "titulo": "REGISTRAR ENTRADAS Y SALIDAS DEL LIBRO DE OPERACIONES FORESTAL EN LÍNEA",
           "descripcion": "El profesional encargado de realizar el seguimiento a las empresas forestales indica cómo realizar el cargue de la información en el Libro de Operaciones Forestales en Línea (LOFL), con el fin de registrar los ingresos y salidas en la plataforma. Una vez la empresa forestal cumpla con lo establecido para el registro, el técnico asignado de seguimiento ambiental realiza la capacitación para el registro de ingresos y salidas en el Módulo de Registro del Libro de Operaciones de LOFL.",
-          "responsables": ["Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)", "Técnico adscrito a la Subdirección de Seguimiento y Control Ambiental (Rol Técnico)"],
-          "documentos": ["Registro de Acta de Visita de Inspección Ocular y capacitación a la empresa forestal"],
+          "responsables": [
+            "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)",
+            "Técnico adscrito a la Subdirección de Seguimiento y Control Ambiental (Rol Técnico)"
+          ],
+          "documentos": [
+            "Registro de Acta de Visita de Inspección Ocular y capacitación a la empresa forestal"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -90,8 +186,16 @@
           "numero": 6,
           "titulo": "REALIZAR SEGUIMIENTO AL LIBRO DE OPERACIONES FORESTAL EN LÍNEA",
           "descripcion": "La autoridad ambiental podrá realizar los controles y seguimiento al LOFL y verificará anualmente los informes entregados por las empresas forestales, mediante el módulo de visitas de registro, control y seguimiento del LOFL y el módulo de reportes de los LOFL. Una vez verificado el establecimiento comercial y el informe anual de actividades, el funcionario de la ventanilla única de trámites ambientales elabora y entrega la liquidación por concepto de seguimiento ambiental para su respectivo pago. El usuario realiza el pago en tesorería o a través de los canales virtuales establecidos; realizado el pago, Tesorería expide la factura correspondiente.",
-          "responsables": ["Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)", "Técnico adscrito a la Subdirección de Seguimiento y Control Ambiental (Rol Técnico)", "Personal de Notificaciones"],
-          "documentos": ["Registro de Acta de Visita de Inspección Ocular", "Recibo de pago", "Informe técnico"],
+          "responsables": [
+            "Técnico Asignado en cumplimiento del Rol Autoridad Ambiental (Rol Coordinador)",
+            "Técnico adscrito a la Subdirección de Seguimiento y Control Ambiental (Rol Técnico)",
+            "Personal de Notificaciones"
+          ],
+          "documentos": [
+            "Registro de Acta de Visita de Inspección Ocular",
+            "Recibo de pago",
+            "Informe técnico"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

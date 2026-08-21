@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyPassword, createSessionCookie } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export async function POST(req: NextRequest) {
   const form = await req.formData();
@@ -18,10 +19,25 @@ export async function POST(req: NextRequest) {
   if (!email || !password) return fail("Correo y contraseña son obligatorios.");
 
   const usuario = await db.usuario.findUnique({ where: { email }, include: { cargo: true } });
-  if (!usuario || !usuario.activo) return fail("Credenciales inválidas.");
+  if (!usuario || !usuario.activo) {
+    await registrarAuditoria({
+      tipo: "LOGIN_FALLIDO",
+      descripcion: `Intento de inicio de sesión con correo "${email}" (${!usuario ? "no existe" : "inactivo"}).`,
+      emailIntento: email,
+    });
+    return fail("Credenciales inválidas.");
+  }
 
   const valido = await verifyPassword(password, usuario.passwordHash);
-  if (!valido) return fail("Credenciales inválidas.");
+  if (!valido) {
+    await registrarAuditoria({
+      tipo: "LOGIN_FALLIDO",
+      descripcion: `Contraseña incorrecta para "${email}".`,
+      usuarioId: usuario.id,
+      emailIntento: email,
+    });
+    return fail("Credenciales inválidas.");
+  }
 
   await createSessionCookie({
     userId: usuario.id,
@@ -29,6 +45,13 @@ export async function POST(req: NextRequest) {
     nombre: usuario.nombre,
     rol: usuario.rol,
     cargo: usuario.cargo?.nombre ?? null,
+  });
+
+  await registrarAuditoria({
+    tipo: "LOGIN_EXITOSO",
+    descripcion: `${usuario.nombre} inició sesión.`,
+    usuarioId: usuario.id,
+    emailIntento: email,
   });
 
   const redirectTo = next && next.startsWith("/") ? next : "/";

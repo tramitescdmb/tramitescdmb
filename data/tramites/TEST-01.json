@@ -8,6 +8,7 @@
   "slug": "tramite-de-prueba",
   "archivoFuente": "N/A — creado para probar la interfaz, no viene de un PDF real",
   "objeto": "Servir de ejemplo liviano para revisar cómo se ve la interfaz con un trámite corto, sin la cantidad de texto de los trámites reales.",
+  "resumen": "Este trámite es un ejemplo corto para probar la interfaz — no es un trámite real de la CDMB.",
   "alcance": "Solo para pruebas internas del equipo — no es un trámite real de la CDMB.",
   "autoridadResponsabilidad": "Ninguna — es un trámite de prueba.",
   "documentosRequeridos": [

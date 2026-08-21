@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDE_MUNICIPIO, CENTRO_CDMB_POR_DEFECTO, type MunicipioCdmb } from "@/lib/municipios";
-import { latLonAPlanas, esLatLonValido } from "@/lib/coordenadas";
+import {
+  desdeLatLon,
+  desdePlanas,
+  desdeCartesianas,
+  esLatLonValido,
+  esPlanaColombiaAprox,
+  esCartesianaValida,
+  type CoordenadasCompletas,
+} from "@/lib/coordenadas";
 
 type Punto = { lat: number; lon: number };
 
@@ -17,13 +25,19 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
   const [direccion, setDireccion] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
+
+  const [modo, setModo] = useState<"elipsoidales" | "planas" | "cartesianas">("elipsoidales");
   const [latTexto, setLatTexto] = useState("");
   const [lonTexto, setLonTexto] = useState("");
+  const [planaXTexto, setPlanaXTexto] = useState("");
+  const [planaYTexto, setPlanaYTexto] = useState("");
+  const [cartXTexto, setCartXTexto] = useState("");
+  const [cartYTexto, setCartYTexto] = useState("");
+  const [cartZTexto, setCartZTexto] = useState("");
   const [errorCoords, setErrorCoords] = useState<string | null>(null);
 
   const centroide = CENTROIDE_MUNICIPIO[municipio as MunicipioCdmb] ?? CENTRO_CDMB_POR_DEFECTO;
 
-  // Inicializa el mapa una sola vez (Leaflet toca `window`, por eso el import es dinámico y dentro de useEffect)
   useEffect(() => {
     let cancelado = false;
     import("leaflet").then((L) => {
@@ -47,7 +61,6 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Si cambia el municipio y todavía no hay punto marcado, recentra el mapa
   useEffect(() => {
     if (!punto && mapRef.current) {
       mapRef.current.setView(centroide, 13);
@@ -55,10 +68,19 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [municipio]);
 
+  function sincronizarCampos(c: CoordenadasCompletas) {
+    setLatTexto(c.lat.toFixed(6));
+    setLonTexto(c.lon.toFixed(6));
+    setPlanaXTexto(c.planaX.toFixed(2));
+    setPlanaYTexto(c.planaY.toFixed(2));
+    setCartXTexto(c.cartesianaX.toFixed(2));
+    setCartYTexto(c.cartesianaY.toFixed(2));
+    setCartZTexto(c.cartesianaZ.toFixed(2));
+  }
+
   function colocarPunto(lat: number, lon: number) {
     setPunto({ lat, lon });
-    setLatTexto(lat.toFixed(6));
-    setLonTexto(lon.toFixed(6));
+    sincronizarCampos(desdeLatLon(lat, lon));
     setErrorCoords(null);
     setErrorBusqueda(null);
 
@@ -84,6 +106,11 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     setPunto(null);
     setLatTexto("");
     setLonTexto("");
+    setPlanaXTexto("");
+    setPlanaYTexto("");
+    setCartXTexto("");
+    setCartYTexto("");
+    setCartZTexto("");
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -104,15 +131,13 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
       if (!res.ok) throw new Error(data.error || "No se encontró esa dirección.");
       colocarPunto(data.lat, data.lon);
     } catch (err) {
-      setErrorBusqueda(
-        err instanceof Error ? err.message : "No se pudo buscar — márcala tocando el mapa."
-      );
+      setErrorBusqueda(err instanceof Error ? err.message : "No se pudo buscar — márcala tocando el mapa.");
     } finally {
       setBuscando(false);
     }
   }
 
-  function usarCoordenadasEscritas() {
+  function usarElipsoidales() {
     const lat = parseFloat(latTexto.replace(",", "."));
     const lon = parseFloat(lonTexto.replace(",", "."));
     if (!esLatLonValido(lat, lon)) {
@@ -123,7 +148,35 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     colocarPunto(lat, lon);
   }
 
-  const planas = punto ? latLonAPlanas(punto.lat, punto.lon) : null;
+  function usarPlanas() {
+    const x = parseFloat(planaXTexto.replace(",", "."));
+    const y = parseFloat(planaYTexto.replace(",", "."));
+    if (!esPlanaColombiaAprox(x, y)) {
+      setErrorCoords("Esas coordenadas planas no parecen estar dentro de Colombia — revisa que X e Y no estén invertidas.");
+      return;
+    }
+    setErrorCoords(null);
+    const c = desdePlanas(x, y);
+    colocarPunto(c.lat, c.lon);
+  }
+
+  function usarCartesianas() {
+    const x = parseFloat(cartXTexto.replace(",", "."));
+    const y = parseFloat(cartYTexto.replace(",", "."));
+    const z = parseFloat(cartZTexto.replace(",", "."));
+    if (!esCartesianaValida(x, y, z)) {
+      setErrorCoords("Escribe las tres coordenadas cartesianas (X, Y, Z) en metros.");
+      return;
+    }
+    setErrorCoords(null);
+    const c = desdeCartesianas(x, y, z);
+    colocarPunto(c.lat, c.lon);
+  }
+
+  const planas = punto ? desdeLatLon(punto.lat, punto.lon) : null;
+
+  const tabClase = (activa: boolean) =>
+    `rounded-md px-2.5 py-1 text-xs font-medium ${activa ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`;
 
   return (
     <div className="space-y-3">
@@ -146,63 +199,107 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
       {errorBusqueda && <p className="text-xs text-red-600">{errorBusqueda}</p>}
 
       <p className="text-xs text-stone-500">
-        O toca directamente el punto exacto en el mapa. Si no hay una dirección real (kilómetro de vía,
-        finca), pega las coordenadas de Google Maps abajo (clic derecho sobre el punto → clic en los
-        números).
+        O toca directamente el punto exacto en el mapa. Si tienes las coordenadas de otra fuente (GPS,
+        levantamiento topográfico, plano), pégalas abajo — acepta las tres formas en que puedan venir,
+        no hace falta convertirlas antes.
       </p>
 
-      <div className="flex flex-wrap items-end gap-2">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-stone-600">Latitud</label>
-          <input
-            value={latTexto}
-            onChange={(e) => setLatTexto(e.target.value)}
-            placeholder="ej. 7.119300"
-            className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-stone-600">Longitud</label>
-          <input
-            value={lonTexto}
-            onChange={(e) => setLonTexto(e.target.value)}
-            placeholder="ej. -73.122700"
-            className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={usarCoordenadasEscritas}
-          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50"
-        >
-          Usar
+      <div className="flex gap-1.5">
+        <button type="button" className={tabClase(modo === "elipsoidales")} onClick={() => setModo("elipsoidales")}>
+          Latitud/Longitud
         </button>
-        {punto && (
-          <button type="button" onClick={quitarPunto} className="text-xs text-stone-400 hover:text-red-600">
-            Quitar punto
-          </button>
-        )}
+        <button type="button" className={tabClase(modo === "planas")} onClick={() => setModo("planas")}>
+          Coordenadas planas
+        </button>
+        <button type="button" className={tabClase(modo === "cartesianas")} onClick={() => setModo("cartesianas")}>
+          Cartesianas (ECEF)
+        </button>
       </div>
+
+      {modo === "elipsoidales" && (
+        <div className="flex flex-wrap items-end gap-2">
+          <TextoCoord label="Latitud" placeholder="ej. 7.119300" value={latTexto} onChange={setLatTexto} />
+          <TextoCoord label="Longitud" placeholder="ej. -73.122700" value={lonTexto} onChange={setLonTexto} />
+          <BotonUsar onClick={usarElipsoidales} />
+        </div>
+      )}
+      {modo === "planas" && (
+        <div className="flex flex-wrap items-end gap-2">
+          <TextoCoord label="X (planas)" placeholder="ej. 4986456.54" value={planaXTexto} onChange={setPlanaXTexto} />
+          <TextoCoord label="Y (planas)" placeholder="ej. 2344673.53" value={planaYTexto} onChange={setPlanaYTexto} />
+          <BotonUsar onClick={usarPlanas} />
+          <span className="text-xs text-stone-400">MAGNA-SIRGAS Origen-Nacional (EPSG:9377), en metros.</span>
+        </div>
+      )}
+      {modo === "cartesianas" && (
+        <div className="flex flex-wrap items-end gap-2">
+          <TextoCoord label="X" placeholder="ej. 1837814.89" value={cartXTexto} onChange={setCartXTexto} />
+          <TextoCoord label="Y" placeholder="ej. -6057588.37" value={cartYTexto} onChange={setCartYTexto} />
+          <TextoCoord label="Z" placeholder="ej. 785346.56" value={cartZTexto} onChange={setCartZTexto} />
+          <BotonUsar onClick={usarCartesianas} />
+          <span className="text-xs text-stone-400">Geocéntricas (ECEF), en metros.</span>
+        </div>
+      )}
+      {punto && (
+        <button type="button" onClick={quitarPunto} className="text-xs text-stone-400 hover:text-red-600">
+          Quitar punto
+        </button>
+      )}
       {errorCoords && <p className="text-xs text-red-600">{errorCoords}</p>}
 
       <div ref={contenedorRef} className="h-64 w-full overflow-hidden rounded-lg border border-stone-200" />
 
       {punto && planas && (
-        <div className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
+        <div className="space-y-0.5 rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
           <p>
-            <span className="font-medium">Lat/Lon (WGS84):</span> {punto.lat.toFixed(6)}, {punto.lon.toFixed(6)}
+            <span className="font-medium">Elipsoidales (lat/lon, WGS84):</span> {planas.lat.toFixed(6)},{" "}
+            {planas.lon.toFixed(6)}
           </p>
           <p>
-            <span className="font-medium">Coordenadas planas (MAGNA-SIRGAS Origen-Nacional):</span> X{" "}
-            {planas.x.toLocaleString("es-CO")} m, Y {planas.y.toLocaleString("es-CO")} m
+            <span className="font-medium">Planas (MAGNA-SIRGAS Origen-Nacional):</span> X{" "}
+            {planas.planaX.toLocaleString("es-CO")} m, Y {planas.planaY.toLocaleString("es-CO")} m
+          </p>
+          <p>
+            <span className="font-medium">Cartesianas (ECEF):</span> X {planas.cartesianaX.toLocaleString("es-CO")} m,
+            Y {planas.cartesianaY.toLocaleString("es-CO")} m, Z {planas.cartesianaZ.toLocaleString("es-CO")} m
           </p>
         </div>
       )}
 
       <input type="hidden" name="ubicacionLat" value={punto?.lat ?? ""} />
       <input type="hidden" name="ubicacionLon" value={punto?.lon ?? ""} />
-      <input type="hidden" name="ubicacionPlanaX" value={planas?.x ?? ""} />
-      <input type="hidden" name="ubicacionPlanaY" value={planas?.y ?? ""} />
     </div>
+  );
+}
+
+function TextoCoord({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-stone-600">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-36 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+      />
+    </div>
+  );
+}
+
+function BotonUsar({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50">
+      Usar
+    </button>
   );
 }

@@ -102,12 +102,19 @@ export default async function ExpedienteDetallePage({
                 <dt className="mb-1 text-xs text-stone-400">📍 Ubicación tomada en campo</dt>
                 <dd className="space-y-0.5 text-stone-700">
                   <p>
-                    Lat/Lon (WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
+                    Elipsoidales (lat/lon, WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
                   </p>
                   {expediente.ubicacionPlanaX != null && expediente.ubicacionPlanaY != null && (
                     <p>
                       Planas (MAGNA-SIRGAS Origen-Nacional): X {expediente.ubicacionPlanaX.toLocaleString("es-CO")} m,
                       Y {expediente.ubicacionPlanaY.toLocaleString("es-CO")} m
+                    </p>
+                  )}
+                  {expediente.ubicacionCartesianaX != null && expediente.ubicacionCartesianaY != null && expediente.ubicacionCartesianaZ != null && (
+                    <p>
+                      Cartesianas (ECEF): X {expediente.ubicacionCartesianaX.toLocaleString("es-CO")} m, Y{" "}
+                      {expediente.ubicacionCartesianaY.toLocaleString("es-CO")} m, Z{" "}
+                      {expediente.ubicacionCartesianaZ.toLocaleString("es-CO")} m
                     </p>
                   )}
                   <a

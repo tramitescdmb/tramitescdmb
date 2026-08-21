@@ -8,15 +8,46 @@
   "slug": "verificacion-plan-contingencia-hidrocarburos",
   "archivoFuente": "M-DA-PR45 version  5.pdf",
   "objeto": "Describir y estandarizar los pasos a seguir para evaluar los Planes de Contingencia del Transporte de Hidrocarburos y Sustancias Nocivas de los usuarios que transporten dichas sustancias nocivas para la salud y para los recursos hidrobiológicos, que son presentados ante la CDMB.",
+  "resumen": "Este trámite verifica el cumplimiento del Plan de Contingencia de las empresas que transportan hidrocarburos y sustancias nocivas.",
   "alcance": "El procedimiento inicia desde la radicación del documento, hasta remitir oficio de respuesta informando que adoptó los términos de referencia para la elaboración, o expedir el acto administrativo que requiera información adicional o ajustes al Plan de Contingencia del Transporte de Hidrocarburos y Sustancias Nocivas presentado por los usuarios que realicen el manejo de dichas sustancias en el área de jurisdicción de la CDMB. El propósito de este trámite es obtener la información necesaria para verificar las acciones que se deben ejecutar ante la ocurrencia de eventos de derrames en la actividad de transporte de hidrocarburos y/o sustancias nocivas para la salud y recursos hidrobiológicos.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental, y el Profesional Especializado responsable del grupo de Evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos adscritos al grupo de evaluación de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir y actualizar el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Oficio firmado por el gerente de la empresa o su delegado, dirigido a la autoridad ambiental, con los datos de la empresa (nombre, dirección, teléfono, email, número de identificación del solicitante) y el compromiso de implementación del PDC y cumplimiento de la normatividad relacionada", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Razón Social", "obligatorio": true, "notas": "Solo persona jurídica" },
-    { "orden": 3, "nombre": "Poder otorgado", "obligatorio": false, "notas": "Cuando se actúe como apoderado" },
-    { "orden": 4, "nombre": "Certificación de existencia y representación legal", "obligatorio": true, "notas": "Solo persona jurídica" },
-    { "orden": 5, "nombre": "Autorización del propietario o poseedor", "obligatorio": false, "notas": "Cuando el solicitante sea mero tenedor" },
-    { "orden": 6, "nombre": "Plan de Contingencia para el Manejo de Derrames de Hidrocarburos y Sustancias Nocivas, de conformidad con los Términos de Referencia únicos adoptados mediante Resolución 1209 de 29 de junio de 2018 del MADS (1 copia física y 1 copia digital con anexos)", "obligatorio": true, "notas": null }
+    {
+      "orden": 1,
+      "nombre": "Oficio firmado por el gerente de la empresa o su delegado, dirigido a la autoridad ambiental, con los datos de la empresa (nombre, dirección, teléfono, email, número de identificación del solicitante) y el compromiso de implementación del PDC y cumplimiento de la normatividad relacionada",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Razón Social",
+      "obligatorio": true,
+      "notas": "Solo persona jurídica"
+    },
+    {
+      "orden": 3,
+      "nombre": "Poder otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe como apoderado"
+    },
+    {
+      "orden": 4,
+      "nombre": "Certificación de existencia y representación legal",
+      "obligatorio": true,
+      "notas": "Solo persona jurídica"
+    },
+    {
+      "orden": 5,
+      "nombre": "Autorización del propietario o poseedor",
+      "obligatorio": false,
+      "notas": "Cuando el solicitante sea mero tenedor"
+    },
+    {
+      "orden": 6,
+      "nombre": "Plan de Contingencia para el Manejo de Derrames de Hidrocarburos y Sustancias Nocivas, de conformidad con los Términos de Referencia únicos adoptados mediante Resolución 1209 de 29 de junio de 2018 del MADS (1 copia física y 1 copia digital con anexos)",
+      "obligatorio": true,
+      "notas": null
+    }
   ],
   "flujos": [
     {
@@ -28,8 +59,15 @@
           "numero": 1,
           "titulo": "IDENTIFICAR EMPRESAS QUE REQUIERAN PRESENTAR EL PLAN DE CONTINGENCIA Y ENVIAR COMUNICACIÓN",
           "descripcion": "La autoridad ambiental puede solicitar los Planes de Contingencia para el Manejo del Transporte de Hidrocarburos y Sustancias Nocivas a los usuarios que requieran presentarlo, según lo estipula el Decreto 3930 de 2010, artículo 35 (modificado por el artículo 3 del Decreto Nacional 4728 de 2010) y el Decreto 1076 de 2015, artículo 2.2.3.3.4.14.",
-          "responsables": ["Profesional Especializado responsable del grupo de Evaluación ambiental", "Secretaria de SEYCA", "Subdirector(a) de SEYCA", "Servidor público responsable de Correspondencia enviada"],
-          "documentos": ["Comunicación radicada y enviada al usuario solicitando presentar el Plan"],
+          "responsables": [
+            "Profesional Especializado responsable del grupo de Evaluación ambiental",
+            "Secretaria de SEYCA",
+            "Subdirector(a) de SEYCA",
+            "Servidor público responsable de Correspondencia enviada"
+          ],
+          "documentos": [
+            "Comunicación radicada y enviada al usuario solicitando presentar el Plan"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -39,8 +77,14 @@
           "numero": 2,
           "titulo": "RECEPCIONAR Y VERIFICAR",
           "descripcion": "El usuario presenta el Plan de Contingencia del Transporte de Hidrocarburos y Sustancias Nocivas o realiza actualización del documento. El servidor público responsable de la ventanilla de Trámites Ambientales revisa que la documentación requerida esté completa: oficio firmado por el gerente o delegado con los datos de la empresa y compromiso de cumplimiento; razón social (persona jurídica); poder otorgado (si se actúa como apoderado); certificación de existencia y representación legal (persona jurídica); autorización del propietario o poseedor (si el solicitante es mero tenedor); y el Plan de Contingencia conforme a los Términos de Referencia únicos de la Resolución 1209 de 2018 del MADS (1 copia física y 1 copia digital con anexos).",
-          "responsables": ["Servidor público responsable de Ventanilla trámites ambientales"],
-          "documentos": ["Comunicado del usuario y anexos", "Formato Control de Procesos (E-GE-FO02)", "SIC"],
+          "responsables": [
+            "Servidor público responsable de Ventanilla trámites ambientales"
+          ],
+          "documentos": [
+            "Comunicado del usuario y anexos",
+            "Formato Control de Procesos (E-GE-FO02)",
+            "SIC"
+          ],
           "tiempo": "Inmediatamente",
           "tiempoDias": 0,
           "esDecision": false,
@@ -50,8 +94,18 @@
           "numero": 3,
           "titulo": "RADICAR Y REGISTRO EN EL SINCA",
           "descripcion": "El usuario entrega el PDC en la Ventanilla de Correspondencia; se radica y se ingresa el registro al aplicativo de Correspondencia (Proceso → Correspondencia Recibida) del Sistema de Información Corporativo. El servidor público responsable de la ventanilla de correspondencia recibida remite los documentos a la Subdirección de Evaluación y Control Ambiental para iniciar la revisión documental, previa asignación del número de expediente en el SINCA.",
-          "responsables": ["Servidor público responsable de Ventanilla correspondencia recibida", "Secretaria de SEYCA", "Servidor público responsable del grupo de Evaluación ambiental", "Servidor público en derecho responsable del trámite"],
-          "documentos": ["Radicación del usuario y anexos", "Formato Control de Procesos (E-GE-FO02)", "Registro en el aplicativo de Correspondencia", "Registro Número SINCA"],
+          "responsables": [
+            "Servidor público responsable de Ventanilla correspondencia recibida",
+            "Secretaria de SEYCA",
+            "Servidor público responsable del grupo de Evaluación ambiental",
+            "Servidor público en derecho responsable del trámite"
+          ],
+          "documentos": [
+            "Radicación del usuario y anexos",
+            "Formato Control de Procesos (E-GE-FO02)",
+            "Registro en el aplicativo de Correspondencia",
+            "Registro Número SINCA"
+          ],
           "tiempo": "Tres (3) días hábiles",
           "tiempoDias": 3,
           "esDecision": false,
@@ -61,8 +115,16 @@
           "numero": 4,
           "titulo": "VERIFICAR REQUISITOS Y CUMPLIMIENTO DE TÉRMINOS DE REFERENCIA, ACUSAR RECIBO MEDIANTE COMUNICACIÓN ENVIADA AL USUARIO",
           "descripcion": "El Profesional Especializado responsable del grupo de Evaluación ambiental asigna al Profesional del Grupo de Evaluación Ambiental para que revise el PDC presentado, verificando que haya adoptado los Términos de Referencia únicos para la elaboración de los Planes de Contingencia (Resolución 1209 de 29 de junio de 2018 del MADS, o la que la modifique o sustituya): Introducción; Marco Normativo; Generalidades (análisis de riesgo y capacidad de respuesta, organización de la respuesta, capacitación y simulacros); y Plan de Contingencia (gestión del riesgo, identificación/análisis/evaluación del riesgo y sus medidas de reducción, objetivos, alcance, ámbitos de responsabilidad y competencia, diagnóstico de las operaciones, caracterización de rutas de transporte, plan estratégico, plan operativo, plan informativo, programa de capacitación y entrenamiento, divulgación del plan, sistema de seguimiento, reporte a la autoridad ambiental, actualización del PDC por nuevas rutas y costos del plan). Si el PDC cumple, se acusa recibo mediante oficio informando que se recibe para seguimiento. Si no cumple con los lineamientos establecidos en los términos de referencia, se solicitarán ajustes adicionales mediante acto administrativo debidamente motivado.",
-          "responsables": ["Profesional asignado del Grupo de Evaluación Ambiental", "Profesional Especializado responsable del grupo de Evaluación ambiental"],
-          "documentos": ["Radicación del usuario y anexos", "Formato Control de Procesos (E-GE-FO02)", "Comunicación al usuario acusando recibido y trasladando para seguimiento, o acto administrativo solicitando ajustes o información adicional", "SINCA con soportes"],
+          "responsables": [
+            "Profesional asignado del Grupo de Evaluación Ambiental",
+            "Profesional Especializado responsable del grupo de Evaluación ambiental"
+          ],
+          "documentos": [
+            "Radicación del usuario y anexos",
+            "Formato Control de Procesos (E-GE-FO02)",
+            "Comunicación al usuario acusando recibido y trasladando para seguimiento, o acto administrativo solicitando ajustes o información adicional",
+            "SINCA con soportes"
+          ],
           "tiempo": "Ocho (8) días",
           "tiempoDias": 8,
           "esDecision": false,
@@ -72,8 +134,15 @@
           "numero": 5,
           "titulo": "HACER REGISTRO DE USUARIOS Y SEGUIMIENTO",
           "descripcion": "Una vez revisado y acusado recibo el Plan de Contingencia elaborado de acuerdo con los términos de referencia del MADS, se envía el expediente al grupo de evaluación ambiental para que se incorpore en el registro de usuarios de Planes de Contingencia del Transporte de Hidrocarburos y/o Sustancias Nocivas, y el grupo de Seguimiento y Control ambiental realice las actividades de seguimiento y control.",
-          "responsables": ["Profesional asignado del Grupo de Evaluación Ambiental", "Profesional Especializado Responsable del Grupo de Evaluación Ambiental"],
-          "documentos": ["Comunicación cargada en el SIC", "Memorando remisión de expediente", "SINCA con soportes"],
+          "responsables": [
+            "Profesional asignado del Grupo de Evaluación Ambiental",
+            "Profesional Especializado Responsable del Grupo de Evaluación Ambiental"
+          ],
+          "documentos": [
+            "Comunicación cargada en el SIC",
+            "Memorando remisión de expediente",
+            "SINCA con soportes"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

@@ -8,14 +8,40 @@
   "slug": "certificacion-ambiental-desintegracion-vehicular",
   "archivoFuente": "M-DA-PR64 version 2.pdf",
   "objeto": "Revisar las condiciones mínimas que debe cumplir las Entidades Desintegradoras de acuerdo a normas, criterios y directrices trazadas por el Ministerio de Ambiente y Desarrollo Sostenible (MADS).",
+  "resumen": "Este trámite certifica que una entidad desintegradora de vehículos cumple las condiciones ambientales mínimas exigidas por el MADS.",
   "alcance": "Aplica a todas las entidades que tengan como objetivo la desintegración vehicular y se encuentren en el área de jurisdicción de la Corporación Autónoma Regional Para la Defensa de la Meseta de Bucaramanga (CDMB).",
   "autoridadResponsabilidad": "El (la) Subdirector (a) de Evaluación y Control Ambiental, el (la) Coordinador (a) de Evaluación Ambiental para la Sostenibilidad y el (la) Profesional Especializado (a) Responsable del Grupo de Evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Funcionarios y/o Contratistas del Grupo de Evaluación Ambiental para la Sostenibilidad de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Solicitud suscrita por la persona natural o el representante legal (personas jurídicas), indicando nombre o razón social, cédula de ciudadanía o NIT, dirección del domicilio, teléfono y correo electrónico", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por intermedio de apoderado" },
-    { "orden": 3, "nombre": "Plan de desintegración de vehículos elaborado conforme a las etapas del proceso de desintegración vehicular", "obligatorio": true, "notas": "Conforme al artículo 5 de la Resolución 1606 de 2015" },
-    { "orden": 4, "nombre": "Planos y descripción técnica de las instalaciones en las que se pretende realizar el proceso de desintegración vehicular", "obligatorio": true, "notas": "Debe tener en cuenta las condiciones ambientales descritas en el artículo 5 de la Resolución 1606 de 2015" },
-    { "orden": 5, "nombre": "Constancia de pago del trámite ambiental", "obligatorio": true, "notas": null }
+    {
+      "orden": 1,
+      "nombre": "Solicitud suscrita por la persona natural o el representante legal (personas jurídicas), indicando nombre o razón social, cédula de ciudadanía o NIT, dirección del domicilio, teléfono y correo electrónico",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por intermedio de apoderado"
+    },
+    {
+      "orden": 3,
+      "nombre": "Plan de desintegración de vehículos elaborado conforme a las etapas del proceso de desintegración vehicular",
+      "obligatorio": true,
+      "notas": "Conforme al artículo 5 de la Resolución 1606 de 2015"
+    },
+    {
+      "orden": 4,
+      "nombre": "Planos y descripción técnica de las instalaciones en las que se pretende realizar el proceso de desintegración vehicular",
+      "obligatorio": true,
+      "notas": "Debe tener en cuenta las condiciones ambientales descritas en el artículo 5 de la Resolución 1606 de 2015"
+    },
+    {
+      "orden": 5,
+      "nombre": "Constancia de pago del trámite ambiental",
+      "obligatorio": true,
+      "notas": null
+    }
   ],
   "flujos": [
     {
@@ -27,8 +53,14 @@
           "numero": 1,
           "titulo": "RADICAR SOLICITUD Y REGISTRAR EN EL SIC Y SINCA",
           "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02). Se revisa el orden e identidad de los documentos (solicitud, poder si aplica, plan de desintegración, planos y descripción técnica, constancia de pago). Si los requisitos están completos: el funcionario de ventanilla liquida la evaluación ambiental, el usuario paga en tesorería (o canal virtual) y entrega la documentación para que se asigne número de solicitud en el SINCA, número de expediente y profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se devuelve inmediatamente la documentación. Nota 1: si al realizar la visita el profesional/técnico identifica que es necesario, se procede a ajustar los servicios cobrados al usuario. El servidor responsable actualiza la etapa en el SINCA.",
-          "responsables": ["Servidor responsable de Ventanilla trámites ambientales", "Servidor responsable de correspondencia"],
-          "documentos": ["Solicitud del Usuario radicado", "Lista de Chequeo (E-GE-FO02)"],
+          "responsables": [
+            "Servidor responsable de Ventanilla trámites ambientales",
+            "Servidor responsable de correspondencia"
+          ],
+          "documentos": [
+            "Solicitud del Usuario radicado",
+            "Lista de Chequeo (E-GE-FO02)"
+          ],
           "tiempo": "Un (1) día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -38,8 +70,14 @@
           "numero": 2,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, otorgando un plazo máximo de un (1) mes. Vencido este plazo sin que se allegue la información, se decreta el desistimiento tácito y el archivo del expediente (artículo 17 de la Ley 1437 de 2011) mediante acto administrativo notificado personalmente, contra el cual procede únicamente recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable actualiza la etapa en el SINCA. La documentación presentada debe cumplir los requisitos del artículo 4 de la Resolución 1606 de 2015.",
-          "responsables": ["Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Solicitud de trámite del usuario y documentos soportes", "Formato Control de Procesos (E-GE-FO02)", "Oficio al usuario"],
+          "responsables": [
+            "Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Solicitud de trámite del usuario y documentos soportes",
+            "Formato Control de Procesos (E-GE-FO02)",
+            "Oficio al usuario"
+          ],
           "tiempo": "Diez (10) días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -49,8 +87,13 @@
           "numero": 3,
           "titulo": "ELABORAR AUTO DE INICIO DE TRÁMITE",
           "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental procede a realizar el Auto de Inicio, el cual ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. El servidor responsable actualiza la etapa en el SINCA. Cuando la información esté completa, se expide el auto de iniciación de trámite, que debe subirse al SINCA dejando trazabilidad en el sistema.",
-          "responsables": ["Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Auto de Inicio firmado y numerado", "SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Auto de Inicio firmado y numerado",
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": "Diez (20) días",
           "tiempoDias": 20,
           "esDecision": false,
@@ -60,8 +103,17 @@
           "numero": 4,
           "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR VISITA",
           "descripcion": "El Secretario General, una vez firmado el Auto, remite el expediente a la oficina de notificaciones para que se notifique el Auto de inicio del trámite, de forma que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011), y se ordena su publicación en el GDI conforme a la Ley 99/93. Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de la visita, quien verifica que la constancia de pago por costos del trámite se encuentre en el expediente. El servidor responsable actualiza la etapa en el SINCA, asegurando la notificación, publicación y alimentación del SINCA con los debidos soportes, dejando trazabilidad.",
-          "responsables": ["Servidor Responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Servidor responsable de notificar", "Servidor responsable de la publicación del área de Gestión Documental"],
-          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de Evaluación y Control Ambiental",
+            "Servidor responsable de notificar",
+            "Servidor responsable de la publicación del área de Gestión Documental"
+          ],
+          "documentos": [
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en la Web",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Tres (3) días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -71,8 +123,16 @@
           "numero": 5,
           "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR CONCEPTO TÉCNICO",
           "descripcion": "Los profesionales o técnicos del equipo de campo realizan la visita al Centro de Desintegración Vehicular, registrando los datos en el SINCA en los campos previstos para esta tarea. En la visita se verifican las instalaciones del centro, el adecuado funcionamiento de los equipos en las etapas de desintegración conforme a la normatividad, el almacenamiento de residuos de cada una de las partes desintegradas y las buenas prácticas ambientales con los residuos peligrosos según su clasificación (Título 6, Parte 2, Libro 2 del Decreto 1076 de 2015 o la norma que lo modifique o sustituya). El servidor técnico responsable elabora el concepto técnico por el cual se decide sobre la viabilidad o no de otorgar la certificación ambiental al centro de Desintegración Vehicular, y lo entrega al coordinador del área de evaluación para que este asigne al servidor jurídico encargado de elaborar la resolución o acto administrativo.",
-          "responsables": ["Servidor Técnico de la coordinación de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soportes y trazabilidad", "Comunicación enviada", "Informe técnico"],
+          "responsables": [
+            "Servidor Técnico de la coordinación de Evaluación para la sostenibilidad",
+            "Subdirector de SEYCA",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soportes y trazabilidad",
+            "Comunicación enviada",
+            "Informe técnico"
+          ],
           "tiempo": "treinta (30) días",
           "tiempoDias": 30,
           "esDecision": false,
@@ -82,8 +142,13 @@
           "numero": 6,
           "titulo": "ELABORAR Y ENVIAR COMUNICACIÓN SOLICITANDO INFORMACIÓN ADICIONAL",
           "descripcion": "El servidor responsable adscrito a la coordinación de evaluación envía comunicación al usuario solicitando la información que considere necesaria para continuar con el trámite, otorgando un plazo de un (1) mes calendario, prorrogable por única vez y por el mismo plazo concedido.",
-          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["SINCA con soporte y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "SINCA con soporte y trazabilidad"
+          ],
           "tiempo": "Tres (3) días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -93,22 +158,42 @@
           "numero": 7,
           "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL?",
           "descripcion": "Si el interesado presentó la información adicional, se continúa a la actividad 9, activando los tiempos en el SINCA. Si el interesado no presentó la información adicional, el servidor técnico responsable del trámite remite el expediente al responsable de la coordinación de Evaluación para que se realice el archivo definitivo por desistimiento tácito de la solicitud.",
-          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["Informe Técnico", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Informe Técnico",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Sí presentó la información", "siguientePaso": 9 },
-            { "respuesta": "No presentó la información", "siguientePaso": null, "resultado": "DESISTIDO" }
+            {
+              "respuesta": "Sí presentó la información",
+              "siguientePaso": 9
+            },
+            {
+              "respuesta": "No presentó la información",
+              "siguientePaso": null,
+              "resultado": "DESISTIDO"
+            }
           ]
         },
         {
           "numero": 8,
           "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
           "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias de carácter técnico, solicita explicación y corrección al técnico que realizó la visita. Posteriormente da el visto bueno al informe y le asigna número consecutivo. Mediante el SINCA se hace cambio de etapa, y por cuaderno se entrega el expediente físico junto con el informe técnico debidamente cargado en la plataforma, remitiéndose el expediente al área Jurídica de la Subdirección de Evaluación y Control Ambiental.",
-          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
-          "documentos": ["Aplicativo SINCA", "Concepto Técnico", "Memorando Interno"],
+          "responsables": [
+            "Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad",
+            "Coordinador de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Aplicativo SINCA",
+            "Concepto Técnico",
+            "Memorando Interno"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -118,22 +203,45 @@
           "numero": 9,
           "titulo": "PROYECTAR RESOLUCIÓN QUE OTORGA O NIEGA EL PERMISO DE DESINTEGRACIÓN VEHICULAR",
           "descripcion": "De acuerdo con lo determinado en el informe técnico, el profesional en derecho asignado proyecta la resolución con la cual se otorga o niega el permiso de desintegración vehicular. La resolución debe ir numerada y publicada. Con la revisión y visto bueno del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para la respectiva firma y aprobación del acto administrativo, previa revisión, análisis y estudio del Asesor de Dirección General. La proyección de la resolución se realiza en un término no mayor a 20 días contados a partir de la emisión del concepto técnico.",
-          "responsables": ["Profesional en derecho", "Subdirector SEYCA", "Director General", "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad"],
-          "documentos": ["Resolución de aprobación o negación de la certificación del Centro de Desintegración Vehicular"],
+          "responsables": [
+            "Profesional en derecho",
+            "Subdirector SEYCA",
+            "Director General",
+            "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad"
+          ],
+          "documentos": [
+            "Resolución de aprobación o negación de la certificación del Centro de Desintegración Vehicular"
+          ],
           "tiempo": "Diez (10) días",
           "tiempoDias": 10,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga el permiso", "siguientePaso": 10, "resultado": "APROBADO" },
-            { "respuesta": "Niega el permiso", "siguientePaso": 10, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga el permiso",
+              "siguientePaso": 10,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el permiso",
+              "siguientePaso": 10,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 10,
           "titulo": "NOTIFICAR AL USUARIO",
           "descripcion": "Una vez emitida la resolución que aprueba o niega el permiso, el profesional en derecho de la coordinación de Evaluación remite la actuación a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena su publicación en el GDI conforme a la Ley 99/93. Si el usuario autorizó la notificación por correo electrónico, se realiza por este medio. Si el interesado no comparece a la CDMB para notificarse de la resolución, se notifica por aviso fijado por un término de cinco (5) días hábiles conforme al artículo 69 de la Ley 1437 de 2011.",
-          "responsables": ["Gestión documental", "Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación del auto"],
-          "documentos": ["Constancia de Notificación personal", "SINCA con soporte y trazabilidad", "Página web"],
+          "responsables": [
+            "Gestión documental",
+            "Servidor responsable de notificar",
+            "Servidor de Gestión documental encargado de la publicación del auto"
+          ],
+          "documentos": [
+            "Constancia de Notificación personal",
+            "SINCA con soporte y trazabilidad",
+            "Página web"
+          ],
           "tiempo": "tres (3) días",
           "tiempoDias": 3,
           "esDecision": false,

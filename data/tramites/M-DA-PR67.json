@@ -8,12 +8,28 @@
   "slug": "registro-usuarios-recurso-hidrico-rurh",
   "archivoFuente": "M-DA-PR67 version 1.pdf",
   "objeto": "Establecer el procedimiento para el Registro de Usuarios del Recurso Hídrico (RURH) para las personas naturales que solicitan el uso de agua para consumo humano y doméstico en viviendas rurales dispersas, y generadores de aguas residuales domésticas provenientes de soluciones individuales de saneamiento básico de viviendas rurales dispersas, que se encuentran bajo el artículo 279 de la Ley 1955 de 2019 y su Decreto reglamentario 1210 de 2020, dentro del área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
+  "resumen": "Este trámite registra a los usuarios rurales dispersos que usan agua para consumo humano o generan aguas residuales domésticas.",
   "alcance": "Aplica para toda persona natural cuya actividad requiera el uso y/o aprovechamiento del recurso hídrico de aguas públicas superficiales y subterráneas y a su vez genere vertimientos al suelo en viviendas rurales dispersas del área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y los Coordinadores del grupo de Evaluación para la Sostenibilidad Ambiental y de Seguimiento para la Sostenibilidad Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Fotocopia de la cédula de ciudadanía del solicitante", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o declaración extrajuicio (poseedor)", "obligatorio": true, "notas": null },
-    { "orden": 3, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" }
+    {
+      "orden": 1,
+      "nombre": "Fotocopia de la cédula de ciudadanía del solicitante",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o declaración extrajuicio (poseedor)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por medio de apoderado"
+    }
   ],
   "flujos": [
     {
@@ -25,8 +41,13 @@
           "numero": 1,
           "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
           "descripcion": "El usuario presenta un oficio, carta o correo electrónico de solicitud, de forma electrónica o presencial, para ser registrado por la autoridad ambiental en el Registro de Usuarios del Recurso Hídrico (RURH). Se asigna radicado de entrada.",
-          "responsables": ["Funcionario responsable de Ventanilla trámites ambientales", "Funcionario responsable de correspondencia"],
-          "documentos": ["Solicitud del usuario y anexo(s)"],
+          "responsables": [
+            "Funcionario responsable de Ventanilla trámites ambientales",
+            "Funcionario responsable de correspondencia"
+          ],
+          "documentos": [
+            "Solicitud del usuario y anexo(s)"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -36,8 +57,15 @@
           "numero": 2,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
           "descripcion": "En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos asignados a la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, otorgando un plazo máximo de un (1) mes. Vencido este plazo, si no se allegó la información, se procede a devolver la documentación y archivar. Nota 1: se da respuesta al usuario siguiendo el Modelo Respuesta Solicitud Registro de Usuarios del Recurso Hídrico – RURH (Anexo 4), que solicita: fotocopia de la cédula del solicitante, acreditación sobre el predio (certificado de libertad y tradición, prueba de tenencia o declaración extrajuicio según el caso) y poder si se actúa por apoderado.",
-          "responsables": ["Coordinación de Evaluación para la Sostenibilidad", "Profesionales Técnicos de la Subdirección de Evaluación y Control Ambiental", "Funcionario responsable de Ventanilla trámites ambientales", "Funcionario responsable de correspondencia"],
-          "documentos": ["Modelo Respuesta Solicitud Registro de Usuarios del Recurso Hídrico – RURH (Anexo 4)"],
+          "responsables": [
+            "Coordinación de Evaluación para la Sostenibilidad",
+            "Profesionales Técnicos de la Subdirección de Evaluación y Control Ambiental",
+            "Funcionario responsable de Ventanilla trámites ambientales",
+            "Funcionario responsable de correspondencia"
+          ],
+          "documentos": [
+            "Modelo Respuesta Solicitud Registro de Usuarios del Recurso Hídrico – RURH (Anexo 4)"
+          ],
           "tiempo": "quince (15) días",
           "tiempoDias": 15,
           "esDecision": false,
@@ -47,8 +75,14 @@
           "numero": 3,
           "titulo": "ASIGNAR LA SOLICITUD AL FUNCIONARIO Y PROGRAMAR VISITA",
           "descripcion": "Una vez radicada la información solicitada, se asigna al profesional técnico encargado y se programa la visita, la cual se comunica al usuario vía telefónica. A partir de este momento, el funcionario de la CDMB tiene 30 días calendario para realizar la visita y el registro del usuario, o el requerimiento correspondiente en caso de que no aplique a registro.",
-          "responsables": ["Funcionario encargado de asignación de SINCA en la coordinación de evaluación", "Profesional técnico"],
-          "documentos": ["SINCA", "Documentos y anexos"],
+          "responsables": [
+            "Funcionario encargado de asignación de SINCA en la coordinación de evaluación",
+            "Profesional técnico"
+          ],
+          "documentos": [
+            "SINCA",
+            "Documentos y anexos"
+          ],
           "tiempo": "tres (3) días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -58,8 +92,12 @@
           "numero": 4,
           "titulo": "REALIZAR VISITA DE CAMPO",
           "descripcion": "Durante la visita técnica, el funcionario de la CDMB diligencia el Formulario M-DA-FO71 Registro de Usuarios del Recurso Hídrico (RURH) (Anexo 3), validado por el usuario con su firma, declarando bajo la gravedad de juramento la veracidad y legitimidad de la información. La visita de campo permite validar: 1) información del usuario, 2) información del predio, 3) fuente de captación, 4) usos del agua y cantidad requerida, 5) descripción del sistema de tratamiento de aguas residuales domésticas, 6) sitio de disposición final del vertimiento, y 7) si el usuario cumple los requisitos para ser catalogado como Vivienda Rural Dispersa.",
-          "responsables": ["Profesional técnico"],
-          "documentos": ["Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)"],
+          "responsables": [
+            "Profesional técnico"
+          ],
+          "documentos": [
+            "Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)"
+          ],
           "tiempo": "diez (10) días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -69,8 +107,13 @@
           "numero": 5,
           "titulo": "ELABORAR INFORME TÉCNICO",
           "descripcion": "El profesional técnico encargado es responsable de verificar los datos y elaborar el informe técnico (Anexo 7). Consideraciones: si la información está incompleta, debe contactar al usuario para completarla antes de emitir el concepto; debe verificar si el predio está ubicado en suelo rural o urbano, o si hace parte de una parcelación o condominio constituido o en proyecto; debe verificar la Tabla 1 de Criterios para definir Subsistencia y Actividad Productiva; si los usos solicitados sobrepasan las cantidades máximas de dicha tabla, debe informar al usuario que debe tramitar los permisos de concesión de aguas y/o vertimientos correspondientes; cuando identifique generación de aguas residuales no domésticas asociadas a fumigación, lavado de equipos o elementos de protección personal, debe requerir información técnica sobre el sistema de tratamiento a implementar (tanques desactivadores de plaguicidas, tanque de almacenamiento, entre otros). Si el usuario no cumple los requisitos de vivienda rural dispersa, se devuelve la documentación notificando que no aplica el registro, sino el trámite de concesión de aguas y/o vertimientos. El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico; si presenta inconsistencias técnicas, solicita aclaración y corrección al profesional técnico que realizó la visita; posteriormente da el visto bueno al informe y le asigna número consecutivo.",
-          "responsables": ["Profesional técnico", "Coordinador de Evaluación para la Sostenibilidad"],
-          "documentos": ["Anexo 7. M-DA-FO72 Informe Técnico RURH"],
+          "responsables": [
+            "Profesional técnico",
+            "Coordinador de Evaluación para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Anexo 7. M-DA-FO72 Informe Técnico RURH"
+          ],
           "tiempo": "diez (10) días",
           "tiempoDias": 10,
           "esDecision": false,
@@ -80,22 +123,46 @@
           "numero": 6,
           "titulo": "ELABORAR OFICIO DE APROBACIÓN Y/O NEGACIÓN DEL REGISTRO DEL USUARIO",
           "descripcion": "Con la información recolectada en campo, complementada con aquella que el profesional técnico consulta (ubicación, área en la cartografía, coordenadas, información de la fuente hídrica y bases de datos de la Corporación), se procede a diligenciar el Anexo 5, Modelo Oficio Registro de Usuarios del Recurso Hídrico – RURH, oficio en el que se señala si es viable o no otorgar el registro de Usuarios del Recurso Hídrico – RURH.",
-          "responsables": ["Profesional técnico"],
-          "documentos": ["Documentos y anexos", "Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)", "Anexo 5. Modelo Oficio Registro de Usuarios del Recurso Hídrico – RURH", "Anexo 6. Modelo Oficio si NO procede al Registro de Usuarios del Recurso Hídrico - RURH", "Anexo 7. M-DA-FO72 Modelo Informe Técnico RURH", "SINCA HV - # SINCA"],
+          "responsables": [
+            "Profesional técnico"
+          ],
+          "documentos": [
+            "Documentos y anexos",
+            "Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)",
+            "Anexo 5. Modelo Oficio Registro de Usuarios del Recurso Hídrico – RURH",
+            "Anexo 6. Modelo Oficio si NO procede al Registro de Usuarios del Recurso Hídrico - RURH",
+            "Anexo 7. M-DA-FO72 Modelo Informe Técnico RURH",
+            "SINCA HV - # SINCA"
+          ],
           "tiempo": "cinco (5) días",
           "tiempoDias": 5,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Es viable otorgar el registro", "siguientePaso": 7, "resultado": "APROBADO" },
-            { "respuesta": "No es viable otorgar el registro", "siguientePaso": 7, "resultado": "NEGADO" }
+            {
+              "respuesta": "Es viable otorgar el registro",
+              "siguientePaso": 7,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "No es viable otorgar el registro",
+              "siguientePaso": 7,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 7,
           "titulo": "DILIGENCIAR EN LA BASE DE DATOS RURH DE LA CDMB CON EL SINCA HV - # SINCA",
           "descripcion": "El profesional técnico diligencia en la base de datos RURH la información de campo, anexando el Formulario Registro de Usuarios del Recurso Hídrico (RURH) como soporte y herramienta de consulta y validación cuando haya lugar a ello por parte de los interesados. Además, debe cargar el informe técnico revisado y aprobado con el fin de permitir la trazabilidad del registro.",
-          "responsables": ["Profesional técnico"],
-          "documentos": ["Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)", "Anexo 7. M-DA-FO72 Modelo Informe Técnico RURH", "Base de datos RURH (dentro del SIC, duplicar base de datos CA)", "SINCA HV - # SINCA"],
+          "responsables": [
+            "Profesional técnico"
+          ],
+          "documentos": [
+            "Anexo 3. M-DA-FO71 Formulario Registro de Usuarios del Recurso Hídrico (RURH)",
+            "Anexo 7. M-DA-FO72 Modelo Informe Técnico RURH",
+            "Base de datos RURH (dentro del SIC, duplicar base de datos CA)",
+            "SINCA HV - # SINCA"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -105,8 +172,13 @@
           "numero": 8,
           "titulo": "ENVIAR EL OFICIO DE APROBACIÓN / NEGACIÓN AL USUARIO",
           "descripcion": "Se notifica al usuario por medio del Oficio Registro de Usuarios del Recurso Hídrico – RURH. La Oficina de Gestión Documental envía el oficio al usuario para comunicarle la aprobación o negación del registro. Si el usuario autorizó la notificación por correo electrónico, se realiza por este medio.",
-          "responsables": ["Oficina de Gestión Documental", "Subdirección de Evaluación y Control Ambiental SEYCA"],
-          "documentos": ["Anexo 5. Modelo Oficio Registro de Usuarios del Recurso Hídrico – RURH"],
+          "responsables": [
+            "Oficina de Gestión Documental",
+            "Subdirección de Evaluación y Control Ambiental SEYCA"
+          ],
+          "documentos": [
+            "Anexo 5. Modelo Oficio Registro de Usuarios del Recurso Hídrico – RURH"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -116,8 +188,13 @@
           "numero": 9,
           "titulo": "REPORTAR LOS USUARIOS DEL RURH EN EL APLICATIVO WEB SISTEMA DE INFORMACIÓN DEL RECURSO HÍDRICO (SIRH) DEL IDEAM",
           "descripcion": "Se realiza el cargue de la información registrada en la base de datos RURH de la CDMB en el aplicativo web Sistema de Información del Recurso Hídrico (SIRH) del IDEAM.",
-          "responsables": ["Profesional técnico"],
-          "documentos": ["Base de datos RURH", "Base de datos IDEAM"],
+          "responsables": [
+            "Profesional técnico"
+          ],
+          "documentos": [
+            "Base de datos RURH",
+            "Base de datos IDEAM"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -127,8 +204,12 @@
           "numero": 10,
           "titulo": "REALIZAR SEGUIMIENTO DEL RURH",
           "descripcion": "La información de los usuarios registrados se envía a la Coordinación de Seguimiento para la Sostenibilidad para su seguimiento. En la fase de seguimiento se puede presentar que, al realizar el seguimiento al registro, se evidencie que ya no aplica para usuario registrado sino para trámite de concesión de aguas o vertimientos; en ese caso, se procede a anular el registro y se requiere al usuario para que inicie el trámite de concesión de aguas o de vertimientos, según corresponda.",
-          "responsables": ["Profesional encargado Coordinación de Seguimiento para la Sostenibilidad"],
-          "documentos": ["Informes de seguimiento y control"],
+          "responsables": [
+            "Profesional encargado Coordinación de Seguimiento para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Informes de seguimiento y control"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession, hashPassword } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -28,8 +29,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(url, { status: 303 });
   }
 
-  await db.usuario.create({
+  const nuevo = await db.usuario.create({
     data: { email, nombre, rol, cargoId, passwordHash: await hashPassword(password) },
+  });
+
+  await registrarAuditoria({
+    tipo: "USUARIO_CREADO",
+    descripcion: `${session.nombre} creó el usuario "${nuevo.nombre}" (${nuevo.email}), rol ${rol}.`,
+    usuarioId: session.userId,
   });
 
   url.searchParams.set("ok", "Usuario creado.");

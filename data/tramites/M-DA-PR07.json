@@ -8,6 +8,7 @@
   "slug": "permiso-emisiones-atmosfericas-fuentes-fijas",
   "archivoFuente": "M-DA-PR07 version 8.pdf",
   "objeto": "Describir y estandarizar los pasos a seguir para tramitar o renovar el permiso de emisiones atmosféricas de acuerdo con lo estipulado en el Decreto 948 de 1995, ya sea por solicitud del usuario o requerimiento de la CDMB.",
+  "resumen": "Este trámite otorga o renueva el permiso para que una fuente fija (industria, planta) emita al aire dentro de los límites que permite la norma.",
   "alcance": "A todas las industrias ubicadas dentro del área de jurisdicción de la CDMB, de acuerdo con lo establecido en la Resolución 619 de 1997, el Decreto 948 de 1995 y el Protocolo para la Vigilancia y Control de las Emisiones Atmosféricas Generadas por las Fuentes Fijas. El propósito del trámite es otorgar una autorización para realizar emisiones al aire dentro de los límites permisibles establecidos en las normas ambientales.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador del grupo de Evaluación Ambiental para la Sostenibilidad tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios adscritos al área de evaluación de SEYCA serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [],
@@ -21,8 +22,15 @@
           "numero": 1,
           "titulo": "RADICAR SOLICITUD Y REGISTRAR EN EL SIC Y SINCA",
           "descripcion": "El usuario presenta en la ventanilla de trámites la solicitud acompañada de la documentación completa, para su verificación con base en la lista de chequeo de requisitos (Formato Control de Procesos, código E-GE-FO02), y se radica en la Oficina de Correspondencia el oficio de solicitud del Permiso de Emisiones (o de manera virtual a través del correo info@cdmb.gov.co). El servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del SIC, y el responsable de la ventanilla de trámite revisa que la documentación esté completa según la lista de chequeo. Si está incompleta, no se inicia el trámite y se devuelven los documentos al usuario. Si está completa, se genera y envía al usuario la liquidación para el pago de los servicios de evaluación; realizado el pago, se asigna número de solicitud SINCA y número de expediente en la carpeta donde se archivará físicamente la documentación. La lista de chequeo de requisitos corresponde al documento E-GE-FO02, relacionado en este procedimiento como Anexo.",
-          "responsables": ["Funcionario responsable de Ventanilla trámites ambientales", "Funcionario responsable de correspondencia"],
-          "documentos": ["Solicitud del usuario radicada", "Documentos anexos", "Lista de Chequeo (E-GE-FO02)"],
+          "responsables": [
+            "Funcionario responsable de Ventanilla trámites ambientales",
+            "Funcionario responsable de correspondencia"
+          ],
+          "documentos": [
+            "Solicitud del usuario radicada",
+            "Documentos anexos",
+            "Lista de Chequeo (E-GE-FO02)"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -32,8 +40,14 @@
           "numero": 2,
           "titulo": "REMITIR LA SOLICITUD Y ASIGNACIÓN DE RESPONSABLE",
           "descripcion": "El servidor responsable de la ventanilla de correspondencia remite la solicitud a la Coordinación de Evaluación para la Sostenibilidad de SEYCA, para que esta asigne al servidor técnico adscrito a la coordinación, quien queda encargado de la revisión técnica documental y de sustanciar la respectiva actuación.",
-          "responsables": ["Servidor responsable de la ventanilla de correspondencia", "Coordinador de Evaluación para la Sostenibilidad"],
-          "documentos": ["Solicitud y soportes", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor responsable de la ventanilla de correspondencia",
+            "Coordinador de Evaluación para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Solicitud y soportes",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Un (1) día",
           "tiempoDias": 1,
           "esDecision": false,
@@ -43,8 +57,13 @@
           "numero": 3,
           "titulo": "REALIZAR REVISIÓN JURÍDICA DOCUMENTAL",
           "descripcion": "El servidor en derecho responsable, asignado por reparto para este permiso, procede a la revisión jurídica documental del expediente y a la verificación del pago de los servicios; cuenta con cinco (5) días hábiles para dicha revisión de la documentación. Posteriormente se emitirá el auto de inicio de trámite. Nota: el texto del procedimiento indica además que la revisión jurídica documental se deberá realizar en un término de dos (2) días hábiles, plazo que no coincide con los cinco (5) días mencionados antes en la misma actividad (inconsistencia presente en el documento fuente).",
-          "responsables": ["Profesional en derecho"],
-          "documentos": ["Documentos Trámite", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Profesional en derecho"
+          ],
+          "documentos": [
+            "Documentos Trámite",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Dos (2) días hábiles",
           "tiempoDias": 2,
           "esDecision": false,
@@ -54,8 +73,12 @@
           "numero": 4,
           "titulo": "REALIZAR REVISIÓN TÉCNICA DOCUMENTAL",
           "descripcion": "El servidor técnico competente recibe el expediente del trámite y procede a realizar tanto la revisión técnica de la documentación como la verificación del pago de la liquidación correspondiente por parte del usuario. Una vez hecha la revisión técnica documental y recibido el pago de los servicios, se envía el expediente a un profesional en derecho para la revisión jurídica documental.",
-          "responsables": ["Servidor técnico responsable del trámite"],
-          "documentos": ["Documentos del trámite"],
+          "responsables": [
+            "Servidor técnico responsable del trámite"
+          ],
+          "documentos": [
+            "Documentos del trámite"
+          ],
           "tiempo": "Cinco (5) días hábiles",
           "tiempoDias": 5,
           "esDecision": false,
@@ -65,8 +88,19 @@
           "numero": 5,
           "titulo": "EXPEDIR AUTO DE INICIO DE TRÁMITE",
           "descripcion": "El profesional en derecho expide el auto de inicio de trámite, revisado por el responsable de la coordinación de evaluación para la sostenibilidad y firmado por el Subdirector de SEYCA. Una vez emitido, visado, firmado y numerado, el profesional en derecho lo remite a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena su publicación en el GDI conforme a la Ley 99/93. En caso de que la solicitud no reúna los requisitos exigidos, en el mismo auto de iniciación de trámite se indicarán al interesado las correcciones o adiciones necesarias, para que las subsane en el término de diez (10) días hábiles; si el usuario no allega la información, se determina el archivo definitivo de la solicitud por desistimiento tácito.",
-          "responsables": ["Profesional en derecho", "Servidor responsable del área de Evaluación Ambiental", "Subdirector(a) de Evaluación y Control Ambiental", "Servidor responsable de notificar", "Servidor responsable de la publicación del área de Gestión documental"],
-          "documentos": ["Auto de Inicio de Trámite", "SINCA con soportes y trazabilidad", "Constancia de Notificación personal o edicto", "Registro del documento en la Web"],
+          "responsables": [
+            "Profesional en derecho",
+            "Servidor responsable del área de Evaluación Ambiental",
+            "Subdirector(a) de Evaluación y Control Ambiental",
+            "Servidor responsable de notificar",
+            "Servidor responsable de la publicación del área de Gestión documental"
+          ],
+          "documentos": [
+            "Auto de Inicio de Trámite",
+            "SINCA con soportes y trazabilidad",
+            "Constancia de Notificación personal o edicto",
+            "Registro del documento en la Web"
+          ],
           "tiempo": "Tres (3) días",
           "tiempoDias": 3,
           "esDecision": false,
@@ -76,8 +110,13 @@
           "numero": 6,
           "titulo": "REALIZAR VISITA TÉCNICA",
           "descripcion": "El servidor responsable del trámite realiza la visita dentro de los quince (15) días hábiles siguientes, según lo indicado en el auto de iniciación de trámite, o una vez allegada la información solicitada; en el auto se precisa la fecha, hora y lugar en que habrá de realizarse. Los datos de la visita se recogen mediante Hoja de Visita Institucional. Se debe subir al sistema cada uno de los soportes que se generan en este procedimiento.",
-          "responsables": ["Servidor técnico responsable del trámite"],
-          "documentos": ["Hoja de Visita Institucional", "SINCA y Soportes de trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite"
+          ],
+          "documentos": [
+            "Hoja de Visita Institucional",
+            "SINCA y Soportes de trazabilidad"
+          ],
           "tiempo": "Quince (15) días",
           "tiempoDias": 15,
           "esDecision": false,
@@ -87,8 +126,17 @@
           "numero": 7,
           "titulo": "SOLICITAR INFORMACIÓN ADICIONAL A OTRAS ENTIDADES O AUTORIDADES",
           "descripcion": "Si el servidor técnico responsable del trámite considera necesario requerir información o conceptos adicionales a otras entidades o autoridades, lo hace mediante comunicación, dentro de los cinco (5) días hábiles siguientes a la ejecutoria del auto de iniciación de trámite o a la fecha en que el peticionario allegó la información adicional requerida, otorgando quince (15) días siguientes a la fecha de la comunicación para que remitan los conceptos técnicos o informaciones necesarios para la concesión del permiso. Nota 1: se debe suspender el tiempo en el SINCA mientras las otras entidades allegan la información solicitada. Si no se requiere información adicional de otras entidades, se continúa con la actividad 8.",
-          "responsables": ["Servidor técnico responsable del trámite", "Servidor responsable del área de Evaluación Ambiental", "Subdirector(a) de Evaluación y Control Ambiental", "Secretaria de SEYCA", "Servidor de Correspondencia"],
-          "documentos": ["Comunicación enviada a otras entidades o autoridades", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Servidor responsable del área de Evaluación Ambiental",
+            "Subdirector(a) de Evaluación y Control Ambiental",
+            "Secretaria de SEYCA",
+            "Servidor de Correspondencia"
+          ],
+          "documentos": [
+            "Comunicación enviada a otras entidades o autoridades",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Cinco (5) días hábiles",
           "tiempoDias": 5,
           "esDecision": false,
@@ -98,8 +146,14 @@
           "numero": 8,
           "titulo": "ELABORAR CONCEPTO TÉCNICO",
           "descripcion": "Una vez recibida la información adicional por parte de las otras entidades, si se llegó a requerir, o vencido el término anterior, el servidor técnico elabora el concepto, teniendo en cuenta los aportes y/o información adicional de las otras entidades si se allegaron. Finalizado el concepto técnico, el servidor técnico entrega el expediente físico y en el SINCA al responsable de la coordinación de evaluación, para que se ordene la proyección de la resolución por la cual se otorga o se niega el permiso.",
-          "responsables": ["Servidor técnico responsable del trámite", "Servidor responsable del área de Evaluación Ambiental"],
-          "documentos": ["Concepto técnico", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Servidor técnico responsable del trámite",
+            "Servidor responsable del área de Evaluación Ambiental"
+          ],
+          "documentos": [
+            "Concepto técnico",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Treinta (30) días",
           "tiempoDias": 30,
           "esDecision": false,
@@ -109,14 +163,32 @@
           "numero": 9,
           "titulo": "PROYECTAR RESOLUCIÓN QUE OTORGA O NIEGA EL PERMISO DE EMISIONES ATMOSFÉRICAS",
           "descripcion": "De acuerdo con lo determinado o dictaminado en el concepto técnico, el profesional en derecho asignado proyecta la resolución con la cual se otorga o niega el Permiso de Emisiones Atmosféricas. Una vez firmada y numerada la resolución, se remite a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena su publicación en el GDI conforme a la Ley 99/93. Nota 2: recordar que la resolución que otorga o niega el permiso debe ser motivada.",
-          "responsables": ["Subdirector de Evaluación y Control Ambiental", "Dirección General", "Servidor responsable de notificar", "Servidor responsable de la publicación del área de Gestión documental"],
-          "documentos": ["Resolución que otorga o niega el permiso de emisiones atmosféricas", "Constancia de Notificación personal o edicto", "Página Web", "SINCA con soportes y trazabilidad"],
+          "responsables": [
+            "Subdirector de Evaluación y Control Ambiental",
+            "Dirección General",
+            "Servidor responsable de notificar",
+            "Servidor responsable de la publicación del área de Gestión documental"
+          ],
+          "documentos": [
+            "Resolución que otorga o niega el permiso de emisiones atmosféricas",
+            "Constancia de Notificación personal o edicto",
+            "Página Web",
+            "SINCA con soportes y trazabilidad"
+          ],
           "tiempo": "Treinta (30) días",
           "tiempoDias": 30,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga el permiso", "siguientePaso": null, "resultado": "APROBADO" },
-            { "respuesta": "Niega el permiso", "siguientePaso": null, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga el permiso",
+              "siguientePaso": null,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el permiso",
+              "siguientePaso": null,
+              "resultado": "NEGADO"
+            }
           ]
         }
       ]

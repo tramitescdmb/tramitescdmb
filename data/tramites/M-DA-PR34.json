@@ -8,25 +8,106 @@
   "slug": "permiso-recoleccion-especimenes-silvestres-investigacion-cientifica",
   "archivoFuente": "M-DA-PR34 version     4.pdf",
   "objeto": "Establecer y precisar claramente los pasos para la solicitud del permiso de recolección de especímenes silvestres de la diversidad biológica con fines de investigación científica no comercial.",
+  "resumen": "Este trámite autoriza la recolección de especímenes silvestres de la biodiversidad con fines de investigación científica no comercial.",
   "alcance": "Aplica para toda persona natural o jurídica que pretenda adelantar uno o más proyectos de investigación científica en diversidad biológica en áreas localizadas en jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB, que involucre alguna o todas las actividades de colecta, recolección, captura, caza, pesca, manipulación y movilización del recurso biológico.",
   "autoridadResponsabilidad": "El Subdirector(a) de Evaluación y Control Ambiental y el Profesional Especializado responsable del grupo de Evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos adscritos a SEYCA, tanto en el grupo de Evaluación Ambiental como en el grupo de Trámites Ambientales, son responsables de cumplir y actualizar el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Formato de solicitud de Permiso Individual de Recolección debidamente diligenciado", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 2, "nombre": "Documento con la descripción detallada de las metodologías establecidas (diseño del muestreo, esfuerzo de muestreo, técnicas a emplear) para el levantamiento de información primaria, por cada grupo biológico objeto de estudio y recolección", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 3, "nombre": "Documento con la descripción del perfil de los profesionales que intervendrán en la recolección de especímenes", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 4, "nombre": "Información sobre si la recolección involucra especies amenazadas, en veda o endémicas", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 5, "nombre": "Copia de la comunicación del Ministerio del Interior sobre la presencia o no de grupos étnicos en el territorio donde se realizará la recolección", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 6, "nombre": "Copia del documento de identificación del solicitante (si es persona jurídica: certificado de existencia y representación legal; si actúa por apoderado: poder debidamente conferido conforme a la Ley 1564 de 2012)", "obligatorio": true, "notas": "Permiso individual de recolección" },
-    { "orden": 7, "nombre": "Formato de Solicitud de Permiso Marco de Recolección debidamente diligenciado", "obligatorio": true, "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)" },
-    { "orden": 8, "nombre": "Certificado de existencia y representación legal o equivalente de la entidad peticionaria, con fecha de expedición no superior a 30 días previos a la presentación", "obligatorio": true, "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)" },
-    { "orden": 9, "nombre": "Indicación de los programas de investigación", "obligatorio": true, "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)" },
-    { "orden": 10, "nombre": "Relación de los investigadores vinculados a cada programa dentro de la institución", "obligatorio": true, "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)" },
-    { "orden": 11, "nombre": "Breve descripción de los programas a realizar, de acuerdo con lo requerido en el Formato de Solicitud de Permiso Marco de Recolección", "obligatorio": true, "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)" },
-    { "orden": 12, "nombre": "Formato de solicitud de permiso de estudio con fines de elaboración de Estudios Ambientales debidamente diligenciado, indicando departamento(s) y/o municipio(s) donde se realizará la recolecta (Art. 4 Decreto 3016 de 2016; Decreto 1076 de 2015, Art. 2.2.2.9.2.4)", "obligatorio": true, "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales" },
-    { "orden": 13, "nombre": "Documento con la descripción detallada de las metodologías establecidas (diseño del muestreo, esfuerzo de muestreo, técnicas a emplear) para el levantamiento de información primaria, por cada grupo biológico objeto de estudio y recolección", "obligatorio": true, "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales" },
-    { "orden": 14, "nombre": "Documento con la descripción del perfil de los profesionales que intervendrán en la recolección de especímenes", "obligatorio": true, "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales" },
-    { "orden": 15, "nombre": "Copia del documento de identificación del solicitante (si es persona jurídica: certificado de existencia y representación legal; si actúa por apoderado: poder debidamente conferido conforme a la Ley 1564 de 2012)", "obligatorio": true, "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales" },
-    { "orden": 16, "nombre": "Copia del recibo de consignación del valor de los servicios fijados para la evaluación de la solicitud", "obligatorio": true, "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales" }
+    {
+      "orden": 1,
+      "nombre": "Formato de solicitud de Permiso Individual de Recolección debidamente diligenciado",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 2,
+      "nombre": "Documento con la descripción detallada de las metodologías establecidas (diseño del muestreo, esfuerzo de muestreo, técnicas a emplear) para el levantamiento de información primaria, por cada grupo biológico objeto de estudio y recolección",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 3,
+      "nombre": "Documento con la descripción del perfil de los profesionales que intervendrán en la recolección de especímenes",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 4,
+      "nombre": "Información sobre si la recolección involucra especies amenazadas, en veda o endémicas",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 5,
+      "nombre": "Copia de la comunicación del Ministerio del Interior sobre la presencia o no de grupos étnicos en el territorio donde se realizará la recolección",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 6,
+      "nombre": "Copia del documento de identificación del solicitante (si es persona jurídica: certificado de existencia y representación legal; si actúa por apoderado: poder debidamente conferido conforme a la Ley 1564 de 2012)",
+      "obligatorio": true,
+      "notas": "Permiso individual de recolección"
+    },
+    {
+      "orden": 7,
+      "nombre": "Formato de Solicitud de Permiso Marco de Recolección debidamente diligenciado",
+      "obligatorio": true,
+      "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)"
+    },
+    {
+      "orden": 8,
+      "nombre": "Certificado de existencia y representación legal o equivalente de la entidad peticionaria, con fecha de expedición no superior a 30 días previos a la presentación",
+      "obligatorio": true,
+      "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)"
+    },
+    {
+      "orden": 9,
+      "nombre": "Indicación de los programas de investigación",
+      "obligatorio": true,
+      "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)"
+    },
+    {
+      "orden": 10,
+      "nombre": "Relación de los investigadores vinculados a cada programa dentro de la institución",
+      "obligatorio": true,
+      "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)"
+    },
+    {
+      "orden": 11,
+      "nombre": "Breve descripción de los programas a realizar, de acuerdo con lo requerido en el Formato de Solicitud de Permiso Marco de Recolección",
+      "obligatorio": true,
+      "notas": "Permiso marco de recolección (Instituciones Nacionales de Investigación)"
+    },
+    {
+      "orden": 12,
+      "nombre": "Formato de solicitud de permiso de estudio con fines de elaboración de Estudios Ambientales debidamente diligenciado, indicando departamento(s) y/o municipio(s) donde se realizará la recolecta (Art. 4 Decreto 3016 de 2016; Decreto 1076 de 2015, Art. 2.2.2.9.2.4)",
+      "obligatorio": true,
+      "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales"
+    },
+    {
+      "orden": 13,
+      "nombre": "Documento con la descripción detallada de las metodologías establecidas (diseño del muestreo, esfuerzo de muestreo, técnicas a emplear) para el levantamiento de información primaria, por cada grupo biológico objeto de estudio y recolección",
+      "obligatorio": true,
+      "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales"
+    },
+    {
+      "orden": 14,
+      "nombre": "Documento con la descripción del perfil de los profesionales que intervendrán en la recolección de especímenes",
+      "obligatorio": true,
+      "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales"
+    },
+    {
+      "orden": 15,
+      "nombre": "Copia del documento de identificación del solicitante (si es persona jurídica: certificado de existencia y representación legal; si actúa por apoderado: poder debidamente conferido conforme a la Ley 1564 de 2012)",
+      "obligatorio": true,
+      "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales"
+    },
+    {
+      "orden": 16,
+      "nombre": "Copia del recibo de consignación del valor de los servicios fijados para la evaluación de la solicitud",
+      "obligatorio": true,
+      "notas": "Permiso de estudio para la recolección con fines de elaboración de estudios ambientales"
+    }
   ],
   "flujos": [
     {
@@ -38,8 +119,18 @@
           "numero": 1,
           "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
           "descripcion": "El usuario radica en la ventanilla de radicación (o cualquier canal de atención) el Formulario de solicitud de permiso de recolección de especies silvestres de la diversidad biológica con fines de investigación científica no comercial, que puede ser de tres tipos: permiso individual de recolección, permiso marco de recolección, o permiso de estudio para la recolección de especímenes con fines de elaboración de estudios ambientales. Se verifica que los documentos radicados correspondan al tipo de trámite solicitado. Nota: como estímulo a la investigación científica, las Corporaciones Ambientales no realizan ningún cobro por los servicios de evaluación y seguimiento de los permisos individuales y marco. El funcionario de ventanilla revisa el orden e identidad de los documentos conforme a la lista de chequeo aprobada (Formato Control de Procesos E-GE-FO02), verificando que la metodología de muestreo sea adecuada para el grupo taxonómico y que las hojas de vida cuenten con sus soportes. Si los requisitos no están completos, se devuelve inmediatamente la documentación. Si están completos, se asigna número de solicitud en el SINCA, número de expediente y el profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si se requiere información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos la solicitan mediante oficio, otorgando un plazo máximo de un (1) mes; vencido este plazo sin respuesta, se decreta el desistimiento tácito y archivo del expediente (Art. 17, Ley 1437 de 2011), mediante acto administrativo notificado personalmente, contra el cual únicamente procede recurso de reposición. La CDMB cuenta con diez (10) días para solicitar información adicional, por una única vez. Mientras se aporta la información solicitada se suspenden los términos del trámite (Arts. 14 y 15 del CPACA).",
-          "responsables": ["Personal asistencial de Radicación de Correspondencia y/o responsables de los diferentes canales de atención", "Profesional Técnico de la Subdirección de Evaluación y Control Ambiental", "Coordinación de Evaluación para la Sostenibilidad", "Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
-          "documentos": ["Solicitud del usuario", "Expediente creado en el SINCA", "Registrar documentos en el SINCA", "Oficio solicitando información adicional"],
+          "responsables": [
+            "Personal asistencial de Radicación de Correspondencia y/o responsables de los diferentes canales de atención",
+            "Profesional Técnico de la Subdirección de Evaluación y Control Ambiental",
+            "Coordinación de Evaluación para la Sostenibilidad",
+            "Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"
+          ],
+          "documentos": [
+            "Solicitud del usuario",
+            "Expediente creado en el SINCA",
+            "Registrar documentos en el SINCA",
+            "Oficio solicitando información adicional"
+          ],
           "tiempo": "Hasta 1 mes si se solicita información adicional (la Corporación cuenta con 10 días para solicitarla, por única vez)",
           "tiempoDias": null,
           "esDecision": false,
@@ -49,8 +140,16 @@
           "numero": 2,
           "titulo": "EXPEDIR Y NOTIFICAR EL AUTO DE INICIO DE TRÁMITE",
           "descripcion": "El profesional jurídico asignado del Grupo de Trámites Ambientales de la Subdirección de Evaluación y Control Ambiental elabora el Auto de Inicio, el cual es firmado junto con la citación por el Secretario General. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA. El Secretario General, una vez firmado, remite el expediente a la oficina de notificaciones para notificar el Auto de inicio del trámite administrativo en los términos de la Ley 1437 de 2011, de forma que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo. Surtida la notificación y cargada la información en el SINCA, el servidor responsable actualiza la etapa.",
-          "responsables": ["Profesional Jurídico adscrito al Grupo de Trámites Ambientales", "Profesional o técnico de SEYCA", "Funcionario de la oficina de notificaciones"],
-          "documentos": ["Auto de Inicio de trámite administrativo ambiental", "Aplicativo SINCA", "Auto de inicio del trámite"],
+          "responsables": [
+            "Profesional Jurídico adscrito al Grupo de Trámites Ambientales",
+            "Profesional o técnico de SEYCA",
+            "Funcionario de la oficina de notificaciones"
+          ],
+          "documentos": [
+            "Auto de Inicio de trámite administrativo ambiental",
+            "Aplicativo SINCA",
+            "Auto de inicio del trámite"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -60,8 +159,12 @@
           "numero": 4,
           "titulo": "ELABORAR CONCEPTO TÉCNICO",
           "descripcion": "Después de expedido el auto de inicio y de ser notificado el usuario, el personal encargado de la solicitud elabora el Concepto Técnico especificando la viabilidad o no de otorgar el permiso de recolección, con las respectivas obligaciones del solicitante según la normatividad vigente. Nota: si el permiso con fines de elaboración de estudios ambientales requiere sacrificar individuos, debe quedar establecido en las obligaciones el pago de la tasa compensatoria por caza de fauna silvestre. El Concepto Técnico se carga al SINCA por parte del técnico asignado, una vez esté totalmente firmado y aprobado. Nota: la CDMB cuenta con veinte (20) días hábiles, contados a partir de la expedición del auto o de la entrega de la información adicional, para otorgar o negar el permiso mediante resolución, contra la cual proceden los recursos de ley.",
-          "responsables": ["Personal encargado de la solicitud (profesional o técnico asignado de SEYCA)"],
-          "documentos": ["Concepto Técnico"],
+          "responsables": [
+            "Personal encargado de la solicitud (profesional o técnico asignado de SEYCA)"
+          ],
+          "documentos": [
+            "Concepto Técnico"
+          ],
           "tiempo": "20 días hábiles",
           "tiempoDias": 20,
           "esDecision": false,
@@ -71,22 +174,49 @@
           "numero": 5,
           "titulo": "EXPEDIR RESOLUCIÓN QUE OTORGA O NIEGA EL PERMISO DE RECOLECCIÓN",
           "descripcion": "El profesional jurídico designado del Grupo de Abogados adscrito a SEYCA proyecta la Resolución. Conforme al artículo 2.2.2.8.5.3 del Decreto Único 1076 de 2015, los Permisos Marco de Recolección podrán otorgarse hasta por diez (10) años y los Permisos Individuales de Recolección hasta por cinco (5) años, términos contados a partir de la expedición del permiso. Con la revisión y visto bueno del Coordinador de Evaluación para la Sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para la respectiva firma y aprobación del Acto Administrativo, previa revisión, análisis y estudio del Asesor de Dirección General. Una vez aprobada y firmada la Resolución que otorga o niega el permiso, el expediente se envía a la Secretaría General para su numeración y notificación de la providencia; la Secretaría General gestiona la publicación del acto administrativo en el GDI de la entidad, debidamente escaneado en formato PDF, dando cumplimiento al artículo 71 de la Ley 99 de 1993, y remite el expediente a la Oficina de Notificaciones. La proyección de la Resolución, revisión y firma del acto administrativo por el Director General se realiza en un término de sesenta (60) días; la aprobación de la Resolución se realiza en un término de cinco (5) días.",
-          "responsables": ["Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental", "Coordinador de Evaluación para la Sostenibilidad", "Subdirector de SEYCA", "Asesor de la Dirección General", "Director General"],
-          "documentos": ["Resolución cargada a los sistemas de información de la entidad"],
+          "responsables": [
+            "Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental",
+            "Coordinador de Evaluación para la Sostenibilidad",
+            "Subdirector de SEYCA",
+            "Asesor de la Dirección General",
+            "Director General"
+          ],
+          "documentos": [
+            "Resolución cargada a los sistemas de información de la entidad"
+          ],
           "tiempo": "60 días (proyección, revisión y firma) + 5 días (aprobación)",
           "tiempoDias": 60,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga el permiso de recolección", "siguientePaso": 6, "resultado": "APROBADO" },
-            { "respuesta": "Niega el permiso de recolección", "siguientePaso": 6, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga el permiso de recolección",
+              "siguientePaso": 6,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el permiso de recolección",
+              "siguientePaso": 6,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 6,
           "titulo": "NOTIFICAR AL USUARIO Y HACER SEGUIMIENTO",
           "descripcion": "La Oficina de Notificaciones cita al usuario para comunicarle la resolución de aprobación o negación del permiso. Se le informa que cuenta con diez (10) días hábiles para presentar los recursos de ley (Arts. 67 y 76, Ley 1437 de 2011). Si el usuario autorizó notificación por correo electrónico, se notifica por ese medio; si el interesado no comparece a la CDMB, se notifica por aviso fijado durante cinco (5) días hábiles (Art. 69, Ley 1437 de 2011). Si no se interponen recursos, se declara ejecutoriada la Resolución. Si se interpone recurso de reposición, el expediente se devuelve a la Coordinación de Evaluación para la Sostenibilidad para revisión técnica y resolución del recurso por parte del profesional jurídico adscrito a SEYCA, en un plazo de dos (2) meses; resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión y se procede con la notificación personal al usuario, declarándose ejecutoriada la Resolución. Una vez ejecutoriada, el servidor público adscrito al Grupo de Seguimiento realiza seguimiento al predio asociado al permiso para verificar el cumplimiento de las obligaciones de la resolución. En caso de incumplimiento, el profesional encargado de la visita informa detalladamente los hallazgos al Grupo de Trámites Ambientales para evaluar el inicio de un proceso sancionatorio. Si en las obligaciones de un permiso con fines de elaboración de estudios ambientales se establece tasa compensatoria por caza de fauna silvestre, esta se liquida y cobra conforme a los Decretos 1272 de 2016, 372 de 2016 y 0589 de 2017. Cumplido el período por el cual se otorgó el permiso y verificado el cumplimiento total de las obligaciones, se da cierre mediante acto administrativo y el expediente se traslada a archivo definitivo. Nota: en cualquier momento del proceso el usuario puede solicitar el desistimiento del trámite mediante carta del representante legal, la cual es verificada por el técnico, dando lugar a una resolución de desistimiento expreso.",
-          "responsables": ["Personal asistencial de la Oficina de Notificaciones", "Profesional de SEYCA", "Profesional Jurídico adscrito a SEYCA", "Servidor público adscrito al Grupo de Seguimiento", "Grupo de Trámites Ambientales"],
-          "documentos": ["Resolución de concesión de aguas", "Constancia de notificación (Personal y/o Edicto)", "Memorando interno", "Aplicativo SINCA"],
+          "responsables": [
+            "Personal asistencial de la Oficina de Notificaciones",
+            "Profesional de SEYCA",
+            "Profesional Jurídico adscrito a SEYCA",
+            "Servidor público adscrito al Grupo de Seguimiento",
+            "Grupo de Trámites Ambientales"
+          ],
+          "documentos": [
+            "Resolución de concesión de aguas",
+            "Constancia de notificación (Personal y/o Edicto)",
+            "Memorando interno",
+            "Aplicativo SINCA"
+          ],
           "tiempo": "10 días hábiles (recursos); 5 días hábiles (aviso si no comparece); 2 meses (resolver recurso de reposición)",
           "tiempoDias": null,
           "esDecision": false,

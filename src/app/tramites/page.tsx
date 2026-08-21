@@ -54,9 +54,13 @@ export default async function CatalogoTramitesPage() {
                 <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
                   {t.codigo} · v{t.version}
                 </span>
-                {tiempo && tiempo.total > 0 && (
+                {tiempo && (tiempo.total > 0 ? (
                   <span className="text-xs text-stone-400">🕒 ~{tiempo.total} días</span>
-                )}
+                ) : (
+                  <span className="text-xs text-stone-300" title="El procedimiento oficial no especifica tiempos por actividad">
+                    🕒 sin tiempo especificado
+                  </span>
+                ))}
               </div>
 
               <div className="mb-1 flex items-start gap-2">
@@ -69,7 +73,7 @@ export default async function CatalogoTramitesPage() {
                 </span>
                 <h2 className="mt-1 font-medium leading-snug text-stone-900">{t.nombre}</h2>
               </div>
-              <p className="mt-1 line-clamp-2 flex-1 text-sm text-stone-500">{t.objeto}</p>
+              <p className="mt-1 line-clamp-2 flex-1 text-sm text-stone-500">{t.resumen ?? t.objeto}</p>
 
               <p className="mt-3 text-xs text-stone-400">{t.proceso}</p>
 

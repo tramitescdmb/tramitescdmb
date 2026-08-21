@@ -8,14 +8,40 @@
   "slug": "permiso-poda-traslado-tala-corte-arboles",
   "archivoFuente": "M-DA-PR48 version  3.pdf",
   "objeto": "Atender las solicitudes de los usuarios para intervenir el recurso flora conforme a lo establecido por la normatividad vigente garantizando su sostenibilidad.",
+  "resumen": "Este trámite autoriza la poda, traslado, tala o corte de árboles conforme a la normatividad vigente.",
   "alcance": "A todas las personas naturales y jurídicas que dentro de la jurisdicción de la CDMB, en predios rurales como en sectores urbanos, requieran talar o podar árboles aislados que por razones de su ubicación, estado sanitario o daños mecánicos estén causando perjuicio a la estabilidad de los suelos, a canales de agua, andenes, calles, obras de infraestructura o edificaciones, que se encuentren caídos o muertos por causas naturales, o que por razones de orden sanitario debidamente comprobadas requieren ser talados.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Profesional Especializado responsable del Grupo de Evaluación Ambiental, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Servidores Públicos de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
   "documentosRequeridos": [
-    { "orden": 1, "nombre": "Carta de solicitud dirigida a la CDMB, radicada en la oficina de correspondencia", "obligatorio": true, "notas": null },
-    { "orden": 2, "nombre": "Fotocopia de la cédula de ciudadanía del interesado", "obligatorio": true, "notas": null },
-    { "orden": 3, "nombre": "Formato de Solicitud de Poda o Tala de Emergencia y/o Prioritaria (M-DA-FO67) diligenciado completamente", "obligatorio": true, "notas": null },
-    { "orden": 4, "nombre": "Certificado de Libertad y Tradición del inmueble (expedición no superior a 2 meses)", "obligatorio": true, "notas": "Predio de propiedad privada, cuando el solicitante es el propietario" },
-    { "orden": 5, "nombre": "Prueba adecuada que acredite la tenencia del predio y autorización del propietario", "obligatorio": false, "notas": "Predio de propiedad privada, cuando el solicitante actúa como tenedor (no propietario)" }
+    {
+      "orden": 1,
+      "nombre": "Carta de solicitud dirigida a la CDMB, radicada en la oficina de correspondencia",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Fotocopia de la cédula de ciudadanía del interesado",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Formato de Solicitud de Poda o Tala de Emergencia y/o Prioritaria (M-DA-FO67) diligenciado completamente",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 4,
+      "nombre": "Certificado de Libertad y Tradición del inmueble (expedición no superior a 2 meses)",
+      "obligatorio": true,
+      "notas": "Predio de propiedad privada, cuando el solicitante es el propietario"
+    },
+    {
+      "orden": 5,
+      "nombre": "Prueba adecuada que acredite la tenencia del predio y autorización del propietario",
+      "obligatorio": false,
+      "notas": "Predio de propiedad privada, cuando el solicitante actúa como tenedor (no propietario)"
+    }
   ],
   "flujos": [
     {
@@ -27,8 +53,12 @@
           "numero": 1,
           "titulo": "RADICAR SOLICITUD",
           "descripcion": "Se debe radicar en la oficina de correspondencia de la CDMB carta de solicitud junto con la fotocopia de la cédula del interesado y el diligenciamiento completo del \"Formato Solicitud de Poda o Tala de Emergencia o Prioritaria\". Para predios de propiedad privada, el solicitante debe acreditar: a) La propiedad del inmueble: Certificado de Libertad y tradición (expedición no superior a 2 meses); b) Si es tenedor: prueba adecuada que lo acredite como tal y autorización del propietario del predio.",
-          "responsables": ["Interesado o solicitante"],
-          "documentos": ["Solicitud y anexos"],
+          "responsables": [
+            "Interesado o solicitante"
+          ],
+          "documentos": [
+            "Solicitud y anexos"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -38,8 +68,13 @@
           "numero": 2,
           "titulo": "REMITIR SOLICITUD Y ANEXOS A LA SUBDIRECCIÓN RESPONSABLE",
           "descripcion": "La Oficina de Correspondencia remite la solicitud y los anexos a la Subdirección de Evaluación y Control Ambiental para que sean entregados al grupo de Evaluación Ambiental para la Sostenibilidad.",
-          "responsables": ["Servidor Público de correspondencia"],
-          "documentos": ["Solicitud y anexos", "Registro en el aplicativo de correspondencia"],
+          "responsables": [
+            "Servidor Público de correspondencia"
+          ],
+          "documentos": [
+            "Solicitud y anexos",
+            "Registro en el aplicativo de correspondencia"
+          ],
           "tiempo": "Un (1) día hábil",
           "tiempoDias": 1,
           "esDecision": false,
@@ -49,8 +84,14 @@
           "numero": 3,
           "titulo": "REGISTRAR SOLICITUD Y ASIGNAR FUNCIONARIO",
           "descripcion": "El personal del grupo de Evaluación Ambiental para la Sostenibilidad procede a revisar que la información requerida para llevar a cabo el trámite se encuentre completa y con el formato de solicitud diligenciado adecuadamente. Una vez surtido este proceso, se asigna el trámite al profesional o técnico de SEYCA para programación de visita técnica y evaluación. En caso que la información no sea aportada de manera adecuada, se devuelve inmediatamente la solicitud al usuario para su ajuste y/o complemento.",
-          "responsables": ["Secretaria SEYCA", "Secretaria del grupo de Evaluación Ambiental para la Sostenibilidad", "Servidor público asignado del grupo de Evaluación Ambiental para la Sostenibilidad"],
-          "documentos": ["Registro y asignación de responsable en el aplicativo de correspondencia"],
+          "responsables": [
+            "Secretaria SEYCA",
+            "Secretaria del grupo de Evaluación Ambiental para la Sostenibilidad",
+            "Servidor público asignado del grupo de Evaluación Ambiental para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Registro y asignación de responsable en el aplicativo de correspondencia"
+          ],
           "tiempo": "Dos (2) días hábiles",
           "tiempoDias": 2,
           "esDecision": false,
@@ -60,8 +101,13 @@
           "numero": 4,
           "titulo": "REALIZAR VISITA",
           "descripcion": "El profesional o técnico de SEYCA responsable del trámite procede a fijar la fecha de realización de la visita técnica con el usuario, mediante comunicación telefónica o escrita. Para árboles ubicados en predios de propiedad privada y en zona rural, es necesario que, por facilidad de acceso al área, la visita sea practicada en compañía del solicitante o interesado. Para árboles ubicados en espacio público, en caso de no ser posible la comunicación con el usuario o que este no pueda atender la visita, la solicitud debe ser igualmente atendida mediante la práctica de la diligencia y toma de la evidencia respectiva (registro fotográfico) para la evaluación. El servidor público asignado realiza la visita técnica, en lo posible de manera conjunta con el usuario, al lugar donde se ubica el árbol o árboles objeto de la solicitud, verificando el cumplimiento de los requisitos exigidos por la normatividad y realizando la evaluación técnica de las características y condiciones del árbol, para verificar la existencia de una situación que justifique la poda, el traslado, la tala o el corte.",
-          "responsables": ["Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"],
-          "documentos": ["Registro fotográfico", "Formato de \"Autorización de corte, poda y/o traslado de árboles\" (cuando aplique)"],
+          "responsables": [
+            "Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Registro fotográfico",
+            "Formato de \"Autorización de corte, poda y/o traslado de árboles\" (cuando aplique)"
+          ],
           "tiempo": "Siete (7) días hábiles",
           "tiempoDias": 7,
           "esDecision": false,
@@ -71,8 +117,13 @@
           "numero": 5,
           "titulo": "DILIGENCIAR FORMATO DE AUTORIZACIÓN DE CORTE, PODA Y/O TRASLADO DE ÁRBOLES",
           "descripcion": "Si durante la práctica de la visita el técnico o profesional evidencia que el árbol presenta riesgo inminente de caída (mal estado fitosanitario, pudrición del fuste, raíces expuestas e inclinaciones mayores al 30%, generando riesgo sobre la integridad física de personas, animales o infraestructura), requiriendo una acción inmediata, se procede a realizar la Autorización en campo mediante el diligenciamiento del Formato \"Autorización de corte, poda y/o traslado de árboles\", firmado por el usuario y el técnico (original para el solicitante y copia para el archivo de la CDMB), incluyendo las recomendaciones técnicas necesarias. Adicionalmente, mediante comunicación oficial se da respuesta a la solicitud radicada anexando el formato de autorización escaneado, la fecha de la visita y el registro fotográfico. Nota: esta autorización mediante formulario únicamente aplica para árboles con riesgo inminente de caída.",
-          "responsables": ["Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"],
-          "documentos": ["Formato de \"Autorización de corte, poda y/o traslado de árboles\" (cuando aplique)", "Registro en el aplicativo de correspondencia"],
+          "responsables": [
+            "Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Formato de \"Autorización de corte, poda y/o traslado de árboles\" (cuando aplique)",
+            "Registro en el aplicativo de correspondencia"
+          ],
           "tiempo": null,
           "tiempoDias": null,
           "esDecision": false,
@@ -82,22 +133,41 @@
           "numero": 6,
           "titulo": "ELABORAR OFICIO QUE OTORGA O NIEGA EL PERMISO",
           "descripcion": "Cuando la solicitud del peticionario consiste en una poda, tala, corte y/o traslado en predio público y/o privado, el servidor público asignado elabora el oficio dirigido al interesado en calidad de propietario o tenedor del predio, en el cual conceptúa si autoriza o niega la solicitud, según sea el caso, incluyendo las recomendaciones técnicas necesarias para garantizar una correcta ejecución de la actividad, en caso de ser autorizada. Si los árboles se encuentran ubicados en espacio público, el oficio va dirigido al solicitante, con copia a la entidad competente para la ejecución de la actividad autorizada (Municipio, electrificadora, alumbrado público, empresas de aseo, áreas de manejo especial - AME, cuando son predios de la CDMB, etc.).",
-          "responsables": ["Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"],
-          "documentos": ["Propuesta de oficio", "Comunicación al usuario"],
+          "responsables": [
+            "Servidor público del grupo de Evaluación Ambiental para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Propuesta de oficio",
+            "Comunicación al usuario"
+          ],
           "tiempo": "Dos (2) días hábiles",
           "tiempoDias": 2,
           "esDecision": true,
           "opciones": [
-            { "respuesta": "Otorga el permiso", "siguientePaso": 7, "resultado": "APROBADO" },
-            { "respuesta": "Niega el permiso", "siguientePaso": 7, "resultado": "NEGADO" }
+            {
+              "respuesta": "Otorga el permiso",
+              "siguientePaso": 7,
+              "resultado": "APROBADO"
+            },
+            {
+              "respuesta": "Niega el permiso",
+              "siguientePaso": 7,
+              "resultado": "NEGADO"
+            }
           ]
         },
         {
           "numero": 7,
           "titulo": "REVISAR Y FIRMAR OFICIO",
           "descripcion": "El Subdirector de Evaluación y Control Ambiental revisa y firma el oficio en cuestión, el cual debe haber sido previamente visado por el Profesional Especializado asignado del grupo de Evaluación Ambiental para la Sostenibilidad.",
-          "responsables": ["Subdirector SEYCA", "Profesional Especializado asignado del grupo de Evaluación Ambiental para la Sostenibilidad"],
-          "documentos": ["Comunicación al usuario", "Registro en el aplicativo de correspondencia"],
+          "responsables": [
+            "Subdirector SEYCA",
+            "Profesional Especializado asignado del grupo de Evaluación Ambiental para la Sostenibilidad"
+          ],
+          "documentos": [
+            "Comunicación al usuario",
+            "Registro en el aplicativo de correspondencia"
+          ],
           "tiempo": "Dos (2) días hábiles",
           "tiempoDias": 2,
           "esDecision": false,
@@ -107,8 +177,13 @@
           "numero": 8,
           "titulo": "RADICAR Y ENVIAR OFICIO AL USUARIO",
           "descripcion": "La secretaria del grupo de Evaluación Ambiental para la Sostenibilidad radica y envía el oficio al interesado a través de la Oficina de Correspondencia, el cual debe quedar debidamente registrado y anexado en el aplicativo de correspondencia. Nota: el procedimiento de autorización de poda, corte, tala o traslado arbóreo cuenta con un término de quince (15) días hábiles a partir de la radicación de la solicitud.",
-          "responsables": ["Secretaria del grupo de Evaluación Ambiental para la Sostenibilidad", "Servidor público de correspondencia"],
-          "documentos": ["Registro en el aplicativo de correspondencia"],
+          "responsables": [
+            "Secretaria del grupo de Evaluación Ambiental para la Sostenibilidad",
+            "Servidor público de correspondencia"
+          ],
+          "documentos": [
+            "Registro en el aplicativo de correspondencia"
+          ],
           "tiempo": "Un (1) día hábil",
           "tiempoDias": 1,
           "esDecision": false,

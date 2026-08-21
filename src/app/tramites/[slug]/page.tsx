@@ -56,19 +56,19 @@ export default async function TramiteDetallePage({
         <div className="space-y-5 lg:col-span-2">
           {/* Objeto / alcance / autoridad en una sola tarjeta compacta, con líneas de resumen */}
           <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 text-sm">
-            <p>
-              <span className="font-medium text-stone-700">Qué es: </span>
-              <span className="text-stone-600">{tramite.objeto}</span>
-            </p>
+            <p className="text-base text-stone-800">{tramite.resumen ?? tramite.objeto}</p>
             <p>
               <span className="font-medium text-stone-700">A quién aplica: </span>
               <span className="text-stone-600">{tramite.alcance}</span>
             </p>
             <details className="group">
               <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-                Ver autoridad y responsabilidad
+                Ver objetivo formal, autoridad y responsabilidad
               </summary>
-              <p className="mt-2 text-stone-600">{tramite.autoridadResponsabilidad}</p>
+              <div className="mt-2 space-y-2 text-stone-600">
+                <p>{tramite.objeto}</p>
+                <p>{tramite.autoridadResponsabilidad}</p>
+              </div>
             </details>
           </section>
 
@@ -156,14 +156,25 @@ export default async function TramiteDetallePage({
 
         <div className="space-y-4">
           <div className="rounded-xl border border-cdmb-200 bg-cdmb-50 p-4">
-            {tiempo && tiempo.total > 0 && (
+            {tiempo && (
               <p className="mb-3 border-b border-cdmb-200 pb-3 text-sm text-cdmb-900">
-                🕒 <strong>~{tiempo.total} días hábiles</strong> estimados
-                {!tiempo.completo && (
-                  <span className="block text-xs text-cdmb-700">
-                    (suma de {tiempo.pasosConTiempo} de {tiempo.pasosTotal} pasos que tienen tiempo definido en el
-                    procedimiento — puede tomar más)
-                  </span>
+                {tiempo.total > 0 ? (
+                  <>
+                    🕒 <strong>~{tiempo.total} días hábiles</strong> estimados
+                    {!tiempo.completo && (
+                      <span className="block text-xs text-cdmb-700">
+                        (suma de {tiempo.pasosConTiempo} de {tiempo.pasosTotal} pasos que tienen tiempo definido en
+                        el procedimiento — puede tomar más)
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    🕒 Tiempo sin especificar
+                    <span className="block text-xs text-cdmb-700">
+                      El procedimiento oficial no indica un tiempo por actividad para este trámite.
+                    </span>
+                  </>
                 )}
               </p>
             )}
