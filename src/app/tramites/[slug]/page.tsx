@@ -231,7 +231,7 @@ export default async function TramiteDetallePage({
                           </svg>
                         </summary>
                         <div className="border-t border-stone-100 px-3 pb-3 pt-2 pl-12 text-sm">
-                          <p className="whitespace-pre-line text-stone-600">{paso.descripcion}</p>
+                          <p className="whitespace-pre-line text-justify text-[13px] leading-relaxed text-stone-600">{paso.descripcion}</p>
                           <dl className="mt-2 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
                             {paso.responsables.length > 0 && (
                               <div>
