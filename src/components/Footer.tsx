@@ -30,7 +30,7 @@ export async function Footer() {
             <p className="text-sm font-medium text-stone-800">
               CDMB — Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga
             </p>
-            <p className="text-xs text-stone-500">Sistema interno de gestión de trámites ambientales</p>
+            <p className="text-xs text-stone-500">SINCA</p>
           </div>
         </div>
         <p className="text-xs text-stone-400">© {new Date().getFullYear()} CDMB. Todos los derechos reservados.</p>
