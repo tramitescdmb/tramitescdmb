@@ -80,6 +80,28 @@ export function cargoCanonico(textoResponsable: string): string {
   return textoResponsable.trim();
 }
 
+/**
+ * A diferencia de cargoCanonico() (un texto corto = un cargo), esto revisa
+ * un párrafo largo tipo `autoridadResponsabilidad` ("El Subdirector... y el
+ * Coordinador... tienen la autoridad... Los servidores adscritos... serán
+ * responsables...") y devuelve TODOS los cargos del catálogo que aparecen
+ * mencionados — para mostrar el/los cargo(s) puntual(es) en vez del párrafo
+ * legal completo. Si el párrafo no menciona ningún cargo reconocible,
+ * devuelve una lista vacía (no un texto de respaldo: aquí sí puede pasar,
+ * y no tiene sentido "inventar" un cargo).
+ */
+export function cargosEnTexto(texto: string): string[] {
+  const normalizado = normalizar(texto);
+  const encontrados: string[] = [];
+  for (const cargo of CARGOS_CDMB) {
+    if (cargo.palabrasClave.length === 0) continue;
+    if (cargo.palabrasClave.some((p) => normalizado.includes(normalizar(p)))) {
+      encontrados.push(cargo.nombre);
+    }
+  }
+  return encontrados;
+}
+
 /** Cargos canónicos únicos mencionados en cualquier paso de una lista de flujos. */
 export function cargosQueIntervienen(flujos: { pasos: { responsables: string[] }[] }[]): string[] {
   const vistos = new Set<string>();

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
 import { categoriaTramite } from "@/lib/tramite-categoria";
-import { cargoCanonico, cargosQueIntervienen } from "@/lib/cargos";
+import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 
 export default async function TramiteDetallePage({
   params,
@@ -29,6 +29,7 @@ export default async function TramiteDetallePage({
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
   const categoria = categoriaTramite(tramite.nombre);
   const cargos = cargosQueIntervienen(tramite.flujos);
+  const cargosResponsables = cargosEnTexto(tramite.autoridadResponsabilidad);
 
   return (
     <div className="space-y-6">
@@ -65,18 +66,27 @@ export default async function TramiteDetallePage({
                 <span className="font-medium text-stone-700">A quién aplica: </span>
                 <span className="text-stone-600">{tramite.alcance}</span>
               </p>
-              <p className="flex items-start gap-1.5 rounded-lg bg-stone-50 p-2.5">
-                <span aria-hidden>👤</span>
-                <span>
-                  <span className="font-medium text-stone-700">Responsable: </span>
-                  <span className="text-stone-600">{tramite.autoridadResponsabilidad}</span>
-                </span>
-              </p>
+              {cargosResponsables.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2.5">
+                  <span className="text-sm font-medium text-stone-700">👤 Responsable:</span>
+                  {cargosResponsables.map((c) => (
+                    <span
+                      key={c}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )}
               <details className="group">
                 <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-                  Ver objetivo formal del procedimiento
+                  Ver objetivo formal, autoridad y responsabilidad (texto original del procedimiento)
                 </summary>
-                <p className="mt-2 text-stone-600">{tramite.objeto}</p>
+                <div className="mt-2 space-y-2 text-stone-600">
+                  <p>{tramite.objeto}</p>
+                  <p>{tramite.autoridadResponsabilidad}</p>
+                </div>
               </details>
             </div>
           </section>
