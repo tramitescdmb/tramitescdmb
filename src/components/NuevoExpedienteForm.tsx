@@ -39,6 +39,8 @@ export function NuevoExpedienteForm({
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [municipio, setMunicipio] = useState("");
+  const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
+  const esJuridica = tipoSolicitante === "JURIDICA";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -159,16 +161,35 @@ export function NuevoExpedienteForm({
         )}
         {flujos.length === 1 && <input type="hidden" name="flujoId" value={flujos[0].id} />}
 
-        <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="¿A nombre de quién queda el expediente?">
+        <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="¿A nombre de quién queda el expediente? Elige primero esto — cambia lo que se pide más abajo (cédula o NIT).">
           <select
             name="solicitanteTipo"
             required
-            defaultValue="NATURAL"
+            value={tipoSolicitante}
+            onChange={(e) => setTipoSolicitante(e.target.value as "NATURAL" | "JURIDICA")}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="NATURAL">Persona natural</option>
             <option value="JURIDICA">Persona jurídica (empresa, entidad)</option>
           </select>
+        </Field>
+
+        <Field
+          label={esJuridica ? "NIT" : "Cédula de ciudadanía"}
+          required
+          icon={<IconIdCard className={iconSm} />}
+          help={
+            esJuridica
+              ? "Número de Identificación Tributaria (NIT) de la empresa o entidad, con dígito de verificación si lo tienes a la mano."
+              : "Número de cédula de ciudadanía (o cédula de extranjería) de la persona natural."
+          }
+        >
+          <input
+            name="solicitanteIdentificacion"
+            required
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
+          />
         </Field>
 
         <Field
@@ -182,20 +203,6 @@ export function NuevoExpedienteForm({
             required
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             placeholder="Ej: Juan Pérez Gómez / Industrias ABC S.A.S."
-          />
-        </Field>
-
-        <Field
-          label="Identificación"
-          required
-          icon={<IconIdCard className={iconSm} />}
-          help="Cédula de ciudadanía (persona natural) o NIT (persona jurídica)."
-        >
-          <input
-            name="solicitanteIdentificacion"
-            required
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            placeholder="Ej: 91234567 o 900123456-1"
           />
         </Field>
 

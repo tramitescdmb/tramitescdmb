@@ -76,12 +76,14 @@ export default async function ExpedienteDetallePage({
             <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
               <div>
-                <dt className="text-xs text-stone-400">Nombre / razón social</dt>
-                <dd className="text-stone-800">{expediente.solicitanteNombre}</dd>
+                <dt className="text-xs text-stone-400">
+                  {expediente.solicitanteTipo === "JURIDICA" ? "NIT" : "Cédula de ciudadanía"}
+                </dt>
+                <dd className="text-stone-800">{expediente.solicitanteIdentificacion}</dd>
               </div>
               <div>
-                <dt className="text-xs text-stone-400">Identificación</dt>
-                <dd className="text-stone-800">{expediente.solicitanteIdentificacion}</dd>
+                <dt className="text-xs text-stone-400">Nombre / razón social</dt>
+                <dd className="text-stone-800">{expediente.solicitanteNombre}</dd>
               </div>
               <div>
                 <dt className="text-xs text-stone-400">Correo</dt>
