@@ -6,26 +6,82 @@ import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN, type Categoria
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
+type Tramite = Awaited<ReturnType<typeof getCatalogoTramites>>[number];
+type Conteo = { activos: number; aprobados: number; negados: number };
+
+/** Una tarjeta del catálogo — normalmente un trámite completo, salvo el caso "PR21" (ver abajo). */
+type EntradaCatalogo = {
+  key: string;
+  tramite: Tramite;
+  nombre: string;
+  suits: string[];
+  flujoParaTiempo: Tramite["flujos"][number] | undefined;
+  conteo: Conteo | undefined;
+};
+
+/**
+ * Si el SUIT registra cada flujo de un trámite como una ficha separada (ej.
+ * M-DA-PR21: un solo procedimiento/PDF, pero "Concesión de Aguas
+ * Superficiales" y "Concesión de Aguas Subterráneas" son dos servicios
+ * distintos en el SUIT), el catálogo debe mostrar una tarjeta por flujo, no
+ * una tarjeta con dos insignias SUIT pegadas — así el usuario reconoce cada
+ * servicio del SUIT como su propia tarjeta, igual que en cdmb.gov.co.
+ * Si no aplica (caso normal: todo el trámite es un solo registro, o los
+ * flujos son etapas del mismo servicio como "inicio"/"renovación"), se
+ * muestra la tarjeta única de siempre.
+ */
+function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPorFlujo: Map<string, Conteo>): EntradaCatalogo[] {
+  const seSepaporFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
+  if (seSepaporFlujo) {
+    return t.flujos.map((f) => ({
+      key: f.id,
+      tramite: t,
+      nombre: f.nombre,
+      suits: f.suitNumero ? [f.suitNumero] : [],
+      flujoParaTiempo: f,
+      conteo: conteoPorFlujo.get(f.id),
+    }));
+  }
+  const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
+  return [
+    {
+      key: t.id,
+      tramite: t,
+      nombre: t.nombre,
+      suits: todosLosSuitNumeros(t),
+      flujoParaTiempo: flujoPrincipal,
+      conteo: conteoPorTramite.get(t.id),
+    },
+  ];
+}
+
 export default async function CatalogoTramitesPage() {
   const [tramites, porEstado] = await Promise.all([
     getCatalogoTramites(),
-    db.expediente.groupBy({ by: ["tramiteTipoId", "estado"], _count: { _all: true } }),
+    db.expediente.groupBy({ by: ["tramiteTipoId", "flujoId", "estado"], _count: { _all: true } }),
   ]);
 
-  const conteoPorTramite = new Map<string, { activos: number; aprobados: number; negados: number }>();
+  const conteoPorTramite = new Map<string, Conteo>();
+  const conteoPorFlujo = new Map<string, Conteo>();
   for (const row of porEstado) {
-    const actual = conteoPorTramite.get(row.tramiteTipoId) ?? { activos: 0, aprobados: 0, negados: 0 };
-    if (ESTADOS_ACTIVOS.includes(row.estado)) actual.activos += row._count._all;
-    else if (row.estado === "APROBADO") actual.aprobados += row._count._all;
-    else if (row.estado === "NEGADO" || row.estado === "RECHAZADO") actual.negados += row._count._all;
-    conteoPorTramite.set(row.tramiteTipoId, actual);
+    const sumar = (mapa: Map<string, Conteo>, clave: string) => {
+      const actual = mapa.get(clave) ?? { activos: 0, aprobados: 0, negados: 0 };
+      if (ESTADOS_ACTIVOS.includes(row.estado)) actual.activos += row._count._all;
+      else if (row.estado === "APROBADO") actual.aprobados += row._count._all;
+      else if (row.estado === "NEGADO" || row.estado === "RECHAZADO") actual.negados += row._count._all;
+      mapa.set(clave, actual);
+    };
+    sumar(conteoPorTramite, row.tramiteTipoId);
+    sumar(conteoPorFlujo, row.flujoId);
   }
 
-  const porCategoria = new Map<string, typeof tramites>();
-  for (const t of tramites) {
-    const cat = categoriaTramite(t.nombre, t.codigo, todosLosSuitNumeros(t));
+  const entradas = tramites.flatMap((t) => entradasDe(t, conteoPorTramite, conteoPorFlujo));
+
+  const porCategoria = new Map<string, EntradaCatalogo[]>();
+  for (const entrada of entradas) {
+    const cat = categoriaTramite(entrada.tramite.nombre, entrada.tramite.codigo, todosLosSuitNumeros(entrada.tramite));
     const lista = porCategoria.get(cat.id) ?? [];
-    lista.push(t);
+    lista.push(entrada);
     porCategoria.set(cat.id, lista);
   }
   const secciones = CATEGORIAS_ORDEN.map((cat) => ({ cat, items: porCategoria.get(cat.id) ?? [] })).filter(
@@ -83,13 +139,8 @@ export default async function CatalogoTramitesPage() {
             </summary>
 
             <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {items.map((t) => (
-                <TarjetaTramite
-                  key={t.id}
-                  tramite={t}
-                  categoria={cat}
-                  conteo={conteoPorTramite.get(t.id)}
-                />
+              {items.map((entrada) => (
+                <TarjetaTramite key={entrada.key} entrada={entrada} categoria={cat} />
               ))}
             </div>
           </details>
@@ -99,18 +150,9 @@ export default async function CatalogoTramitesPage() {
   );
 }
 
-function TarjetaTramite({
-  tramite: t,
-  categoria,
-  conteo,
-}: {
-  tramite: Awaited<ReturnType<typeof getCatalogoTramites>>[number];
-  categoria: Categoria;
-  conteo: { activos: number; aprobados: number; negados: number } | undefined;
-}) {
-  const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
-  const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
-  const suits = todosLosSuitNumeros(t);
+function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; categoria: Categoria }) {
+  const { tramite: t, nombre, suits, flujoParaTiempo, conteo } = entrada;
+  const tiempo = flujoParaTiempo ? tiempoEstimadoDias(flujoParaTiempo.pasos) : null;
 
   return (
     <Link
@@ -143,7 +185,7 @@ function TarjetaTramite({
           {categoria.emoji}
         </span>
         <h3 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">
-          {t.nombre}
+          {nombre}
         </h3>
       </div>
 
