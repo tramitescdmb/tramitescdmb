@@ -82,28 +82,28 @@ export default async function ExpedienteDetallePage({
           {/* Datos del solicitante */}
           <section className="rounded-xl border border-stone-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-              <div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+              <div className="min-w-0">
                 <dt className="text-xs text-stone-400">
                   {expediente.solicitanteTipo === "JURIDICA" ? "NIT" : "Cédula de ciudadanía"}
                 </dt>
-                <dd className="text-stone-800">{expediente.solicitanteIdentificacion}</dd>
+                <dd className="break-words text-stone-800">{expediente.solicitanteIdentificacion}</dd>
               </div>
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-stone-400">Nombre / razón social</dt>
-                <dd className="text-stone-800">{expediente.solicitanteNombre}</dd>
+                <dd className="break-words text-stone-800">{expediente.solicitanteNombre}</dd>
               </div>
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-stone-400">Correo</dt>
-                <dd className="text-stone-800">{expediente.solicitanteEmail ?? "—"}</dd>
+                <dd className="break-all text-stone-800">{expediente.solicitanteEmail ?? "—"}</dd>
               </div>
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-stone-400">Teléfono</dt>
-                <dd className="text-stone-800">{expediente.solicitanteTelefono ?? "—"}</dd>
+                <dd className="break-words text-stone-800">{expediente.solicitanteTelefono ?? "—"}</dd>
               </div>
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-stone-400">Municipio</dt>
-                <dd className="text-stone-800">{expediente.municipio}</dd>
+                <dd className="break-words text-stone-800">{expediente.municipio}</dd>
               </div>
             </dl>
 
