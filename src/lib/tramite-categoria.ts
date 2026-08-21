@@ -6,13 +6,16 @@
  * La agrupación por recurso/tema (Recurso Hídrico, Recurso Flora, Fauna
  * Silvestre...) — mismo criterio que usan otras Corporaciones Autónomas
  * Regionales en su sitio de trámites (CAR.gov.co) — aplica SOLO a los
- * trámites inscritos en el SUIT (`suitNumeros.length > 0`): son los que el
- * usuario confirmó como "los 20 trámites ambientales" reales, verificados
+ * trámites inscritos en el SUIT: son los que el usuario confirmó como "los
+ * 20 trámites ambientales" reales (memorando ADEI-143/2026), verificados
  * contra cdmb.gov.co/tema/tramites-y-servicios/tramites-inscritos-en-el-
  * sistema-unico-de-informacion. Los demás NO se reparten dentro de esas
  * subcategorías (aunque su nombre mencione "agua" o "forestal") — van
  * aparte, en "Sin registro en el SUIT", a propósito, para no mezclar algo
- * verificado con algo que no lo está.
+ * verificado con algo que no lo está. El tercer argumento de
+ * `categoriaTramite` debe ser el resultado de `todosLosSuitNumeros()` (ver
+ * abajo), no `tramite.suitNumeros` a secas — un trámite puede tener el
+ * número a nivel de flujo en vez de a nivel de trámite (ver M-DA-PR21).
  *
  * Los nombres de clases de Tailwind están escritos completos a propósito
  * (no armados con `${color}-100`): Tailwind solo genera CSS para clases que
@@ -99,6 +102,26 @@ export type Categoria = {
   etiqueta: string;
   clases: { icono: string; badge: string; barra: string; borde: string };
 };
+
+/**
+ * Une el/los número(s) SUIT del trámite con el de cada uno de sus flujos —
+ * la mayoría de trámites tienen el número a nivel de TramiteTipo (un solo
+ * registro cubre todo el procedimiento), pero algunos lo tienen a nivel de
+ * Flujo (ej. M-DA-PR21: un solo procedimiento/PDF, pero "Concesión de Aguas
+ * Superficiales" y "Concesión de Aguas Subterráneas" son dos fichas SUIT
+ * distintas, una por flujo). Sin combinar los dos, un trámite así parecería
+ * "sin registro en el SUIT" al no tener nada en TramiteTipo.suitNumeros.
+ */
+export function todosLosSuitNumeros(tramite: {
+  suitNumeros: string[];
+  flujos: { suitNumero: string | null }[];
+}): string[] {
+  const numeros = new Set(tramite.suitNumeros);
+  for (const f of tramite.flujos) {
+    if (f.suitNumero) numeros.add(f.suitNumero);
+  }
+  return Array.from(numeros);
+}
 
 function categoriaDesdeFija(c: CategoriaFija): Categoria {
   return { id: c.id, emoji: c.emoji, etiqueta: c.etiqueta, clases: CLASES_COLOR[c.color] };

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
-import { categoriaTramite } from "@/lib/tramite-categoria";
+import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 
 export default async function TramiteDetallePage({
@@ -27,7 +27,8 @@ export default async function TramiteDetallePage({
 
   const flujoPrincipal = tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
-  const categoria = categoriaTramite(tramite.nombre, tramite.codigo, tramite.suitNumeros);
+  const suits = todosLosSuitNumeros(tramite);
+  const categoria = categoriaTramite(tramite.nombre, tramite.codigo, suits);
   const cargos = cargosQueIntervienen(tramite.flujos);
   const cargosResponsables = cargosEnTexto(tramite.autoridadResponsabilidad);
 
@@ -42,7 +43,7 @@ export default async function TramiteDetallePage({
             {tramite.codigo} · versión {tramite.version}
           </span>
           <span className="text-xs text-stone-400">{tramite.proceso}</span>
-          {tramite.suitNumeros.map((numero) => (
+          {suits.map((numero) => (
             <a
               key={numero}
               href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${numero}`}
@@ -157,9 +158,22 @@ export default async function TramiteDetallePage({
             {tramite.flujos.map((flujo) => (
               <div key={flujo.id} className="mb-4">
                 {tramite.flujos.length > 1 && (
-                  <h3 className="mb-2 inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
-                    {flujo.nombre}
-                    {flujo.esFlujoInicial && " (inicia el expediente)"}
+                  <h3 className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
+                      {flujo.nombre}
+                      {flujo.esFlujoInicial && " (inicia el expediente)"}
+                    </span>
+                    {flujo.suitNumero && (
+                      <a
+                        href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
+                        title="Ver la ficha oficial de esta modalidad en el SUIT"
+                      >
+                        🏛️ SUIT {flujo.suitNumero} ↗
+                      </a>
+                    )}
                   </h3>
                 )}
                 <div className="space-y-1.5">
@@ -261,7 +275,7 @@ export default async function TramiteDetallePage({
               <>
                 <p className="mb-2 text-sm text-cdmb-900">
                   Este trámite todavía no se sigue paso a paso en SINCA. Gestiónalo directamente en VITAL
-                  {tramite.suitNumeros.length > 0 && " o consulta su ficha oficial en el SUIT"}.
+                  {suits.length > 0 && " o consulta su ficha oficial en el SUIT"}.
                 </p>
                 <div className="flex flex-col gap-2">
                   <a
@@ -272,7 +286,7 @@ export default async function TramiteDetallePage({
                   >
                     Ir a VITAL ↗
                   </a>
-                  {tramite.suitNumeros.map((numero) => (
+                  {suits.map((numero) => (
                     <a
                       key={numero}
                       href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${numero}`}

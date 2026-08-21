@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites, tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
-import { categoriaTramite, CATEGORIAS_ORDEN, type Categoria } from "@/lib/tramite-categoria";
+import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN, type Categoria } from "@/lib/tramite-categoria";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -23,7 +23,7 @@ export default async function CatalogoTramitesPage() {
 
   const porCategoria = new Map<string, typeof tramites>();
   for (const t of tramites) {
-    const cat = categoriaTramite(t.nombre, t.codigo, t.suitNumeros);
+    const cat = categoriaTramite(t.nombre, t.codigo, todosLosSuitNumeros(t));
     const lista = porCategoria.get(cat.id) ?? [];
     lista.push(t);
     porCategoria.set(cat.id, lista);
@@ -110,6 +110,7 @@ function TarjetaTramite({
 }) {
   const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
+  const suits = todosLosSuitNumeros(t);
 
   return (
     <Link
@@ -146,9 +147,9 @@ function TarjetaTramite({
         </h3>
       </div>
 
-      {t.suitNumeros.length > 0 && (
+      {suits.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {t.suitNumeros.map((numero) => (
+          {suits.map((numero) => (
             <span
               key={numero}
               className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
