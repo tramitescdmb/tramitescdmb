@@ -155,15 +155,29 @@ export default async function TramiteDetallePage({
                   {tramite.documentosRequeridos.length})
                 </span>
               </h2>
-              <ol className="mt-2 space-y-1 text-sm">
+              <ol className="mt-3 space-y-2">
                 {tramite.documentosRequeridos.map((d) => (
-                  <li key={d.id} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex-none text-stone-300">{d.orden}.</span>
-                    <span className="text-stone-700">
-                      {d.nombre}
-                      {d.obligatorio && <span className="text-red-500"> *</span>}
-                      {d.notas && <span className="block text-xs text-stone-400">{d.notas}</span>}
+                  <li key={d.id} className="flex items-start gap-3 rounded-lg bg-stone-50 p-3">
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold ${categoria.clases.icono}`}
+                    >
+                      {d.orden}
                     </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-sm font-medium text-stone-800">{d.nombre}</span>
+                        {d.obligatorio ? (
+                          <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
+                            Obligatorio
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+                            Opcional
+                          </span>
+                        )}
+                      </div>
+                      {d.notas && <p className="mt-0.5 text-xs text-stone-500">{d.notas}</p>}
+                    </div>
                   </li>
                 ))}
               </ol>
