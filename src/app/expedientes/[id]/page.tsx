@@ -7,7 +7,7 @@ import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
-import { documentoDePagoEnPaso } from "@/lib/documentos";
+import { documentoDePagoEnPaso, documentoEtapaAbierta } from "@/lib/documentos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 
 const ESTADOS = [
@@ -442,9 +442,19 @@ export default async function ExpedienteDetallePage({
                               {doc.subidoPor.nombre} · {doc.createdAt.toLocaleDateString("es-CO")}
                             </p>
                           </div>
-                          {(session?.rol === "ADMIN" || session?.userId === doc.subidoPorId) && (
-                            <EliminarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />
-                          )}
+                          {(() => {
+                            const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
+                            const puede =
+                              session?.rol === "ADMIN" || (abierta && session?.userId === doc.subidoPorId);
+                            return (
+                              <EliminarDocumentoBoton
+                                documentoId={doc.id}
+                                nombre={doc.nombre}
+                                etapaAbierta={abierta}
+                                puedeEliminar={puede}
+                              />
+                            );
+                          })()}
                         </li>
                       ))}
                     </ul>
