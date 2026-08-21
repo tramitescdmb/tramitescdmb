@@ -1,0 +1,17 @@
+{
+  "codigo": "IE-03",
+  "version": "1",
+  "fecha": "2026-07-21",
+  "proceso": "INSTRUMENTO ECONÓMICO",
+  "nombre": "Tasa Compensatoria por Aprovechamiento Forestal Maderable en Bosque Natural",
+  "nombreCompleto": "Tasa Compensatoria por Aprovechamiento Forestal Maderable en Bosque Natural",
+  "slug": "tasa-compensatoria-aprovechamiento-forestal",
+  "archivoFuente": "cdmb.gov.co/tramites-y-servicios",
+  "objeto": "Es la tasa que se cobra a todos los usuarios que realizan aprovechamiento forestal maderable, por cada especie objeto de cobro, en terrenos públicos o privados, para dar cumplimiento al artículo 42 de la Ley 99 de 1993.",
+  "resumen": "Este instrumento cobra a quienes aprovechan madera de bosque natural, por cada especie objeto de cobro.",
+  "alcance": "Aplica a los usuarios que ejercen aprovechamiento forestal maderable en bosque natural, en terrenos públicos o privados dentro de la jurisdicción de la CDMB.",
+  "autoridadResponsabilidad": "Instrumento económico administrado por la CDMB — no hace parte de los procedimientos SIGC de la Corporación con autoridad y responsabilidad documentada paso a paso.",
+  "suitNumeros": [],
+  "documentosRequeridos": [],
+  "flujos": []
+}

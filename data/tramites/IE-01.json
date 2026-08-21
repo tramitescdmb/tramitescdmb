@@ -1,0 +1,17 @@
+{
+  "codigo": "IE-01",
+  "version": "1",
+  "fecha": "2026-07-18",
+  "proceso": "INSTRUMENTO ECONÓMICO",
+  "nombre": "Tasa Retributiva",
+  "nombreCompleto": "Tasa Retributiva",
+  "slug": "tasa-retributiva",
+  "archivoFuente": "cdmb.gov.co/tramites-y-servicios",
+  "objeto": "Es un instrumento económico que cobra la autoridad ambiental competente a los usuarios por la utilización del recurso hídrico como receptor de vertimientos puntuales directos o indirectos, y se cobra por la totalidad de la carga contaminante descargada al recurso hídrico.",
+  "resumen": "Este instrumento cobra a quienes vierten sustancias o compuestos a las aguas superficiales, marinas o al suelo, según la carga contaminante descargada.",
+  "alcance": "Están obligadas al pago todas las personas naturales o jurídicas, públicas o privadas, que realicen vertimientos puntuales al recurso hídrico de manera directa o indirecta, cuenten o no con un permiso de vertimientos. El pago de esta tasa no implica legalización del vertimiento.",
+  "autoridadResponsabilidad": "Instrumento económico administrado por la CDMB — no hace parte de los procedimientos SIGC de la Corporación con autoridad y responsabilidad documentada paso a paso.",
+  "suitNumeros": [],
+  "documentosRequeridos": [],
+  "flujos": []
+}

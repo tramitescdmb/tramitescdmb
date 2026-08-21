@@ -11,6 +11,10 @@
   "resumen": "Este trámite autoriza el uso de agua superficial o subterránea (quebradas, ríos, lagos, aguas lluvias, pozos) dentro de la jurisdicción de la CDMB.",
   "alcance": "Aplica para toda persona natural o jurídica cuya actividad requiera el uso y/o aprovechamiento del recurso hídrico de aguas públicas superficiales y subterráneas, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental – SEYCA, la Secretaría General y los coordinadores respectivos, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA, la Secretaría General y el Asesor de Director General, serán los responsables de cumplir el procedimiento.",
+  "suitNumeros": [
+    "19201",
+    "19204"
+  ],
   "documentosRequeridos": [
     {
       "orden": 1,

@@ -11,6 +11,9 @@
   "resumen": "Este trámite otorga o renueva el permiso para que una fuente fija (industria, planta) emita al aire dentro de los límites que permite la norma.",
   "alcance": "A todas las industrias ubicadas dentro del área de jurisdicción de la CDMB, de acuerdo con lo establecido en la Resolución 619 de 1997, el Decreto 948 de 1995 y el Protocolo para la Vigilancia y Control de las Emisiones Atmosféricas Generadas por las Fuentes Fijas. El propósito del trámite es otorgar una autorización para realizar emisiones al aire dentro de los límites permisibles establecidos en las normas ambientales.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador del grupo de Evaluación Ambiental para la Sostenibilidad tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios adscritos al área de evaluación de SEYCA serán los responsables de cumplir el procedimiento.",
+  "suitNumeros": [
+    "19120"
+  ],
   "documentosRequeridos": [],
   "flujos": [
     {
@@ -21,7 +24,7 @@
         {
           "numero": 1,
           "titulo": "RADICAR SOLICITUD Y REGISTRAR EN EL SIC Y SINCA",
-          "descripcion": "El usuario presenta en la ventanilla de trámites la solicitud acompañada de la documentación completa, para su verificación con base en la lista de chequeo de requisitos (Formato Control de Procesos, código E-GE-FO02), y se radica en la Oficina de Correspondencia el oficio de solicitud del Permiso de Emisiones (o de manera virtual a través del correo info@cdmb.gov.co). El servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del SIC, y el responsable de la ventanilla de trámite revisa que la documentación esté completa según la lista de chequeo. Si está incompleta, no se inicia el trámite y se devuelven los documentos al usuario. Si está completa, se genera y envía al usuario la liquidación para el pago de los servicios de evaluación; realizado el pago, se asigna número de solicitud SINCA y número de expediente en la carpeta donde se archivará físicamente la documentación. La lista de chequeo de requisitos corresponde al documento E-GE-FO02, relacionado en este procedimiento como Anexo.",
+          "descripcion": "El usuario presenta en la ventanilla de trámites la solicitud acompañada de la documentación completa, para su verificación con base en la lista de chequeo de requisitos (Formato Control de Procesos, código E-GE-FO02), y se radica en la Oficina de Correspondencia el oficio de solicitud del Permiso de Emisiones (o de manera virtual a través de VITAL – Ventanilla Integral de Trámites Ambientales en Línea). El servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del SIC, y el responsable de la ventanilla de trámite revisa que la documentación esté completa según la lista de chequeo. Si está incompleta, no se inicia el trámite y se devuelven los documentos al usuario. Si está completa, se genera y envía al usuario la liquidación para el pago de los servicios de evaluación; realizado el pago, se asigna número de solicitud SINCA y número de expediente en la carpeta donde se archivará físicamente la documentación. La lista de chequeo de requisitos corresponde al documento E-GE-FO02, relacionado en este procedimiento como Anexo.",
           "responsables": [
             "Funcionario responsable de Ventanilla trámites ambientales",
             "Funcionario responsable de correspondencia"

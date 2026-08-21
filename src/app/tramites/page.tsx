@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites, tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
-import { categoriaTramite } from "@/lib/tramite-categoria";
+import { categoriaTramite, CATEGORIAS_ORDEN, type Categoria } from "@/lib/tramite-categoria";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -21,12 +21,24 @@ export default async function CatalogoTramitesPage() {
     conteoPorTramite.set(row.tramiteTipoId, actual);
   }
 
+  const porCategoria = new Map<string, typeof tramites>();
+  for (const t of tramites) {
+    const cat = categoriaTramite(t.nombre);
+    const lista = porCategoria.get(cat.id) ?? [];
+    lista.push(t);
+    porCategoria.set(cat.id, lista);
+  }
+  const secciones = CATEGORIAS_ORDEN.map((cat) => ({ cat, items: porCategoria.get(cat.id) ?? [] })).filter(
+    (s) => s.items.length > 0
+  );
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-stone-900">Catálogo de trámites</h1>
         <p className="text-sm text-stone-500">
-          Los {tramites.length} trámites ambientales que atiende la CDMB, tomados de sus procedimientos oficiales.
+          Los {tramites.length} trámites ambientales que atiende la CDMB, organizados por recurso o tema
+          — mismo criterio que usan otras Corporaciones Autónomas Regionales.
         </p>
       </div>
 
@@ -34,77 +46,127 @@ export default async function CatalogoTramitesPage() {
         Cada tarjeta es un <strong>tipo de trámite</strong> (el procedimiento oficial: qué es, qué se
         necesita para radicarlo y por qué pasos avanza). Los números de abajo son los expedientes de ese
         trámite: cuántos están <strong>activos</strong> ahora mismo, cuántos ya quedaron{" "}
-        <strong>aprobados</strong> y cuántos <strong>negados/rechazados</strong>. Entra a un trámite para
-        ver el detalle completo y, desde ahí, iniciar un expediente nuevo.
+        <strong>aprobados</strong> y cuántos <strong>negados/rechazados</strong>. Si ves la etiqueta{" "}
+        <strong>SUIT</strong>, ese trámite además está inscrito en el Sistema Único de Información de
+        Trámites del Gobierno; el enlace lleva a su ficha oficial. Entra a un trámite para ver el detalle
+        completo y, desde ahí, iniciar un expediente nuevo.
       </SectionHelp>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {tramites.map((t) => {
-          const conteo = conteoPorTramite.get(t.id);
-          const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
-          const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
-          const categoria = categoriaTramite(t.nombre);
-          return (
-            <Link
-              key={t.id}
-              href={`/tramites/${t.slug}`}
-              className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
-            >
-              <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
+      <nav className="flex flex-wrap gap-2" aria-label="Ir a una categoría">
+        {secciones.map(({ cat, items }) => (
+          <a
+            key={cat.id}
+            href={`#cat-${cat.id}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition hover:brightness-95 ${cat.clases.badge}`}
+          >
+            <span aria-hidden>{cat.emoji}</span>
+            {cat.etiqueta}
+            <span className="opacity-60">({items.length})</span>
+          </a>
+        ))}
+      </nav>
 
-              <div className="mb-3 flex items-center justify-between">
-                <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
-                  {t.codigo} · v{t.version}
-                </span>
-                {tiempo && (tiempo.total > 0 ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
-                    🕒 ~{tiempo.total} días
-                  </span>
-                ) : (
-                  <span className="text-xs text-stone-300" title="El procedimiento oficial no especifica tiempos por actividad">
-                    🕒 sin tiempo especificado
-                  </span>
-                ))}
-              </div>
-
-              <div className="mb-2 flex items-start gap-3">
-                <span
-                  className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl text-xl ${categoria.clases.icono}`}
-                  title={categoria.etiqueta}
-                  aria-hidden
-                >
-                  {categoria.emoji}
-                </span>
-                <h2 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">
-                  {t.nombre}
-                </h2>
-              </div>
-
-              <span className={`mb-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium ${categoria.clases.badge}`}>
-                {categoria.etiqueta}
+      <div className="space-y-10">
+        {secciones.map(({ cat, items }) => (
+          <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-20">
+            <div className="mb-3 flex items-center gap-2.5 border-b border-stone-200 pb-2">
+              <span
+                className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-base ${cat.clases.icono}`}
+                aria-hidden
+              >
+                {cat.emoji}
               </span>
+              <h2 className="text-base font-semibold text-stone-900">{cat.etiqueta}</h2>
+              <span className="text-sm text-stone-400">({items.length})</span>
+            </div>
 
-              <p className="flex-1 text-sm text-stone-500">
-                {t.resumen ? resumenSinPrefijo(t.resumen) : t.objeto}
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
-                {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
-                {conteo && conteo.activos > 0 && (
-                  <CountPill color="amber" value={conteo.activos} label="activo" />
-                )}
-                {conteo && conteo.aprobados > 0 && (
-                  <CountPill color="green" value={conteo.aprobados} label="aprobado" />
-                )}
-                {conteo && conteo.negados > 0 && (
-                  <CountPill color="red" value={conteo.negados} label="negado" />
-                )}
-              </div>
-            </Link>
-          );
-        })}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {items.map((t) => (
+                <TarjetaTramite
+                  key={t.id}
+                  tramite={t}
+                  categoria={cat}
+                  conteo={conteoPorTramite.get(t.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
+  );
+}
+
+function TarjetaTramite({
+  tramite: t,
+  categoria,
+  conteo,
+}: {
+  tramite: Awaited<ReturnType<typeof getCatalogoTramites>>[number];
+  categoria: Categoria;
+  conteo: { activos: number; aprobados: number; negados: number } | undefined;
+}) {
+  const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
+  const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
+
+  return (
+    <Link
+      href={`/tramites/${t.slug}`}
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
+    >
+      <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
+
+      <div className="mb-3 flex items-center justify-between">
+        <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
+          {t.codigo} · v{t.version}
+        </span>
+        {tiempo && (tiempo.total > 0 ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
+            🕒 ~{tiempo.total} días
+          </span>
+        ) : (
+          <span className="text-xs text-stone-300" title="El procedimiento oficial no especifica tiempos por actividad">
+            🕒 sin tiempo especificado
+          </span>
+        ))}
+      </div>
+
+      <div className="mb-2 flex items-start gap-3">
+        <span
+          className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl text-xl ${categoria.clases.icono}`}
+          title={categoria.etiqueta}
+          aria-hidden
+        >
+          {categoria.emoji}
+        </span>
+        <h3 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">
+          {t.nombre}
+        </h3>
+      </div>
+
+      {t.suitNumeros.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {t.suitNumeros.map((numero) => (
+            <span
+              key={numero}
+              className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
+              title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. Entra al trámite para ver el enlace a la ficha oficial.`}
+            >
+              🏛️ SUIT {numero}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <p className="flex-1 text-sm text-stone-500">{t.resumen ? resumenSinPrefijo(t.resumen) : t.objeto}</p>
+
+      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
+        {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
+        {conteo && conteo.activos > 0 && <CountPill color="amber" value={conteo.activos} label="activo" />}
+        {conteo && conteo.aprobados > 0 && <CountPill color="green" value={conteo.aprobados} label="aprobado" />}
+        {conteo && conteo.negados > 0 && <CountPill color="red" value={conteo.negados} label="negado" />}
+      </div>
+    </Link>
   );
 }
 

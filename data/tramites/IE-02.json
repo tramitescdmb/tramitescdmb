@@ -1,0 +1,17 @@
+{
+  "codigo": "IE-02",
+  "version": "1",
+  "fecha": "2026-07-21",
+  "proceso": "INSTRUMENTO ECONÓMICO",
+  "nombre": "Tasa por Utilización de Agua",
+  "nombreCompleto": "Tasa por Utilización de Agua",
+  "slug": "tasa-utilizacion-agua",
+  "archivoFuente": "cdmb.gov.co/tramites-y-servicios",
+  "objeto": "Es el cobro que realizan las autoridades ambientales competentes a los usuarios por la utilización del agua de las fuentes naturales superficiales o subterráneas.",
+  "resumen": "Este instrumento cobra a quienes usan agua de fuentes naturales superficiales o subterráneas, tengan o no concesión vigente.",
+  "alcance": "Aplica a los usuarios que utilizan agua de fuentes naturales superficiales o subterráneas dentro de la jurisdicción de la CDMB.",
+  "autoridadResponsabilidad": "Instrumento económico administrado por la CDMB — no hace parte de los procedimientos SIGC de la Corporación con autoridad y responsabilidad documentada paso a paso.",
+  "suitNumeros": [],
+  "documentosRequeridos": [],
+  "flujos": []
+}

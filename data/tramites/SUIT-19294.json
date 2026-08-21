@@ -1,0 +1,17 @@
+{
+  "codigo": "SUIT-19294",
+  "version": "1",
+  "fecha": "2025-12-10",
+  "proceso": "TRÁMITE EN LÍNEA (SUIT/VITAL)",
+  "nombre": "Solicitud de Exportación o Importación de Productos Forestales y Flora Silvestre",
+  "nombreCompleto": "Solicitud de Exportación o Importación de Productos Forestales y Flora Silvestre",
+  "slug": "exportacion-importacion-flora-silvestre",
+  "archivoFuente": "cdmb.gov.co/tramites-y-servicios",
+  "objeto": "Obtener la certificación para importar o exportar productos forestales en segundo grado de transformación, flor cortada, follaje y demás productos de la flora silvestre no obtenidos mediante aprovechamiento del medio natural.",
+  "resumen": "Certifica la importación o exportación de productos forestales, flor cortada, follaje y otros productos de la flora silvestre no obtenidos del medio natural.",
+  "alcance": "Aplica a personas naturales o jurídicas que requieran importar o exportar productos forestales de segundo grado de transformación, flor cortada, follaje u otros productos de la flora silvestre.",
+  "autoridadResponsabilidad": "Trámite en línea a través de VITAL, inscrito en el SUIT — no hace parte de los procedimientos SIGC de la CDMB con autoridad y responsabilidad documentada paso a paso.",
+  "suitNumeros": ["19294"],
+  "documentosRequeridos": [],
+  "flujos": []
+}

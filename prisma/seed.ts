@@ -45,6 +45,7 @@ type TramiteJson = {
   resumen?: string;
   alcance: string;
   autoridadResponsabilidad: string;
+  suitNumeros?: string[];
   documentosRequeridos: DocumentoRequeridoJson[];
   flujos: FlujoJson[];
 };
@@ -76,6 +77,7 @@ async function seedTramites() {
         resumen: t.resumen ?? null,
         alcance: t.alcance,
         autoridadResponsabilidad: t.autoridadResponsabilidad,
+        suitNumeros: t.suitNumeros ?? [],
       },
       update: {
         version: t.version,
@@ -89,11 +91,24 @@ async function seedTramites() {
         resumen: t.resumen ?? null,
         alcance: t.alcance,
         autoridadResponsabilidad: t.autoridadResponsabilidad,
+        suitNumeros: t.suitNumeros ?? [],
       },
     });
 
-    // Reset children para poder re-sembrar de forma idempotente
+    // Reset children para poder re-sembrar de forma idempotente — pero si ya hay expedientes
+    // reales que apuntan a un flujo de este trámite, borrarlo rompe la referencia (FK). En ese
+    // caso se deja el flujo/pasos existentes tal cual (no se puede re-sembrar ese trámite sin
+    // antes migrar sus expedientes a los flujos nuevos) y se sigue con los demás.
     await db.documentoRequeridoDefinicion.deleteMany({ where: { tramiteTipoId: tramite.id } });
+
+    const expedientesExistentes = await db.expediente.count({ where: { tramiteTipoId: tramite.id } });
+    if (expedientesExistentes > 0) {
+      console.log(
+        `  ⚠ ${t.codigo} tiene ${expedientesExistentes} expediente(s) real(es) — se deja su flujo/pasos actuales sin tocar.`
+      );
+      continue;
+    }
+
     await db.pasoDefinicion.deleteMany({ where: { flujo: { tramiteTipoId: tramite.id } } });
     await db.flujo.deleteMany({ where: { tramiteTipoId: tramite.id } });
 

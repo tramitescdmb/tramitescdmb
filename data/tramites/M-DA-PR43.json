@@ -11,6 +11,9 @@
   "resumen": "Este trámite inscribe y hace seguimiento a los generadores de residuos o desechos peligrosos ante el IDEAM.",
   "alcance": "El procedimiento inicia desde la radicación de la solicitud, hasta remitir carta con usuario y contraseña que requieren las empresas generadoras para obtener el ingreso al aplicativo del IDEAM. El propósito de este servicio es lograr la inscripción de toda persona natural o jurídica que desarrolle cualquier tipo de actividad que genere residuos o desechos peligrosos, con excepción de los generadores de residuos o desechos peligrosos que generen una cantidad inferior a 10.0 kg/mes.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador responsable del área de evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al área de evaluación ambiental de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir y actualizar el procedimiento.",
+  "suitNumeros": [
+    "19516"
+  ],
   "documentosRequeridos": [
     {
       "orden": 1,

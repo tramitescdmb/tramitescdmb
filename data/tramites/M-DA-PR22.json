@@ -11,6 +11,9 @@
   "resumen": "Este trámite evalúa y otorga la Licencia Ambiental de proyectos, obras o actividades que la requieran dentro de la jurisdicción de la CDMB.",
   "alcance": "Aplica a todas las solicitudes de Licencia Ambiental para proyectos, obras o actividades que la requieran, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Grupo de Evaluación para la Sostenibilidad tienen la autoridad y responsabilidad de modificar y hacer cumplir el respectivo procedimiento.",
+  "suitNumeros": [
+    "19514"
+  ],
   "documentosRequeridos": [
     {
       "orden": 1,

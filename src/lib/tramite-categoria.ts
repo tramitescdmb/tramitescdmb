@@ -1,8 +1,13 @@
 /**
- * Ícono + color por tipo de trámite, para que el catálogo y el detalle se
- * reconozcan de un vistazo (agua, bosque, vehículos...) en vez de ser 30
- * tarjetas idénticas. Se infiere por palabras clave del nombre — no hace
- * falta tocar los JSON de datos para esto, es solo presentación.
+ * Ícono + color + categoría por tipo de trámite. Se usa para (1) reconocer
+ * cada trámite de un vistazo en el catálogo y el detalle, y (2) agrupar el
+ * catálogo en secciones por recurso/tema — mismo criterio que usan otras
+ * Corporaciones Autónomas Regionales en su sitio de trámites (CAR.gov.co:
+ * Recurso Hídrico, Recurso Aire, Recurso Flora, Fauna Silvestre, Licencia
+ * Ambiental, Gestión...), adaptado a los 30 trámites reales de la CDMB (no
+ * se copian categorías de CAR que aquí no tendrían ningún trámite adentro).
+ * Se infiere por palabras clave del nombre — no hace falta tocar los JSON
+ * de datos para esto, es solo presentación.
  *
  * Los nombres de clases de Tailwind están escritos completos a propósito
  * (no armados con `${color}-100`): Tailwind solo genera CSS para clases que
@@ -33,26 +38,45 @@ const CLASES_COLOR: Record<ColorToken, { icono: string; badge: string; barra: st
   stone: { icono: "bg-stone-200 text-stone-600", badge: "bg-stone-100 text-stone-600", barra: "bg-stone-300", borde: "border-stone-300" },
 };
 
-const REGLAS: { emoji: string; etiqueta: string; color: ColorToken; palabras: string[] }[] = [
-  { emoji: "💧", etiqueta: "Agua / vertimientos", color: "sky", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer"] },
-  { emoji: "🌳", etiqueta: "Bosques / árboles", color: "cdmb", palabras: ["forestal", "árbol", "arbol", "poda", "tala", "bosque", "plantacion", "plantación"] },
-  { emoji: "🦉", etiqueta: "Fauna silvestre", color: "amber", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
-  { emoji: "⛏️", etiqueta: "Minería", color: "orange", palabras: ["minera", "minería", "mineria"] },
-  { emoji: "🌬️", etiqueta: "Aire / emisiones", color: "cyan", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
-  { emoji: "🚚", etiqueta: "Transporte / vehículos", color: "rose", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
-  { emoji: "♻️", etiqueta: "Residuos", color: "teal", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
-  { emoji: "⚖️", etiqueta: "Licencias / permisos generales", color: "indigo", palabras: ["licencia", "anla"] },
-  { emoji: "🏢", etiqueta: "Gestión ambiental empresarial", color: "violet", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
+/** Orden en que aparecen las secciones del catálogo — de mayor a menor peso en los 30 trámites de la CDMB. */
+const REGLAS: { id: string; emoji: string; etiqueta: string; color: ColorToken; palabras: string[] }[] = [
+  { id: "hidrico", emoji: "💧", etiqueta: "Recurso Hídrico", color: "sky", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer", "tasa retributiva"] },
+  { id: "flora", emoji: "🌳", etiqueta: "Recurso Flora", color: "cdmb", palabras: ["forestal", "árbol", "arbol", "poda", "tala", "bosque", "plantacion", "plantación"] },
+  { id: "fauna", emoji: "🦉", etiqueta: "Fauna Silvestre", color: "amber", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
+  { id: "aire", emoji: "🌬️", etiqueta: "Recurso Aire", color: "cyan", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
+  { id: "residuos", emoji: "♻️", etiqueta: "Residuos", color: "teal", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
+  { id: "transporte", emoji: "🚚", etiqueta: "Transporte / Vehículos", color: "rose", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
+  { id: "licencias", emoji: "⚖️", etiqueta: "Licencia Ambiental", color: "indigo", palabras: ["licencia", "anla"] },
+  { id: "mineria", emoji: "⛏️", etiqueta: "Minería", color: "orange", palabras: ["minera", "minería", "mineria"] },
+  { id: "gestion", emoji: "🏢", etiqueta: "Gestión", color: "violet", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
 ];
 
-export type Categoria = { emoji: string; etiqueta: string; clases: { icono: string; badge: string; barra: string; borde: string } };
+const OTROS: { id: string; emoji: string; etiqueta: string; color: ColorToken } = {
+  id: "otros",
+  emoji: "📋",
+  etiqueta: "Otros Trámites",
+  color: "stone",
+};
+
+export type Categoria = {
+  id: string;
+  emoji: string;
+  etiqueta: string;
+  clases: { icono: string; badge: string; barra: string; borde: string };
+};
 
 export function categoriaTramite(nombre: string): Categoria {
   const texto = nombre.toLowerCase();
   for (const regla of REGLAS) {
     if (regla.palabras.some((p) => texto.includes(p))) {
-      return { emoji: regla.emoji, etiqueta: regla.etiqueta, clases: CLASES_COLOR[regla.color] };
+      return { id: regla.id, emoji: regla.emoji, etiqueta: regla.etiqueta, clases: CLASES_COLOR[regla.color] };
     }
   }
-  return { emoji: "📋", etiqueta: "Trámite ambiental", clases: CLASES_COLOR.stone };
+  return { id: OTROS.id, emoji: OTROS.emoji, etiqueta: OTROS.etiqueta, clases: CLASES_COLOR[OTROS.color] };
 }
+
+/** Todas las categorías, en el orden en que deben mostrarse las secciones del catálogo (Otros al final). */
+export const CATEGORIAS_ORDEN: Categoria[] = [
+  ...REGLAS.map((r) => ({ id: r.id, emoji: r.emoji, etiqueta: r.etiqueta, clases: CLASES_COLOR[r.color] })),
+  { id: OTROS.id, emoji: OTROS.emoji, etiqueta: OTROS.etiqueta, clases: CLASES_COLOR[OTROS.color] },
+];

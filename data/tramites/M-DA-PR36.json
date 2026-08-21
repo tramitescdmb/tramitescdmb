@@ -11,6 +11,9 @@
   "resumen": "Este trámite evalúa los Planes de Saneamiento y Manejo de Vertimientos (PSMV) que deben presentar los prestadores del servicio de alcantarillado.",
   "alcance": "Aplica a todas las personas prestadoras del servicio de alcantarillado, asimismo a todos los usuarios prestadores del servicio de alcantarillado sujetos al pago de tasa retributiva.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador de Evaluación para la sostenibilidad tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir este procedimiento.",
+  "suitNumeros": [
+    "19226"
+  ],
   "documentosRequeridos": [
     {
       "orden": 1,

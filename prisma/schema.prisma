@@ -117,6 +117,7 @@ model TramiteTipo {
   resumen                   String?  @db.Text // frase natural "Este trámite..." para la UI (objeto es la redacción formal del PDF)
   alcance                   String   @db.Text
   autoridadResponsabilidad  String   @db.Text
+  suitNumeros               String[] @default([]) // número(s) de ficha en el SUIT (Sistema Único de Información de Trámites), si está inscrito — algunos trámites tienen más de uno (ej. concesión de aguas superficiales + subterráneas por separado)
   activo                    Boolean  @default(true)
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt

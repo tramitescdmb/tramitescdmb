@@ -40,7 +40,7 @@
         {
           "numero": 1,
           "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
-          "descripcion": "El usuario presenta un oficio, carta o correo electrónico de solicitud, de forma electrónica o presencial, para ser registrado por la autoridad ambiental en el Registro de Usuarios del Recurso Hídrico (RURH). Se asigna radicado de entrada.",
+          "descripcion": "El usuario presenta un oficio o carta de solicitud, de forma presencial o virtual a través de VITAL – Ventanilla Integral de Trámites Ambientales en Línea, para ser registrado por la autoridad ambiental en el Registro de Usuarios del Recurso Hídrico (RURH). Se asigna radicado de entrada.",
           "responsables": [
             "Funcionario responsable de Ventanilla trámites ambientales",
             "Funcionario responsable de correspondencia"

@@ -16,6 +16,7 @@ export default async function NuevoExpedientePage({
   if (!tramite) notFound();
 
   const flujoInicial = tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
+  if (!flujoInicial) notFound();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

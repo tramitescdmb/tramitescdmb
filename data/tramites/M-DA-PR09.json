@@ -11,6 +11,9 @@
   "resumen": "Este trámite certifica que un Centro de Diagnóstico Automotor cumple las condiciones mínimas para revisar gases y opacidad de vehículos.",
   "alcance": "Aplica a todos los Centros de Diagnóstico que aspiren a habilitarse y registrarse como Centro de Diagnóstico Automotor, para efectuar las revisiones técnico-mecánica y de gases, ubicados en el área de jurisdicción de la CDMB.",
   "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el responsable del área de Evaluación tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al área de evaluación de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
+  "suitNumeros": [
+    "19667"
+  ],
   "documentosRequeridos": [
     {
       "orden": 1,
