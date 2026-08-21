@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generarNumeroExpediente } from "@/lib/expedientes";
+import { esMunicipioValido } from "@/lib/municipios";
 
 type DocumentoInput = {
   path: string;
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     tramiteTipoId,
     flujoId,
     solicitante,
+    municipio,
     documentos,
   }: {
     id: string;
@@ -36,11 +38,19 @@ export async function POST(req: NextRequest) {
       telefono?: string;
       direccion?: string;
     };
+    municipio: string;
     documentos: DocumentoInput[];
   } = body;
 
   if (!expedienteId || !tramiteTipoId || !flujoId || !solicitante?.nombre?.trim() || !solicitante?.identificacion?.trim()) {
     return NextResponse.json({ error: "Faltan campos obligatorios del solicitante." }, { status: 400 });
+  }
+
+  if (!esMunicipioValido(municipio)) {
+    return NextResponse.json(
+      { error: "El municipio debe ser uno de los 13 de la jurisdicción de la CDMB." },
+      { status: 400 }
+    );
   }
 
   const tramite = await db.tramiteTipo.findUnique({
@@ -67,6 +77,7 @@ export async function POST(req: NextRequest) {
       solicitanteEmail: solicitante.email?.trim() || null,
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
+      municipio,
       estado: "RADICADO",
       pasoActualNumero: primerPaso,
       createdById: session.userId,

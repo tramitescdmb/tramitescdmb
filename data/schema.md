@@ -9,6 +9,14 @@ Este JSON es la fuente de verdad que se importa a la base de datos (ver `prisma/
 `prisma/seed.ts`). El motor de la aplicación es genérico: NO se escribe código específico por
 trámite, todo sale de estos archivos.
 
+## Restricción de jurisdicción
+
+Todo expediente (`Expediente.municipio`) debe quedar en uno de los **13 municipios de la
+jurisdicción de la CDMB** (ver `src/lib/municipios.ts`) — la misma lista que usa el proyecto
+Negocios Verdes (`lib/catalogos.dart`, `kMunicipios`), carácter por carácter. La CDMB no tiene
+competencia por fuera de esos municipios, así que esto se valida tanto en el formulario como en el
+servidor (`/api/expedientes`).
+
 ## Forma del objeto
 
 ```jsonc

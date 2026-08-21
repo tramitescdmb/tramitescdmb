@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 
 type DocumentoRequerido = {
   id: string;
@@ -42,9 +43,14 @@ export function NuevoExpedienteForm({
     const fd = new FormData(form);
     const solicitanteNombre = String(fd.get("solicitanteNombre") || "").trim();
     const solicitanteIdentificacion = String(fd.get("solicitanteIdentificacion") || "").trim();
+    const municipio = String(fd.get("municipio") || "").trim();
 
     if (!solicitanteNombre || !solicitanteIdentificacion) {
       setError("Completa al menos el nombre y la identificación del solicitante.");
+      return;
+    }
+    if (!municipio) {
+      setError("Selecciona el municipio donde queda el predio o proyecto — la CDMB solo tiene competencia dentro de su jurisdicción.");
       return;
     }
 
@@ -93,6 +99,7 @@ export function NuevoExpedienteForm({
             telefono: String(fd.get("solicitanteTelefono") || ""),
             direccion: String(fd.get("solicitanteDireccion") || ""),
           },
+          municipio,
           documentos,
         }),
       });
@@ -177,6 +184,28 @@ export function NuevoExpedienteForm({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             placeholder="Ej: 91234567 o 900123456-1"
           />
+        </Field>
+
+        <Field
+          label="Municipio del predio o proyecto"
+          required
+          help="La CDMB solo tiene competencia dentro de su jurisdicción (13 municipios). Si el predio o proyecto queda en otro municipio, este trámite no aplica aquí."
+        >
+          <select
+            name="municipio"
+            required
+            defaultValue=""
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          >
+            <option value="" disabled>
+              Selecciona un municipio…
+            </option>
+            {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

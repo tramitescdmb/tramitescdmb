@@ -1,25 +1,11 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
+import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
+import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { getDashboardData } from "@/lib/dashboard-data";
 
 export default async function DashboardPage() {
-  const [totalTramites, totalExpedientes, porEstado, recientes] = await Promise.all([
-    db.tramiteTipo.count({ where: { activo: true } }),
-    db.expediente.count(),
-    db.expediente.groupBy({ by: ["estado"], _count: { _all: true } }),
-    db.expediente.findMany({
-      take: 8,
-      orderBy: { fechaUltimoMovimiento: "desc" },
-      include: { tramiteTipo: true },
-    }),
-  ]);
-
-  const conteoPorEstado = Object.fromEntries(porEstado.map((p) => [p.estado, p._count._all]));
-  const activos =
-    (conteoPorEstado.RADICADO ?? 0) +
-    (conteoPorEstado.EN_TRAMITE ?? 0) +
-    (conteoPorEstado.INFORMACION_ADICIONAL_REQUERIDA ?? 0) +
-    (conteoPorEstado.SUSPENDIDO ?? 0);
+  const d = await getDashboardData();
 
   return (
     <div className="space-y-8">
@@ -28,11 +14,40 @@ export default async function DashboardPage() {
         <p className="text-sm text-gray-500">Resumen de trámites y expedientes de la CDMB</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Trámites disponibles" value={totalTramites} href="/tramites" />
-        <StatCard label="Expedientes totales" value={totalExpedientes} href="/expedientes" />
-        <StatCard label="En curso" value={activos} href="/expedientes?estado=EN_TRAMITE" />
-        <StatCard label="Aprobados" value={conteoPorEstado.APROBADO ?? 0} href="/expedientes?estado=APROBADO" />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="Trámites disponibles" value={d.totalTramites} href="/tramites" />
+        <StatCard label="Expedientes totales" value={d.totalExpedientes} href="/expedientes" />
+        <StatCard label="En curso" value={d.activos} href="/expedientes?estado=EN_TRAMITE" />
+        <StatCard label="Aprobados" value={d.aprobados} href="/expedientes?estado=APROBADO" accent="good" />
+        <StatCard label="Negados / rechazados" value={d.negados} href="/expedientes?estado=NEGADO" accent="critical" />
+        <StatCard
+          label="Tasa de aprobación"
+          value={d.tasaAprobacion === null ? "—" : `${d.tasaAprobacion}%`}
+          href="/expedientes"
+          help={d.tasaAprobacion === null ? "Aún no hay expedientes decididos (aprobados o negados)." : "De los expedientes ya decididos (aprobados + negados/rechazados)."}
+        />
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 className="text-sm font-semibold text-gray-900">Solicitudes radicadas por mes</h2>
+        <p className="mb-4 text-xs text-gray-500">Últimos 12 meses, por fecha de radicación del expediente.</p>
+        <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900">Municipios con más solicitudes</h2>
+          <p className="mb-4 text-xs text-gray-500">
+            Municipio del predio o proyecto (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
+          </p>
+          <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900">Trámites más solicitados</h2>
+          <p className="mb-4 text-xs text-gray-500">Cuáles de los 30 trámites concentran más expedientes.</p>
+          <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white">
@@ -42,20 +57,20 @@ export default async function DashboardPage() {
             Ver todos
           </Link>
         </div>
-        {recientes.length === 0 ? (
+        {d.recientes.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-400">
             Todavía no hay expedientes radicados.
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {recientes.map((exp) => (
+            {d.recientes.map((exp) => (
               <li key={exp.id} className="flex items-center justify-between px-5 py-3">
                 <div>
                   <Link href={`/expedientes/${exp.id}`} className="font-medium text-gray-900 hover:text-cdmb-700">
                     {exp.numero}
                   </Link>
                   <p className="text-sm text-gray-500">
-                    {exp.tramiteTipo.nombre} · {exp.solicitanteNombre}
+                    {exp.tramiteTipo.nombre} · {exp.solicitanteNombre} · {exp.municipio}
                   </p>
                 </div>
                 <EstadoBadge estado={exp.estado} />
@@ -68,13 +83,27 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
+function StatCard({
+  label,
+  value,
+  href,
+  accent,
+  help,
+}: {
+  label: string;
+  value: number | string;
+  href: string;
+  accent?: "good" | "critical";
+  help?: string;
+}) {
+  const valueColor = accent === "good" ? "text-green-700" : accent === "critical" ? "text-red-700" : "text-gray-900";
   return (
     <Link
       href={href}
+      title={help}
       className="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-cdmb-300 hover:shadow-sm"
     >
-      <p className="text-2xl font-semibold text-gray-900">{value}</p>
+      <p className={`text-2xl font-semibold ${valueColor}`}>{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
     </Link>
   );

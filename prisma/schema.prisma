@@ -137,6 +137,7 @@ model Expediente {
   solicitanteEmail          String?
   solicitanteTelefono       String?
   solicitanteDireccion      String?
+  municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
 
   estado           EstadoExpediente @default(RADICADO)
   pasoActualNumero Int              @default(1)
@@ -159,6 +160,7 @@ model Expediente {
 
   @@index([tramiteTipoId])
   @@index([estado])
+  @@index([municipio])
 }
 
 model ExpedienteDocumento {

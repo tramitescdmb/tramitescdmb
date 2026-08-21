@@ -87,6 +87,10 @@ export default async function ExpedienteDetallePage({
                 <dt className="text-xs text-gray-400">Teléfono</dt>
                 <dd className="text-gray-800">{expediente.solicitanteTelefono ?? "—"}</dd>
               </div>
+              <div>
+                <dt className="text-xs text-gray-400">Municipio</dt>
+                <dd className="text-gray-800">{expediente.municipio}</dd>
+              </div>
             </dl>
           </section>
 
