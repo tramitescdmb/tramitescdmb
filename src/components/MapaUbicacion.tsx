@@ -27,6 +27,7 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
 
   const [modo, setModo] = useState<"elipsoidales" | "planas" | "cartesianas">("elipsoidales");
+  const [alturaTexto, setAlturaTexto] = useState("");
   const [latTexto, setLatTexto] = useState("");
   const [lonTexto, setLonTexto] = useState("");
   const [planaXTexto, setPlanaXTexto] = useState("");
@@ -71,6 +72,7 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
   function sincronizarCampos(c: CoordenadasCompletas) {
     setLatTexto(c.lat.toFixed(6));
     setLonTexto(c.lon.toFixed(6));
+    setAlturaTexto(c.altura.toFixed(2));
     setPlanaXTexto(c.planaX.toFixed(2));
     setPlanaYTexto(c.planaY.toFixed(2));
     setCartXTexto(c.cartesianaX.toFixed(2));
@@ -78,9 +80,14 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     setCartZTexto(c.cartesianaZ.toFixed(2));
   }
 
-  function colocarPunto(lat: number, lon: number) {
+  function altura() {
+    const v = parseFloat(alturaTexto.replace(",", "."));
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function colocarPunto(lat: number, lon: number, alturaMetros = altura()) {
     setPunto({ lat, lon });
-    sincronizarCampos(desdeLatLon(lat, lon));
+    sincronizarCampos(desdeLatLon(lat, lon, alturaMetros));
     setErrorCoords(null);
     setErrorBusqueda(null);
 
@@ -106,6 +113,7 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     setPunto(null);
     setLatTexto("");
     setLonTexto("");
+    setAlturaTexto("");
     setPlanaXTexto("");
     setPlanaYTexto("");
     setCartXTexto("");
@@ -170,10 +178,23 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
     }
     setErrorCoords(null);
     const c = desdeCartesianas(x, y, z);
-    colocarPunto(c.lat, c.lon);
+    colocarPunto(c.lat, c.lon, c.altura);
   }
 
-  const planas = punto ? desdeLatLon(punto.lat, punto.lon) : null;
+  function handleAlturaChange(valor: string) {
+    setAlturaTexto(valor);
+    if (!punto) return;
+    const v = parseFloat(valor.replace(",", "."));
+    if (!Number.isFinite(v)) return;
+    const c = desdeLatLon(punto.lat, punto.lon, v);
+    setPlanaXTexto(c.planaX.toFixed(2));
+    setPlanaYTexto(c.planaY.toFixed(2));
+    setCartXTexto(c.cartesianaX.toFixed(2));
+    setCartYTexto(c.cartesianaY.toFixed(2));
+    setCartZTexto(c.cartesianaZ.toFixed(2));
+  }
+
+  const planas = punto ? desdeLatLon(punto.lat, punto.lon, altura()) : null;
 
   const tabClase = (activa: boolean) =>
     `rounded-md px-2.5 py-1 text-xs font-medium ${activa ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`;
@@ -216,6 +237,15 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
         </button>
       </div>
 
+      <div>
+        <TextoCoord label="Altura (msnm)" placeholder="ej. 960" value={alturaTexto} onChange={handleAlturaChange} />
+        <p className="mt-1 text-xs text-stone-400">
+          Metros sobre el nivel del mar. Bucaramanga y su área metropolitana están alrededor de 960
+          msnm — se usa para calcular bien la coordenada cartesiana Z. Si no la sabes con precisión, un
+          valor aproximado es suficiente.
+        </p>
+      </div>
+
       {modo === "elipsoidales" && (
         <div className="flex flex-wrap items-end gap-2">
           <TextoCoord label="Latitud" placeholder="ej. 7.119300" value={latTexto} onChange={setLatTexto} />
@@ -253,7 +283,7 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
         <div className="space-y-0.5 rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
           <p>
             <span className="font-medium">Elipsoidales (lat/lon, WGS84):</span> {planas.lat.toFixed(6)},{" "}
-            {planas.lon.toFixed(6)}
+            {planas.lon.toFixed(6)} · Altura: {planas.altura.toLocaleString("es-CO")} msnm
           </p>
           <p>
             <span className="font-medium">Planas (MAGNA-SIRGAS Origen-Nacional):</span> X{" "}
@@ -268,6 +298,7 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
 
       <input type="hidden" name="ubicacionLat" value={punto?.lat ?? ""} />
       <input type="hidden" name="ubicacionLon" value={punto?.lon ?? ""} />
+      <input type="hidden" name="ubicacionAltura" value={punto ? altura() : ""} />
     </div>
   );
 }

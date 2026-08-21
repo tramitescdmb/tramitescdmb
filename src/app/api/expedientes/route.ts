@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       direccion?: string;
     };
     municipio: string;
-    ubicacion?: { lat: number | null; lon: number | null };
+    ubicacion?: { lat: number | null; lon: number | null; altura?: number | null };
     documentos: DocumentoInput[];
   } = body;
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     ubicacionCartesianaZ: null,
   };
   if (ubicacion?.lat != null && ubicacion?.lon != null && esLatLonValido(ubicacion.lat, ubicacion.lon)) {
-    const c = desdeLatLon(ubicacion.lat, ubicacion.lon);
+    const c = desdeLatLon(ubicacion.lat, ubicacion.lon, ubicacion.altura ?? 0);
     datosUbicacion = {
       ubicacionLat: c.lat,
       ubicacionLon: c.lon,
