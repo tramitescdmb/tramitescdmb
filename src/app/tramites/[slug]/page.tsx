@@ -42,7 +42,7 @@ export default async function TramiteDetallePage({
         </div>
         <div className="mt-1 flex items-center gap-2.5">
           <span
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-cdmb-50 text-xl"
+            className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg text-xl ${categoria.clases.icono}`}
             title={categoria.etiqueta}
             aria-hidden
           >

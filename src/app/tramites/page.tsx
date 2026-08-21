@@ -48,14 +48,18 @@ export default async function CatalogoTramitesPage() {
             <Link
               key={t.id}
               href={`/tramites/${t.slug}`}
-              className="flex flex-col rounded-xl border border-stone-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
+              className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
             >
-              <div className="mb-2 flex items-center justify-between">
+              <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
+
+              <div className="mb-3 flex items-center justify-between">
                 <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
                   {t.codigo} · v{t.version}
                 </span>
                 {tiempo && (tiempo.total > 0 ? (
-                  <span className="text-xs text-stone-400">🕒 ~{tiempo.total} días</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
+                    🕒 ~{tiempo.total} días
+                  </span>
                 ) : (
                   <span className="text-xs text-stone-300" title="El procedimiento oficial no especifica tiempos por actividad">
                     🕒 sin tiempo especificado
@@ -63,19 +67,24 @@ export default async function CatalogoTramitesPage() {
                 ))}
               </div>
 
-              <div className="mb-1 flex items-start gap-2">
+              <div className="mb-2 flex items-start gap-3">
                 <span
-                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-cdmb-50 text-lg"
+                  className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl text-xl ${categoria.clases.icono}`}
                   title={categoria.etiqueta}
                   aria-hidden
                 >
                   {categoria.emoji}
                 </span>
-                <h2 className="mt-1 font-medium leading-snug text-stone-900">{t.nombre}</h2>
+                <h2 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">
+                  {t.nombre}
+                </h2>
               </div>
-              <p className="mt-1 line-clamp-2 flex-1 text-sm text-stone-500">{t.resumen ?? t.objeto}</p>
 
-              <p className="mt-3 text-xs text-stone-400">{t.proceso}</p>
+              <span className={`mb-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium ${categoria.clases.badge}`}>
+                {categoria.etiqueta}
+              </span>
+
+              <p className="line-clamp-2 flex-1 text-sm text-stone-500">{t.resumen ?? t.objeto}</p>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
                 {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
