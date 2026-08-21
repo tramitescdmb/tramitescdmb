@@ -41,3 +41,16 @@ export function tiempoEstimadoDias(pasos: { tiempoDias: number | null }[]) {
   const total = conocidos.reduce((acc, p) => acc + (p.tiempoDias ?? 0), 0);
   return { total, completo: conocidos.length === pasos.length, pasosConTiempo: conocidos.length, pasosTotal: pasos.length };
 }
+
+/**
+ * Todos los `resumen` empiezan con "Este trámite..." (a propósito, para que
+ * se lean bien solos en la página de detalle). En el catálogo, con 30+
+ * tarjetas seguidas, repetir "Este trámite" al inicio de cada una es puro
+ * ruido — esto lo quita y deja la oración en su forma directa ("Autoriza...",
+ * "Certifica..."). Si algún texto no trae ese prefijo, lo deja intacto.
+ */
+export function resumenSinPrefijo(texto: string) {
+  const sinPrefijo = texto.replace(/^este trámite\s+/i, "");
+  if (sinPrefijo === texto) return texto;
+  return sinPrefijo.charAt(0).toUpperCase() + sinPrefijo.slice(1);
+}

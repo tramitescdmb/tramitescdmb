@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
-import { getCatalogoTramites, tiempoEstimadoDias } from "@/lib/tramites-data";
+import { getCatalogoTramites, tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
 import { categoriaTramite } from "@/lib/tramite-categoria";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
@@ -38,7 +38,7 @@ export default async function CatalogoTramitesPage() {
         ver el detalle completo y, desde ahí, iniciar un expediente nuevo.
       </SectionHelp>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {tramites.map((t) => {
           const conteo = conteoPorTramite.get(t.id);
           const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
@@ -84,7 +84,9 @@ export default async function CatalogoTramitesPage() {
                 {categoria.etiqueta}
               </span>
 
-              <p className="line-clamp-2 flex-1 text-sm text-stone-500">{t.resumen ?? t.objeto}</p>
+              <p className="flex-1 text-sm text-stone-500">
+                {t.resumen ? resumenSinPrefijo(t.resumen) : t.objeto}
+              </p>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
                 {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
