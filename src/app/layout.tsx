@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen text-gray-900 antialiased" suppressHydrationWarning>
+      <body className="min-h-screen text-stone-900 antialiased" suppressHydrationWarning>
         <NavBar />
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       </body>

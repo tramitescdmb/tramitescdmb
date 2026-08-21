@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   if (!email || !password) return fail("Correo y contraseña son obligatorios.");
 
-  const usuario = await db.usuario.findUnique({ where: { email } });
+  const usuario = await db.usuario.findUnique({ where: { email }, include: { cargo: true } });
   if (!usuario || !usuario.activo) return fail("Credenciales inválidas.");
 
   const valido = await verifyPassword(password, usuario.passwordHash);
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     email: usuario.email,
     nombre: usuario.nombre,
     rol: usuario.rol,
+    cargo: usuario.cargo?.nombre ?? null,
   });
 
   const redirectTo = next && next.startsWith("/") ? next : "/";

@@ -9,7 +9,7 @@ const EVENTOS: Record<string, { icono: string; etiqueta: string }> = {
 export function EventoIcono({ tipo }: { tipo: string }) {
   const info = EVENTOS[tipo] ?? { icono: "•", etiqueta: tipo };
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500">
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500">
       <span aria-hidden>{info.icono}</span>
       {info.etiqueta}
     </span>

@@ -132,20 +132,20 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
           placeholder="Buscar una dirección (ej. Carrera 27 # 15-20)"
-          className="min-w-[200px] flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="min-w-[200px] flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
         />
         <button
           type="button"
           onClick={buscarDireccion}
           disabled={buscando}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
         >
           {buscando ? "Buscando…" : "Buscar en el mapa"}
         </button>
       </div>
       {errorBusqueda && <p className="text-xs text-red-600">{errorBusqueda}</p>}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-stone-500">
         O toca directamente el punto exacto en el mapa. Si no hay una dirección real (kilómetro de vía,
         finca), pega las coordenadas de Google Maps abajo (clic derecho sobre el punto → clic en los
         números).
@@ -153,42 +153,42 @@ export function MapaUbicacion({ municipio }: { municipio: string }) {
 
       <div className="flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">Latitud</label>
+          <label className="mb-1 block text-xs font-medium text-stone-600">Latitud</label>
           <input
             value={latTexto}
             onChange={(e) => setLatTexto(e.target.value)}
             placeholder="ej. 7.119300"
-            className="w-32 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">Longitud</label>
+          <label className="mb-1 block text-xs font-medium text-stone-600">Longitud</label>
           <input
             value={lonTexto}
             onChange={(e) => setLonTexto(e.target.value)}
             placeholder="ej. -73.122700"
-            className="w-32 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
           />
         </div>
         <button
           type="button"
           onClick={usarCoordenadasEscritas}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50"
         >
           Usar
         </button>
         {punto && (
-          <button type="button" onClick={quitarPunto} className="text-xs text-gray-400 hover:text-red-600">
+          <button type="button" onClick={quitarPunto} className="text-xs text-stone-400 hover:text-red-600">
             Quitar punto
           </button>
         )}
       </div>
       {errorCoords && <p className="text-xs text-red-600">{errorCoords}</p>}
 
-      <div ref={contenedorRef} className="h-64 w-full overflow-hidden rounded-lg border border-gray-200" />
+      <div ref={contenedorRef} className="h-64 w-full overflow-hidden rounded-lg border border-stone-200" />
 
       {punto && planas && (
-        <div className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
+        <div className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
           <p>
             <span className="font-medium">Lat/Lon (WGS84):</span> {punto.lat.toFixed(6)}, {punto.lon.toFixed(6)}
           </p>

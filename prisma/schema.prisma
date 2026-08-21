@@ -17,15 +17,32 @@ enum RolUsuario {
   FUNCIONARIO
 }
 
+/**
+ * Cargo real dentro de la CDMB (Subdirector SEYCA, Profesional en Derecho, etc.) —
+ * es distinto del RolUsuario (que es el permiso dentro de la app). El cargo es
+ * "quién es" el funcionario en la organización; se usa para resaltar qué pasos
+ * de un trámite le corresponden. Catálogo fijo, sembrado en prisma/seed.ts a
+ * partir de los "responsables" reales de los 30 procedimientos — ver
+ * src/lib/cargos.ts para las palabras clave de coincidencia con cada paso.
+ */
+model Cargo {
+  id      String    @id @default(cuid())
+  nombre  String    @unique
+  orden   Int       @default(0)
+  usuarios Usuario[]
+}
+
 model Usuario {
   id           String     @id @default(cuid())
   email        String     @unique
   nombre       String
   passwordHash String
   rol          RolUsuario @default(FUNCIONARIO)
+  cargoId      String?
   activo       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
+  cargo                Cargo?            @relation(fields: [cargoId], references: [id])
   expedientesCreados   Expediente[]      @relation("CreadoPor")
   expedientesAsignados Expediente[]      @relation("ResponsableActual")
   documentos           ExpedienteDocumento[]

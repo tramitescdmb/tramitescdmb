@@ -12,7 +12,7 @@ export function BarChartHorizontal({
   formatValue?: (n: number) => string;
 }) {
   if (data.length === 0) {
-    return <p className="px-1 py-8 text-center text-sm text-gray-400">{emptyMessage}</p>;
+    return <p className="px-1 py-8 text-center text-sm text-stone-400">{emptyMessage}</p>;
   }
 
   const max = Math.max(...data.map((d) => d.value), 1);
@@ -24,10 +24,10 @@ export function BarChartHorizontal({
         return (
           <li key={item.label} tabIndex={0} className="group relative rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-cdmb-400">
             <div className="mb-1 flex items-baseline justify-between text-xs">
-              <span className="truncate pr-2 text-gray-700">{item.label}</span>
-              <span className="flex-none tabular-nums text-gray-500">{formatValue(item.value)}</span>
+              <span className="truncate pr-2 text-stone-700">{item.label}</span>
+              <span className="flex-none tabular-nums text-stone-500">{formatValue(item.value)}</span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100">
               <div
                 className="h-full rounded-full transition-[filter] group-hover:brightness-110"
                 style={{ width: `${pct}%`, backgroundColor: BAR_COLOR }}
@@ -35,7 +35,7 @@ export function BarChartHorizontal({
             </div>
             <div
               role="tooltip"
-              className="pointer-events-none absolute -top-7 left-0 z-10 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white group-hover:block group-focus-visible:block"
+              className="pointer-events-none absolute -top-7 left-0 z-10 hidden whitespace-nowrap rounded-md bg-stone-900 px-2 py-1 text-xs text-white group-hover:block group-focus-visible:block"
             >
               <span className="font-semibold">{formatValue(item.value)}</span> — {item.label}
             </div>

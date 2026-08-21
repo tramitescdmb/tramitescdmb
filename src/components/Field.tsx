@@ -9,20 +9,27 @@ export function Field({
   label,
   help,
   required,
+  icon,
   children,
 }: {
   label: string;
   help?: string;
   required?: boolean;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-gray-700">
+      <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+        {icon && (
+          <span className="text-cdmb-600" aria-hidden>
+            {icon}
+          </span>
+        )}
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-      {help && <p className="mt-1 text-xs text-gray-500">{help}</p>}
+      {help && <p className="mt-1 text-xs text-stone-500">{help}</p>}
     </div>
   );
 }

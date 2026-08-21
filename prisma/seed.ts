@@ -138,6 +138,18 @@ async function seedTramites() {
   }
 }
 
+async function seedCargos() {
+  const { CARGOS_CDMB } = await import("../src/lib/cargos");
+  for (let i = 0; i < CARGOS_CDMB.length; i++) {
+    await db.cargo.upsert({
+      where: { nombre: CARGOS_CDMB[i].nombre },
+      create: { nombre: CARGOS_CDMB[i].nombre, orden: i },
+      update: { orden: i },
+    });
+  }
+  console.log(`Sembrados ${CARGOS_CDMB.length} cargos.`);
+}
+
 async function seedAdmin() {
   const email = process.env.SEED_ADMIN_EMAIL || "tramitescdmb@gmail.com";
   const existing = await db.usuario.findUnique({ where: { email } });
@@ -166,6 +178,7 @@ async function seedAdmin() {
 
 async function main() {
   await seedTramites();
+  await seedCargos();
   await seedAdmin();
 }
 

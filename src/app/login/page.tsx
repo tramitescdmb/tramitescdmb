@@ -1,3 +1,5 @@
+import { IconMail, IconLock } from "@/components/icons";
+
 const ERRORES: Record<string, string> = {
   "Correo y contraseña son obligatorios.": "Correo y contraseña son obligatorios.",
   "Credenciales inválidas.": "Correo o contraseña incorrectos.",
@@ -12,14 +14,14 @@ export default async function LoginPage({
   const error = params.error ? ERRORES[params.error] ?? params.error : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
+      <div className="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-8 shadow-sm">
         <div className="mb-6 text-center">
           <span className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cdmb-600 text-lg font-bold text-white">
             C
           </span>
-          <h1 className="text-lg font-semibold text-gray-900">Trámites CDMB</h1>
-          <p className="text-sm text-gray-500">Ingresa con tu cuenta institucional</p>
+          <h1 className="text-lg font-semibold text-stone-900">Trámites CDMB</h1>
+          <p className="text-sm text-stone-500">Ingresa con tu cuenta institucional</p>
         </div>
 
         {error && (
@@ -29,23 +31,29 @@ export default async function LoginPage({
         <form action="/api/auth/login" method="post" className="space-y-4">
           <input type="hidden" name="next" value={params.next ?? "/"} />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Correo</label>
+            <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <IconMail className="h-4 w-4 text-cdmb-600" aria-hidden />
+              Correo
+            </label>
             <input
               type="email"
               name="email"
               required
               autoFocus
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               placeholder="nombre@cdmb.gov.co"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Contraseña</label>
+            <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <IconLock className="h-4 w-4 text-cdmb-600" aria-hidden />
+              Contraseña
+            </label>
             <input
               type="password"
               name="password"
               required
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               placeholder="••••••••"
             />
           </div>

@@ -12,7 +12,7 @@ const PAD_BOTTOM = 24;
 export function AreaTrendChart({ data, emptyMessage }: { data: Point[]; emptyMessage: string }) {
   const total = data.reduce((acc, d) => acc + d.value, 0);
   if (data.length < 2 || total === 0) {
-    return <p className="px-1 py-8 text-center text-sm text-gray-400">{emptyMessage}</p>;
+    return <p className="px-1 py-8 text-center text-sm text-stone-400">{emptyMessage}</p>;
   }
 
   const max = Math.max(...data.map((d) => d.value), 1);

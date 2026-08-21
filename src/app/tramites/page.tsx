@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites, tiempoEstimadoDias } from "@/lib/tramites-data";
+import { categoriaTramite } from "@/lib/tramite-categoria";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -23,8 +24,8 @@ export default async function CatalogoTramitesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Catálogo de trámites</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-xl font-semibold text-stone-900">Catálogo de trámites</h1>
+        <p className="text-sm text-stone-500">
           Los {tramites.length} trámites ambientales que atiende la CDMB, tomados de sus procedimientos oficiales.
         </p>
       </div>
@@ -42,28 +43,38 @@ export default async function CatalogoTramitesPage() {
           const conteo = conteoPorTramite.get(t.id);
           const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
           const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
+          const categoria = categoriaTramite(t.nombre);
           return (
             <Link
               key={t.id}
               href={`/tramites/${t.slug}`}
-              className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
+              className="flex flex-col rounded-xl border border-stone-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
             >
               <div className="mb-2 flex items-center justify-between">
-                <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-500">
+                <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
                   {t.codigo} · v{t.version}
                 </span>
                 {tiempo && tiempo.total > 0 && (
-                  <span className="text-xs text-gray-400">🕒 ~{tiempo.total} días</span>
+                  <span className="text-xs text-stone-400">🕒 ~{tiempo.total} días</span>
                 )}
               </div>
 
-              <h2 className="font-medium leading-snug text-gray-900">{t.nombre}</h2>
-              <p className="mt-1 line-clamp-2 flex-1 text-sm text-gray-500">{t.objeto}</p>
+              <div className="mb-1 flex items-start gap-2">
+                <span
+                  className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-cdmb-50 text-lg"
+                  title={categoria.etiqueta}
+                  aria-hidden
+                >
+                  {categoria.emoji}
+                </span>
+                <h2 className="mt-1 font-medium leading-snug text-stone-900">{t.nombre}</h2>
+              </div>
+              <p className="mt-1 line-clamp-2 flex-1 text-sm text-stone-500">{t.objeto}</p>
 
-              <p className="mt-3 text-xs text-gray-400">{t.proceso}</p>
+              <p className="mt-3 text-xs text-stone-400">{t.proceso}</p>
 
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-gray-100 pt-3">
-                {!conteo && <span className="text-xs text-gray-300">Sin expedientes todavía</span>}
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
+                {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
                 {conteo && conteo.activos > 0 && (
                   <CountPill color="amber" value={conteo.activos} label="activo" />
                 )}

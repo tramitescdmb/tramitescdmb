@@ -15,7 +15,7 @@ export async function NavBar() {
             </span>
             Trámites CDMB
           </Link>
-          <nav className="hidden gap-4 text-sm text-gray-600 sm:flex">
+          <nav className="hidden gap-4 text-sm text-stone-600 sm:flex">
             <Link href="/" className="hover:text-cdmb-700">
               Panel
             </Link>
@@ -33,12 +33,12 @@ export async function NavBar() {
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">
-            {session.nombre} <span className="text-gray-300">·</span>{" "}
-            <span className="text-gray-400">{session.rol}</span>
+          <span className="text-stone-500">
+            {session.nombre} <span className="text-stone-300">·</span>{" "}
+            <span className="text-stone-400">{session.rol}</span>
           </span>
           <form action="/api/auth/logout" method="post">
-            <button className="rounded-md border border-gray-200 px-3 py-1.5 text-gray-600 hover:bg-gray-50">
+            <button className="rounded-md border border-stone-200 px-3 py-1.5 text-stone-600 hover:bg-stone-50">
               Salir
             </button>
           </form>

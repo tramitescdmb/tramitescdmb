@@ -10,8 +10,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Panel general</h1>
-        <p className="text-sm text-gray-500">Resumen de trámites y expedientes de la CDMB</p>
+        <h1 className="text-xl font-semibold text-stone-900">Panel general</h1>
+        <p className="text-sm text-stone-500">Resumen de trámites y expedientes de la CDMB</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -28,48 +28,48 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-gray-900">Solicitudes radicadas por mes</h2>
-        <p className="mb-4 text-xs text-gray-500">Últimos 12 meses, por fecha de radicación del expediente.</p>
+      <div className="rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
+        <p className="mb-4 text-xs text-stone-500">Últimos 12 meses, por fecha de radicación del expediente.</p>
         <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-gray-900">Municipios con más solicitudes</h2>
-          <p className="mb-4 text-xs text-gray-500">
+        <div className="rounded-xl border border-stone-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-stone-900">Municipios con más solicitudes</h2>
+          <p className="mb-4 text-xs text-stone-500">
             Municipio del predio o proyecto (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
           </p>
           <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-gray-900">Trámites más solicitados</h2>
-          <p className="mb-4 text-xs text-gray-500">Cuáles de los 30 trámites concentran más expedientes.</p>
+        <div className="rounded-xl border border-stone-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-stone-900">Trámites más solicitados</h2>
+          <p className="mb-4 text-xs text-stone-500">Cuáles de los 30 trámites concentran más expedientes.</p>
           <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">Actividad reciente</h2>
+      <div className="rounded-xl border border-stone-200 bg-white">
+        <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-stone-900">Actividad reciente</h2>
           <Link href="/expedientes" className="text-sm text-cdmb-700 hover:underline">
             Ver todos
           </Link>
         </div>
         {d.recientes.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-gray-400">
+          <div className="px-5 py-10 text-center text-sm text-stone-400">
             Todavía no hay expedientes radicados.
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-stone-100">
             {d.recientes.map((exp) => (
               <li key={exp.id} className="flex items-center justify-between px-5 py-3">
                 <div>
-                  <Link href={`/expedientes/${exp.id}`} className="font-medium text-gray-900 hover:text-cdmb-700">
+                  <Link href={`/expedientes/${exp.id}`} className="font-medium text-stone-900 hover:text-cdmb-700">
                     {exp.numero}
                   </Link>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-stone-500">
                     {exp.tramiteTipo.nombre} · {exp.solicitanteNombre} · {exp.municipio}
                   </p>
                 </div>
@@ -96,15 +96,15 @@ function StatCard({
   accent?: "good" | "critical";
   help?: string;
 }) {
-  const valueColor = accent === "good" ? "text-green-700" : accent === "critical" ? "text-red-700" : "text-gray-900";
+  const valueColor = accent === "good" ? "text-green-700" : accent === "critical" ? "text-red-700" : "text-stone-900";
   return (
     <Link
       href={href}
       title={help}
-      className="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-cdmb-300 hover:shadow-sm"
+      className="rounded-xl border border-stone-200 bg-white p-4 transition hover:border-cdmb-300 hover:shadow-sm"
     >
       <p className={`text-2xl font-semibold ${valueColor}`}>{value}</p>
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm text-stone-500">{label}</p>
     </Link>
   );
 }

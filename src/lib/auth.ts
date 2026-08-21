@@ -16,6 +16,7 @@ export type SessionPayload = {
   email: string;
   nombre: string;
   rol: "ADMIN" | "FUNCIONARIO";
+  cargo: string | null;
 };
 
 export async function hashPassword(password: string) {
@@ -60,6 +61,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       email: payload.email as string,
       nombre: payload.nombre as string,
       rol: payload.rol as "ADMIN" | "FUNCIONARIO",
+      cargo: (payload.cargo as string | null) ?? null,
     };
   } catch {
     return null;
@@ -74,6 +76,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       email: payload.email as string,
       nombre: payload.nombre as string,
       rol: payload.rol as "ADMIN" | "FUNCIONARIO",
+      cargo: (payload.cargo as string | null) ?? null,
     };
   } catch {
     return null;

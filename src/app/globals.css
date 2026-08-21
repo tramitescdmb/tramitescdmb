@@ -7,5 +7,6 @@
 }
 
 body {
-  background-color: #f6f8f7;
+  /* Fondo cálido (no gris frío) — pensado para uso prolongado sin cansar la vista */
+  background-color: #faf8f5;
 }

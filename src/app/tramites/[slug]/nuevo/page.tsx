@@ -23,8 +23,8 @@ export default async function NuevoExpedientePage({
         <Link href={`/tramites/${tramite.slug}`} className="text-sm text-cdmb-700 hover:underline">
           ← {tramite.nombre}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-gray-900">Nuevo expediente</h1>
-        <p className="text-sm text-gray-500">Trámite: {tramite.nombre} ({tramite.codigo})</p>
+        <h1 className="mt-1 text-xl font-semibold text-stone-900">Nuevo expediente</h1>
+        <p className="text-sm text-stone-500">Trámite: {tramite.nombre} ({tramite.codigo})</p>
       </div>
 
       <SectionHelp>
