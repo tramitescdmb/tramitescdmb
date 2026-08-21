@@ -168,7 +168,7 @@ export default async function TramiteDetallePage({
                         <span className="text-sm font-medium text-stone-800">{d.nombre}</span>
                         {d.obligatorio ? (
                           <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
-                            Obligatorio
+                            Obligatorio{d.aplicaA === "JURIDICA" ? " · solo persona jurídica" : d.aplicaA === "NATURAL" ? " · solo persona natural" : ""}
                           </span>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">

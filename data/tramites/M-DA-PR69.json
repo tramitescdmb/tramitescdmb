@@ -31,13 +31,15 @@
       "orden": 3,
       "nombre": "Cédula de ciudadanía",
       "obligatorio": true,
-      "notas": "Si el solicitante es persona natural"
+      "notas": "Si el solicitante es persona natural",
+      "aplicaA": "NATURAL"
     },
     {
       "orden": 4,
       "nombre": "Certificado de existencia y representación legal",
       "obligatorio": true,
-      "notas": "Si el solicitante es persona jurídica (sociedades o corporaciones); expedido dentro de los 3 meses anteriores a la solicitud"
+      "notas": "Si el solicitante es persona jurídica (sociedades o corporaciones); expedido dentro de los 3 meses anteriores a la solicitud",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,

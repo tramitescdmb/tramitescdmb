@@ -136,6 +136,7 @@ model DocumentoRequeridoDefinicion {
   nombre        String
   obligatorio   Boolean @default(true)
   notas         String?
+  aplicaA       TipoSolicitante? // null = aplica a cualquier solicitante; si no, solo es obligatorio para ese tipo (ej. "Certificado de Existencia y Representación Legal" solo para JURIDICA)
 
   tramiteTipo TramiteTipo @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
 
@@ -285,6 +286,7 @@ enum TipoEvento {
   CAMBIO_ESTADO
   AVANCE_PASO
   DOCUMENTO_SUBIDO
+  DOCUMENTO_ELIMINADO
   COMENTARIO
   ASIGNACION_CAMBIADA
 }

@@ -8,9 +8,11 @@ import { subirArchivoDirecto } from "@/lib/uploads-client";
 export function SubirDocumentoPasoForm({
   expedienteId,
   pasoNumero,
+  documentoPagoSugerido,
 }: {
   expedienteId: string;
   pasoNumero: number;
+  documentoPagoSugerido?: string | null;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -24,7 +26,10 @@ export function SubirDocumentoPasoForm({
     const form = e.currentTarget;
     const input = form.elements.namedItem("archivo") as HTMLInputElement | null;
     const files = input?.files ? Array.from(input.files) : [];
-    if (files.length === 0) {
+    const inputPago = form.elements.namedItem("archivoPago") as HTMLInputElement | null;
+    const filesPago = inputPago?.files ? Array.from(inputPago.files) : [];
+
+    if (files.length === 0 && filesPago.length === 0) {
       setError("Selecciona al menos un archivo.");
       return;
     }
@@ -32,6 +37,11 @@ export function SubirDocumentoPasoForm({
     setSubmitting(true);
     try {
       const archivos = [];
+      for (const file of filesPago) {
+        setProgreso(`Subiendo "${file.name}"…`);
+        const subido = await subirArchivoDirecto(expedienteId, file);
+        archivos.push({ ...subido, descripcion: documentoPagoSugerido });
+      }
       for (const file of files) {
         setProgreso(`Subiendo "${file.name}"…`);
         archivos.push(await subirArchivoDirecto(expedienteId, file));
@@ -60,8 +70,21 @@ export function SubirDocumentoPasoForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+      {documentoPagoSugerido && (
+        <Field
+          label={`💰 ${documentoPagoSugerido}`}
+          help="Este paso incluye un pago en tesorería — adjunta aquí el soporte (recibo, constancia o factura)."
+        >
+          <input
+            type="file"
+            name="archivoPago"
+            disabled={submitting}
+            className="block text-sm text-stone-600 file:mr-3 file:rounded-md file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-amber-700 hover:file:bg-amber-100"
+          />
+        </Field>
+      )}
       <Field
-        label="Adjuntar documento de este paso"
+        label={documentoPagoSugerido ? "Otros documentos de este paso" : "Adjuntar documento de este paso"}
         help="Ej: el informe técnico, el auto firmado, la resolución — lo que este paso genere. No importa el tamaño del archivo (planos, estudios grandes, etc.)."
       >
         <input

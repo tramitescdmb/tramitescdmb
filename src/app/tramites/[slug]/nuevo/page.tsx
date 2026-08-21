@@ -54,6 +54,7 @@ export default async function NuevoExpedientePage({
           nombre: d.nombre,
           obligatorio: d.obligatorio,
           notas: d.notas,
+          aplicaA: d.aplicaA,
         }))}
         flujos={flujosParaElegir.map((f) => ({ id: f.id, nombre: f.nombre }))}
         flujoInicialId={flujoInicial.id}

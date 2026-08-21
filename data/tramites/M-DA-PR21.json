@@ -22,13 +22,15 @@
       "orden": 2,
       "nombre": "Cédula de Ciudadanía",
       "obligatorio": true,
-      "notas": "Solo persona natural"
+      "notas": "Solo persona natural",
+      "aplicaA": "NATURAL"
     },
     {
       "orden": 3,
       "nombre": "Documentos que acrediten la personería jurídica del solicitante: Certificado de existencia y representación legal (sociedades o corporaciones, expedido dentro de los 3 meses anteriores a la solicitud), o Personería Jurídica y/o Certificación e Inscripción de Dignatarios expedida por la Gobernación o Alcaldía (Juntas de Acción Comunal o Acueductos)",
       "obligatorio": true,
-      "notas": "Solo persona jurídica"
+      "notas": "Solo persona jurídica",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 4,

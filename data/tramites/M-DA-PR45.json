@@ -25,7 +25,8 @@
       "orden": 2,
       "nombre": "Razón Social",
       "obligatorio": true,
-      "notas": "Solo persona jurídica"
+      "notas": "Solo persona jurídica",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 3,
@@ -37,7 +38,8 @@
       "orden": 4,
       "nombre": "Certificación de existencia y representación legal",
       "obligatorio": true,
-      "notas": "Solo persona jurídica"
+      "notas": "Solo persona jurídica",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,

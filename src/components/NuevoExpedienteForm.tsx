@@ -7,15 +7,22 @@ import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { MapaUbicacion } from "@/components/MapaUbicacion";
-import { IconLayers, IconUser, IconIdCard, IconMapPin, IconMail, IconPhone, IconDocument, IconUpload } from "@/components/icons";
+import { IconLayers, IconUser, IconIdCard, IconMapPin, IconMail, IconPhone, IconDocument, IconUpload, IconX } from "@/components/icons";
 
 const iconSm = "h-4 w-4";
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type DocumentoRequerido = {
   id: string;
   nombre: string;
   obligatorio: boolean;
   notas: string | null;
+  aplicaA: "NATURAL" | "JURIDICA" | null;
 };
 
 type FlujoOpcion = { id: string; nombre: string };
@@ -41,6 +48,26 @@ export function NuevoExpedienteForm({
   const [municipio, setMunicipio] = useState("");
   const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
+
+  const [archivosPorDoc, setArchivosPorDoc] = useState<Record<string, File | null>>({});
+  const [archivosExtra, setArchivosExtra] = useState<File[]>([]);
+  const docInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const extraInputRef = useRef<HTMLInputElement | null>(null);
+
+  function quitarArchivoDoc(docId: string) {
+    setArchivosPorDoc((prev) => ({ ...prev, [docId]: null }));
+    const input = docInputRefs.current[docId];
+    if (input) input.value = "";
+  }
+
+  function quitarArchivoExtra(index: number) {
+    setArchivosExtra((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  /** ¿Este documento aplica al tipo de solicitante actual? (null = aplica a cualquiera) */
+  function documentoRequerido(doc: DocumentoRequerido) {
+    return doc.obligatorio && (doc.aplicaA === null || (doc.aplicaA === "JURIDICA") === esJuridica);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -72,8 +99,7 @@ export function NuevoExpedienteForm({
       }> = [];
 
       for (const doc of documentosRequeridos) {
-        const input = form.elements.namedItem(`doc_${doc.id}`) as HTMLInputElement | null;
-        const file = input?.files?.[0];
+        const file = archivosPorDoc[doc.id];
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
           const subido = await subirArchivoDirecto(expedienteId, file);
@@ -81,9 +107,7 @@ export function NuevoExpedienteForm({
         }
       }
 
-      const extraInput = form.elements.namedItem("documentos_extra") as HTMLInputElement | null;
-      const extraFiles = extraInput?.files ? Array.from(extraInput.files) : [];
-      for (const file of extraFiles) {
+      for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
         const subido = await subirArchivoDirecto(expedienteId, file);
         documentos.push({ ...subido, descripcion: "Documento adicional aportado por el solicitante." });
@@ -109,6 +133,7 @@ export function NuevoExpedienteForm({
           ubicacion: {
             lat: fd.get("ubicacionLat") ? Number(fd.get("ubicacionLat")) : null,
             lon: fd.get("ubicacionLon") ? Number(fd.get("ubicacionLon")) : null,
+            altura: fd.get("ubicacionAltura") ? Number(fd.get("ubicacionAltura")) : null,
             planaX: fd.get("ubicacionPlanaX") ? Number(fd.get("ubicacionPlanaX")) : null,
             planaY: fd.get("ubicacionPlanaY") ? Number(fd.get("ubicacionPlanaY")) : null,
           },
@@ -286,38 +311,90 @@ export function NuevoExpedienteForm({
           </p>
         )}
 
-        {documentosRequeridos.map((doc) => (
-          <Field
-            key={doc.id}
-            label={doc.nombre}
-            required={doc.obligatorio}
-            icon={<IconDocument className={iconSm} />}
-            help={
-              (doc.notas ?? (doc.obligatorio ? "Documento obligatorio." : "Documento opcional / aplica solo en algunos casos.")) +
-              " Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG) — el que tengas."
-            }
-          >
-            <input
-              type="file"
-              name={`doc_${doc.id}`}
-              disabled={submitting}
-              className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-md file:border-0 file:bg-cdmb-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cdmb-700 hover:file:bg-cdmb-100"
-            />
-          </Field>
-        ))}
+        {documentosRequeridos.map((doc) => {
+          const requerido = documentoRequerido(doc);
+          const noAplicaAlTipo = doc.aplicaA !== null && (doc.aplicaA === "JURIDICA") !== esJuridica;
+          const archivo = archivosPorDoc[doc.id] ?? null;
+          return (
+            <Field
+              key={doc.id}
+              label={doc.nombre}
+              required={requerido}
+              icon={<IconDocument className={iconSm} />}
+              help={
+                (doc.notas ?? (requerido ? "Documento obligatorio." : "Documento opcional / aplica solo en algunos casos.")) +
+                (noAplicaAlTipo
+                  ? ` No es obligatorio para ${esJuridica ? "persona jurídica" : "persona natural"}, pero puedes adjuntarlo si aplica.`
+                  : "") +
+                " Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG) — el que tengas."
+              }
+            >
+              <input
+                ref={(el) => {
+                  docInputRefs.current[doc.id] = el;
+                }}
+                type="file"
+                disabled={submitting}
+                onChange={(e) => setArchivosPorDoc((prev) => ({ ...prev, [doc.id]: e.target.files?.[0] ?? null }))}
+                className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-md file:border-0 file:bg-cdmb-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cdmb-700 hover:file:bg-cdmb-100"
+              />
+              {archivo && (
+                <div className="mt-1.5 flex items-center gap-2 rounded-md bg-cdmb-50 px-2.5 py-1.5 text-xs text-cdmb-800">
+                  <span className="min-w-0 flex-1 truncate">
+                    📄 {archivo.name} <span className="text-cdmb-500">({formatBytes(archivo.size)})</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => quitarArchivoDoc(doc.id)}
+                    disabled={submitting}
+                    title="Quitar este archivo"
+                    className="flex-none rounded p-0.5 text-cdmb-500 hover:bg-cdmb-100 hover:text-red-600"
+                  >
+                    <IconX className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </Field>
+          );
+        })}
 
         <Field
           label="Otros documentos"
           icon={<IconUpload className={iconSm} />}
-          help="Cualquier otro soporte que no esté en la lista de arriba (puedes seleccionar varios archivos a la vez)."
+          help="Cualquier otro soporte que no esté en la lista de arriba (puedes seleccionar varios archivos, incluso en varias veces)."
         >
           <input
+            ref={extraInputRef}
             type="file"
-            name="documentos_extra"
             multiple
             disabled={submitting}
+            onChange={(e) => {
+              const nuevos = e.target.files ? Array.from(e.target.files) : [];
+              if (nuevos.length > 0) setArchivosExtra((prev) => [...prev, ...nuevos]);
+              if (extraInputRef.current) extraInputRef.current.value = "";
+            }}
             className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-md file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-stone-700 hover:file:bg-stone-200"
           />
+          {archivosExtra.length > 0 && (
+            <ul className="mt-1.5 space-y-1">
+              {archivosExtra.map((archivo, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-md bg-stone-100 px-2.5 py-1.5 text-xs text-stone-700">
+                  <span className="min-w-0 flex-1 truncate">
+                    📄 {archivo.name} <span className="text-stone-400">({formatBytes(archivo.size)})</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => quitarArchivoExtra(i)}
+                    disabled={submitting}
+                    title="Quitar este archivo"
+                    className="flex-none rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-red-600"
+                  >
+                    <IconX className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </Field>
       </section>
 

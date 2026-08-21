@@ -25,7 +25,8 @@
       "orden": 2,
       "nombre": "Certificado de existencia y representación legal",
       "obligatorio": true,
-      "notas": "Solo si es persona jurídica"
+      "notas": "Solo si es persona jurídica",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 3,

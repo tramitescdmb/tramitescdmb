@@ -165,3 +165,11 @@ export function IconPin(props: IconProps) {
     </svg>
   );
 }
+
+export function IconX(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}

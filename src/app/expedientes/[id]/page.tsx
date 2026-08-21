@@ -6,7 +6,9 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
-import { cargoCoincideConPaso } from "@/lib/cargos";
+import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
+import { documentoDePagoEnPaso } from "@/lib/documentos";
+import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 
 const ESTADOS = [
   "RADICADO",
@@ -64,6 +66,21 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargo, pasoActual.responsables) : false;
+  const documentoPago = pasoActual ? documentoDePagoEnPaso(pasoActual.documentos) : null;
+
+  // Agrupa los documentos por paso (null = subidos en la radicación) para mostrarlos en
+  // tarjetas separadas — con todo junto en una sola lista no se distinguía a qué etapa
+  // pertenecía cada archivo.
+  const gruposDocumentos: Array<[number | null, typeof expediente.documentos]> = [];
+  for (const doc of expediente.documentos) {
+    let grupo = gruposDocumentos.find(([num]) => num === doc.pasoNumero);
+    if (!grupo) {
+      grupo = [doc.pasoNumero, []];
+      gruposDocumentos.push(grupo);
+    }
+    grupo[1].push(doc);
+  }
+  gruposDocumentos.sort(([a], [b]) => (a ?? -1) - (b ?? -1));
 
   return (
     <div className="space-y-6">
@@ -166,7 +183,9 @@ export default async function ExpedienteDetallePage({
                 {pasoActual.responsables.length > 0 && (
                   <div>
                     <dt className="font-medium text-stone-500">👤 Responsable</dt>
-                    <dd className="text-stone-700">{pasoActual.responsables.join(", ")}</dd>
+                    <dd className="text-stone-700">
+                      {Array.from(new Set(pasoActual.responsables.map(cargoCanonico))).join(", ")}
+                    </dd>
                   </div>
                 )}
                 {pasoActual.documentos.length > 0 && (
@@ -185,7 +204,11 @@ export default async function ExpedienteDetallePage({
 
               {/* Subir documento de este paso */}
               <div className="mt-4 border-t border-stone-100 pt-4">
-                <SubirDocumentoPasoForm expedienteId={expediente.id} pasoNumero={pasoActual.numero} />
+                <SubirDocumentoPasoForm
+                  expedienteId={expediente.id}
+                  pasoNumero={pasoActual.numero}
+                  documentoPagoSugerido={documentoPago}
+                />
               </div>
 
               {/* Acciones para avanzar */}
@@ -380,33 +403,54 @@ export default async function ExpedienteDetallePage({
 
         {/* Documentos */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-stone-200 bg-white">
-            <div className="border-b border-stone-100 px-4 py-3">
+          <div className="space-y-3">
+            <div className="px-1">
               <h3 className="text-sm font-semibold text-stone-900">Documentos del expediente</h3>
-              <p className="text-xs text-stone-500">Todo lo adjuntado, de la radicación en adelante.</p>
+              <p className="text-xs text-stone-500">Agrupados por paso, de la radicación en adelante.</p>
             </div>
+
             {expediente.documentos.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-stone-400">Sin documentos todavía.</p>
+              <div className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-stone-400">
+                Sin documentos todavía.
+              </div>
             ) : (
-              <ul className="divide-y divide-stone-100">
-                {expediente.documentos.map((doc) => (
-                  <li key={doc.id} className="px-4 py-2.5 text-sm">
-                    <a
-                      href={`/api/documentos/${doc.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium text-cdmb-700 hover:underline"
-                    >
-                      📄 {doc.nombre}
-                    </a>
-                    {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
-                    <p className="text-xs text-stone-400">
-                      {doc.pasoNumero ? `Paso ${doc.pasoNumero} · ` : ""}
-                      {doc.subidoPor.nombre} · {doc.createdAt.toLocaleDateString("es-CO")}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              gruposDocumentos.map(([numeroPaso, docs]) => {
+                const tituloPaso = numeroPaso == null ? null : pasos.find((p) => p.numero === numeroPaso)?.titulo;
+                return (
+                  <div key={numeroPaso ?? "radicacion"} className="rounded-xl border border-stone-200 bg-white">
+                    <div className="border-b border-stone-100 bg-stone-50 px-4 py-2 rounded-t-xl">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-cdmb-700">
+                        {numeroPaso == null
+                          ? "📥 Documentos de radicación"
+                          : `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`}
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-stone-100">
+                      {docs.map((doc) => (
+                        <li key={doc.id} className="flex items-start gap-2 px-4 py-2.5 text-sm">
+                          <div className="min-w-0 flex-1">
+                            <a
+                              href={`/api/documentos/${doc.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-medium text-cdmb-700 hover:underline"
+                            >
+                              📄 {doc.nombre}
+                            </a>
+                            {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
+                            <p className="text-xs text-stone-400">
+                              {doc.subidoPor.nombre} · {doc.createdAt.toLocaleDateString("es-CO")}
+                            </p>
+                          </div>
+                          {(session?.rol === "ADMIN" || session?.userId === doc.subidoPorId) && (
+                            <EliminarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })
             )}
           </div>
 

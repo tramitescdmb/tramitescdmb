@@ -32,6 +32,7 @@ type DocumentoRequeridoJson = {
   nombre: string;
   obligatorio: boolean;
   notas: string | null;
+  aplicaA?: "NATURAL" | "JURIDICA" | null;
 };
 
 type TramiteJson = {
@@ -97,12 +98,29 @@ async function seedTramites() {
       },
     });
 
-    // Reset children para poder re-sembrar de forma idempotente — pero si ya hay expedientes
+    // documentosRequeridos no tiene FK desde Expediente (a diferencia de Flujo/PasoDefinicion, que
+    // sí referencia Expediente.flujoId) — así que borrarlo y re-sembrarlo es siempre seguro, tenga
+    // o no expedientes reales el trámite. Esto debe ir ANTES del guard de abajo: si el trámite ya
+    // tiene expedientes y hacemos `continue`, un `createMany` posterior a ese guard nunca se
+    // ejecutaría y el trámite se quedaría sin su lista de "documentos para radicar".
+    await db.documentoRequeridoDefinicion.deleteMany({ where: { tramiteTipoId: tramite.id } });
+    if (t.documentosRequeridos?.length) {
+      await db.documentoRequeridoDefinicion.createMany({
+        data: t.documentosRequeridos.map((d) => ({
+          tramiteTipoId: tramite.id,
+          orden: d.orden,
+          nombre: d.nombre,
+          obligatorio: d.obligatorio,
+          notas: d.notas,
+          aplicaA: d.aplicaA ?? null,
+        })),
+      });
+    }
+
+    // Reset de flujos/pasos para poder re-sembrar de forma idempotente — pero si ya hay expedientes
     // reales que apuntan a un flujo de este trámite, borrarlo rompe la referencia (FK). En ese
     // caso se deja el flujo/pasos existentes tal cual (no se puede re-sembrar ese trámite sin
     // antes migrar sus expedientes a los flujos nuevos) y se sigue con los demás.
-    await db.documentoRequeridoDefinicion.deleteMany({ where: { tramiteTipoId: tramite.id } });
-
     const expedientesExistentes = await db.expediente.count({ where: { tramiteTipoId: tramite.id } });
     if (expedientesExistentes > 0) {
       console.log(
@@ -113,18 +131,6 @@ async function seedTramites() {
 
     await db.pasoDefinicion.deleteMany({ where: { flujo: { tramiteTipoId: tramite.id } } });
     await db.flujo.deleteMany({ where: { tramiteTipoId: tramite.id } });
-
-    if (t.documentosRequeridos?.length) {
-      await db.documentoRequeridoDefinicion.createMany({
-        data: t.documentosRequeridos.map((d) => ({
-          tramiteTipoId: tramite.id,
-          orden: d.orden,
-          nombre: d.nombre,
-          obligatorio: d.obligatorio,
-          notas: d.notas,
-        })),
-      });
-    }
 
     for (let i = 0; i < t.flujos.length; i++) {
       const f = t.flujos[i];

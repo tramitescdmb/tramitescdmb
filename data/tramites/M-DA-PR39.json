@@ -25,19 +25,22 @@
       "orden": 2,
       "nombre": "Cédula de Ciudadanía",
       "obligatorio": true,
-      "notas": "Si el solicitante es persona natural"
+      "notas": "Si el solicitante es persona natural",
+      "aplicaA": "NATURAL"
     },
     {
       "orden": 3,
       "nombre": "Certificado de Existencia y Representación Legal (expedición no superior a 3 meses)",
       "obligatorio": true,
-      "notas": "Personas jurídicas: sociedades o corporaciones"
+      "notas": "Personas jurídicas: sociedades o corporaciones",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 4,
       "nombre": "Personería Jurídica y/o Certificación e Inscripción de Dignatarios (expedida por la Gobernación o Alcaldía)",
       "obligatorio": true,
-      "notas": "Juntas de Acción Comunal o Acueductos"
+      "notas": "Juntas de Acción Comunal o Acueductos",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,
