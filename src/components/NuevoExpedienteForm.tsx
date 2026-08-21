@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { MapaUbicacion } from "@/components/MapaUbicacion";
 
 type DocumentoRequerido = {
   id: string;
@@ -34,6 +35,7 @@ export function NuevoExpedienteForm({
   const [submitting, setSubmitting] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [municipio, setMunicipio] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,7 +45,6 @@ export function NuevoExpedienteForm({
     const fd = new FormData(form);
     const solicitanteNombre = String(fd.get("solicitanteNombre") || "").trim();
     const solicitanteIdentificacion = String(fd.get("solicitanteIdentificacion") || "").trim();
-    const municipio = String(fd.get("municipio") || "").trim();
 
     if (!solicitanteNombre || !solicitanteIdentificacion) {
       setError("Completa al menos el nombre y la identificación del solicitante.");
@@ -100,6 +101,12 @@ export function NuevoExpedienteForm({
             direccion: String(fd.get("solicitanteDireccion") || ""),
           },
           municipio,
+          ubicacion: {
+            lat: fd.get("ubicacionLat") ? Number(fd.get("ubicacionLat")) : null,
+            lon: fd.get("ubicacionLon") ? Number(fd.get("ubicacionLon")) : null,
+            planaX: fd.get("ubicacionPlanaX") ? Number(fd.get("ubicacionPlanaX")) : null,
+            planaY: fd.get("ubicacionPlanaY") ? Number(fd.get("ubicacionPlanaY")) : null,
+          },
           documentos,
         }),
       });
@@ -194,7 +201,8 @@ export function NuevoExpedienteForm({
           <select
             name="municipio"
             required
-            defaultValue=""
+            value={municipio}
+            onChange={(e) => setMunicipio(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="" disabled>
@@ -206,6 +214,19 @@ export function NuevoExpedienteForm({
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field
+          label="Ubicación exacta en campo (opcional)"
+          help="Si ya tienes el punto exacto del predio o proyecto — por GPS, visita técnica o una dirección — márcalo aquí. Se guarda en latitud/longitud y también se calcula en coordenadas planas (el sistema oficial de Colombia)."
+        >
+          {municipio ? (
+            <MapaUbicacion municipio={municipio} />
+          ) : (
+            <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-400">
+              Selecciona primero el municipio para poder marcar la ubicación en el mapa.
+            </p>
+          )}
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

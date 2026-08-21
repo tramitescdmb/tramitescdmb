@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
+import { getTramitePorSlug } from "@/lib/tramites-data";
 
 export default async function NuevoExpedientePage({
   params,
@@ -11,13 +11,7 @@ export default async function NuevoExpedientePage({
 }) {
   const { slug } = await params;
 
-  const tramite = await db.tramiteTipo.findUnique({
-    where: { slug },
-    include: {
-      documentosRequeridos: { orderBy: { orden: "asc" } },
-      flujos: { orderBy: { orden: "asc" } },
-    },
-  });
+  const tramite = await getTramitePorSlug(slug);
 
   if (!tramite) notFound();
 

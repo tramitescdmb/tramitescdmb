@@ -1,0 +1,65 @@
+{
+  "codigo": "TEST-01",
+  "version": "1",
+  "fecha": "2026-08-21",
+  "proceso": "PRUEBAS",
+  "nombre": "Trámite de Prueba (mínimo)",
+  "nombreCompleto": "TRÁMITE DE PRUEBA CON INFORMACIÓN MÍNIMA",
+  "slug": "tramite-de-prueba",
+  "archivoFuente": "N/A — creado para probar la interfaz, no viene de un PDF real",
+  "objeto": "Servir de ejemplo liviano para revisar cómo se ve la interfaz con un trámite corto, sin la cantidad de texto de los trámites reales.",
+  "alcance": "Solo para pruebas internas del equipo — no es un trámite real de la CDMB.",
+  "autoridadResponsabilidad": "Ninguna — es un trámite de prueba.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Documento de ejemplo obligatorio", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Documento de ejemplo opcional", "obligatorio": false, "notas": "Solo para probar cómo se ve un documento opcional con nota." }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INICIO",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR LA SOLICITUD",
+          "descripcion": "Paso corto de ejemplo: se recibe la solicitud y se revisa que estén los documentos.",
+          "responsables": ["Servidor de ventanilla"],
+          "documentos": ["Solicitud radicada"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "¿ESTÁ COMPLETA LA INFORMACIÓN?",
+          "descripcion": "Paso de ejemplo con una decisión: si falta algo se pide completar, si no se continúa.",
+          "responsables": ["Servidor técnico"],
+          "documentos": [],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Sí, está completa", "siguientePaso": 3 },
+            { "respuesta": "No, falta información", "siguientePaso": null, "resultado": "INFORMACION_ADICIONAL_REQUERIDA" }
+          ]
+        },
+        {
+          "numero": 3,
+          "titulo": "APROBAR O NEGAR",
+          "descripcion": "Paso final de ejemplo: se decide si se aprueba o se niega la solicitud de prueba.",
+          "responsables": ["Coordinador de prueba"],
+          "documentos": ["Resolución de ejemplo"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprobar", "siguientePaso": 3, "resultado": "APROBADO" },
+            { "respuesta": "Negar", "siguientePaso": 3, "resultado": "NEGADO" }
+          ]
+        }
+      ]
+    }
+  ]
+}

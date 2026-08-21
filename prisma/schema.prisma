@@ -139,6 +139,12 @@ model Expediente {
   solicitanteDireccion      String?
   municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
 
+  // Ubicación del predio/proyecto tomada en campo (mapa OSM) — opcional, no todo trámite la necesita.
+  ubicacionLat    Float? // WGS84
+  ubicacionLon    Float? // WGS84
+  ubicacionPlanaX Float? // MAGNA-SIRGAS Origen-Nacional (EPSG:9377), calculada a partir de lat/lon — ver src/lib/coordenadas.ts
+  ubicacionPlanaY Float?
+
   estado           EstadoExpediente @default(RADICADO)
   pasoActualNumero Int              @default(1)
 

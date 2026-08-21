@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generarNumeroExpediente } from "@/lib/expedientes";
 import { esMunicipioValido } from "@/lib/municipios";
+import { latLonAPlanas, esLatLonValido } from "@/lib/coordenadas";
 
 type DocumentoInput = {
   path: string;
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     flujoId,
     solicitante,
     municipio,
+    ubicacion,
     documentos,
   }: {
     id: string;
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
       direccion?: string;
     };
     municipio: string;
+    ubicacion?: { lat: number | null; lon: number | null };
     documentos: DocumentoInput[];
   } = body;
 
@@ -65,6 +68,19 @@ export async function POST(req: NextRequest) {
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
   const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);
 
+  // Las planas nunca se confían del cliente — se recalculan aquí a partir de lat/lon.
+  let ubicacionLat: number | null = null;
+  let ubicacionLon: number | null = null;
+  let ubicacionPlanaX: number | null = null;
+  let ubicacionPlanaY: number | null = null;
+  if (ubicacion?.lat != null && ubicacion?.lon != null && esLatLonValido(ubicacion.lat, ubicacion.lon)) {
+    ubicacionLat = ubicacion.lat;
+    ubicacionLon = ubicacion.lon;
+    const planas = latLonAPlanas(ubicacion.lat, ubicacion.lon);
+    ubicacionPlanaX = planas.x;
+    ubicacionPlanaY = planas.y;
+  }
+
   const expediente = await db.expediente.create({
     data: {
       id: expedienteId,
@@ -78,6 +94,10 @@ export async function POST(req: NextRequest) {
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
       municipio,
+      ubicacionLat,
+      ubicacionLon,
+      ubicacionPlanaX,
+      ubicacionPlanaY,
       estado: "RADICADO",
       pasoActualNumero: primerPaso,
       createdById: session.userId,

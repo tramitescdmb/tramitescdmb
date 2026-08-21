@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
+import { getCatalogoTramites, tiempoEstimadoDias } from "@/lib/tramites-data";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
 export default async function CatalogoTramitesPage() {
   const [tramites, porEstado] = await Promise.all([
-    db.tramiteTipo.findMany({
-      where: { activo: true },
-      orderBy: { nombre: "asc" },
-      include: { _count: { select: { flujos: true, expedientes: true } } },
-    }),
+    getCatalogoTramites(),
     db.expediente.groupBy({ by: ["tramiteTipoId", "estado"], _count: { _all: true } }),
   ]);
 
@@ -43,6 +40,8 @@ export default async function CatalogoTramitesPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tramites.map((t) => {
           const conteo = conteoPorTramite.get(t.id);
+          const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
+          const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
           return (
             <Link
               key={t.id}
@@ -53,9 +52,9 @@ export default async function CatalogoTramitesPage() {
                 <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-500">
                   {t.codigo} · v{t.version}
                 </span>
-                <span className="text-xs text-gray-400">
-                  {t._count.flujos} flujo{t._count.flujos === 1 ? "" : "s"}
-                </span>
+                {tiempo && tiempo.total > 0 && (
+                  <span className="text-xs text-gray-400">🕒 ~{tiempo.total} días</span>
+                )}
               </div>
 
               <h2 className="font-medium leading-snug text-gray-900">{t.nombre}</h2>

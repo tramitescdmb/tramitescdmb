@@ -92,6 +92,31 @@ export default async function ExpedienteDetallePage({
                 <dd className="text-gray-800">{expediente.municipio}</dd>
               </div>
             </dl>
+
+            {expediente.ubicacionLat != null && expediente.ubicacionLon != null && (
+              <div className="mt-3 border-t border-gray-100 pt-3 text-sm">
+                <dt className="mb-1 text-xs text-gray-400">📍 Ubicación tomada en campo</dt>
+                <dd className="space-y-0.5 text-gray-700">
+                  <p>
+                    Lat/Lon (WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
+                  </p>
+                  {expediente.ubicacionPlanaX != null && expediente.ubicacionPlanaY != null && (
+                    <p>
+                      Planas (MAGNA-SIRGAS Origen-Nacional): X {expediente.ubicacionPlanaX.toLocaleString("es-CO")} m,
+                      Y {expediente.ubicacionPlanaY.toLocaleString("es-CO")} m
+                    </p>
+                  )}
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${expediente.ubicacionLat}&mlon=${expediente.ubicacionLon}#map=17/${expediente.ubicacionLat}/${expediente.ubicacionLon}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-cdmb-700 hover:underline"
+                  >
+                    Ver en el mapa ↗
+                  </a>
+                </dd>
+              </div>
+            )}
           </section>
 
           {/* Paso actual */}
