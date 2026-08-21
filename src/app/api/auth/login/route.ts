@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verifyPassword, createSessionCookie } from "@/lib/auth";
+import { createSessionCookie } from "@/lib/auth";
+import { verifyPassword } from "@/lib/password";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 export async function POST(req: NextRequest) {

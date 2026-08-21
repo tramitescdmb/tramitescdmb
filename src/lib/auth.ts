@@ -1,6 +1,13 @@
-import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+
+/**
+ * Solo sesión (JWT firmado con `jose`) — a propósito SIN bcrypt. Este archivo
+ * lo importa src/middleware.ts, que corre en el Edge Runtime de Vercel, y
+ * bcryptjs usa APIs de Node que el Edge Runtime no soporta (eso rompía el
+ * build/despliegue). El hash/verificación de contraseñas vive aparte, en
+ * src/lib/password.ts, que solo se usa desde rutas API (Node runtime normal).
+ */
 
 const COOKIE_NAME = "sinca_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 días
@@ -18,14 +25,6 @@ export type SessionPayload = {
   rol: "ADMIN" | "FUNCIONARIO";
   cargo: string | null;
 };
-
-export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
-}
-
-export async function verifyPassword(password: string, hash: string) {
-  return bcrypt.compare(password, hash);
-}
 
 export async function createSessionCookie(payload: SessionPayload) {
   const token = await new SignJWT({ ...payload })
