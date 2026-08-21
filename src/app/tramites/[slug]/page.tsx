@@ -8,10 +8,13 @@ import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos
 
 export default async function TramiteDetallePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ flujo?: string }>;
 }) {
   const { slug } = await params;
+  const { flujo: flujoCodigoFoco } = await searchParams;
 
   const [tramite, expedientes] = await Promise.all([
     getTramitePorSlug(slug),
@@ -25,11 +28,25 @@ export default async function TramiteDetallePage({
 
   if (!tramite) notFound();
 
-  const flujoPrincipal = tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
+  /**
+   * Cuando se llega desde una tarjeta del catálogo que representa UN flujo
+   * específico (?flujo=... — ver M-DA-PR21: "Concesión de Aguas
+   * Superficiales" y "...Subterráneas" son dos tarjetas, un solo trámite),
+   * la página se enfoca en ESE flujo: título, ficha SUIT, resumen y pasos
+   * son solo de esa modalidad — no debe hablar de la otra. Sin el
+   * parámetro, se ve la página completa del trámite con todos sus flujos,
+   * como siempre.
+   */
+  const flujoEnfocado = flujoCodigoFoco ? tramite.flujos.find((f) => f.codigo === flujoCodigoFoco) : undefined;
+  const flujosAMostrar = flujoEnfocado ? [flujoEnfocado] : tramite.flujos;
+
+  const flujoPrincipal = flujoEnfocado ?? tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
-  const suits = todosLosSuitNumeros(tramite);
-  const categoria = categoriaTramite(tramite.nombre, tramite.codigo, suits);
-  const cargos = cargosQueIntervienen(tramite.flujos);
+  const suits = flujoEnfocado ? (flujoEnfocado.suitNumero ? [flujoEnfocado.suitNumero] : []) : todosLosSuitNumeros(tramite);
+  const tituloMostrado = flujoEnfocado?.nombre ?? tramite.nombre;
+  const resumenMostrado = flujoEnfocado?.resumen ?? tramite.resumen ?? tramite.objeto;
+  const categoria = categoriaTramite(tramite.nombre, tramite.codigo, todosLosSuitNumeros(tramite));
+  const cargos = cargosQueIntervienen(flujosAMostrar);
   const cargosResponsables = cargosEnTexto(tramite.autoridadResponsabilidad);
 
   return (
@@ -64,8 +81,13 @@ export default async function TramiteDetallePage({
           >
             {categoria.emoji}
           </span>
-          <h1 className="text-xl font-semibold text-stone-900">{tramite.nombre}</h1>
+          <h1 className="text-xl font-semibold text-stone-900">{tituloMostrado}</h1>
         </div>
+        {flujoEnfocado && (
+          <Link href={`/tramites/${tramite.slug}`} className="mt-1 inline-block text-xs text-stone-400 hover:text-cdmb-700 hover:underline">
+            Ver el trámite completo ({tramite.nombre}, con todas sus modalidades) →
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -74,7 +96,7 @@ export default async function TramiteDetallePage({
           <section className="relative overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pl-5 text-sm">
             <span className={`absolute inset-y-0 left-0 w-1.5 ${categoria.clases.barra}`} aria-hidden />
             <div className="space-y-3">
-              <p className="text-base text-stone-800">{tramite.resumen ?? tramite.objeto}</p>
+              <p className="text-base text-stone-800">{resumenMostrado}</p>
               <p>
                 <span className="font-medium text-stone-700">A quién aplica: </span>
                 <span className="text-stone-600">{tramite.alcance}</span>
@@ -148,16 +170,16 @@ export default async function TramiteDetallePage({
             </section>
           )}
 
-          {tramite.flujos.length > 0 && (
+          {flujosAMostrar.length > 0 && (
           <section>
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="text-sm font-semibold text-stone-900">Pasos del trámite</h2>
               <p className="text-xs text-stone-400">Clic en cada paso para ver el detalle</p>
             </div>
 
-            {tramite.flujos.map((flujo) => (
+            {flujosAMostrar.map((flujo) => (
               <div key={flujo.id} className="mb-4">
-                {tramite.flujos.length > 1 && (
+                {flujosAMostrar.length > 1 && (
                   <h3 className="mb-2 flex flex-wrap items-center gap-2">
                     <span className="inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
                       {flujo.nombre}
@@ -265,7 +287,7 @@ export default async function TramiteDetallePage({
                   ¿Vas a radicar una solicitud nueva? Crea el expediente aquí.
                 </p>
                 <Link
-                  href={`/tramites/${tramite.slug}/nuevo`}
+                  href={flujoEnfocado ? `/tramites/${tramite.slug}/nuevo?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}/nuevo`}
                   className="inline-flex w-full items-center justify-center rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
                 >
                   + Iniciar nuevo expediente

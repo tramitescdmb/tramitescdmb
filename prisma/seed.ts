@@ -23,6 +23,7 @@ type FlujoJson = {
   nombre: string;
   esFlujoInicial: boolean;
   suitNumero?: string;
+  resumen?: string;
   pasos: PasoJson[];
 };
 
@@ -135,6 +136,7 @@ async function seedTramites() {
           esFlujoInicial: f.esFlujoInicial,
           orden: i,
           suitNumero: f.suitNumero ?? null,
+          resumen: f.resumen ?? null,
         },
       });
 

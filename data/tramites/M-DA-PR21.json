@@ -300,7 +300,8 @@
           "esDecision": false,
           "opciones": null
         }
-      ]
+      ],
+      "resumen": "Este trámite autoriza el uso de agua superficial (quebradas, ríos, lagos, aguas lluvias) dentro de la jurisdicción de la CDMB."
     },
     {
       "codigo": "subterranea",
@@ -504,7 +505,8 @@
           "esDecision": false,
           "opciones": null
         }
-      ]
+      ],
+      "resumen": "Este trámite autoriza el uso de agua subterránea (pozos, acuíferos) dentro de la jurisdicción de la CDMB."
     }
   ]
 }

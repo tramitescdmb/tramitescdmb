@@ -148,6 +148,7 @@ model Flujo {
   esFlujoInicial Boolean @default(false)
   orden         Int     @default(0)
   suitNumero    String? // ficha del SUIT específica de ESTE flujo, cuando el SUIT registra cada modalidad por separado (ej. M-DA-PR21: "Concesión de Aguas Superficiales" y "Concesión de Aguas Subterráneas" son un solo procedimiento/PDF pero dos fichas SUIT distintas)
+  resumen       String? @db.Text // frase natural de ESTE flujo, para cuando se ve enfocado en un solo flujo (?flujo=...) y no debe mencionar la otra modalidad
 
   tramiteTipo TramiteTipo    @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
   pasos       PasoDefinicion[]

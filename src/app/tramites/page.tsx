@@ -17,6 +17,8 @@ type EntradaCatalogo = {
   suits: string[];
   flujoParaTiempo: Tramite["flujos"][number] | undefined;
   conteo: Conteo | undefined;
+  /** Si viene de un flujo específico (caso PR21), el código de ese flujo — para enlazar a la vista enfocada (?flujo=...) que no habla de la otra modalidad. */
+  flujoCodigoFoco?: string;
 };
 
 /**
@@ -40,6 +42,7 @@ function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPor
       suits: f.suitNumero ? [f.suitNumero] : [],
       flujoParaTiempo: f,
       conteo: conteoPorFlujo.get(f.id),
+      flujoCodigoFoco: f.codigo,
     }));
   }
   const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
@@ -151,12 +154,13 @@ export default async function CatalogoTramitesPage() {
 }
 
 function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; categoria: Categoria }) {
-  const { tramite: t, nombre, suits, flujoParaTiempo, conteo } = entrada;
+  const { tramite: t, nombre, suits, flujoParaTiempo, conteo, flujoCodigoFoco } = entrada;
   const tiempo = flujoParaTiempo ? tiempoEstimadoDias(flujoParaTiempo.pasos) : null;
+  const href = flujoCodigoFoco ? `/tramites/${t.slug}?flujo=${flujoCodigoFoco}` : `/tramites/${t.slug}`;
 
   return (
     <Link
-      href={`/tramites/${t.slug}`}
+      href={href}
       className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
     >
       <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
