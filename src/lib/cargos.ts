@@ -60,3 +60,35 @@ export function cargoCoincideConPaso(nombreCargo: string | null | undefined, res
   const textoResponsables = normalizar(responsables.join(" | "));
   return cargo.palabrasClave.some((palabra) => textoResponsables.includes(normalizar(palabra)));
 }
+
+/**
+ * Un mismo cargo aparece escrito distinto en cada PDF ("Coordinador de
+ * Evaluación" / "Coordinador responsable del área de Evaluación" / ...).
+ * Esto agrupa un texto de responsable tal como viene del PDF bajo su cargo
+ * canónico de CARGOS_CDMB, para poder mostrar "quiénes intervienen" sin
+ * repetir la misma persona con 5 redacciones distintas. Si no coincide con
+ * ningún cargo conocido, devuelve el texto original tal cual (no se pierde
+ * información, solo no se agrupa).
+ */
+export function cargoCanonico(textoResponsable: string): string {
+  const texto = normalizar(textoResponsable);
+  for (const cargo of CARGOS_CDMB) {
+    if (cargo.palabrasClave.some((p) => texto.includes(normalizar(p)))) {
+      return cargo.nombre;
+    }
+  }
+  return textoResponsable.trim();
+}
+
+/** Cargos canónicos únicos mencionados en cualquier paso de una lista de flujos. */
+export function cargosQueIntervienen(flujos: { pasos: { responsables: string[] }[] }[]): string[] {
+  const vistos = new Set<string>();
+  for (const flujo of flujos) {
+    for (const paso of flujo.pasos) {
+      for (const r of paso.responsables) {
+        vistos.add(cargoCanonico(r));
+      }
+    }
+  }
+  return Array.from(vistos);
+}
