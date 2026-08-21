@@ -49,6 +49,7 @@ model Cargo {
   nombre  String    @unique
   orden   Int       @default(0)
   usuarios Usuario[]
+  expedientesAsignacion Expediente[] @relation("ExpedienteCargosAsignados")
 }
 
 model Usuario {
@@ -64,6 +65,7 @@ model Usuario {
   cargo                Cargo?            @relation(fields: [cargoId], references: [id])
   expedientesCreados   Expediente[]      @relation("CreadoPor")
   expedientesAsignados Expediente[]      @relation("ResponsableActual")
+  expedientesAsignacion Expediente[]     @relation("ExpedienteUsuariosAsignados")
   documentos           ExpedienteDocumento[]
   eventos              ExpedienteEvento[]
   registrosAuditoria   RegistroAuditoria[]
@@ -242,6 +244,19 @@ model Expediente {
   documentos ExpedienteDocumento[]
   eventos    ExpedienteEvento[]
 
+  /**
+   * Asignación del expediente completo (distinta de `responsableActual`, que
+   * es solo "quién lo tiene ahora mismo" y cambia a medida que avanza de
+   * paso). Esto es "quién(es) deben trabajar este expediente" — a uno o
+   * varios usuarios puntuales, y/o a uno o varios cargos (cualquiera que
+   * tenga ese cargo). Por ahora es solo informativo/visible: no bloquea a
+   * nadie más para editar el expediente (decisión explícita del usuario —
+   * convertir esto en una restricción real de permisos es un cambio
+   * aparte, a confirmar antes de hacerlo).
+   */
+  usuariosAsignados Usuario[] @relation("ExpedienteUsuariosAsignados")
+  cargosAsignados   Cargo[]   @relation("ExpedienteCargosAsignados")
+
   @@index([tramiteTipoId])
   @@index([estado])
   @@index([municipio])
@@ -271,6 +286,7 @@ enum TipoEvento {
   AVANCE_PASO
   DOCUMENTO_SUBIDO
   COMENTARIO
+  ASIGNACION_CAMBIADA
 }
 
 model ExpedienteEvento {

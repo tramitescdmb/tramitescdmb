@@ -37,17 +37,23 @@ export default async function ExpedienteDetallePage({
 }) {
   const { id } = await params;
 
-  const expediente = await db.expediente.findUnique({
-    where: { id },
-    include: {
-      tramiteTipo: true,
-      flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
-      documentos: { orderBy: { createdAt: "desc" }, include: { subidoPor: true } },
-      eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
-      creadoPor: true,
-      responsableActual: true,
-    },
-  });
+  const [expediente, usuariosActivos, cargos] = await Promise.all([
+    db.expediente.findUnique({
+      where: { id },
+      include: {
+        tramiteTipo: true,
+        flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
+        documentos: { orderBy: { createdAt: "desc" }, include: { subidoPor: true } },
+        eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
+        creadoPor: true,
+        responsableActual: true,
+        usuariosAsignados: true,
+        cargosAsignados: true,
+      },
+    }),
+    db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargo: { select: { nombre: true } } } }),
+    db.cargo.findMany({ orderBy: { orden: "asc" } }),
+  ]);
 
   if (!expediente) notFound();
 
@@ -425,6 +431,80 @@ export default async function ExpedienteDetallePage({
               puede seguir documentando (por ejemplo, el seguimiento posterior), pero ya no está activo.
             </div>
           )}
+
+          {/* Asignación del expediente */}
+          <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <h3 className="text-sm font-semibold text-stone-900">Asignado a</h3>
+            <p className="mb-2 text-xs text-stone-500">
+              Quién(es) deben trabajar este expediente — usuarios puntuales y/o cargos completos.
+              Es informativo: cualquier funcionario sigue pudiendo actuar sobre el expediente.
+            </p>
+            {expediente.usuariosAsignados.length === 0 && expediente.cargosAsignados.length === 0 ? (
+              <p className="text-sm text-stone-400">Sin asignar todavía.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {expediente.usuariosAsignados.map((u) => (
+                  <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
+                    👤 {u.nombre}
+                  </span>
+                ))}
+                {expediente.cargosAsignados.map((c) => (
+                  <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
+                    🏷️ {c.nombre}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {session?.rol === "ADMIN" && (
+              <details className="mt-3 group">
+                <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
+                  Editar asignación
+                </summary>
+                <form action={`/api/expedientes/${expediente.id}/asignar`} method="post" className="mt-2 space-y-3 border-t border-stone-100 pt-3">
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-stone-700">Usuarios puntuales</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-2">
+                      {usuariosActivos.map((u) => (
+                        <label key={u.id} className="flex items-center gap-2 text-sm text-stone-700">
+                          <input
+                            type="checkbox"
+                            name="usuarioIds"
+                            value={u.id}
+                            defaultChecked={expediente.usuariosAsignados.some((a) => a.id === u.id)}
+                          />
+                          {u.nombre}
+                          {u.cargo && <span className="text-xs text-stone-400"> — {u.cargo.nombre}</span>}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-stone-700">Cargos completos</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-2">
+                      {cargos.map((c) => (
+                        <label key={c.id} className="flex items-center gap-2 text-sm text-stone-700">
+                          <input
+                            type="checkbox"
+                            name="cargoIds"
+                            value={c.id}
+                            defaultChecked={expediente.cargosAsignados.some((a) => a.id === c.id)}
+                          />
+                          {c.nombre}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700"
+                  >
+                    Guardar asignación
+                  </button>
+                </form>
+              </details>
+            )}
+          </div>
         </div>
       </div>
     </div>
