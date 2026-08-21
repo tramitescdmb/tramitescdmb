@@ -27,7 +27,7 @@ export default async function TramiteDetallePage({
 
   const flujoPrincipal = tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
-  const categoria = categoriaTramite(tramite.nombre);
+  const categoria = categoriaTramite(tramite.nombre, tramite.codigo, tramite.suitNumeros);
   const cargos = cargosQueIntervienen(tramite.flujos);
   const cargosResponsables = cargosEnTexto(tramite.autoridadResponsabilidad);
 

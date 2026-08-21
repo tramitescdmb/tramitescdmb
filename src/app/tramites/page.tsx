@@ -23,7 +23,7 @@ export default async function CatalogoTramitesPage() {
 
   const porCategoria = new Map<string, typeof tramites>();
   for (const t of tramites) {
-    const cat = categoriaTramite(t.nombre);
+    const cat = categoriaTramite(t.nombre, t.codigo, t.suitNumeros);
     const lista = porCategoria.get(cat.id) ?? [];
     lista.push(t);
     porCategoria.set(cat.id, lista);
