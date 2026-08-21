@@ -157,6 +157,8 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   const { tramite: t, nombre, suits, flujoParaTiempo, conteo, flujoCodigoFoco } = entrada;
   const tiempo = flujoParaTiempo ? tiempoEstimadoDias(flujoParaTiempo.pasos) : null;
   const href = flujoCodigoFoco ? `/tramites/${t.slug}?flujo=${flujoCodigoFoco}` : `/tramites/${t.slug}`;
+  const resumenBase = flujoParaTiempo?.resumen ?? t.resumen ?? t.objeto;
+  const descripcion = resumenSinPrefijo(resumenBase);
 
   return (
     <Link
@@ -207,7 +209,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
         </div>
       )}
 
-      <p className="flex-1 text-sm text-stone-500">{t.resumen ? resumenSinPrefijo(t.resumen) : t.objeto}</p>
+      <p className="flex-1 text-sm text-stone-500">{descripcion}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
         {!conteo && <span className="text-xs text-stone-300">Sin expedientes todavía</span>}
