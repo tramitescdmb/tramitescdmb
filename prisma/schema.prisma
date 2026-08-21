@@ -307,3 +307,47 @@ model ExpedienteEvento {
 
   @@index([expedienteId])
 }
+
+// ---------------------------------------------------------------------------
+// Integración VITAL/OTIC (MinAmbiente) — espejo de solo lectura de las
+// solicitudes que el ciudadano radica en la Ventanilla Integral de Trámites
+// Ambientales en Línea (VITAL), traídas vía los servicios web expuestos por
+// X-ROAD (ver src/lib/vital.ts). Por ahora es de un solo sentido: se
+// sincroniza PARA VER, no se reporta nada de vuelta a VITAL (eso — avance de
+// actividad, asociación de radicado — quedó explícitamente fuera de alcance).
+// ---------------------------------------------------------------------------
+
+model SolicitudVital {
+  id                 String    @id @default(cuid())
+  idVital            String    @unique // número VITAL de la solicitud (idVital)
+  idTramiteVital     Int // id_tramite en VITAL
+  idTramiteAutoridad Int? // idTramiteAutoridad — identificador propio de la CDMB en VITAL, si aplica
+  fechaRadicacion    DateTime?
+  nombreActividad    String? // última actividad conocida al momento de sincronizar (hu-otic-vital-io-001)
+
+  solicitanteNombre         String?
+  solicitanteIdentificacion String?
+  solicitanteCorreo         String?
+  solicitanteRaw            Json? // respuesta completa de hu-otic-vital-io-003, tal cual (persona natural o jurídica)
+  camposTramite              Json? // respuesta completa de hu-otic-vital-io-002, tal cual (campos del formulario)
+
+  documentos           SolicitudVitalDocumento[]
+  ultimaSincronizacion DateTime @default(now()) @updatedAt
+  createdAt            DateTime @default(now())
+
+  @@index([idTramiteVital])
+}
+
+model SolicitudVitalDocumento {
+  id          String   @id @default(cuid())
+  solicitudId String
+  nombre      String
+  storagePath String // ya descargado del link temporal de VITAL (expira en 1h) y re-subido a nuestro Storage
+  mimeType    String
+  tamanoBytes Int
+  createdAt   DateTime @default(now())
+
+  solicitud SolicitudVital @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  @@index([solicitudId])
+}

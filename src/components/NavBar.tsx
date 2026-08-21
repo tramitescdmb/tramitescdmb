@@ -33,6 +33,9 @@ export async function NavBar() {
             <Link href="/expedientes" className="hover:text-cdmb-700">
               Expedientes
             </Link>
+            <Link href="/vital" className="hover:text-cdmb-700">
+              VITAL
+            </Link>
             {session.rol === "ADMIN" && (
               <>
                 <Link href="/usuarios" className="hover:text-cdmb-700">
