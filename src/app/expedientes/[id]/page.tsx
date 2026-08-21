@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { EstadoBadge } from "@/components/EstadoBadge";
-import { EventoIcono } from "@/components/EventoIcono";
+import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso } from "@/lib/cargos";
@@ -22,6 +22,14 @@ const ESTADOS = [
 
 type Opcion = { respuesta: string; siguientePaso: number | null; resultado?: string };
 
+const formatoFechaHistoria = new Intl.DateTimeFormat("es-CO", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export default async function ExpedienteDetallePage({
   params,
 }: {
@@ -35,7 +43,7 @@ export default async function ExpedienteDetallePage({
       tramiteTipo: true,
       flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
       documentos: { orderBy: { createdAt: "desc" }, include: { subidoPor: true } },
-      eventos: { orderBy: { createdAt: "desc" }, include: { usuario: true } },
+      eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
       creadoPor: true,
       responsableActual: true,
     },
@@ -317,12 +325,13 @@ export default async function ExpedienteDetallePage({
             </form>
           </section>
 
-          {/* Bitácora */}
-          <section>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
-              Bitácora del expediente <span className="font-normal normal-case text-stone-400">— trazabilidad de todo lo que ha pasado</span>
-            </h2>
-            <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-3 flex gap-2">
+          {/* Historia del expediente — línea de tiempo */}
+          <section className="rounded-xl border border-stone-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
+            <p className="mb-3 text-xs text-stone-500">
+              La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
+            </p>
+            <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
               <input
                 name="texto"
                 placeholder="Agregar una nota o comentario al expediente…"
@@ -332,17 +341,34 @@ export default async function ExpedienteDetallePage({
                 Comentar
               </button>
             </form>
-            <ul className="space-y-3 border-l-2 border-stone-100 pl-4">
-              {expediente.eventos.map((ev) => (
-                <li key={ev.id}>
-                  <EventoIcono tipo={ev.tipo} />
-                  <p className="text-sm text-stone-700">{ev.descripcion}</p>
-                  <p className="text-xs text-stone-400">
-                    {ev.usuario.nombre} · {ev.createdAt.toLocaleString("es-CO")}
-                  </p>
-                </li>
-              ))}
-            </ul>
+
+            <ol>
+              {expediente.eventos.map((ev, idx) => {
+                const info = infoEvento(ev.tipo);
+                const esUltimo = idx === expediente.eventos.length - 1;
+                return (
+                  <li key={ev.id} className="relative flex gap-3 pb-5">
+                    {!esUltimo && (
+                      <span className="absolute left-[15px] top-8 bottom-0 w-px bg-stone-200" aria-hidden />
+                    )}
+                    <span
+                      className={`relative z-10 flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm ${info.clase}`}
+                      aria-hidden
+                    >
+                      {info.icono}
+                    </span>
+                    <div className="min-w-0 flex-1 pt-1">
+                      <p className="text-sm text-stone-700">{ev.descripcion}</p>
+                      <p className="mt-0.5 text-xs text-stone-400">
+                        <span className="font-medium text-stone-500">{ev.usuario.nombre}</span>
+                        {" · "}
+                        {formatoFechaHistoria.format(ev.createdAt)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
         </div>
 
