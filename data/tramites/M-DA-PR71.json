@@ -1,0 +1,275 @@
+{
+  "codigo": "M-DA-PR71",
+  "version": "01",
+  "fecha": "2024-12-30",
+  "proceso": "GESTIÓN DEL CONOCIMIENTO AMBIENTAL",
+  "nombre": "Permiso de Caza de Fauna Silvestre",
+  "nombreCompleto": "PROCEDIMIENTO PARA LA OBTENCIÓN DEL PERMISO DE CAZA DE FAUNA SILVESTRE",
+  "slug": "permiso-caza-fauna-silvestre",
+  "archivoFuente": "M-DA-PR71 version 1.pdf",
+  "objeto": "Regular y controlar la actividad de caza para asegurar su realización de manera sostenible, respetando la biodiversidad y promoviendo la conservación de los ecosistemas.",
+  "alcance": "Este procedimiento se aplicará a todas las actividades de caza autorizadas en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental - SEYCA, Secretaría General y los Coordinadores respectivos, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA, Secretaría General, Asesor de Dirección General, serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Carta de solicitud con los requerimientos mínimos estipulados en el Decreto 1076 de 2015 y sus respectivos anexos", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Nombre, identificación y domicilio del solicitante", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 3, "nombre": "Sistemas, armas, equipos e implementos a emplear en las faenas de caza", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 4, "nombre": "Especies objeto del control (inventario)", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 5, "nombre": "Justificación del control", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 6, "nombre": "Área en la cual se realizará el control, indicando la jurisdicción a la cual pertenece y los cultivos que se pretende proteger", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 7, "nombre": "Nombre e identificación de las personas que ejecutarán las faenas de caza", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 8, "nombre": "Período durante el cual se realizarán las faenas de caza", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 9, "nombre": "Destino final de los productos", "obligatorio": true, "notas": "Caza control" },
+    { "orden": 10, "nombre": "Nombre, domicilio e identificación del solicitante", "obligatorio": true, "notas": "Caza deportiva" },
+    { "orden": 11, "nombre": "Dos (2) fotografías recientes", "obligatorio": true, "notas": "Caza deportiva" },
+    { "orden": 12, "nombre": "Especie o especies sobre las cuales pretende practicar la caza", "obligatorio": true, "notas": "Caza deportiva" },
+    { "orden": 13, "nombre": "Área en donde pretende practicar la caza", "obligatorio": true, "notas": "Caza deportiva" },
+    { "orden": 14, "nombre": "Armas, instrumentos o equipos que pretende utilizar y salvoconducto que ampare su porte", "obligatorio": true, "notas": "Caza deportiva (Decreto 1608 de 1978, artículo 97)" },
+    { "orden": 15, "nombre": "Nombre, identificación y domicilio del solicitante (y del representante legal con prueba de existencia, si es persona jurídica)", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 16, "nombre": "Copia de la resolución que autoriza la experimentación o el funcionamiento del zoocriadero o coto de caza", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 17, "nombre": "Constancia de la visita técnica practicada por técnicos de la entidad administradora del recurso, sobre instalaciones, equipos y condiciones de funcionamiento", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 18, "nombre": "Especies y número de individuos o especímenes que compondrán la población parental", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 19, "nombre": "Lugares de captura de los individuos o especímenes que se autorice obtener", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 20, "nombre": "Sistemas de selección y sistemas de caza que serán empleados", "obligatorio": true, "notas": "Caza fomento" },
+    { "orden": 21, "nombre": "Sistemas de transporte para los individuos o especímenes, desde el lugar de captura hasta el lugar de experimentación, zoocriadero o coto de caza", "obligatorio": true, "notas": "Caza fomento (Decreto 1608 de 1978, artículo 126)" },
+    { "orden": 22, "nombre": "Licencia ambiental vigente y cumplimiento del procedimiento del capítulo 3, título 2, parte 2, libro 2 del Decreto 1076 de 2015", "obligatorio": true, "notas": "Prerrequisito para permiso de caza comercial" }
+  ],
+  "flujos": [
+    {
+      "codigo": "permiso",
+      "nombre": "INSTRUCCIONES PARA LA OBTENCIÓN DEL PERMISO DE CAZA DE FAUNA SILVESTRE",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "El personal encargado de la ventanilla de la entidad recibe la solicitud del usuario y crea un número de radicado de entrada de conformidad con el consecutivo de correspondencia.",
+          "responsables": ["Personal asistencial de Radicación de la Correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["Carta de solicitud con los requerimientos mínimos estipulados en el Decreto 1076 de 2015 y sus respectivos anexos"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REMITIR SOLICITUD Y ANEXOS A LA SUBDIRECCIÓN CORRESPONDIENTE",
+          "descripcion": "La Oficina de Correspondencia remite la solicitud y los anexos a la Subdirección de Evaluación y Control Ambiental para que sean entregados al grupo de Evaluación para la Sostenibilidad.",
+          "responsables": ["Servidor Público de correspondencia", "Secretaria de la subdirección"],
+          "documentos": ["Carta de solicitud con los requerimientos mínimos estipulados en el Decreto 1076 de 2015 y sus respectivos anexos"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "REVISAR SOLICITUD Y ANEXOS",
+          "descripcion": "Se revisa el orden e identidad de los documentos por parte del funcionario de la ventanilla de trámites ambientales del grupo de Evaluación para la Sostenibilidad, según el tipo de caza solicitado. Caza control: nombre/identificación/domicilio del solicitante; sistemas, armas, equipos e implementos a emplear; especies objeto del control (inventario); justificación del control; área del control con jurisdicción y cultivos a proteger; nombre e identificación de quienes ejecutarán las faenas; período de las faenas; destino final de los productos. Caza deportiva: nombre, domicilio e identificación; dos fotografías recientes; especie(s) sobre las que se practicará la caza; área; armas/instrumentos/equipos a utilizar y salvoconducto que ampare su porte. Caza fomento: identificación del solicitante o representante legal con prueba de existencia; copia de la resolución que autoriza la experimentación o el zoocriadero/coto de caza; constancia de visita técnica; especies y número de individuos de la población parental; lugares de captura; sistemas de selección y de caza; sistemas de transporte. Permiso para caza comercial: como prerrequisito, tramitar y obtener licencia ambiental y cumplir el procedimiento del capítulo 3, título 2, parte 2, libro 2 del Decreto 1076 de 2015. Si los requisitos del trámite de caza están completos: el funcionario de ventanilla realiza y entrega la liquidación por concepto de evaluación ambiental; el usuario paga en tesorería o canal virtual, Tesorería expide la factura, y el usuario entrega la documentación para que se asigne número de solicitud en el SINCA, número de expediente y profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se realiza la devolución inmediata de la documentación aportada. Nota: si el profesional y/o técnico identifica en la visita que es necesario, se procede a ajustar los servicios cobrados al usuario.",
+          "responsables": ["Personal encargado de la ventanilla de trámites del Grupo Evaluación para la Sostenibilidad"],
+          "documentos": ["Solicitud", "Anexos a la solicitud", "Comprobante de pago y factura"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del personal de la ventanilla de trámites del grupo de evaluación para la sostenibilidad al área técnica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, con plazo máximo de un (1) mes; vencido este plazo sin que se allegue la información, se decreta el desistimiento tácito y el archivo del expediente (artículo 17 de la Ley 1437 de 2011), mediante acto administrativo que se notifica personalmente, contra el cual solo procede recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable actualiza la etapa en el SINCA. Nota: esta solicitud de información adicional es para aclarar documentación y/o anexos.",
+          "responsables": ["Personal encargado de la ventanilla de trámites del Grupo Evaluación para la sostenibilidad", "Profesional técnico adscrito al Grupo de Evaluación Ambiental para la Sostenibilidad"],
+          "documentos": ["Oficio solicitando información adicional", "Acto administrativo de desistimiento tácito (si se requiere)", "Citación del acto administrativo"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental elabora el Auto de Inicio, que ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. Una vez revisado y aprobado por el profesional universitario y el coordinador, el acto administrativo y la citación se trasladan al Secretario General para su firma. El servidor responsable incluye la información correspondiente, numeración, y actualiza la etapa en el SINCA. Cuando la información esté completa, se expide el auto de iniciación de trámite, que debe subirse al SINCA dejando trazabilidad en el sistema.",
+          "responsables": ["Profesional en derecho", "Servidor Responsable de la Coordinación de Evaluación para la sostenibilidad", "Profesional responsable de la revisión de los aspectos jurídicos"],
+          "documentos": ["Liquidación del servicio de evaluación", "Auto de inicio del trámite administrativo ambiental", "Citación del acto administrativo"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "FIRMAR Y NUMERAR EL AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El Secretario General revisa y firma el auto de inicio del trámite y lo remite junto con el expediente para numeración. El personal encargado de la numeración asigna el número consecutivo, remite el expediente de vuelta al grupo de evaluación para la sostenibilidad, y remite el acto administrativo, con el cambio de etapa en el sistema, a la oficina de notificaciones, para que se proceda a notificar el Auto de inicio del trámite.",
+          "responsables": ["Secretario General", "Secretaria del despacho de la Secretaría General"],
+          "documentos": ["Auto de inicio del trámite administrativo ambiental", "Citación del acto administrativo"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "NOTIFICAR EL AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "Se notifica el auto en mención para que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011), y se ordena su publicación en el GDI conforme a la Ley 99/93. Surtida la notificación y cargada la información en el SINCA y GDI, el acto administrativo con la respectiva constancia secretarial retorna al funcionario de SEYCA encargado de realizar la visita. Se debe asegurar la notificación y publicación, así como la alimentación del SINCA con los debidos soportes dejando trazabilidad.",
+          "responsables": ["Servidor responsable de notificar"],
+          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "PROGRAMAR VISITA",
+          "descripcion": "El profesional o técnico de SEYCA verifica que la constancia de pago por concepto de costos de trámite se encuentre en el expediente; según las fechas disponibles en el programador de visitas, da fecha y hora para la realización de la inspección ocular ordenada en el auto de inicio del trámite. El servidor responsable actualiza la etapa en el SINCA.",
+          "responsables": ["Servidor Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["Programador de visitas"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "REALIZAR VISITA TÉCNICA",
+          "descripcion": "El responsable de la coordinación de Evaluación designa al funcionario técnico adscrito a su área para que realice el estudio de la solicitud de permiso de caza de fauna silvestre. El servidor técnico responsable ejecuta las visitas que se necesiten al lugar, plasmando lo evidenciado en el formato de Hoja de Visita Institucional (con registro fotográfico). Si al corroborar la información presentada con la visita técnica considera necesario solicitar información adicional, procede a requerir por comunicación y se suspenden en el SINCA los términos del trámite. La realización de las visitas y el estudio deben efectuarse dentro de los 30 días hábiles siguientes a la publicación del Auto de Inicio.",
+          "responsables": ["Servidor Responsable de la coordinación de Evaluación para la sostenibilidad", "Servidor Técnico responsable"],
+          "documentos": ["Hoja de Visita Institucional"],
+          "tiempo": "30 días hábiles (visita y estudio, contados desde la publicación del Auto de Inicio)",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 10,
+          "titulo": "ELABORAR Y ENVIAR COMUNICACIÓN SOLICITANDO INFORMACIÓN ADICIONAL",
+          "descripcion": "El servidor responsable adscrito a la coordinación de evaluación envía comunicación al usuario solicitando la información que considere necesaria para continuar con el trámite, otorgando un plazo de un (1) mes calendario, prorrogable por única vez y por el mismo plazo.",
+          "responsables": ["Servidor Técnico responsable", "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirectora de SEYCA", "Secretaria de SEYCA"],
+          "documentos": ["SINCA con soportes y trazabilidad", "Comunicación enviada"],
+          "tiempo": "Tres (3) días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 11,
+          "titulo": "PRESENTAR LA INFORMACIÓN ADICIONAL SOLICITADA",
+          "descripcion": "Si el interesado presentó la información adicional, se procede a emitir el informe técnico, activando los tiempos en el SINCA. Si el interesado no presentó la información adicional, el servidor técnico responsable del trámite remite el expediente al profesional jurídico designado por la coordinación de Evaluación para que se realice el acto administrativo de desistimiento tácito de la solicitud.",
+          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["SINCA con soporte y trazabilidad"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Sí presentó la información", "siguientePaso": 12 },
+            { "respuesta": "No presentó la información", "siguientePaso": null, "resultado": "DESISTIDO" }
+          ]
+        },
+        {
+          "numero": 12,
+          "titulo": "ELABORAR Y NUMERAR INFORME TÉCNICO",
+          "descripcion": "El servidor técnico responsable del trámite proyecta el informe técnico y lo entrega al profesional responsable de la coordinación de Evaluación para que este revise y asigne el número consecutivo al informe técnico. Una vez asignado el número consecutivo, el documento se firma y se pasa a revisión y visto bueno. La emisión del informe técnico se realiza dentro de los ocho (8) días hábiles siguientes a la realización de las visitas y al aporte de la información adicional del solicitante, si a ello hubiere lugar, cargando el informe y soportes en el SINCA.",
+          "responsables": ["El servidor técnico responsable del trámite", "Servidor Profesional Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["Informe Técnico numerado", "SINCA con soportes y trazabilidad"],
+          "tiempo": "Ocho (8) días hábiles",
+          "tiempoDias": 8,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 13,
+          "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
+          "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias de carácter técnico, solicita explicación y corrección al técnico que realizó la visita, y posteriormente da el visto bueno al informe. Mediante el sistema SINCA se hace cambio de etapa, y por cuaderno se entrega el expediente en físico junto con el informe técnico (cargado en la plataforma) al área Jurídica del Grupo de Evaluación para la sostenibilidad.",
+          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
+          "documentos": ["Aplicativo SINCA", "Concepto Técnico"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 14,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DEL PERMISO DE CAZA",
+          "descripcion": "El profesional jurídico recibe el informe técnico, que determina la viabilidad o negación del permiso de caza, y procede a proyectar la resolución numerada. Con la revisión y visto bueno del profesional universitario jurídico, el Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para la firma y aprobación del Acto Administrativo, previa revisión, análisis y estudio del Asesor de Dirección General. La proyección de la Resolución se realiza en un término no mayor de 20 días hábiles contados a partir de la expedición del informe técnico; la Resolución debe cargarse como soporte en el expediente del SINCA.",
+          "responsables": ["Profesional en derecho", "Profesional universitario jurídico", "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental"],
+          "documentos": ["SINCA con soportes y trazabilidad", "Resolución firmada y numerada que otorga o niega el permiso de caza silvestre"],
+          "tiempo": "Quince (15) días",
+          "tiempoDias": 15,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Otorga el permiso de caza", "siguientePaso": 15, "resultado": "APROBADO" },
+            { "respuesta": "Niega el permiso de caza", "siguientePaso": 15, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 15,
+          "titulo": "FIRMAR Y NUMERAR LA RESOLUCIÓN",
+          "descripcion": "El Director General revisa y firma la resolución, y la remite junto con el expediente para numeración. El personal encargado de la numeración asigna el número consecutivo, remite el expediente de vuelta al grupo de evaluación para la sostenibilidad, y remite el acto administrativo, con el cambio de etapa en el sistema, a la oficina de notificaciones, para que se proceda a notificar la resolución.",
+          "responsables": ["Director General", "Servidor responsable de enumerar las Resoluciones"],
+          "documentos": ["Resolución del trámite administrativo ambiental", "Citación del acto administrativo"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 16,
+          "titulo": "NOTIFICAR LA RESOLUCIÓN",
+          "descripcion": "Se notifica la resolución en mención para que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011), y se ordena su publicación en el GDI conforme a la Ley 99/93. Surtida la notificación y cargada la información en el SINCA y GDI, el acto administrativo con la respectiva constancia secretarial retorna al archivo del Grupo de Evaluación para la Sostenibilidad, para posteriormente remitirse al grupo de seguimiento para la sostenibilidad. Se debe asegurar la notificación y publicación, así como la alimentación del SINCA con los debidos soportes dejando trazabilidad.",
+          "responsables": ["Servidor responsable de notificar"],
+          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 17,
+          "titulo": "PRESENTACIÓN DE RECURSO",
+          "descripcion": "En el procedimiento para el otorgamiento del permiso de caza, si el solicitante no está conforme con la resolución emitida por la autoridad competente, podrá interponer un recurso de reposición ante la resolución. El recurso de reposición debe ser interpuesto dentro de los diez (10) días hábiles siguientes a la notificación del acto administrativo, conforme a lo establecido en el Código de Procedimiento Administrativo y de lo Contencioso Administrativo.",
+          "responsables": ["Recepción encargado de correspondencia"],
+          "documentos": ["Presentación del documento (Recurso) y los anexos respectivos, en cumplimiento del artículo 47 de la Ley 1437 de 2011 y demás normativa vigente"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 18,
+          "titulo": "ELABORACIÓN RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DEL RECURSO DEL PERMISO DE CAZA",
+          "descripcion": "El profesional jurídico recibe la correspondencia con la solicitud y anexos respectivos, y procede a proyectar la resolución numerada. Con la revisión y visto bueno del profesional universitario jurídico, el Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para la firma y aprobación del Acto Administrativo, previa revisión, análisis y estudio del Asesor de Dirección General. Nota: si se requiere, se solicita apoyo técnico para determinadas respuestas, realizando un informe complementario firmado por el técnico y el líder del proceso. La proyección de la Resolución se realiza en un término no mayor de 20 días hábiles contados a partir de la expedición del informe técnico; la Resolución debe cargarse como soporte en el expediente del SINCA.",
+          "responsables": ["Profesional en derecho", "Profesional universitario jurídico", "Servidor Responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental"],
+          "documentos": ["SINCA con soportes y trazabilidad", "Resolución firmada y numerada que otorga o niega el permiso de caza silvestre"],
+          "tiempo": "Quince (15) días",
+          "tiempoDias": 15,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba el recurso (modifica o revoca la decisión)", "siguientePaso": 19, "resultado": "APROBADO" },
+            { "respuesta": "Niega el recurso (confirma la decisión)", "siguientePaso": 19, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 19,
+          "titulo": "FIRMAR Y NUMERAR LA RESOLUCIÓN – RESUELVE RECURSO",
+          "descripcion": "El Director General revisa y firma la resolución, y la remite junto con el expediente para numeración. El personal encargado de la numeración asigna el número consecutivo, remite el expediente de vuelta al grupo de evaluación para la sostenibilidad, y remite el acto administrativo, con el cambio de etapa en el sistema, a la oficina de notificaciones, para que se proceda a notificar la resolución.",
+          "responsables": ["Director General", "Servidor responsable de enumerar las Resoluciones"],
+          "documentos": ["Resolución del trámite administrativo ambiental", "Citación del acto administrativo"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 20,
+          "titulo": "NOTIFICAR LA RESOLUCIÓN – RESUELVE RECURSO",
+          "descripcion": "Se notifica la resolución en mención para que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011), y se ordena su publicación en el GDI conforme a la Ley 99/93. Surtida la notificación y cargada la información en el SINCA y GDI, el acto administrativo con la respectiva constancia secretarial retorna al archivo del Grupo de Evaluación para la Sostenibilidad, para posteriormente remitirse al grupo de seguimiento para la sostenibilidad. Se debe asegurar la notificación y publicación, así como la alimentación del SINCA con los debidos soportes dejando trazabilidad.",
+          "responsables": ["Servidor responsable de notificar"],
+          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "codigo": "M-DA-PR21",
+  "version": "17",
+  "fecha": "2022-12-28",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Concesión de Aguas de Uso Público Superficial y Subterránea",
+  "nombreCompleto": "PROCEDIMIENTO CONCESIÓN PARA AGUAS DE USO PÚBLICO SUPERFICIAL Y SUBTERRÁNEAS",
+  "slug": "concesion-aguas-uso-publico-superficial-subterranea",
+  "archivoFuente": "M-DA-PR21 version 17.pdf",
+  "objeto": "Identificar el marco técnico y jurídico para la evaluación del uso del agua superficial y subterránea en todos sus estados y formas (las de quebradas, arroyos, ríos, lagos, aguas lluvias, entre otras) para una gestión integral del recurso hídrico en el área de jurisdicción de la CDMB, que conlleve a la gestión eficaz y respuesta oportuna al usuario.",
+  "alcance": "Aplica para toda persona natural o jurídica cuya actividad requiera el uso y/o aprovechamiento del recurso hídrico de aguas públicas superficiales y subterráneas, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental – SEYCA, la Secretaría General y los coordinadores respectivos, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los funcionarios asignados a las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental - SEYCA, la Secretaría General y el Asesor de Director General, serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formulario Único Nacional de Solicitud de Concesión de Aguas, diligenciado en su totalidad", "obligatorio": true, "notas": "Formulario específico según el tipo de concesión: Aguas Superficiales o Aguas Subterráneas" },
+    { "orden": 2, "nombre": "Cédula de Ciudadanía", "obligatorio": true, "notas": "Solo persona natural" },
+    { "orden": 3, "nombre": "Documentos que acrediten la personería jurídica del solicitante: Certificado de existencia y representación legal (sociedades o corporaciones, expedido dentro de los 3 meses anteriores a la solicitud), o Personería Jurídica y/o Certificación e Inscripción de Dignatarios expedida por la Gobernación o Alcaldía (Juntas de Acción Comunal o Acueductos)", "obligatorio": true, "notas": "Solo persona jurídica" },
+    { "orden": 4, "nombre": "Acreditación sobre el predio: Certificado de Libertad y tradición (propietario, expedición no superior a 3 meses); prueba adecuada que acredite la tenencia y autorización del propietario del predio (tenedor); o prueba adecuada como Certificado Extra-juicio de Poseedor (poseedor)", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Censo de Usuarios", "obligatorio": true, "notas": "Solo para acueductos veredales y municipales" },
+    { "orden": 6, "nombre": "Programa de Uso Eficiente y Ahorro de Agua (PUEAA), de conformidad con la Resolución 1257 de 2018 del Ministerio de Ambiente y Desarrollo Sostenible artículos 2 y 3", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Autorización Sanitaria Favorable emitida por la Secretaría de Salud Departamental", "obligatorio": true, "notas": "Solo si el recurso es para consumo humano" },
+    { "orden": 8, "nombre": "Estudio de factibilidad ambiental del proyecto industrial, de conformidad con el artículo 2.2.3.2.10.4 del Decreto 1076 de 2015", "obligatorio": true, "notas": "Solo si es para uso industrial" },
+    { "orden": 9, "nombre": "Diseño del pozo", "obligatorio": true, "notas": "Solo concesión de aguas subterráneas" },
+    { "orden": 10, "nombre": "Prueba de bombeo", "obligatorio": true, "notas": "Solo concesión de aguas subterráneas" },
+    { "orden": 11, "nombre": "Hoja de visita del monitoreo de la prueba de bombeo por parte de la entidad", "obligatorio": true, "notas": "Solo concesión de aguas subterráneas" },
+    { "orden": 12, "nombre": "Copia de la resolución de aprobación de prospección de aguas subterráneas o certificado de la entidad del reconocimiento de pozo", "obligatorio": true, "notas": "Solo concesión de aguas subterráneas" },
+    { "orden": 13, "nombre": "Requisitos especiales para servicios públicos: detalle de las obras, extensión y número de predios o habitantes a beneficiar, plazo durante el cual se dará el servicio y reglamentación del mismo", "obligatorio": false, "notas": "Solo cuando el trámite corresponde a la prestación de servicios públicos" },
+    { "orden": 14, "nombre": "Autorización de notificación por correo electrónico", "obligatorio": false, "notas": "Solo si el usuario lo autoriza" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES CONCESIÓN PARA AGUAS DE USO PÚBLICO SUPERFICIAL Y SUBTERRÁNEAS",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02). El funcionario de la ventanilla de trámites ambientales revisa el orden e identidad de los documentos según los requisitos del trámite de concesión de aguas superficiales o de aguas subterráneas, según corresponda. Si los requisitos están completos: el funcionario de ventanilla realiza y entrega la liquidación por concepto de evaluación ambiental; el usuario paga en tesorería (o a través de los canales virtuales establecidos) y Tesorería expide la factura; el usuario entrega toda la documentación para que se asigne número de solicitud en el SINCA, número de expediente y se asigne al profesional y/o técnico de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se realiza la devolución inmediata de la documentación aportada. Nota: si el profesional y/o técnico, al realizar la visita, identifica que es necesario, se procederá a hacer ajuste de los servicios cobrados al usuario. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Personal asistencial de Radicación de Correspondencia y/o responsables de los diferentes canales de atención", "Profesional Técnico Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Formulario único Nacional de Concesión de aguas Superficiales del Ministerio de Ambiente y Desarrollo Sostenible con sus respectivos documentos anexos", "Formulario único Nacional de Concesión de aguas Subterráneas del Ministerio de Ambiente y Desarrollo Sostenible con sus respectivos documentos anexos", "Formato Control de Proceso E-GE-FO02 (lista de chequeo)", "Recibo de Pago"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, indicando que el plazo para completarla es de máximo un (1) mes. Vencido este plazo sin que se allegue la información solicitada, se procederá a decretar el desistimiento tácito y el archivo del expediente (Art. 17, Ley 1437 de 2011) mediante acto administrativo, que se notificará personalmente y contra el cual únicamente procede recurso de reposición, sin perjuicio de que la solicitud de trámite pueda ser nuevamente presentada con el lleno de los requisitos legales. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Coordinación de Evaluación para la Sostenibilidad", "Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Oficio para el usuario"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental procede a realizar el Auto de Inicio, el cual ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Profesional Jurídico Subdirección de Evaluación y Control Ambiental", "Secretaría General"],
+          "documentos": ["Auto de inicio del trámite administrativo ambiental", "Aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "NOTIFICAR EL AUTO DE TRÁMITE, ENTREGAR EL AVISO Y PROGRAMAR VISITA",
+          "descripcion": "El Secretario General, una vez firmado, remite el expediente a la oficina de notificaciones para que se proceda a notificar el Auto de inicio del trámite; el funcionario de la oficina de notificaciones entrega al interesado el aviso expedido por el Secretario General en los términos de la Ley 1437 de 2011. Se notifica el auto para que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo. Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de realizar la visita. El profesional o técnico de SEYCA verifica que la constancia de pago por concepto de costos de trámite se encuentre en el expediente y, acorde con las fechas disponibles en el programador de visitas, fija fecha y hora para la realización de la inspección ocular ordenada en el auto de inicio.",
+          "responsables": ["Profesional o técnico de concesión de aguas", "Funcionario de la oficina de notificaciones"],
+          "documentos": ["Auto de inicio del trámite", "Aviso"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "PUBLICAR AVISOS DEL TRÁMITE DE LA CONCESIÓN DE AGUA",
+          "descripcion": "El usuario realiza la fijación del aviso de inspección ocular en la cartelera de la alcaldía o inspección de policía del municipio que corresponda, por un periodo de diez (10) días hábiles anteriores a la fecha de inspección, y debe hacer entrega de la constancia de fijación y desfijación del aviso (expedida por la alcaldía o inspección de policía) al profesional o técnico de concesión de aguas en el momento de la visita y/o por medio electrónico, quien la incorporará al expediente. Si el punto de captación y el predio a beneficiar se encuentran en municipios diferentes, el usuario realizará la fijación en ambas alcaldías o inspecciones. Para dar cumplimiento al artículo 70 de la Ley 99 de 1993 sobre publicación del auto de inicio, el funcionario de notificaciones gestiona la publicación del acto administrativo en el Boletín Informativo Ambiental y en el GDI de la entidad, debidamente escaneado en PDF, e incorpora dicho documento al SINCA antes de realizar el cambio de etapa a SEYCA. La Oficina de Notificaciones fija el aviso de publicación de inspección en los sitios y canales designados por la Entidad y, cumplidas las actividades, expide constancia de fijación y desfijación del aviso, la incorpora al expediente y remite la documentación al profesional de SEYCA para continuar con la inspección ocular.",
+          "responsables": ["El solicitante", "Profesional o técnico de concesión de aguas de SEYCA", "Funcionario de la oficina de Notificaciones"],
+          "documentos": ["Aplicativo SINCA", "Aviso de Trámite", "Oficio de comunicación", "Constancia de publicación del aviso en cartelera"],
+          "tiempo": "Diez (10) días hábiles",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "Los profesionales o técnicos del equipo de campo realizan la visita y elaboran el informe del sitio de captación de la posible concesión, registrando los datos en el SINCA en los campos previstos. Se tienen en cuenta, entre otros: geo-referenciación del predio; verificación de los datos consignados en el Formato Único de Concesión de Aguas Superficiales o Subterráneas respecto a la demanda del recurso (consumo humano, pecuario, agrícola, industrial, recreación, etc.); visita a la captación (geo-referenciación, aforos, identificación de usuarios aguas arriba y aguas abajo, verificación del estado de conservación forestal, identificación de posibles generadores de conflictos por uso del agua); comprobación del estado de la conducción y sus formas de almacenamiento y distribución para sugerir recomendaciones de ahorro y uso eficiente; verificación de la prueba de bombeo presentada por el usuario cuando la solicitud sea de aguas subterráneas; diligenciamiento del Formato Cartera de visita técnica de campo de solicitud de concesión de aguas (M-DA-FO12); promoción, si es necesario, del fortalecimiento del conocimiento del recurso hídrico en las comunidades; notificación mediante oficio a los usuarios detectados en campo sin concesión para que realicen la legalización; elaboración del soporte cartográfico hidrológico para la ubicación de la fuente y cota; y verificación del manejo de aguas residuales en el predio objeto del trámite. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA. Nota: los profesionales y técnicos deben cumplir la visita en la fecha y hora señalada conforme a la programación de la Coordinación de Evaluación para la Sostenibilidad, para dar cumplimiento a la fecha fijada en el aviso publicado en la alcaldía o inspección de policía. El técnico o grupo de profesionales que practique la visita de campo tendrá un plazo de treinta (30) días para rendir y subir el informe a la plataforma; cuando se trate de Juntas de Acción Comunal, el plazo será de hasta 40 días.",
+          "responsables": ["Profesional o técnico de concesión de aguas"],
+          "documentos": ["Aplicativo SINCA", "Formato Cartera de Visita Técnica de Campo de Solicitud de Concesión de Aguas (M-DA-FO12)", "Informe Técnico de Concesiones"],
+          "tiempo": "Treinta (30) días (hasta 40 días cuando se trate de Juntas de Acción Comunal)",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "REVISAR Y DAR VISTO BUENO AL CONCEPTO TÉCNICO",
+          "descripcion": "El Coordinador de Evaluación revisa el Informe Técnico de Concesiones y los aplicativos SINCA (datos técnicos, registro de la solicitud, información de campo, registro de aforos, registro de la compensación, registro de la visita técnica). Si el informe presenta inconsistencias de carácter técnico, solicita explicación y corrección al profesional o técnico que realizó la visita; de lo contrario, da visto bueno al informe y le asigna número consecutivo al concepto. Mediante el sistema SINCA se hace cambio de etapa, y por cuaderno se hace entrega del expediente en físico junto con el informe técnico (debidamente cargado a la plataforma), como soporte para facilitar el trabajo del jurídico en la proyección de la Resolución. El Coordinador de Evaluación tendrá diez (10) días para la revisión y visto bueno respectivo.",
+          "responsables": ["Profesional o técnico de concesión de aguas", "Coordinador de Evaluación para la Sostenibilidad"],
+          "documentos": ["Aplicativo SINCA", "Informe Técnico de Concesiones", "Memorando Interno"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DE LA CONCESIÓN DE AGUAS O AUTO DE ARCHIVO",
+          "descripcion": "Una vez remitido el correspondiente Informe Técnico de Concesión junto con el expediente, el profesional designado del Grupo de Abogados adscrito a SEYCA proyecta la Resolución. Con la revisión y visto bueno del Coordinador de Evaluación y el Subdirector de SEYCA, se envía a la Dirección General para la respectiva firma y aprobación del Acto Administrativo que otorga o niega la concesión de aguas, previa revisión, análisis y estudio del Asesor de Dirección General. Una vez aprobada y firmada la Resolución, el expediente se envía a la Secretaría General para su numeración y notificación de la respectiva providencia. La Secretaría General gestiona la publicación del acto administrativo en el GDI de la entidad (Gestión Documentos Institucionales Digitales - Boletín informativo Ambiental), debidamente escaneado en formato PDF, dando cumplimiento al artículo 71 de la Ley 99 de 1993, y remite el expediente a la Oficina de Notificaciones. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA. La proyección de la Resolución, revisión y firma del acto administrativo para firma del Director General se realizará en un término de sesenta (60) días. La aprobación de la Resolución se realizará en un término de cinco (5) días.",
+          "responsables": ["Profesional Jurídico Subdirección de Evaluación y Control Ambiental", "Coordinador de Evaluación para la Sostenibilidad", "Subdirector SEYCA", "Asesor de la Dirección General", "Director General"],
+          "documentos": ["Expediente", "Aplicativo SINCA", "Resolución de concesión de agua"],
+          "tiempo": "Sesenta (60) días para proyección, revisión y firma; cinco (5) días para la aprobación",
+          "tiempoDias": 60,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba la concesión de aguas", "siguientePaso": 9, "resultado": "APROBADO" },
+            { "respuesta": "Niega la concesión de aguas", "siguientePaso": 9, "resultado": "NEGADO" },
+            { "respuesta": "Archiva el trámite", "siguientePaso": null, "resultado": "ARCHIVADO" }
+          ]
+        },
+        {
+          "numero": 9,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "La oficina de notificaciones cita al usuario para comunicarle la resolución de aprobación o negación correspondiente al trámite de concesión de aguas, e informa que cuenta con diez (10) días hábiles para presentar los recursos de ley (artículos 67 y 76, Ley 1437 de 2011). Si el usuario autorizó la notificación por correo electrónico, se notifica por ese medio. Si no se interponen recursos, se declara ejecutoriada la Resolución y se continúa con la actividad siguiente. Si se interpone recurso, se devuelve el expediente a la Coordinación de Evaluación para la Sostenibilidad para que se revise técnicamente y se emita el concepto técnico que sirva de fundamento para resolver el recurso de reposición; se entrega al jurídico adscrito a SEYCA para que profiera la decisión que en derecho corresponda y proyecte la resolución que lo resuelva, con un plazo de dos (2) meses para resolver el recurso. Resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión correspondiente; se notifica personalmente al usuario y se declara ejecutoriada la Resolución, continuando con la actividad siguiente. Si el interesado no comparece a la CDMB para notificarse, se notificará por aviso, el cual quedará fijado por un término de cinco (5) días hábiles conforme al artículo 69 de la Ley 1437 de 2011.",
+          "responsables": ["Personal asistencial de la Oficina de Notificaciones", "Profesional de SEYCA"],
+          "documentos": ["Resolución de concesión de aguas", "Constancia de notificación (Personal y/o Edicto)", "Memorando interno", "Aplicativo SINCA"],
+          "tiempo": "Diez (10) días hábiles para recursos; dos (2) meses para resolverlos si se interponen",
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 10,
+          "titulo": "INCORPORAR AL REGISTRO ÚNICO DE USUARIOS",
+          "descripcion": "En cumplimiento del Decreto 1324 de 2007, antes del archivo del expediente con la aprobación de la concesión, se debe realizar el registro del usuario en el aplicativo SINCA de \"Registro de usuarios del recurso hídrico\".",
+          "responsables": ["Profesional o técnico de SEYCA"],
+          "documentos": ["Aplicativo SINCA", "Expediente"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

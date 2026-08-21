@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios internos (funcionarios CDMB)
+// ---------------------------------------------------------------------------
+
+enum RolUsuario {
+  ADMIN
+  FUNCIONARIO
+}
+
+model Usuario {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  nombre       String
+  passwordHash String
+  rol          RolUsuario @default(FUNCIONARIO)
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  expedientesCreados   Expediente[]      @relation("CreadoPor")
+  expedientesAsignados Expediente[]      @relation("ResponsableActual")
+  documentos           ExpedienteDocumento[]
+  eventos              ExpedienteEvento[]
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo de trámites (datos de referencia, sembrados desde data/tramites/*.json)
+// ---------------------------------------------------------------------------
+
+model TramiteTipo {
+  id                        String   @id @default(cuid())
+  codigo                    String   @unique // ej. M-DA-PR05
+  version                   String
+  fecha                     DateTime
+  proceso                   String
+  nombre                    String
+  nombreCompleto            String
+  slug                      String   @unique
+  archivoFuente             String
+  objeto                    String   @db.Text
+  alcance                   String   @db.Text
+  autoridadResponsabilidad  String   @db.Text
+  activo                    Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  flujos              Flujo[]
+  documentosRequeridos DocumentoRequeridoDefinicion[]
+  expedientes         Expediente[]
+}
+
+model DocumentoRequeridoDefinicion {
+  id            String  @id @default(cuid())
+  tramiteTipoId String
+  orden         Int
+  nombre        String
+  obligatorio   Boolean @default(true)
+  notas         String?
+
+  tramiteTipo TramiteTipo @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+
+  @@index([tramiteTipoId])
+}
+
+model Flujo {
+  id            String  @id @default(cuid())
+  tramiteTipoId String
+  codigo        String // inicio | renovacion | ...
+  nombre        String
+  esFlujoInicial Boolean @default(false)
+  orden         Int     @default(0)
+
+  tramiteTipo TramiteTipo    @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+  pasos       PasoDefinicion[]
+  expedientes Expediente[]
+
+  @@unique([tramiteTipoId, codigo])
+}
+
+model PasoDefinicion {
+  id          String   @id @default(cuid())
+  flujoId     String
+  numero      Int
+  titulo      String
+  descripcion String   @db.Text
+  responsables String[]
+  documentos   String[]
+  tiempo       String?
+  tiempoDias   Int?
+  esDecision   Boolean  @default(false)
+  opciones     Json?
+
+  flujo Flujo @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+
+  @@unique([flujoId, numero])
+}
+
+// ---------------------------------------------------------------------------
+// Expedientes (instancias reales de un trámite gestionadas por la CDMB)
+// ---------------------------------------------------------------------------
+
+enum EstadoExpediente {
+  RADICADO
+  EN_TRAMITE
+  INFORMACION_ADICIONAL_REQUERIDA
+  SUSPENDIDO
+  APROBADO
+  NEGADO
+  DESISTIDO
+  ARCHIVADO
+  RECHAZADO
+}
+
+enum TipoSolicitante {
+  NATURAL
+  JURIDICA
+}
+
+model Expediente {
+  id             String   @id @default(cuid())
+  numero         String   @unique // ej. M-DA-PR05-2026-0001
+  tramiteTipoId  String
+  flujoId        String
+
+  solicitanteTipo           TipoSolicitante @default(NATURAL)
+  solicitanteNombre         String
+  solicitanteIdentificacion String
+  solicitanteEmail          String?
+  solicitanteTelefono       String?
+  solicitanteDireccion      String?
+
+  estado           EstadoExpediente @default(RADICADO)
+  pasoActualNumero Int              @default(1)
+
+  createdById         String
+  responsableActualId String?
+
+  fechaRadicacion      DateTime  @default(now())
+  fechaUltimoMovimiento DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tramiteTipo      TramiteTipo @relation(fields: [tramiteTipoId], references: [id])
+  flujo            Flujo       @relation(fields: [flujoId], references: [id])
+  creadoPor        Usuario     @relation("CreadoPor", fields: [createdById], references: [id])
+  responsableActual Usuario?   @relation("ResponsableActual", fields: [responsableActualId], references: [id])
+
+  documentos ExpedienteDocumento[]
+  eventos    ExpedienteEvento[]
+
+  @@index([tramiteTipoId])
+  @@index([estado])
+}
+
+model ExpedienteDocumento {
+  id            String   @id @default(cuid())
+  expedienteId  String
+  pasoNumero    Int?
+  nombre        String
+  descripcion   String?
+  storagePath   String
+  mimeType      String
+  tamanoBytes   Int
+  subidoPorId   String
+  createdAt     DateTime @default(now())
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor  Usuario    @relation(fields: [subidoPorId], references: [id])
+
+  @@index([expedienteId])
+}
+
+enum TipoEvento {
+  CREACION
+  CAMBIO_ESTADO
+  AVANCE_PASO
+  DOCUMENTO_SUBIDO
+  COMENTARIO
+}
+
+model ExpedienteEvento {
+  id             String     @id @default(cuid())
+  expedienteId   String
+  tipo           TipoEvento
+  descripcion    String     @db.Text
+  pasoNumero     Int?
+  estadoAnterior EstadoExpediente?
+  estadoNuevo    EstadoExpediente?
+  usuarioId      String
+  createdAt      DateTime   @default(now())
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@index([expedienteId])
+}

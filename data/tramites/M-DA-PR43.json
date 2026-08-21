@@ -1,0 +1,92 @@
+{
+  "codigo": "M-DA-PR43",
+  "version": "02",
+  "fecha": "2016-12-05",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Registro de Generadores de Residuos Peligrosos",
+  "nombreCompleto": "PROCEDIMIENTO PARA LA INSCRIPCIÓN Y SEGUIMIENTO EN EL REGISTRO DE GENERADORES DE RESIDUOS O DESECHOS PELIGROSOS",
+  "slug": "registro-generadores-residuos-peligrosos",
+  "archivoFuente": "M-DA-PR43 version   2.pdf",
+  "objeto": "Describir y estandarizar los pasos a seguir para servir de ente intermediador entre el generador del residuo peligroso y el usuario final de la información (Instituto de Hidrología, Meteorología y Estudios Ambientales - IDEAM).",
+  "alcance": "El procedimiento inicia desde la radicación de la solicitud, hasta remitir carta con usuario y contraseña que requieren las empresas generadoras para obtener el ingreso al aplicativo del IDEAM. El propósito de este servicio es lograr la inscripción de toda persona natural o jurídica que desarrolle cualquier tipo de actividad que genere residuos o desechos peligrosos, con excepción de los generadores de residuos o desechos peligrosos que generen una cantidad inferior a 10.0 kg/mes.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador responsable del área de evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al área de evaluación ambiental de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir y actualizar el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formato de inscripción (Anexo 1, Resolución 1362 de 2007) para inscripción en el sistema RESPEL", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Formato de inscripción (Anexo 2, Resolución 1023 de 2010) para inscripción en el sistema RUA Manufacturero", "obligatorio": true, "notas": null }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "INICIAR EL SERVICIO POR SOLICITUD DEL USUARIO",
+          "descripcion": "La Empresa Generadora solicita la inscripción en el registro de generadores de residuos o desechos peligrosos en la ventanilla de trámites ambientales de la CDMB. Igualmente debe presentar el Anexo 1: Formato de inscripción encontrado en la Resolución 1362 de 2007 para inscripción en el sistema RESPEL, y el Anexo 2 de la Resolución 1023 de 2010 para inscripción en el sistema RUA Manufacturero.",
+          "responsables": ["Servidor responsable de Ventanilla trámites ambientales"],
+          "documentos": ["Solicitud del usuario y anexo(s)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "ENVIAR SOLICITUD A SEYCA",
+          "descripcion": "El personal asistencial de ventanilla, servidor responsable de Ventanilla de correspondencia, allega la solicitud a la Subdirección de Evaluación y Control Ambiental, al área de evaluación ambiental, para que inicie el trámite de la solicitud.",
+          "responsables": ["Servidor responsable de Ventanilla de Correspondencia", "Servidor responsable de reparto"],
+          "documentos": ["Solicitud del usuario y anexo(s)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ASIGNAR SOLICITUD",
+          "descripcion": "El Responsable del área de evaluación asigna al servidor encargado para la evaluación de la solicitud.",
+          "responsables": ["Servidor responsable del área de evaluación ambiental"],
+          "documentos": ["Asignación de solicitud"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "INGRESAR LA SOLICITUD EN EL APLICATIVO WEB DEL IDEAM",
+          "descripcion": "El servidor encargado del área de evaluación registra la solicitud en el aplicativo Web del registro de generadores de Residuos o Desechos Peligrosos o RUA Manufacturero, y emite carta al interesado informando el número de registro asignado para la identificación del usuario en el sistema.",
+          "responsables": ["Servidor designado por el área de Evaluación Ambiental"],
+          "documentos": ["Registro de solicitud en el aplicativo", "Carta con usuario y contraseña"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REPORTAR DE INFORMACIÓN",
+          "descripcion": "La empresa generadora debe reportar la información anual sobre los residuos o desechos peligrosos entre el periodo del 1 de enero al 31 de marzo del período de balance anterior. El Servidor designado por el área de Seguimiento verificará si la información reportada cumple con los requisitos exigidos en el aplicativo IDEAM; de no cumplir, se realizará comunicación con el usuario para su respectiva corrección y nueva verificación.",
+          "responsables": ["Servidor designado por el área de Control y Seguimiento Ambiental"],
+          "documentos": ["Reporte de información"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "TRANSFERIR INFORMACIÓN AL IDEAM",
+          "descripcion": "El Servidor designado por el área de Seguimiento registra la información correspondiente a la solicitud en el aplicativo del Instituto de Hidrología, Meteorología y Estudios Ambientales - IDEAM, para que éste tenga acceso a la misma.",
+          "responsables": ["Servidor designado por el área de Control y Seguimiento Ambiental"],
+          "documentos": ["Información cargada en el aplicativo del IDEAM"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

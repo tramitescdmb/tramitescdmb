@@ -1,0 +1,124 @@
+{
+  "codigo": "M-DA-PR55",
+  "version": "2",
+  "fecha": "2019-02-14",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Solicitudes de Proyectos a ser Licenciados por la ANLA",
+  "nombreCompleto": "PROCEDIMIENTO PARA SOLICITUDES PROYECTOS A SER LICENCIADOS POR LA AUTORIDAD NACIONAL DE LICENCIAS AMBIENTALES – “ANLA”",
+  "slug": "solicitudes-proyectos-licenciados-anla",
+  "archivoFuente": "M-DA-PR55 version   2.pdf",
+  "objeto": "Describir y estandarizar los pasos a seguir para el otorgamiento de permisos menores y evaluación de Estudios de Impacto Ambiental, de proyectos de infraestructura, minería, energía, hidrocarburos, entre otros, que por competencia son evaluados y licenciados por la Autoridad Nacional de Licencias Ambientales, para los proyectos, obras o actividades a ejecutar dentro de la jurisdicción de la CDMB, dando así cumplimiento a una actividad dentro del Plan de Mejoramiento de la Contraloría General de la República.",
+  "alcance": "Aplica a todas las solicitudes de evaluación de Licencia Ambiental (permisos tales como: Concesión de aguas, ocupación de cauce, aprovechamiento forestal, levantamiento de veda, permisos de estudio con fines de investigación científica en diversidad biológica, entre otros), para proyectos, obras o actividades que las requieran, de competencia de la ANLA, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental, la Secretaria General, el Profesional Especializado responsable del grupo de evaluación ambiental y el Director General, tienen la autoridad y responsabilidad de garantizar el cumplimiento del procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Oficio de solicitud radicado, con los anexos correspondientes al tipo de permiso requerido para el proyecto licenciado por la ANLA (concesión de aguas, ocupación de cauce, aprovechamiento forestal, levantamiento de veda, permisos de estudio con fines de investigación científica en diversidad biológica, entre otros), incluyendo todos los documentos exigidos para el respectivo Estudio de Impacto Ambiental", "obligatorio": true, "notas": "Los documentos específicos varían según el tipo de permiso o trámite solicitado; remitirse al procedimiento CDMB correspondiente a cada permiso" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RADICAR SOLICITUD",
+          "descripcion": "El interesado se acerca a la ventanilla de trámites para que el servidor responsable revise la documentación. Se revisan los documentos de acuerdo al tipo de trámite (remitiéndose al respectivo procedimiento) y se radica la solicitud. Si la documentación viene completa, se entrega en la ventanilla de correspondencia para radicarla de acuerdo a la lista de chequeo del Formato Control de Procesos.",
+          "responsables": ["Personal asistencial de correspondencia"],
+          "documentos": ["Oficio radicado por el usuario y anexos", "Solicitud creada y asignada en el SINCA", "Expediente creado y asignado en el SINCA"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REMITIR SOLICITUD Y ANEXOS A LA SUBDIRECCIÓN RESPONSABLE",
+          "descripcion": "El servidor de correspondencia que recibe la solicitud envía la documentación radicada a la Subdirección de Evaluación y Control Ambiental, para el respectivo reparto por parte del Profesional Especializado coordinador del grupo de Evaluación Ambiental, quien asigna al servidor que se hará cargo del trámite de acuerdo al tema y realiza la respectiva revisión conforme a su respectivo procedimiento de la CDMB.",
+          "responsables": ["Funcionario de correspondencia", "Coordinador del grupo de Evaluación de SEYCA", "Profesionales del Grupo de Evaluación de SEYCA"],
+          "documentos": ["Carta de solicitud y anexos", "Registro en el aplicativo de correspondencia", "Registro en SINCA del prefijo que identifica a ANLA", "Todos los documentos requeridos para el trámite que se solicite, de acuerdo a su respectivo procedimiento de la CDMB"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "REGISTRAR EN EL SINCA",
+          "descripcion": "Se crea y asigna la solicitud en el SINCA, mediante el prefijo que identifica a este tipo de proyectos (ANLA).",
+          "responsables": ["Profesional en derecho adscrito a SEYCA", "Profesional líder de la evaluación"],
+          "documentos": ["Expediente creado y asignado en el SINCA"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "VERIFICAR REQUISITOS",
+          "descripcion": "Se realiza la verificación de requisitos según el formato para la revisión preliminar de la documentación que conforma la solicitud de licencia ambiental, emitido por el Ministerio.",
+          "responsables": ["Profesional en derecho adscrito a SEYCA"],
+          "documentos": ["Todos los documentos requeridos para Estudios de Impacto Ambiental y los que se requieren en los demás procedimientos para permisos menores inmersos en Licencia Ambiental"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "PRACTICAR VISITA \"IN SITU\"",
+          "descripcion": "Una vez se realice el pago por parte del peticionario o usuario, se programa la visita de campo y se coordina con el interesado para verificar \"in situ\" los contenidos del Estudio de Impacto Ambiental y los documentos de las demás solicitudes de permisos, dando cumplimiento al procedimiento que corresponda a cada trámite dentro del SIGC de la CDMB.",
+          "responsables": ["Profesionales del Grupo de Evaluación de SEYCA"],
+          "documentos": ["Hoja de visita de campo", "Coordenadas", "Fotografías"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "REALIZAR LA EVALUACIÓN DE LAS DIFERENTES SOLICITUDES DE PROYECTOS ANLA",
+          "descripcion": "Se evalúa el uso y/o aprovechamiento de los recursos naturales renovables en el área de jurisdicción, dando estricto cumplimiento a los diferentes procedimientos de la CDMB que apliquen (como Concesión de aguas, ocupación de cauce, aprovechamiento forestal, entre otros). Se realiza la apertura en el SINCA de cada solicitud y se registra en la pestaña creada para Permisos (ANLA).",
+          "responsables": ["Profesionales del Grupo de Evaluación de SEYCA", "Profesional en derecho adscrito a SEYCA"],
+          "documentos": ["Apertura en el SINCA de cada solicitud, registrada en la pestaña creada para Permisos (ANLA)"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "Una vez recibida la información del interesado, los profesionales o técnicos asignados por el grupo de evaluación ambiental emiten el concepto técnico de evaluación del uso y aprovechamiento de los recursos naturales renovables, y lo remiten al responsable o coordinador del área de evaluación para que se envíe a la ANLA el respectivo pronunciamiento de la CDMB. Nota: a la ANLA solo se envía el concepto técnico que la CDMB considere pertinente para fijar su posición como autoridad ambiental regional; no se envía acto administrativo ni resolución de aprobación de Licencia Ambiental, porque es la ANLA quien decide si tiene en cuenta o no el concepto de la Corporación, o decide sin él.",
+          "responsables": ["Profesionales del Grupo de Evaluación de SEYCA", "Profesional en derecho adscrito a SEYCA", "Subdirector(a) de Evaluación y Control Ambiental"],
+          "documentos": ["Concepto Técnico", "Elaboración de acto administrativo"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "ENTREGA DE INFORMACIÓN ADICIONAL",
+          "descripcion": "En caso de que la ANLA requiera información adicional relacionada con el uso y/o aprovechamiento de los recursos naturales renovables, la CDMB, en el área de su jurisdicción, emite el correspondiente concepto técnico sobre los mismos, en un término máximo de quince (15) días hábiles contados a partir de la radicación de la información adicional por parte del solicitante. Este procedimiento se desarrolla de la misma manera descrita desde la actividad 1.",
+          "responsables": ["Profesionales del Grupo de Evaluación de SEYCA"],
+          "documentos": ["Concepto Técnico"],
+          "tiempo": "15 días hábiles",
+          "tiempoDias": 15,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "REALIZAR ACOMPAÑAMIENTO A SEGUIMIENTO DEL PROYECTO",
+          "descripcion": "El expediente se remite desde la Coordinación de Evaluación Ambiental a la Coordinación de Seguimiento, para que se designe un servidor público que realice el acompañamiento en el seguimiento al proyecto licenciado por la ANLA, o se realice el archivo del expediente de acuerdo a las diferentes circunstancias presentadas.",
+          "responsables": ["Coordinador de Evaluación Ambiental", "Funcionario de Archivo de la Subdirección"],
+          "documentos": ["Cambio de etapa en el sistema", "Entrega de manera física al funcionario de archivo"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

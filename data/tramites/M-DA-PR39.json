@@ -1,0 +1,128 @@
+{
+  "codigo": "M-DA-PR39",
+  "version": "09",
+  "fecha": "2021-11-02",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Permiso de Ocupación de Cauces, Playas y Lechos",
+  "nombreCompleto": "PROCEDIMIENTO PARA EL PERMISO DE OCUPACIÓN DE CAUCES, PLAYAS Y LECHOS",
+  "slug": "permiso-ocupacion-cauces-playas-lechos",
+  "archivoFuente": "M-DA-PR39 version  9.pdf",
+  "objeto": "Identificar el marco técnico y jurídico para la evaluación de la construcción de obras que ocupen los cauces de una corriente o depósito de agua (por obra de restitución, defensa de taludes, canalización de fuentes, diques, presas, box coulvert, puentes, entre otros) para autorizar o negar la ejecución de obras definitivas o transitorias dentro del lecho del cauce y por debajo de la cota de inundación, en el área de jurisdicción de la C.D.M.B., y mantener su dinámica e hidráulica.",
+  "alcance": "Aplica para toda persona natural o jurídica cuya actividad o servicio realice construcción de obras que ocupen los cauces de las corrientes hídricas o depósitos de agua de forma permanente o transitoria, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
+  "autoridadResponsabilidad": "El Director General, la Secretaría General, la Subdirección de Evaluación y Control Ambiental y los coordinadores respectivos tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos asignados de las coordinaciones respectivas de la Subdirección de Evaluación y Control Ambiental y la Secretaría General serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formulario Único Nacional de Solicitud de trámite de Ocupación de Cauces, Playas y Lechos, diligenciado en su totalidad", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Cédula de Ciudadanía", "obligatorio": true, "notas": "Si el solicitante es persona natural" },
+    { "orden": 3, "nombre": "Certificado de Existencia y Representación Legal (expedición no superior a 3 meses)", "obligatorio": true, "notas": "Personas jurídicas: sociedades o corporaciones" },
+    { "orden": 4, "nombre": "Personería Jurídica y/o Certificación e Inscripción de Dignatarios (expedida por la Gobernación o Alcaldía)", "obligatorio": true, "notas": "Juntas de Acción Comunal o Acueductos" },
+    { "orden": 5, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
+    { "orden": 6, "nombre": "Certificado de Libertad y Tradición del inmueble (expedición no superior a 3 meses)", "obligatorio": true, "notas": "Cuando el solicitante es el propietario del predio" },
+    { "orden": 7, "nombre": "Copia del documento que acredite la tenencia (contrato de arrendamiento, comodato, etc.) o autorización del propietario o poseedor", "obligatorio": true, "notas": "Cuando el solicitante es tenedor del predio" },
+    { "orden": 8, "nombre": "Manifestación escrita y firmada de la calidad de poseedor", "obligatorio": true, "notas": "Cuando el solicitante es poseedor del predio" },
+    { "orden": 9, "nombre": "Autorización del propietario o poseedor", "obligatorio": false, "notas": "Cuando se actúe como mero tenedor o por contrato de arrendamiento" },
+    { "orden": 10, "nombre": "Plano de localización de la fuente hídrica en el área de influencia", "obligatorio": true, "notas": null },
+    { "orden": 11, "nombre": "Documento con descripción del proyecto y de las obras/actividades que requieren la ocupación del cauce, incluyendo cálculos y memorias hidrológicas, hidráulicas y estructurales (Res. CDMB 1294 de 2009, numerales 5.1, 5.2 y 5.3.3)", "obligatorio": true, "notas": null },
+    { "orden": 12, "nombre": "Planos (escala 1:10000 o 1:25000) indicando ubicación y detalle de las obras a ejecutar (Art. 2.2.3.2.19.8, Decreto 1076 de 2015)", "obligatorio": true, "notas": null },
+    { "orden": 13, "nombre": "Autorización de notificación por correo electrónico", "obligatorio": false, "notas": "Solo si el usuario lo autoriza" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos, E-GE-FO02). Se revisa el orden e identidad de los documentos del listado (formulario único nacional, identificación o personería jurídica del solicitante, poder cuando aplique, acreditación sobre el predio como propietario/tenedor/poseedor, plano de localización de la fuente hídrica, y documento técnico con descripción del proyecto y planos de las obras). Si están completos los requisitos: el funcionario de ventanilla liquida la evaluación ambiental; el usuario paga en tesorería o por canal virtual y entrega la documentación con la factura para que se asigne número de solicitud en el SINCA, número de expediente y profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se devuelve inmediatamente la documentación aportada. Nota: si durante la visita el profesional o técnico identifica que es necesario, se hace ajuste de los servicios cobrados al usuario. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Personal Asistencial de Ventanilla de Trámites Ambientales y/o responsables de los diferentes canales de atención", "Profesional Técnico de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Solicitud de trámite del usuario y documentos soporte", "Formato Control de Procesos (E-GE-FO02)", "Recibo de Pago"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, indicando que el plazo para completarla es de máximo un (1) mes. Vencido este plazo sin que se allegue la información solicitada, se procederá a decretar el desistimiento tácito y el archivo del expediente (Art. 17, Ley 1437 de 2011) mediante acto administrativo que se notificará personalmente, contra el cual únicamente procede recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Coordinación de Evaluación para la Sostenibilidad", "Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Solicitud de trámite del usuario y documentos soporte", "Formato Control de Procesos (E-GE-FO02)", "Oficio al usuario"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental procede a realizar el Auto de Inicio, el cual ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental", "Servidor público de la Oficina de Notificaciones", "Secretaria General"],
+          "documentos": ["Expediente", "Auto de admisión de la solicitud de trámite e inicio del trámite administrativo ambiental", "Liquidación de servicios de Evaluación", "Registro en el SINCA", "Notificación"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR LA VISITA",
+          "descripcion": "El Secretario General, una vez firmado el Auto, remite el expediente a la oficina de notificaciones para que se proceda a notificarlo, de forma que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011). Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de realizar la visita, quien verifica que la constancia de pago por costos de trámite se encuentre en el expediente y, conforme a las fechas disponibles en el programador de visitas, agenda fecha y hora para la inspección ocular ordenada en el auto de inicio. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Profesional o técnico de concesión de aguas", "Funcionario de la oficina de notificaciones"],
+          "documentos": ["Recibo de Pago", "Notificación del Acto administrativo"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR VISITA TÉCNICA, ELABORAR CONCEPTO TÉCNICO Y DAR VISTO BUENO",
+          "descripcion": "Los encargados de la visita realizan la inspección al sitio y elaboran un concepto técnico con la evaluación del proyecto, especificando las razones por las cuales se considera otorgar o negar el permiso de ocupación de cauce. El informe se incluye en el SINCA (ruta Proceso > Manejo de expediente > Concepto Técnico). El Coordinador de Evaluación para la Sostenibilidad de SEYCA revisa el concepto técnico y los aplicativos SINCA; si presenta inconsistencias técnicas, solicita explicación y corrección al técnico que realizó la visita, y posteriormente da el visto bueno asignando número consecutivo. Mediante el SINCA se hace cambio de etapa y, por cuaderno, se entrega el expediente físico junto con el informe técnico cargado en la plataforma, remitiéndose al área Jurídica de la Subdirección de Evaluación y Control Ambiental. Una vez realizada la inspección, el encargado tiene treinta (30) días hábiles para presentar el concepto técnico. Nota: si como resultado de la evaluación se determina que no se requiere permiso de ocupación de cauce, se recomendará el archivo mediante auto firmado por el Director General.",
+          "responsables": ["Profesional de Ocupación de Cauce de la Subdirección de Evaluación y Control Ambiental", "Coordinador de Evaluación para la Sostenibilidad"],
+          "documentos": ["Expediente", "Concepto Técnico", "Concepto Técnico Complementario", "Registro en el SINCA"],
+          "tiempo": "Treinta (30) días hábiles",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DE LA OCUPACIÓN DE CAUCE O AUTO DE ARCHIVO",
+          "descripcion": "El Área Jurídica de la Coordinación de Evaluación para la Sostenibilidad recibe el expediente con el concepto técnico y proyecta el acto administrativo correspondiente. Con la revisión y visto bueno del Coordinador de Evaluación para la Sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para la firma y aprobación del Acto Administrativo, previa revisión, análisis y estudio del Asesor de Dirección General; la proyección se realiza en un término de diez (10) días hábiles. Si el concepto técnico determinó que no se requiere el permiso, se profiere en su lugar un Auto de Archivo. Una vez aprobado y firmado el acto administrativo, la Dirección General lo envía a la Secretaría General para su numeración y notificación de la respectiva providencia; la Secretaría General gestiona la publicación del acto en el GDI de la entidad (Boletín informativo Ambiental), debidamente escaneado en PDF, dando cumplimiento al artículo 71 de la Ley 99 de 1993, y remite el expediente a la Oficina de Notificaciones. El tiempo de aprobación de la Resolución se estima en cinco (5) días hábiles adicionales.",
+          "responsables": ["Profesional Jurídico de la Subdirección de Evaluación y Control Ambiental", "Coordinación de Evaluación para la Sostenibilidad", "Subdirector SEYCA", "Secretario General", "Asesor de la Dirección General", "Director General"],
+          "documentos": ["Expediente", "SINCA", "Resolución de Ocupación de Cauce", "Auto de archivo"],
+          "tiempo": "Diez (10) días hábiles para la proyección, más cinco (5) días hábiles para su aprobación",
+          "tiempoDias": 10,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba la ocupación de cauce", "siguientePaso": 7, "resultado": "APROBADO" },
+            { "respuesta": "Niega la ocupación de cauce", "siguientePaso": 7, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 7,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "La oficina de notificaciones cita al usuario para comunicarle el acto administrativo correspondiente al trámite de ocupación de cauce, informando que cuenta con diez (10) días hábiles para presentar los recursos de ley. Si el usuario autorizó la notificación por correo electrónico, se realiza por este medio. En caso de interponerse recurso, se proyecta el acto administrativo que lo resuelva, previo concepto técnico, para proferir la decisión correspondiente; resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión. Si no se interpone recurso, o una vez resuelto, se declara ejecutoriado el acto y se continúa con la actividad siguiente. Si el interesado no comparece a la CDMB para notificarse, se notifica por aviso fijado por un término de cinco (5) días hábiles (Art. 69, Ley 1437 de 2011). El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Oficina de Notificación", "Dirección General", "Secretaria General"],
+          "documentos": ["Resolución de ocupación de cauce", "Auto de archivo", "Constancia de notificación (personal y/o edicto)", "SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "REALIZAR SEGUIMIENTO",
+          "descripcion": "Una vez ejecutoriado el acto administrativo, la oficina de notificaciones remite el expediente mediante memorando, junto con todos sus anexos, a la Coordinación de Seguimiento para la Sostenibilidad, a fin de que los equipos de campo realicen seguimiento. El seguimiento se realiza como mínimo a la mitad y al final del tiempo requerido para la ejecución del proyecto, o las veces que sean necesarias, a iniciativa de la entidad o a solicitud de terceros, y se rinde informe que debe ingresarse al aplicativo SINCA con cargo al expediente.",
+          "responsables": ["Oficina de Notificaciones", "Coordinación de Seguimiento para la Sostenibilidad"],
+          "documentos": ["SINCA", "Expediente", "Memorando Seguimiento", "Informe tipo"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

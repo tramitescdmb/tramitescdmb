@@ -1,0 +1,454 @@
+[
+  {
+    "codigo": "M-DA-PR05",
+    "version": "13",
+    "fecha": "2023-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Vertimientos",
+    "slug": "permiso-vertimientos",
+    "archivoFuente": "M-DA-PR05 version 13.pdf",
+    "numFlujos": 2,
+    "flujos": [
+      "inicio",
+      "renovacion"
+    ],
+    "numPasos": 29,
+    "numDocumentosRequeridos": 25
+  },
+  {
+    "codigo": "M-DA-PR07",
+    "version": "8",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Obtención o Renovación del Permiso de Emisiones Atmosféricas para Fuentes Fijas",
+    "slug": "permiso-emisiones-atmosfericas-fuentes-fijas",
+    "archivoFuente": "M-DA-PR07 version 8.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 9,
+    "numDocumentosRequeridos": 0
+  },
+  {
+    "codigo": "M-DA-PR09",
+    "version": "07",
+    "fecha": "2019-10-01",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Certificación de Centro de Diagnóstico Automotor",
+    "slug": "certificacion-centro-diagnostico-automotor",
+    "archivoFuente": "M-DA-PR09 version  7.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "certificacion"
+    ],
+    "numPasos": 15,
+    "numDocumentosRequeridos": 5
+  },
+  {
+    "codigo": "M-DA-PR16",
+    "version": "05",
+    "fecha": "2018-06-07",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Salvoconducto Único Nacional en Línea",
+    "slug": "salvoconducto-unico-nacional-en-linea",
+    "archivoFuente": "M-DA-PR16 version  5.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 7,
+    "numDocumentosRequeridos": 0
+  },
+  {
+    "codigo": "M-DA-PR21",
+    "version": "17",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Concesión de Aguas de Uso Público Superficial y Subterránea",
+    "slug": "concesion-aguas-uso-publico-superficial-subterranea",
+    "archivoFuente": "M-DA-PR21 version 17.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 10,
+    "numDocumentosRequeridos": 14
+  },
+  {
+    "codigo": "M-DA-PR22",
+    "version": "11",
+    "fecha": "2023-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Licencia Ambiental Global",
+    "slug": "licencia-ambiental-global",
+    "archivoFuente": "M-DA-PR22 version 11.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 21,
+    "numDocumentosRequeridos": 20
+  },
+  {
+    "codigo": "M-DA-PR29",
+    "version": "05",
+    "fecha": "2016-12-22",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Creación del Departamento de Gestión Ambiental",
+    "slug": "creacion-departamento-gestion-ambiental",
+    "archivoFuente": "M-DA-PR29 version   5.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 7,
+    "numDocumentosRequeridos": 8
+  },
+  {
+    "codigo": "M-DA-PR33",
+    "version": "8",
+    "fecha": "2021-11-02",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Prospección y Exploración de Aguas Subterráneas",
+    "slug": "permiso-prospeccion-exploracion-aguas-subterraneas",
+    "archivoFuente": "M-DA-PR33 version 8.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 8,
+    "numDocumentosRequeridos": 8
+  },
+  {
+    "codigo": "M-DA-PR34",
+    "version": "4",
+    "fecha": "2021-11-18",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Recolección de Especímenes Silvestres con Fines de Investigación Científica No Comercial",
+    "slug": "permiso-recoleccion-especimenes-silvestres-investigacion-cientifica",
+    "archivoFuente": "M-DA-PR34 version     4.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 5,
+    "numDocumentosRequeridos": 16
+  },
+  {
+    "codigo": "M-DA-PR35",
+    "version": "03",
+    "fecha": "2017-03-21",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Inventario de Bifenilos Policlorados (PCB)",
+    "slug": "inventario-bifenilos-policlorados-pcb",
+    "archivoFuente": "M-DA-PR35 version   3.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 7,
+    "numDocumentosRequeridos": 13
+  },
+  {
+    "codigo": "M-DA-PR36",
+    "version": "05",
+    "fecha": "2021-06-06",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Evaluación de Planes de Saneamiento y Manejo de Vertimientos",
+    "slug": "evaluacion-psmv",
+    "archivoFuente": "M-DA-PR36 version   5.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "evaluacion"
+    ],
+    "numPasos": 13,
+    "numDocumentosRequeridos": 17
+  },
+  {
+    "codigo": "M-DA-PR39",
+    "version": "09",
+    "fecha": "2021-11-02",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Ocupación de Cauces, Playas y Lechos",
+    "slug": "permiso-ocupacion-cauces-playas-lechos",
+    "archivoFuente": "M-DA-PR39 version  9.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 8,
+    "numDocumentosRequeridos": 13
+  },
+  {
+    "codigo": "M-DA-PR41",
+    "version": "07",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Aprovechamiento Forestal Único, Persistente y de Árboles Aislados",
+    "slug": "aprovechamiento-forestal-unico-persistente-arboles-aislados",
+    "archivoFuente": "M-DA-PR41 version 7.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 8,
+    "numDocumentosRequeridos": 9
+  },
+  {
+    "codigo": "M-DA-PR42",
+    "version": "03",
+    "fecha": "2018-11-17",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Certificación de Inversiones Ambientales",
+    "slug": "certificacion-inversiones-ambientales",
+    "archivoFuente": "M-DA-PR42 version    3.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 8,
+    "numDocumentosRequeridos": 1
+  },
+  {
+    "codigo": "M-DA-PR43",
+    "version": "02",
+    "fecha": "2016-12-05",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Registro de Generadores de Residuos Peligrosos",
+    "slug": "registro-generadores-residuos-peligrosos",
+    "archivoFuente": "M-DA-PR43 version   2.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 6,
+    "numDocumentosRequeridos": 2
+  },
+  {
+    "codigo": "M-DA-PR45",
+    "version": "5",
+    "fecha": "2019-05-24",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Verificación del Plan de Contingencia de Transporte de Hidrocarburos y Sustancias Nocivas",
+    "slug": "verificacion-plan-contingencia-hidrocarburos",
+    "archivoFuente": "M-DA-PR45 version  5.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "verificacion"
+    ],
+    "numPasos": 5,
+    "numDocumentosRequeridos": 6
+  },
+  {
+    "codigo": "M-DA-PR48",
+    "version": "03",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Poda, Traslado, Tala y Corte de Árboles",
+    "slug": "permiso-poda-traslado-tala-corte-arboles",
+    "archivoFuente": "M-DA-PR48 version  3.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 8,
+    "numDocumentosRequeridos": 5
+  },
+  {
+    "codigo": "M-DA-PR55",
+    "version": "2",
+    "fecha": "2019-02-14",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Solicitudes de Proyectos a ser Licenciados por la ANLA",
+    "slug": "solicitudes-proyectos-licenciados-anla",
+    "archivoFuente": "M-DA-PR55 version   2.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 9,
+    "numDocumentosRequeridos": 1
+  },
+  {
+    "codigo": "M-DA-PR58",
+    "version": "1",
+    "fecha": "2018-06-07",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Salvoconducto Único Nacional - Removilización",
+    "slug": "salvoconducto-removilizacion",
+    "archivoFuente": "M-DA-PR58 version  1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "removilizacion"
+    ],
+    "numPasos": 7,
+    "numDocumentosRequeridos": 0
+  },
+  {
+    "codigo": "M-DA-PR59",
+    "version": "1",
+    "fecha": "2018-06-07",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Salvoconducto Único Nacional - Renovación",
+    "slug": "salvoconducto-renovacion",
+    "archivoFuente": "M-DA-PR59 version  1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "renovacion"
+    ],
+    "numPasos": 6,
+    "numDocumentosRequeridos": 0
+  },
+  {
+    "codigo": "M-DA-PR60",
+    "version": "5",
+    "fecha": "2021-11-02",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Manejo y Disposición de RCD",
+    "slug": "manejo-disposicion-rcd",
+    "archivoFuente": "M-DA-PR60 version 5.pdf",
+    "numFlujos": 2,
+    "flujos": [
+      "gestores",
+      "generadores"
+    ],
+    "numPasos": 14,
+    "numDocumentosRequeridos": 7
+  },
+  {
+    "codigo": "M-DA-PR62",
+    "version": "1",
+    "fecha": "2019-05-24",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Inscripción de Gestores de Aceites de Cocina Usados (ACU)",
+    "slug": "inscripcion-gestores-acu",
+    "archivoFuente": "M-DA-PR62 version   1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inscripcion"
+    ],
+    "numPasos": 4,
+    "numDocumentosRequeridos": 14
+  },
+  {
+    "codigo": "M-DA-PR63",
+    "version": "1",
+    "fecha": "2019-05-24",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Inscripción de Generadores de Aceites de Cocina Usados (ACU)",
+    "slug": "inscripcion-generadores-acu",
+    "archivoFuente": "M-DA-PR63 version  1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inscripcion"
+    ],
+    "numPasos": 4,
+    "numDocumentosRequeridos": 8
+  },
+  {
+    "codigo": "M-DA-PR64",
+    "version": "2",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Certificación Ambiental para la Desintegración Vehicular",
+    "slug": "certificacion-ambiental-desintegracion-vehicular",
+    "archivoFuente": "M-DA-PR64 version 2.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 10,
+    "numDocumentosRequeridos": 5
+  },
+  {
+    "codigo": "M-DA-PR65",
+    "version": "1",
+    "fecha": "2022-06-30",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Licencia Ambiental Temporal (Formalización Minera)",
+    "slug": "licencia-ambiental-temporal-formalizacion-minera",
+    "archivoFuente": "M-DA-PR65 version 1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 11,
+    "numDocumentosRequeridos": 11
+  },
+  {
+    "codigo": "M-DA-PR66",
+    "version": "1",
+    "fecha": "2022-12-28",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Concesión de Agua Residual Tratada",
+    "slug": "permiso-concesion-agua-residual-tratada",
+    "archivoFuente": "M-DA-PR66 version 1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 10,
+    "numDocumentosRequeridos": 17
+  },
+  {
+    "codigo": "M-DA-PR67",
+    "version": "1",
+    "fecha": "2023-12-28",
+    "proceso": "EVALUACIÓN Y SEGUIMIENTO AMBIENTAL",
+    "nombre": "Registro de Usuarios del Recurso Hídrico – RURH",
+    "slug": "registro-usuarios-recurso-hidrico-rurh",
+    "archivoFuente": "M-DA-PR67 version 1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 10,
+    "numDocumentosRequeridos": 3
+  },
+  {
+    "codigo": "M-DA-PR69",
+    "version": "2",
+    "fecha": "2024-12-30",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Libro de Operaciones Forestales en Línea",
+    "slug": "libro-operaciones-forestales-en-linea",
+    "archivoFuente": "M-DA-PR69 version 2.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "registro"
+    ],
+    "numPasos": 6,
+    "numDocumentosRequeridos": 10
+  },
+  {
+    "codigo": "M-DA-PR70",
+    "version": "1",
+    "fecha": "2024-04-25",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Registro de Plantaciones Forestales Protectoras-Productoras y Protectoras, de Sombríos o Plantación Asociada a Cultivos Agrícolas",
+    "slug": "registro-plantaciones-forestales-protectoras-productoras",
+    "archivoFuente": "M-DA-PR70 version 1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 7,
+    "numDocumentosRequeridos": 8
+  },
+  {
+    "codigo": "M-DA-PR71",
+    "version": "01",
+    "fecha": "2024-12-30",
+    "proceso": "GESTIÓN DEL CONOCIMIENTO AMBIENTAL",
+    "nombre": "Permiso de Caza de Fauna Silvestre",
+    "slug": "permiso-caza-fauna-silvestre",
+    "archivoFuente": "M-DA-PR71 version 1.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "permiso"
+    ],
+    "numPasos": 20,
+    "numDocumentosRequeridos": 22
+  }
+]

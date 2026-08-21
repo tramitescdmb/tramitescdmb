@@ -1,0 +1,124 @@
+{
+  "codigo": "M-DA-PR41",
+  "version": "07",
+  "fecha": "2022-12-28",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Aprovechamiento Forestal Único, Persistente y de Árboles Aislados",
+  "nombreCompleto": "PROCEDIMIENTO PARA TRÁMITE DE APROVECHAMIENTO FORESTAL ÚNICO, PERSISTENTE Y DE ÁRBOLES AISLADOS",
+  "slug": "aprovechamiento-forestal-unico-persistente-arboles-aislados",
+  "archivoFuente": "M-DA-PR41 version 7.pdf",
+  "objeto": "Describir y estandarizar los pasos para otorgar el aprovechamiento forestal a personas naturales o jurídicas, públicas o privadas, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga-CDMB.",
+  "alcance": "El procedimiento descrito en el presente documento para el aprovechamiento forestal único, persistente, de árboles aislados dentro de la cobertura de bosque natural, y de árboles aislados fuera de la cobertura de bosque natural (tala por obra pública o privada), será aplicado en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga-CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control a la Demanda Ambiental y el Coordinador del Grupo Evaluación para la Sostenibilidad, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Servidores públicos adscritos a SEYCA en el Grupo Evaluación para la Sostenibilidad, serán los responsables de cumplir y actualizar el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formato Único Nacional de Solicitud de Aprovechamiento Forestal y Manejo Sostenible de Flora Silvestre y los Productos Forestales No Maderables (Nuevo/Prórroga)", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Certificado de Libertad y Tradición del inmueble (expedición no superior a 2 meses)", "obligatorio": true, "notas": "Cuando el solicitante es el propietario del predio" },
+    { "orden": 3, "nombre": "Prueba adecuada que acredite la tenencia del predio y autorización del propietario", "obligatorio": false, "notas": "Cuando el solicitante es tenedor del predio; solo permitido para aprovechamiento forestal de árboles aislados (Art. 2.2.1.1.9.2, Decreto 1076 de 2015)" },
+    { "orden": 4, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
+    { "orden": 5, "nombre": "Fotocopia de la cédula de ciudadanía (persona natural) o Certificado de Existencia y Representación Legal (persona jurídica)", "obligatorio": true, "notas": null },
+    { "orden": 6, "nombre": "Mapa del predio con georreferenciación de linderos y superficie, indicando las áreas donde se pretende realizar el aprovechamiento forestal", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Inventario forestal al 100% (especies, volumen, cantidad o peso aproximado de especímenes, ubicación geográfica en coordenadas planas y tarjeta profesional del Ingeniero Forestal que lo realizó)", "obligatorio": true, "notas": "Debe incluir inventario de especies epífitas vasculares o no vasculares si se evidencia su presencia, conforme al Estudio Técnico de epífitas de la CDMB" },
+    { "orden": 8, "nombre": "Plan de Aprovechamiento Forestal, incluyendo la destinación de los productos forestales, las medidas de compensación propuestas y estudio técnico que demuestre una mejor aptitud del suelo diferente al forestal", "obligatorio": true, "notas": "Solo para Aprovechamiento Forestal Único" },
+    { "orden": 9, "nombre": "Plan de manejo forestal", "obligatorio": true, "notas": "Solo para Aprovechamiento Forestal Persistente; en bosques naturales de dominio público además se debe acreditar capacidad para garantizar el manejo silvicultural, la investigación y la eficiencia en el aprovechamiento y transformación" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos, E-GE-FO02). Se revisa el orden e identidad del listado de documentos (formato único nacional de solicitud, acreditación sobre el predio, poder cuando aplique, identificación del solicitante, mapa georreferenciado, inventario forestal al 100%, y los requisitos específicos según el tipo de aprovechamiento: Plan de Aprovechamiento Forestal para el Único, o Plan de Manejo Forestal para el Persistente). Nota: las especies frutales con características leñosas solo requieren el Salvoconducto Único Nacional en línea (SUNL), conforme al artículo 2.2.1.1.12.13 del Decreto 1076 de 2015. Si están completos los requisitos: el funcionario de ventanilla liquida la evaluación ambiental, el usuario paga en tesorería o canal virtual y entrega la documentación con la factura o soporte de pago para que se asigne número de solicitud en el SINCA y número de expediente con nomenclatura AF, asignándose al profesional o técnico de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se devuelve inmediatamente la documentación aportada para su complemento. Nota: si el profesional o técnico, al realizar la visita, identifica que es necesario, se ajustan los servicios cobrados al usuario por concepto de Servicio de Evaluación. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Personal asistencial de la Ventanilla de Correspondencia", "Profesional técnico responsable del Grupo de Evaluación para la Sostenibilidad"],
+          "documentos": ["Solicitud del usuario", "Liquidación del servicio de evaluación", "Expediente creado en el SINCA y en físico", "Registro de documentos en el SINCA y expediente físico"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la Sostenibilidad al área jurídica. En caso de requerir aclaración de la información o su complemento, el profesional técnico y/o jurídico asignado, mediante oficio dirigido al usuario, solicita la información correspondiente, indicando un plazo máximo de un (1) mes para su entrega. Vencido este término, si no se presenta la información solicitada, se procede a decretar el desistimiento tácito del trámite y el archivo del expediente (Art. 17, Ley 1437 de 2011) mediante acto administrativo que se notificará personalmente, contra el cual únicamente procede recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Profesional técnico o jurídico adscrito al Grupo Evaluación para la Sostenibilidad", "Personal asistencial"],
+          "documentos": ["Oficio de solicitud de información adicional", "Registro de documentos requeridos en el SINCA y en el expediente físico", "Acto administrativo de desistimiento tácito (cuando aplique)"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR Y NOTIFICAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado procede a proyectar el Auto de Inicio y, una vez revisado por el profesional correspondiente, lo remite para la firma del Secretario General, ordenando el inicio del trámite y la práctica de la visita de inspección ocular. El funcionario de SEYCA remite el expediente a la oficina de notificaciones para que se notifique el Auto de inicio del trámite en los términos de la Ley 1437 de 2011. Una vez notificado el interesado, se envía copia a la Alcaldía Municipal, acorde con el artículo 2.2.1.1.7.11 del Decreto 1076 de 2015. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Profesional Jurídico de la Subdirección de Evaluación para la Sostenibilidad", "Profesional o técnico de Evaluación para la Sostenibilidad", "Secretaría General"],
+          "documentos": ["Auto de inicio del trámite administrativo ambiental", "Aplicativo SINCA y expediente físico"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "PROGRAMAR LA VISITA",
+          "descripcion": "El profesional o técnico de SEYCA procede a fijar la fecha de realización de la visita técnica ordenada en el Auto que dio inicio al trámite, mediante comunicación telefónica o escrita con el usuario. El servidor responsable incluye la información correspondiente en el expediente y actualiza la información y la etapa en el SINCA.",
+          "responsables": ["Profesional de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR VISITA TÉCNICA, ELABORAR CONCEPTO TÉCNICO Y DAR VISTO BUENO",
+          "descripcion": "Los profesionales o técnicos encargados de la visita realizan la inspección al sitio y revisan la compatibilidad de la actividad con los instrumentos de planificación territorial (POT, POMCA, POF, entre otros), que sirven de base para emitir el concepto técnico, especificando las razones por las cuales se considera otorgar o negar el permiso. Nota: en caso de existir variación entre la cantidad de árboles solicitados inicialmente y los verificados durante la visita, se requerirá al usuario mediante comunicación escrita el ajuste, corrección y/o complemento de la documentación aportada. El Coordinador de Evaluación para la Sostenibilidad revisa el concepto técnico y los aplicativos SINCA; si presenta inconsistencias técnicas, solicita explicación y, de requerirse, corrección al profesional técnico que realizó la visita, y posteriormente da el visto bueno asignando número consecutivo. El informe se imprime e incluye en el expediente físico y en el SINCA (ruta Proceso > Manejo de expediente > Concepto Técnico). Se hace cambio de etapa en el SINCA y, por cuaderno, se entrega el expediente físico junto con el informe técnico cargado en la plataforma, remitiéndose al área Jurídica de la Subdirección de Evaluación y Control Ambiental. Nota: la CDMB tiene sesenta (60) días hábiles desde la visita para dar viabilidad o no al permiso o autorización de aprovechamiento forestal.",
+          "responsables": ["Profesional adscrito al Grupo Evaluación para la Sostenibilidad"],
+          "documentos": ["Oficio de requerimientos (si aplica)", "Concepto técnico", "Aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN",
+          "descripcion": "El área jurídica de la Coordinación de Evaluación para la Sostenibilidad recibe el expediente con el concepto técnico y proyecta el acto administrativo de aprobación o negación del trámite. Una vez revisado por el profesional correspondiente, se remite el acto administrativo a la Dirección General para su firma. Nota: la CDMB cuenta con sesenta (60) días hábiles desde la realización de la visita técnica (actividad 5) para dar viabilidad o no al permiso o autorización de aprovechamiento forestal.",
+          "responsables": ["Profesional jurídico y/o judicante", "Coordinador de Evaluación para la Sostenibilidad", "Subdirector SEYCA", "Asesor de Despacho", "Dirección General", "Secretaria de Dirección General"],
+          "documentos": ["Resolución de aprobación o negación"],
+          "tiempo": "Sesenta (60) días hábiles desde la visita técnica",
+          "tiempoDias": 60,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba el permiso o autorización de aprovechamiento forestal", "siguientePaso": 7, "resultado": "APROBADO" },
+            { "respuesta": "Niega el permiso o autorización de aprovechamiento forestal", "siguientePaso": 7, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 7,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "Se notifica al solicitante el permiso o autorización de Aprovechamiento Forestal; una vez en firme el acto administrativo, se remite nuevamente al Grupo de Evaluación para la Sostenibilidad. De ser aprobado el permiso o autorización, el expediente se remite a la Coordinación de Seguimiento para la Sostenibilidad para los fines pertinentes. Si el usuario autorizó la notificación por correo electrónico, se realiza por ese medio. En caso de interponerse recurso de reposición, se proyecta el acto administrativo que lo resuelve, previo concepto técnico, para proferir la decisión que en derecho corresponda; resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión y su posterior notificación. Si el interesado no comparece a la CDMB para notificarse de la resolución que otorga o niega el permiso, se notifica por aviso fijado por un término de cinco (5) días hábiles, conforme al artículo 69 de la Ley 1437 de 2011. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Servidor público adscrito al Grupo de Evaluación para la Sostenibilidad", "Secretaría General"],
+          "documentos": ["Constancia de notificación del acto administrativo (conforme a la Ley 1437 de 2011)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "REALIZAR PRÓRROGAS",
+          "descripcion": "En caso de requerirse prórroga del permiso o autorización de aprovechamiento forestal, el peticionario debe solicitarla al menos un (1) mes antes del vencimiento del aprovechamiento forestal otorgado, y debe realizar el pago correspondiente a los servicios de evaluación del trámite. El funcionario encargado emite el informe técnico correspondiente para proceder con la proyección y firma de la resolución respectiva, la cual será notificada de conformidad con la Ley 1437 de 2011.",
+          "responsables": ["Funcionario adscrito a SEYCA", "Profesional jurídico y/o judicante", "Coordinador de Evaluación para la Sostenibilidad", "Subdirector SEYCA", "Asesor de Despacho", "Dirección General", "Secretaria de Dirección General"],
+          "documentos": ["Solicitud de prórroga", "Liquidación y pago de la evaluación del trámite", "Informe técnico", "Resolución de aprobación o negación de la prórroga"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

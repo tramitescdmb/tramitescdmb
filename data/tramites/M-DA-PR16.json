@@ -1,0 +1,100 @@
+{
+  "codigo": "M-DA-PR16",
+  "version": "05",
+  "fecha": "2018-06-07",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Salvoconducto Único Nacional en Línea",
+  "nombreCompleto": "PROCEDIMIENTO EXPEDICIÓN DE SALVOCONDUCTO ÚNICO NACIONAL PARA LA MOVILIZACIÓN DE ESPECÍMENES DE LA BIODIVERSIDAD BIOLÓGICA EN LÍNEA",
+  "slug": "salvoconducto-unico-nacional-en-linea",
+  "archivoFuente": "M-DA-PR16 version  5.pdf",
+  "objeto": "Expedir un documento que respalde el transporte legal de especímenes de la diversidad biológica en el territorio nacional.",
+  "alcance": "A todas las personas que requieren transportar especímenes de la diversidad biológica en el territorio nacional.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y la Coordinación de Control y Seguimiento Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Funcionarios de la Subdirección de Evaluación y Control Ambiental serán el responsable de cumplir el procedimiento.",
+  "documentosRequeridos": [],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "REALIZAR REGISTRO EN LA PLATAFORMA VITAL",
+          "descripcion": "Para realizar el registro se puede ingresar directamente desde la URL http://vital.anla.gov.co/ventanillasilpa/ (si el usuario ya está registrado en la plataforma VITAL, omitir este paso y continuar en el paso No. 2). Ver Guía de usuario: https://www.car.gov.co/saladeprensa/asi-es-el-tramite-para-adquirir-el-salvoconducto-unico-nacional-en-linea-sunl",
+          "responsables": ["Usuario"],
+          "documentos": ["Perfil de usuario"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REGISTRAR SOLICITUD DE MOVILIZACIÓN",
+          "descripcion": "El usuario acreditado (registrado) diligenciará la solicitud para la expedición de SUNL desde la URL http://vital.anla.gov.co/ventanillasilpa (INGRESO VITAL). Ver Guía de usuario: https://www.car.gov.co/saladeprensa/asi-es-el-tramite-para-adquirir-el-salvoconducto-unico-nacional-en-linea-sunl",
+          "responsables": ["Usuario"],
+          "documentos": ["Registro de solicitud"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ASIGNAR LA SOLICITUD",
+          "descripcion": "Una vez realizada la solicitud por el usuario, esta será asignada a través del sistema de correspondencia por parte del coordinador de control y seguimiento ambiental al servidor a cargo de este trámite para que sean realizados los demás pasos.",
+          "responsables": ["Coordinador de Control y Seguimiento Ambiental", "Servidor delegado"],
+          "documentos": ["Correspondencia"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "LIQUIDAR EL TRÁMITE",
+          "descripcion": "El usuario se acercará a la entidad, el servidor responsable de liquidar efectúa la respectiva liquidación por el valor correspondiente y verifica que el usuario haya cancelado la respectiva factura que generó la oficina de cartera, solicitando copia del recibo de caja o evidencia de pago del trámite.",
+          "responsables": ["Servidor Designado para el trámite", "Servidor responsable de la facturación"],
+          "documentos": ["Recibo de pago (Nro. radicado VITAL)", "Sistema de liquidación y facturación (SIC)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR REVISIÓN DE EXPEDIENTE Y VISITA DE INSPECCIÓN TÉCNICA",
+          "descripcion": "Una vez el usuario ha cancelado la factura, entrega copia del recibo de pago al servidor encargado del trámite. El Servidor designado revisará el expediente sujeto de solicitud del SUNL; deberá realizar visita de inspección técnica para la verificación de las cantidades y especies a movilizar. Si cuenta con una visita previa no superior a tres (3) meses y el servidor no encuentra motivo para realizar una nueva visita de inspección, se determinará la viabilidad para continuar con la solicitud de SUNL. Si en la visita técnica se encuentran motivos que lleven a determinar la NO viabilidad para la expedición del SUNL, se dará por Rechazado en el sistema de SUNL y terminado el trámite mediante respuesta escrita al solicitante; de lo contrario se continúa con el siguiente paso.",
+          "responsables": ["Servidor Designado para el trámite"],
+          "documentos": ["Recibo de pago de la factura", "Hoja de visita y/o viabilidad", "Correspondencia", "Carpeta de expediente", "Sistema SILA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "REALIZAR EL DILIGENCIAMIENTO DEL SALVOCONDUCTO",
+          "descripcion": "Diligenciamiento del salvoconducto respecto a las especies y cantidades aprobadas mediante la plataforma VITAL – SUNL.",
+          "responsables": ["Servidor Designado para el trámite"],
+          "documentos": ["Salvoconducto Único Nacional para la movilización de especímenes de la diversidad biológica", "Plataforma VITAL", "Sistema SILA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "ENTREGAR EL SUNL AL USUARIO",
+          "descripcion": "Una vez impreso el salvoconducto por medio del SUNL, se elaborará un oficio de entrega de SUNL al Usuario solicitante, apoderado y/o autorizado, donde deberán firmar el servidor designado, el coordinador de Control y seguimiento ambiental y el Usuario solicitante (se anexa copia al expediente). Se descargará por informativa la solicitud de correspondencia siempre y cuando se suban los documentos digitales (oficio y Salvoconducto).",
+          "responsables": ["Coordinador de Control y seguimiento ambiental", "Servidor Designado para el trámite"],
+          "documentos": ["Carpeta de expediente", "Correspondencia"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

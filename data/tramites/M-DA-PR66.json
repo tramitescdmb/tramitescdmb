@@ -1,0 +1,157 @@
+{
+  "codigo": "M-DA-PR66",
+  "version": "1",
+  "fecha": "2022-12-28",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Permiso de Concesión de Agua Residual Tratada",
+  "nombreCompleto": "PROCEDIMIENTO PERMISO CONCESIÓN DE AGUA PARA EL USO DE AGUA RESIDUAL TRATADA",
+  "slug": "permiso-concesion-agua-residual-tratada",
+  "archivoFuente": "M-DA-PR66 version 1.pdf",
+  "objeto": "Identificar el marco técnico y jurídico para el procedimiento de evaluación del trámite ambiental de concesión de agua para el uso de agua residual tratada.",
+  "alcance": "Aplica para toda persona natural o jurídica cuya actividad o servicio establezca el uso de las aguas residuales tratadas del área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.\nDichas aguas no aplican para su empleo como fertilizante o acondicionador de suelos.",
+  "autoridadResponsabilidad": "El Subdirector del proceso de SEYCA, el Coordinador de Evaluación para la sostenibilidad y el Coordinador de Seguimiento para la Sostenibilidad, tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al proceso de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formato Único Nacional para concesión de aguas superficiales debidamente diligenciado, firmado por el representante legal (Resolución 1058 de 2021)", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Nombre, dirección e identificación del solicitante y razón social si se trata de una persona jurídica (cédula de ciudadanía del representante legal)", "obligatorio": true, "notas": null },
+    { "orden": 3, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe mediante apoderado" },
+    { "orden": 4, "nombre": "Certificado de existencia y representación legal (no mayor a 3 meses)", "obligatorio": false, "notas": "Solo personas jurídicas" },
+    { "orden": 5, "nombre": "Fuente de abastecimiento", "obligatorio": true, "notas": null },
+    { "orden": 6, "nombre": "Nombre o localización del predio, proyecto, obra o actividad donde se generan las aguas residuales tratadas", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Criterios de calidad del agua residual de conformidad con el artículo 2.2.3.3.9.5 del Decreto 1076 de 2015 y el artículo 5 de la Resolución 1256 de 2021", "obligatorio": false, "notas": "Solo para uso agrícola; para uso industrial no se establecen criterios de calidad desde el punto de vista ambiental" },
+    { "orden": 8, "nombre": "Balance hídrico del sistema de reuso por parte del usuario receptor, que contemple el volumen entregado por el usuario generador", "obligatorio": true, "notas": null },
+    { "orden": 9, "nombre": "Identificación de los riesgos potenciales a los recursos naturales renovables derivados del uso de las aguas residuales", "obligatorio": true, "notas": null },
+    { "orden": 10, "nombre": "Medidas preventivas a aplicar para evitar los riesgos potenciales identificados, con sus respectivas actividades de seguimiento", "obligatorio": true, "notas": null },
+    { "orden": 11, "nombre": "Evaluación de vulnerabilidad intrínseca de los acuíferos a la contaminación, a escala 1:25.000 o de mayor detalle", "obligatorio": false, "notas": "Solo para uso agrícola" },
+    { "orden": 12, "nombre": "Plan de monitoreo y seguimiento de la calidad y cantidad del agua residual empleada en el reúso, que identifique el punto de control y el punto de entrega", "obligatorio": false, "notas": "Solo para uso agrícola" },
+    { "orden": 13, "nombre": "Plan de monitoreo y seguimiento de la cantidad del agua residual empleada en el reúso, que identifique el punto de control y el punto de entrega", "obligatorio": false, "notas": "Solo para uso industrial" },
+    { "orden": 14, "nombre": "Demostración mediante mediciones in situ de la velocidad de infiltración en el suelo, u otros procedimientos técnicamente establecidos por la ciencia y la técnica", "obligatorio": false, "notas": "Solo para uso agrícola" },
+    { "orden": 15, "nombre": "Tasas de aplicación (m3/día-ha) y tiempo de aplicación (días/año) del agua residual, que no ocasionen cambios en la salinidad, sodicidad y toxicidad del suelo que limiten los usos agrícolas actuales y potenciales", "obligatorio": false, "notas": "Solo para uso agrícola" },
+    { "orden": 16, "nombre": "Ubicación, descripción de la operación del sistema, memorias técnicas, diseños de ingeniería conceptual y básica, y planos de detalle del sistema de tratamiento que se adoptará", "obligatorio": true, "notas": "Estudios, diseños, memorias y planos deben ser elaborados por firmas especializadas o profesionales calificados con matrícula profesional vigente" },
+    { "orden": 17, "nombre": "Constancia de pago del trámite ambiental", "obligatorio": true, "notas": null }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02). El funcionario de la ventanilla de trámites ambientales revisa el orden e identidad de los 17 documentos/requisitos del listado (Formulario Único Nacional, identificación del solicitante, poder si aplica, acreditación del predio, fuente de abastecimiento, criterios de calidad, balance hídrico, identificación y medidas de riesgos, planes de monitoreo según uso agrícola o industrial, diseños del sistema de tratamiento, constancia de pago, entre otros). Si los requisitos están completos: el funcionario de ventanilla liquida la evaluación ambiental, el usuario paga en tesorería (o canal virtual) y entrega la documentación para que se le asigne número de solicitud en el SINCA, número de expediente y sea asignado al profesional/técnico de la Coordinación de Evaluación para la Sostenibilidad. Si no están completos: se devuelve inmediatamente la documentación aportada. Nota: si en la visita técnica se identifica que es necesario, se ajustan los servicios cobrados al usuario. El servidor responsable actualiza la etapa en el SINCA.",
+          "responsables": ["Servidor responsable de Ventanilla de trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["Solicitud del Usuario radicado", "Documentos anexos", "Lista de Chequeo (Formato Control de Procesos E-GE-FO02)"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental solicitan por oficio la información faltante, con plazo máximo de un (1) mes. Vencido el plazo sin respuesta, se decreta desistimiento tácito y archivo del expediente (Art. 17 Ley 1437 de 2011), mediante acto administrativo notificado personalmente, contra el cual procede recurso de reposición, sin perjuicio de que la solicitud pueda presentarse nuevamente con el lleno de los requisitos legales. El servidor responsable actualiza la etapa en el SINCA.",
+          "responsables": ["Profesionales técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Solicitud de trámite del usuario y documentos soportes", "Formato Control de Procesos (E-GE-FO02)", "Oficio al usuario"],
+          "tiempo": "10 días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR AUTO DE INICIO DE TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental elabora el Auto de Inicio, que ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. Cuando la información esté completa, se expide el auto de iniciación de trámite, que debe subirse al SINCA dejando trazabilidad en el sistema.",
+          "responsables": ["Profesional en derecho de la Coordinación de Evaluación para la sostenibilidad", "Secretario General", "Secretaria del despacho de la Secretaría General"],
+          "documentos": ["Auto de Inicio firmado y numerado", "SINCA con soporte y trazabilidad"],
+          "tiempo": "20 días",
+          "tiempoDias": 20,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR VISITA",
+          "descripcion": "El Secretario General, una vez firmado el Auto, remite el expediente a la oficina de notificaciones para notificar el Auto de inicio del trámite, de forma que cobre ejecutoria (Ley 1437 de 2011), y se ordena su publicación en el GDI (Ley 99/93). Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de la visita, quien verifica que la constancia de pago de los costos de trámite se encuentre en el expediente. Debe asegurarse la notificación y publicación, así como la alimentación del SINCA con los debidos soportes, dejando trazabilidad.",
+          "responsables": ["Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Servidor responsable de notificar", "Servidor responsable de la publicación (Gestión Documental)"],
+          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "Los profesionales o técnicos del equipo de campo realizan la visita al sitio de captación de la posible concesión de agua para uso de agua residual tratada y elaboran el concepto técnico, registrando los datos en el SINCA. Se evalúan, entre otros aspectos: el área donde se realiza el reúso y su georreferenciación, los usos establecidos para el agua residual tratada, la calidad y cantidad del agua empleada (identificando punto de control y punto de entrega), que no se generen excedentes de escorrentía o percolación cuando el reúso sea agrícola, los elementos de control del caudal o volumen entregado, la operación y mantenimiento de las obras requeridas, y los puntos de entrega de las aguas residuales tratadas. La visita debe cumplirse en la fecha y hora programadas por la Coordinación de Evaluación para la Sostenibilidad, conforme al aviso fijado en la alcaldía o inspección de policía. El técnico o grupo de profesionales que practique la visita tiene un plazo de treinta (30) días para rendir y subir el informe a la plataforma; cuando se trate de Juntas de Acción Comunal, el plazo es de hasta 40 días.",
+          "responsables": ["Servidor técnico de la coordinación de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["SINCA con soportes y trazabilidad", "Comunicación enviada"],
+          "tiempo": "30 días (40 días si es Junta de Acción Comunal)",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "ELABORAR Y ENVIAR COMUNICACIÓN SOLICITANDO INFORMACIÓN ADICIONAL",
+          "descripcion": "El servidor responsable adscrito a la coordinación de evaluación envía comunicación al usuario solicitando la información que considere necesaria para continuar con el trámite, otorgando un plazo de un (1) mes calendario, prorrogable por una única vez y por el mismo plazo concedido.",
+          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["SINCA con soporte y trazabilidad"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL?",
+          "descripcion": "Si el interesado presentó la información adicional, se continúa a la actividad 9, activando los tiempos en el SINCA. Si no la presentó, el servidor técnico responsable del trámite remite el expediente al responsable de la coordinación de Evaluación para que se realice el archivo definitivo por desistimiento tácito de la solicitud.",
+          "responsables": ["Servidor técnico responsable del trámite", "Responsable de la coordinación de Evaluación para la sostenibilidad"],
+          "documentos": ["Informe Técnico", "SINCA con soportes y trazabilidad"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Sí presentó la información", "siguientePaso": 9 },
+            { "respuesta": "No presentó la información", "siguientePaso": null, "resultado": "DESISTIDO" }
+          ]
+        },
+        {
+          "numero": 8,
+          "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
+          "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias de carácter técnico, solicita explicación y corrección al técnico que realizó la visita. Da el visto bueno al informe y le asigna número consecutivo. Mediante el SINCA se hace cambio de etapa y se entrega el expediente físico junto con el informe técnico al área Jurídica de la Subdirección de Evaluación y Control Ambiental.",
+          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
+          "documentos": ["Aplicativo SINCA", "Concepto Técnico", "Memorando Interno"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN DEL PERMISO DE USO DE AGUAS RESIDUALES",
+          "descripcion": "Con base en el informe técnico que determina la viabilidad de otorgar el permiso de uso de aguas residuales (reúso), el profesional en derecho proyecta la resolución que otorga o niega el permiso, numerada y publicada. Con revisión y visto bueno del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se envía a la Dirección General para firma y aprobación del Acto Administrativo, previa revisión, análisis y estudio del Asesor de Dirección General. La proyección de la resolución se realiza en un término no mayor a 20 días contados a partir de la emisión del concepto técnico.",
+          "responsables": ["Profesional en derecho", "Servidor responsable de la coordinación de Evaluación para la sostenibilidad", "Subdirector de Evaluación y Control Ambiental", "Dirección General", "Servidor responsable de enumerar las resoluciones"],
+          "documentos": ["SINCA con soportes y trazabilidad", "Resolución firmada y numerada que otorga/niega el permiso de uso de agua residual tratada"],
+          "tiempo": "20 días",
+          "tiempoDias": 20,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba el permiso", "siguientePaso": 10, "resultado": "APROBADO" },
+            { "respuesta": "Niega el permiso", "siguientePaso": 10, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 10,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "Una vez emitida la resolución que aprueba o niega el uso de aguas residuales tratadas, el profesional en derecho remite la actuación a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena su publicación en el GDI (Ley 99/93). Si el usuario autorizó notificación por correo electrónico, se notifica por ese medio. Si el interesado no comparece a la CDMB para notificarse, se notifica por aviso fijado por un término de cinco (5) días hábiles (Art. 69, Ley 1437 de 2011).",
+          "responsables": ["Servidor responsable de notificar", "Servidor de Gestión documental encargado de la publicación"],
+          "documentos": ["Constancia de notificación personal o edicto", "SINCA con soporte y trazabilidad", "Página web"],
+          "tiempo": "3 días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

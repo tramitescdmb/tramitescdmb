@@ -1,0 +1,76 @@
+{
+  "codigo": "M-DA-PR63",
+  "version": "1",
+  "fecha": "2019-05-24",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Inscripción de Generadores de Aceites de Cocina Usados (ACU)",
+  "nombreCompleto": "PROCEDIMIENTO INSCRIPCIÓN DE GENERADORES DE ACEITES DE COCINA USADOS (ACU) EN EL ÁREA DE JURISDICCIÓN DE LA CDMB",
+  "slug": "inscripcion-generadores-acu",
+  "archivoFuente": "M-DA-PR63 version  1.pdf",
+  "objeto": "Establecer el procedimiento para la inscripción ante la CDMB de las personas industriales, comerciales y de servicios que generen Aceites de Cocina Usados (ACU) en el área de jurisdicción.",
+  "alcance": "Aplica a todas las personas industriales, comerciales y de servicios que generen Aceites de Cocina Usados (ACU) y que se encuentren ubicados en el área de jurisdicción de la CDMB, conformada por los municipios de Bucaramanga, Floridablanca, Girón, Piedecuesta, Lebrija, Rionegro, El Playón, Matanza, Charta, Suratá, Tona, California y Vetas, que deben cumplir con las disposiciones establecidas en la Resolución MADS No. 316 del 01 de marzo de 2018.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador de Control y Seguimiento Ambiental serán los responsables de velar por el cumplimiento de lo dispuesto en el presente procedimiento y las disposiciones establecidas en la Resolución MADS No. 316 del 01 de marzo de 2018. El Equipo de la Coordinación de Control y Seguimiento Ambiental será el encargado de aplicar este procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Nombre o razón social", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Número de identificación o Nit", "obligatorio": true, "notas": null },
+    { "orden": 3, "nombre": "Representante Legal", "obligatorio": true, "notas": null },
+    { "orden": 4, "nombre": "Número telefónico de contacto", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Dirección del sitio donde genera ACU", "obligatorio": true, "notas": null },
+    { "orden": 6, "nombre": "Municipio o distrito, departamento", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Tipo de negocio (actividad ejecutada)", "obligatorio": true, "notas": null },
+    { "orden": 8, "nombre": "Cantidad generada promedio en Kg/mes", "obligatorio": true, "notas": null }
+  ],
+  "flujos": [
+    {
+      "codigo": "inscripcion",
+      "nombre": "INSTRUCCIONES INSCRIPCIÓN DE GENERADORES DE ACU",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RADICAR SOLICITUD DE INSCRIPCIÓN",
+          "descripcion": "El generador de Aceites de Cocina Usados (ACU), de carácter industrial, comercial y de servicios, presenta la siguiente documentación: nombre o razón social, número de identificación o Nit, representante legal, número telefónico de contacto, dirección del sitio donde genera ACU, municipio o distrito, departamento, tipo de negocio (actividad ejecutada), y cantidad generada promedio en Kg/mes.",
+          "responsables": ["Generador de Aceites de Cocina Usados", "Funcionario de la oficina de correspondencia"],
+          "documentos": ["Oficio de solicitud", "Documentación y/o anexos de soporte"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "CREAR LA SOLICITUD Y EXPEDIENTE EN EL SINCA",
+          "descripcion": "El funcionario y/o contratista del Grupo de Seguimiento y Control de la Subdirección de Evaluación y Control Ambiental asignado para la solicitud crea la solicitud y asigna el expediente en el Sistema de Información de Normatización y Calidad Ambiental SINCA. El expediente para este tipo de solicitudes se identificará con las siglas AG (Aceites - Generadores).",
+          "responsables": ["Funcionario y/o contratista asignado para la solicitud"],
+          "documentos": ["SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ENTREGAR LOS REPORTES ANUALES",
+          "descripcion": "El generador de Aceites de Cocina Usados (ACU), de carácter industrial, comercial y de servicios, debe presentar dentro de los primeros quince (15) días del mes de enero de cada año, información sobre los kilogramos totales de ACU generados durante el periodo correspondiente y copia de las constancias expedidas por el gestor de ACU. Es una obligación periódica anual del generador ya inscrito, no un paso único del trámite de inscripción.",
+          "responsables": ["Generador de Aceites de Cocina Usados", "Funcionario de la oficina de correspondencia"],
+          "documentos": ["Oficio de solicitud", "Documentación y/o anexos de soporte"],
+          "tiempo": "15 días (primeros 15 días del mes de enero de cada año)",
+          "tiempoDias": 15,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "ANEXAR INFORMACIÓN AL EXPEDIENTE",
+          "descripcion": "El funcionario y/o contratista del Grupo de Seguimiento y Control de la Subdirección de Evaluación y Control Ambiental asignado para la solicitud anexa la información en físico al expediente y diligencia los datos técnicos sobre la generación de Aceites de Cocina Usados (ACU) en el Sistema de Información de Normatización y Calidad Ambiental SINCA.",
+          "responsables": ["Funcionario y/o contratista asignado para la solicitud"],
+          "documentos": ["SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

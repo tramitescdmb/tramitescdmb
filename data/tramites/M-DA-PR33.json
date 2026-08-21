@@ -1,0 +1,124 @@
+{
+  "codigo": "M-DA-PR33",
+  "version": "8",
+  "fecha": "2021-11-02",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Permiso de Prospección y Exploración de Aguas Subterráneas",
+  "nombreCompleto": "PROCEDIMIENTO PERMISO DE PROSPECCIÓN Y EXPLORACIÓN DE AGUAS SUBTERRÁNEAS",
+  "slug": "permiso-prospeccion-exploracion-aguas-subterraneas",
+  "archivoFuente": "M-DA-PR33 version 8.pdf",
+  "objeto": "Identificar el marco técnico y jurídico para la evaluación del procedimiento de Permisos para prospección y exploración de aguas subterráneas en jurisdicción de la CDMB.",
+  "alcance": "Aplica a todas las solicitudes de permisos para exploración y prospección de aguas subterráneas en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y los coordinadores designados tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos de nivel Profesional, Técnico y contratistas de las coordinaciones designadas de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formulario Único Nacional de Solicitud de Prospección y Exploración de Aguas Subterráneas", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Cédula de Ciudadanía", "obligatorio": true, "notas": "Solo persona natural" },
+    { "orden": 3, "nombre": "Documentos que acrediten la personería jurídica del solicitante: Certificado de existencia y representación legal (expedido dentro de los 3 meses anteriores a la solicitud) para sociedades o corporaciones; o Personería Jurídica y/o Certificación e Inscripción de Dignatarios (expedida por la Gobernación o Alcaldía, antelación no superior a 3 meses) para Juntas de Acción Comunal o Acueductos", "obligatorio": true, "notas": "Solo persona jurídica" },
+    { "orden": 4, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe por medio de apoderado" },
+    { "orden": 5, "nombre": "Acreditación sobre el predio: Certificado de libertad y tradición (propietario, expedición no superior a 3 meses); copia del documento que acredite la tenencia y autorización del propietario o poseedor (tenedor); prueba adecuada (poseedor); o autorización escrita con firma autenticada del dueño del predio (si se trata de predio ajeno)", "obligatorio": true, "notas": null },
+    { "orden": 6, "nombre": "Plancha/Plano IGAC escala 1:10.000 señalando la ubicación del predio y el pozo", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Documento Técnico: ubicación y extensión del predio o predios a explorar (propios, ajenos o baldíos), nombre y NIT de la empresa perforadora, relación y especificaciones del equipo a usar, sistema de perforación a emplear y plan de trabajo, características hidrogeológicas de la zona, relación de otros aprovechamientos de aguas subterráneas existentes en el área, superficie para la cual se solicita el permiso y término del mismo", "obligatorio": true, "notas": null },
+    { "orden": 8, "nombre": "Autorización de notificación por correo electrónico", "obligatorio": false, "notas": "Solo si el usuario lo autoriza" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES PERMISO DE PROSPECCIÓN Y EXPLORACIÓN DE AGUAS SUBTERRÁNEAS",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, junto con toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02). El funcionario de la ventanilla de trámites ambientales revisa el orden e identidad de los 8 documentos/requisitos del listado. Si los requisitos están completos: el funcionario de ventanilla realiza y entrega la liquidación por concepto de evaluación ambiental, el usuario paga en tesorería (o a través de los canales virtuales establecidos) y entrega la documentación para que se asigne número de solicitud en el SINCA, número de expediente y se asigne al profesional y/o técnico de la Coordinación de Evaluación para la sostenibilidad. Si no están completos: se realiza la devolución inmediata de la documentación aportada. Nota: si el profesional y/o técnico, al realizar la visita, identifica que es necesario, se procederá a hacer ajuste de los servicios cobrados al usuario. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Oficina de Correspondencia y/o responsables de los diferentes canales de atención", "Profesional Técnico Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Formulario Único Nacional de Solicitud de Prospección y Exploración de Aguas Subterráneas", "Documento Técnico y Estudio Geo-eléctrico", "Anexos", "SIC", "Lista de Chequeo Trámite de Permiso de Exploración de Aguas Subterráneas (Formato E-GE-FO02)", "Recibo de Pago"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL",
+          "descripcion": "Se asigna el expediente por parte del Coordinador de Evaluación para la sostenibilidad al área jurídica. En caso de requerir información adicional, complementar o aclarar información, los profesionales técnicos y jurídicos asignados de la Subdirección de Evaluación y Control Ambiental, mediante oficio dirigido al usuario, solicitan la información faltante, indicando que el plazo para completarla es de máximo un (1) mes. Vencido este plazo sin que se allegue la información solicitada, se procederá a decretar el desistimiento tácito y el archivo del expediente (Art. 17, Ley 1437 de 2011) mediante acto administrativo, que se notificará personalmente y contra el cual únicamente procede recurso de reposición, sin perjuicio de que la solicitud de trámite pueda ser nuevamente presentada con el lleno de los requisitos legales. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Coordinación de Evaluación para la sostenibilidad", "Profesionales Técnicos y jurídicos Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Formulario Único Nacional de Solicitud de Prospección y Exploración de Aguas Subterráneas", "Documento Técnico y Estudio Geo-eléctrico", "Anexos", "SIC"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental procede a realizar el Auto de Inicio, el cual ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por la Secretaría General. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Profesional Jurídico Subdirección de Evaluación y Control Ambiental", "Secretaría General"],
+          "documentos": ["Auto de admisión de la solicitud e inicio del trámite administrativo", "Aplicativo SINCA", "Liquidación de servicios de Evaluación"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR LA VISITA",
+          "descripcion": "El Secretario General, una vez firmado el Auto, remite el expediente a la oficina de notificaciones para que se proceda a notificarlo, de forma que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011). Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de realizar la visita. El profesional o técnico de SEYCA verifica que la constancia de pago por concepto de costos de trámite se encuentre en el expediente y, acorde con las fechas disponibles en el programador de visitas, fija fecha y hora para la realización de la inspección ocular ordenada en el auto de inicio. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Funcionario de la oficina de notificaciones", "Profesional o técnico de SEYCA"],
+          "documentos": ["Notificación del Acto administrativo"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "Los profesionales o técnicos del equipo de campo realizan la visita y elaboran el respectivo informe, registrando los datos en el SINCA en los campos previstos para esta tarea. Se tienen en cuenta, entre otros, los siguientes aspectos: identificación del predio, empresa perforadora, plan de trabajo, características hidrogeológicas, relación de otros aprovechamientos de aguas, superficie para la que se solicita el permiso y término del permiso. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA.",
+          "responsables": ["Profesional idóneo adscrito a SEYCA"],
+          "documentos": ["Informe técnico"],
+          "tiempo": "Quince (15) días hábiles",
+          "tiempoDias": 15,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "REVISAR Y DAR VISTO BUENO AL CONCEPTO TÉCNICO",
+          "descripcion": "El Coordinador de Evaluación para la sostenibilidad revisa el Informe Técnico de Prospección y Exploración de Aguas Subterráneas y los aplicativos SINCA. Si el informe presenta inconsistencias de carácter técnico, solicita explicación y corrección al Profesional o Técnico que realizó la visita; de lo contrario, da visto bueno al informe y le asigna número consecutivo al concepto. Mediante el sistema SINCA se hace cambio de etapa, y por cuaderno se hace entrega del expediente en físico junto con el informe técnico (debidamente cargado a la plataforma) y se remite el expediente al área Jurídica de la Subdirección de Evaluación y Control Ambiental. El Coordinador de Evaluación para la sostenibilidad tendrá diez (10) días para la revisión y visto bueno respectivo.",
+          "responsables": ["Profesional o técnico de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
+          "documentos": ["Aplicativo SINCA", "Concepto Técnico", "Memorando Interno"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O DE NEGACIÓN O AUTO DE ARCHIVO",
+          "descripcion": "Una vez remitido el correspondiente Informe Técnico de prospección y exploración de aguas subterráneas junto con el expediente, el profesional designado del Grupo Jurídico adscrito a SEYCA proyecta la Resolución, previa revisión del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA; se envía a la Dirección General para la respectiva firma y aprobación del Acto Administrativo que otorga o niega la prospección y exploración de aguas subterráneas, previa revisión, análisis y estudio del asesor de la Dirección General. Una vez aprobada y firmada la Resolución, el expediente se envía a la Secretaría General para su numeración y notificación de la respectiva providencia. La Secretaría General gestiona la publicación del acto administrativo en el GDI de la entidad (Gestión Documentos Institucionales Digitales – Boletín informativo Ambiental), debidamente escaneado en formato PDF, dando cumplimiento al artículo 71 de la Ley 99 de 1993, y remite el expediente a la Oficina de Notificaciones. El servidor responsable incluirá la información correspondiente y actualizará la etapa en el SINCA. La proyección de la Resolución, revisión, firma y aprobación del acto administrativo para firma del Director General se realizará en un término de sesenta (60) días.",
+          "responsables": ["Profesional Jurídico Subdirección de Evaluación y Control Ambiental", "Coordinador de Evaluación para la sostenibilidad", "Subdirector SEYCA", "Asesor de la Dirección General", "Director General"],
+          "documentos": ["Resolución"],
+          "tiempo": "Sesenta (60) días",
+          "tiempoDias": 60,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba la prospección y exploración", "siguientePaso": 8, "resultado": "APROBADO" },
+            { "respuesta": "Niega la prospección y exploración", "siguientePaso": 8, "resultado": "NEGADO" },
+            { "respuesta": "Archiva el trámite", "siguientePaso": null, "resultado": "ARCHIVADO" }
+          ]
+        },
+        {
+          "numero": 8,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "La oficina de notificaciones cita al usuario para comunicarle la resolución de aprobación o negación correspondiente al trámite de prospección y exploración de aguas subterráneas, e informa que cuenta con diez (10) días hábiles para presentar los recursos de ley (artículos 67 y 76, Ley 1437 de 2011). Si el usuario autorizó la notificación por correo electrónico, se notifica por ese medio. Si no se interponen recursos, se declara ejecutoriada la Resolución. Si se interpone recurso, se devuelve el expediente a la Coordinación de Evaluación para la sostenibilidad para que se revise técnicamente y se emita el concepto técnico que sirva de fundamento para resolver el recurso de reposición; se entrega al profesional jurídico adscrito a SEYCA para que profiera la decisión que en derecho corresponda y proyecte la resolución que lo resuelva, con un plazo de dos (2) meses para resolver el recurso. Resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión correspondiente, se notifica personalmente al usuario y se declara ejecutoriada la Resolución. Si el interesado no comparece a la CDMB para notificarse de la resolución, se notificará por aviso, el cual quedará fijado por un término de cinco (5) días hábiles, conforme al artículo 69 de la Ley 1437 de 2011.",
+          "responsables": ["Oficina de Notificaciones", "Subdirección de Evaluación y Control Ambiental SEYCA"],
+          "documentos": ["Resolución"],
+          "tiempo": "Diez (10) días hábiles para recursos; dos (2) meses para resolverlos si se interponen",
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

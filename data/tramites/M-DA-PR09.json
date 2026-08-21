@@ -1,0 +1,197 @@
+{
+  "codigo": "M-DA-PR09",
+  "version": "07",
+  "fecha": "2019-10-01",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Certificación de Centro de Diagnóstico Automotor",
+  "nombreCompleto": "PROCEDIMIENTO CERTIFICACIÓN DE UN CENTRO DE DIAGNÓSTICO AUTOMOTOR PARA LA REVISIÓN DE GASES",
+  "slug": "certificacion-centro-diagnostico-automotor",
+  "archivoFuente": "M-DA-PR09 version  7.pdf",
+  "objeto": "Certificar las condiciones mínimas que deben cumplir los Centros de Diagnóstico Automotor de acuerdo a la normatividad en el proceso de revisión de gases y opacidad de los vehículos automotores que transiten por el área de jurisdicción de la CDMB.",
+  "alcance": "Aplica a todos los Centros de Diagnóstico que aspiren a habilitarse y registrarse como Centro de Diagnóstico Automotor, para efectuar las revisiones técnico-mecánica y de gases, ubicados en el área de jurisdicción de la CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el responsable del área de Evaluación tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores adscritos al área de evaluación de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Nombre o razón social del solicitante y del representante legal o apoderado, si los hubiere, con indicación de su domicilio", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Certificado de existencia y representación legal", "obligatorio": true, "notas": "Solo si es persona jurídica" },
+    { "orden": 3, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se obre por intermediario o apoderado" },
+    { "orden": 4, "nombre": "Cumplimiento de los requisitos exigidos en la NTC 5385 (Centro de Diagnóstico Automotor), NTC 5375 (Revisión Técnico-Mecánica y de Emisiones Contaminantes en Vehículos Automotores) y NTC 5365 (Calidad de Aire)", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Listado de los equipos indicando marca, modelo, serie y aspectos técnicos", "obligatorio": true, "notas": null }
+  ],
+  "flujos": [
+    {
+      "codigo": "certificacion",
+      "nombre": "INSTRUCCIONES CERTIFICACIÓN DE UN CENTRO DE DIAGNÓSTICO AUTOMOTOR PARA LA REVISIÓN DE GASES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RADICAR SOLICITUD Y REGISTRARLA EN EL SIC Y SINCA",
+          "descripcion": "El usuario presenta en la ventanilla de trámites la solicitud acompañada de la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02), y se radica en la ventanilla de Correspondencia la solicitud de Certificación del Centro de Diagnóstico. El servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del Sistema de Información Corporativo (SIC), y el servidor responsable de la ventanilla de trámites le asigna un número de solicitud en el SINCA. Los anexos a verificar son: nombre o razón social del solicitante y representante legal o apoderado con domicilio; certificado de existencia y representación legal (persona jurídica); poder debidamente otorgado (si obra por apoderado); cumplimiento de los requisitos de las NTC 5385, NTC 5375 y NTC 5365; y listado de equipos con marca, modelo, serie y aspectos técnicos.",
+          "responsables": ["Servidor responsable de ventanilla de trámites ambientales", "Servidor responsable de correspondencia"],
+          "documentos": ["Solicitud del Usuario radicado", "Lista de Chequeo (E-GE-FO02)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REMITIR LA SOLICITUD A LA COORDINACIÓN DE EVALUACIÓN DE SEYCA",
+          "descripcion": "El servidor responsable de la ventanilla de correspondencia remite la solicitud a la Coordinación de Evaluación de SEYCA.",
+          "responsables": ["Servidor responsable de correspondencia", "Coordinador responsable del área de Evaluación"],
+          "documentos": ["Solicitud del Usuario radicado"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ASIGNAR AL TÉCNICO RESPONSABLE",
+          "descripcion": "Una vez el coordinador del área de Evaluación recibe la solicitud radicada por el usuario, procede a asignar el técnico responsable adscrito al área de evaluación, quien estará encargado de la revisión de las condiciones mínimas de acuerdo a la normatividad.",
+          "responsables": ["Coordinador responsable de área de Evaluación", "Servidor responsable de correspondencia"],
+          "documentos": ["Solicitud del Usuario radicado"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "REGISTRAR SOLICITUD EN EL SINCA",
+          "descripcion": "El técnico responsable registra la solicitud en el Sistema de Información de Normatización y Calidad Ambiental (SINCA) y asigna el expediente con código CD.",
+          "responsables": ["Servidor técnico competente"],
+          "documentos": ["Registro en el SINCA"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR REVISIÓN TÉCNICA PRELIMINAR",
+          "descripcion": "El servidor técnico responsable asignado verifica que la documentación presentada cumpla con los requisitos establecidos en el artículo primero (1) de la Resolución 653 de 2006. Si la documentación se encuentra completa, el técnico responsable elabora la liquidación por concepto de evaluación del trámite y mediante comunicación telefónica informa al usuario, quien debe acercarse a recogerla y realizar el pago correspondiente. Si la documentación allegada no se encuentra completa, ver el paso 6. Nota: desde el momento en que se informa al usuario que la liquidación está disponible, los términos del trámite quedan suspendidos hasta que el usuario allegue la constancia de pago.",
+          "responsables": ["Servidor técnico competente", "Servidor Responsable del área de Evaluación"],
+          "documentos": ["Documentos de solicitud", "SINCA con soportes y trazabilidad", "Liquidación del trámite", "Constancia de pago"],
+          "tiempo": "Un (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "ENVIAR OFICIO SOLICITANDO INFORMACIÓN ADICIONAL AL USUARIO",
+          "descripcion": "El técnico responsable proyecta una comunicación dirigida al titular del trámite en la cual solicita los requisitos faltantes establecidos en la Resolución 653 de 2006. Si transcurridos los tiempos establecidos en el Código de Procedimiento Administrativo y de lo Contencioso Administrativo el titular del trámite no allega la información solicitada, se procede a decretar el desistimiento tácito y el archivo definitivo de la solicitud.",
+          "responsables": ["Servidor técnico competente", "Coordinador Responsable del área de Evaluación", "Subdirector de SEYCA"],
+          "documentos": ["Comunicación enviada al usuario", "SINCA con soportes y Trazabilidad"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "ASIGNAR SERVIDOR JURÍDICO RESPONSABLE",
+          "descripcion": "El coordinador del área de Evaluación asigna el expediente a un profesional en derecho para que elabore el auto de inicio del trámite.",
+          "responsables": ["Coordinador Responsable del área de Evaluación", "Profesional en derecho responsable"],
+          "documentos": ["SINCA"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "EXPEDIR AUTO DE INICIO DE TRÁMITE",
+          "descripcion": "El servidor jurídico responsable elabora el auto de inicio del trámite, el cual debe ser revisado por el coordinador del área de evaluación y firmado por la secretaria general. Cuando la información esté completa, se expide el auto de iniciación de trámite, que debe subirse en el SINCA dejando trazabilidad en el sistema.",
+          "responsables": ["Profesional en derecho", "Coordinador Responsable del área de Evaluación", "Secretaria General de la entidad"],
+          "documentos": ["Auto de Inicio firmado y numerado", "SINCA con soporte y Trazabilidad"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "ENVIAR AUTO A NOTIFICACIÓN Y PUBLICACIÓN",
+          "descripcion": "Una vez emitido, visado, firmado y numerado el auto de inicio, el profesional en derecho lo envía mediante memorando a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena igualmente su publicación en el GDI, de acuerdo con lo establecido en la Ley 99/93. Se debe asegurar la notificación y publicación, así como la alimentación del SINCA con los debidos soportes dejando trazabilidad. Nota: desde el momento en que se cita a notificarse al titular, los términos del trámite quedan suspendidos hasta que el auto se encuentre notificado.",
+          "responsables": ["Profesional en derecho", "Servidor responsable de notificar", "Servidor responsable de la publicación del área de Gestión documental", "Secretaría General"],
+          "documentos": ["Constancia de Notificación personal o edicto", "Registro del documento en la Web", "SINCA con soportes y trazabilidad"],
+          "tiempo": "Tres (3) días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 10,
+          "titulo": "ASIGNAR TÉCNICO RESPONSABLE PARA LA VISITA",
+          "descripcion": "Una vez notificado el auto de inicio del trámite, el coordinador del área de Evaluación asigna al técnico responsable para la realización de la visita y la elaboración del concepto técnico.",
+          "responsables": ["Coordinador Responsable del área de Evaluación", "Servidor técnico competente"],
+          "documentos": ["Documentación del trámite"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 11,
+          "titulo": "REALIZAR VISITA TÉCNICA",
+          "descripcion": "El servidor técnico responsable asignado realiza la visita técnica de evaluación al centro de diagnóstico automotor, en la cual verifica el adecuado funcionamiento de los equipos de medición de gases y el cumplimiento de las normas técnicas NTC 5365, NTC 5375, NTC 5385, NTC 4983 y NTC 4231.",
+          "responsables": ["Servidor técnico competente"],
+          "documentos": ["Documentos de la solicitud", "SINCA con soportes y Trazabilidad"],
+          "tiempo": "Uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 12,
+          "titulo": "ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "El servidor técnico responsable asignado elabora el concepto técnico por el cual se decide sobre la viabilidad o no de otorgar la certificación ambiental en materia de revisión de gases al centro de diagnóstico automotor, y lo entrega al coordinador del área de evaluación para que este asigne al servidor jurídico encargado de elaborar la resolución o acto administrativo.",
+          "responsables": ["Servidor técnico competente", "Coordinador Responsable del área de Evaluación"],
+          "documentos": ["Concepto técnico", "SINCA con soportes y trazabilidad"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 13,
+          "titulo": "ASIGNAR SERVIDOR JURÍDICO RESPONSABLE PARA RESOLUCIÓN",
+          "descripcion": "El coordinador del área de Evaluación asigna el expediente a un profesional en derecho para que elabore la resolución que otorga o niega la certificación ambiental en materia de revisión de gases al centro de diagnóstico automotor.",
+          "responsables": ["Coordinador Responsable del área de Evaluación", "Profesional en derecho responsable"],
+          "documentos": ["Expediente", "Concepto técnico"],
+          "tiempo": "Dos (2) días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 14,
+          "titulo": "PROYECTAR RESOLUCIÓN QUE OTORGA O NIEGA LA CERTIFICACIÓN DEL CENTRO DE DIAGNÓSTICO AUTOMOTOR",
+          "descripcion": "De acuerdo con lo determinado en el concepto técnico, el profesional en derecho asignado proyecta la resolución con la cual otorga o niega la certificación ambiental en materia de revisión de gases. Una vez firmada y numerada la resolución, el profesional en derecho remite a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena igualmente su publicación en el GDI, de acuerdo con lo establecido en la Ley 99/93. Nota: la resolución que otorga o niega el permiso debe ser motivada.",
+          "responsables": ["Profesional en derecho", "Servidor Responsable del área de Evaluación", "Subdirector SEYCA", "Director General"],
+          "documentos": ["Resolución de aprobación o negación de la certificación del Centro de Diagnóstico Automotor"],
+          "tiempo": "Diez (10) días",
+          "tiempoDias": 10,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Otorga la certificación", "siguientePaso": 15, "resultado": "APROBADO" },
+            { "respuesta": "Niega la certificación", "siguientePaso": 15, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 15,
+          "titulo": "ENVIAR RESOLUCIÓN A NOTIFICACIÓN Y PUBLICACIÓN",
+          "descripcion": "Una vez emitida, visada, firmada y numerada la resolución, el profesional en derecho la envía mediante memorando y en el SINCA a la oficina de Notificaciones de la Secretaría General para su notificación, y se ordena igualmente su publicación en el GDI, de acuerdo con lo establecido en la Ley 99/93. Se debe asegurar la notificación y publicación, así como la alimentación del SINCA con los debidos soportes dejando trazabilidad.",
+          "responsables": ["Profesional en derecho", "Servidor Responsable del área de Evaluación", "Servidor responsable de enumerar las Resoluciones", "Servidor responsable de notificar", "Servidor responsable de la publicación del área de Gestión documental"],
+          "documentos": [],
+          "tiempo": "Tres (3) días",
+          "tiempoDias": 3,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

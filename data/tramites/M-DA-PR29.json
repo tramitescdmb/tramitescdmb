@@ -1,0 +1,109 @@
+{
+  "codigo": "M-DA-PR29",
+  "version": "05",
+  "fecha": "2016-12-22",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Creación del Departamento de Gestión Ambiental",
+  "nombreCompleto": "PROCEDIMIENTO DE APROBACIÓN PARA LA CREACIÓN DEL DEPARTAMENTO DE GESTIÓN AMBIENTAL DE LAS EMPRESAS A NIVEL INDUSTRIAL",
+  "slug": "creacion-departamento-gestion-ambiental",
+  "archivoFuente": "M-DA-PR29 version   5.pdf",
+  "objeto": "Implementar de una forma adecuada la normativa ambiental vigente dentro de las empresas del área de jurisdicción de la CDMB, relacionadas en el Decreto 1299 de 2008.",
+  "alcance": "Lograr que se implemente el Departamento de Gestión Ambiental para las empresas a nivel industrial, en cada una de las empresas que correspondan a la jurisdicción de la CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el responsable del área de evaluación de la Subdirección de Evaluación y Control Ambiental tienen la autoridad y responsabilidad de cumplir y hacer cumplir el procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formato de Inscripción del DGA", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Acta de Constitución del Departamento de Gestión Ambiental firmada por el representante legal de la empresa", "obligatorio": true, "notas": null },
+    { "orden": 3, "nombre": "Organigrama de la empresa y del DGA", "obligatorio": true, "notas": null },
+    { "orden": 4, "nombre": "Miembros del DGA identificando el cargo dentro de la empresa y dentro del DGA", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Funciones y responsabilidades del DGA", "obligatorio": true, "notas": null },
+    { "orden": 6, "nombre": "Cronograma de actividades", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Plan de acción ambiental", "obligatorio": true, "notas": null },
+    { "orden": 8, "nombre": "RUT", "obligatorio": true, "notas": null }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RADICAR SOLICITUD Y REGISTRAR EN EL SIC Y SINCA",
+          "descripcion": "El Usuario presenta en la ventanilla de trámites la solicitud acompañada de la documentación para su respectiva verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos, código E-GE-FO02); una vez cumpla con la lista de chequeo se procede a radicar en la ventanilla de Correspondencia la solicitud de aprobación de la creación del Departamento de Gestión Ambiental. El Servidor responsable de Correspondencia registra la solicitud en la Aplicación de Correspondencia del Sistema de Información Corporativo – SIC, y el servidor responsable de la ventanilla de trámites ambientales le asigna un número de solicitud en el SINCA. Los anexos a verificar son: 1. Formato de Inscripción del DGA; 2. Acta de Constitución del Departamento de Gestión Ambiental firmada por el representante legal de la empresa; 3. Organigrama de la empresa y del DGA; 4. Miembros del DGA identificando el cargo dentro de la empresa y dentro del DGA; 5. Funciones y responsabilidades del DGA; 6. Cronograma de actividades; 7. Plan de acción ambiental; 8. RUT.",
+          "responsables": ["Servidor responsable de Ventanilla trámites ambientales", "Servidor responsable de correspondencia"],
+          "documentos": ["Solicitud del Usuario radicado", "Documentos anexos", "Lista de Chequeo (E-GE-FO02)"],
+          "tiempo": "Uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REMITIR LA SOLICITUD Y ASIGNACIÓN DE RESPONSABLE",
+          "descripcion": "El servidor responsable de la ventanilla de correspondencia remite la solicitud al área de Evaluación de SEYCA, para que ésta se asigne al servidor del área de evaluación quien estará encargado de aprobar la respectiva actuación. Una vez revisada la documentación por parte del servidor responsable del área de evaluación, éste asignará expediente SINCA (DG-xxxx-xxxx). De lo contrario, envía una comunicación al usuario solicitando la documentación faltante requerida, y se inicia el proceso nuevamente.",
+          "responsables": ["Secretaria Subdirección SEYCA", "Servidor responsable de correspondencia", "Servidor responsable del área de Evaluación y Control Ambiental"],
+          "documentos": ["SINCA (No. expediente)", "Lista de Chequeo (E-GE-FO02)"],
+          "tiempo": "Uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "VISITA DE EVALUACIÓN",
+          "descripcion": "El servidor encargado de la evaluación realiza visita y evalúa el documento. Si cumple con la norma del Departamento de Gestión Ambiental, se procede de acuerdo con el paso siguiente. Por el contrario, cuando no cumple con la norma del Departamento de Gestión Ambiental, se oficia nuevamente al usuario para requerirle que presente la documentación solicitada.",
+          "responsables": ["Servidor área de Evaluación y Control Ambiental"],
+          "documentos": ["Oficio para el Usuario", "Acta de visita"],
+          "tiempo": "cinco (5) días",
+          "tiempoDias": 5,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "ELABORAR OFICIO DIRIGIDO A USUARIO",
+          "descripcion": "El servidor responsable del área de evaluación elabora un oficio dirigido al usuario, donde le informa que ha cumplido con los requerimientos hechos por la Entidad. Igualmente carga el informe de visita y el concepto técnico (favorable o desfavorable) en el SINCA.",
+          "responsables": ["Servidor encargado de realizar la Evaluación y Control Ambiental"],
+          "documentos": ["Oficio para el Usuario", "SINCA"],
+          "tiempo": "uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "CAMBIO DE ESTADO EN EL SINCA",
+          "descripcion": "El servidor encargado de la evaluación informa al servidor responsable del área de evaluación que la solicitud se encuentra lista para cambio de estado. El servidor responsable del área debe realizar el cambio de estado de la solicitud en el SINCA.",
+          "responsables": ["Servidor responsable del área de Evaluación y Control Ambiental"],
+          "documentos": ["SINCA"],
+          "tiempo": "uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "REVISAR Y FIRMAR OFICIO",
+          "descripcion": "El Servidor responsable del área de Evaluación da el visto bueno al oficio y lo envía al Subdirector de Evaluación y Control Ambiental para su firma. La Secretaria de la Subdirección envía el oficio a la Oficina de Correspondencia para su entrega al interesado.",
+          "responsables": ["Servidor responsable del área de Evaluación y Control Ambiental", "Subdirector SEYCA", "Secretaria SEYCA"],
+          "documentos": ["Oficio para el Usuario"],
+          "tiempo": "uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "CREAR EXPEDIENTE FÍSICO",
+          "descripcion": "Se envía toda la documentación generada durante el trámite a archivo temporal de la subdirección para crear su respectivo expediente físico.",
+          "responsables": ["Servidor responsable del área de Evaluación y Control Ambiental", "Funcionario Encargado de Archivo"],
+          "documentos": ["Carpeta Expediente"],
+          "tiempo": "uno (1) día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

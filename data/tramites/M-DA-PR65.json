@@ -1,0 +1,165 @@
+{
+  "codigo": "M-DA-PR65",
+  "version": "1",
+  "fecha": "2022-06-30",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Licencia Ambiental Temporal (Formalización Minera)",
+  "nombreCompleto": "PROCEDIMIENTO OTORGAMIENTO TRÁMITE DE LA LICENCIA AMBIENTAL TEMPORAL (FORMALIZACIÓN MINERA)",
+  "slug": "licencia-ambiental-temporal-formalizacion-minera",
+  "archivoFuente": "M-DA-PR65 version 1.pdf",
+  "objeto": "Establecer la secuencia de actividades y responsabilidades necesarias, para la evaluación de Licencias Ambientales Temporales de proyectos, obras o actividades que lo requieran, en lo que compete a la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga – CDMB, como autoridad ambiental dentro de su área de jurisdicción.",
+  "alcance": "Aplica a todas las solicitudes de Licencia Ambiental Temporal para proyectos, obras o actividades que lo requieran, en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental, y el Grupo de Evaluación para la Sostenibilidad, tienen la Autoridad y responsabilidad de modificar y hacer cumplir el respectivo procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Formulario Único de Licencia Ambiental", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Documento que acredite la inclusión en un proceso de Formalización Minera", "obligatorio": true, "notas": "Según el caso: copia de la radicación de la solicitud ante la Agencia Nacional Minera (minería tradicional); guías ambientales para la formalización ante la ANM (subcontrato de formalización minera); copia del documento de Declaración del ARE (Áreas de Reserva Especial); o aprobación de la devolución de áreas por parte de la ANM (devolución de áreas)" },
+    { "orden": 3, "nombre": "Planos que soportan el Estudio de Impacto Ambiental (EIA), conforme al Modelo de Almacenamiento Geográfico - Geodatabase de la Resolución 2182 del 23 de diciembre de 2016", "obligatorio": true, "notas": null },
+    { "orden": 4, "nombre": "Costo estimado de inversión y operación del proyecto", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe como apoderado" },
+    { "orden": 6, "nombre": "Documento de identificación, o certificado de existencia y representación legal", "obligatorio": true, "notas": "Certificado de existencia y representación legal en caso de personas jurídicas" },
+    { "orden": 7, "nombre": "Certificación del Ministerio del Interior sobre presencia o no de comunidades étnicas y de existencia de territorios colectivos en el área de influencia del proyecto", "obligatorio": true, "notas": "Conforme al protocolo de coordinación interinstitucional para la consulta previa" },
+    { "orden": 8, "nombre": "Copia de la radicación del documento exigido por el ICANH en cumplimiento de la Ley 1185 de 2008", "obligatorio": true, "notas": null },
+    { "orden": 9, "nombre": "Formularios y formatos únicos de solicitud de permisos menores que se requieran para el desarrollo del proyecto", "obligatorio": false, "notas": "Solo si el proyecto requiere permisos ambientales menores asociados (p.ej. concesión de aguas superficiales o subterráneas, vertimientos, aprovechamiento forestal, ocupación de cauces, emisiones atmosféricas)" },
+    { "orden": 10, "nombre": "Constancia de pago para la prestación del servicio de evaluación de la licencia ambiental", "obligatorio": true, "notas": "Se remite al usuario y se allega posteriormente, una vez este haya entregado toda la demás documentación" },
+    { "orden": 11, "nombre": "Autorización de notificación por correo electrónico (formato MDA-F057)", "obligatorio": false, "notas": "Solo si el usuario autoriza la notificación electrónica" }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RECIBIR, RADICAR LA SOLICITUD DE LICENCIA AMBIENTAL TEMPORAL",
+          "descripcion": "El interesado radicará el Estudio de Impacto Ambiental (EIA) en la ventanilla de trámites ambientales, según sea competencia de la Corporación Autónoma Regional competente y de conformidad con lo estipulado en el artículo 2.2.2.3.2.3 del Decreto 1076 de 2015. El EIA presentado por el usuario debe cumplir con lo dispuesto en los Términos de referencia para la elaboración del EIA para la licencia ambiental temporal para la formalización minera, adoptados mediante la Resolución 448 de 2020, y anexar la documentación mínima exigida (Formulario Único de Licencia Ambiental, documento que acredite la inclusión en el proceso de formalización minera, planos que soportan el EIA, costo estimado del proyecto, poder si aplica, documento de identificación o certificado de existencia y representación legal, certificación del Ministerio del Interior sobre comunidades étnicas, copia de la radicación ante el ICANH, formularios de permisos menores, constancia de pago y autorización de notificación electrónica), presentada en formato digital y físico debidamente organizada y foliada, conforme al artículo 2.2.2.3.6.2 del Decreto 1076 de 2015, que apliquen. Nota: la constancia de pago para la prestación del servicio de evaluación de la licencia ambiental se remitirá al usuario, posteriormente a que este allegue toda la documentación anteriormente enunciada.",
+          "responsables": ["Servidor responsable de Ventanilla trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["Radicado de entrada enviado por el interesado a la CDMB", "Documentos anexos"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "REALIZAR LA REVISIÓN DE LA DOCUMENTACIÓN",
+          "descripcion": "El coordinador responsable del grupo de Evaluación de Licencias Ambientales asignará a un profesional encargado, según el tipo de proyecto, para que realice la revisión preliminar de la información allegada mediante la Lista de chequeo de LAT, estableciendo si la información cumple con los requisitos establecidos, a excepción de la constancia de pago para la prestación del servicio de evaluación de LA. Si la documentación está incompleta, se procede a la devolución física de la documentación presentada por el usuario. Si la documentación está completa: el profesional encargado del trámite solicita la liquidación de pago por concepto de evaluación ambiental al funcionario de la ventanilla única, quien la genera y entrega; el profesional responsable envía la liquidación y forma de pago al usuario, quien deberá allegar el comprobante de pago en un término no mayor a treinta (30) días a través de los canales de información habilitados por la CDMB. El encargado de la ventanilla única remite al profesional designado para que anexe la factura o comprobante de pago al expediente físico y solicite la apertura de número SINCA y expediente para el inicio del trámite de LAT.",
+          "responsables": ["Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional técnico encargado de evaluación del trámite de Licencia Ambiental - SEYCA", "Servidor responsable de Ventanilla trámites ambientales"],
+          "documentos": ["Formato E-GE-FO02 Control de procesos", "Formato de Verificación Preliminar de Documentación de LA adaptado", "Liquidación emitida por la CDMB para la evaluación del trámite ambiental", "Radicado de salida CDMB emitiendo respectiva liquidación y formas de pago", "Factura pago del trámite ambiental CDMB", "SIC con soportes y trazabilidad", "Apertura de expediente en físico"],
+          "tiempo": "10 días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORACIÓN AUTO DE INICIO DE TRÁMITE Y NOTIFICACIÓN AL USUARIO",
+          "descripcion": "Una vez creado el número SINCA y expediente de LAT, inicia el trámite ambiental: el Coordinador de Evaluación para la Sostenibilidad asigna el trámite a un profesional del área jurídica, quien proyectará el respectivo Auto de inicio, el cual deberá ser firmado por el Secretario General. Una vez suscrito, la Secretaría General remite el acto administrativo a la oficina de notificaciones para notificar el Auto de inicio y remite el expediente a la Coordinación de Evaluación para la sostenibilidad mientras se surte la notificación. El usuario autoriza previamente, mediante el formato MDA-FO57 'Autorización notificación por correo electrónico', la notificación electrónica del auto, que cobra ejecutoria según la Ley 1437 de 2011, ordenándose además su publicación en el GDI conforme a la Ley 99 de 1993. En caso de requerir notificación por aviso, se realiza conforme al artículo 69 de la Ley 1437 de 2011, por un término de cinco (5) días. Surtida la notificación, el servidor responsable actualiza la etapa en el SINCA. Una vez efectuada la notificación y publicación, el acto administrativo es devuelto de manera prioritaria a la Subdirección de Evaluación y Control Ambiental, donde se realiza cambio de etapa y el coordinador designa el equipo profesional encargado de la evaluación de la documentación. Nota: remitir copia del Auto de inicio a la Agencia Nacional de Minería.",
+          "responsables": ["Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor público de Notificaciones", "Servidor público responsable de la publicación en el GDI", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de Ventanilla trámites ambientales", "Oficina de notificaciones"],
+          "documentos": ["SIC con soporte y trazabilidad", "Auto de inicio firmado y numerado", "Memorando", "Registro del documento en GDI", "Constancia de Notificación personal o edicto"],
+          "tiempo": "Tres (3) días para elaborar y firmar el Auto de inicio; cinco (5) días adicionales si aplica notificación por aviso",
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "EVALUACIÓN DE LA DOCUMENTACIÓN Y VISITA TÉCNICA",
+          "descripcion": "Paralelamente a la notificación del auto de inicio, el equipo profesional designado por el coordinador del Grupo de Evaluación para la sostenibilidad procede a fijar la fecha de la visita de inspección ocular cuando la naturaleza del proyecto lo requiera (no superará los tres días hábiles posteriores a la notificación del auto de inicio) y realiza la evaluación del EIA presentado y sus respectivos anexos. En caso de considerarse necesario, el equipo practicará la visita y plasmará lo evidenciado en el formato de Hoja de Visita Institucional, notificando previamente al interesado mediante comunicación oficial. Nota 1: se debe anexar registro fotográfico. Nota 2: en caso de requerirse información adicional, paralelamente a la ejecución de la visita, el profesional jurídico encargado proyecta oficio al usuario comunicando que se realizará reunión de solicitud de información adicional.",
+          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Servidor responsable de Ventanilla trámites ambientales", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["Memorando designación equipo evaluador", "SIC con soportes y trazabilidad", "Radicado de salida CDMB notificación de la visita", "Hoja de visita institucional", "Registro fotográfico"],
+          "tiempo": "8 días",
+          "tiempoDias": 8,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "¿REQUIERE INFORMACIÓN ADICIONAL?",
+          "descripcion": "El servidor responsable adscrito a la coordinación de evaluación debe determinar, posterior a la visita técnica, si se requiere o no solicitar información adicional por única vez. 1. No requiere información adicional: el equipo profesional procederá a emitir el informe técnico conforme con el numeral 7 de este procedimiento (paso 7). 2. Sí requiere información adicional: se realiza, dentro de los dos (2) días, la reunión de solicitud de información adicional donde se indica la documentación que debe anexarse; posteriormente se otorga un plazo de un (1) mes calendario al usuario, prorrogable a solicitud del mismo por única vez, conforme al artículo 2.2.2.3.6.3 del Decreto 1076 de 2015. La reunión debe ser notificada al usuario mediante oficio y deben asistir al menos: el solicitante, representante legal o apoderado, y un delegado de la autoridad ambiental. Toda decisión adoptada en la reunión se notifica verbalmente dejando constancia en acta; procede recurso de reposición que se resuelve de plano en la misma reunión. La inasistencia del solicitante no impide la reunión, salvo justa causa. Nota: a partir del requerimiento de información adicional la entidad suspende el tiempo del trámite, hasta cumplir los 30 días con los que cuenta el usuario, o 60 días en caso de solicitud y aprobación de prórroga.",
+          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Secretaria de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor responsable de Ventanilla trámites ambientales"],
+          "documentos": ["Radicado de salida CDMB programación de reunión de información adicional", "Acta de Reunión de información adicional firmada", "SIC con soportes y trazabilidad"],
+          "tiempo": "2 días",
+          "tiempoDias": 2,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "No requiere información adicional", "siguientePaso": 7 },
+            { "respuesta": "Sí requiere información adicional", "siguientePaso": 6 }
+          ]
+        },
+        {
+          "numero": 6,
+          "titulo": "¿EL INTERESADO PRESENTÓ LA INFORMACIÓN ADICIONAL?",
+          "descripcion": "a. Si presenta información adicional, el equipo profesional procederá a emitir informe técnico conforme con el numeral 7 de este procedimiento. b. Si no presenta información adicional, el equipo profesional remitirá al encargado de jurídica para que emita el Acto administrativo que ordena el archivo de la solicitud y realiza devolución de la totalidad de documentación, conforme al numeral 3, artículo 2.2.2.3.6.3 del Decreto 1076 de 2015. Posteriormente, la CDMB notifica al usuario conforme a los artículos 67 y 68 de la Ley 1437 de 2011 en un plazo de cinco (5) días; el usuario tendrá cinco (5) días de plazo para notificarse. Notificación por aviso a los diez (10) días de emitido el Acto administrativo que ordena el archivo, publicando el aviso por cinco (5) días, conforme al artículo 69 de la Ley 1437 de 2011.",
+          "responsables": ["Equipo Profesional responsable de evaluación del trámite de Licencia Ambiental – SEYCA", "Profesional jurídico designado por el coordinador", "Coordinador del grupo de Evaluación para la sostenibilidad", "Subdirector de SEYCA", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["Radicado de entrada CDMB enviado por el interesado", "Radicado de salida CDMB consulta de información a otras entidades", "Acto administrativo que ordena el archivo de la solicitud y realiza devolución de la totalidad de documentación", "SIC con soportes y trazabilidad"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Presentó la información adicional", "siguientePaso": 7 },
+            { "respuesta": "No presentó la información adicional", "siguientePaso": null, "resultado": "ARCHIVADO" }
+          ]
+        },
+        {
+          "numero": 7,
+          "titulo": "EMITIR Y REVISAR INFORME TÉCNICO",
+          "descripcion": "Una vez realizada la visita de inspección ocular, el equipo profesional designado por el coordinador del Grupo de Evaluación para la sostenibilidad procederá a emitir el informe técnico de evaluación del trámite ambiental de LAT, en un término no mayor a ocho (8) días hábiles. El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias de carácter técnico, solicita explicación y corrección al técnico que realizó la visita; posteriormente da el visto bueno al informe y le asigna número consecutivo, en un término no mayor a dos (2) días. Mediante el sistema SINCA se hace cambio de etapa, se entrega el expediente en físico junto con el informe técnico debidamente cargado en el SIC y se remite el expediente al área Jurídica de la Subdirección de Evaluación y Control Ambiental.",
+          "responsables": ["Grupo profesional de la Coordinación de Evaluación para la sostenibilidad", "Coordinador de Evaluación para la sostenibilidad"],
+          "documentos": ["Informe técnico", "SIC con soportes y trazabilidad"],
+          "tiempo": "10 días",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR AUTO DE REUNIDA LA INFORMACIÓN",
+          "descripcion": "Con sustento en el Informe Técnico, el profesional en derecho designado por el responsable de la coordinación del grupo de Evaluación para la Sostenibilidad proyectará el Auto por el cual se declara reunida la información. Una vez firmado y numerado, lo remitirá a la oficina de notificaciones para que se surta la comunicación del mismo y se ordena su publicación en el boletín ambiental GDI, conforme al artículo 71 de la Ley 99 de 1993 y la Ley 1437 de 2011; posteriormente se realiza la devolución del expediente a la Subdirección de Evaluación y Control Ambiental. Nota: remitir copia del Auto de reunida la información adicional a la Agencia Nacional de Minería.",
+          "responsables": ["Servidor público responsable de notificación", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Subdirector de SEYCA", "Secretario general", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención"],
+          "documentos": ["SIC con soportes y trazabilidad", "Auto de reunida la información firmado y numerado", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de notificación y publicación"],
+          "tiempo": "2 días",
+          "tiempoDias": 2,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR RESOLUCIÓN QUE DA VIABILIDAD O NIEGA LA LICENCIA AMBIENTAL TEMPORAL PARA FORMALIZACIÓN MINERA",
+          "descripcion": "Una vez revisado y firmado el informe técnico por el Coordinador de Evaluación para la sostenibilidad de SEYCA, se procede con la proyección de la Resolución por parte del profesional jurídico designado, en un término no mayor a cinco (5) días, que determina: A. Dar viabilidad a la Licencia Ambiental Temporal, si el informe técnico determina la viabilidad de otorgar el trámite, conforme con la Ley 1955 de 2019 y la Resolución 448 de 2020; o B. Negar la Licencia Ambiental Temporal, si el informe técnico determina no otorgarla, conforme con las mismas normas. Nota 1: la resolución proyectada, con la revisión y visto bueno del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA, se remite a la Dirección General para firma y aprobación, previa revisión, análisis y estudio del Asesor de Dirección General. Posterior a su aprobación, se remite a notificaciones para surtir la notificación, elaborando constancia de ejecutoria, y se ordena su publicación en el boletín ambiental GDI, conforme a los artículos 70 y 71 de la Ley 99 de 1993 y la Ley 1437 de 2011. La CDMB notifica al usuario conforme a los artículos 67 y 68 de la Ley 1437 de 2011 en un plazo de cinco (5) días; el usuario tendrá cinco (5) días de plazo para notificarse. Si no es posible la notificación personal, se procede con notificación por aviso, publicado por cinco (5) días conforme al artículo 69 de la Ley 1437 de 2011. Surtida la notificación, se actualiza el expediente físico y el sistema corporativo. Nota 2: la entidad dará por terminado el trámite, y el solicitante podrá presentar una nueva solicitud. Nota 3: remitir copia del Acto administrativo a la Agencia Nacional de Minería.",
+          "responsables": ["Dirección General", "Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor responsable de Ventanilla trámites ambientales", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Servidor público responsable de notificación", "Servidor público responsable de la publicación"],
+          "documentos": ["SIC con soportes y trazabilidad", "Resolución que otorga o niega el trámite ambiental", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de publicación", "Constancia de ejecutoria"],
+          "tiempo": "5 días",
+          "tiempoDias": 5,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Da viabilidad a la Licencia Ambiental Temporal", "siguientePaso": 10, "resultado": "APROBADO" },
+            { "respuesta": "Niega la Licencia Ambiental Temporal", "siguientePaso": 10, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 10,
+          "titulo": "ELABORAR, NOTIFICAR Y PUBLICAR RESOLUCIÓN QUE DA RESPUESTA AL RECURSO DE REPOSICIÓN",
+          "descripcion": "Contra el acto administrativo mediante el cual la entidad se pronuncia sobre el trámite ambiental (otorgamiento o negación), procede el recurso de reposición, que debe interponerse en un término no mayor a diez (10) días contados a partir de la notificación. Si el interesado presenta recurso de reposición, el responsable de la oficina de notificaciones remite el expediente junto con el recurso al coordinador del grupo de Evaluación para la sostenibilidad de SEYCA, para que sea resuelto de fondo conforme a la Ley 1437 de 2011. El Coordinador designará al profesional jurídico que dará respuesta al recurso mediante la elaboración de la Resolución; una vez firmada, se envía a notificación y publicación conforme a la Ley 1437 de 2011 y la Ley 99 de 1993. Nota 1: el término para resolver los recursos es de dos (2) meses, conforme al artículo 86 de la Ley 1437 de 2011. Nota 2: remitir copia del Acto administrativo a la Agencia Nacional de Minería. Este paso solo aplica cuando el interesado efectivamente interpone recurso de reposición contra la resolución del paso 9; si no se interpone recurso, se continúa directamente con el paso 11.",
+          "responsables": ["Dirección General", "Secretario general", "Subdirector de SEYCA", "Coordinador del grupo de Evaluación para la sostenibilidad", "Profesional jurídico designado por el coordinador", "Servidor responsable de la publicación del área de Gestión documental", "Servidor responsable de correspondencia y/o responsables de los diferentes canales de atención", "Oficina de notificaciones"],
+          "documentos": ["Resolución resuelve recurso", "SIC con soportes y trazabilidad", "Resolución que resuelve el recurso", "Constancia de Notificación personal o edicto", "Registro del documento en GDI", "Constancia de publicación", "Constancia de ejecutoria"],
+          "tiempo": "60 días",
+          "tiempoDias": 60,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 11,
+          "titulo": "ENVIAR EXPEDIENTE A SEGUIMIENTO Y CONTROL AMBIENTAL",
+          "descripcion": "Una vez notificada y ejecutoriada la resolución que resuelve el recurso presentado (paso 10), o notificada la resolución que da viabilidad o niega la licencia ambiental temporal cuando no se presentó recurso de reposición, el responsable de la oficina de notificaciones realizará la entrega del expediente a SEYCA, específicamente al Coordinador de Seguimiento Ambiental, con el fin de que designe a un profesional para realizar seguimiento a los términos y condiciones establecidos en el acto administrativo, o se realice el archivo del expediente en caso de ser negada. Conforme al artículo 22 de la Ley 1955 de 2019, la autoridad ambiental deberá hacer seguimiento y control a los términos y condiciones establecidos, y en caso de inobservancia procederá a requerir por una sola vez al interesado, para que en un término no mayor a treinta (30) días subsane las faltas encontradas. Vencido este término, si el interesado no subsana la falta o no desvirtúa el incumplimiento, la autoridad ambiental comunicará tal situación a la autoridad minera dentro de los cinco (5) días siguientes, a efectos de que dicha entidad proceda al rechazo de la solicitud de formalización de minería tradicional, o a la revocatoria del acto administrativo de autorización del subcontrato de formalización minera, de delimitación y declaración del Área de Reserva Especial, o de la aprobación de la devolución de áreas para la formalización. De la actuación que surta la autoridad minera se corre traslado a la Policía Nacional, para lo de su competencia. Nota estructural: en el PDF fuente esta actividad final no lleva número explícito en la columna 'No.' de la tabla (posible omisión del documento original); se numera aquí como paso 11 por continuidad lógica del procedimiento.",
+          "responsables": ["Responsable oficina de notificaciones", "Subdirector SEYCA", "Servidor público de archivo SEYCA", "Profesional responsable de seguimiento del trámite de Licencia Ambiental – SEYCA"],
+          "documentos": ["Memorando", "SINCA SIC con soportes y trazabilidad", "Expediente en físico"],
+          "tiempo": "1 día",
+          "tiempoDias": 1,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}

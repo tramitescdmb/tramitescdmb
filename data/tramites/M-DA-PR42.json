@@ -1,0 +1,127 @@
+{
+  "codigo": "M-DA-PR42",
+  "version": "03",
+  "fecha": "2018-11-17",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Certificación de Inversiones Ambientales",
+  "nombreCompleto": "PROCEDIMIENTO DE CERTIFICACIÓN O ACREDITACIÓN DE LAS INVERSIONES PARA EL CONTROL DEL MEDIO AMBIENTE O CONSERVACIÓN Y MEJORAMIENTO DEL MEDIO AMBIENTE",
+  "slug": "certificacion-inversiones-ambientales",
+  "archivoFuente": "M-DA-PR42 version    3.pdf",
+  "objeto": "Describir y estandarizar claramente los pasos a seguir para el otorgar la acreditación o certificación de las inversiones de control y mejoramiento del medio ambiente.",
+  "alcance": "Aplica para toda persona natural o jurídica localizados en el área de jurisdicción de la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga - CDMB, que realicen directamente inversiones en control y mejoramiento del medio ambiente.\nEl propósito de éste trámite es acreditar, para la deducción del impuesto de renta, que las inversiones corresponden al control y mejoramiento del medio ambiente y que no se realizan por mandato de una autoridad ambiental para mitigar el impacto ambiental producido por la obra o actividad objeto de una licencia ambiental.",
+  "autoridadResponsabilidad": "El(la) Subdirector(a) de Evaluación y Control Ambiental, el(la) Coordinador(a) de Evaluación Ambiental y el(la) Profesional Especializado(a) Responsable del Grupo de Evaluación Ambiental tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los Funcionarios y/o Contratistas del Grupo de Evaluación Ambiental de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir el procedimiento.",
+  "documentosRequeridos": [
+    {
+      "orden": 1,
+      "nombre": "Solicitud de acreditación o certificación de las inversiones, con la información y documentos exigidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018",
+      "obligatorio": true,
+      "notas": "El procedimiento no reproduce el listado detallado de requisitos; remite directamente a los artículos 3° y 4° de la Resolución MADS No. 509 de 2018"
+    }
+  ],
+  "flujos": [
+    {
+      "codigo": "inicio",
+      "nombre": "INSTRUCCIONES",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "RADICAR SOLICITUD",
+          "descripcion": "El interesado radica la solicitud con la información requerida para el trámite en la oficina de correspondencia.",
+          "responsables": ["Oficina de correspondencia", "Responsable ventanilla de radicación de documentos"],
+          "documentos": ["Listado de requisitos y formatos establecidos en los artículos 3° y 4° de la Resolución 509 de 2008"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "VERIFICAR LA SOLICITUD",
+          "descripcion": "El (los) Funcionario(s) y/o Contratista(s) del Grupo de Evaluación de la Subdirección de Evaluación y Control Ambiental designados para el estudio de la solicitud verifican la documentación presentada por el solicitante, con el objetivo de determinar si esta se encuentra completa.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) designados para el estudio de la solicitud"],
+          "documentos": ["Lista de chequeo y/o verificación de los requisitos"],
+          "tiempo": "15 días hábiles",
+          "tiempoDias": 15,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "¿LA SOLICITUD CUMPLE CON LOS REQUISITOS?",
+          "descripcion": "Si la solicitud cumple con todos los requisitos establecidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018, continúe con el paso No. 7. Si la solicitud NO cumple con todos los requisitos establecidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018, continúe con el paso No. 4.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) designados para el estudio de la solicitud"],
+          "documentos": ["Lista de chequeo y/o verificación de los requisitos"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Cumple con los requisitos", "siguientePaso": 7 },
+            { "respuesta": "No cumple con los requisitos", "siguientePaso": 4 }
+          ]
+        },
+        {
+          "numero": 4,
+          "titulo": "REQUERIR INFORMACIÓN ADICIONAL",
+          "descripcion": "El (los) Funcionario(s) y/o Contratista(s) del Grupo de Evaluación de la Subdirección de Evaluación y Control Ambiental designados elabora(n) un oficio dirigido al solicitante, mediante el cual le requiere la información adicional faltante, conforme con lo establecido en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018. El oficio en mención deberá ser revisado por el(la) Coordinador(a) de Evaluación Ambiental y firmado por el(la) Subdirector(a) de Evaluación y Control Ambiental.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) designados para el estudio de la solicitud", "Coordinador(a) de Evaluación Ambiental", "Subdirector(a) de Evaluación y Control Ambiental", "Funcionario(s) y/o Contratista(s) responsables de la oficina de radicación de correspondencia"],
+          "documentos": ["Oficio de requerimiento de información adicional dirigido al solicitante"],
+          "tiempo": "5 días hábiles",
+          "tiempoDias": 5,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "¿EL SOLICITANTE RADICÓ LA INFORMACIÓN ADICIONAL REQUERIDA O SOLICITUD DE PRÓRROGA?",
+          "descripcion": "Si transcurridos treinta (30) días calendario a partir de la recepción del oficio de requerimiento, plazo que podrá ser prorrogado por única vez y por el mismo término a solicitud de parte, el solicitante NO radicó la información adicional requerida para cumplir con todos los requisitos establecidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018, continúe con el paso No. 6. Si dentro de los treinta (30) días calendario a partir de la recepción del oficio de requerimiento, plazo que podrá ser prorrogado por única vez y por el mismo término a solicitud de parte, el solicitante radica la información adicional requerida para cumplir con todos los requisitos establecidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018, continúe con el paso No. 7.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) designados para el estudio de la solicitud"],
+          "documentos": ["Lista de chequeo y/o verificación de los requisitos"],
+          "tiempo": "30 días calendario (prorrogable por única vez y por el mismo término)",
+          "tiempoDias": 30,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "El solicitante radicó la información adicional dentro del plazo", "siguientePaso": 7 },
+            { "respuesta": "El solicitante NO radicó la información adicional dentro del plazo", "siguientePaso": 6, "resultado": "DESISTIDO" }
+          ]
+        },
+        {
+          "numero": 6,
+          "titulo": "DECRETAR DESISTIMIENTO TÁCITO Y ARCHIVO DEL EXPEDIENTE",
+          "descripcion": "Se entenderá que el peticionario ha desistido de su solicitud o de la actuación cuando no satisfaga el requerimiento, salvo que antes de vencer el plazo concedido solicite prórroga hasta por un término igual. El(los) Funcionario(s) y/o Contratista(s) jurídico(s) designados para el estudio de la solicitud, elabora(n) un auto motivado por el cual decreta el desistimiento tácito del interesado y ordena el archivo definitivo del expediente. El auto de desistimiento tácito y archivo definitivo debe ser revisado por el (la) Coordinador(a) de Evaluación, aprobado por el(la) Subdirector(a) de Evaluación y Control Ambiental y firmado por el (la) Secretario(a) General de la CDMB. El auto de desistimiento tácito y archivo definitivo debe ser notificado en debida forma al interesado.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) jurídico(s) designados para el estudio de la solicitud", "Coordinador(a) de Evaluación Ambiental", "Subdirector(a) de Evaluación y Control Ambiental", "Secretario(a) General", "Funcionario(s) y/o Contratista(s) responsable de la oficina de notificaciones"],
+          "documentos": ["Auto de Desistimiento Tácito y Archivo Definitivo del expediente", "Constancia de Notificación Personal", "Comunicación de Citación a Notificación Personal"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "ELABORAR CONCEPTO TÉCNICO",
+          "descripcion": "El (los) Funcionario(s) y/o Contratista(s) del Grupo de Evaluación de la Subdirección de Evaluación y Control Ambiental designados para la evaluación de la solicitud, elabora(n) el Concepto Técnico mediante el cual se determina la viabilidad de otorgar o no la acreditación de las inversiones para el control del medio ambiente o conservación y mejoramiento del medio ambiente. El Concepto Técnico es revisado y aprobado por el(la) Coordinador(a) de Evaluación de la Subdirección de Evaluación y Control Ambiental.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) designados para el estudio de la solicitud", "Coordinador(a) de Evaluación Ambiental"],
+          "documentos": ["Concepto Técnico mediante el cual se determina la viabilidad de otorgar la acreditación de las inversiones para el control del medio ambiente o conservación y mejoramiento del medio ambiente"],
+          "tiempo": "30 días hábiles",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "ELABORAR RESOLUCIÓN QUE ACREDITA LAS INVERSIONES PARA EL CONTROL DEL MEDIO AMBIENTE O CONSERVACIÓN Y MEJORAMIENTO DEL MEDIO AMBIENTE",
+          "descripcion": "En un plazo no mayor a tres (3) meses, el(los) Funcionario(s) y/o Contratista(s) técnicos y jurídico(s) designados para el estudio de la solicitud, elabora(n) una resolución motivada mediante la cual acoge(n) el Concepto Técnico del paso anterior y se resuelve otorgar o no la respectiva certificación de las inversiones para el control del medio ambiente o conservación y mejoramiento del medio ambiente. La resolución será proyectada por el (la) Subdirector(a) de Evaluación y Control Ambiental, revisada y aprobada por el (la) Secretario(a) General de la CDMB y firmada exclusivamente por el (la) Director(a) General de la CDMB y/o quién haga sus veces. La resolución deberá ser notificada en debida forma, conforme con lo establecido en la Ley 1437 del 18 de enero de 2011 (Código de Procedimiento Administrativo y de lo Contencioso Administrativo) o la norma que la modifique, sustituya o derogue. Contra la resolución procede el recurso de reposición acorde con lo establecido en la citada ley.",
+          "responsables": ["Funcionario(s) y/o Contratista(s) jurídico(s) designados para el estudio de la solicitud", "Subdirector(a) de Evaluación y Control Ambiental", "Secretario(a) General", "Director(a) General", "Funcionario(s) y/o Contratista(s) responsable de la oficina de notificaciones"],
+          "documentos": ["Resolución que acredita las inversiones para el control del medio ambiente o conservación y mejoramiento del medio ambiente", "Constancia de Notificación Personal", "Comunicación de Citación a Notificación Personal"],
+          "tiempo": "30 días hábiles",
+          "tiempoDias": 30,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Otorga la certificación o acreditación de las inversiones", "siguientePaso": null, "resultado": "APROBADO" },
+            { "respuesta": "Niega la certificación o acreditación de las inversiones", "siguientePaso": null, "resultado": "NEGADO" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "codigo": "M-DA-PR36",
+  "version": "05",
+  "fecha": "2021-06-06",
+  "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+  "nombre": "Evaluación de Planes de Saneamiento y Manejo de Vertimientos",
+  "nombreCompleto": "PROCEDIMIENTO DE EVALUACIÓN A LOS PLANES DE SANEAMIENTO Y MANEJO DE VERTIMIENTOS – PSMV",
+  "slug": "evaluacion-psmv",
+  "archivoFuente": "M-DA-PR36 version   5.pdf",
+  "objeto": "Establecer la secuencia de actividades y responsabilidades necesarias para la evaluación a los planes de saneamiento y manejo de vertimientos – PSMV en lo que compete a la CDMB como autoridad ambiental dentro de su propia jurisdicción.",
+  "alcance": "Aplica a todas las personas prestadoras del servicio de alcantarillado, asimismo a todos los usuarios prestadores del servicio de alcantarillado sujetos al pago de tasa retributiva.",
+  "autoridadResponsabilidad": "El Subdirector de Evaluación y Control Ambiental y el Coordinador de Evaluación para la sostenibilidad tienen la autoridad de modificar y hacer cumplir el respectivo procedimiento. Los servidores públicos de la Subdirección de Evaluación y Control Ambiental serán los responsables de cumplir este procedimiento.",
+  "documentosRequeridos": [
+    { "orden": 1, "nombre": "Carta de presentación del PSMV firmada por el representante legal de la empresa de servicios públicos de alcantarillado, o en su defecto conjuntamente por el alcalde y el coordinador de la unidad de servicios públicos", "obligatorio": true, "notas": null },
+    { "orden": 2, "nombre": "Acta de posesión del representante legal de la entidad territorial", "obligatorio": true, "notas": null },
+    { "orden": 3, "nombre": "Certificado de existencia y representación legal", "obligatorio": true, "notas": "Expedición no mayor a tres meses" },
+    { "orden": 4, "nombre": "Fotocopia de la cédula de ciudadanía de los firmantes de la carta de presentación", "obligatorio": true, "notas": null },
+    { "orden": 5, "nombre": "Poder debidamente otorgado", "obligatorio": false, "notas": "Cuando se actúe mediante apoderado" },
+    { "orden": 6, "nombre": "Formulación del PSMV para un período mínimo de 10 años, con ejecución por fases de corto (2 años), mediano (5 años) y largo plazo (10 años)", "obligatorio": true, "notas": null },
+    { "orden": 7, "nombre": "Balance y evaluación detallada del cronograma PSMV vigente, con corte a la fecha de presentación", "obligatorio": false, "notas": "Aplica según el caso, por ejemplo actualización del PSMV" },
+    { "orden": 8, "nombre": "Diagnóstico del sistema de alcantarillado (cobertura, colectores principales, vertimientos puntuales, corrientes o cuerpos receptores, interceptores/emisarios, sistemas de tratamiento, con esquema o mapa)", "obligatorio": true, "notas": null },
+    { "orden": 9, "nombre": "Identificación de la totalidad de los vertimientos puntuales de aguas residuales y las respectivas corrientes, tramos o cuerpos de agua receptores (coordenadas, longitudes, áreas aferentes, cargas)", "obligatorio": true, "notas": null },
+    { "orden": 10, "nombre": "Caracterización de las descargas de aguas residuales", "obligatorio": true, "notas": "Realizada con laboratorio acreditado por el IDEAM" },
+    { "orden": 11, "nombre": "Caracterización de las corrientes, tramos o cuerpos de agua receptores, antes y después de los vertimientos identificados", "obligatorio": true, "notas": "Realizada con laboratorio acreditado por el IDEAM" },
+    { "orden": 12, "nombre": "Proyecciones anuales de la carga contaminante generada, recolectada, transportada y tratada, por vertimiento y por corriente, tramo o cuerpo de agua receptor", "obligatorio": true, "notas": null },
+    { "orden": 13, "nombre": "Objetivos de reducción del número de vertimientos puntuales", "obligatorio": true, "notas": null },
+    { "orden": 14, "nombre": "Descripción detallada de programas, proyectos y actividades con sus cronogramas, inversiones y soportes económico-financieros; fechas previstas de construcción e inicio de operación del/los sistema(s) de tratamiento", "obligatorio": true, "notas": "Según sea el caso" },
+    { "orden": 15, "nombre": "Formulación de indicadores de seguimiento que reflejen el avance físico de las obras programadas y el nivel de logro de los objetivos y metas de calidad", "obligatorio": true, "notas": null },
+    { "orden": 16, "nombre": "Planos georreferenciados (redes de alcantarillado existentes; puntos de vertimiento y ubicación del sistema de tratamiento; corrientes y tramos según objetivos de calidad), a escala 1:10000 o 1:25000, más tabla Excel de atributos y registro fotográfico georreferenciado", "obligatorio": true, "notas": null },
+    { "orden": 17, "nombre": "Autorización de notificación por correo electrónico", "obligatorio": false, "notas": "Solo si el usuario lo autoriza" }
+  ],
+  "flujos": [
+    {
+      "codigo": "evaluacion",
+      "nombre": "INSTRUCCIONES EVALUACIÓN A LOS PLANES DE SANEAMIENTO Y MANEJO DE VERTIMIENTOS – PSMV",
+      "esFlujoInicial": true,
+      "pasos": [
+        {
+          "numero": 1,
+          "titulo": "PRESTAR ASISTENCIA TÉCNICA",
+          "descripcion": "Cuando el usuario lo requiera, para la definición de criterios: identificación de vertimientos, caracterización, priorización y programación de obras, indicadores de los PSMV, lista de chequeo.",
+          "responsables": ["Servidor público asignado de PSMV"],
+          "documentos": ["Oficios", "Actas", "Certificado de permanencia (visitas)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 2,
+          "titulo": "RECIBIR, REVISAR Y RADICAR LA SOLICITUD DE TRÁMITE",
+          "descripcion": "Se reciben los documentos en la ventanilla de radicación y/o cualquier canal de atención, la solicitud acompañada de toda la documentación, para su verificación con base en la lista de chequeo correspondiente (Formato Control de Procesos E-GE-FO02). El usuario debe presentar un documento del PSMV para el área urbana del municipio y otro para el sector rural (centros poblados y/o corregimientos), dado que los puntos de vertimiento, sistemas de alcantarillado y de tratamiento pueden diferir. Los archivos deben presentarse en PDF full text (no imagen) más copia en herramienta de office, sin clave de apertura, junto con planos georreferenciados (redes de alcantarillado existentes; puntos de vertimiento y ubicación del sistema de tratamiento; corrientes y tramos según objetivos de calidad) a escala 1:10000 o 1:25000, tabla Excel de atributos y registro fotográfico georreferenciado. Se revisa el orden e identidad de los 17 documentos/requisitos del listado (carta de presentación, acta de posesión, certificado de existencia y representación legal, cédulas, poder si aplica, formulación del PSMV a 10 años, balance del cronograma vigente, diagnóstico del sistema de alcantarillado, identificación de vertimientos puntuales, caracterizaciones con laboratorio acreditado IDEAM, proyecciones de carga contaminante, objetivos de reducción, descripción de programas/proyectos, indicadores de seguimiento, planos y autorización de notificación electrónica si aplica). Si los requisitos están completos: el servidor de ventanilla entrega la liquidación al usuario para el pago de la evaluación ambiental; el usuario paga en tesorería o canal virtual, Tesorería expide la factura, y el usuario entrega la documentación y factura para que se asigne número de solicitud en el SINCA, número de expediente (si aplica) y profesional/técnico responsable de la Coordinación de Evaluación para la Sostenibilidad. Si los requisitos están incompletos: se realiza la devolución inmediata de la documentación aportada. Nota: si en la visita técnica el profesional identifica que es necesario ajustar los servicios cobrados al usuario, se procede a reliquidar la visita. El servidor responsable actualiza la etapa en el SINCA.",
+          "responsables": ["PPSALCAC", "Servidor Público responsable de la Ventanilla de Trámites Ambientales y/o responsable de los diferentes canales de atención", "Profesional técnico Responsable de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Carta de presentación", "Documento del PSMV de conformidad con el Formato Control de Procesos (E-GE-FO02)"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 3,
+          "titulo": "ELABORAR AUTO DE INICIO DEL TRÁMITE",
+          "descripcion": "El profesional jurídico asignado de la Subdirección de Evaluación y Control Ambiental elabora el Auto de Inicio, que ordena la realización de la visita técnica de inspección ocular por parte del personal competente de SEYCA. El Auto y la citación son firmados por el Secretario General. El servidor responsable incluye la información correspondiente y actualiza la etapa en el SINCA.",
+          "responsables": ["Abogado SEYCA", "Profesional Técnico de SEYCA", "Secretario General"],
+          "documentos": ["Auto de inicio del trámite administrativo ambiental", "Aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 4,
+          "titulo": "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR LA VISITA",
+          "descripcion": "El Secretario General, una vez firmado el Auto, remite el expediente a la oficina de notificaciones para que se proceda a notificar el Auto de inicio del trámite, de forma que cobre ejecutoria según el Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011). Surtida la notificación y cargada la información en el SINCA, el expediente retorna al funcionario de SEYCA encargado de realizar la visita, quien verifica que la constancia de pago por concepto de costos de trámite se encuentre en el expediente y, según las fechas disponibles en el programador de visitas, agenda fecha y hora para la inspección ocular ordenada en el auto de inicio.",
+          "responsables": ["Servidor público asignado de PSMV", "Servidor público de Secretaría General", "Servidor público de la oficina de notificaciones"],
+          "documentos": ["Notificación del Auto de inicio", "Comunicación informando el día de la visita técnica ocular"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 5,
+          "titulo": "REALIZAR VISITA TÉCNICA Y ELABORAR INFORME",
+          "descripcion": "Los profesionales o técnicos del equipo de campo de PSMV realizan la inspección ocular, acorde con la fecha asignada para la visita técnica al sitio de interés, y elaboran el informe correspondiente, registrando los datos en el SINCA.",
+          "responsables": ["Profesional o técnico de PSMV"],
+          "documentos": ["Informe Técnico", "Aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 6,
+          "titulo": "EVALUAR PSMV",
+          "descripcion": "Se evalúa la solicitud del PSMV de conformidad con los parámetros normativos de referencia.",
+          "responsables": ["Servidores públicos responsables de PSMV"],
+          "documentos": ["Informe Técnico", "Expediente"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 7,
+          "titulo": "SOLICITAR INFORMACIÓN ADICIONAL O AJUSTES AL PSMV",
+          "descripcion": "Si en la evaluación se considera necesario ajustar algún tópico del documento, se hace un requerimiento; los profesionales técnicos y/o jurídicos asignados de la Subdirección de Evaluación y Control Ambiental disponen de 30 días hábiles para solicitarlo al prestador del servicio. La persona prestadora del servicio dispondrá de un término máximo de 30 días hábiles para allegar la información requerida. Recibida la información, si esta no es acorde a lo requerido, o vencido el término del requerimiento, la CDMB decidirá mediante resolución motivada la negación del PSMV, en un término que no podrá ser mayor a 60 días hábiles.",
+          "responsables": ["Profesionales Técnicos y jurídicos de la Subdirección de Evaluación y Control Ambiental"],
+          "documentos": ["Solicitud de trámite del usuario y documentos soportes", "Formato Control de Procesos (E-GE-FO02)", "Oficio al usuario", "Resolución de negación"],
+          "tiempo": "30 días hábiles para requerir, 30 días hábiles para responder (decisión en máximo 60 días hábiles)",
+          "tiempoDias": 30,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 8,
+          "titulo": "RECIBIR EL PSMV CORREGIDO",
+          "descripcion": "El usuario presenta a la autoridad ambiental (CDMB) el documento corregido para continuar con la evaluación y aprobación.",
+          "responsables": ["PPSALCAC", "Recepción CDMB"],
+          "documentos": ["Carta de presentación", "Documento corregido"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 9,
+          "titulo": "CONTINUAR CON LA EVALUACIÓN DEL PSMV",
+          "descripcion": "Se continúa la evaluación del documento del PSMV siguiendo los referentes normativos.",
+          "responsables": ["Servidor público asignado de PSMV"],
+          "documentos": ["Concepto Técnico", "Expediente"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 10,
+          "titulo": "REVISAR Y DAR VISTO BUENO AL INFORME TÉCNICO",
+          "descripcion": "El Coordinador de Evaluación para la sostenibilidad de SEYCA revisa el informe técnico y los aplicativos SINCA; si presenta inconsistencias de carácter técnico, solicita explicación y corrección al técnico que realizó la visita, y posteriormente da el visto bueno al informe, asignándole número consecutivo. Mediante el SINCA se hace cambio de etapa y, por cuaderno, se entrega el expediente en físico junto con el informe técnico debidamente cargado a la plataforma del sistema, remitiéndose el expediente al área Jurídica de la Subdirección de Evaluación y Control Ambiental.",
+          "responsables": ["Coordinador de Evaluación para la Sostenibilidad de SEYCA"],
+          "documentos": ["Expediente con informe técnico cargado en el aplicativo SINCA"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 11,
+          "titulo": "ELABORAR RESOLUCIÓN DE APROBACIÓN O NEGACIÓN",
+          "descripcion": "Una vez remitido el Informe Técnico del PSMV junto con el expediente, el profesional designado del Grupo de Abogados adscrito a SEYCA proyecta la Resolución, previa revisión del Coordinador de Evaluación para la sostenibilidad y el Subdirector de SEYCA; se envía a la Dirección General para la respectiva firma y aprobación del Acto Administrativo que otorga o niega el PSMV, previa revisión, análisis y estudio del asesor de la Dirección General. Una vez aprobada y firmada la Resolución, el expediente se envía a la Secretaría General para su numeración y notificación de la respectiva providencia. La Secretaría General gestiona la publicación del acto administrativo en el GDI de la entidad (Boletín informativo Ambiental), debidamente escaneado en formato PDF, dando cumplimiento al artículo 71 de la Ley 99 de 1993. Surtida esta etapa, la Secretaría General remite el expediente a la Oficina de Notificaciones. El servidor responsable actualiza la etapa en el SINCA.",
+          "responsables": ["Profesional o apoyo Jurídico asignado de PSMV", "Funcionario asignado de notificación"],
+          "documentos": ["Expediente", "Resolución de aprobación o negación", "Citación de notificación", "Notificación del Acto Administrativo", "Publicación del Acto Administrativo"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": true,
+          "opciones": [
+            { "respuesta": "Aprueba el PSMV", "siguientePaso": 12, "resultado": "APROBADO" },
+            { "respuesta": "Niega el PSMV", "siguientePaso": 12, "resultado": "NEGADO" }
+          ]
+        },
+        {
+          "numero": 12,
+          "titulo": "NOTIFICAR AL USUARIO",
+          "descripcion": "La oficina de notificaciones cita al usuario para comunicarle la resolución de aprobación o negación correspondiente al trámite de PSMV, informando que tiene diez (10) días hábiles para presentar los recursos de ley, conforme a los artículos 67 y 76 de la Ley 1437 de 2011. Si el usuario autorizó la notificación por correo electrónico, se realiza por ese medio. Si no se interponen los recursos de ley, se declara ejecutoriada la Resolución. En caso de interponerse recurso, se devuelve el expediente a la Coordinación de Evaluación para la sostenibilidad, para que se revise técnicamente y se emita el concepto técnico que sirva de fundamento para resolver el recurso de reposición; se entrega al profesional jurídico adscrito a SEYCA para que profiera la decisión y proyecte la resolución que lo resuelve, con un plazo de dos (2) meses. Resuelto el recurso, se envían las diligencias a la Dirección General para la firma de la decisión; ya resuelto, se procede con la notificación personal al usuario y se declara ejecutoriada la Resolución. Si el interesado no comparece a la CDMB para notificarse, se notifica por aviso fijado por un término de cinco (5) días hábiles, conforme al artículo 69 de la Ley 1437 de 2011.",
+          "responsables": ["Oficina de Notificaciones", "Subdirección de Evaluación y Control Ambiental SEYCA"],
+          "documentos": ["Resolución"],
+          "tiempo": "Diez (10) días hábiles para recursos; dos (2) meses para resolver el recurso de reposición si se interpone",
+          "tiempoDias": 10,
+          "esDecision": false,
+          "opciones": null
+        },
+        {
+          "numero": 13,
+          "titulo": "EN CASO DE RESOLUCIÓN DE NEGACIÓN",
+          "descripcion": "Una vez publicada la constancia de ejecutoria del acto administrativo, se expide informe con sus respectivos soportes para remitir a la oficina de Sancionatorios.",
+          "responsables": ["Servidor público asignado de PSMV"],
+          "documentos": ["Formato Control de procesos", "Memorando a Sancionatorios", "Informe técnico", "Soportes"],
+          "tiempo": null,
+          "tiempoDias": null,
+          "esDecision": false,
+          "opciones": null
+        }
+      ]
+    }
+  ]
+}
