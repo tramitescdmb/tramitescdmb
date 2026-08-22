@@ -1,3 +1,19 @@
+import type { ComponentType, SVGProps } from "react";
+import {
+  IconGota,
+  IconArbol,
+  IconHuella,
+  IconViento,
+  IconReciclaje,
+  IconCamion,
+  IconBalanza,
+  IconMontana,
+  IconOficina,
+  IconMoneda,
+  IconDocumento,
+  IconFrasco,
+} from "@/components/icons-categoria";
+
 /**
  * Ícono + color + categoría por tipo de trámite. Se usa para (1) reconocer
  * cada trámite de un vistazo en el catálogo y el detalle, y (2) agrupar el
@@ -17,57 +33,49 @@
  * abajo), no `tramite.suitNumeros` a secas — un trámite puede tener el
  * número a nivel de flujo en vez de a nivel de trámite (ver M-DA-PR21).
  *
+ * Paleta: antes cada categoría tenía su propio matiz saturado (12 en total)
+ * — con 9+ categorías visibles a la vez se sentía como demasiado color para
+ * una entidad ambiental seria. Ahora se agrupan por FAMILIA — la mayoría de
+ * los recursos naturales usa el verde institucional (cdmb) o su vecino
+ * cercano (teal); el agua se queda en azul (convención universal, incluso
+ * dentro de identidades predominantemente verdes); lo regulatorio/
+ * administrativo comparte un mismo gris-azulado sobrio; y lo económico usa
+ * ámbar. El verde termina siendo, con diferencia, el color que más se repite
+ * en la página. Los íconos de emoji (💧🌳🦉…) se reemplazaron por líneas
+ * simples (ver icons-categoria.tsx) — un emoji grande y a color se siente
+ * como app de consumo, no como una corporación autónoma regional.
+ *
  * Los nombres de clases de Tailwind están escritos completos a propósito
  * (no armados con `${color}-100`): Tailwind solo genera CSS para clases que
  * puede ver como texto literal en el código fuente.
  */
-type ColorToken =
-  | "sky"
-  | "cdmb"
-  | "amber"
-  | "orange"
-  | "cyan"
-  | "rose"
-  | "teal"
-  | "indigo"
-  | "violet"
-  | "yellow"
-  | "slate"
-  | "stone";
+type ColorToken = "cdmb" | "teal" | "sky" | "slate" | "amber" | "stone";
 
-// Antes los íconos usaban un tono más saturado que las tarjetitas (badge) — con 9+ categorías
-// visibles a la vez eso se sentía como "demasiado color". Ahora íconos y badge comparten el
-// mismo tono suave (-50): la categoría se sigue distinguiendo por el emoji y el color, pero con
-// menos intensidad total en pantalla.
 const CLASES_COLOR: Record<ColorToken, { icono: string; badge: string; barra: string; borde: string }> = {
-  sky: { icono: "bg-sky-50 text-sky-600", badge: "bg-sky-50 text-sky-700", barra: "bg-sky-400", borde: "border-sky-400" },
   cdmb: { icono: "bg-cdmb-50 text-cdmb-600", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-400", borde: "border-cdmb-400" },
-  amber: { icono: "bg-amber-50 text-amber-600", badge: "bg-amber-50 text-amber-700", barra: "bg-amber-400", borde: "border-amber-400" },
-  orange: { icono: "bg-orange-50 text-orange-600", badge: "bg-orange-50 text-orange-700", barra: "bg-orange-400", borde: "border-orange-400" },
-  cyan: { icono: "bg-cyan-50 text-cyan-600", badge: "bg-cyan-50 text-cyan-700", barra: "bg-cyan-400", borde: "border-cyan-400" },
-  rose: { icono: "bg-rose-50 text-rose-600", badge: "bg-rose-50 text-rose-700", barra: "bg-rose-400", borde: "border-rose-400" },
   teal: { icono: "bg-teal-50 text-teal-600", badge: "bg-teal-50 text-teal-700", barra: "bg-teal-400", borde: "border-teal-400" },
-  indigo: { icono: "bg-indigo-50 text-indigo-600", badge: "bg-indigo-50 text-indigo-700", barra: "bg-indigo-400", borde: "border-indigo-400" },
-  violet: { icono: "bg-violet-50 text-violet-600", badge: "bg-violet-50 text-violet-700", barra: "bg-violet-400", borde: "border-violet-400" },
-  yellow: { icono: "bg-yellow-50 text-yellow-600", badge: "bg-yellow-50 text-yellow-700", barra: "bg-yellow-400", borde: "border-yellow-400" },
+  sky: { icono: "bg-sky-50 text-sky-600", badge: "bg-sky-50 text-sky-700", barra: "bg-sky-400", borde: "border-sky-400" },
   slate: { icono: "bg-slate-100 text-slate-600", badge: "bg-slate-100 text-slate-700", barra: "bg-slate-400", borde: "border-slate-400" },
+  amber: { icono: "bg-amber-50 text-amber-600", badge: "bg-amber-50 text-amber-700", barra: "bg-amber-400", borde: "border-amber-400" },
   stone: { icono: "bg-stone-100 text-stone-500", badge: "bg-stone-100 text-stone-600", barra: "bg-stone-300", borde: "border-stone-300" },
 };
 
-type CategoriaFija = { id: string; emoji: string; etiqueta: string; color: ColorToken };
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+type CategoriaFija = { id: string; Icono: IconComponent; etiqueta: string; color: ColorToken };
 
 /** Las 3 "tasas" de cdmb.gov.co/tema/tramites-y-servicios/instrumentos-economicos — se identifican por `codigo` (prefijo "IE-"), no por palabras del nombre. */
 const CATEGORIA_INSTRUMENTOS_ECONOMICOS: CategoriaFija = {
   id: "economicos",
-  emoji: "💰",
+  Icono: IconMoneda,
   etiqueta: "Instrumentos Económicos",
-  color: "yellow",
+  color: "amber",
 };
 
 /** Trámite de ejemplo para probar la interfaz (`TEST-01`) — nunca se mezcla con trámites reales. */
 const CATEGORIA_PRUEBA: CategoriaFija = {
   id: "prueba",
-  emoji: "🧪",
+  Icono: IconFrasco,
   etiqueta: "Trámite de Prueba",
   color: "stone",
 };
@@ -75,34 +83,34 @@ const CATEGORIA_PRUEBA: CategoriaFija = {
 /** Trámites reales de la CDMB que todavía no están inscritos en el SUIT — aparte de las subcategorías por recurso. */
 const CATEGORIA_SIN_SUIT: CategoriaFija = {
   id: "sin-suit",
-  emoji: "📄",
+  Icono: IconDocumento,
   etiqueta: "Sin registro en el SUIT",
-  color: "slate",
+  color: "stone",
 };
 
 /** Orden en que aparecen las secciones del catálogo — de mayor a menor peso entre los trámites inscritos en el SUIT. */
-const REGLAS: { id: string; emoji: string; etiqueta: string; color: ColorToken; palabras: string[] }[] = [
-  { id: "hidrico", emoji: "💧", etiqueta: "Recurso Hídrico", color: "sky", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer"] },
-  { id: "flora", emoji: "🌳", etiqueta: "Recurso Flora", color: "cdmb", palabras: ["forestal", "árbol", "arbol", "poda", "tala", "bosque", "plantacion", "plantación"] },
-  { id: "fauna", emoji: "🦉", etiqueta: "Fauna Silvestre", color: "amber", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
-  { id: "aire", emoji: "🌬️", etiqueta: "Recurso Aire", color: "cyan", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
-  { id: "residuos", emoji: "♻️", etiqueta: "Residuos", color: "teal", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
-  { id: "transporte", emoji: "🚚", etiqueta: "Transporte / Vehículos", color: "rose", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
-  { id: "licencias", emoji: "⚖️", etiqueta: "Licencia Ambiental", color: "indigo", palabras: ["licencia", "anla"] },
-  { id: "mineria", emoji: "⛏️", etiqueta: "Minería", color: "orange", palabras: ["minera", "minería", "mineria"] },
-  { id: "gestion", emoji: "🏢", etiqueta: "Gestión", color: "violet", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
+const REGLAS: { id: string; Icono: IconComponent; etiqueta: string; color: ColorToken; palabras: string[] }[] = [
+  { id: "hidrico", Icono: IconGota, etiqueta: "Recurso Hídrico", color: "sky", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer"] },
+  { id: "flora", Icono: IconArbol, etiqueta: "Recurso Flora", color: "cdmb", palabras: ["forestal", "árbol", "arbol", "poda", "tala", "bosque", "plantacion", "plantación"] },
+  { id: "fauna", Icono: IconHuella, etiqueta: "Fauna Silvestre", color: "teal", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
+  { id: "aire", Icono: IconViento, etiqueta: "Recurso Aire", color: "teal", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
+  { id: "residuos", Icono: IconReciclaje, etiqueta: "Residuos", color: "cdmb", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
+  { id: "transporte", Icono: IconCamion, etiqueta: "Transporte / Vehículos", color: "slate", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
+  { id: "licencias", Icono: IconBalanza, etiqueta: "Licencia Ambiental", color: "slate", palabras: ["licencia", "anla"] },
+  { id: "mineria", Icono: IconMontana, etiqueta: "Minería", color: "slate", palabras: ["minera", "minería", "mineria"] },
+  { id: "gestion", Icono: IconOficina, etiqueta: "Gestión", color: "slate", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
 ];
 
 const OTROS: CategoriaFija = {
   id: "otros",
-  emoji: "📋",
+  Icono: IconDocumento,
   etiqueta: "Otros Trámites",
   color: "stone",
 };
 
 export type Categoria = {
   id: string;
-  emoji: string;
+  Icono: IconComponent;
   etiqueta: string;
   clases: { icono: string; badge: string; barra: string; borde: string };
 };
@@ -128,7 +136,7 @@ export function todosLosSuitNumeros(tramite: {
 }
 
 function categoriaDesdeFija(c: CategoriaFija): Categoria {
-  return { id: c.id, emoji: c.emoji, etiqueta: c.etiqueta, clases: CLASES_COLOR[c.color] };
+  return { id: c.id, Icono: c.Icono, etiqueta: c.etiqueta, clases: CLASES_COLOR[c.color] };
 }
 
 export function categoriaTramite(nombre: string, codigo?: string, suitNumeros?: string[]): Categoria {
@@ -139,7 +147,7 @@ export function categoriaTramite(nombre: string, codigo?: string, suitNumeros?: 
   const texto = nombre.toLowerCase();
   for (const regla of REGLAS) {
     if (regla.palabras.some((p) => texto.includes(p))) {
-      return { id: regla.id, emoji: regla.emoji, etiqueta: regla.etiqueta, clases: CLASES_COLOR[regla.color] };
+      return { id: regla.id, Icono: regla.Icono, etiqueta: regla.etiqueta, clases: CLASES_COLOR[regla.color] };
     }
   }
   return categoriaDesdeFija(OTROS);
@@ -147,7 +155,7 @@ export function categoriaTramite(nombre: string, codigo?: string, suitNumeros?: 
 
 /** Todas las categorías, en el orden en que deben mostrarse las secciones del catálogo. */
 export const CATEGORIAS_ORDEN: Categoria[] = [
-  ...REGLAS.map((r) => ({ id: r.id, emoji: r.emoji, etiqueta: r.etiqueta, clases: CLASES_COLOR[r.color] })),
+  ...REGLAS.map((r) => ({ id: r.id, Icono: r.Icono, etiqueta: r.etiqueta, clases: CLASES_COLOR[r.color] })),
   categoriaDesdeFija(OTROS),
   categoriaDesdeFija(CATEGORIA_INSTRUMENTOS_ECONOMICOS),
   categoriaDesdeFija(CATEGORIA_SIN_SUIT),

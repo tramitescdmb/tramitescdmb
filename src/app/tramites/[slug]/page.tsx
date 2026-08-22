@@ -75,11 +75,11 @@ export default async function TramiteDetallePage({
         </div>
         <div className="mt-1 flex items-center gap-2.5">
           <span
-            className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg text-xl ${categoria.clases.icono}`}
+            className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg ${categoria.clases.icono}`}
             title={categoria.etiqueta}
             aria-hidden
           >
-            {categoria.emoji}
+            <categoria.Icono className="h-5 w-5" />
           </span>
           <h1 className="text-xl font-semibold text-stone-900">{tituloMostrado}</h1>
         </div>

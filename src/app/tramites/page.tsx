@@ -112,7 +112,7 @@ export default async function CatalogoTramitesPage() {
             href={`#cat-${cat.id}`}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition hover:brightness-95 ${cat.clases.badge}`}
           >
-            <span className="text-2xl leading-none" aria-hidden>{cat.emoji}</span>
+            <cat.Icono className="h-5 w-5 flex-none" aria-hidden />
             {cat.etiqueta}
             <span className="opacity-60">({items.length})</span>
           </a>
@@ -124,10 +124,10 @@ export default async function CatalogoTramitesPage() {
           <details key={cat.id} id={`cat-${cat.id}`} open className="scroll-mt-20 group">
             <summary className="flex cursor-pointer list-none items-center gap-2.5 border-b border-stone-200 pb-2 [&::-webkit-details-marker]:hidden">
               <span
-                className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-base ${cat.clases.icono}`}
+                className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${cat.clases.icono}`}
                 aria-hidden
               >
-                {cat.emoji}
+                <cat.Icono className="h-5 w-5" />
               </span>
               <h2 className="text-base font-semibold text-stone-900">{cat.etiqueta}</h2>
               <span className="text-sm text-stone-400">({items.length})</span>
@@ -184,11 +184,11 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
 
       <div className="mb-2 flex items-start gap-3">
         <span
-          className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl text-xl ${categoria.clases.icono}`}
+          className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl ${categoria.clases.icono}`}
           title={categoria.etiqueta}
           aria-hidden
         >
-          {categoria.emoji}
+          <categoria.Icono className="h-6 w-6" />
         </span>
         <h3 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">
           {nombre}
