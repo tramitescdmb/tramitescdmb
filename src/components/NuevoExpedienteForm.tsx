@@ -6,8 +6,29 @@ import Link from "next/link";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
-import { IconLayers, IconUser, IconIdCard, IconMapPin, IconMail, IconPhone, IconDocument, IconUpload, IconX } from "@/components/icons";
+import {
+  IconLayers,
+  IconUser,
+  IconIdCard,
+  IconMapPin,
+  IconMail,
+  IconPhone,
+  IconDocument,
+  IconUpload,
+  IconX,
+  IconSearch,
+  IconBriefcase,
+  IconBuilding,
+} from "@/components/icons";
+
+function numeroONulo(valor: string): number | null {
+  const limpio = valor.trim();
+  if (!limpio) return null;
+  const n = Number(limpio);
+  return Number.isFinite(n) ? n : null;
+}
 
 const iconSm = "h-4 w-4";
 
@@ -53,6 +74,59 @@ export function NuevoExpedienteForm({
   const mapaPredioRef = useRef<MapaUbicacionHandle>(null);
   const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
+  const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState("");
+  const [solicitanteNombre, setSolicitanteNombre] = useState("");
+  const [solicitanteEmail, setSolicitanteEmail] = useState("");
+  const [solicitanteTelefono, setSolicitanteTelefono] = useState("");
+  const [regimenTributario, setRegimenTributario] = useState("");
+  const [granContribuyente, setGranContribuyente] = useState(false);
+  const [buscandoSolicitante, setBuscandoSolicitante] = useState(false);
+  const [mensajeBusqueda, setMensajeBusqueda] = useState<{ tipo: "ok" | "info" | "error"; texto: string } | null>(null);
+
+  const [claseSolicitud, setClaseSolicitud] = useState("");
+  const [predioNombre, setPredioNombre] = useState("");
+  const [predioCatastral, setPredioCatastral] = useState("");
+  const [predioMatricula, setPredioMatricula] = useState("");
+  const [predioAreaM2, setPredioAreaM2] = useState("");
+  const [predioAreaCultivosM2, setPredioAreaCultivosM2] = useState("");
+  const [predioAreaBosqueM2, setPredioAreaBosqueM2] = useState("");
+  const [predioViviendas, setPredioViviendas] = useState("");
+
+  async function buscarSolicitante() {
+    const id = solicitanteIdentificacion.trim();
+    if (!id) {
+      setMensajeBusqueda({ tipo: "error", texto: "Escribe primero el número de identificación." });
+      return;
+    }
+    setBuscandoSolicitante(true);
+    setMensajeBusqueda(null);
+    try {
+      const res = await fetch(`/api/solicitantes/buscar?identificacion=${encodeURIComponent(id)}`);
+      if (res.ok) {
+        const s = await res.json();
+        setTipoSolicitante(s.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
+        setSolicitanteNombre(s.nombre ?? "");
+        setSolicitanteEmail(s.email ?? "");
+        setSolicitanteTelefono(s.telefono ?? "");
+        setSolicitanteDireccion(s.direccion ?? "");
+        setMunicipioSolicitante(s.municipio ?? "");
+        setRegimenTributario(s.regimenTributario ?? "");
+        setGranContribuyente(Boolean(s.granContribuyente));
+        setMensajeBusqueda({
+          tipo: "ok",
+          texto: `Ya está registrado: se completaron los datos de "${s.nombre}". Revísalos y ajusta lo que haya cambiado.`,
+        });
+      } else if (res.status === 404) {
+        setMensajeBusqueda({ tipo: "info", texto: "No hay un solicitante registrado con este número — se creará uno nuevo al radicar." });
+      } else {
+        setMensajeBusqueda({ tipo: "error", texto: "No se pudo buscar. Intenta de nuevo." });
+      }
+    } catch {
+      setMensajeBusqueda({ tipo: "error", texto: "No se pudo buscar. Revisa tu conexión e intenta de nuevo." });
+    } finally {
+      setBuscandoSolicitante(false);
+    }
+  }
 
   const [archivosPorDoc, setArchivosPorDoc] = useState<Record<string, File | null>>({});
   const [archivosExtra, setArchivosExtra] = useState<File[]>([]);
@@ -80,10 +154,10 @@ export function NuevoExpedienteForm({
 
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const solicitanteNombre = String(fd.get("solicitanteNombre") || "").trim();
-    const solicitanteIdentificacion = String(fd.get("solicitanteIdentificacion") || "").trim();
+    const nombreTrim = solicitanteNombre.trim();
+    const identificacionTrim = solicitanteIdentificacion.trim();
 
-    if (!solicitanteNombre || !solicitanteIdentificacion) {
+    if (!nombreTrim || !identificacionTrim) {
       setError("Completa al menos el nombre y la identificación del solicitante.");
       return;
     }
@@ -127,15 +201,28 @@ export function NuevoExpedienteForm({
           tramiteTipoId: tramiteId,
           flujoId: String(fd.get("flujoId") || flujoInicialId),
           solicitante: {
-            tipo: String(fd.get("solicitanteTipo") || "NATURAL"),
-            nombre: solicitanteNombre,
-            identificacion: solicitanteIdentificacion,
-            email: String(fd.get("solicitanteEmail") || ""),
-            telefono: String(fd.get("solicitanteTelefono") || ""),
+            tipo: tipoSolicitante,
+            nombre: nombreTrim,
+            identificacion: identificacionTrim,
+            email: solicitanteEmail,
+            telefono: solicitanteTelefono,
             direccion: solicitanteDireccion,
+            municipio: municipioSolicitante,
+            regimenTributario: regimenTributario || null,
+            granContribuyente,
           },
           municipio,
           predioDireccion,
+          predio: {
+            nombre: predioNombre,
+            catastral: predioCatastral,
+            matricula: predioMatricula,
+            areaM2: numeroONulo(predioAreaM2),
+            areaCultivosM2: numeroONulo(predioAreaCultivosM2),
+            areaBosqueM2: numeroONulo(predioAreaBosqueM2),
+            viviendas: numeroONulo(predioViviendas),
+          },
+          claseSolicitud: claseSolicitud || null,
           ubicacion: {
             lat: fd.get("ubicacionLat") ? Number(fd.get("ubicacionLat")) : null,
             lon: fd.get("ubicacionLon") ? Number(fd.get("ubicacionLon")) : null,
@@ -211,17 +298,44 @@ export function NuevoExpedienteForm({
           required
           icon={<IconIdCard className={iconSm} />}
           help={
-            esJuridica
+            (esJuridica
               ? "Número de Identificación Tributaria (NIT) de la empresa o entidad, con dígito de verificación si lo tienes a la mano."
-              : "Número de cédula de ciudadanía (o cédula de extranjería) de la persona natural."
+              : "Número de cédula de ciudadanía (o cédula de extranjería) de la persona natural.") +
+            " Si ya tiene expedientes con nosotros, busca su número primero para no volver a escribir todo."
           }
         >
-          <input
-            name="solicitanteIdentificacion"
-            required
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
-          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              name="solicitanteIdentificacion"
+              required
+              value={solicitanteIdentificacion}
+              onChange={(e) => setSolicitanteIdentificacion(e.target.value)}
+              className="min-w-[160px] flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
+            />
+            <button
+              type="button"
+              onClick={buscarSolicitante}
+              disabled={buscandoSolicitante}
+              className="flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <IconSearch className="h-3.5 w-3.5" />
+              {buscandoSolicitante ? "Buscando…" : "Buscar"}
+            </button>
+          </div>
+          {mensajeBusqueda && (
+            <p
+              className={`mt-1.5 rounded-md px-2.5 py-1.5 text-xs ${
+                mensajeBusqueda.tipo === "ok"
+                  ? "bg-cdmb-50 text-cdmb-800"
+                  : mensajeBusqueda.tipo === "info"
+                    ? "bg-stone-100 text-stone-600"
+                    : "bg-red-50 text-red-700"
+              }`}
+            >
+              {mensajeBusqueda.texto}
+            </p>
+          )}
         </Field>
 
         <Field
@@ -233,6 +347,8 @@ export function NuevoExpedienteForm({
           <input
             name="solicitanteNombre"
             required
+            value={solicitanteNombre}
+            onChange={(e) => setSolicitanteNombre(e.target.value)}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             placeholder="Ej: Juan Pérez Gómez / Industrias ABC S.A.S."
           />
@@ -243,6 +359,8 @@ export function NuevoExpedienteForm({
             <input
               type="email"
               name="solicitanteEmail"
+              value={solicitanteEmail}
+              onChange={(e) => setSolicitanteEmail(e.target.value)}
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               placeholder="correo@ejemplo.com"
             />
@@ -250,10 +368,44 @@ export function NuevoExpedienteForm({
           <Field label="Teléfono" icon={<IconPhone className={iconSm} />} help="Número de contacto del solicitante.">
             <input
               name="solicitanteTelefono"
+              value={solicitanteTelefono}
+              onChange={(e) => setSolicitanteTelefono(e.target.value)}
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               placeholder="Ej: 3001234567"
             />
           </Field>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field
+            label="Régimen tributario (opcional)"
+            icon={<IconBriefcase className={iconSm} />}
+            help="Para aplicar correctamente retenciones, beneficios o estampillas si la CDMB llega a pagarle a este solicitante."
+          >
+            <select
+              value={regimenTributario}
+              onChange={(e) => setRegimenTributario(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            >
+              <option value="">Sin especificar</option>
+              {REGIMENES_TRIBUTARIOS.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={granContribuyente}
+                onChange={(e) => setGranContribuyente(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300 text-cdmb-600 focus:ring-cdmb-500"
+              />
+              Gran contribuyente
+            </label>
+          </div>
         </div>
 
         <div className="space-y-3 rounded-lg border border-stone-100 bg-stone-50/60 p-4">
@@ -375,6 +527,93 @@ export function NuevoExpedienteForm({
             </p>
           )}
         </Field>
+
+        <div className="space-y-3 rounded-lg border border-stone-100 bg-stone-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Datos adicionales del predio (opcional)
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nombre del predio" icon={<IconMapPin className={iconSm} />} help="Como aparece en la escritura o como lo conoce el solicitante.">
+              <input
+                value={predioNombre}
+                onChange={(e) => setPredioNombre(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Clase de solicitud" icon={<IconLayers className={iconSm} />} help="Para estadísticas — si el trámite ya distingue esto por tipo de solicitud arriba, puedes dejarlo igual aquí.">
+              <select
+                value={claseSolicitud}
+                onChange={(e) => setClaseSolicitud(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              >
+                <option value="">Sin especificar</option>
+                <option value="NUEVA">Nueva</option>
+                <option value="RENOVACION">Renovación</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nro. Catastral" icon={<IconDocument className={iconSm} />} help="Número de identificación catastral del predio, si se conoce.">
+              <input
+                value={predioCatastral}
+                onChange={(e) => setPredioCatastral(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Matrícula inmobiliaria" icon={<IconDocument className={iconSm} />} help="Número de matrícula ante la Oficina de Registro de Instrumentos Públicos, si se conoce.">
+              <input
+                value={predioMatricula}
+                onChange={(e) => setPredioMatricula(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Field label="Área predial (m²)">
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={predioAreaM2}
+                onChange={(e) => setPredioAreaM2(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Área en cultivos (m²)">
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={predioAreaCultivosM2}
+                onChange={(e) => setPredioAreaCultivosM2(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Área en bosque (m²)">
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={predioAreaBosqueM2}
+                onChange={(e) => setPredioAreaBosqueM2(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Nro. de viviendas" icon={<IconBuilding className={iconSm} />}>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={predioViviendas}
+                onChange={(e) => setPredioViviendas(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+          </div>
+        </div>
       </section>
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">

@@ -10,6 +10,7 @@ import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
 import { documentoEtapaAbierta } from "@/lib/documentos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
+import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 
 const ESTADOS = [
   "RADICADO",
@@ -52,6 +53,7 @@ export default async function ExpedienteDetallePage({
         responsableActual: true,
         usuariosAsignados: true,
         cargosAsignados: true,
+        solicitante: true,
       },
     }),
     db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargo: { select: { nombre: true } } } }),
@@ -136,7 +138,26 @@ export default async function ExpedienteDetallePage({
                 <dt className="text-xs text-stone-400">Dirección del predio o proyecto</dt>
                 <dd className="break-words text-stone-800">{expediente.predioDireccion ?? "—"}</dd>
               </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Régimen tributario</dt>
+                <dd className="break-words text-stone-800">{regimenTributarioLabel(expediente.solicitante?.regimenTributario)}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Gran contribuyente</dt>
+                <dd className="text-stone-800">{expediente.solicitante?.granContribuyente ? "Sí" : "No"}</dd>
+              </div>
             </dl>
+
+            <BloqueDatosPredio
+              claseSolicitud={expediente.claseSolicitud}
+              nombre={expediente.predioNombre}
+              catastral={expediente.predioCatastral}
+              matricula={expediente.predioMatricula}
+              areaM2={expediente.predioAreaM2}
+              areaCultivosM2={expediente.predioAreaCultivosM2}
+              areaBosqueM2={expediente.predioAreaBosqueM2}
+              viviendas={expediente.predioViviendas}
+            />
 
             <BloqueUbicacion
               titulo="📍 Ubicación del predio o proyecto"
@@ -558,6 +579,87 @@ export default async function ExpedienteDetallePage({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Solo se muestra si el expediente tiene al menos un dato de este bloque — la mayoría son opcionales. */
+function BloqueDatosPredio({
+  claseSolicitud,
+  nombre,
+  catastral,
+  matricula,
+  areaM2,
+  areaCultivosM2,
+  areaBosqueM2,
+  viviendas,
+}: {
+  claseSolicitud: string | null;
+  nombre: string | null;
+  catastral: string | null;
+  matricula: string | null;
+  areaM2: number | null;
+  areaCultivosM2: number | null;
+  areaBosqueM2: number | null;
+  viviendas: number | null;
+}) {
+  const hayDatos =
+    claseSolicitud || nombre || catastral || matricula || areaM2 != null || areaCultivosM2 != null || areaBosqueM2 != null || viviendas != null;
+  if (!hayDatos) return null;
+
+  return (
+    <div className="mt-3 border-t border-stone-100 pt-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Datos adicionales del predio</p>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+        {claseSolicitud && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Clase de solicitud</dt>
+            <dd className="text-stone-800">{claseSolicitud === "RENOVACION" ? "Renovación" : "Nueva"}</dd>
+          </div>
+        )}
+        {nombre && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Nombre del predio</dt>
+            <dd className="break-words text-stone-800">{nombre}</dd>
+          </div>
+        )}
+        {catastral && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Nro. Catastral</dt>
+            <dd className="break-words text-stone-800">{catastral}</dd>
+          </div>
+        )}
+        {matricula && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Matrícula inmobiliaria</dt>
+            <dd className="break-words text-stone-800">{matricula}</dd>
+          </div>
+        )}
+        {areaM2 != null && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Área predial</dt>
+            <dd className="text-stone-800">{areaM2.toLocaleString("es-CO")} m²</dd>
+          </div>
+        )}
+        {areaCultivosM2 != null && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Área en cultivos</dt>
+            <dd className="text-stone-800">{areaCultivosM2.toLocaleString("es-CO")} m²</dd>
+          </div>
+        )}
+        {areaBosqueM2 != null && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Área en bosque</dt>
+            <dd className="text-stone-800">{areaBosqueM2.toLocaleString("es-CO")} m²</dd>
+          </div>
+        )}
+        {viviendas != null && (
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Nro. de viviendas</dt>
+            <dd className="text-stone-800">{viviendas.toLocaleString("es-CO")}</dd>
+          </div>
+        )}
+      </dl>
     </div>
   );
 }

@@ -199,12 +199,63 @@ enum TipoSolicitante {
   JURIDICA
 }
 
+enum RegimenTributario {
+  RESPONSABLE_IVA
+  NO_RESPONSABLE_IVA
+  SIMPLE_TRIBUTACION
+  REGIMEN_ESPECIAL
+  OTRO
+}
+
+enum ClaseSolicitud {
+  NUEVA
+  RENOVACION
+}
+
+/**
+ * Registro maestro por NIT/cédula — antes cada Expediente guardaba su propia
+ * copia de los datos del solicitante, sin nada que los conectara: la misma
+ * empresa podía quedar escrita distinto en cada trámite, y no había forma de
+ * preguntar "¿qué otros trámites tiene esta NIT con la CDMB?". Ahora, al
+ * radicar, se busca por identificación — si ya existe se reutiliza (y se
+ * actualizan los datos de contacto), si no existe se crea aquí.
+ *
+ * El régimen tributario y "gran contribuyente" NO son decorativos: la CDMB
+ * a veces le paga a estos mismos terceros (o cobra estampillas), y el
+ * régimen determina retenciones/beneficios — por eso se guardan aquí y no
+ * en cada Expediente. A propósito no se replicó el formulario contable
+ * completo del sistema viejo (clave contable, RUP, actividad económica...)
+ * — eso vive en el sistema contable real de la CDMB, no en SINCA.
+ *
+ * `Expediente.solicitanteNombre/Identificacion/...` se mantienen aparte
+ * (no se borran): son la foto de cómo era el solicitante EN ESE MOMENTO,
+ * que para un trámite regulatorio es lo correcto conservar aunque el
+ * tercero cambie de nombre o dirección después.
+ */
+model Solicitante {
+  id                String             @id @default(cuid())
+  tipo              TipoSolicitante
+  identificacion    String             @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
+  nombre            String // nombre completo o razón social
+  regimenTributario RegimenTributario?
+  granContribuyente Boolean            @default(false)
+  email             String?
+  telefono          String?
+  direccion         String?
+  municipio         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  expedientes Expediente[]
+}
+
 model Expediente {
   id             String   @id @default(cuid())
   numero         String   @unique // ej. M-DA-PR05-2026-0001
   tramiteTipoId  String
   flujoId        String
 
+  solicitanteId             String? // vínculo al registro maestro por NIT/cédula (ver Solicitante) — null en expedientes creados antes de este campo
   solicitanteTipo           TipoSolicitante @default(NATURAL)
   solicitanteNombre         String
   solicitanteIdentificacion String
@@ -213,6 +264,19 @@ model Expediente {
   solicitanteDireccion      String? // dirección del solicitante — distinta de la del predio (ej. empresa con sede en otra ciudad)
   predioDireccion           String? // dirección del predio o del lugar donde se desarrolla el proyecto
   municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
+
+  claseSolicitud   ClaseSolicitud? // Nueva / Renovación — el PDF del procedimiento no siempre lo distingue como flujo aparte
+
+  // Datos del predio que el procedimiento oficial no siempre pide como tal, pero que sí importan
+  // para la decisión real (ej. el área determina cuánta agua se puede conceder) o son identificadores
+  // legales reales del predio — no están todos los trámites, por eso opcionales.
+  predioNombre         String? // ej. "Finca La Esperanza" — un predio rural casi siempre tiene nombre propio, distinto de la dirección
+  predioCatastral      String? // número catastral (IGAC)
+  predioMatricula      String? // matrícula inmobiliaria
+  predioAreaM2         Float?
+  predioAreaCultivosM2 Float?
+  predioAreaBosqueM2   Float?
+  predioViviendas      Int?
 
   // Ubicación del predio/proyecto tomada en campo (mapa OSM) — opcional, no todo trámite la necesita.
   // Se puede cargar desde cualquiera de las 3 representaciones (elipsoidal/plana/cartesiana);
@@ -253,6 +317,7 @@ model Expediente {
   flujo            Flujo       @relation(fields: [flujoId], references: [id])
   creadoPor        Usuario     @relation("CreadoPor", fields: [createdById], references: [id])
   responsableActual Usuario?   @relation("ResponsableActual", fields: [responsableActualId], references: [id])
+  solicitante      Solicitante? @relation(fields: [solicitanteId], references: [id])
 
   documentos ExpedienteDocumento[]
   eventos    ExpedienteEvento[]
@@ -273,6 +338,7 @@ model Expediente {
   @@index([tramiteTipoId])
   @@index([estado])
   @@index([municipio])
+  @@index([solicitanteId])
 }
 
 model ExpedienteDocumento {

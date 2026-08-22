@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
     solicitante,
     municipio,
     predioDireccion,
+    predio,
+    claseSolicitud,
     ubicacion,
     solicitanteUbicacion,
     documentos,
@@ -41,9 +43,22 @@ export async function POST(req: NextRequest) {
       email?: string;
       telefono?: string;
       direccion?: string;
+      municipio?: string;
+      regimenTributario?: "RESPONSABLE_IVA" | "NO_RESPONSABLE_IVA" | "SIMPLE_TRIBUTACION" | "REGIMEN_ESPECIAL" | "OTRO" | null;
+      granContribuyente?: boolean;
     };
     municipio: string;
     predioDireccion?: string;
+    predio?: {
+      nombre?: string;
+      catastral?: string;
+      matricula?: string;
+      areaM2?: number | null;
+      areaCultivosM2?: number | null;
+      areaBosqueM2?: number | null;
+      viviendas?: number | null;
+    };
+    claseSolicitud?: "NUEVA" | "RENOVACION" | null;
     ubicacion?: { lat: number | null; lon: number | null };
     solicitanteUbicacion?: { lat: number | null; lon: number | null };
     documentos: DocumentoInput[];
@@ -104,19 +119,56 @@ export async function POST(req: NextRequest) {
     ...calcularUbicacion("solicitanteUbicacion", solicitanteUbicacion),
   };
 
+  // Registro maestro por NIT/cédula: se reutiliza si ya existe (actualizando solo contacto, sin
+  // pisar el régimen si esta vez no se mandó) o se crea si es la primera vez que se ve esta
+  // identificación — ver el comentario en el modelo Solicitante (prisma/schema.prisma) del porqué.
+  const identificacionSolicitante = solicitante.identificacion.trim();
+  const solicitanteRecord = await db.solicitante.upsert({
+    where: { identificacion: identificacionSolicitante },
+    create: {
+      tipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
+      identificacion: identificacionSolicitante,
+      nombre: solicitante.nombre.trim(),
+      regimenTributario: solicitante.regimenTributario || null,
+      granContribuyente: Boolean(solicitante.granContribuyente),
+      email: solicitante.email?.trim() || null,
+      telefono: solicitante.telefono?.trim() || null,
+      direccion: solicitante.direccion?.trim() || null,
+      municipio: solicitante.municipio?.trim() || null,
+    },
+    update: {
+      nombre: solicitante.nombre.trim(),
+      email: solicitante.email?.trim() || undefined,
+      telefono: solicitante.telefono?.trim() || undefined,
+      direccion: solicitante.direccion?.trim() || undefined,
+      municipio: solicitante.municipio?.trim() || undefined,
+      ...(solicitante.regimenTributario ? { regimenTributario: solicitante.regimenTributario } : {}),
+      ...(solicitante.granContribuyente != null ? { granContribuyente: solicitante.granContribuyente } : {}),
+    },
+  });
+
   const expediente = await db.expediente.create({
     data: {
       id: expedienteId,
       numero,
       tramiteTipoId: tramite.id,
       flujoId: flujo.id,
+      solicitanteId: solicitanteRecord.id,
       solicitanteTipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
       solicitanteNombre: solicitante.nombre.trim(),
-      solicitanteIdentificacion: solicitante.identificacion.trim(),
+      solicitanteIdentificacion: identificacionSolicitante,
       solicitanteEmail: solicitante.email?.trim() || null,
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
       predioDireccion: predioDireccion?.trim() || null,
+      predioNombre: predio?.nombre?.trim() || null,
+      predioCatastral: predio?.catastral?.trim() || null,
+      predioMatricula: predio?.matricula?.trim() || null,
+      predioAreaM2: predio?.areaM2 ?? null,
+      predioAreaCultivosM2: predio?.areaCultivosM2 ?? null,
+      predioAreaBosqueM2: predio?.areaBosqueM2 ?? null,
+      predioViviendas: predio?.viviendas ?? null,
+      claseSolicitud: claseSolicitud || null,
       municipio,
       ...datosUbicacion,
       estado: "RADICADO",
