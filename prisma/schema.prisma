@@ -210,21 +210,33 @@ model Expediente {
   solicitanteIdentificacion String
   solicitanteEmail          String?
   solicitanteTelefono       String?
-  solicitanteDireccion      String?
+  solicitanteDireccion      String? // dirección del solicitante — distinta de la del predio (ej. empresa con sede en otra ciudad)
+  predioDireccion           String? // dirección del predio o del lugar donde se desarrolla el proyecto
   municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
 
   // Ubicación del predio/proyecto tomada en campo (mapa OSM) — opcional, no todo trámite la necesita.
   // Se puede cargar desde cualquiera de las 3 representaciones (elipsoidal/plana/cartesiana);
   // lat/lon (WGS84) es la que manda internamente, las demás se recalculan siempre en el
-  // servidor a partir de ella — ver src/lib/coordenadas.ts.
+  // servidor a partir de ella — ver src/lib/coordenadas.ts. Sin altura: se probó y se quitó
+  // a pedido del usuario (no la necesitan para nada de este trámite).
   ubicacionLat         Float? // elipsoidal WGS84
   ubicacionLon         Float? // elipsoidal WGS84
-  ubicacionAltura      Float? // metros sobre el elipsoide
   ubicacionPlanaX      Float? // MAGNA-SIRGAS Origen-Nacional (EPSG:9377)
   ubicacionPlanaY      Float?
   ubicacionCartesianaX Float? // ECEF geocéntrica (mismo elipsoide GRS80)
   ubicacionCartesianaY Float?
   ubicacionCartesianaZ Float?
+
+  // Dirección/ubicación del SOLICITANTE — distinta de la del predio/proyecto de arriba (ej.
+  // una empresa con sede en Bucaramanga que solicita un permiso para un proyecto en Vetas).
+  // Mismo esquema, misma lógica de recálculo en el servidor.
+  solicitanteUbicacionLat         Float?
+  solicitanteUbicacionLon         Float?
+  solicitanteUbicacionPlanaX      Float?
+  solicitanteUbicacionPlanaY      Float?
+  solicitanteUbicacionCartesianaX Float?
+  solicitanteUbicacionCartesianaY Float?
+  solicitanteUbicacionCartesianaZ Float?
 
   estado           EstadoExpediente @default(RADICADO)
   pasoActualNumero Int              @default(1)

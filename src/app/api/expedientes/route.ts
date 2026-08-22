@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     flujoId,
     solicitante,
     municipio,
+    predioDireccion,
     ubicacion,
+    solicitanteUbicacion,
     documentos,
   }: {
     id: string;
@@ -41,7 +43,9 @@ export async function POST(req: NextRequest) {
       direccion?: string;
     };
     municipio: string;
-    ubicacion?: { lat: number | null; lon: number | null; altura?: number | null };
+    predioDireccion?: string;
+    ubicacion?: { lat: number | null; lon: number | null };
+    solicitanteUbicacion?: { lat: number | null; lon: number | null };
     documentos: DocumentoInput[];
   } = body;
 
@@ -69,30 +73,36 @@ export async function POST(req: NextRequest) {
   const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);
 
   // Las planas y cartesianas nunca se confían del cliente — se recalculan aquí a partir de lat/lon,
-  // que es la única representación que viaja del formulario (ver MapaUbicacion.tsx).
-  let datosUbicacion: Record<string, number | null> = {
-    ubicacionLat: null,
-    ubicacionLon: null,
-    ubicacionAltura: null,
-    ubicacionPlanaX: null,
-    ubicacionPlanaY: null,
-    ubicacionCartesianaX: null,
-    ubicacionCartesianaY: null,
-    ubicacionCartesianaZ: null,
-  };
-  if (ubicacion?.lat != null && ubicacion?.lon != null && esLatLonValido(ubicacion.lat, ubicacion.lon)) {
-    const c = desdeLatLon(ubicacion.lat, ubicacion.lon, ubicacion.altura ?? 0);
-    datosUbicacion = {
-      ubicacionLat: c.lat,
-      ubicacionLon: c.lon,
-      ubicacionAltura: c.altura,
-      ubicacionPlanaX: c.planaX,
-      ubicacionPlanaY: c.planaY,
-      ubicacionCartesianaX: c.cartesianaX,
-      ubicacionCartesianaY: c.cartesianaY,
-      ubicacionCartesianaZ: c.cartesianaZ,
+  // que es la única representación que viaja del formulario (ver MapaUbicacion.tsx). El predio/
+  // proyecto y el solicitante son dos ubicaciones independientes (ej. empresa con sede en
+  // Bucaramanga pidiendo un permiso para un proyecto en otro municipio) — se calculan por separado.
+  function calcularUbicacion(prefijo: string, punto?: { lat: number | null; lon: number | null }) {
+    const datos: Record<string, number | null> = {
+      [`${prefijo}Lat`]: null,
+      [`${prefijo}Lon`]: null,
+      [`${prefijo}PlanaX`]: null,
+      [`${prefijo}PlanaY`]: null,
+      [`${prefijo}CartesianaX`]: null,
+      [`${prefijo}CartesianaY`]: null,
+      [`${prefijo}CartesianaZ`]: null,
     };
+    if (punto?.lat != null && punto?.lon != null && esLatLonValido(punto.lat, punto.lon)) {
+      const c = desdeLatLon(punto.lat, punto.lon);
+      datos[`${prefijo}Lat`] = c.lat;
+      datos[`${prefijo}Lon`] = c.lon;
+      datos[`${prefijo}PlanaX`] = c.planaX;
+      datos[`${prefijo}PlanaY`] = c.planaY;
+      datos[`${prefijo}CartesianaX`] = c.cartesianaX;
+      datos[`${prefijo}CartesianaY`] = c.cartesianaY;
+      datos[`${prefijo}CartesianaZ`] = c.cartesianaZ;
+    }
+    return datos;
   }
+
+  const datosUbicacion = {
+    ...calcularUbicacion("ubicacion", ubicacion),
+    ...calcularUbicacion("solicitanteUbicacion", solicitanteUbicacion),
+  };
 
   const expediente = await db.expediente.create({
     data: {
@@ -106,6 +116,7 @@ export async function POST(req: NextRequest) {
       solicitanteEmail: solicitante.email?.trim() || null,
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
+      predioDireccion: predioDireccion?.trim() || null,
       municipio,
       ...datosUbicacion,
       estado: "RADICADO",

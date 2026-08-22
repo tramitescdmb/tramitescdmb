@@ -128,43 +128,36 @@ export default async function ExpedienteDetallePage({
                 <dt className="text-xs text-stone-400">Municipio</dt>
                 <dd className="break-words text-stone-800">{expediente.municipio}</dd>
               </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Dirección del solicitante</dt>
+                <dd className="break-words text-stone-800">{expediente.solicitanteDireccion ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Dirección del predio o proyecto</dt>
+                <dd className="break-words text-stone-800">{expediente.predioDireccion ?? "—"}</dd>
+              </div>
             </dl>
 
-            {expediente.ubicacionLat != null && expediente.ubicacionLon != null && (
-              <div className="mt-3 border-t border-stone-100 pt-3 text-sm">
-                <dt className="mb-2 text-xs text-stone-400">📍 Ubicación tomada en campo</dt>
-                <dd className="space-y-2">
-                  <MapaSoloLectura lat={expediente.ubicacionLat} lon={expediente.ubicacionLon} />
-                  <div className="space-y-0.5 text-stone-700">
-                    <p>
-                      Elipsoidales (lat/lon, WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
-                      {expediente.ubicacionAltura != null && ` · Altura: ${expediente.ubicacionAltura.toLocaleString("es-CO")} msnm`}
-                    </p>
-                    {expediente.ubicacionPlanaX != null && expediente.ubicacionPlanaY != null && (
-                      <p>
-                        Planas (MAGNA-SIRGAS Origen-Nacional): X {expediente.ubicacionPlanaX.toLocaleString("es-CO")} m,
-                        Y {expediente.ubicacionPlanaY.toLocaleString("es-CO")} m
-                      </p>
-                    )}
-                    {expediente.ubicacionCartesianaX != null && expediente.ubicacionCartesianaY != null && expediente.ubicacionCartesianaZ != null && (
-                      <p>
-                        Cartesianas (ECEF): X {expediente.ubicacionCartesianaX.toLocaleString("es-CO")} m, Y{" "}
-                        {expediente.ubicacionCartesianaY.toLocaleString("es-CO")} m, Z{" "}
-                        {expediente.ubicacionCartesianaZ.toLocaleString("es-CO")} m
-                      </p>
-                    )}
-                    <a
-                      href={`https://www.openstreetmap.org/?mlat=${expediente.ubicacionLat}&mlon=${expediente.ubicacionLon}#map=17/${expediente.ubicacionLat}/${expediente.ubicacionLon}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-block text-cdmb-700 hover:underline"
-                    >
-                      Abrir en OpenStreetMap ↗
-                    </a>
-                  </div>
-                </dd>
-              </div>
-            )}
+            <BloqueUbicacion
+              titulo="📍 Ubicación del predio o proyecto"
+              lat={expediente.ubicacionLat}
+              lon={expediente.ubicacionLon}
+              planaX={expediente.ubicacionPlanaX}
+              planaY={expediente.ubicacionPlanaY}
+              cartX={expediente.ubicacionCartesianaX}
+              cartY={expediente.ubicacionCartesianaY}
+              cartZ={expediente.ubicacionCartesianaZ}
+            />
+            <BloqueUbicacion
+              titulo="📍 Ubicación del solicitante"
+              lat={expediente.solicitanteUbicacionLat}
+              lon={expediente.solicitanteUbicacionLon}
+              planaX={expediente.solicitanteUbicacionPlanaX}
+              planaY={expediente.solicitanteUbicacionPlanaY}
+              cartX={expediente.solicitanteUbicacionCartesianaX}
+              cartY={expediente.solicitanteUbicacionCartesianaY}
+              cartZ={expediente.solicitanteUbicacionCartesianaZ}
+            />
           </section>
 
           {/* Paso actual */}
@@ -566,5 +559,67 @@ export default async function ExpedienteDetallePage({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Colapsado por defecto — mostrar el mapa y las 3 coordenadas siempre expandidas
+ * (aún más si hay dos: predio y solicitante) sumaba mucho texto/mapa a la página.
+ * Un resumen de una línea y el detalle solo si el usuario lo pide.
+ */
+function BloqueUbicacion({
+  titulo,
+  lat,
+  lon,
+  planaX,
+  planaY,
+  cartX,
+  cartY,
+  cartZ,
+}: {
+  titulo: string;
+  lat: number | null;
+  lon: number | null;
+  planaX: number | null;
+  planaY: number | null;
+  cartX: number | null;
+  cartY: number | null;
+  cartZ: number | null;
+}) {
+  if (lat == null || lon == null) return null;
+  return (
+    <details className="mt-3 border-t border-stone-100 pt-3 text-sm">
+      <summary className="cursor-pointer text-xs font-medium text-stone-500 [&::-webkit-details-marker]:hidden">
+        {titulo} — {lat.toFixed(6)}, {lon.toFixed(6)} <span className="text-cdmb-700">(ver mapa y coordenadas)</span>
+      </summary>
+      <div className="mt-2 space-y-2">
+        <MapaSoloLectura lat={lat} lon={lon} />
+        <div className="space-y-0.5 text-stone-700">
+          <p>
+            Elipsoidales (lat/lon, WGS84): {lat.toFixed(6)}, {lon.toFixed(6)}
+          </p>
+          {planaX != null && planaY != null && (
+            <p>
+              Planas (MAGNA-SIRGAS Origen-Nacional): X {planaX.toLocaleString("es-CO")} m, Y{" "}
+              {planaY.toLocaleString("es-CO")} m
+            </p>
+          )}
+          {cartX != null && cartY != null && cartZ != null && (
+            <p>
+              Cartesianas (ECEF): X {cartX.toLocaleString("es-CO")} m, Y {cartY.toLocaleString("es-CO")} m, Z{" "}
+              {cartZ.toLocaleString("es-CO")} m
+            </p>
+          )}
+          <a
+            href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block text-cdmb-700 hover:underline"
+          >
+            Abrir en OpenStreetMap ↗
+          </a>
+        </div>
+      </div>
+    </details>
   );
 }

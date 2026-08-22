@@ -130,12 +130,14 @@ export function NuevoExpedienteForm({
             direccion: String(fd.get("solicitanteDireccion") || ""),
           },
           municipio,
+          predioDireccion: String(fd.get("predioDireccion") || ""),
           ubicacion: {
             lat: fd.get("ubicacionLat") ? Number(fd.get("ubicacionLat")) : null,
             lon: fd.get("ubicacionLon") ? Number(fd.get("ubicacionLon")) : null,
-            altura: fd.get("ubicacionAltura") ? Number(fd.get("ubicacionAltura")) : null,
-            planaX: fd.get("ubicacionPlanaX") ? Number(fd.get("ubicacionPlanaX")) : null,
-            planaY: fd.get("ubicacionPlanaY") ? Number(fd.get("ubicacionPlanaY")) : null,
+          },
+          solicitanteUbicacion: {
+            lat: fd.get("solicitanteUbicacionLat") ? Number(fd.get("solicitanteUbicacionLat")) : null,
+            lon: fd.get("solicitanteUbicacionLon") ? Number(fd.get("solicitanteUbicacionLon")) : null,
           },
           documentos,
         }),
@@ -231,6 +233,51 @@ export function NuevoExpedienteForm({
           />
         </Field>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Correo electrónico" icon={<IconMail className={iconSm} />} help="Para notificaciones, si el solicitante autoriza este medio.">
+            <input
+              type="email"
+              name="solicitanteEmail"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder="correo@ejemplo.com"
+            />
+          </Field>
+          <Field label="Teléfono" icon={<IconPhone className={iconSm} />} help="Número de contacto del solicitante.">
+            <input
+              name="solicitanteTelefono"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder="Ej: 3001234567"
+            />
+          </Field>
+        </div>
+
+        <div className="space-y-3 rounded-lg border border-stone-100 bg-stone-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Dirección del solicitante
+          </p>
+          <Field
+            label="Dirección"
+            icon={<IconMapPin className={iconSm} />}
+            help="Dirección de domicilio o de la sede del solicitante — no necesariamente la del predio o proyecto (ej. una empresa con sede en otra ciudad)."
+          >
+            <input
+              name="solicitanteDireccion"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+          </Field>
+          <Field
+            label="Ubicación en el mapa (opcional)"
+            icon={<IconMapPin className={iconSm} />}
+            help="Si quieres dejar el punto exacto de esa dirección — no es obligatorio para el solicitante."
+          >
+            <MapaUbicacion municipio={municipio || "Bucaramanga"} prefijo="solicitanteUbicacion" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="text-sm font-semibold text-stone-900">2. Predio o proyecto</h2>
+
         <Field
           label="Municipio del predio o proyecto"
           required
@@ -255,49 +302,35 @@ export function NuevoExpedienteForm({
           </select>
         </Field>
 
-        <Field label="Dirección" icon={<IconMapPin className={iconSm} />} help="Dirección del predio, proyecto o del solicitante, según aplique.">
+        <Field
+          label="Dirección del predio o proyecto"
+          icon={<IconMapPin className={iconSm} />}
+          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante."
+        >
           <input
-            name="solicitanteDireccion"
+            name="predioDireccion"
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           />
         </Field>
 
         <Field
-          label="Ubicación exacta en campo (opcional)"
+          label="Ubicación exacta del predio (opcional)"
           icon={<IconMapPin className={iconSm} />}
           help="Si ya tienes el punto exacto del predio o proyecto — por GPS, visita técnica o una dirección — márcalo aquí. Se guarda en latitud/longitud y también se calcula en coordenadas planas (el sistema oficial de Colombia)."
         >
           {municipio ? (
-            <MapaUbicacion municipio={municipio} />
+            <MapaUbicacion municipio={municipio} prefijo="ubicacion" />
           ) : (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-400">
               Selecciona primero el municipio para poder marcar la ubicación en el mapa.
             </p>
           )}
         </Field>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Correo electrónico" icon={<IconMail className={iconSm} />} help="Para notificaciones, si el solicitante autoriza este medio.">
-            <input
-              type="email"
-              name="solicitanteEmail"
-              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-              placeholder="correo@ejemplo.com"
-            />
-          </Field>
-          <Field label="Teléfono" icon={<IconPhone className={iconSm} />} help="Número de contacto del solicitante.">
-            <input
-              name="solicitanteTelefono"
-              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-              placeholder="Ej: 3001234567"
-            />
-          </Field>
-        </div>
       </section>
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
         <div>
-          <h2 className="text-sm font-semibold text-stone-900">2. Documentos</h2>
+          <h2 className="text-sm font-semibold text-stone-900">3. Documentos</h2>
           <p className="text-xs text-stone-500">
             Sube lo que el solicitante ya trajo — sin importar el tamaño del archivo, se sube directo a
             nuestro almacenamiento. Si te falta algo, puedes crear el expediente igual y subirlo después.

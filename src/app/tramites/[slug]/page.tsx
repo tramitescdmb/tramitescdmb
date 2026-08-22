@@ -5,6 +5,7 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
+import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
 
 export default async function TramiteDetallePage({
   params,
@@ -148,39 +149,7 @@ export default async function TramiteDetallePage({
 
           {tramite.documentosRequeridos.length > 0 && (
             <section className="rounded-xl border border-stone-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-stone-900">
-                Documentos para radicar
-                <span className="ml-2 font-normal text-stone-400">
-                  ({tramite.documentosRequeridos.filter((d) => d.obligatorio).length} obligatorios de{" "}
-                  {tramite.documentosRequeridos.length})
-                </span>
-              </h2>
-              <ol className="mt-3 space-y-2">
-                {tramite.documentosRequeridos.map((d) => (
-                  <li key={d.id} className="flex items-start gap-3 rounded-lg bg-stone-50 p-3">
-                    <span
-                      className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold ${categoria.clases.icono}`}
-                    >
-                      {d.orden}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="text-sm font-medium text-stone-800">{d.nombre}</span>
-                        {d.obligatorio ? (
-                          <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
-                            Obligatorio{d.aplicaA === "JURIDICA" ? " · solo persona jurídica" : d.aplicaA === "NATURAL" ? " · solo persona natural" : ""}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">
-                            Opcional
-                          </span>
-                        )}
-                      </div>
-                      {d.notas && <p className="mt-0.5 text-xs text-stone-500">{d.notas}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <DocumentosParaRadicar documentos={tramite.documentosRequeridos} claseIcono={categoria.clases.icono} />
             </section>
           )}
 
