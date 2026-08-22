@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
-import { MapaUbicacion } from "@/components/MapaUbicacion";
+import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
 import { IconLayers, IconUser, IconIdCard, IconMapPin, IconMail, IconPhone, IconDocument, IconUpload, IconX } from "@/components/icons";
 
 const iconSm = "h-4 w-4";
@@ -46,6 +46,11 @@ export function NuevoExpedienteForm({
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [municipio, setMunicipio] = useState("");
+  const [municipioSolicitante, setMunicipioSolicitante] = useState("");
+  const [solicitanteDireccion, setSolicitanteDireccion] = useState("");
+  const [predioDireccion, setPredioDireccion] = useState("");
+  const mapaSolicitanteRef = useRef<MapaUbicacionHandle>(null);
+  const mapaPredioRef = useRef<MapaUbicacionHandle>(null);
   const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
 
@@ -127,10 +132,10 @@ export function NuevoExpedienteForm({
             identificacion: solicitanteIdentificacion,
             email: String(fd.get("solicitanteEmail") || ""),
             telefono: String(fd.get("solicitanteTelefono") || ""),
-            direccion: String(fd.get("solicitanteDireccion") || ""),
+            direccion: solicitanteDireccion,
           },
           municipio,
-          predioDireccion: String(fd.get("predioDireccion") || ""),
+          predioDireccion,
           ubicacion: {
             lat: fd.get("ubicacionLat") ? Number(fd.get("ubicacionLat")) : null,
             lon: fd.get("ubicacionLon") ? Number(fd.get("ubicacionLon")) : null,
@@ -255,22 +260,54 @@ export function NuevoExpedienteForm({
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
             Dirección del solicitante
           </p>
+
+          <Field
+            label="Municipio (opcional)"
+            icon={<IconMapPin className={iconSm} />}
+            help="Si el solicitante vive o tiene su sede dentro de la jurisdicción de la CDMB — ayuda a que el mapa de abajo arranque centrado en el lugar correcto."
+          >
+            <select
+              value={municipioSolicitante}
+              onChange={(e) => setMunicipioSolicitante(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            >
+              <option value="">Fuera de la jurisdicción / no aplica…</option>
+              {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field
             label="Dirección"
             icon={<IconMapPin className={iconSm} />}
-            help="Dirección de domicilio o de la sede del solicitante — no necesariamente la del predio o proyecto (ej. una empresa con sede en otra ciudad)."
+            help="Dirección de domicilio o de la sede del solicitante — no necesariamente la del predio o proyecto (ej. una empresa con sede en otra ciudad). El botón busca esta misma dirección en el mapa de abajo."
           >
-            <input
-              name="solicitanteDireccion"
-              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            />
+            <div className="flex flex-wrap gap-2">
+              <input
+                name="solicitanteDireccion"
+                value={solicitanteDireccion}
+                onChange={(e) => setSolicitanteDireccion(e.target.value)}
+                className="min-w-[200px] flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+              <button
+                type="button"
+                onClick={() => mapaSolicitanteRef.current?.buscarDireccion(solicitanteDireccion)}
+                className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              >
+                Buscar en el mapa
+              </button>
+            </div>
           </Field>
+
           <Field
             label="Ubicación en el mapa (opcional)"
             icon={<IconMapPin className={iconSm} />}
-            help="Si quieres dejar el punto exacto de esa dirección — no es obligatorio para el solicitante."
+            help="El botón de arriba marca aquí la dirección — no es obligatorio para el solicitante."
           >
-            <MapaUbicacion municipio={municipio || "Bucaramanga"} prefijo="solicitanteUbicacion" />
+            <MapaUbicacion ref={mapaSolicitanteRef} municipio={municipioSolicitante || "Bucaramanga"} prefijo="solicitanteUbicacion" />
           </Field>
         </div>
       </section>
@@ -305,21 +342,33 @@ export function NuevoExpedienteForm({
         <Field
           label="Dirección del predio o proyecto"
           icon={<IconMapPin className={iconSm} />}
-          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante."
+          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. El botón busca esta misma dirección en el mapa de abajo."
         >
-          <input
-            name="predioDireccion"
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              name="predioDireccion"
+              value={predioDireccion}
+              onChange={(e) => setPredioDireccion(e.target.value)}
+              className="min-w-[200px] flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+            <button
+              type="button"
+              onClick={() => mapaPredioRef.current?.buscarDireccion(predioDireccion)}
+              disabled={!municipio}
+              className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Buscar en el mapa
+            </button>
+          </div>
         </Field>
 
         <Field
           label="Ubicación exacta del predio (opcional)"
           icon={<IconMapPin className={iconSm} />}
-          help="Si ya tienes el punto exacto del predio o proyecto — por GPS, visita técnica o una dirección — márcalo aquí. Se guarda en latitud/longitud y también se calcula en coordenadas planas (el sistema oficial de Colombia)."
+          help="El botón de arriba marca aquí la dirección — o toca el mapa, o pega coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se guarda en latitud/longitud y también se calcula en coordenadas planas (el sistema oficial de Colombia)."
         >
           {municipio ? (
-            <MapaUbicacion municipio={municipio} prefijo="ubicacion" />
+            <MapaUbicacion ref={mapaPredioRef} municipio={municipio} prefijo="ubicacion" />
           ) : (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-400">
               Selecciona primero el municipio para poder marcar la ubicación en el mapa.
