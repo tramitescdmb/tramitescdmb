@@ -110,11 +110,14 @@ export default async function CatalogoTramitesPage() {
           <a
             key={cat.id}
             href={`#cat-${cat.id}`}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition hover:brightness-95 ${cat.clases.badge}`}
+            className={`group flex items-center overflow-hidden rounded-full shadow-sm transition hover:shadow-md hover:brightness-95 ${cat.clases.pildora}`}
           >
-            <cat.Icono className="h-5 w-5 flex-none" aria-hidden />
-            {cat.etiqueta}
-            <span className="opacity-60">({items.length})</span>
+            <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${cat.clases.icono}`}>
+              <cat.Icono className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="whitespace-nowrap px-4 text-sm font-semibold text-white">
+              {cat.etiqueta} <span className="font-normal text-white/75">({items.length})</span>
+            </span>
           </a>
         ))}
       </nav>
