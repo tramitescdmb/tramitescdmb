@@ -7,8 +7,9 @@ import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
-import { documentoDePagoEnPaso, documentoEtapaAbierta } from "@/lib/documentos";
+import { documentoEtapaAbierta } from "@/lib/documentos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
+import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 
 const ESTADOS = [
   "RADICADO",
@@ -66,7 +67,6 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargo, pasoActual.responsables) : false;
-  const documentoPago = pasoActual ? documentoDePagoEnPaso(pasoActual.documentos) : null;
 
   // Agrupa los documentos por paso (null = subidos en la radicación) para mostrarlos en
   // tarjetas separadas — con todo junto en una sola lista no se distinguía a qué etapa
@@ -132,32 +132,36 @@ export default async function ExpedienteDetallePage({
 
             {expediente.ubicacionLat != null && expediente.ubicacionLon != null && (
               <div className="mt-3 border-t border-stone-100 pt-3 text-sm">
-                <dt className="mb-1 text-xs text-stone-400">📍 Ubicación tomada en campo</dt>
-                <dd className="space-y-0.5 text-stone-700">
-                  <p>
-                    Elipsoidales (lat/lon, WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
-                  </p>
-                  {expediente.ubicacionPlanaX != null && expediente.ubicacionPlanaY != null && (
+                <dt className="mb-2 text-xs text-stone-400">📍 Ubicación tomada en campo</dt>
+                <dd className="space-y-2">
+                  <MapaSoloLectura lat={expediente.ubicacionLat} lon={expediente.ubicacionLon} />
+                  <div className="space-y-0.5 text-stone-700">
                     <p>
-                      Planas (MAGNA-SIRGAS Origen-Nacional): X {expediente.ubicacionPlanaX.toLocaleString("es-CO")} m,
-                      Y {expediente.ubicacionPlanaY.toLocaleString("es-CO")} m
+                      Elipsoidales (lat/lon, WGS84): {expediente.ubicacionLat.toFixed(6)}, {expediente.ubicacionLon.toFixed(6)}
+                      {expediente.ubicacionAltura != null && ` · Altura: ${expediente.ubicacionAltura.toLocaleString("es-CO")} msnm`}
                     </p>
-                  )}
-                  {expediente.ubicacionCartesianaX != null && expediente.ubicacionCartesianaY != null && expediente.ubicacionCartesianaZ != null && (
-                    <p>
-                      Cartesianas (ECEF): X {expediente.ubicacionCartesianaX.toLocaleString("es-CO")} m, Y{" "}
-                      {expediente.ubicacionCartesianaY.toLocaleString("es-CO")} m, Z{" "}
-                      {expediente.ubicacionCartesianaZ.toLocaleString("es-CO")} m
-                    </p>
-                  )}
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${expediente.ubicacionLat}&mlon=${expediente.ubicacionLon}#map=17/${expediente.ubicacionLat}/${expediente.ubicacionLon}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-cdmb-700 hover:underline"
-                  >
-                    Ver en el mapa ↗
-                  </a>
+                    {expediente.ubicacionPlanaX != null && expediente.ubicacionPlanaY != null && (
+                      <p>
+                        Planas (MAGNA-SIRGAS Origen-Nacional): X {expediente.ubicacionPlanaX.toLocaleString("es-CO")} m,
+                        Y {expediente.ubicacionPlanaY.toLocaleString("es-CO")} m
+                      </p>
+                    )}
+                    {expediente.ubicacionCartesianaX != null && expediente.ubicacionCartesianaY != null && expediente.ubicacionCartesianaZ != null && (
+                      <p>
+                        Cartesianas (ECEF): X {expediente.ubicacionCartesianaX.toLocaleString("es-CO")} m, Y{" "}
+                        {expediente.ubicacionCartesianaY.toLocaleString("es-CO")} m, Z{" "}
+                        {expediente.ubicacionCartesianaZ.toLocaleString("es-CO")} m
+                      </p>
+                    )}
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${expediente.ubicacionLat}&mlon=${expediente.ubicacionLon}#map=17/${expediente.ubicacionLat}/${expediente.ubicacionLon}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block text-cdmb-700 hover:underline"
+                    >
+                      Abrir en OpenStreetMap ↗
+                    </a>
+                  </div>
                 </dd>
               </div>
             )}
@@ -207,7 +211,7 @@ export default async function ExpedienteDetallePage({
                 <SubirDocumentoPasoForm
                   expedienteId={expediente.id}
                   pasoNumero={pasoActual.numero}
-                  documentoPagoSugerido={documentoPago}
+                  documentosDelPaso={pasoActual.documentos}
                 />
               </div>
 

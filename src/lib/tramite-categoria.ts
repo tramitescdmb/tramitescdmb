@@ -35,19 +35,23 @@ type ColorToken =
   | "slate"
   | "stone";
 
+// Antes los íconos usaban un tono más saturado que las tarjetitas (badge) — con 9+ categorías
+// visibles a la vez eso se sentía como "demasiado color". Ahora íconos y badge comparten el
+// mismo tono suave (-50): la categoría se sigue distinguiendo por el emoji y el color, pero con
+// menos intensidad total en pantalla.
 const CLASES_COLOR: Record<ColorToken, { icono: string; badge: string; barra: string; borde: string }> = {
-  sky: { icono: "bg-sky-100 text-sky-700", badge: "bg-sky-50 text-sky-700", barra: "bg-sky-400", borde: "border-sky-400" },
-  cdmb: { icono: "bg-cdmb-100 text-cdmb-700", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-400", borde: "border-cdmb-400" },
-  amber: { icono: "bg-amber-100 text-amber-700", badge: "bg-amber-50 text-amber-700", barra: "bg-amber-400", borde: "border-amber-400" },
-  orange: { icono: "bg-orange-100 text-orange-700", badge: "bg-orange-50 text-orange-700", barra: "bg-orange-400", borde: "border-orange-400" },
-  cyan: { icono: "bg-cyan-100 text-cyan-700", badge: "bg-cyan-50 text-cyan-700", barra: "bg-cyan-400", borde: "border-cyan-400" },
-  rose: { icono: "bg-rose-100 text-rose-700", badge: "bg-rose-50 text-rose-700", barra: "bg-rose-400", borde: "border-rose-400" },
-  teal: { icono: "bg-teal-100 text-teal-700", badge: "bg-teal-50 text-teal-700", barra: "bg-teal-400", borde: "border-teal-400" },
-  indigo: { icono: "bg-indigo-100 text-indigo-700", badge: "bg-indigo-50 text-indigo-700", barra: "bg-indigo-400", borde: "border-indigo-400" },
-  violet: { icono: "bg-violet-100 text-violet-700", badge: "bg-violet-50 text-violet-700", barra: "bg-violet-400", borde: "border-violet-400" },
-  yellow: { icono: "bg-yellow-100 text-yellow-700", badge: "bg-yellow-50 text-yellow-700", barra: "bg-yellow-400", borde: "border-yellow-400" },
-  slate: { icono: "bg-slate-200 text-slate-700", badge: "bg-slate-100 text-slate-700", barra: "bg-slate-400", borde: "border-slate-400" },
-  stone: { icono: "bg-stone-200 text-stone-600", badge: "bg-stone-100 text-stone-600", barra: "bg-stone-300", borde: "border-stone-300" },
+  sky: { icono: "bg-sky-50 text-sky-600", badge: "bg-sky-50 text-sky-700", barra: "bg-sky-400", borde: "border-sky-400" },
+  cdmb: { icono: "bg-cdmb-50 text-cdmb-600", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-400", borde: "border-cdmb-400" },
+  amber: { icono: "bg-amber-50 text-amber-600", badge: "bg-amber-50 text-amber-700", barra: "bg-amber-400", borde: "border-amber-400" },
+  orange: { icono: "bg-orange-50 text-orange-600", badge: "bg-orange-50 text-orange-700", barra: "bg-orange-400", borde: "border-orange-400" },
+  cyan: { icono: "bg-cyan-50 text-cyan-600", badge: "bg-cyan-50 text-cyan-700", barra: "bg-cyan-400", borde: "border-cyan-400" },
+  rose: { icono: "bg-rose-50 text-rose-600", badge: "bg-rose-50 text-rose-700", barra: "bg-rose-400", borde: "border-rose-400" },
+  teal: { icono: "bg-teal-50 text-teal-600", badge: "bg-teal-50 text-teal-700", barra: "bg-teal-400", borde: "border-teal-400" },
+  indigo: { icono: "bg-indigo-50 text-indigo-600", badge: "bg-indigo-50 text-indigo-700", barra: "bg-indigo-400", borde: "border-indigo-400" },
+  violet: { icono: "bg-violet-50 text-violet-600", badge: "bg-violet-50 text-violet-700", barra: "bg-violet-400", borde: "border-violet-400" },
+  yellow: { icono: "bg-yellow-50 text-yellow-600", badge: "bg-yellow-50 text-yellow-700", barra: "bg-yellow-400", borde: "border-yellow-400" },
+  slate: { icono: "bg-slate-100 text-slate-600", badge: "bg-slate-100 text-slate-700", barra: "bg-slate-400", borde: "border-slate-400" },
+  stone: { icono: "bg-stone-100 text-stone-500", badge: "bg-stone-100 text-stone-600", barra: "bg-stone-300", borde: "border-stone-300" },
 };
 
 type CategoriaFija = { id: string; emoji: string; etiqueta: string; color: ColorToken };
