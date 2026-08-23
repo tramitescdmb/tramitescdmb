@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { EditarSolicitanteForm } from "@/components/EditarSolicitanteForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
+import { nombreCompletoSolicitante } from "@/lib/solicitante";
 
 export default async function SolicitanteDetallePage({
   params,
@@ -33,7 +34,7 @@ export default async function SolicitanteDetallePage({
           ← Solicitantes
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold text-stone-900">{solicitante.nombre}</h1>
+          <h1 className="text-xl font-semibold text-stone-900">{nombreCompletoSolicitante(solicitante)}</h1>
           {solicitante.granContribuyente && (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
               Gran contribuyente
@@ -49,6 +50,23 @@ export default async function SolicitanteDetallePage({
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos de contacto</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+          {solicitante.tipo === "JURIDICA" ? (
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Razón social</dt>
+              <dd className="break-words text-stone-800">{solicitante.razonSocial ?? "—"}</dd>
+            </div>
+          ) : (
+            <>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Nombres</dt>
+                <dd className="break-words text-stone-800">{solicitante.nombres ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Apellidos</dt>
+                <dd className="break-words text-stone-800">{solicitante.apellidos ?? "—"}</dd>
+              </div>
+            </>
+          )}
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Correo</dt>
             <dd className="break-all text-stone-800">{solicitante.email ?? "—"}</dd>
@@ -59,7 +77,7 @@ export default async function SolicitanteDetallePage({
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Municipio</dt>
-            <dd className="break-words text-stone-800">{solicitante.municipio ?? "—"}</dd>
+            <dd className="break-words text-stone-800">{solicitante.municipio}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Dirección</dt>
@@ -75,7 +93,10 @@ export default async function SolicitanteDetallePage({
           <EditarSolicitanteForm
             solicitante={{
               id: solicitante.id,
-              nombre: solicitante.nombre,
+              tipo: solicitante.tipo,
+              nombres: solicitante.nombres,
+              apellidos: solicitante.apellidos,
+              razonSocial: solicitante.razonSocial,
               email: solicitante.email,
               telefono: solicitante.telefono,
               direccion: solicitante.direccion,

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
-import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { Spinner } from "@/components/Spinner";
+import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { IconUser, IconIdCard, IconMail, IconPhone, IconMapPin, IconBriefcase } from "@/components/icons";
 
@@ -15,7 +16,9 @@ export function NuevoSolicitanteForm() {
   const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const esJuridica = tipo === "JURIDICA";
   const [identificacion, setIdentificacion] = useState("");
-  const [nombre, setNombre] = useState("");
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [razonSocial, setRazonSocial] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -29,8 +32,16 @@ export function NuevoSolicitanteForm() {
     e.preventDefault();
     setError(null);
 
-    if (!identificacion.trim() || !nombre.trim()) {
-      setError({ texto: "Completa al menos la identificación y el nombre." });
+    if (!identificacion.trim()) {
+      setError({ texto: "Completa la identificación." });
+      return;
+    }
+    if (esJuridica ? !razonSocial.trim() : !nombres.trim() || !apellidos.trim()) {
+      setError({ texto: esJuridica ? "Completa la razón social." : "Completa los nombres y apellidos." });
+      return;
+    }
+    if (!municipio) {
+      setError({ texto: 'Selecciona el municipio (o "Fuera de la jurisdicción" si no aplica).' });
       return;
     }
 
@@ -42,7 +53,9 @@ export function NuevoSolicitanteForm() {
         body: JSON.stringify({
           tipo,
           identificacion,
-          nombre,
+          nombres,
+          apellidos,
+          razonSocial,
           email,
           telefono,
           direccion,
@@ -98,15 +111,38 @@ export function NuevoSolicitanteForm() {
         />
       </Field>
 
-      <Field label="Nombre o razón social" required icon={<IconUser className={iconSm} />} help="Nombre completo de la persona, o razón social si es una empresa/entidad.">
-        <input
-          required
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          placeholder="Ej: Juan Pérez Gómez / Industrias ABC S.A.S."
-        />
-      </Field>
+      {esJuridica ? (
+        <Field label="Razón social" required icon={<IconUser className={iconSm} />} help="Nombre legal de la empresa o entidad.">
+          <input
+            required
+            value={razonSocial}
+            onChange={(e) => setRazonSocial(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            placeholder="Ej: Industrias ABC S.A.S."
+          />
+        </Field>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Nombres" required icon={<IconUser className={iconSm} />} help="">
+            <input
+              required
+              value={nombres}
+              onChange={(e) => setNombres(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder="Ej: Juan Pérez"
+            />
+          </Field>
+          <Field label="Apellidos" required icon={<IconUser className={iconSm} />} help="">
+            <input
+              required
+              value={apellidos}
+              onChange={(e) => setApellidos(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder="Ej: Gómez Rodríguez"
+            />
+          </Field>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Correo electrónico" icon={<IconMail className={iconSm} />} help="">
@@ -136,13 +172,17 @@ export function NuevoSolicitanteForm() {
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           />
         </Field>
-        <Field label="Municipio" icon={<IconMapPin className={iconSm} />} help="">
+        <Field label="Municipio" required icon={<IconMapPin className={iconSm} />} help="">
           <select
+            required
             value={municipio}
             onChange={(e) => setMunicipio(e.target.value)}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
-            <option value="">Sin especificar</option>
+            <option value="" disabled>
+              Selecciona un municipio…
+            </option>
+            <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
             {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -205,8 +245,9 @@ export function NuevoSolicitanteForm() {
         <button
           type="submit"
           disabled={guardando}
-          className="rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
+          {guardando && <Spinner claro />}
           {guardando ? "Guardando…" : "Crear solicitante"}
         </button>
       </div>

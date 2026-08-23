@@ -16,9 +16,23 @@ export async function POST(req: NextRequest) {
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   const identificacion = String(body.identificacion || "").trim();
-  const nombre = String(body.nombre || "").trim();
-  if (!identificacion || !nombre) {
-    return NextResponse.json({ error: "La identificación y el nombre son obligatorios." }, { status: 400 });
+  const esJuridica = body.tipo === "JURIDICA";
+  const nombres = String(body.nombres || "").trim();
+  const apellidos = String(body.apellidos || "").trim();
+  const razonSocial = String(body.razonSocial || "").trim();
+  const municipio = String(body.municipio || "").trim();
+
+  if (!identificacion) {
+    return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
+  }
+  if (esJuridica ? !razonSocial : !nombres || !apellidos) {
+    return NextResponse.json(
+      { error: esJuridica ? "La razón social es obligatoria." : "Los nombres y apellidos son obligatorios." },
+      { status: 400 }
+    );
+  }
+  if (!municipio) {
+    return NextResponse.json({ error: "El municipio es obligatorio." }, { status: 400 });
   }
 
   const existente = await db.solicitante.findUnique({ where: { identificacion } });
@@ -31,15 +45,17 @@ export async function POST(req: NextRequest) {
 
   const creado = await db.solicitante.create({
     data: {
-      tipo: body.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
+      tipo: esJuridica ? "JURIDICA" : "NATURAL",
       identificacion,
-      nombre,
+      nombres: nombres || null,
+      apellidos: apellidos || null,
+      razonSocial: razonSocial || null,
       regimenTributario: body.regimenTributario || null,
       granContribuyente: Boolean(body.granContribuyente),
       email: String(body.email || "").trim() || null,
       telefono: String(body.telefono || "").trim() || null,
       direccion: String(body.direccion || "").trim() || null,
-      municipio: String(body.municipio || "").trim() || null,
+      municipio,
     },
   });
 

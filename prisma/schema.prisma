@@ -233,16 +233,22 @@ enum ClaseSolicitud {
  * tercero cambie de nombre o dirección después.
  */
 model Solicitante {
-  id                String             @id @default(cuid())
-  tipo              TipoSolicitante
-  identificacion    String             @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
-  nombre            String // nombre completo o razón social
+  id     String          @id @default(cuid())
+  tipo   TipoSolicitante
+  identificacion String  @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
+  // Separados para poder buscar por nombre o por apellido (persona natural) — para persona
+  // jurídica normalmente solo aplica razonSocial, pero se deja nombres/apellidos libres por si
+  // hace falta guardar el nombre de un contacto/representante. Validado en la app según `tipo`,
+  // no aquí, porque cuál es obligatorio depende del tipo.
+  nombres           String?
+  apellidos         String?
+  razonSocial       String?
   regimenTributario RegimenTributario?
   granContribuyente Boolean            @default(false)
   email             String?
   telefono          String?
   direccion         String?
-  municipio         String?
+  municipio         String // obligatorio — incluye "Fuera de la jurisdicción" como opción válida explícita, ver src/lib/municipios.ts
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 

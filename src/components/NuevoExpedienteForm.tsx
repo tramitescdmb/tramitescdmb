@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
+import { Spinner } from "@/components/Spinner";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
-import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
 import {
@@ -54,12 +55,14 @@ export function NuevoExpedienteForm({
   documentosRequeridos,
   flujos,
   flujoInicialId,
+  mostrarDatosPredio,
 }: {
   tramiteId: string;
   tramiteSlug: string;
   documentosRequeridos: DocumentoRequerido[];
   flujos: FlujoOpcion[];
   flujoInicialId: string;
+  mostrarDatosPredio: boolean;
 }) {
   const router = useRouter();
   const expedienteIdRef = useRef<string>(crypto.randomUUID());
@@ -75,7 +78,9 @@ export function NuevoExpedienteForm({
   const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
   const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState("");
-  const [solicitanteNombre, setSolicitanteNombre] = useState("");
+  const [solicitanteNombres, setSolicitanteNombres] = useState("");
+  const [solicitanteApellidos, setSolicitanteApellidos] = useState("");
+  const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState("");
   const [solicitanteEmail, setSolicitanteEmail] = useState("");
   const [solicitanteTelefono, setSolicitanteTelefono] = useState("");
   const [regimenTributario, setRegimenTributario] = useState("");
@@ -105,16 +110,19 @@ export function NuevoExpedienteForm({
       if (res.ok) {
         const s = await res.json();
         setTipoSolicitante(s.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
-        setSolicitanteNombre(s.nombre ?? "");
+        setSolicitanteNombres(s.nombres ?? "");
+        setSolicitanteApellidos(s.apellidos ?? "");
+        setSolicitanteRazonSocial(s.razonSocial ?? "");
         setSolicitanteEmail(s.email ?? "");
         setSolicitanteTelefono(s.telefono ?? "");
         setSolicitanteDireccion(s.direccion ?? "");
         setMunicipioSolicitante(s.municipio ?? "");
         setRegimenTributario(s.regimenTributario ?? "");
         setGranContribuyente(Boolean(s.granContribuyente));
+        const nombreEncontrado = s.tipo === "JURIDICA" ? s.razonSocial : [s.nombres, s.apellidos].filter(Boolean).join(" ");
         setMensajeBusqueda({
           tipo: "ok",
-          texto: `Ya está registrado: se completaron los datos de "${s.nombre}". Revísalos y ajusta lo que haya cambiado.`,
+          texto: `Ya está registrado: se completaron los datos de "${nombreEncontrado}". Revísalos y ajusta lo que haya cambiado.`,
         });
       } else if (res.status === 404) {
         setMensajeBusqueda({ tipo: "info", texto: "No hay un solicitante registrado con este número — se creará uno nuevo al radicar." });
@@ -154,11 +162,25 @@ export function NuevoExpedienteForm({
 
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const nombreTrim = solicitanteNombre.trim();
     const identificacionTrim = solicitanteIdentificacion.trim();
+    const nombresTrim = solicitanteNombres.trim();
+    const apellidosTrim = solicitanteApellidos.trim();
+    const razonSocialTrim = solicitanteRazonSocial.trim();
 
-    if (!nombreTrim || !identificacionTrim) {
-      setError("Completa al menos el nombre y la identificación del solicitante.");
+    if (!identificacionTrim) {
+      setError("Completa la identificación del solicitante.");
+      return;
+    }
+    if (esJuridica ? !razonSocialTrim : !nombresTrim || !apellidosTrim) {
+      setError(esJuridica ? "Completa la razón social del solicitante." : "Completa los nombres y apellidos del solicitante.");
+      return;
+    }
+    if (!municipioSolicitante) {
+      setError("Selecciona el municipio del solicitante (o \"Fuera de la jurisdicción\" si no aplica).");
+      return;
+    }
+    if (!predioDireccion.trim()) {
+      setError("Escribe la dirección del predio o proyecto.");
       return;
     }
     if (!municipio) {
@@ -202,7 +224,9 @@ export function NuevoExpedienteForm({
           flujoId: String(fd.get("flujoId") || flujoInicialId),
           solicitante: {
             tipo: tipoSolicitante,
-            nombre: nombreTrim,
+            nombres: nombresTrim,
+            apellidos: apellidosTrim,
+            razonSocial: razonSocialTrim,
             identificacion: identificacionTrim,
             email: solicitanteEmail,
             telefono: solicitanteTelefono,
@@ -317,9 +341,9 @@ export function NuevoExpedienteForm({
               type="button"
               onClick={buscarSolicitante}
               disabled={buscandoSolicitante}
-              className="flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
             >
-              <IconSearch className="h-3.5 w-3.5" />
+              {buscandoSolicitante ? <Spinner /> : <IconSearch className="h-3.5 w-3.5" />}
               {buscandoSolicitante ? "Buscando…" : "Buscar"}
             </button>
           </div>
@@ -338,21 +362,38 @@ export function NuevoExpedienteForm({
           )}
         </Field>
 
-        <Field
-          label="Nombre o razón social"
-          required
-          icon={<IconUser className={iconSm} />}
-          help="Nombre completo de la persona, o razón social si es una empresa/entidad."
-        >
-          <input
-            name="solicitanteNombre"
-            required
-            value={solicitanteNombre}
-            onChange={(e) => setSolicitanteNombre(e.target.value)}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            placeholder="Ej: Juan Pérez Gómez / Industrias ABC S.A.S."
-          />
-        </Field>
+        {esJuridica ? (
+          <Field label="Razón social" required icon={<IconUser className={iconSm} />} help="Nombre legal de la empresa o entidad.">
+            <input
+              required
+              value={solicitanteRazonSocial}
+              onChange={(e) => setSolicitanteRazonSocial(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              placeholder="Ej: Industrias ABC S.A.S."
+            />
+          </Field>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nombres" required icon={<IconUser className={iconSm} />} help="">
+              <input
+                required
+                value={solicitanteNombres}
+                onChange={(e) => setSolicitanteNombres(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                placeholder="Ej: Juan Pérez"
+              />
+            </Field>
+            <Field label="Apellidos" required icon={<IconUser className={iconSm} />} help="">
+              <input
+                required
+                value={solicitanteApellidos}
+                onChange={(e) => setSolicitanteApellidos(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                placeholder="Ej: Gómez Rodríguez"
+              />
+            </Field>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Correo electrónico" icon={<IconMail className={iconSm} />} help="Para notificaciones, si el solicitante autoriza este medio.">
@@ -414,16 +455,21 @@ export function NuevoExpedienteForm({
           </p>
 
           <Field
-            label="Municipio (opcional)"
+            label="Municipio"
+            required
             icon={<IconMapPin className={iconSm} />}
-            help="Si el solicitante vive o tiene su sede dentro de la jurisdicción de la CDMB — ayuda a que el mapa de abajo arranque centrado en el lugar correcto."
+            help="Dónde vive o tiene su sede el solicitante — si no es dentro de la jurisdicción de la CDMB, elige esa opción. Ayuda a centrar el mapa y, más adelante, a poder ubicar los trámites en un mapa."
           >
             <select
+              required
               value={municipioSolicitante}
               onChange={(e) => setMunicipioSolicitante(e.target.value)}
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
-              <option value="">Fuera de la jurisdicción / no aplica…</option>
+              <option value="" disabled>
+                Selecciona un municipio…
+              </option>
+              <option value={FUERA_DE_JURISDICCION}>Fuera de la jurisdicción / no aplica</option>
               {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -447,7 +493,7 @@ export function NuevoExpedienteForm({
               <button
                 type="button"
                 onClick={() => mapaSolicitanteRef.current?.buscarDireccion(solicitanteDireccion)}
-                className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95"
               >
                 Buscar en el mapa
               </button>
@@ -459,7 +505,7 @@ export function NuevoExpedienteForm({
             icon={<IconMapPin className={iconSm} />}
             help="El botón de arriba marca aquí la dirección — no es obligatorio para el solicitante."
           >
-            <MapaUbicacion ref={mapaSolicitanteRef} municipio={municipioSolicitante || "Bucaramanga"} prefijo="solicitanteUbicacion" />
+            <MapaUbicacion ref={mapaSolicitanteRef} municipio={municipioSolicitante} prefijo="solicitanteUbicacion" />
           </Field>
         </div>
       </section>
@@ -493,12 +539,14 @@ export function NuevoExpedienteForm({
 
         <Field
           label="Dirección del predio o proyecto"
+          required
           icon={<IconMapPin className={iconSm} />}
-          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. El botón busca esta misma dirección en el mapa de abajo."
+          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. Se pide siempre, para poder ubicar los trámites en un mapa más adelante. El botón busca esta misma dirección en el mapa de abajo."
         >
           <div className="flex flex-wrap gap-2">
             <input
               name="predioDireccion"
+              required
               value={predioDireccion}
               onChange={(e) => setPredioDireccion(e.target.value)}
               className="min-w-[200px] flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
@@ -507,7 +555,7 @@ export function NuevoExpedienteForm({
               type="button"
               onClick={() => mapaPredioRef.current?.buscarDireccion(predioDireccion)}
               disabled={!municipio}
-              className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
             >
               Buscar en el mapa
             </button>
@@ -528,6 +576,7 @@ export function NuevoExpedienteForm({
           )}
         </Field>
 
+        {mostrarDatosPredio && (
         <div className="space-y-3 rounded-lg border border-stone-100 bg-stone-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
             Datos adicionales del predio (opcional)
@@ -614,6 +663,7 @@ export function NuevoExpedienteForm({
             </Field>
           </div>
         </div>
+        )}
       </section>
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
@@ -734,8 +784,9 @@ export function NuevoExpedienteForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
+          {submitting && <span className="h-3.5 w-3.5 flex-none animate-spin rounded-full border-2 border-white border-t-transparent" />}
           {submitting ? "Radicando…" : "Radicar expediente"}
         </button>
       </div>

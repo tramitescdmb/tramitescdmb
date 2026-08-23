@@ -17,24 +17,32 @@ export async function GET(req: NextRequest) {
   }
 
   const busqueda = req.nextUrl.searchParams.get("q")?.trim();
+  const municipio = req.nextUrl.searchParams.get("municipio")?.trim();
 
   const solicitantes = await db.solicitante.findMany({
-    where: busqueda
-      ? {
-          OR: [
-            { identificacion: { contains: busqueda, mode: "insensitive" } },
-            { nombre: { contains: busqueda, mode: "insensitive" } },
-          ],
-        }
-      : {},
-    orderBy: { nombre: "asc" },
+    where: {
+      ...(busqueda
+        ? {
+            OR: [
+              { identificacion: { contains: busqueda, mode: "insensitive" } },
+              { nombres: { contains: busqueda, mode: "insensitive" } },
+              { apellidos: { contains: busqueda, mode: "insensitive" } },
+              { razonSocial: { contains: busqueda, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      ...(municipio ? { municipio } : {}),
+    },
+    orderBy: [{ apellidos: "asc" }, { razonSocial: "asc" }],
     include: { _count: { select: { expedientes: true } } },
   });
 
   const encabezados = [
     "Identificación",
     "Tipo",
-    "Nombre o razón social",
+    "Nombres",
+    "Apellidos",
+    "Razón social",
     "Régimen tributario",
     "Gran contribuyente",
     "Correo",
@@ -49,7 +57,9 @@ export async function GET(req: NextRequest) {
     [
       s.identificacion,
       s.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural",
-      s.nombre,
+      s.nombres,
+      s.apellidos,
+      s.razonSocial,
       regimenTributarioLabel(s.regimenTributario),
       s.granContribuyente ? "Sí" : "No",
       s.email,

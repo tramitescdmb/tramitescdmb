@@ -3,27 +3,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
-import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { Spinner } from "@/components/Spinner";
+import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 
 type Solicitante = {
   id: string;
-  nombre: string;
+  tipo: string;
+  nombres: string | null;
+  apellidos: string | null;
+  razonSocial: string | null;
   email: string | null;
   telefono: string | null;
   direccion: string | null;
-  municipio: string | null;
+  municipio: string;
   regimenTributario: string | null;
   granContribuyente: boolean;
 };
 
 export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitante }) {
   const router = useRouter();
-  const [nombre, setNombre] = useState(solicitante.nombre);
+  const esJuridica = solicitante.tipo === "JURIDICA";
+  const [nombres, setNombres] = useState(solicitante.nombres ?? "");
+  const [apellidos, setApellidos] = useState(solicitante.apellidos ?? "");
+  const [razonSocial, setRazonSocial] = useState(solicitante.razonSocial ?? "");
   const [email, setEmail] = useState(solicitante.email ?? "");
   const [telefono, setTelefono] = useState(solicitante.telefono ?? "");
   const [direccion, setDireccion] = useState(solicitante.direccion ?? "");
-  const [municipio, setMunicipio] = useState(solicitante.municipio ?? "");
+  const [municipio, setMunicipio] = useState(solicitante.municipio);
   const [regimenTributario, setRegimenTributario] = useState(solicitante.regimenTributario ?? "");
   const [granContribuyente, setGranContribuyente] = useState(solicitante.granContribuyente);
   const [guardando, setGuardando] = useState(false);
@@ -37,7 +44,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
       const res = await fetch(`/api/solicitantes/${solicitante.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, email, telefono, direccion, municipio, regimenTributario, granContribuyente }),
+        body: JSON.stringify({ nombres, apellidos, razonSocial, email, telefono, direccion, municipio, regimenTributario, granContribuyente }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -57,14 +64,35 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
         Editar datos
       </summary>
       <form onSubmit={guardar} className="mt-3 space-y-3 border-t border-stone-100 pt-3">
-        <Field label="Nombre o razón social" required help="">
-          <input
-            required
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
-        </Field>
+        {esJuridica ? (
+          <Field label="Razón social" required help="">
+            <input
+              required
+              value={razonSocial}
+              onChange={(e) => setRazonSocial(e.target.value)}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+          </Field>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Nombres" required help="">
+              <input
+                required
+                value={nombres}
+                onChange={(e) => setNombres(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <Field label="Apellidos" required help="">
+              <input
+                required
+                value={apellidos}
+                onChange={(e) => setApellidos(e.target.value)}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Correo electrónico" help="">
@@ -92,13 +120,14 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             />
           </Field>
-          <Field label="Municipio" help="">
+          <Field label="Municipio" required help="">
             <select
+              required
               value={municipio}
               onChange={(e) => setMunicipio(e.target.value)}
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
-              <option value="">Sin especificar</option>
+              <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
               {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -141,8 +170,9 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
         <button
           type="submit"
           disabled={guardando}
-          className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
+          {guardando && <Spinner claro />}
           {guardando ? "Guardando…" : "Guardar cambios"}
         </button>
       </form>

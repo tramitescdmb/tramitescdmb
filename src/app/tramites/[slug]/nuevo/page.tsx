@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SectionHelp } from "@/components/Field";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
+import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
 
 export default async function NuevoExpedientePage({
   params,
@@ -58,6 +59,7 @@ export default async function NuevoExpedientePage({
         }))}
         flujos={flujosParaElegir.map((f) => ({ id: f.id, nombre: f.nombre }))}
         flujoInicialId={flujoInicial.id}
+        mostrarDatosPredio={aplicaDatosPredio(tramite.codigo)}
       />
     </div>
   );

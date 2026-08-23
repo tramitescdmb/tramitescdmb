@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
+const NAV_LINK = "rounded-md px-2.5 py-1.5 transition-colors hover:bg-cdmb-50 hover:text-cdmb-700 active:bg-cdmb-100";
+
 export async function NavBar() {
   const session = await getSession();
   if (!session) return null;
@@ -23,31 +25,31 @@ export async function NavBar() {
             )}
             Trámites CDMB
           </Link>
-          <nav className="hidden gap-4 text-sm text-stone-600 sm:flex">
-            <Link href="/" className="hover:text-cdmb-700">
+          <nav className="hidden gap-1 text-sm text-stone-600 sm:flex">
+            <Link href="/" className={NAV_LINK}>
               Panel
             </Link>
-            <Link href="/tramites" className="hover:text-cdmb-700">
+            <Link href="/tramites" className={NAV_LINK}>
               Catálogo de trámites
             </Link>
-            <Link href="/expedientes" className="hover:text-cdmb-700">
+            <Link href="/expedientes" className={NAV_LINK}>
               Expedientes
             </Link>
-            <Link href="/solicitantes" className="hover:text-cdmb-700">
+            <Link href="/solicitantes" className={NAV_LINK}>
               Solicitantes
             </Link>
-            <Link href="/vital" className="hover:text-cdmb-700">
+            <Link href="/vital" className={NAV_LINK}>
               VITAL
             </Link>
             {session.rol === "ADMIN" && (
               <>
-                <Link href="/usuarios" className="hover:text-cdmb-700">
+                <Link href="/usuarios" className={NAV_LINK}>
                   Usuarios
                 </Link>
-                <Link href="/auditoria" className="hover:text-cdmb-700">
+                <Link href="/auditoria" className={NAV_LINK}>
                   Auditoría
                 </Link>
-                <Link href="/admin/apariencia" className="hover:text-cdmb-700">
+                <Link href="/admin/apariencia" className={NAV_LINK}>
                   Apariencia
                 </Link>
               </>
@@ -60,7 +62,7 @@ export async function NavBar() {
             <span className="text-stone-400">{session.rol}</span>
           </span>
           <form action="/api/auth/logout" method="post">
-            <button className="rounded-md border border-stone-200 px-3 py-1.5 text-stone-600 hover:bg-stone-50">
+            <button className="rounded-md border border-stone-200 px-3 py-1.5 text-stone-600 transition-transform hover:bg-stone-50 active:scale-95">
               Salir
             </button>
           </form>

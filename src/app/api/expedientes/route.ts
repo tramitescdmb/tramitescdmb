@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { generarNumeroExpediente } from "@/lib/expedientes";
 import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
+import { nombreCompletoSolicitante } from "@/lib/solicitante";
 
 type DocumentoInput = {
   path: string;
@@ -38,17 +39,19 @@ export async function POST(req: NextRequest) {
     flujoId: string;
     solicitante: {
       tipo: "NATURAL" | "JURIDICA";
-      nombre: string;
+      nombres?: string;
+      apellidos?: string;
+      razonSocial?: string;
       identificacion: string;
       email?: string;
       telefono?: string;
       direccion?: string;
-      municipio?: string;
+      municipio: string;
       regimenTributario?: "RESPONSABLE_IVA" | "NO_RESPONSABLE_IVA" | "SIMPLE_TRIBUTACION" | "REGIMEN_ESPECIAL" | "OTRO" | null;
       granContribuyente?: boolean;
     };
     municipio: string;
-    predioDireccion?: string;
+    predioDireccion: string;
     predio?: {
       nombre?: string;
       catastral?: string;
@@ -64,8 +67,21 @@ export async function POST(req: NextRequest) {
     documentos: DocumentoInput[];
   } = body;
 
-  if (!expedienteId || !tramiteTipoId || !flujoId || !solicitante?.nombre?.trim() || !solicitante?.identificacion?.trim()) {
+  if (!expedienteId || !tramiteTipoId || !flujoId || !solicitante?.identificacion?.trim()) {
     return NextResponse.json({ error: "Faltan campos obligatorios del solicitante." }, { status: 400 });
+  }
+  const esJuridica = solicitante.tipo === "JURIDICA";
+  if (esJuridica ? !solicitante.razonSocial?.trim() : !solicitante.nombres?.trim() || !solicitante.apellidos?.trim()) {
+    return NextResponse.json(
+      { error: esJuridica ? "Falta la razón social del solicitante." : "Faltan los nombres o apellidos del solicitante." },
+      { status: 400 }
+    );
+  }
+  if (!solicitante.municipio?.trim()) {
+    return NextResponse.json({ error: "Falta el municipio del solicitante." }, { status: 400 });
+  }
+  if (!predioDireccion?.trim()) {
+    return NextResponse.json({ error: "Falta la dirección del predio o proyecto." }, { status: 400 });
   }
 
   if (!esMunicipioValido(municipio)) {
@@ -123,28 +139,42 @@ export async function POST(req: NextRequest) {
   // pisar el régimen si esta vez no se mandó) o se crea si es la primera vez que se ve esta
   // identificación — ver el comentario en el modelo Solicitante (prisma/schema.prisma) del porqué.
   const identificacionSolicitante = solicitante.identificacion.trim();
+  const nombresTrim = solicitante.nombres?.trim() || null;
+  const apellidosTrim = solicitante.apellidos?.trim() || null;
+  const razonSocialTrim = solicitante.razonSocial?.trim() || null;
   const solicitanteRecord = await db.solicitante.upsert({
     where: { identificacion: identificacionSolicitante },
     create: {
       tipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
       identificacion: identificacionSolicitante,
-      nombre: solicitante.nombre.trim(),
+      nombres: nombresTrim,
+      apellidos: apellidosTrim,
+      razonSocial: razonSocialTrim,
       regimenTributario: solicitante.regimenTributario || null,
       granContribuyente: Boolean(solicitante.granContribuyente),
       email: solicitante.email?.trim() || null,
       telefono: solicitante.telefono?.trim() || null,
       direccion: solicitante.direccion?.trim() || null,
-      municipio: solicitante.municipio?.trim() || null,
+      municipio: solicitante.municipio.trim(),
     },
     update: {
-      nombre: solicitante.nombre.trim(),
+      nombres: nombresTrim ?? undefined,
+      apellidos: apellidosTrim ?? undefined,
+      razonSocial: razonSocialTrim ?? undefined,
       email: solicitante.email?.trim() || undefined,
       telefono: solicitante.telefono?.trim() || undefined,
       direccion: solicitante.direccion?.trim() || undefined,
-      municipio: solicitante.municipio?.trim() || undefined,
+      municipio: solicitante.municipio.trim() || undefined,
       ...(solicitante.regimenTributario ? { regimenTributario: solicitante.regimenTributario } : {}),
       ...(solicitante.granContribuyente != null ? { granContribuyente: solicitante.granContribuyente } : {}),
     },
+  });
+
+  const nombreCompleto = nombreCompletoSolicitante({
+    tipo: solicitante.tipo,
+    nombres: nombresTrim,
+    apellidos: apellidosTrim,
+    razonSocial: razonSocialTrim,
   });
 
   const expediente = await db.expediente.create({
@@ -155,12 +185,12 @@ export async function POST(req: NextRequest) {
       flujoId: flujo.id,
       solicitanteId: solicitanteRecord.id,
       solicitanteTipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
-      solicitanteNombre: solicitante.nombre.trim(),
+      solicitanteNombre: nombreCompleto,
       solicitanteIdentificacion: identificacionSolicitante,
       solicitanteEmail: solicitante.email?.trim() || null,
       solicitanteTelefono: solicitante.telefono?.trim() || null,
       solicitanteDireccion: solicitante.direccion?.trim() || null,
-      predioDireccion: predioDireccion?.trim() || null,
+      predioDireccion: predioDireccion.trim(),
       predioNombre: predio?.nombre?.trim() || null,
       predioCatastral: predio?.catastral?.trim() || null,
       predioMatricula: predio?.matricula?.trim() || null,

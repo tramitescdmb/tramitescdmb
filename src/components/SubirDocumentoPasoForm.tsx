@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { IconX } from "@/components/icons";
+import { Spinner } from "@/components/Spinner";
 
 function esDocumentoDePago(nombre: string) {
   return /\bpago\b|\bfactura\b/i.test(nombre);
@@ -195,8 +196,9 @@ export function SubirDocumentoPasoForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
+          {submitting && <Spinner />}
           {submitting ? "Subiendo…" : "Subir"}
         </button>
         {error && <p className="text-xs text-red-600">{error}</p>}

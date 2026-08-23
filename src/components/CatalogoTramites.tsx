@@ -55,7 +55,7 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
         <button
           type="button"
           onClick={() => setFiltro(null)}
-          className={`rounded-full border px-5 py-3 text-sm font-semibold transition ${
+          className={`rounded-full border px-5 py-3 text-sm font-semibold transition active:scale-95 ${
             filtro === null
               ? "border-stone-900 bg-stone-900 text-white shadow-sm"
               : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
@@ -71,7 +71,7 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
               type="button"
               onClick={() => setFiltro(activo ? null : cat.id)}
               aria-pressed={activo}
-              className={`flex items-center overflow-hidden rounded-full shadow-sm transition ${
+              className={`flex items-center overflow-hidden rounded-full shadow-sm transition active:scale-95 ${
                 activo ? "outline outline-2 outline-offset-2 outline-stone-900" : "hover:shadow-md hover:brightness-95"
               } ${cat.clases.pildora}`}
             >
@@ -114,7 +114,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   return (
     <Link
       href={href}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:shadow-sm"
     >
       <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
 

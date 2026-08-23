@@ -53,3 +53,11 @@ export const CENTROIDE_MUNICIPIO: Record<MunicipioCdmb, [number, number]> = {
 };
 
 export const CENTRO_CDMB_POR_DEFECTO: [number, number] = CENTROIDE_MUNICIPIO.Bucaramanga;
+
+/**
+ * Para el municipio del SOLICITANTE (no del predio) — a diferencia de Expediente.municipio, el
+ * solicitante sí puede vivir o tener su sede fuera de la jurisdicción (ej. una empresa con sede en
+ * otra ciudad que pide un permiso para un proyecto en un municipio de la CDMB). Se guarda como texto
+ * explícito en vez de dejar el campo vacío, para que quede registrado que sí se preguntó.
+ */
+export const FUERA_DE_JURISDICCION = "Fuera de la jurisdicción";
