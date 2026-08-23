@@ -7,6 +7,34 @@ import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
 
+/**
+ * Algunos trámites (ej. M-DA-PR21: Concesión de Aguas Superficiales vs.
+ * Subterráneas) tienen dos flujos que, según el procedimiento oficial, NO
+ * son dos secuencias distintas — son una sola tabla de actividades que
+ * aplica a ambas modalidades por igual (solo cambian los requisitos de
+ * radicación, ya diferenciados en "Documentos para radicar"). Cuando los
+ * pasos de todos los flujos a mostrar son idénticos, no tiene sentido
+ * repetir la misma lista una vez por flujo.
+ */
+function pasosIdenticos(
+  a: { numero: number; titulo: string; descripcion: string; tiempo: string | null; esDecision: boolean; responsables: string[]; documentos: string[] }[],
+  b: typeof a
+) {
+  if (a.length !== b.length) return false;
+  return a.every((p, i) => {
+    const q = b[i];
+    return (
+      p.numero === q.numero &&
+      p.titulo === q.titulo &&
+      p.descripcion === q.descripcion &&
+      p.tiempo === q.tiempo &&
+      p.esDecision === q.esDecision &&
+      p.responsables.join("|") === q.responsables.join("|") &&
+      p.documentos.join("|") === q.documentos.join("|")
+    );
+  });
+}
+
 export default async function TramiteDetallePage({
   params,
   searchParams,
@@ -49,6 +77,64 @@ export default async function TramiteDetallePage({
   const categoria = categoriaTramite(tramite.nombre, tramite.codigo, todosLosSuitNumeros(tramite));
   const cargos = cargosQueIntervienen(flujosAMostrar);
   const cargosResponsables = cargosEnTexto(tramite.autoridadResponsabilidad);
+  const pasosCompartidos =
+    flujosAMostrar.length > 1 && flujosAMostrar.every((f) => pasosIdenticos(f.pasos, flujosAMostrar[0].pasos));
+
+  const renderPasos = (pasos: (typeof flujosAMostrar)[number]["pasos"]) => (
+    <div className="space-y-1.5">
+      {pasos.map((paso) => {
+        const responsablesCanonicos = Array.from(new Set(paso.responsables.map(cargoCanonico)));
+        return (
+          <details key={paso.id} className="group rounded-lg border border-stone-200 bg-white open:shadow-sm">
+            <summary className="flex cursor-pointer list-none items-start gap-3 p-3 [&::-webkit-details-marker]:hidden">
+              <span
+                className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold ${categoria.clases.icono}`}
+              >
+                {paso.numero}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-sm font-medium text-stone-800">{paso.titulo}</span>
+                  {paso.esDecision && <span className="flex-none text-xs text-amber-600">⚠ decisión</span>}
+                  {paso.tiempo && <span className="flex-none text-xs text-stone-400">{paso.tiempo}</span>}
+                </div>
+                {responsablesCanonicos.length > 0 && (
+                  <p className="mt-1 text-xs text-stone-500">
+                    <span aria-hidden>👤</span> {responsablesCanonicos.join(" · ")}
+                  </p>
+                )}
+              </div>
+              <svg
+                className="mt-1 h-4 w-4 flex-none text-stone-300 transition-transform group-open:rotate-180"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="border-t border-stone-100 px-3 pb-3 pt-2 pl-12 text-sm">
+              <p className="whitespace-pre-line text-justify text-[13px] leading-relaxed text-stone-600">{paso.descripcion}</p>
+              <dl className="mt-2 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
+                {paso.responsables.length > 0 && (
+                  <div>
+                    <dt className="font-medium text-stone-500">👤 Responsable (texto original del PDF)</dt>
+                    <dd className="text-stone-600">{paso.responsables.join(", ")}</dd>
+                  </div>
+                )}
+                {paso.documentos.length > 0 && (
+                  <div>
+                    <dt className="font-medium text-stone-500">📄 Documentos/registros</dt>
+                    <dd className="text-stone-600">{paso.documentos.join(", ")}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -160,82 +246,57 @@ export default async function TramiteDetallePage({
               <p className="text-xs text-stone-400">Clic en cada paso para ver el detalle</p>
             </div>
 
-            {flujosAMostrar.map((flujo) => (
-              <div key={flujo.id} className="mb-4">
-                {flujosAMostrar.length > 1 && (
-                  <h3 className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
-                      {flujo.nombre}
-                      {flujo.esFlujoInicial && " (inicia el expediente)"}
+            {pasosCompartidos ? (
+              <div className="mb-4">
+                <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-stone-50 p-2.5 text-xs text-stone-600">
+                  <span className="font-medium text-stone-700">Procedimiento común a estas modalidades:</span>
+                  {flujosAMostrar.map((flujo) => (
+                    <span key={flujo.id} className="inline-flex items-center gap-1.5">
+                      <span className="inline-block rounded-md bg-white px-2 py-1 font-medium text-stone-600 ring-1 ring-stone-200">
+                        {flujo.nombre}
+                      </span>
+                      {flujo.suitNumero && (
+                        <a
+                          href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-stone-400 hover:text-cdmb-700 hover:underline"
+                          title="Ver la ficha oficial de esta modalidad en el SUIT"
+                        >
+                          SUIT {flujo.suitNumero} ↗
+                        </a>
+                      )}
                     </span>
-                    {flujo.suitNumero && (
-                      <a
-                        href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
-                        title="Ver la ficha oficial de esta modalidad en el SUIT"
-                      >
-                        🏛️ SUIT {flujo.suitNumero} ↗
-                      </a>
-                    )}
-                  </h3>
-                )}
-                <div className="space-y-1.5">
-                  {flujo.pasos.map((paso) => {
-                    const responsablesCanonicos = Array.from(new Set(paso.responsables.map(cargoCanonico)));
-                    return (
-                      <details key={paso.id} className="group rounded-lg border border-stone-200 bg-white open:shadow-sm">
-                        <summary className="flex cursor-pointer list-none items-start gap-3 p-3 [&::-webkit-details-marker]:hidden">
-                          <span
-                            className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold ${categoria.clases.icono}`}
-                          >
-                            {paso.numero}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-sm font-medium text-stone-800">{paso.titulo}</span>
-                              {paso.esDecision && <span className="flex-none text-xs text-amber-600">⚠ decisión</span>}
-                              {paso.tiempo && <span className="flex-none text-xs text-stone-400">{paso.tiempo}</span>}
-                            </div>
-                            {responsablesCanonicos.length > 0 && (
-                              <p className="mt-1 text-xs text-stone-500">
-                                <span aria-hidden>👤</span> {responsablesCanonicos.join(" · ")}
-                              </p>
-                            )}
-                          </div>
-                          <svg
-                            className="mt-1 h-4 w-4 flex-none text-stone-300 transition-transform group-open:rotate-180"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="border-t border-stone-100 px-3 pb-3 pt-2 pl-12 text-sm">
-                          <p className="whitespace-pre-line text-justify text-[13px] leading-relaxed text-stone-600">{paso.descripcion}</p>
-                          <dl className="mt-2 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
-                            {paso.responsables.length > 0 && (
-                              <div>
-                                <dt className="font-medium text-stone-500">👤 Responsable (texto original del PDF)</dt>
-                                <dd className="text-stone-600">{paso.responsables.join(", ")}</dd>
-                              </div>
-                            )}
-                            {paso.documentos.length > 0 && (
-                              <div>
-                                <dt className="font-medium text-stone-500">📄 Documentos/registros</dt>
-                                <dd className="text-stone-600">{paso.documentos.join(", ")}</dd>
-                              </div>
-                            )}
-                          </dl>
-                        </div>
-                      </details>
-                    );
-                  })}
+                  ))}
                 </div>
+                {renderPasos(flujosAMostrar[0].pasos)}
               </div>
-            ))}
+            ) : (
+              flujosAMostrar.map((flujo) => (
+                <div key={flujo.id} className="mb-4">
+                  {flujosAMostrar.length > 1 && (
+                    <h3 className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
+                        {flujo.nombre}
+                        {flujo.esFlujoInicial && " (inicia el expediente)"}
+                      </span>
+                      {flujo.suitNumero && (
+                        <a
+                          href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
+                          title="Ver la ficha oficial de esta modalidad en el SUIT"
+                        >
+                          🏛️ SUIT {flujo.suitNumero} ↗
+                        </a>
+                      )}
+                    </h3>
+                  )}
+                  {renderPasos(flujo.pasos)}
+                </div>
+              ))
+            )}
           </section>
           )}
         </div>
