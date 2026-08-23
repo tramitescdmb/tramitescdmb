@@ -33,15 +33,15 @@ export function NuevoSolicitanteForm() {
     setError(null);
 
     if (!identificacion.trim()) {
-      setError({ texto: "Completa la identificación." });
+      setError({ texto: "Debe indicarse la identificación." });
       return;
     }
     if (esJuridica ? !razonSocial.trim() : !nombres.trim() || !apellidos.trim()) {
-      setError({ texto: esJuridica ? "Completa la razón social." : "Completa los nombres y apellidos." });
+      setError({ texto: esJuridica ? "Debe indicarse la razón social." : "Deben indicarse los nombres y apellidos." });
       return;
     }
     if (!municipio) {
-      setError({ texto: 'Selecciona el municipio (o "Fuera de la jurisdicción" si no aplica).' });
+      setError({ texto: 'Debe seleccionarse el municipio (o la opción "Fuera de la jurisdicción" si no aplica).' });
       return;
     }
 
@@ -68,7 +68,7 @@ export function NuevoSolicitanteForm() {
       const data = await res.json().catch(() => ({}));
 
       if (res.status === 409) {
-        setError({ texto: "Ya existe un solicitante con esta identificación.", idExistente: data.id });
+        setError({ texto: "Ya existe un solicitante registrado con esta identificación.", idExistente: data.id });
         return;
       }
       if (!res.ok) {
@@ -77,7 +77,7 @@ export function NuevoSolicitanteForm() {
 
       router.push(`/solicitantes/${data.id}`);
     } catch (err) {
-      setError({ texto: err instanceof Error ? err.message : "Ocurrió un error inesperado." });
+      setError({ texto: err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente." });
     } finally {
       setGuardando(false);
     }
@@ -85,7 +85,7 @@ export function NuevoSolicitanteForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
-      <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="¿Persona natural o empresa/entidad? Cambia lo que se pide más abajo (cédula o NIT).">
+      <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="Defina si corresponde a persona natural o a empresa/entidad. Esta selección determina si se solicita cédula o NIT.">
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")}
@@ -100,7 +100,7 @@ export function NuevoSolicitanteForm() {
         label={esJuridica ? "NIT" : "Cédula de ciudadanía"}
         required
         icon={<IconIdCard className={iconSm} />}
-        help="No puede repetirse — si ya existe un solicitante con este número, te lo voy a avisar en vez de crear uno duplicado."
+        help="No puede repetirse. Si ya existe un solicitante registrado con este número, se notificará en lugar de crear un registro duplicado."
       >
         <input
           required
@@ -180,7 +180,7 @@ export function NuevoSolicitanteForm() {
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="" disabled>
-              Selecciona un municipio…
+              Seleccione un municipio…
             </option>
             <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
             {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (

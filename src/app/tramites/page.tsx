@@ -100,8 +100,8 @@ export default async function CatalogoTramitesPage() {
       </div>
 
       <SectionHelp>
-        Filtra por categoría o entra directo a un trámite para ver el detalle completo y, desde ahí,
-        iniciar un expediente nuevo.
+        Puede filtrarse por categoría, o accederse directamente a un trámite para ver el detalle completo
+        e iniciar un expediente nuevo.
       </SectionHelp>
 
       <CatalogoTramites secciones={secciones} />

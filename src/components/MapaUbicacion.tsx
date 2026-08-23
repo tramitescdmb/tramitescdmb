@@ -134,7 +134,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
 
     async function buscarDireccion(direccion: string) {
       if (!direccion.trim()) {
-        setErrorBusqueda("Escribe una dirección para buscarla.");
+        setErrorBusqueda("Debe indicarse una dirección para realizar la búsqueda.");
         return;
       }
       setBuscando(true);
@@ -146,7 +146,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
         if (!res.ok) throw new Error(data.error || "No se encontró esa dirección.");
         colocarPunto(data.lat, data.lon);
       } catch (err) {
-        setErrorBusqueda(err instanceof Error ? err.message : "No se pudo buscar — márcala tocando el mapa.");
+        setErrorBusqueda(err instanceof Error ? err.message : "No se pudo completar la búsqueda. Puede ubicarse el punto directamente en el mapa.");
       } finally {
         setBuscando(false);
       }
@@ -158,7 +158,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
       const lat = parseFloat(latTexto.replace(",", "."));
       const lon = parseFloat(lonTexto.replace(",", "."));
       if (!esLatLonValido(lat, lon)) {
-        setErrorCoords("Escribe latitud y longitud válidas (ej. 7.119300 y -73.122700).");
+        setErrorCoords("Debe indicarse una latitud y longitud válidas (ej. 7.119300 y -73.122700).");
         return;
       }
       setErrorCoords(null);
@@ -169,7 +169,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
       const x = parseFloat(planaXTexto.replace(",", "."));
       const y = parseFloat(planaYTexto.replace(",", "."));
       if (!esPlanaColombiaAprox(x, y)) {
-        setErrorCoords("Esas coordenadas planas no parecen estar dentro de Colombia — revisa que X e Y no estén invertidas.");
+        setErrorCoords("Estas coordenadas planas no parecen estar dentro de Colombia. Verifique que los valores de X e Y no estén invertidos.");
         return;
       }
       setErrorCoords(null);
@@ -182,7 +182,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
       const y = parseFloat(cartYTexto.replace(",", "."));
       const z = parseFloat(cartZTexto.replace(",", "."));
       if (!esCartesianaValida(x, y, z)) {
-        setErrorCoords("Escribe las tres coordenadas cartesianas (X, Y, Z) en metros.");
+        setErrorCoords("Deben indicarse las tres coordenadas cartesianas (X, Y, Z) en metros.");
         return;
       }
       setErrorCoords(null);
@@ -206,9 +206,9 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
         {errorBusqueda && <p className="text-xs text-red-600">{errorBusqueda}</p>}
 
         <p className="text-xs text-stone-500">
-          El botón &quot;Buscar en el mapa&quot; junto a la dirección de arriba marca el punto aquí. También
-          puedes tocar directamente el punto exacto en el mapa, o pegar coordenadas de otra fuente (GPS,
-          levantamiento topográfico, plano) abajo — acepta las tres formas en que puedan venir.
+          El botón &quot;Buscar en el mapa&quot; junto a la dirección anterior ubica el punto aquí. También
+          puede seleccionarse el punto exacto directamente en el mapa, o registrarse coordenadas de otra
+          fuente (GPS, levantamiento topográfico, plano) a continuación — se aceptan las tres formas.
         </p>
 
         <div className="flex gap-1.5">

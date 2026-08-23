@@ -24,15 +24,15 @@ export function EliminarDocumentoBoton({
     let oficio = "";
     if (!etapaAbierta) {
       const respuesta = prompt(
-        `"${nombre}" quedó en una etapa que ya se cerró. Para eliminarlo, escribe el número o referencia del oficio de solicitud del Subdirector (obligatorio):`
+        `"${nombre}" quedó en una etapa que ya se cerró. Para eliminarlo, debe indicarse el número o referencia del oficio de solicitud del Subdirector (obligatorio):`
       );
       if (respuesta === null) return; // canceló el diálogo
       oficio = respuesta.trim();
       if (!oficio) {
-        alert("Se necesita el oficio de solicitud del Subdirector para eliminar un documento de una etapa ya cerrada.");
+        alert("Se requiere el oficio de solicitud del Subdirector para eliminar un documento de una etapa ya cerrada.");
         return;
       }
-    } else if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) {
+    } else if (!confirm(`¿Eliminar "${nombre}"? Esta acción no puede deshacerse.`)) {
       return;
     }
 
@@ -49,7 +49,7 @@ export function EliminarDocumentoBoton({
       }
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      alert(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente.");
       setEliminando(false);
     }
   }

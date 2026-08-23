@@ -69,6 +69,7 @@ model Usuario {
   documentos           ExpedienteDocumento[]
   eventos              ExpedienteEvento[]
   registrosAuditoria   RegistroAuditoria[]
+  visitasTecnicas      VisitaTecnica[]
 }
 
 // ---------------------------------------------------------------------------
@@ -325,8 +326,9 @@ model Expediente {
   responsableActual Usuario?   @relation("ResponsableActual", fields: [responsableActualId], references: [id])
   solicitante      Solicitante? @relation(fields: [solicitanteId], references: [id])
 
-  documentos ExpedienteDocumento[]
-  eventos    ExpedienteEvento[]
+  documentos      ExpedienteDocumento[]
+  eventos         ExpedienteEvento[]
+  visitasTecnicas VisitaTecnica[]
 
   /**
    * Asignación del expediente completo (distinta de `responsableActual`, que
@@ -373,6 +375,7 @@ enum TipoEvento {
   DOCUMENTO_ELIMINADO
   COMENTARIO
   ASIGNACION_CAMBIADA
+  VISITA_REGISTRADA
 }
 
 model ExpedienteEvento {
@@ -388,6 +391,39 @@ model ExpedienteEvento {
 
   expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@index([expedienteId])
+}
+
+/**
+ * Punto de geoposición capturado en campo por un funcionario de la CDMB (ej. durante la "visita
+ * técnica" que exige la mayoría de los procedimientos — ver la descripción del paso en
+ * data/tramites/*.json, que literalmente pide "geo-referenciación del predio... registrando los
+ * datos en el SINCA"). A diferencia de los campos ubicacion.../solicitanteUbicacion... de Expediente
+ * (capturados una vez al radicar, por dirección o a mano desde un mapa), esto se captura desde el GPS real del
+ * dispositivo del funcionario (navigator.geolocation) durante cualquier paso posterior — puede haber
+ * más de uno por expediente si hay varias visitas en distintos pasos. No está atado a un trámite en
+ * particular: la "visita técnica" es común a la mayoría, así que el botón de captura está siempre
+ * disponible en el paso actual, y cada funcionario lo usa si corresponde a su procedimiento.
+ */
+model VisitaTecnica {
+  id             String   @id @default(cuid())
+  expedienteId   String
+  pasoNumero     Int
+  lat            Float
+  lon            Float
+  planaX         Float?
+  planaY         Float?
+  cartesianaX    Float?
+  cartesianaY    Float?
+  cartesianaZ    Float?
+  precisionM     Float? // exactitud reportada por el GPS del dispositivo (navigator.geolocation) — informativa, no se valida
+  nota           String? @db.Text
+  capturadoPorId String
+  createdAt      DateTime @default(now())
+
+  expediente   Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  capturadoPor Usuario    @relation(fields: [capturadoPorId], references: [id])
 
   @@index([expedienteId])
 }

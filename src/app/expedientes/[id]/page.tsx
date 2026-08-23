@@ -10,6 +10,7 @@ import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
 import { documentoEtapaAbierta } from "@/lib/documentos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
+import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 
 const ESTADOS = [
@@ -49,6 +50,7 @@ export default async function ExpedienteDetallePage({
         flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
         documentos: { orderBy: { createdAt: "desc" }, include: { subidoPor: true } },
         eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
+        visitasTecnicas: { orderBy: { createdAt: "desc" }, include: { capturadoPor: true } },
         creadoPor: true,
         responsableActual: true,
         usuariosAsignados: true,
@@ -69,6 +71,9 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargo, pasoActual.responsables) : false;
+  const visitasDelPasoActual = pasoActual
+    ? expediente.visitasTecnicas.filter((v) => v.pasoNumero === pasoActual.numero)
+    : [];
 
   // Agrupa los documentos por paso (null = subidos en la radicación) para mostrarlos en
   // tarjetas separadas — con todo junto en una sola lista no se distinguía a qué etapa
@@ -190,7 +195,7 @@ export default async function ExpedienteDetallePage({
                 </p>
                 {esMiPaso && (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    ✋ Te corresponde a ti ({session?.cargo})
+                    ✋ Corresponde a su cargo ({session?.cargo})
                   </span>
                 )}
               </div>
@@ -229,13 +234,40 @@ export default async function ExpedienteDetallePage({
                 />
               </div>
 
+              {/* Geoposición de la visita técnica — disponible en cualquier paso, no todos los
+                  trámites lo requieren pero la mayoría sí tiene un paso de "visita técnica" que
+                  pide geo-referenciar el predio (ver data/tramites/*.json). */}
+              <div className="mt-4 border-t border-stone-100 pt-4">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Geoposición de la visita técnica (opcional)
+                </h3>
+                {visitasDelPasoActual.length > 0 && (
+                  <ul className="mb-3 space-y-3">
+                    {visitasDelPasoActual.map((v) => (
+                      <li key={v.id} className="rounded-lg border border-stone-200 bg-stone-50/60 p-3">
+                        <MapaSoloLectura lat={v.lat} lon={v.lon} />
+                        <p className="mt-2 text-xs text-stone-600">
+                          Latitud/longitud: {v.lat.toFixed(6)}, {v.lon.toFixed(6)}
+                          {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
+                        </p>
+                        {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
+                        <p className="mt-0.5 text-xs text-stone-400">
+                          {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />
+              </div>
+
               {/* Acciones para avanzar */}
               <div className="mt-4 border-t border-stone-100 pt-4">
                 {pasoActual.esDecision ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-stone-500">
-                      ⚠ Este paso requiere una decisión. Elige qué pasó realmente para que el expediente
-                      siga el camino correcto:
+                      ⚠ Este paso requiere una decisión. Seleccione la opción correspondiente para que el
+                      expediente siga el camino correcto:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {Array.isArray(pasoActual.opciones) &&
@@ -266,7 +298,7 @@ export default async function ExpedienteDetallePage({
                       )}
                     </div>
                     <p className="text-xs text-stone-400">
-                      Si ninguna opción encaja, usa &quot;Cambiar estado manualmente&quot; más abajo.
+                      Si ninguna opción corresponde, utilice &quot;Cambiar estado manualmente&quot; más abajo.
                     </p>
                   </div>
                 ) : siguientePaso ? (
@@ -281,8 +313,8 @@ export default async function ExpedienteDetallePage({
                   </form>
                 ) : (
                   <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-                    Este era el último paso del flujo. Si el trámite ya quedó resuelto, define el estado
-                    final con &quot;Cambiar estado manualmente&quot; más abajo.
+                    Este es el último paso del flujo. Si el trámite ya quedó resuelto, debe definirse el
+                    estado final mediante &quot;Cambiar estado manualmente&quot; más abajo.
                   </p>
                 )}
               </div>
@@ -339,9 +371,9 @@ export default async function ExpedienteDetallePage({
           <section className="rounded-xl border border-stone-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
             <p className="mb-3 text-xs text-stone-500">
-              Úsalo para cerrar el expediente cuando el flujo no tiene un botón de decisión que encaje
-              (por ejemplo, un archivo por desistimiento tácito, o para suspenderlo mientras se espera algo
-              externo).
+              Utilice esta opción para cerrar el expediente cuando el flujo no cuenta con un botón de
+              decisión que corresponda (por ejemplo, un archivo por desistimiento tácito, o para
+              suspenderlo mientras se espera información externa).
             </p>
             <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">
               <Field label="Nuevo estado" required help="">

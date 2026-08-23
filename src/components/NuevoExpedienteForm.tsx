@@ -100,7 +100,7 @@ export function NuevoExpedienteForm({
   async function buscarSolicitante() {
     const id = solicitanteIdentificacion.trim();
     if (!id) {
-      setMensajeBusqueda({ tipo: "error", texto: "Escribe primero el número de identificación." });
+      setMensajeBusqueda({ tipo: "error", texto: "Debe ingresarse primero el número de identificación." });
       return;
     }
     setBuscandoSolicitante(true);
@@ -122,15 +122,15 @@ export function NuevoExpedienteForm({
         const nombreEncontrado = s.tipo === "JURIDICA" ? s.razonSocial : [s.nombres, s.apellidos].filter(Boolean).join(" ");
         setMensajeBusqueda({
           tipo: "ok",
-          texto: `Ya está registrado: se completaron los datos de "${nombreEncontrado}". Revísalos y ajusta lo que haya cambiado.`,
+          texto: `Registro existente: se completaron los datos de "${nombreEncontrado}". Verifique la información y actualice lo que corresponda.`,
         });
       } else if (res.status === 404) {
-        setMensajeBusqueda({ tipo: "info", texto: "No hay un solicitante registrado con este número — se creará uno nuevo al radicar." });
+        setMensajeBusqueda({ tipo: "info", texto: "No se encontró un solicitante registrado con este número. Se creará un nuevo registro al radicar el expediente." });
       } else {
-        setMensajeBusqueda({ tipo: "error", texto: "No se pudo buscar. Intenta de nuevo." });
+        setMensajeBusqueda({ tipo: "error", texto: "No fue posible completar la búsqueda. Intente nuevamente." });
       }
     } catch {
-      setMensajeBusqueda({ tipo: "error", texto: "No se pudo buscar. Revisa tu conexión e intenta de nuevo." });
+      setMensajeBusqueda({ tipo: "error", texto: "No fue posible completar la búsqueda. Verifique la conexión e intente nuevamente." });
     } finally {
       setBuscandoSolicitante(false);
     }
@@ -168,23 +168,23 @@ export function NuevoExpedienteForm({
     const razonSocialTrim = solicitanteRazonSocial.trim();
 
     if (!identificacionTrim) {
-      setError("Completa la identificación del solicitante.");
+      setError("Debe indicarse la identificación del solicitante.");
       return;
     }
     if (esJuridica ? !razonSocialTrim : !nombresTrim || !apellidosTrim) {
-      setError(esJuridica ? "Completa la razón social del solicitante." : "Completa los nombres y apellidos del solicitante.");
+      setError(esJuridica ? "Debe indicarse la razón social del solicitante." : "Deben indicarse los nombres y apellidos del solicitante.");
       return;
     }
     if (!municipioSolicitante) {
-      setError("Selecciona el municipio del solicitante (o \"Fuera de la jurisdicción\" si no aplica).");
+      setError('Debe seleccionarse el municipio del solicitante (o la opción "Fuera de la jurisdicción" si no aplica).');
       return;
     }
     if (!predioDireccion.trim()) {
-      setError("Escribe la dirección del predio o proyecto.");
+      setError("Debe indicarse la dirección del predio o proyecto.");
       return;
     }
     if (!municipio) {
-      setError("Selecciona el municipio donde queda el predio o proyecto — la CDMB solo tiene competencia dentro de su jurisdicción.");
+      setError("Debe seleccionarse el municipio donde queda el predio o proyecto. La CDMB solo tiene competencia dentro de su jurisdicción.");
       return;
     }
 
@@ -267,7 +267,7 @@ export function NuevoExpedienteForm({
       const { id } = await res.json();
       router.push(`/expedientes/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intenta de nuevo.");
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente.");
       setSubmitting(false);
       setProgreso(null);
     }
@@ -283,7 +283,7 @@ export function NuevoExpedienteForm({
             label="Tipo de solicitud"
             required
             icon={<IconLayers className={iconSm} />}
-            help="Elige qué está pidiendo el solicitante — cada trámite puede tener más de una modalidad (por ejemplo, una solicitud nueva o la renovación de un permiso vigente)."
+            help="Seleccione qué está solicitando el interesado. Cada trámite puede tener más de una modalidad — por ejemplo, una solicitud nueva o la renovación de un permiso vigente."
           >
             <div className="space-y-2">
               {flujos.map((f) => (
@@ -304,7 +304,7 @@ export function NuevoExpedienteForm({
         )}
         {flujos.length === 1 && <input type="hidden" name="flujoId" value={flujos[0].id} />}
 
-        <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="¿A nombre de quién queda el expediente? Elige primero esto — cambia lo que se pide más abajo (cédula o NIT).">
+        <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="Defina a nombre de quién queda el expediente. Esta selección determina si se solicita cédula o NIT en los campos siguientes.">
           <select
             name="solicitanteTipo"
             required
@@ -323,9 +323,9 @@ export function NuevoExpedienteForm({
           icon={<IconIdCard className={iconSm} />}
           help={
             (esJuridica
-              ? "Número de Identificación Tributaria (NIT) de la empresa o entidad, con dígito de verificación si lo tienes a la mano."
-              : "Número de cédula de ciudadanía (o cédula de extranjería) de la persona natural.") +
-            " Si ya tiene expedientes con nosotros, busca su número primero para no volver a escribir todo."
+              ? "Número de Identificación Tributaria (NIT) de la empresa o entidad, con dígito de verificación si está disponible."
+              : "Número de cédula de ciudadanía o cédula de extranjería de la persona natural.") +
+            " Si el solicitante ya cuenta con expedientes registrados, verifique su número antes de continuar para evitar duplicar la información."
           }
         >
           <div className="flex flex-wrap gap-2">
@@ -458,7 +458,7 @@ export function NuevoExpedienteForm({
             label="Municipio"
             required
             icon={<IconMapPin className={iconSm} />}
-            help="Dónde vive o tiene su sede el solicitante — si no es dentro de la jurisdicción de la CDMB, elige esa opción. Ayuda a centrar el mapa y, más adelante, a poder ubicar los trámites en un mapa."
+            help="Municipio donde reside o tiene su sede el solicitante. Si no corresponde a la jurisdicción de la CDMB, debe seleccionarse esa opción. Permite centrar el mapa y, en el futuro, ubicar los trámites geográficamente."
           >
             <select
               required
@@ -467,7 +467,7 @@ export function NuevoExpedienteForm({
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
               <option value="" disabled>
-                Selecciona un municipio…
+                Seleccione un municipio…
               </option>
               <option value={FUERA_DE_JURISDICCION}>Fuera de la jurisdicción / no aplica</option>
               {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
@@ -481,7 +481,7 @@ export function NuevoExpedienteForm({
           <Field
             label="Dirección"
             icon={<IconMapPin className={iconSm} />}
-            help="Dirección de domicilio o de la sede del solicitante — no necesariamente la del predio o proyecto (ej. una empresa con sede en otra ciudad). El botón busca esta misma dirección en el mapa de abajo."
+            help="Dirección de domicilio o sede del solicitante — no necesariamente la del predio o proyecto (por ejemplo, una empresa con sede en otra ciudad). El botón ubica esta misma dirección en el mapa."
           >
             <div className="flex flex-wrap gap-2">
               <input
@@ -503,7 +503,7 @@ export function NuevoExpedienteForm({
           <Field
             label="Ubicación en el mapa (opcional)"
             icon={<IconMapPin className={iconSm} />}
-            help="El botón de arriba marca aquí la dirección — no es obligatorio para el solicitante."
+            help="El botón anterior ubica la dirección en el mapa. Este campo no es obligatorio."
           >
             <MapaUbicacion ref={mapaSolicitanteRef} municipio={municipioSolicitante} prefijo="solicitanteUbicacion" />
           </Field>
@@ -517,7 +517,7 @@ export function NuevoExpedienteForm({
           label="Municipio del predio o proyecto"
           required
           icon={<IconMapPin className={iconSm} />}
-          help="La CDMB solo tiene competencia dentro de su jurisdicción (13 municipios). Si el predio o proyecto queda en otro municipio, este trámite no aplica aquí."
+          help="La CDMB solo tiene competencia dentro de su jurisdicción (13 municipios). Si el predio o proyecto se encuentra en otro municipio, este trámite no aplica."
         >
           <select
             name="municipio"
@@ -527,7 +527,7 @@ export function NuevoExpedienteForm({
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="" disabled>
-              Selecciona un municipio…
+              Seleccione un municipio…
             </option>
             {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
               <option key={m} value={m}>
@@ -541,7 +541,7 @@ export function NuevoExpedienteForm({
           label="Dirección del predio o proyecto"
           required
           icon={<IconMapPin className={iconSm} />}
-          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. Se pide siempre, para poder ubicar los trámites en un mapa más adelante. El botón busca esta misma dirección en el mapa de abajo."
+          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. Es un campo obligatorio, requerido para poder ubicar los trámites en un mapa en el futuro. El botón ubica esta misma dirección en el mapa."
         >
           <div className="flex flex-wrap gap-2">
             <input
@@ -565,13 +565,13 @@ export function NuevoExpedienteForm({
         <Field
           label="Ubicación exacta del predio (opcional)"
           icon={<IconMapPin className={iconSm} />}
-          help="El botón de arriba marca aquí la dirección — o toca el mapa, o pega coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se guarda en latitud/longitud y también se calcula en coordenadas planas (el sistema oficial de Colombia)."
+          help="El botón anterior ubica la dirección en el mapa. También puede seleccionarse el punto directamente en el mapa, o registrarse coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se almacena en latitud/longitud y se calcula automáticamente en coordenadas planas, el sistema oficial de Colombia."
         >
           {municipio ? (
             <MapaUbicacion ref={mapaPredioRef} municipio={municipio} prefijo="ubicacion" />
           ) : (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-400">
-              Selecciona primero el municipio para poder marcar la ubicación en el mapa.
+              Debe seleccionarse primero el municipio para poder ubicar el punto en el mapa.
             </p>
           )}
         </Field>
@@ -590,7 +590,7 @@ export function NuevoExpedienteForm({
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               />
             </Field>
-            <Field label="Clase de solicitud" icon={<IconLayers className={iconSm} />} help="Para estadísticas — si el trámite ya distingue esto por tipo de solicitud arriba, puedes dejarlo igual aquí.">
+            <Field label="Clase de solicitud" icon={<IconLayers className={iconSm} />} help="Para fines estadísticos. Si el trámite ya distingue esta información en el tipo de solicitud, puede registrarse el mismo valor aquí.">
               <select
                 value={claseSolicitud}
                 onChange={(e) => setClaseSolicitud(e.target.value)}
@@ -670,15 +670,16 @@ export function NuevoExpedienteForm({
         <div>
           <h2 className="text-sm font-semibold text-stone-900">3. Documentos</h2>
           <p className="text-xs text-stone-500">
-            Sube lo que el solicitante ya trajo — sin importar el tamaño del archivo, se sube directo a
-            nuestro almacenamiento. Si te falta algo, puedes crear el expediente igual y subirlo después.
+            Cargue los documentos aportados por el solicitante — sin importar el tamaño del archivo, se
+            almacena directamente en el sistema. Si falta algún documento, el expediente puede crearse de
+            igual forma y completarse posteriormente.
           </p>
         </div>
 
         {documentosRequeridos.length === 0 && (
           <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-            Este trámite no tiene una lista fija de documentos en el procedimiento oficial — usa el campo
-            de &quot;otros documentos&quot; más abajo para adjuntar lo que corresponda.
+            Este trámite no cuenta con una lista fija de documentos en el procedimiento oficial. Utilice el
+            campo &quot;Otros documentos&quot; para adjuntar la información correspondiente.
           </p>
         )}
 
@@ -693,11 +694,11 @@ export function NuevoExpedienteForm({
               required={requerido}
               icon={<IconDocument className={iconSm} />}
               help={
-                (doc.notas ?? (requerido ? "Documento obligatorio." : "Documento opcional / aplica solo en algunos casos.")) +
+                (doc.notas ?? (requerido ? "Documento obligatorio." : "Documento opcional. Aplica solo en algunos casos.")) +
                 (noAplicaAlTipo
-                  ? ` No es obligatorio para ${esJuridica ? "persona jurídica" : "persona natural"}, pero puedes adjuntarlo si aplica.`
+                  ? ` No es obligatorio para ${esJuridica ? "persona jurídica" : "persona natural"}, pero puede adjuntarse si corresponde.`
                   : "") +
-                " Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG) — el que tengas."
+                " Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG)."
               }
             >
               <input
@@ -732,7 +733,7 @@ export function NuevoExpedienteForm({
         <Field
           label="Otros documentos"
           icon={<IconUpload className={iconSm} />}
-          help="Cualquier otro soporte que no esté en la lista de arriba (puedes seleccionar varios archivos, incluso en varias veces)."
+          help="Cualquier otro soporte que no esté incluido en la lista anterior. Pueden seleccionarse varios archivos, incluso en distintos momentos."
         >
           <input
             ref={extraInputRef}

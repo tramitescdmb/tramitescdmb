@@ -6,6 +6,7 @@ const EVENTOS: Record<string, { icono: string; etiqueta: string; clase: string }
   DOCUMENTO_ELIMINADO: { icono: "🗑️", etiqueta: "Documento eliminado", clase: "bg-red-100 text-red-700" },
   COMENTARIO: { icono: "💬", etiqueta: "Comentario", clase: "bg-stone-200 text-stone-600" },
   ASIGNACION_CAMBIADA: { icono: "👥", etiqueta: "Asignación cambiada", clase: "bg-teal-100 text-teal-700" },
+  VISITA_REGISTRADA: { icono: "📍", etiqueta: "Visita técnica registrada", clase: "bg-emerald-100 text-emerald-700" },
 };
 const EVENTO_DEFECTO = { icono: "•", etiqueta: "Evento", clase: "bg-stone-200 text-stone-600" };
 

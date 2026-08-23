@@ -52,7 +52,7 @@ export function SubirDocumentoPasoForm({
 
     const hayArchivosPorDoc = documentosDelPaso.some((d) => archivosPorDoc[d]);
     if (!hayArchivosPorDoc && archivosExtra.length === 0) {
-      setError("Selecciona al menos un archivo.");
+      setError("Debe seleccionarse al menos un archivo.");
       return;
     }
 
@@ -93,7 +93,7 @@ export function SubirDocumentoPasoForm({
       setProgreso(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intenta de nuevo.");
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente.");
     } finally {
       setSubmitting(false);
     }
@@ -156,7 +156,7 @@ export function SubirDocumentoPasoForm({
 
       <Field
         label={documentosDelPaso.length > 0 ? "Otros documentos de este paso" : "Adjuntar documento de este paso"}
-        help="Cualquier otro soporte que no esté en la lista de arriba (puedes seleccionar varios archivos)."
+        help="Cualquier otro soporte que no esté incluido en la lista anterior. Pueden seleccionarse varios archivos."
       >
         <input
           ref={extraInputRef}

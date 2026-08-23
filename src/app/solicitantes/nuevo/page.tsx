@@ -10,8 +10,8 @@ export default function NuevoSolicitantePage() {
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-stone-900">Nuevo solicitante</h1>
         <p className="text-sm text-stone-500">
-          Da de alta un NIT o cédula antes de que llegue su primer trámite. Al radicar un expediente,
-          buscarlo por esta identificación trae automáticamente estos datos.
+          Permite registrar un NIT o cédula antes de que llegue su primer trámite. Al radicar un
+          expediente, la búsqueda por esta identificación completa automáticamente estos datos.
         </p>
       </div>
 

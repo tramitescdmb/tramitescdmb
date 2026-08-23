@@ -149,7 +149,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
             <span
               key={numero}
               className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
-              title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. Entra al trámite para ver el enlace a la ficha oficial.`}
+              title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. El enlace a la ficha oficial está disponible dentro del trámite.`}
             >
               🏛️ SUIT {numero}
             </span>

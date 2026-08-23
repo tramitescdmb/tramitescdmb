@@ -66,8 +66,8 @@ export default async function ExpedientesPage({
       <div>
         <h1 className="text-xl font-semibold text-stone-900">Expedientes</h1>
         <p className="text-sm text-stone-500">
-          Todos los casos radicados, de cualquier trámite. Filtra por estado, o busca por número,
-          solicitante, trámite o municipio para encontrar más rápido lo que buscas.
+          Todos los casos radicados, de cualquier trámite. Puede filtrarse por estado, o buscarse por
+          número, solicitante, trámite o municipio.
         </p>
       </div>
 

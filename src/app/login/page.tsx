@@ -28,7 +28,7 @@ export default async function LoginPage({
             </span>
           )}
           <h1 className="text-lg font-semibold text-stone-900">Trámites CDMB</h1>
-          <p className="text-sm text-stone-500">Ingresa con tu cuenta institucional</p>
+          <p className="text-sm text-stone-500">Ingreso con cuenta institucional</p>
         </div>
 
         {error && (

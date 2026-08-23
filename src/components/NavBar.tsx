@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
-const NAV_LINK = "rounded-md px-2.5 py-1.5 transition-colors hover:bg-cdmb-50 hover:text-cdmb-700 active:bg-cdmb-100";
+const NAV_LINK = "whitespace-nowrap rounded-md px-2.5 py-1.5 transition-colors hover:bg-cdmb-50 hover:text-cdmb-700 active:bg-cdmb-100";
 
 export async function NavBar() {
   const session = await getSession();
@@ -12,9 +12,9 @@ export async function NavBar() {
 
   return (
     <header className="border-b border-cdmb-100 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-cdmb-800">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link href="/" className="flex items-center gap-2 whitespace-nowrap font-semibold text-cdmb-800">
             {config.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={config.logoUrl} alt="CDMB" className="h-8 w-auto" />
@@ -25,7 +25,7 @@ export async function NavBar() {
             )}
             Trámites CDMB
           </Link>
-          <nav className="hidden gap-1 text-sm text-stone-600 sm:flex">
+          <nav className="hidden flex-wrap gap-1 text-sm text-stone-600 sm:flex">
             <Link href="/" className={NAV_LINK}>
               Panel
             </Link>
@@ -56,7 +56,7 @@ export async function NavBar() {
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-3 whitespace-nowrap text-sm">
           <span className="text-stone-500">
             {session.nombre} <span className="text-stone-300">·</span>{" "}
             <span className="text-stone-400">{session.rol}</span>

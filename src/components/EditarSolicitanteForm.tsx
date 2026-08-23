@@ -52,7 +52,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
       }
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente.");
     } finally {
       setGuardando(false);
     }
@@ -61,7 +61,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
   return (
     <details className="mt-3 group">
       <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-        Editar datos
+        Editar información
       </summary>
       <form onSubmit={guardar} className="mt-3 space-y-3 border-t border-stone-100 pt-3">
         {esJuridica ? (

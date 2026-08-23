@@ -42,7 +42,7 @@ export default async function NuevoExpedientePage({
 
       <SectionHelp>
         Este formulario <strong>radica</strong> la solicitud: crea el expediente en estado
-        &quot;Radicado&quot; con los datos del solicitante y los documentos que ya tengas a la mano.
+        &quot;Radicado&quot; con los datos del solicitante y los documentos disponibles al momento.
         Los pasos siguientes del trámite (visitas, conceptos técnicos, resoluciones, etc.) se registran
         después, desde la página del expediente.
       </SectionHelp>
