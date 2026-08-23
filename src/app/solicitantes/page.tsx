@@ -35,14 +35,22 @@ export default async function SolicitantesPage({
             en los siguientes, para no volver a pedir los mismos datos cada vez.
           </p>
         </div>
-        {session?.rol === "ADMIN" && (
-          <a
-            href={`/api/solicitantes/exportar${busqueda ? `?q=${encodeURIComponent(busqueda)}` : ""}`}
-            className="flex-none rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+        <div className="flex flex-none flex-wrap items-center gap-2">
+          <Link
+            href="/solicitantes/nuevo"
+            className="rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
           >
-            ⬇ Descargar CSV{busqueda ? " (resultados filtrados)" : ""}
-          </a>
-        )}
+            + Nuevo solicitante
+          </Link>
+          {session?.rol === "ADMIN" && (
+            <a
+              href={`/api/solicitantes/exportar${busqueda ? `?q=${encodeURIComponent(busqueda)}` : ""}`}
+              className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              ⬇ Descargar CSV{busqueda ? " (resultados filtrados)" : ""}
+            </a>
+          )}
+        </div>
       </div>
 
       <form action="/solicitantes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
