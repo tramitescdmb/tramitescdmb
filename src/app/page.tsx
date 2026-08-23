@@ -38,7 +38,7 @@ export default async function DashboardPage() {
         <div className="rounded-xl border border-stone-200 bg-white p-5">
           <h2 className="text-sm font-semibold text-stone-900">Municipios con más solicitudes</h2>
           <p className="mb-4 text-xs text-stone-500">
-            Municipio del predio o proyecto (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
+            Municipio donde se adelanta el trámite (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
           </p>
           <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
         </div>

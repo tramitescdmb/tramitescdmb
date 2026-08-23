@@ -180,11 +180,11 @@ export function NuevoExpedienteForm({
       return;
     }
     if (!predioDireccion.trim()) {
-      setError("Debe indicarse la dirección del predio o proyecto.");
+      setError("Debe indicarse la dirección donde se adelantará el trámite.");
       return;
     }
     if (!municipio) {
-      setError("Debe seleccionarse el municipio donde queda el predio o proyecto. La CDMB solo tiene competencia dentro de su jurisdicción.");
+      setError("Debe seleccionarse el municipio donde se adelantará el trámite. La CDMB solo tiene competencia dentro de su jurisdicción.");
       return;
     }
 
@@ -481,7 +481,7 @@ export function NuevoExpedienteForm({
           <Field
             label="Dirección"
             icon={<IconMapPin className={iconSm} />}
-            help="Dirección de domicilio o sede del solicitante — no necesariamente la del predio o proyecto (por ejemplo, una empresa con sede en otra ciudad). El botón ubica esta misma dirección en el mapa."
+            help="Dirección de domicilio o sede del solicitante — no necesariamente la del lugar donde se adelanta el trámite (por ejemplo, una empresa con sede en otra ciudad). El botón ubica esta misma dirección en el mapa."
           >
             <div className="flex flex-wrap gap-2">
               <input
@@ -511,13 +511,13 @@ export function NuevoExpedienteForm({
       </section>
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-stone-900">2. Predio o proyecto</h2>
+        <h2 className="text-sm font-semibold text-stone-900">2. Lugar del trámite</h2>
 
         <Field
-          label="Municipio del predio o proyecto"
+          label="Municipio donde se adelanta el trámite"
           required
           icon={<IconMapPin className={iconSm} />}
-          help="La CDMB solo tiene competencia dentro de su jurisdicción (13 municipios). Si el predio o proyecto se encuentra en otro municipio, este trámite no aplica."
+          help="La CDMB solo tiene competencia dentro de su jurisdicción (13 municipios). Si el lugar del trámite se encuentra en otro municipio, este trámite no aplica."
         >
           <select
             name="municipio"
@@ -538,10 +538,10 @@ export function NuevoExpedienteForm({
         </Field>
 
         <Field
-          label="Dirección del predio o proyecto"
+          label="Dirección donde se adelanta el trámite"
           required
           icon={<IconMapPin className={iconSm} />}
-          help="Dirección del predio o del lugar donde se desarrolla el proyecto — distinta de la dirección del solicitante. Es un campo obligatorio, requerido para poder ubicar los trámites en un mapa en el futuro. El botón ubica esta misma dirección en el mapa."
+          help="Dirección del lugar donde se adelanta el trámite — distinta de la dirección del solicitante. Es un campo obligatorio, requerido para poder ubicar los trámites en un mapa en el futuro. El botón ubica esta misma dirección en el mapa."
         >
           <div className="flex flex-wrap gap-2">
             <input
@@ -563,7 +563,7 @@ export function NuevoExpedienteForm({
         </Field>
 
         <Field
-          label="Ubicación exacta del predio (opcional)"
+          label="Ubicación exacta (opcional)"
           icon={<IconMapPin className={iconSm} />}
           help="El botón anterior ubica la dirección en el mapa. También puede seleccionarse el punto directamente en el mapa, o registrarse coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se almacena en latitud/longitud y se calcula automáticamente en coordenadas planas, el sistema oficial de Colombia."
         >

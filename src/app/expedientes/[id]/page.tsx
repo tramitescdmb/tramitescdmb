@@ -140,7 +140,7 @@ export default async function ExpedienteDetallePage({
                 <dd className="break-words text-stone-800">{expediente.solicitanteDireccion ?? "—"}</dd>
               </div>
               <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Dirección del predio o proyecto</dt>
+                <dt className="text-xs text-stone-400">Dirección donde se adelanta el trámite</dt>
                 <dd className="break-words text-stone-800">{expediente.predioDireccion ?? "—"}</dd>
               </div>
               <div className="min-w-0">
@@ -165,7 +165,7 @@ export default async function ExpedienteDetallePage({
             />
 
             <BloqueUbicacion
-              titulo="📍 Ubicación del predio o proyecto"
+              titulo="📍 Ubicación del lugar del trámite"
               lat={expediente.ubicacionLat}
               lon={expediente.ubicacionLon}
               planaX={expediente.ubicacionPlanaX}

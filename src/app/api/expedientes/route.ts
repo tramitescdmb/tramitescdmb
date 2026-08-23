@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Falta el municipio del solicitante." }, { status: 400 });
   }
   if (!predioDireccion?.trim()) {
-    return NextResponse.json({ error: "Falta la dirección del predio o proyecto." }, { status: 400 });
+    return NextResponse.json({ error: "Falta la dirección donde se adelantará el trámite." }, { status: 400 });
   }
 
   if (!esMunicipioValido(municipio)) {
