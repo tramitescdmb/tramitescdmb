@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { EditarSolicitanteForm } from "@/components/EditarSolicitanteForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
@@ -11,6 +12,7 @@ export default async function SolicitanteDetallePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await getSession();
 
   const solicitante = await db.solicitante.findUnique({
     where: { id },
@@ -69,18 +71,20 @@ export default async function SolicitanteDetallePage({
           </div>
         </dl>
 
-        <EditarSolicitanteForm
-          solicitante={{
-            id: solicitante.id,
-            nombre: solicitante.nombre,
-            email: solicitante.email,
-            telefono: solicitante.telefono,
-            direccion: solicitante.direccion,
-            municipio: solicitante.municipio,
-            regimenTributario: solicitante.regimenTributario,
-            granContribuyente: solicitante.granContribuyente,
-          }}
-        />
+        {session?.rol === "ADMIN" && (
+          <EditarSolicitanteForm
+            solicitante={{
+              id: solicitante.id,
+              nombre: solicitante.nombre,
+              email: solicitante.email,
+              telefono: solicitante.telefono,
+              direccion: solicitante.direccion,
+              municipio: solicitante.municipio,
+              regimenTributario: solicitante.regimenTributario,
+              granContribuyente: solicitante.granContribuyente,
+            }}
+          />
+        )}
       </section>
 
       <section>

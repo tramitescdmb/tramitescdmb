@@ -5,6 +5,9 @@ import { getSession } from "@/lib/auth";
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  if (session.rol !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede editar el registro de un solicitante." }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await req.json().catch(() => null);

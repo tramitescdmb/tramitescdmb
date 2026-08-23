@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 
 export default async function SolicitantesPage({
@@ -9,6 +10,7 @@ export default async function SolicitantesPage({
 }) {
   const { q } = await searchParams;
   const busqueda = q?.trim();
+  const session = await getSession();
 
   const solicitantes = await db.solicitante.findMany({
     where: busqueda
@@ -25,12 +27,22 @@ export default async function SolicitantesPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Solicitantes</h1>
-        <p className="text-sm text-stone-500">
-          Registro único por NIT/cédula — se crea automáticamente al radicar un expediente y se reutiliza
-          en los siguientes, para no volver a pedir los mismos datos cada vez.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-stone-900">Solicitantes</h1>
+          <p className="text-sm text-stone-500">
+            Registro único por NIT/cédula — se crea automáticamente al radicar un expediente y se reutiliza
+            en los siguientes, para no volver a pedir los mismos datos cada vez.
+          </p>
+        </div>
+        {session?.rol === "ADMIN" && (
+          <a
+            href={`/api/solicitantes/exportar${busqueda ? `?q=${encodeURIComponent(busqueda)}` : ""}`}
+            className="flex-none rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+          >
+            ⬇ Descargar CSV{busqueda ? " (resultados filtrados)" : ""}
+          </a>
+        )}
       </div>
 
       <form action="/solicitantes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
