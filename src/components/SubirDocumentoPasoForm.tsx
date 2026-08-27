@@ -69,7 +69,8 @@ export function SubirDocumentoPasoForm({
       }
       for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
-        archivos.push(await subirArchivoDirecto(expedienteId, file));
+        const subido = await subirArchivoDirecto(expedienteId, file);
+        archivos.push({ ...subido, descripcion: "Documento adicional aportado durante este paso." });
       }
 
       setProgreso("Guardando…");

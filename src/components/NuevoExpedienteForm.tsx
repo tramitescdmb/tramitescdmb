@@ -151,10 +151,20 @@ export function NuevoExpedienteForm({
     setArchivosExtra((prev) => prev.filter((_, i) => i !== index));
   }
 
-  /** ¿Este documento aplica al tipo de solicitante actual? (null = aplica a cualquiera) */
-  function documentoRequerido(doc: DocumentoRequerido) {
-    return doc.obligatorio && (doc.aplicaA === null || (doc.aplicaA === "JURIDICA") === esJuridica);
+  /** ¿Este documento aplica al tipo de solicitante actual? (aplicaA null = aplica a cualquiera) */
+  function aplicaAlTipoSolicitante(doc: DocumentoRequerido) {
+    return doc.aplicaA === null || (doc.aplicaA === "JURIDICA") === esJuridica;
   }
+
+  /** ¿Es obligatorio para el tipo de solicitante actual? (ya asume que aplica a ese tipo) */
+  function documentoRequerido(doc: DocumentoRequerido) {
+    return doc.obligatorio && aplicaAlTipoSolicitante(doc);
+  }
+
+  // Solo se muestran los documentos que aplican al tipo de solicitante elegido — un documento
+  // exclusivo de persona jurídica (ej. Certificado de Existencia y Representación Legal) no debe
+  // aparecer como campo para cargar si se está radicando a nombre de una persona natural, y viceversa.
+  const documentosAplicables = documentosRequeridos.filter(aplicaAlTipoSolicitante);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -200,11 +210,12 @@ export function NuevoExpedienteForm({
       }> = [];
 
       for (const doc of documentosRequeridos) {
+        if (!aplicaAlTipoSolicitante(doc)) continue;
         const file = archivosPorDoc[doc.id];
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
           const subido = await subirArchivoDirecto(expedienteId, file);
-          documentos.push({ ...subido, descripcion: doc.notas });
+          documentos.push({ ...subido, descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre });
         }
       }
 
@@ -676,16 +687,16 @@ export function NuevoExpedienteForm({
           </p>
         </div>
 
-        {documentosRequeridos.length === 0 && (
+        {documentosAplicables.length === 0 && (
           <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-            Este trámite no cuenta con una lista fija de documentos en el procedimiento oficial. Utilice el
-            campo &quot;Otros documentos&quot; para adjuntar la información correspondiente.
+            Este trámite no cuenta con una lista fija de documentos en el procedimiento oficial para el tipo de
+            solicitante seleccionado. Utilice el campo &quot;Otros documentos&quot; para adjuntar la información
+            correspondiente.
           </p>
         )}
 
-        {documentosRequeridos.map((doc) => {
+        {documentosAplicables.map((doc) => {
           const requerido = documentoRequerido(doc);
-          const noAplicaAlTipo = doc.aplicaA !== null && (doc.aplicaA === "JURIDICA") !== esJuridica;
           const archivo = archivosPorDoc[doc.id] ?? null;
           return (
             <Field
@@ -695,9 +706,6 @@ export function NuevoExpedienteForm({
               icon={<IconDocument className={iconSm} />}
               help={
                 (doc.notas ?? (requerido ? "Documento obligatorio." : "Documento opcional. Aplica solo en algunos casos.")) +
-                (noAplicaAlTipo
-                  ? ` No es obligatorio para ${esJuridica ? "persona jurídica" : "persona natural"}, pero puede adjuntarse si corresponde.`
-                  : "") +
                 " Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG)."
               }
             >
