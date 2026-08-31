@@ -17,11 +17,24 @@
  * de "Coordinador(a) de Evaluación" más abajo.
  */
 export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
-  { nombre: "Director(a) General", palabrasClave: ["director general", "dirección general"] },
-  { nombre: "Asesor(a) de Dirección General", palabrasClave: ["asesor de dirección", "asesor de despacho"] },
+  { nombre: "Director(a) General", palabrasClave: ["director general", "directora general", "dirección general"] },
   {
+    // "asesor de la dirección general" (con "la" en medio) NO contiene "asesor de
+    // dirección" — sin esta clave el texto caía SOLO en "Director General" (por
+    // "dirección general"), un cargo distinto. En la práctica todo paso que menciona
+    // al Asesor menciona también al Director aparte, así que el solape residual con
+    // "Director General" es inocuo.
+    nombre: "Asesor(a) de Dirección General",
+    palabrasClave: ["asesor de dirección", "asesora de dirección", "asesor de la dirección", "asesora de la dirección", "asesor de despacho"],
+  },
+  {
+    // Se quitó la clave suelta "seyca": marcaba como Subdirector cualquier texto que
+    // solo nombra el ÁREA ("Secretaria de SEYCA", "Profesional de SEYCA", "Equipo
+    // profesional ... – SEYCA"). Todo paso en que interviene el Subdirector real lo
+    // escribe como "Subdirector(a) ... " (de SEYCA / de Evaluación y Control
+    // Ambiental / del proceso de SEYCA), así que "subdirector"/"subdirectora" basta.
     nombre: "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)",
-    palabrasClave: ["subdirector", "subdirectora", "seyca"],
+    palabrasClave: ["subdirector", "subdirectora"],
   },
   { nombre: "Secretario(a) General", palabrasClave: ["secretario general", "secretaria general", "secretaría general"] },
   {
@@ -31,16 +44,41 @@ export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
     // que le daba acceso real a pasos que no le corresponden (bug encontrado
     // auditando los 30 PDF paso por paso tras activar el bloqueo real).
     nombre: "Coordinador(a) de Evaluación para la Sostenibilidad",
-    palabrasClave: ["evaluación para la sostenibilidad", "evaluación ambiental", "grupo de evaluación"],
+    palabrasClave: [
+      "evaluación para la sostenibilidad",
+      "evaluación ambiental",
+      "grupo de evaluación",
+      "coordinación de evaluación",
+      "coordinador responsable del área de evaluación",
+    ],
   },
   {
     nombre: "Coordinador(a) de Seguimiento para la Sostenibilidad",
-    palabrasClave: ["seguimiento para la sostenibilidad", "grupo de seguimiento", "control y seguimiento ambiental"],
+    palabrasClave: [
+      "seguimiento para la sostenibilidad",
+      "grupo de seguimiento",
+      "coordinación de seguimiento",
+      "coordinador de seguimiento",
+      "control y seguimiento ambiental",
+      "seguimiento y control ambiental",
+    ],
   },
   { nombre: "Profesional en Derecho / Jurídico", palabrasClave: ["profesional en derecho", "jurídic", "judicante"] },
   {
     nombre: "Profesional o Técnico de Evaluación",
-    palabrasClave: ["profesional técnico", "técnico responsable", "servidor técnico", "profesional o técnico"],
+    palabrasClave: [
+      "profesional técnico",
+      "técnico responsable",
+      "servidor técnico",
+      "profesional o técnico",
+      "técnico adscrito",
+      "técnico asignado",
+      "área de evaluación",
+      "de la subdirección de evaluación",
+      "adscrito a seyca",
+      "profesionales designados",
+      "profesional designado",
+    ],
   },
   {
     nombre: "Servidor(a) de Ventanilla de Trámites Ambientales",

@@ -218,7 +218,8 @@ export default async function TramiteDetallePage({
               <h2 className="text-sm font-semibold text-stone-900">Quiénes intervienen</h2>
               <p className="mt-0.5 text-xs text-stone-500">
                 Cargos de la CDMB que participan en algún paso de este trámite, según el procedimiento oficial.
-                Es informativo: cualquier funcionario puede seguir gestionando cualquier paso.
+                En un expediente, cada paso solo puede avanzarlo el funcionario con el cargo que corresponde
+                (o un administrador).
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {cargos.map((c) => (
@@ -328,7 +329,7 @@ export default async function TramiteDetallePage({
             {tramite.flujos.length > 0 ? (
               <>
                 <p className="mb-2 text-sm text-cdmb-900">
-                  ¿Vas a radicar una solicitud nueva? Crea el expediente aquí.
+                  ¿Va a radicar una solicitud nueva? Cree el expediente aquí.
                 </p>
                 <Link
                   href={flujoEnfocado ? `/tramites/${tramite.slug}/nuevo?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}/nuevo`}
@@ -340,8 +341,8 @@ export default async function TramiteDetallePage({
             ) : (
               <>
                 <p className="mb-2 text-sm text-cdmb-900">
-                  Este trámite todavía no se sigue paso a paso en SINCA. Gestiónalo directamente en VITAL
-                  {suits.length > 0 && " o consulta su ficha oficial en el SUIT"}.
+                  Este trámite todavía no se sigue paso a paso en SINCA. Gestiónelo directamente en VITAL
+                  {suits.length > 0 && " o consulte su ficha oficial en el SUIT"}.
                 </p>
                 <div className="flex flex-col gap-2">
                   <a

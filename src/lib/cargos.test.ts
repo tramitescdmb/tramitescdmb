@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { puedeGestionarPaso } from "./cargos";
+import { puedeGestionarPaso, cargosEnTexto } from "./cargos";
 
 // "Coordinador de Evaluación para la Sostenibilidad" tal como aparece literal en el catálogo
 // (CARGOS_CDMB) — usarlo tal cual, no una paráfrasis, es justo lo que hace que la comparación
@@ -56,5 +56,36 @@ describe("puedeGestionarPaso", () => {
     const correspondencia = { rol: "FUNCIONARIO" as const, cargo: "Servidor(a) de Correspondencia" };
     expect(puedeGestionarPaso(notificaciones, paso)).toBe(true);
     expect(puedeGestionarPaso(correspondencia, paso)).toBe(false);
+  });
+});
+
+describe("cargosEnTexto — precisión del reconocimiento por palabra clave", () => {
+  it("'Asesor de la Dirección General' reconoce al Asesor (antes solo caía en Director General)", () => {
+    expect(cargosEnTexto("Asesor de la Dirección General")).toContain("Asesor(a) de Dirección General");
+  });
+
+  it("el nombre del ÁREA (SEYCA) sin la palabra 'subdirector' NO se marca como Subdirector", () => {
+    expect(cargosEnTexto("Secretaria de SEYCA")).not.toContain("Subdirector(a) de Evaluación y Control Ambiental (SEYCA)");
+    expect(cargosEnTexto("Profesional idóneo adscrito a SEYCA")).not.toContain(
+      "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)"
+    );
+    // pero "Subdirector ... de SEYCA" sí
+    expect(cargosEnTexto("Subdirector de SEYCA")).toContain("Subdirector(a) de Evaluación y Control Ambiental (SEYCA)");
+  });
+
+  it("reconoce al Coordinador de Seguimiento aunque el texto invierta 'seguimiento y control ambiental'", () => {
+    expect(cargosEnTexto("Coordinación de Seguimiento y Control Ambiental")).toContain(
+      "Coordinador(a) de Seguimiento para la Sostenibilidad"
+    );
+    expect(cargosEnTexto("Coordinador de seguimiento / servidor delegado")).toContain(
+      "Coordinador(a) de Seguimiento para la Sostenibilidad"
+    );
+  });
+
+  it("mapea al staff del área de evaluación como Profesional o Técnico de Evaluación", () => {
+    expect(cargosEnTexto("Servidor área de Evaluación y Control Ambiental")).toContain("Profesional o Técnico de Evaluación");
+    expect(cargosEnTexto("Profesional de la Subdirección de Evaluación y Control Ambiental")).toContain(
+      "Profesional o Técnico de Evaluación"
+    );
   });
 });

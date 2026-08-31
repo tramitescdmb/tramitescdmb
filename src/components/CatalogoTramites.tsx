@@ -125,8 +125,24 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
       <div className="space-y-8">
         {visibles.map(({ cat, items }) => (
           <div key={cat.id}>
+            {filtro === cat.id && !buscando && (
+              <div className="mb-4 flex items-center gap-3 border-b border-stone-200 pb-3">
+                <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${cat.clases.icono}`} aria-hidden>
+                  {cat.iconoGrande}
+                </span>
+                <div>
+                  <h2 className="text-base font-semibold text-stone-900">{cat.etiqueta}</h2>
+                  <p className="text-xs text-stone-500">
+                    {items.length} {items.length === 1 ? "trámite" : "trámites"} en esta categoría
+                  </p>
+                </div>
+              </div>
+            )}
             {filtro === null && !buscando && (
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">{cat.etiqueta}</h2>
+              <div className="mb-3 flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 flex-none rounded-full ${cat.clases.pildora}`} aria-hidden />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-400">{cat.etiqueta}</h2>
+              </div>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {items.map((entrada) => (
@@ -176,7 +192,12 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
         >
           {categoria.iconoGrande}
         </span>
-        <h3 className="pt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">{nombre}</h3>
+        <div className="min-w-0">
+          <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${categoria.clases.badge}`}>
+            {categoria.etiqueta}
+          </span>
+          <h3 className="mt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">{nombre}</h3>
+        </div>
       </div>
 
       {suits.length > 0 && (
