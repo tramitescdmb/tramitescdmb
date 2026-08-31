@@ -62,6 +62,13 @@ model Usuario {
   activo       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
+  // true = la identidad la valida el directorio activo de la CDMB (API externa,
+  // src/lib/directorio-activo.ts). Estos usuarios NO tienen contraseña propia en
+  // esta app: `passwordHash` queda con un valor centinela que nunca verifica, y
+  // el formulario normal de correo/contraseña siempre los rechaza. Se dan de
+  // alta solos la primera vez que inician sesión por directorio activo.
+  directorioActivo Boolean @default(false)
+
   cargo                Cargo?            @relation(fields: [cargoId], references: [id])
   expedientesCreados   Expediente[]      @relation("CreadoPor")
   expedientesAsignados Expediente[]      @relation("ResponsableActual")

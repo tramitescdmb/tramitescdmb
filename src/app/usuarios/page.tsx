@@ -34,6 +34,10 @@ export default async function UsuariosPage({
         Rol <strong>Administrador</strong>: además de gestionar expedientes, puede crear otros usuarios y
         desactivarlos. Rol <strong>Funcionario</strong>: puede crear y avanzar expedientes, pero no
         administra usuarios.
+        <br />
+        Los usuarios marcados como <strong>Directorio activo</strong> se crean solos la primera vez que
+        ingresan con las credenciales de la red de la CDMB; su contraseña no se administra aquí. Puede
+        asignarles el cargo y, si corresponde, cambiarles el rol.
       </SectionHelp>
 
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -54,7 +58,14 @@ export default async function UsuariosPage({
           <tbody className="divide-y divide-stone-100">
             {usuarios.map((u) => (
               <tr key={u.id}>
-                <td className="px-4 py-2.5 text-stone-800">{u.nombre}</td>
+                <td className="px-4 py-2.5 text-stone-800">
+                  {u.nombre}
+                  {u.directorioActivo && (
+                    <span className="ml-2 rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">
+                      Directorio activo
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-stone-600">{u.email}</td>
                 <td className="px-4 py-2.5 text-stone-600">{u.cargo?.nombre ?? "—"}</td>
                 <td className="px-4 py-2.5 text-stone-600">{u.rol === "ADMIN" ? "Administrador" : "Funcionario"}</td>

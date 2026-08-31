@@ -36,6 +36,17 @@ export async function POST(req: NextRequest) {
   }
 
   const usuario = await db.usuario.findUnique({ where: { email }, include: { cargo: true } });
+
+  if (usuario && usuario.directorioActivo) {
+    await registrarAuditoria({
+      tipo: "LOGIN_FALLIDO",
+      descripcion: `"${email}" intentó el ingreso con contraseña, pero su cuenta es de directorio activo.`,
+      usuarioId: usuario.id,
+      emailIntento: email,
+    });
+    return fail("Esta cuenta ingresa por la conexión de directorio activo CDMB. Utilice esa opción más abajo.");
+  }
+
   if (!usuario || !usuario.activo) {
     await registrarAuditoria({
       tipo: "LOGIN_FALLIDO",
