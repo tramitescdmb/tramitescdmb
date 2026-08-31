@@ -8,8 +8,14 @@ export function nombreCompletoSolicitante(s: {
   apellidos?: string | null;
   razonSocial?: string | null;
 }): string {
+  // Cada parte se recorta ANTES de unirse (no después): unir primero y recortar al final solo
+  // quita los espacios de las puntas, dejando dobles espacios internos si algún dato ya venía con
+  // espacios sueltos alrededor (dato viejo, copiado y pegado, etc.).
+  const nombres = s.nombres?.trim();
+  const apellidos = s.apellidos?.trim();
+  const razonSocial = s.razonSocial?.trim();
   if (s.tipo === "JURIDICA") {
-    return s.razonSocial?.trim() || [s.nombres, s.apellidos].filter(Boolean).join(" ").trim() || "—";
+    return razonSocial || [nombres, apellidos].filter(Boolean).join(" ") || "—";
   }
-  return [s.nombres, s.apellidos].filter(Boolean).join(" ").trim() || s.razonSocial?.trim() || "—";
+  return [nombres, apellidos].filter(Boolean).join(" ") || razonSocial || "—";
 }

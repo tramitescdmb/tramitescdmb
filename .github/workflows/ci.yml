@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Valores de relleno: nada aquí se conecta a una base real. prisma generate solo lee el schema,
+# y next build no prerenderiza ninguna página con datos (todas son dinámicas/server-rendered on
+# demand) — así que solo hace falta que las variables EXISTAN, no que sean válidas.
+env:
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+  DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
+  SESSION_SECRET: "ci-solo-para-build-no-es-un-secreto-real"
+  NEXT_PUBLIC_SUPABASE_URL: "https://ci.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci"
+  SUPABASE_SERVICE_ROLE_KEY: "ci"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tipos (tsc)
+        run: npx tsc --noEmit
+
+      - name: Lint (ESLint)
+        run: npx eslint .
+
+      - name: Pruebas (vitest)
+        run: npm test
+
+      - name: Build de producción
+        run: npm run build
