@@ -26,36 +26,45 @@
     },
     {
       "orden": 3,
-      "nombre": "Certificado de existencia y representación legal (fecha de expedición no superior a 30 días calendario previos a la solicitud del registro) y fotocopia del documento de identificación del representante legal",
+      "nombre": "Certificado de existencia y representación legal (expedición no superior a 30 días calendario previos a la solicitud del registro)",
       "obligatorio": true,
-      "notas": "Solo personas jurídicas"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 4,
-      "nombre": "Fotocopia de la cédula de ciudadanía",
+      "nombre": "Fotocopia del documento de identificación del representante legal",
       "obligatorio": true,
-      "notas": "Solo personas naturales"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,
+      "nombre": "Fotocopia de la cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Solo personas naturales",
+      "aplicaA": "NATURAL"
+    },
+    {
+      "orden": 6,
       "nombre": "Certificado de tradición y libertad del predio, con fecha de expedición no superior a 30 días calendario previos a la fecha de solicitud del registro",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 6,
+      "orden": 7,
       "nombre": "Mapa de localización que permita identificar la ruta de acceso al predio y las coordenadas para georreferenciación del área de plantación",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 7,
+      "orden": 8,
       "nombre": "Comprobante de pago de los costos de evaluación",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 8,
+      "orden": 9,
       "nombre": "Informe técnico de aprovechamiento, presentado dos (2) meses antes de iniciar las actividades de cosecha",
       "obligatorio": false,
       "notas": "Solo si el interesado desea aprovechar un porcentaje de la producción, comercializar la madera u obtener un subproducto no maderable"

@@ -34,66 +34,81 @@
     },
     {
       "orden": 4,
-      "nombre": "Acreditación sobre el predio: Certificado de Libertad y tradición (propietario, expedición no superior a 3 meses); prueba adecuada que acredite la tenencia y autorización del propietario del predio (tenedor); o prueba adecuada como Certificado Extra-juicio de Poseedor (poseedor)",
+      "nombre": "Certificado de Libertad y tradición del inmueble (expedición no superior a 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
       "orden": 5,
+      "nombre": "Prueba adecuada que acredite la tenencia del predio y autorización del propietario",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Certificado Extra-juicio de Poseedor",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es poseedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 7,
       "nombre": "Censo de Usuarios",
       "obligatorio": true,
       "notas": "Solo para acueductos veredales y municipales"
     },
     {
-      "orden": 6,
+      "orden": 8,
       "nombre": "Programa de Uso Eficiente y Ahorro de Agua (PUEAA), de conformidad con la Resolución 1257 de 2018 del Ministerio de Ambiente y Desarrollo Sostenible artículos 2 y 3",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 7,
+      "orden": 9,
       "nombre": "Autorización Sanitaria Favorable emitida por la Secretaría de Salud Departamental",
       "obligatorio": true,
       "notas": "Solo si el recurso es para consumo humano"
     },
     {
-      "orden": 8,
+      "orden": 10,
       "nombre": "Estudio de factibilidad ambiental del proyecto industrial, de conformidad con el artículo 2.2.3.2.10.4 del Decreto 1076 de 2015",
       "obligatorio": true,
       "notas": "Solo si es para uso industrial"
     },
     {
-      "orden": 9,
+      "orden": 11,
       "nombre": "Diseño del pozo",
       "obligatorio": true,
       "notas": "Solo concesión de aguas subterráneas"
     },
     {
-      "orden": 10,
+      "orden": 12,
       "nombre": "Prueba de bombeo",
       "obligatorio": true,
       "notas": "Solo concesión de aguas subterráneas"
     },
     {
-      "orden": 11,
+      "orden": 13,
       "nombre": "Hoja de visita del monitoreo de la prueba de bombeo por parte de la entidad",
       "obligatorio": true,
       "notas": "Solo concesión de aguas subterráneas"
     },
     {
-      "orden": 12,
+      "orden": 14,
       "nombre": "Copia de la resolución de aprobación de prospección de aguas subterráneas o certificado de la entidad del reconocimiento de pozo",
       "obligatorio": true,
       "notas": "Solo concesión de aguas subterráneas"
     },
     {
-      "orden": 13,
+      "orden": 15,
       "nombre": "Requisitos especiales para servicios públicos: detalle de las obras, extensión y número de predios o habitantes a beneficiar, plazo durante el cual se dará el servicio y reglamentación del mismo",
       "obligatorio": false,
       "notas": "Solo cuando el trámite corresponde a la prestación de servicios públicos"
     },
     {
-      "orden": 14,
+      "orden": 16,
       "nombre": "Autorización de notificación por correo electrónico",
       "obligatorio": false,
       "notas": "Solo si el usuario lo autoriza"

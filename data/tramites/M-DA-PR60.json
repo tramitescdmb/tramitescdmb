@@ -20,36 +20,52 @@
     },
     {
       "orden": 2,
-      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal",
+      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses)",
       "obligatorio": false,
-      "notas": "Solo personas jurídicas"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 3,
+      "nombre": "Cédula de ciudadanía del representante legal",
+      "obligatorio": false,
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
+    },
+    {
+      "orden": 4,
       "nombre": "Poder debidamente otorgado",
       "obligatorio": false,
       "notas": "Cuando se actúe por medio de apoderado"
     },
     {
-      "orden": 4,
-      "nombre": "Acreditación sobre el predio: Certificado de libertad y tradición del propietario (no mayor a 3 meses), o prueba de tenencia con autorización del propietario y certificado de libertad y tradición (tenedor)",
+      "orden": 5,
+      "nombre": "Certificado de libertad y tradición del inmueble (no mayor a 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
-      "orden": 5,
+      "orden": 6,
+      "nombre": "Prueba de tenencia del predio, con autorización del propietario, y certificado de libertad y tradición",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 7,
       "nombre": "Nombre y localización del predio, proyecto, obra o actividad",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 6,
+      "orden": 8,
       "nombre": "Concepto de uso del suelo emitido por la oficina de Planeación municipal, que certifique que la actividad a desarrollar está permitida en el predio seleccionado",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 7,
+      "orden": 9,
       "nombre": "Copia de los permisos, licencias y demás autorizaciones ambientales a que haya lugar para el desarrollo de la actividad solicitada",
       "obligatorio": true,
       "notas": null

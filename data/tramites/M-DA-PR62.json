@@ -14,87 +14,10 @@
   "documentosRequeridos": [
     {
       "orden": 1,
-      "nombre": "Nombre o razón social",
+      "nombre": "Oficio de solicitud de inscripción como gestor de Aceites de Cocina Usados (ACU)",
       "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 2,
-      "nombre": "Número de identificación o Nit",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 3,
-      "nombre": "Representante Legal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 4,
-      "nombre": "Número telefónico de contacto",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 5,
-      "nombre": "Dirección oficina principal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 6,
-      "nombre": "Actividad ejecutada (recolección, transporte, tratamiento y/o tipo de aprovechamiento realizado con el ACU)",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 7,
-      "nombre": "Dirección de la planta de aprovechamiento",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 8,
-      "nombre": "Municipio o distrito, departamento",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 9,
-      "nombre": "Capacidad de recolección de ACU en Kg/mes del gestor",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 10,
-      "nombre": "Capacidad de transporte de ACU en kg/mes del gestor",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 11,
-      "nombre": "Capacidad de almacenamiento de ACU en kg/mes del gestor",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 12,
-      "nombre": "Capacidad de tratamiento y/o aprovechamiento de ACU en kg/mes del gestor",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 13,
-      "nombre": "Descripción de actividad y proceso ejecutado (tipo de aprovechamiento realizado con el ACU)",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 14,
-      "nombre": "Número y fecha de los actos administrativos que otorgan los permisos y autorizaciones ambientales que amparan el desarrollo de la actividad",
-      "obligatorio": true,
-      "notas": null
+      "notas": "Debe incluir: nombre o razón social, número de identificación o NIT, representante legal, teléfono de contacto, dirección de la oficina principal y de la planta de aprovechamiento, municipio, actividad ejecutada (recolección, transporte, tratamiento y/o aprovechamiento), capacidades de recolección/transporte/almacenamiento/tratamiento en Kg/mes, y número y fecha de los actos administrativos que amparan la actividad.",
+      "aplicaA": null
     }
   ],
   "flujos": [

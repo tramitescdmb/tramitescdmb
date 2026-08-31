@@ -34,7 +34,8 @@
       "orden": 4,
       "nombre": "Certificado de existencia y representación legal (no mayor a 3 meses)",
       "obligatorio": false,
-      "notas": "Solo personas jurídicas"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,

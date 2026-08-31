@@ -43,24 +43,39 @@
     },
     {
       "orden": 5,
-      "nombre": "Acreditación sobre el predio: Certificado de libertad y tradición (propietario, expedición no superior a 3 meses); copia del documento que acredite la tenencia y autorización del propietario o poseedor (tenedor); prueba adecuada (poseedor); o autorización escrita con firma autenticada del dueño del predio (si se trata de predio ajeno)",
+      "nombre": "Certificado de libertad y tradición del inmueble (expedición no superior a 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
       "orden": 6,
+      "nombre": "Documento que acredite la tenencia del predio y autorización del propietario o poseedor, o autorización escrita con firma autenticada del dueño (si el predio es ajeno)",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Prueba adecuada de la calidad de poseedor",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es poseedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 8,
       "nombre": "Plancha/Plano IGAC escala 1:10.000 señalando la ubicación del predio y el pozo",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 7,
+      "orden": 9,
       "nombre": "Documento Técnico: ubicación y extensión del predio o predios a explorar (propios, ajenos o baldíos), nombre y NIT de la empresa perforadora, relación y especificaciones del equipo a usar, sistema de perforación a emplear y plan de trabajo, características hidrogeológicas de la zona, relación de otros aprovechamientos de aguas subterráneas existentes en el área, superficie para la cual se solicita el permiso y término del mismo",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 8,
+      "orden": 10,
       "nombre": "Autorización de notificación por correo electrónico",
       "obligatorio": false,
       "notas": "Solo si el usuario lo autoriza"

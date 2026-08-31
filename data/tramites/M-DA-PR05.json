@@ -23,144 +23,168 @@
     },
     {
       "orden": 2,
-      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses) + cédula del representante legal",
+      "nombre": "Certificado de Existencia y Representación Legal (o documento equivalente, expedido con antelación no superior a 3 meses)",
       "obligatorio": true,
-      "notas": "Solo personas jurídicas"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 3,
-      "nombre": "Copia de la cédula de ciudadanía",
+      "nombre": "Cédula de ciudadanía del representante legal",
       "obligatorio": true,
-      "notas": "Solo personas naturales"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 4,
+      "nombre": "Copia de la cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Solo personas naturales",
+      "aplicaA": "NATURAL"
+    },
+    {
+      "orden": 5,
       "nombre": "Poder debidamente otorgado",
       "obligatorio": false,
       "notas": "Cuando se actúe por medio de apoderado"
     },
     {
-      "orden": 5,
-      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)",
+      "orden": 6,
+      "nombre": "Certificado de Libertad y Tradición del inmueble (expedición no superior a 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
-      "orden": 6,
+      "orden": 7,
+      "nombre": "Prueba de tenencia del predio y autorización del propietario",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Certificado Extra-juicio como Poseedor",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es poseedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 9,
       "nombre": "Nombre y localización del predio, proyecto, obra o actividad",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 7,
+      "orden": 10,
       "nombre": "Costo del proyecto, obra o actividad",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 8,
+      "orden": 11,
       "nombre": "Fuente de abastecimiento de agua y cuenca hidrográfica a la que pertenece",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 9,
+      "orden": 12,
       "nombre": "Características de las actividades que generan el vertimiento",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 10,
+      "orden": 13,
       "nombre": "Plano de origen, cantidad y localización georreferenciada de las descargas al cuerpo de agua o al suelo (análogo 100x70 cm y copia digital)",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 11,
+      "orden": 14,
       "nombre": "Nombre de la fuente receptora del vertimiento y cuenca hidrográfica a la que pertenece",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 12,
+      "orden": 15,
       "nombre": "Caudal de la descarga (litros/s)",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 13,
+      "orden": 16,
       "nombre": "Frecuencia de la descarga (días/mes)",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 14,
+      "orden": 17,
       "nombre": "Tiempo de la descarga (horas/día)",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 15,
+      "orden": 18,
       "nombre": "Tipo de flujo de la descarga (continuo o intermitente)",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 16,
+      "orden": 19,
       "nombre": "Caracterización actual del vertimiento existente o estado final previsto del vertimiento proyectado",
       "obligatorio": true,
       "notas": "Conforme a la norma de vertimientos vigente"
     },
     {
-      "orden": 17,
+      "orden": 20,
       "nombre": "Ubicación, descripción de operación del sistema, memorias técnicas, diseños de ingeniería (conceptual y básica), planos de detalle y condiciones de eficiencia del sistema de tratamiento",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 18,
+      "orden": 21,
       "nombre": "Concepto sobre el uso del suelo expedido por la autoridad municipal competente",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 19,
+      "orden": 22,
       "nombre": "Plan de Gestión del Riesgo para el manejo del vertimiento",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 20,
+      "orden": 23,
       "nombre": "Plan de Contingencia para prevención y control de derrames",
       "obligatorio": false,
       "notas": "Cuando a ello hubiere lugar"
     },
     {
-      "orden": 21,
+      "orden": 24,
       "nombre": "Evaluación ambiental del vertimiento",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 22,
+      "orden": 25,
       "nombre": "Manual de operaciones y mantenimiento de las unidades del sistema de tratamiento",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 23,
+      "orden": 26,
       "nombre": "Autorización de notificación por correo electrónico",
       "obligatorio": false,
       "notas": "Solo si el usuario lo autoriza"
     },
     {
-      "orden": 24,
+      "orden": 27,
       "nombre": "Información adicional para vertimiento al suelo — agua residual doméstica tratada: infiltración, sistema y área de disposición, plan de cierre y abandono",
       "obligatorio": false,
       "notas": "Solo si la solicitud es de vertimiento al suelo, ARD"
     },
     {
-      "orden": 25,
+      "orden": 28,
       "nombre": "Información adicional para vertimiento al suelo — agua residual no doméstica tratada: línea base del suelo y del agua subterránea, sistema y área de disposición, plan de monitoreo, plan de cierre y abandono",
       "obligatorio": false,
       "notas": "Solo si la solicitud es de vertimiento al suelo, ARnD"

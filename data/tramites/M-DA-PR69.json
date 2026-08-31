@@ -43,36 +43,51 @@
     },
     {
       "orden": 5,
-      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, exp. máx. 3 meses), prueba de tenencia (tenedor), o Certificado Extra-juicio como Poseedor (poseedor)",
+      "nombre": "Certificado de Libertad y Tradición del inmueble (exp. máx. 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
       "orden": 6,
+      "nombre": "Prueba de tenencia del predio",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Certificado Extra-juicio como Poseedor",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es poseedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 8,
       "nombre": "Autorización del propietario del predio",
       "obligatorio": false,
       "notas": "Cuando se requiera, si el solicitante es tenedor"
     },
     {
-      "orden": 7,
+      "orden": 9,
       "nombre": "Copia del Certificado de Cámara de Comercio",
       "obligatorio": true,
       "notas": "Expedido dentro de los 3 meses anteriores a la solicitud"
     },
     {
-      "orden": 8,
+      "orden": 10,
       "nombre": "Certificado de Uso del Suelo emitido por la Autoridad Competente",
       "obligatorio": true,
       "notas": "Expedido dentro de los 3 meses anteriores a la solicitud"
     },
     {
-      "orden": 9,
+      "orden": 11,
       "nombre": "Copia del libro de operaciones (rayado, pasta dura, tamaño oficio, foliado) con el inventario actual de productos en el predio",
       "obligatorio": true,
       "notas": null
     },
     {
-      "orden": 10,
+      "orden": 12,
       "nombre": "Pantallazo del registro en la plataforma VITAL",
       "obligatorio": true,
       "notas": "Solicitud de activación de usuario ante la autoridad ambiental"

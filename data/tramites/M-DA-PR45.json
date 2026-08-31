@@ -23,32 +23,25 @@
     },
     {
       "orden": 2,
-      "nombre": "Razón Social",
-      "obligatorio": true,
-      "notas": "Solo persona jurídica",
-      "aplicaA": "JURIDICA"
-    },
-    {
-      "orden": 3,
       "nombre": "Poder otorgado",
       "obligatorio": false,
       "notas": "Cuando se actúe como apoderado"
     },
     {
-      "orden": 4,
+      "orden": 3,
       "nombre": "Certificación de existencia y representación legal",
       "obligatorio": true,
       "notas": "Solo persona jurídica",
       "aplicaA": "JURIDICA"
     },
     {
-      "orden": 5,
+      "orden": 4,
       "nombre": "Autorización del propietario o poseedor",
       "obligatorio": false,
       "notas": "Cuando el solicitante sea mero tenedor"
     },
     {
-      "orden": 6,
+      "orden": 5,
       "nombre": "Plan de Contingencia para el Manejo de Derrames de Hidrocarburos y Sustancias Nocivas, de conformidad con los Términos de Referencia únicos adoptados mediante Resolución 1209 de 29 de junio de 2018 del MADS (1 copia física y 1 copia digital con anexos)",
       "obligatorio": true,
       "notas": null

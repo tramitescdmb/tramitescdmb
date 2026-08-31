@@ -14,81 +14,10 @@
   "documentosRequeridos": [
     {
       "orden": 1,
-      "nombre": "Nombre completo o razón social",
+      "nombre": "Formato de solicitud de inscripción al Inventario de PCB, firmado por el representante legal o propietario",
       "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 2,
-      "nombre": "Nombre Comercial",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 3,
-      "nombre": "Identificación de la empresa o propietario",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 4,
-      "nombre": "Número de identificación",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 5,
-      "nombre": "Registro Cámara de Comercio (No. Matrícula)",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 6,
-      "nombre": "Dirección, Departamento, Municipio",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 7,
-      "nombre": "Nombre completo persona natural o representante legal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 8,
-      "nombre": "Identificación de la persona natural o representante legal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 9,
-      "nombre": "Número de Identificación de la persona natural o representante legal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 10,
-      "nombre": "Teléfono",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 11,
-      "nombre": "Fax",
-      "obligatorio": false,
-      "notas": null
-    },
-    {
-      "orden": 12,
-      "nombre": "E-mail",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 13,
-      "nombre": "Primer Periodo de balance a declarar",
-      "obligatorio": true,
-      "notas": null
+      "notas": "Debe incluir: nombre completo o razón social, nombre comercial, identificación de la empresa o propietario, número de identificación, registro de Cámara de Comercio, dirección/departamento/municipio, nombre e identificación del representante legal (si aplica), teléfono, correo electrónico y el primer período de balance a declarar.",
+      "aplicaA": null
     }
   ],
   "flujos": [

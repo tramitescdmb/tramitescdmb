@@ -20,12 +20,27 @@
     },
     {
       "orden": 2,
-      "nombre": "Acreditación sobre el predio: Certificado de Libertad y Tradición (propietario, no superior a 3 meses), prueba de tenencia y autorización del propietario (tenedor), o declaración extrajuicio (poseedor)",
+      "nombre": "Certificado de Libertad y Tradición del inmueble (no superior a 3 meses)",
       "obligatorio": true,
-      "notas": null
+      "notas": "Cuando el solicitante es el propietario del predio",
+      "aplicaA": null
     },
     {
       "orden": 3,
+      "nombre": "Prueba de tenencia del predio y autorización del propietario",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es tenedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 4,
+      "nombre": "Declaración extrajuicio",
+      "obligatorio": true,
+      "notas": "Cuando el solicitante es poseedor del predio",
+      "aplicaA": null
+    },
+    {
+      "orden": 5,
       "nombre": "Poder debidamente otorgado",
       "obligatorio": false,
       "notas": "Cuando se actúe por medio de apoderado"

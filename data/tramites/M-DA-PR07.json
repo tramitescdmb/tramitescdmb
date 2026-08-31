@@ -14,7 +14,127 @@
   "suitNumeros": [
     "19120"
   ],
-  "documentosRequeridos": [],
+  "documentosRequeridos": [
+    {
+      "orden": 1,
+      "nombre": "Formulario Único Nacional de Solicitud de Permiso de Emisiones Atmosféricas para Fuentes Fijas",
+      "obligatorio": true,
+      "notas": "En caso de renovación del permiso, debe anexarse el Informe de Estado de Emisiones (IE-1), según la Resolución 1351 de 1995.",
+      "aplicaA": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Fotocopia de la cédula de ciudadanía",
+      "obligatorio": true,
+      "notas": "Si el solicitante es persona natural",
+      "aplicaA": "NATURAL"
+    },
+    {
+      "orden": 3,
+      "nombre": "Fotocopia de la cédula de ciudadanía del representante legal",
+      "obligatorio": true,
+      "notas": "Si el solicitante es persona jurídica",
+      "aplicaA": "JURIDICA"
+    },
+    {
+      "orden": 4,
+      "nombre": "Certificado de existencia y representación legal de Cámara de Comercio",
+      "obligatorio": true,
+      "notas": "Solo personas jurídicas — expedición máxima de 3 meses",
+      "aplicaA": "JURIDICA"
+    },
+    {
+      "orden": 5,
+      "nombre": "Registro Único Tributario (RUT)",
+      "obligatorio": true,
+      "notas": "Expedición máxima de 12 meses",
+      "aplicaA": null
+    },
+    {
+      "orden": 6,
+      "nombre": "Dirección o localización de las instalaciones con emisiones",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    },
+    {
+      "orden": 7,
+      "nombre": "Certificado actualizado del registro de instrumentos públicos y privados sobre la propiedad del inmueble, o prueba idónea de la posesión o tenencia",
+      "obligatorio": true,
+      "notas": "Expedición máxima de 3 meses",
+      "aplicaA": null
+    },
+    {
+      "orden": 8,
+      "nombre": "Poder debidamente otorgado",
+      "obligatorio": false,
+      "notas": "Cuando se actúe por intermedio de apoderado",
+      "aplicaA": null
+    },
+    {
+      "orden": 9,
+      "nombre": "Plano catastral del IGAC o del AMB, escala 1:1000",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    },
+    {
+      "orden": 10,
+      "nombre": "Factura expedida por tesorería y soporte de pago de los derechos de trámite y otorgamiento del permiso",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    },
+    {
+      "orden": 11,
+      "nombre": "Fecha proyectada de iniciación de actividades, o fechas proyectadas de iniciación y terminación de las obras, trabajos o actividades",
+      "obligatorio": true,
+      "notas": "Solo si se trata de obra, trabajos o actividades transitorias",
+      "aplicaA": null
+    },
+    {
+      "orden": 12,
+      "nombre": "Concepto sobre uso del suelo del establecimiento, obra o actividad, expedido por la autoridad municipal o distrital competente (o los documentos/planos oficiales que sustenten la compatibilidad con el uso permitido del suelo)",
+      "obligatorio": true,
+      "notas": "Expedición máxima de 12 meses",
+      "aplicaA": null
+    },
+    {
+      "orden": 13,
+      "nombre": "Información meteorológica básica del área afectada por las emisiones",
+      "obligatorio": true,
+      "notas": "Debe incluir un período de muestreo mínimo de 30 días y el análisis de precipitación, temperatura, viento (rosa de vientos), humedad relativa y radiación solar, tomado de estaciones hidroclimatológicas cercanas.",
+      "aplicaA": null
+    },
+    {
+      "orden": 14,
+      "nombre": "Descripción de las obras, procesos y actividades de producción, mantenimiento, tratamiento, almacenamiento y disposición que generan las emisiones",
+      "obligatorio": true,
+      "notas": "Incluye planos, flujograma con los puntos de emisión al aire, y descripción y planos de ductos, chimeneas o fuentes dispersas, con sus materiales, medidas y características técnicas.",
+      "aplicaA": null
+    },
+    {
+      "orden": 15,
+      "nombre": "Información técnica sobre producción prevista o actual, proyectos de expansión y proyecciones de producción a cinco (5) años",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    },
+    {
+      "orden": 16,
+      "nombre": "Estudio técnico de evaluación de las emisiones de los procesos de combustión o producción",
+      "obligatorio": true,
+      "notas": "Debe incluir información sobre consumo de materias primas, combustibles u otros materiales utilizados (Decreto 2107 de 1995, artículo 4).",
+      "aplicaA": null
+    },
+    {
+      "orden": 17,
+      "nombre": "Diseño de los sistemas de control de emisiones atmosféricas existentes o proyectados, su ubicación e informe de ingeniería",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    }
+  ],
   "flujos": [
     {
       "codigo": "inicio",

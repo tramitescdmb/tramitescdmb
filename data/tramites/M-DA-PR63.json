@@ -14,51 +14,10 @@
   "documentosRequeridos": [
     {
       "orden": 1,
-      "nombre": "Nombre o razón social",
+      "nombre": "Oficio de solicitud de inscripción como generador de Aceites de Cocina Usados (ACU)",
       "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 2,
-      "nombre": "Número de identificación o Nit",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 3,
-      "nombre": "Representante Legal",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 4,
-      "nombre": "Número telefónico de contacto",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 5,
-      "nombre": "Dirección del sitio donde genera ACU",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 6,
-      "nombre": "Municipio o distrito, departamento",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 7,
-      "nombre": "Tipo de negocio (actividad ejecutada)",
-      "obligatorio": true,
-      "notas": null
-    },
-    {
-      "orden": 8,
-      "nombre": "Cantidad generada promedio en Kg/mes",
-      "obligatorio": true,
-      "notas": null
+      "notas": "Debe incluir: nombre o razón social, número de identificación o NIT, representante legal, teléfono de contacto, dirección del sitio donde se genera el ACU, municipio, tipo de negocio y cantidad generada promedio en Kg/mes.",
+      "aplicaA": null
     }
   ],
   "flujos": [

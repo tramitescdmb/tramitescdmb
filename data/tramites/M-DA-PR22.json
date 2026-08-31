@@ -37,7 +37,8 @@
       "orden": 4,
       "nombre": "Certificado de existencia y representación legal",
       "obligatorio": false,
-      "notas": "Para el trámite de DAA; solo personas jurídicas"
+      "notas": "Para el trámite de DAA; solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 5,
@@ -79,7 +80,8 @@
       "orden": 11,
       "nombre": "Registro Único Tributario (RUT)",
       "obligatorio": true,
-      "notas": "Solo personas jurídicas"
+      "notas": "Solo personas jurídicas",
+      "aplicaA": "JURIDICA"
     },
     {
       "orden": 12,
