@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/sinca/sincronizar", "schedule": "0 7 * * *" }
+  ]
+}

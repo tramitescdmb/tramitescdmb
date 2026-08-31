@@ -110,6 +110,63 @@ model RegistroAuditoria {
 }
 
 // ---------------------------------------------------------------------------
+// SINCA 1.0 — histórico de trámites ambientales con resolución de fondo.
+// Espejo local (SOLO CONSULTA) del API externo `GET /api/presinca/resoluciones`
+// (~5.163 registros al 2026-08). NADA en la app crea, edita ni borra estos
+// datos desde la interfaz: se sincronizan desde el API con src/lib/sinca-sync.ts
+// (backfill único + refresco diario) y solo se leen. `nroSolicitud` es el
+// identificador que trae SINCA 1.0 (`nrosolicitud_sol`).
+// ---------------------------------------------------------------------------
+
+model SincaResolucion {
+  nroSolicitud        Int       @id
+  numeroResolucion    String?
+  fechaResolucion     DateTime? // fecha_documento: fecha de la resolución de fondo
+  anioResolucion      Int? // derivado de fechaResolucion, para agrupar sin castear en cada consulta
+  fechaRecibido       DateTime? // fecharecibido_sol
+  proyecto            String    @db.Text // proyecto_sol
+  tipoSolicitud       String? // "(CA) CONCESIONES DE AGUAS" tal cual lo entrega el API
+  tipoSolicitudCodigo String? // "CA" (derivado)
+  tipoSolicitudNombre String? // "CONCESIONES DE AGUAS" (derivado)
+  indTipoSolicitud    String? // indtiposol_sol.label — Normal / Renovación
+  estado              String? // estado_sol.label — Aprobada, Negada, Desestimiento, ...
+  origen              String? // origen_sol.label, si viene
+  expediente          String? // expediente_sol
+  departamento        String?
+  municipio           String?
+  barrio              String?
+  correo              String? // correo_sol
+  representanteLegal  String? // replegal_sol
+  idRepresentante     String? // idreplegal_sol (NIT/cédula del representante)
+  cantidadDocumentos  Int       @default(0) // cantidad_emision_documentos
+  cantidadInteresados Int       @default(0) // cantidad_interesado
+  lat                 Float?
+  lon                 Float?
+  raw                 Json // registro original completo del API (para la ficha de detalle)
+  sincronizadoEn      DateTime  @default(now())
+
+  @@index([anioResolucion])
+  @@index([tipoSolicitudCodigo])
+  @@index([estado])
+  @@index([municipio])
+  @@index([expediente])
+  @@index([fechaResolucion])
+}
+
+model SincaSincronizacion {
+  id             String   @id @default(cuid())
+  iniciadoEn     DateTime @default(now())
+  terminadoEn    DateTime?
+  ok             Boolean  @default(false)
+  totalApi       Int?
+  creados        Int?
+  actualizados   Int?
+  eliminados     Int?
+  mensajeError   String?  @db.Text
+  disparadoPor   String? // "cron", "manual:<usuario>", "script"
+}
+
+// ---------------------------------------------------------------------------
 // Catálogo de trámites (datos de referencia, sembrados desde data/tramites/*.json)
 // ---------------------------------------------------------------------------
 

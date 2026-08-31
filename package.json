@@ -12,7 +12,8 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "sinca:sync": "tsx scripts/sinca-sync.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",

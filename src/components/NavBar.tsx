@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
+import { sincaConfigurado } from "@/lib/sinca";
 import { SidebarNav } from "@/components/SidebarNav";
 
 function iniciales(nombre: string) {
@@ -22,6 +23,7 @@ export async function NavBar() {
 
   const config = await getConfiguracionSitio();
   const esAdmin = session.rol === "ADMIN";
+  const haySinca = sincaConfigurado();
 
   const marca = (
     <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-cdmb-800">
@@ -51,7 +53,7 @@ export async function NavBar() {
       {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana. */}
       <aside className="sticky top-0 hidden h-screen w-64 flex-none flex-col border-r border-stone-200 bg-white lg:flex">
         <div className="border-b border-stone-100 px-4 py-4">{marca}</div>
-        <SidebarNav esAdmin={esAdmin} />
+        <SidebarNav esAdmin={esAdmin} haySinca={haySinca} />
         <div className="border-t border-stone-100 p-3">
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
             <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
@@ -73,7 +75,7 @@ export async function NavBar() {
           {salir}
         </div>
         <div className="border-t border-stone-100 px-3 py-1.5">
-          <SidebarNav esAdmin={esAdmin} orientacion="horizontal" />
+          <SidebarNav esAdmin={esAdmin} haySinca={haySinca} orientacion="horizontal" />
         </div>
       </header>
     </>

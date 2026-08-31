@@ -8,6 +8,7 @@ import {
   FolderOpen,
   Users,
   Link2,
+  Archive,
   UserCog,
   ShieldCheck,
   Palette,
@@ -24,6 +25,8 @@ const ITEMS_PRINCIPAL: Item[] = [
   { href: "/vital", label: "VITAL", icon: Link2 },
 ];
 
+const ITEM_HISTORICO: Item = { href: "/historico", label: "SINCA 1.0", icon: Archive };
+
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
   { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
@@ -36,12 +39,22 @@ const ITEMS_ADMIN: Item[] = [
  * envuelve (columna vs. fila), así que el resaltado del enlace activo (que
  * necesita usePathname, por eso "use client") vive en un solo lugar.
  */
-export function SidebarNav({ esAdmin, orientacion = "vertical" }: { esAdmin: boolean; orientacion?: "vertical" | "horizontal" }) {
+export function SidebarNav({
+  esAdmin,
+  haySinca = false,
+  orientacion = "vertical",
+}: {
+  esAdmin: boolean;
+  haySinca?: boolean;
+  orientacion?: "vertical" | "horizontal";
+}) {
   const pathname = usePathname();
   const activo = (href: string, exacto?: boolean) => (exacto ? pathname === href : pathname === href || pathname.startsWith(href + "/"));
 
+  const principal = haySinca ? [...ITEMS_PRINCIPAL, ITEM_HISTORICO] : ITEMS_PRINCIPAL;
+
   if (orientacion === "horizontal") {
-    const items = [...ITEMS_PRINCIPAL, ...(esAdmin ? ITEMS_ADMIN : [])];
+    const items = [...principal, ...(esAdmin ? ITEMS_ADMIN : [])];
     return (
       <nav className="flex gap-1 overflow-x-auto" aria-label="Navegación">
         {items.map((item) => (
@@ -53,7 +66,7 @@ export function SidebarNav({ esAdmin, orientacion = "vertical" }: { esAdmin: boo
 
   return (
     <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Navegación">
-      <Grupo items={ITEMS_PRINCIPAL} activo={activo} />
+      <Grupo items={principal} activo={activo} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} />}
     </nav>
   );
