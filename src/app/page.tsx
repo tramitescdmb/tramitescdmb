@@ -6,6 +6,8 @@ import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { getSession } from "@/lib/auth";
+import { getPendientes } from "@/lib/pendientes";
+import { MisPendientes } from "@/components/MisPendientes";
 
 function saludo(hora: number) {
   if (hora < 12) return "Buenos días";
@@ -14,7 +16,8 @@ function saludo(hora: number) {
 }
 
 export default async function DashboardPage() {
-  const [d, session] = await Promise.all([getDashboardData(), getSession()]);
+  const session = await getSession();
+  const [d, pendientes] = await Promise.all([getDashboardData(), getPendientes(session)]);
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
@@ -25,6 +28,8 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
+
+      <MisPendientes resumen={pendientes} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard icon={LibraryBig} label="Trámites disponibles" value={d.totalTramites} href="/tramites" />

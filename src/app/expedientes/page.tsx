@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { Paginador } from "@/components/Paginador";
@@ -22,33 +24,48 @@ const ESTADOS = [
 export default async function ExpedientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; q?: string; tramite?: string; municipio?: string; page?: string }>;
+  searchParams: Promise<{ estado?: string; q?: string; tramite?: string; municipio?: string; asignados?: string; page?: string }>;
 }) {
-  const { estado, q, tramite, municipio, page: pageParam } = await searchParams;
+  const { estado, q, tramite, municipio, asignados, page: pageParam } = await searchParams;
 
-  const tramites = await db.tramiteTipo.findMany({
-    where: { activo: true },
-    orderBy: { nombre: "asc" },
-    select: { id: true, nombre: true, codigo: true },
-  });
+  const [tramites, session] = await Promise.all([
+    db.tramiteTipo.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, codigo: true },
+    }),
+    getSession(),
+  ]);
 
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);
 
-  const where = {
-    ...(estado ? { estado: estado as (typeof ESTADOS)[number] } : {}),
-    ...(tramite ? { tramiteTipoId: tramite } : {}),
-    ...(municipio ? { municipio } : {}),
-    ...(busqueda
-      ? {
-          OR: [
-            { numero: { contains: busqueda, mode: "insensitive" as const } },
-            { solicitanteNombre: { contains: busqueda, mode: "insensitive" as const } },
-            { solicitanteIdentificacion: { contains: busqueda, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  };
+  // Filtro "asignados a mí": expedientes asignados a mi usuario puntual o a mi cargo.
+  // Solo tiene efecto si hay sesión; si no, se ignora (no se puede saber "quién soy").
+  const soloMios = asignados === "mi" && Boolean(session);
+
+  const filtros: Prisma.ExpedienteWhereInput[] = [];
+  if (estado) filtros.push({ estado: estado as (typeof ESTADOS)[number] });
+  if (tramite) filtros.push({ tramiteTipoId: tramite });
+  if (municipio) filtros.push({ municipio });
+  if (busqueda) {
+    filtros.push({
+      OR: [
+        { numero: { contains: busqueda, mode: "insensitive" } },
+        { solicitanteNombre: { contains: busqueda, mode: "insensitive" } },
+        { solicitanteIdentificacion: { contains: busqueda, mode: "insensitive" } },
+      ],
+    });
+  }
+  if (soloMios && session) {
+    filtros.push({
+      OR: [
+        { usuariosAsignados: { some: { id: session.userId } } },
+        ...(session.cargo ? [{ cargosAsignados: { some: { nombre: session.cargo } } }] : []),
+      ],
+    });
+  }
+  const where: Prisma.ExpedienteWhereInput = filtros.length ? { AND: filtros } : {};
 
   const [total, expedientes] = await Promise.all([
     db.expediente.count({ where }),
@@ -66,7 +83,7 @@ export default async function ExpedientesPage({
   // El GET conserva estado/q/tramite/municipio a la vez — helper para armar los links de los pills de estado sin perder los otros filtros.
   const conFiltro = (extra: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
-    const actuales = { estado, q, tramite, municipio, ...extra };
+    const actuales = { estado, q, tramite, municipio, asignados, ...extra };
     for (const [k, v] of Object.entries(actuales)) {
       if (v) params.set(k, v);
     }
@@ -85,8 +102,18 @@ export default async function ExpedientesPage({
         </p>
       </div>
 
+      {soloMios && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cdmb-200 bg-cdmb-50/60 px-4 py-2.5 text-sm text-cdmb-900">
+          <span>Mostrando solo los expedientes asignados a su nombre o a su cargo.</span>
+          <Link href={conFiltro({ asignados: undefined })} className="font-medium text-cdmb-700 hover:underline">
+            Ver todos
+          </Link>
+        </div>
+      )}
+
       <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
+        {soloMios && <input type="hidden" name="asignados" value="mi" />}
         <div className="min-w-[220px] flex-1">
           <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
           <input
