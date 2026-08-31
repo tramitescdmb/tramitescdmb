@@ -17,9 +17,51 @@
   "documentosRequeridos": [
     {
       "orden": 1,
-      "nombre": "Solicitud de acreditación o certificación de las inversiones, con la información y documentos exigidos en los artículos 3° y 4° de la Resolución MADS No. 509 del 03 de abril de 2018",
+      "nombre": "Formato Único de Solicitud de Acreditación o Certificación de Inversiones Ambientales, firmado por el representante legal",
       "obligatorio": true,
-      "notas": "El procedimiento no reproduce el listado detallado de requisitos; remite directamente a los artículos 3° y 4° de la Resolución MADS No. 509 de 2018"
+      "notas": null
+    },
+    {
+      "orden": 2,
+      "nombre": "Declaración bajo la gravedad de juramento de que la inversión no se realiza por mandato de una autoridad ambiental para mitigar el impacto de una obra o actividad objeto de licencia ambiental",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 3,
+      "nombre": "Descripción detallada de la inversión en control del medio ambiente, o en conservación y mejoramiento del medio ambiente, según los parámetros de la Resolución 509 de 2018 del MADS",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 4,
+      "nombre": "Formato 1 — Beneficios ambientales de inversiones en control o mejoramiento del medio ambiente por disminución de la demanda de recursos naturales renovables",
+      "obligatorio": false,
+      "notas": "Diligenciar cuando aplique según el tipo de inversión"
+    },
+    {
+      "orden": 5,
+      "nombre": "Formato 2 — Beneficios ambientales de inversiones en control o mejoramiento del medio ambiente en la fuente o al final del proceso",
+      "obligatorio": false,
+      "notas": "Diligenciar cuando aplique según el tipo de inversión"
+    },
+    {
+      "orden": 6,
+      "nombre": "Formato 3 — Beneficios ambientales de inversiones en control o mejoramiento del medio ambiente para descarga a la atmósfera o emisiones atmosféricas",
+      "obligatorio": false,
+      "notas": "Diligenciar cuando aplique según el tipo de inversión"
+    },
+    {
+      "orden": 7,
+      "nombre": "Formato 4 — Beneficios ambientales de inversiones en control o mejoramiento del medio ambiente para residuos sólidos",
+      "obligatorio": false,
+      "notas": "Diligenciar cuando aplique según el tipo de inversión"
+    },
+    {
+      "orden": 8,
+      "nombre": "Formato 5 — Identificación y cálculo de la inversión en control del medio ambiente o conservación y mejoramiento del medio ambiente",
+      "obligatorio": true,
+      "notas": null
     }
   ],
   "flujos": [

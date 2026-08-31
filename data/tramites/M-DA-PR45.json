@@ -23,26 +23,57 @@
     },
     {
       "orden": 2,
+      "nombre": "Razón Social",
+      "obligatorio": true,
+      "notas": "Solo persona jurídica",
+      "aplicaA": "JURIDICA"
+    },
+    {
+      "orden": 3,
       "nombre": "Poder otorgado",
       "obligatorio": false,
       "notas": "Cuando se actúe como apoderado"
     },
     {
-      "orden": 3,
+      "orden": 4,
       "nombre": "Certificación de existencia y representación legal",
       "obligatorio": true,
       "notas": "Solo persona jurídica",
       "aplicaA": "JURIDICA"
     },
     {
-      "orden": 4,
+      "orden": 5,
       "nombre": "Autorización del propietario o poseedor",
       "obligatorio": false,
       "notas": "Cuando el solicitante sea mero tenedor"
     },
     {
-      "orden": 5,
+      "orden": 6,
+      "nombre": "Tarjeta de propiedad o constancia de arrendamiento de los vehículos",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 7,
+      "nombre": "SOAT de los vehículos y seguros de responsabilidad extracontractual",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 8,
       "nombre": "Plan de Contingencia para el Manejo de Derrames de Hidrocarburos y Sustancias Nocivas, de conformidad con los Términos de Referencia únicos adoptados mediante Resolución 1209 de 29 de junio de 2018 del MADS (1 copia física y 1 copia digital con anexos)",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 9,
+      "nombre": "Tarjeta de emergencia de los materiales transportados, de acuerdo con la NTC 4532 y NTC 1692",
+      "obligatorio": true,
+      "notas": null
+    },
+    {
+      "orden": 10,
+      "nombre": "Informe de estado de cumplimiento del Decreto 1609 de 2002 (Cap. II, IV, V y VIII) y del Decreto 198 de 2013",
       "obligatorio": true,
       "notas": null
     }
