@@ -4,39 +4,60 @@ import { getSession } from "@/lib/auth";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
+import { Paginador } from "@/components/Paginador";
+
+const POR_PAGINA = 30;
 
 export default async function SolicitantesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; municipio?: string }>;
+  searchParams: Promise<{ q?: string; municipio?: string; page?: string }>;
 }) {
-  const { q, municipio } = await searchParams;
+  const { q, municipio, page: pageParam } = await searchParams;
   const busqueda = q?.trim();
+  const pagina = Math.max(1, Number(pageParam) || 1);
   const session = await getSession();
 
-  const solicitantes = await db.solicitante.findMany({
-    where: {
-      ...(busqueda
-        ? {
-            OR: [
-              { identificacion: { contains: busqueda, mode: "insensitive" } },
-              { nombres: { contains: busqueda, mode: "insensitive" } },
-              { apellidos: { contains: busqueda, mode: "insensitive" } },
-              { razonSocial: { contains: busqueda, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-      ...(municipio ? { municipio } : {}),
-    },
-    orderBy: [{ apellidos: "asc" }, { razonSocial: "asc" }],
-    include: { _count: { select: { expedientes: true } } },
-  });
+  const where = {
+    ...(busqueda
+      ? {
+          OR: [
+            { identificacion: { contains: busqueda, mode: "insensitive" as const } },
+            { nombres: { contains: busqueda, mode: "insensitive" as const } },
+            { apellidos: { contains: busqueda, mode: "insensitive" as const } },
+            { razonSocial: { contains: busqueda, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(municipio ? { municipio } : {}),
+  };
+
+  const [total, solicitantes] = await Promise.all([
+    db.solicitante.count({ where }),
+    db.solicitante.findMany({
+      where,
+      orderBy: [{ apellidos: "asc" }, { razonSocial: "asc" }],
+      include: { _count: { select: { expedientes: true } } },
+      take: POR_PAGINA,
+      skip: (pagina - 1) * POR_PAGINA,
+    }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const paramsExport = new URLSearchParams();
   if (busqueda) paramsExport.set("q", busqueda);
   if (municipio) paramsExport.set("municipio", municipio);
   const qsExport = paramsExport.toString();
   const hayFiltros = Boolean(busqueda || municipio);
+
+  const hrefPagina = (p: number) => {
+    const params = new URLSearchParams();
+    if (busqueda) params.set("q", busqueda);
+    if (municipio) params.set("municipio", municipio);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/solicitantes?${qs}` : "/solicitantes";
+  };
 
   return (
     <div className="space-y-6">
@@ -148,6 +169,13 @@ export default async function SolicitantesPage({
             </tbody>
           </table>
         )}
+        <Paginador
+          paginaActual={pagina}
+          totalPaginas={totalPaginas}
+          total={total}
+          porPagina={POR_PAGINA}
+          hrefPagina={hrefPagina}
+        />
       </div>
     </div>
   );

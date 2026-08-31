@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
+import { Paginador } from "@/components/Paginador";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+
+const POR_PAGINA = 30;
 
 const ESTADOS = [
   "RADICADO",
@@ -18,9 +21,9 @@ const ESTADOS = [
 export default async function ExpedientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; q?: string; tramite?: string; municipio?: string }>;
+  searchParams: Promise<{ estado?: string; q?: string; tramite?: string; municipio?: string; page?: string }>;
 }) {
-  const { estado, q, tramite, municipio } = await searchParams;
+  const { estado, q, tramite, municipio, page: pageParam } = await searchParams;
 
   const tramites = await db.tramiteTipo.findMany({
     where: { activo: true },
@@ -29,25 +32,34 @@ export default async function ExpedientesPage({
   });
 
   const busqueda = q?.trim();
+  const pagina = Math.max(1, Number(pageParam) || 1);
 
-  const expedientes = await db.expediente.findMany({
-    where: {
-      ...(estado ? { estado: estado as (typeof ESTADOS)[number] } : {}),
-      ...(tramite ? { tramiteTipoId: tramite } : {}),
-      ...(municipio ? { municipio } : {}),
-      ...(busqueda
-        ? {
-            OR: [
-              { numero: { contains: busqueda, mode: "insensitive" } },
-              { solicitanteNombre: { contains: busqueda, mode: "insensitive" } },
-              { solicitanteIdentificacion: { contains: busqueda, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { fechaUltimoMovimiento: "desc" },
-    include: { tramiteTipo: true, flujo: true },
-  });
+  const where = {
+    ...(estado ? { estado: estado as (typeof ESTADOS)[number] } : {}),
+    ...(tramite ? { tramiteTipoId: tramite } : {}),
+    ...(municipio ? { municipio } : {}),
+    ...(busqueda
+      ? {
+          OR: [
+            { numero: { contains: busqueda, mode: "insensitive" as const } },
+            { solicitanteNombre: { contains: busqueda, mode: "insensitive" as const } },
+            { solicitanteIdentificacion: { contains: busqueda, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [total, expedientes] = await Promise.all([
+    db.expediente.count({ where }),
+    db.expediente.findMany({
+      where,
+      orderBy: { fechaUltimoMovimiento: "desc" },
+      include: { tramiteTipo: true, flujo: true },
+      take: POR_PAGINA,
+      skip: (pagina - 1) * POR_PAGINA,
+    }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const hayFiltrosExtra = Boolean(busqueda || tramite || municipio);
   // El GET conserva estado/q/tramite/municipio a la vez — helper para armar los links de los pills de estado sin perder los otros filtros.
@@ -60,6 +72,7 @@ export default async function ExpedientesPage({
     const qs = params.toString();
     return qs ? `/expedientes?${qs}` : "/expedientes";
   };
+  const hrefPagina = (p: number) => conFiltro({ page: p > 1 ? String(p) : undefined });
 
   return (
     <div className="space-y-6">
@@ -189,6 +202,13 @@ export default async function ExpedientesPage({
             </tbody>
           </table>
         )}
+        <Paginador
+          paginaActual={pagina}
+          totalPaginas={totalPaginas}
+          total={total}
+          porPagina={POR_PAGINA}
+          hrefPagina={hrefPagina}
+        />
       </div>
     </div>
   );
