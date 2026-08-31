@@ -19,6 +19,22 @@ export async function POST(req: NextRequest) {
 
   if (!email || !password) return fail("Correo y contraseña son obligatorios.");
 
+  // Protección contra fuerza bruta: se apoya en RegistroAuditoria (ya se registraba cada fallo, solo
+  // faltaba frenar en base a eso) en vez de un contador en memoria, porque en Vercel cada solicitud
+  // puede caer en una instancia distinta — un contador en memoria no serviría de nada ahí.
+  const VENTANA_MINUTOS = 15;
+  const MAX_INTENTOS_FALLIDOS = 5;
+  const intentosFallidosRecientes = await db.registroAuditoria.count({
+    where: {
+      tipo: "LOGIN_FALLIDO",
+      emailIntento: email,
+      createdAt: { gte: new Date(Date.now() - VENTANA_MINUTOS * 60 * 1000) },
+    },
+  });
+  if (intentosFallidosRecientes >= MAX_INTENTOS_FALLIDOS) {
+    return fail(`Demasiados intentos fallidos. Espere ${VENTANA_MINUTOS} minutos antes de volver a intentar.`);
+  }
+
   const usuario = await db.usuario.findUnique({ where: { email }, include: { cargo: true } });
   if (!usuario || !usuario.activo) {
     await registrarAuditoria({
