@@ -217,3 +217,56 @@ export async function obtenerResolucionDetalle(nroSolicitud: number): Promise<Si
   }
   return cuerpo.data;
 }
+
+export type ArchivoResolucion =
+  | { ok: true; datos: ArrayBuffer; contentType: string; nombre: string }
+  | { ok: false; estado: number; mensaje: string };
+
+/**
+ * Descarga el archivo (PDF/imagen/Word) de un documento de la resolución.
+ * `POST /presinca/resoluciones/file` con `{ ruta: <caminopdf_edc> }` — la misma
+ * llamada que hace el sistema anterior. `ruta` es una ruta de archivo en el
+ * servidor documental de la CDMB (ej. `N:\solNNNN_DocJur3_de_YYYYMMDD.pdf`), no
+ * una URL; el backend la resuelve contra su unidad de red. Si esa unidad no es
+ * alcanzable desde donde corre el API, responde 400 "No existe archivo".
+ */
+export async function descargarArchivoResolucion(ruta: string): Promise<ArchivoResolucion> {
+  const base = process.env.SINCA_API_URL?.trim().replace(/\/+$/, "");
+  if (!base) return { ok: false, estado: 503, mensaje: "SINCA 1.0 no está configurado." };
+
+  const hacer = async (token: string) =>
+    fetch(`${base}/presinca/resoluciones/file`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ruta }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(45_000),
+    });
+
+  let token = tokenEnMemoria ?? (await autenticar());
+  let res = await hacer(token);
+  if (res.status === 401) {
+    tokenEnMemoria = null;
+    token = await autenticar();
+    res = await hacer(token);
+  }
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!res.ok || contentType.includes("application/json")) {
+    let mensaje = `HTTP ${res.status}`;
+    try {
+      const j = (await res.json()) as { message?: string };
+      if (j?.message) mensaje = j.message;
+    } catch {
+      /* noop */
+    }
+    return { ok: false, estado: res.status === 200 ? 502 : res.status, mensaje };
+  }
+
+  const nombre = ruta.split(/[\\/]/).pop() || "documento";
+  return { ok: true, datos: await res.arrayBuffer(), contentType: contentType || "application/octet-stream", nombre };
+}

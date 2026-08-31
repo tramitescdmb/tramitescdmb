@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, FileText, User, ClipboardList } from "lucide-react";
+import { ArrowLeft, MapPin, FileText, User, ClipboardList, Download } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi } from "@/lib/sinca";
@@ -180,10 +180,21 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
                     {doc.foliosdoc_edc != null && <span>{doc.foliosdoc_edc} folios</span>}
                   </div>
                   {archivo && (
-                    <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
-                      Archivo en el sistema documental de SINCA 1.0: <span className="font-mono">{archivo}</span>. La
-                      descarga del PDF aún no está disponible en esta consulta.
-                    </p>
+                    <div className="mt-3">
+                      <a
+                        href={`/api/historico/documento/${base.nroSolicitud}/${i}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                      >
+                        <Download className="h-3.5 w-3.5" aria-hidden />
+                        Ver / descargar {archivo.split(".").pop()?.toUpperCase()}
+                      </a>
+                      <p className="mt-1 text-xs text-stone-400">
+                        El archivo se obtiene del servidor documental de la CDMB (SINCA 1.0). Si no abre, es porque ese
+                        servidor no está disponible desde aquí.
+                      </p>
+                    </div>
                   )}
                 </li>
               );
