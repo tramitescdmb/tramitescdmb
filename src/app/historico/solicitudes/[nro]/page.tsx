@@ -1,22 +1,43 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, FileText, User } from "lucide-react";
+import { ArrowLeft, MapPin, FileText, User, ClipboardList } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi } from "@/lib/sinca";
 
 function fecha(valor: Date | string | null | undefined) {
-  if (!valor) return "—";
+  if (!valor) return null;
   const d = typeof valor === "string" ? new Date(valor.includes(" ") ? valor.replace(" ", "T") : valor) : valor;
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return null;
   const a = d.getUTCFullYear();
-  if (a < 1980 || a > new Date().getUTCFullYear() + 1) return "—";
+  if (a < 1980 || a > new Date().getUTCFullYear() + 1) return null;
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
 }
-
+const txt = (v: unknown) => (v === null || v === undefined || v === "" || v === "null" ? null : String(v));
 function nombreArchivo(camino: string | null | undefined) {
   if (!camino) return null;
   return camino.split(/[\\/]/).pop() || camino;
+}
+
+function Campos({ titulo, icon: Icon, campos }: { titulo: string; icon: typeof User; campos: [string, string | null][] }) {
+  const visibles = campos.filter(([, v]) => v);
+  if (visibles.length === 0) return null;
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white p-6">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
+        <Icon className="h-4 w-4 text-cdmb-600" aria-hidden />
+        {titulo}
+      </h3>
+      <dl className="mt-4 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+        {visibles.map(([k, v]) => (
+          <div key={k} className="border-b border-stone-100 pb-2">
+            <dt className="text-xs text-stone-400">{k}</dt>
+            <dd className="text-sm text-stone-800">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 export default async function HistoricoDetallePage({ params }: { params: Promise<{ nro: string }> }) {
@@ -31,51 +52,68 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
   const session = await getSession();
   const esAdmin = session?.rol === "ADMIN";
 
-  // Detalle en vivo: trae documentos e interesado. Si el API falla, se muestra
-  // solo lo que hay en el espejo local.
-  let detalle: SincaResolucionDetalleApi | null = null;
+  let d: SincaResolucionDetalleApi | null = null;
   let errorDetalle = false;
   try {
-    detalle = await obtenerResolucionDetalle(nroSolicitud);
+    d = await obtenerResolucionDetalle(nroSolicitud);
   } catch {
     errorDetalle = true;
   }
 
-  const documentos = detalle?.emision_documentos ?? [];
-  const resolucionDoc = documentos.find((d) => d.documentos_cdmb?.tipodoc_dcc?.value === "R");
-  // La fecha de la resolución en SINCA 1.0 a veces tiene el año mal digitado; se
-  // usa la fecha de emisión/vigencia del documento cuando está disponible.
-  const fechaResolucionReal =
-    fecha(base.fechaResolucion) !== "—"
-      ? fecha(base.fechaResolucion)
-      : fecha(resolucionDoc?.fechaemision_edc ?? resolucionDoc?.fechavigencia_edc);
+  const documentos = d?.emision_documentos ?? [];
+  const resolucionDoc = documentos.find((x) => x.documentos_cdmb?.tipodoc_dcc?.value === "R");
+  const fechaResolucion =
+    fecha(base.fechaResolucion) ?? fecha(resolucionDoc?.fechaemision_edc) ?? fecha(resolucionDoc?.fechavigencia_edc);
 
-  const interesado = detalle?.interesado?.[0]?.nit as Record<string, unknown> | undefined;
+  const interesado = d?.interesado?.[0]?.nit as Record<string, unknown> | undefined;
   const nombreInteresado =
-    (interesado?.razon_soc_nit as string) ||
-    [interesado?.primer_nom_nit, interesado?.segundo_nom_nit, interesado?.primer_ape_nit, interesado?.segundo_ape_nit]
-      .filter(Boolean)
-      .join(" ") ||
-    (interesado?.nombre_nit as string) ||
+    txt(interesado?.razon_soc_nit) ||
+    [interesado?.primer_nom_nit, interesado?.segundo_nom_nit, interesado?.primer_ape_nit, interesado?.segundo_ape_nit].filter(Boolean).join(" ") ||
+    txt(interesado?.nombre_nit) ||
     base.representanteLegal;
   const nitInteresado = interesado?.numero_nit
     ? `${interesado.numero_nit}${interesado.digito_nit != null ? `-${interesado.digito_nit}` : ""}`
     : base.idRepresentante;
 
-  const datos: { etiqueta: string; valor: string | null }[] = [
-    { etiqueta: "Número de solicitud (SINCA 1.0)", valor: String(base.nroSolicitud) },
-    { etiqueta: "Número de resolución", valor: base.numeroResolucion },
-    { etiqueta: "Fecha de la resolución", valor: fechaResolucionReal },
-    { etiqueta: "Fecha de recibido", valor: fecha(base.fechaRecibido) },
-    { etiqueta: "Expediente", valor: base.expediente },
-    { etiqueta: "Tipo de trámite", valor: base.tipoSolicitud },
-    { etiqueta: "Modalidad", valor: base.indTipoSolicitud },
-    { etiqueta: "Estado", valor: base.estado },
-    { etiqueta: "Origen", valor: detalle?.origen_sol?.label ?? base.origen },
-    { etiqueta: "Departamento", valor: detalle?.municipios?.departamentos?.nombre_dpt ?? base.departamento },
-    { etiqueta: "Municipio", valor: detalle?.municipios?.nombre_mun ?? base.municipio },
-    { etiqueta: "Vereda / barrio", valor: detalle?.vereda ?? detalle?.barrio ?? base.barrio },
-    { etiqueta: "Dirección", valor: detalle?.direccion_sol ?? null },
+  const datosSolicitud: [string, string | null][] = [
+    ["Número de solicitud (SINCA 1.0)", String(base.nroSolicitud)],
+    ["Número de resolución", base.numeroResolucion],
+    ["Fecha de la resolución", fechaResolucion],
+    ["Expediente", base.expediente],
+    ["Tipo de trámite", base.tipoSolicitud],
+    ["Modalidad", d?.indtiposol_sol?.label ?? base.indTipoSolicitud],
+    ["Estado", d?.estado_sol?.label ?? base.estado],
+    ["Origen", d?.origen_sol?.label ?? base.origen],
+    ["Número de origen (radicado)", txt(d?.nroorigen_sol)],
+    ["Año de origen", txt(d?.anoorigen_sol)],
+    ["Fecha de recibido", fecha(base.fechaRecibido) ?? fecha(d?.fecharecibido_sol)],
+    ["¿Requiere permiso?", d?.requierepermiso_sol?.label ?? null],
+    ["Licencia única", d?.licenciaunica_sol?.label ?? null],
+    ["Número de título minero", txt(d?.nrotitulomin_tmi)],
+    ["Observación", txt(d?.observacion_sol)],
+  ];
+
+  const datosUbicacion: [string, string | null][] = [
+    ["Departamento", d?.municipios?.departamentos?.nombre_dpt ?? base.departamento],
+    ["Municipio", d?.municipios?.nombre_mun ?? base.municipio],
+    ["Tipo de centro poblado", d?.tipocenpoblado_sol?.label ?? null],
+    ["Vereda", txt(d?.vereda)],
+    ["Barrio / sector", txt(d?.barrio) ?? txt(base.barrio)],
+    ["Dirección", txt(d?.direccion_sol)],
+    ["Clase de suelo", d?.clasesuelo_sol?.label ?? null],
+    ["Uso del suelo", d?.usosuelo_sol?.label ?? null],
+    ["Tipo de proyecto", d?.tipoproyecto_sol?.label ?? null],
+    ["Número de viviendas", txt(d?.nroviviendas_sol)],
+    ["Número de predios", txt(d?.nropredios_sol)],
+    ["Área (m²)", txt(d?.area_sol)],
+    ["Descripción del sitio", txt(d?.descripsitio_sol)],
+  ];
+
+  const datosContacto: [string, string | null][] = [
+    ["Correo", txt(d?.correo_sol) ?? base.correo],
+    ["Teléfono", txt(d?.telefono_sol)],
+    ["Representante legal", base.representanteLegal],
+    ["Identificación del representante", base.idRepresentante],
   ];
 
   return (
@@ -91,21 +129,11 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
           <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">{base.estado ?? "—"}</span>
         </div>
         <p className="mt-2 text-sm text-stone-700">{base.proyecto || "Sin descripción del proyecto."}</p>
-
-        <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-          {datos.map((f) => (
-            <div key={f.etiqueta} className="border-b border-stone-100 pb-2">
-              <dt className="text-xs text-stone-400">{f.etiqueta}</dt>
-              <dd className="text-sm text-stone-800">{f.valor && f.valor !== "null" ? f.valor : "—"}</dd>
-            </div>
-          ))}
-        </dl>
-
         {base.lat != null && base.lon != null && (
-          <div className="mt-5 flex items-center gap-2 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-600">
+          <div className="mt-4 flex items-center gap-2 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-600">
             <MapPin className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
             <span>
-              Ubicación aproximada: {base.lat.toFixed(5)}, {base.lon.toFixed(5)}{" "}
+              {base.lat.toFixed(5)}, {base.lon.toFixed(5)}{" "}
               <a
                 href={`https://www.openstreetmap.org/?mlat=${base.lat}&mlon=${base.lon}#map=15/${base.lat}/${base.lon}`}
                 target="_blank"
@@ -125,39 +153,36 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
           <FileText className="h-4 w-4 text-cdmb-600" aria-hidden />
           Documentos de la resolución
         </h3>
-
         {errorDetalle ? (
-          <p className="mt-3 text-sm text-stone-500">
-            No fue posible consultar los documentos en SINCA 1.0 en este momento. Intente más tarde.
-          </p>
+          <p className="mt-3 text-sm text-stone-500">No fue posible consultar los documentos en SINCA 1.0 en este momento. Intente más tarde.</p>
         ) : documentos.length === 0 ? (
           <p className="mt-3 text-sm text-stone-500">Esta solicitud no tiene documentos registrados en SINCA 1.0.</p>
         ) : (
           <ul className="mt-4 space-y-4">
-            {documentos.map((d, i) => {
-              const archivo = nombreArchivo(d.caminopdf_edc);
+            {documentos.map((doc, i) => {
+              const archivo = nombreArchivo(doc.caminopdf_edc);
               return (
                 <li key={i} className="rounded-lg border border-stone-200 p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="text-sm font-medium text-stone-800">
-                      {d.documentos_cdmb?.nombre_dcc ?? d.documentos_cdmb?.tipodoc_dcc?.label ?? "Documento"}
+                      {doc.documentos_cdmb?.nombre_dcc ?? doc.documentos_cdmb?.tipodoc_dcc?.label ?? "Documento"}
                     </p>
                     <span className="text-xs text-stone-400">
-                      {d.documentos_cdmb?.tipodoc_dcc?.label ?? "—"}
-                      {d.nrodocumento_edc ? ` · N.º ${d.nrodocumento_edc}` : ""}
+                      {doc.documentos_cdmb?.tipodoc_dcc?.label ?? "—"}
+                      {doc.nrodocumento_edc ? ` · N.º ${doc.nrodocumento_edc}` : ""}
                     </span>
                   </div>
-                  {d.referencia_edc && <p className="mt-1 text-sm text-stone-600">{d.referencia_edc}</p>}
+                  {doc.referencia_edc && <p className="mt-1 text-sm text-stone-600">{doc.referencia_edc}</p>}
                   <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-stone-500">
-                    <span>Emisión: {fecha(d.fechaemision_edc)}</span>
-                    <span>Vigencia: {fecha(d.fechavigencia_edc)}</span>
-                    {d.fechanotificacion_edc && <span>Notificación: {fecha(d.fechanotificacion_edc)}</span>}
-                    {d.foliosdoc_edc != null && <span>{d.foliosdoc_edc} folios</span>}
+                    {fecha(doc.fechaemision_edc) && <span>Emisión: {fecha(doc.fechaemision_edc)}</span>}
+                    {fecha(doc.fechavigencia_edc) && <span>Vigencia: {fecha(doc.fechavigencia_edc)}</span>}
+                    {fecha(doc.fechanotificacion_edc) && <span>Notificación: {fecha(doc.fechanotificacion_edc)}</span>}
+                    {doc.foliosdoc_edc != null && <span>{doc.foliosdoc_edc} folios</span>}
                   </div>
                   {archivo && (
                     <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
-                      Archivo en el sistema documental de SINCA 1.0: <span className="font-mono">{archivo}</span>. Esta
-                      consulta no permite descargar el PDF todavía.
+                      Archivo en el sistema documental de SINCA 1.0: <span className="font-mono">{archivo}</span>. La
+                      descarga del PDF aún no está disponible en esta consulta.
                     </p>
                   )}
                 </li>
@@ -167,46 +192,29 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         )}
       </section>
 
-      {/* Interesado / solicitante */}
+      <Campos titulo="Datos de la solicitud" icon={ClipboardList} campos={datosSolicitud} />
+      <Campos titulo="Ubicación y predio" icon={MapPin} campos={datosUbicacion} />
+      <Campos titulo="Contacto" icon={User} campos={datosContacto} />
+
       {nombreInteresado && (
-        <section className="rounded-xl border border-stone-200 bg-white p-6">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-            <User className="h-4 w-4 text-cdmb-600" aria-hidden />
-            Interesado
-          </h3>
-          <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 text-sm">
-            <div>
-              <dt className="text-xs text-stone-400">Nombre / razón social</dt>
-              <dd className="text-stone-800">{nombreInteresado}</dd>
-            </div>
-            {nitInteresado && (
-              <div>
-                <dt className="text-xs text-stone-400">Identificación</dt>
-                <dd className="text-stone-800">{nitInteresado}</dd>
-              </div>
-            )}
-            {(interesado?.correo_nit as string) || base.correo ? (
-              <div>
-                <dt className="text-xs text-stone-400">Correo</dt>
-                <dd className="text-stone-800">{(interesado?.correo_nit as string) || base.correo}</dd>
-              </div>
-            ) : null}
-            {(interesado?.direcc_nit as string) || detalle?.direccion_sol ? (
-              <div>
-                <dt className="text-xs text-stone-400">Dirección</dt>
-                <dd className="text-stone-800">{(interesado?.direcc_nit as string) || detalle?.direccion_sol}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </section>
+        <Campos
+          titulo="Interesado"
+          icon={User}
+          campos={[
+            ["Nombre / razón social", nombreInteresado],
+            ["Identificación", nitInteresado],
+            ["Correo", txt(interesado?.correo_nit)],
+            ["Celular", txt(interesado?.celular_nit)],
+            ["Dirección", txt(interesado?.direcc_nit)],
+            ["Naturaleza jurídica", txt((interesado?.natur_jurid_nit as { label?: string } | undefined)?.label)],
+          ]}
+        />
       )}
 
-      {esAdmin && detalle && (
+      {esAdmin && d && (
         <details className="rounded-xl border border-stone-200 bg-white p-4 text-sm">
           <summary className="cursor-pointer text-xs font-medium text-stone-500">Datos técnicos (solo administradores)</summary>
-          <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-stone-900 p-3 text-xs text-stone-100">
-            {JSON.stringify(detalle, null, 2)}
-          </pre>
+          <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-stone-900 p-3 text-xs text-stone-100">{JSON.stringify(d, null, 2)}</pre>
         </details>
       )}
     </div>

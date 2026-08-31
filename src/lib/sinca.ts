@@ -174,6 +174,8 @@ export type SincaDocumentoEmitido = {
 export type SincaResolucionDetalleApi = {
   nrosolicitud_sol: number;
   nrosolresol_sol: string | null;
+  nroorigen_sol: number | string | null;
+  anoorigen_sol: number | string | null;
   proyecto_sol: string | null;
   observacion_sol: string | null;
   descripsitio_sol: string | null;
@@ -181,14 +183,21 @@ export type SincaResolucionDetalleApi = {
   telefono_sol: string | null;
   correo_sol: string | null;
   fecharecibido_sol: string | null;
+  feregistro_sol: string | null;
   expediente_sol: string | null;
   estado_sol: Etiquetado;
   indtiposol_sol: Etiquetado;
   origen_sol: Etiquetado;
   requierepermiso_sol: Etiquetado;
+  licenciaunica_sol: Etiquetado;
+  tipoproyecto_sol: Etiquetado;
   tipocenpoblado_sol: Etiquetado;
   clasesuelo_sol: Etiquetado;
   usosuelo_sol: Etiquetado;
+  nrotitulomin_tmi: string | number | null;
+  nroviviendas_sol: number | string | null;
+  nropredios_sol: number | string | null;
+  area_sol: number | string | null;
   municipios: { nombre_mun: string | null; departamentos: { nombre_dpt: string | null } | null } | null;
   vereda: string | null;
   barrio: string | null;
