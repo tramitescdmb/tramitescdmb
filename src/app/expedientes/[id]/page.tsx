@@ -6,7 +6,8 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
-import { cargoCoincideConPaso, cargoCanonico } from "@/lib/cargos";
+import { cargoCoincideConPaso, cargoCanonico, cargosEnTexto, puedeGestionarPaso } from "@/lib/cargos";
+import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { documentoEtapaAbierta } from "@/lib/documentos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
@@ -37,10 +38,13 @@ const formatoFechaHistoria = new Intl.DateTimeFormat("es-CO", {
 
 export default async function ExpedienteDetallePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
 
   const [expediente, usuariosActivos, cargos] = await Promise.all([
     db.expediente.findUnique({
@@ -71,6 +75,8 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargo, pasoActual.responsables) : false;
+  const puedeAvanzar = pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
+  const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const visitasDelPasoActual = pasoActual
     ? expediente.visitasTecnicas.filter((v) => v.pasoNumero === pasoActual.numero)
     : [];
@@ -105,7 +111,23 @@ export default async function ExpedienteDetallePage({
           </Link>{" "}
           · Flujo: {expediente.flujo.nombre}
         </p>
+        <div className="mt-3 max-w-md">
+          <ProgresoExpediente pasoActualNumero={expediente.pasoActualNumero} totalPasos={pasos.length} estado={expediente.estado} tamaño="grande" />
+        </div>
       </div>
+
+      {error === "sin-permiso-paso" && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          🔒 No pudo avanzarse el paso: según el procedimiento, este paso le corresponde a{" "}
+          <strong>{cargosDelPasoActual.join(", ") || "otro cargo"}</strong>, y su cargo actual no coincide. Solo un
+          administrador o un funcionario con ese cargo puede completarlo.
+        </div>
+      )}
+      {error === "sin-permiso-estado" && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          🔒 Solo un administrador puede cambiar el estado del expediente manualmente.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -263,7 +285,15 @@ export default async function ExpedienteDetallePage({
 
               {/* Acciones para avanzar */}
               <div className="mt-4 border-t border-stone-100 pt-4">
-                {pasoActual.esDecision ? (
+                {!puedeAvanzar ? (
+                  <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                    🔒 Este paso solo puede avanzarlo{" "}
+                    <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
+                    {session?.cargo ? <> — su cargo actual es &quot;{session.cargo}&quot;.</> : " — no tiene un cargo asignado."}{" "}
+                    Puede seguir adjuntando documentos y registrando la visita técnica; para avanzar el paso, pídale
+                    a la persona con ese cargo (o a un administrador) que lo haga.
+                  </p>
+                ) : pasoActual.esDecision ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-stone-500">
                       ⚠ Este paso requiere una decisión. Seleccione la opción correspondiente para que el
@@ -367,7 +397,8 @@ export default async function ExpedienteDetallePage({
             </ol>
           </section>
 
-          {/* Cambio de estado manual */}
+          {/* Cambio de estado manual — salida de emergencia que salta el flujo de pasos, por eso
+              queda reservada al administrador (ver /api/expedientes/[id]/estado/route.ts). */}
           <section className="rounded-xl border border-stone-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
             <p className="mb-3 text-xs text-stone-500">
@@ -375,6 +406,12 @@ export default async function ExpedienteDetallePage({
               decisión que corresponda (por ejemplo, un archivo por desistimiento tácito, o para
               suspenderlo mientras se espera información externa).
             </p>
+            {session?.rol !== "ADMIN" ? (
+              <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                🔒 Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
+                del flujo. Gestione el expediente desde &quot;Paso actual&quot; más arriba.
+              </p>
+            ) : (
             <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">
               <Field label="Nuevo estado" required help="">
                 <select
@@ -402,6 +439,7 @@ export default async function ExpedienteDetallePage({
                 Guardar estado
               </button>
             </form>
+            )}
           </section>
 
           {/* Historia del expediente — línea de tiempo */}

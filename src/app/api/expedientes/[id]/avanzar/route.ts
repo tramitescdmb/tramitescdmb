@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { EstadoExpediente } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { puedeGestionarPaso } from "@/lib/cargos";
 
 const ESTADOS_TERMINALES: EstadoExpediente[] = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
 
@@ -26,6 +27,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
 
   const pasoActual = expediente.flujo.pasos.find((p) => p.numero === expediente.pasoActualNumero);
+
+  if (pasoActual && !puedeGestionarPaso(session, pasoActual.responsables)) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "sin-permiso-paso");
+    return NextResponse.redirect(url, { status: 303 });
+  }
+
   const siguientePasoNumero = siguientePasoRaw ? Number(siguientePasoRaw) : null;
   const siguienteExiste = siguientePasoNumero
     ? expediente.flujo.pasos.some((p) => p.numero === siguientePasoNumero)

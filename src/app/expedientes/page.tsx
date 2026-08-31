@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
+import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { Paginador } from "@/components/Paginador";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 
@@ -54,7 +55,7 @@ export default async function ExpedientesPage({
     db.expediente.findMany({
       where,
       orderBy: { fechaUltimoMovimiento: "desc" },
-      include: { tramiteTipo: true, flujo: true },
+      include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true } } } } },
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
     }),
@@ -171,7 +172,7 @@ export default async function ExpedientesPage({
                 <th className="px-4 py-2.5 font-medium">Trámite</th>
                 <th className="px-4 py-2.5 font-medium">Solicitante</th>
                 <th className="px-4 py-2.5 font-medium">Municipio</th>
-                <th className="px-4 py-2.5 font-medium">Paso actual</th>
+                <th className="px-4 py-2.5 font-medium">Avance</th>
                 <th className="px-4 py-2.5 font-medium">Estado</th>
                 <th className="px-4 py-2.5 font-medium">Último movimiento</th>
               </tr>
@@ -190,7 +191,13 @@ export default async function ExpedientesPage({
                     <span className="block text-xs text-stone-400">{exp.solicitanteIdentificacion}</span>
                   </td>
                   <td className="px-4 py-2.5 text-stone-500">{exp.municipio}</td>
-                  <td className="px-4 py-2.5 text-stone-500">Paso {exp.pasoActualNumero}</td>
+                  <td className="min-w-[140px] px-4 py-2.5">
+                    <ProgresoExpediente
+                      pasoActualNumero={exp.pasoActualNumero}
+                      totalPasos={exp.flujo.pasos.length}
+                      estado={exp.estado}
+                    />
+                  </td>
                   <td className="px-4 py-2.5">
                     <EstadoBadge estado={exp.estado} />
                   </td>

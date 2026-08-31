@@ -44,13 +44,43 @@ export type EntradaCatalogo = {
  * activo, las categorías se separan con un rótulo de texto simple (sin
  * caja, sin ícono repetido) en vez de otra fila de insignias.
  */
+function coincideBusqueda(entrada: EntradaCatalogo, termino: string) {
+  const t = termino.toLowerCase();
+  return (
+    entrada.nombre.toLowerCase().includes(t) ||
+    entrada.tramite.codigo.toLowerCase().includes(t) ||
+    entrada.suits.some((s) => s.toLowerCase().includes(t))
+  );
+}
+
 export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaParaCliente; items: EntradaCatalogo[] }[] }) {
   const [filtro, setFiltro] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
   const totalTramites = secciones.reduce((acc, s) => acc + s.items.length, 0);
-  const visibles = filtro ? secciones.filter((s) => s.cat.id === filtro) : secciones;
+
+  const buscando = busqueda.trim().length > 0;
+  const porCategoria = filtro ? secciones.filter((s) => s.cat.id === filtro) : secciones;
+  const visibles = buscando
+    ? porCategoria.map((s) => ({ ...s, items: s.items.filter((e) => coincideBusqueda(e, busqueda)) })).filter((s) => s.items.length > 0)
+    : porCategoria;
+  const totalVisible = visibles.reduce((acc, s) => acc + s.items.length, 0);
 
   return (
     <div className="space-y-6">
+      <div className="relative max-w-md">
+        <svg viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden>
+          <circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M18 18l-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por nombre, código o ficha SUIT…"
+          className="w-full rounded-lg border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        />
+      </div>
+
       <nav className="flex flex-wrap gap-2.5" aria-label="Filtrar por categoría">
         <button
           type="button"
@@ -86,10 +116,16 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
         })}
       </nav>
 
+      {buscando && (
+        <p className="text-sm text-stone-500">
+          {totalVisible === 0 ? "Ningún trámite coincide con la búsqueda." : `${totalVisible} trámite${totalVisible === 1 ? "" : "s"} encontrado${totalVisible === 1 ? "" : "s"}.`}
+        </p>
+      )}
+
       <div className="space-y-8">
         {visibles.map(({ cat, items }) => (
           <div key={cat.id}>
-            {filtro === null && (
+            {filtro === null && !buscando && (
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">{cat.etiqueta}</h2>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

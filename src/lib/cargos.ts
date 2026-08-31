@@ -102,6 +102,32 @@ export function cargosEnTexto(texto: string): string[] {
   return encontrados;
 }
 
+/**
+ * ¿Puede este usuario avanzar/completar el paso actual (marcarlo hecho, tomar la
+ * decisión que lo mueve al siguiente)? Esta es la única restricción de acceso real
+ * sobre pasos — a diferencia de `cargoCoincideConPaso` (que es solo el resaltado
+ * visual "esto le toca a su cargo"), esta función decide si el botón de avanzar
+ * queda habilitado o bloqueado:
+ *
+ * - ADMIN: siempre puede, sin importar su cargo (control total de respaldo).
+ * - Si el texto de `responsables` del paso no menciona ningún cargo del catálogo
+ *   (redacción del PDF demasiado genérica o inusual), NO se restringe a nadie —
+ *   bloquear sin poder identificar con certeza a quién le corresponde dejaría el
+ *   trámite sin nadie que pueda avanzarlo.
+ * - Si sí se reconoce uno o más cargos, solo un funcionario con alguno de esos
+ *   cargos asignados puede avanzar el paso.
+ */
+export function puedeGestionarPaso(
+  session: { rol: "ADMIN" | "FUNCIONARIO"; cargo: string | null } | null | undefined,
+  responsables: string[]
+): boolean {
+  if (!session) return false;
+  if (session.rol === "ADMIN") return true;
+  const cargosDelPaso = cargosEnTexto(responsables.join(" | "));
+  if (cargosDelPaso.length === 0) return true;
+  return session.cargo != null && cargosDelPaso.includes(session.cargo);
+}
+
 /** Cargos canónicos únicos mencionados en cualquier paso de una lista de flujos. */
 export function cargosQueIntervienen(flujos: { pasos: { responsables: string[] }[] }[]): string[] {
   const vistos = new Set<string>();

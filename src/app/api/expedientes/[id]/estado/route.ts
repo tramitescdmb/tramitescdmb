@@ -18,6 +18,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  // Cambiar el estado a mano salta por completo el flujo de pasos (y con él, la
+  // restricción por cargo de /avanzar) — dejarlo abierto a cualquier funcionario
+  // anularía esa restricción por otra puerta. Solo el administrador tiene esta
+  // salida de emergencia; el resto sigue el paso a paso guiado.
+  if (session.rol !== "ADMIN") {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "sin-permiso-estado");
+    return NextResponse.redirect(url, { status: 303 });
+  }
 
   const form = await req.formData();
   const nuevoEstado = String(form.get("estado") || "");

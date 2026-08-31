@@ -24,7 +24,7 @@ export async function getDashboardData() {
       db.expediente.findMany({
         take: 8,
         orderBy: { fechaUltimoMovimiento: "desc" },
-        include: { tramiteTipo: true },
+        include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true } } } } },
       }),
       db.expediente.groupBy({
         by: ["municipio"],
