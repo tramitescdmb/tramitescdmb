@@ -76,6 +76,13 @@
     },
     {
       "orden": 10,
+      "nombre": "Estudio Geoeléctrico y diseño del pozo profundo",
+      "obligatorio": true,
+      "notas": null,
+      "aplicaA": null
+    },
+    {
+      "orden": 11,
       "nombre": "Autorización de notificación por correo electrónico",
       "obligatorio": false,
       "notas": "Solo si el usuario lo autoriza"
@@ -97,7 +104,8 @@
           ],
           "documentos": [
             "Formulario Único Nacional de Solicitud de Prospección y Exploración de Aguas Subterráneas",
-            "Documento Técnico y Estudio Geo-eléctrico",
+            "Documento Técnico",
+            "Estudio Geoeléctrico y diseño del pozo profundo",
             "Anexos",
             "SIC",
             "Lista de Chequeo Trámite de Permiso de Exploración de Aguas Subterráneas (Formato E-GE-FO02)",
@@ -118,7 +126,8 @@
           ],
           "documentos": [
             "Formulario Único Nacional de Solicitud de Prospección y Exploración de Aguas Subterráneas",
-            "Documento Técnico y Estudio Geo-eléctrico",
+            "Documento Técnico",
+            "Estudio Geoeléctrico y diseño del pozo profundo",
             "Anexos",
             "SIC"
           ],
