@@ -248,7 +248,7 @@
       "inicio"
     ],
     "numPasos": 8,
-    "numDocumentosRequeridos": 1
+    "numDocumentosRequeridos": 8
   },
   {
     "codigo": "M-DA-PR43",
@@ -278,7 +278,7 @@
       "verificacion"
     ],
     "numPasos": 5,
-    "numDocumentosRequeridos": 5
+    "numDocumentosRequeridos": 10
   },
   {
     "codigo": "M-DA-PR48",
