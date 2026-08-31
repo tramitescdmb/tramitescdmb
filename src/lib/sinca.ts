@@ -145,3 +145,66 @@ export async function listarResoluciones(opts: OpcionesListado = {}): Promise<Pa
   }
   return cuerpo;
 }
+
+// --- Detalle de una resolución --------------------------------------------------
+// `GET /presinca/resoluciones/{nrosolicitud_sol}` devuelve bastante más que el
+// listado: los documentos emitidos (incl. la resolución de fondo) y el interesado.
+
+export type SincaDocumentoEmitido = {
+  fechaemision_edc: string | null;
+  fechavigencia_edc: string | null;
+  fechadocumento_edc: string | null;
+  fechanotificacion_edc: string | null;
+  nrodocumento_edc: string | null;
+  referencia_edc: string | null;
+  foliosdoc_edc: number | null;
+  caminopdf_edc: string | null; // ruta del archivo en el servidor de la CDMB (no es una URL)
+  edc_caminodoc_edc: string | null;
+  caminodoc_edc: string | null;
+  tipoubicacionpdf_edc: Etiquetado;
+  inddefinitivo_edc: Etiquetado;
+  documentos_cdmb: {
+    nombre_dcc: string | null;
+    tipodoc_dcc: Etiquetado;
+    consecutivo_dcc: string | number | null;
+  } | null;
+  [k: string]: unknown;
+};
+
+export type SincaResolucionDetalleApi = {
+  nrosolicitud_sol: number;
+  nrosolresol_sol: string | null;
+  proyecto_sol: string | null;
+  observacion_sol: string | null;
+  descripsitio_sol: string | null;
+  direccion_sol: string | null;
+  telefono_sol: string | null;
+  correo_sol: string | null;
+  fecharecibido_sol: string | null;
+  expediente_sol: string | null;
+  estado_sol: Etiquetado;
+  indtiposol_sol: Etiquetado;
+  origen_sol: Etiquetado;
+  requierepermiso_sol: Etiquetado;
+  tipocenpoblado_sol: Etiquetado;
+  clasesuelo_sol: Etiquetado;
+  usosuelo_sol: Etiquetado;
+  municipios: { nombre_mun: string | null; departamentos: { nombre_dpt: string | null } | null } | null;
+  vereda: string | null;
+  barrio: string | null;
+  tipo_solicitud: { tiposol_tps: string | null; nombretipo_tps: string | null } | null;
+  interesado: { nit: Record<string, unknown> | null }[] | null;
+  emision_documentos: SincaDocumentoEmitido[] | null;
+  [k: string]: unknown;
+};
+
+/** `null` si el API responde 404 para ese número de solicitud. */
+export async function obtenerResolucionDetalle(nroSolicitud: number): Promise<SincaResolucionDetalleApi | null> {
+  const res = await fetchConToken(`/presinca/resoluciones/${nroSolicitud}`);
+  if (res.status === 404) return null;
+  const cuerpo = (await res.json().catch(() => null)) as { data?: SincaResolucionDetalleApi; message?: string } | null;
+  if (!res.ok || !cuerpo?.data) {
+    throw new Error(`SINCA 1.0 /presinca/resoluciones/${nroSolicitud} falló: ${cuerpo?.message ?? `HTTP ${res.status}`}`);
+  }
+  return cuerpo.data;
+}
