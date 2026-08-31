@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
@@ -714,6 +715,7 @@ export function NuevoExpedienteForm({
                   docInputRefs.current[doc.id] = el;
                 }}
                 type="file"
+                accept={ACCEPT_DOCUMENTOS}
                 disabled={submitting}
                 onChange={(e) => setArchivosPorDoc((prev) => ({ ...prev, [doc.id]: e.target.files?.[0] ?? null }))}
                 className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-md file:border-0 file:bg-cdmb-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cdmb-700 hover:file:bg-cdmb-100"
@@ -746,6 +748,7 @@ export function NuevoExpedienteForm({
           <input
             ref={extraInputRef}
             type="file"
+            accept={ACCEPT_DOCUMENTOS}
             multiple
             disabled={submitting}
             onChange={(e) => {

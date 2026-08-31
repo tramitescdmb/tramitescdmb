@@ -1,4 +1,10 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  extensionPermitida,
+  mensajeArchivoDemasiadoGrande,
+  mensajeTipoNoPermitido,
+  TAMANO_MAXIMO_BYTES,
+} from "@/lib/uploads-config";
 
 export type ArchivoSubido = {
   path: string;
@@ -14,6 +20,9 @@ export type ArchivoSubido = {
  * para los planos, estudios técnicos, etc. que piden algunos trámites.
  */
 export async function subirArchivoDirecto(expedienteId: string, file: File): Promise<ArchivoSubido> {
+  if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
+  if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
+
   const signRes = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

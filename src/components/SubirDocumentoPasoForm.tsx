@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { IconX } from "@/components/icons";
 import { Spinner } from "@/components/Spinner";
 
@@ -118,6 +119,7 @@ export function SubirDocumentoPasoForm({
                       docInputRefs.current[nombreDoc] = el;
                     }}
                     type="file"
+                    accept={ACCEPT_DOCUMENTOS}
                     disabled={submitting}
                     onChange={(e) =>
                       setArchivosPorDoc((prev) => ({ ...prev, [nombreDoc]: e.target.files?.[0] ?? null }))
@@ -157,11 +159,12 @@ export function SubirDocumentoPasoForm({
 
       <Field
         label={documentosDelPaso.length > 0 ? "Otros documentos de este paso" : "Adjuntar documento de este paso"}
-        help="Cualquier otro soporte que no esté incluido en la lista anterior. Pueden seleccionarse varios archivos."
+        help="Cualquier otro soporte que no esté incluido en la lista anterior. Pueden seleccionarse varios archivos. Formatos aceptados: PDF, Word, Excel o imagen (JPG/PNG)."
       >
         <input
           ref={extraInputRef}
           type="file"
+          accept={ACCEPT_DOCUMENTOS}
           multiple
           disabled={submitting}
           onChange={(e) => {

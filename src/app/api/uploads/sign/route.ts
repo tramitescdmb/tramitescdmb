@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
+import { extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -12,6 +14,17 @@ export async function POST(req: NextRequest) {
 
   if (!expedienteId || !fileName) {
     return NextResponse.json({ error: "Faltan expedienteId o fileName." }, { status: 400 });
+  }
+
+  // El navegador ya valida esto (src/lib/uploads-client.ts), pero esa validación se puede saltar
+  // (otro cliente HTTP, devtools) — el servidor es quien de verdad decide qué se puede subir.
+  if (!extensionPermitida(fileName)) {
+    return NextResponse.json({ error: mensajeTipoNoPermitido(fileName) }, { status: 400 });
+  }
+
+  const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });
+  if (!expediente) {
+    return NextResponse.json({ error: "El expediente indicado no existe." }, { status: 404 });
   }
 
   const path = buildStoragePath(expedienteId, fileName);
