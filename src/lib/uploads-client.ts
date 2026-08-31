@@ -19,14 +19,18 @@ export type ArchivoSubido = {
  * Así no aplica el límite de tamaño de solicitud de Vercel (~4.5MB) — sirve
  * para los planos, estudios técnicos, etc. que piden algunos trámites.
  */
-export async function subirArchivoDirecto(expedienteId: string, file: File): Promise<ArchivoSubido> {
+export async function subirArchivoDirecto(
+  expedienteId: string,
+  file: File,
+  opciones?: { nuevo?: boolean }
+): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
 
   const signRes = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ expedienteId, fileName: file.name }),
+    body: JSON.stringify({ expedienteId, fileName: file.name, nuevo: opciones?.nuevo === true }),
   });
   if (!signRes.ok) {
     const body = await signRes.json().catch(() => ({}));

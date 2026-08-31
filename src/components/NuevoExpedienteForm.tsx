@@ -215,14 +215,14 @@ export function NuevoExpedienteForm({
         const file = archivosPorDoc[doc.id];
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
-          const subido = await subirArchivoDirecto(expedienteId, file);
+          const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
           documentos.push({ ...subido, descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre });
         }
       }
 
       for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
-        const subido = await subirArchivoDirecto(expedienteId, file);
+        const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
         documentos.push({ ...subido, descripcion: "Documento adicional aportado por el solicitante." });
       }
 
