@@ -4,12 +4,17 @@
  * para ~16 cargos reales — cada PDF los escribió un poco distinto: "Subdirector
  * de SEYCA" / "Subdirector SEYCA" / "Subdirectora de SEYCA" son el mismo cargo).
  *
- * `palabrasClave` sirve para resaltar en el seguimiento de un expediente cuándo
- * un paso probablemente le corresponde al usuario que tiene la sesión abierta
- * (compara su cargo contra el texto de `responsables` del paso). Es una ayuda
- * visual, no una restricción: cualquier funcionario puede seguir gestionando
- * cualquier paso — el texto de los PDFs es demasiado variado para bloquear con
- * certeza total quién puede hacer qué.
+ * `palabrasClave` cumple doble función: (1) resalta en el seguimiento de un
+ * expediente cuándo un paso probablemente le corresponde al usuario que tiene
+ * la sesión abierta (`cargoCoincideConPaso`, solo visual), y (2) desde que
+ * existe `puedeGestionarPaso` (ver abajo), es también la fuente de verdad del
+ * bloqueo real: si el texto de `responsables` de un paso reconoce uno o más
+ * cargos de este catálogo, solo alguien con ese cargo (o el ADMIN) puede
+ * avanzarlo. Por eso las palabras clave deben ser lo bastante específicas
+ * para no cruzarse entre cargos — una palabra clave genérica (p. ej. un
+ * "coordinador" sin calificar) no solo resaltaría mal, bloquearía mal: le
+ * daría acceso real a un paso de OTRO coordinador. Ver el caso ya corregido
+ * de "Coordinador(a) de Evaluación" más abajo.
  */
 export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
   { nombre: "Director(a) General", palabrasClave: ["director general", "dirección general"] },
@@ -20,8 +25,13 @@ export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
   },
   { nombre: "Secretario(a) General", palabrasClave: ["secretario general", "secretaria general", "secretaría general"] },
   {
+    // "coordinador"/"coordinadora"/"coordinación" a secas — sin calificar — se
+    // quitaron a propósito: coincidían también con textos que hablan del OTRO
+    // coordinador ("Coordinador de Seguimiento para la Sostenibilidad"), lo
+    // que le daba acceso real a pasos que no le corresponden (bug encontrado
+    // auditando los 30 PDF paso por paso tras activar el bloqueo real).
     nombre: "Coordinador(a) de Evaluación para la Sostenibilidad",
-    palabrasClave: ["coordinador", "coordinadora", "coordinación"].concat(["evaluación para la sostenibilidad", "evaluación ambiental", "grupo de evaluación"]),
+    palabrasClave: ["evaluación para la sostenibilidad", "evaluación ambiental", "grupo de evaluación"],
   },
   {
     nombre: "Coordinador(a) de Seguimiento para la Sostenibilidad",
@@ -37,7 +47,10 @@ export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
     palabrasClave: ["ventanilla"],
   },
   { nombre: "Servidor(a) de Correspondencia", palabrasClave: ["correspondencia", "canales de atención"] },
-  { nombre: "Servidor(a) de Notificaciones", palabrasClave: ["notificaci"] },
+  // "notific" (no "notificaci") para cubrir tanto "notificación/notificaciones" como
+  // el verbo "notificar" — con solo "notificaci" se perdían los pasos redactados como
+  // "Servidor responsable de notificar" (encontrado en la misma auditoría).
+  { nombre: "Servidor(a) de Notificaciones", palabrasClave: ["notific"] },
   { nombre: "Servidor(a) de Gestión Documental", palabrasClave: ["gestión documental", "publicación"] },
   { nombre: "Servidor(a) de Facturación / Tesorería", palabrasClave: ["facturación", "tesorería", "liquidación"] },
   { nombre: "Secretaria(o) de Despacho / Apoyo administrativo", palabrasClave: ["secretaria de", "secretaria del despacho"] },

@@ -7,7 +7,6 @@ import {
   Recycle,
   Truck,
   Scale,
-  Mountain,
   Building2,
   Coins,
   FileText,
@@ -33,25 +32,46 @@ import {
  * abajo), no `tramite.suitNumeros` a secas — un trámite puede tener el
  * número a nivel de flujo en vez de a nivel de trámite (ver M-DA-PR21).
  *
- * Paleta e íconos — segunda vuelta de ajuste a partir de una referencia
- * visual que el usuario mostró (otra CAR: píldoras verde-azuladas, un ícono
- * detallado en un círculo oscuro + texto en blanco sobre el mismo tono, sin
- * variar el color por categoría). Antes había 12 tonos, luego 6 agrupados
- * por familia — igual se sentía como demasiado color para una entidad
- * seria. Ahora es un solo color institucional (el verde de la CDMB, en dos
- * tonos: uno oscuro para el círculo del ícono, uno para el fondo de la
- * píldora/insignia) para TODAS las categorías reales — la diferencia entre
- * categorías la da la forma del ícono, no el matiz. Los emojis se
- * reemplazaron por íconos de línea propios primero, y ahora por
- * lucide-react (MIT, sin nuevas vulnerabilidades) — el estilo "propio"
- * a mano no llegaba al nivel de acabado de la referencia. Solo lo NO
- * verificado (sin SUIT, prueba) se queda neutro/gris a propósito, para
- * seguir distinguiendo "esto no pasó por la verificación oficial".
+ * Paleta e íconos — tercera vuelta. Las dos anteriores (12 tonos sueltos, y
+ * luego un solo verde institucional para todo, diferenciando solo por
+ * forma de ícono) resultaron, en los dos sentidos opuestos, poco intuitivas:
+ * con 12 tonos sueltos no se sabía si el color significaba algo; con un
+ * solo tono, reconocer la categoría exigía leer el ícono uno por uno en vez
+ * de "verlo" de un vistazo. Esta paleta sigue el método de color
+ * categórico de la skill `dataviz` (references/color-formula.md): 8
+ * familias de matiz, en orden fijo, escogidas por separación bajo
+ * daltonismo (protanopia/deuteranopia) y no solo "a ojo" — una por cada una
+ * de las 8 categorías reales que hoy tienen trámites (ver conteo verificado
+ * contra `data/tramites/*.json`; si `M-DA-PR*` cambia y una categoría queda
+ * en 9, la novena NO debe inventarse un tono más — se dobla dentro de
+ * "Otros Trámites", como manda la regla de la skill). La asociación
+ * categoría→matiz busca además ser intuitiva por sí misma donde el mundo
+ * real ya tiene una asociación fuerte (agua = azul, flora = verde) y usa
+ * el resto de la rueda para separar visualmente lo que no la tiene. Los
+ * íconos de línea son de lucide-react. Lo NO verificado (sin SUIT, prueba)
+ * se queda neutro/gris a propósito, para seguir distinguiendo "esto no
+ * pasó por la verificación oficial" de las categorías reales.
  */
-type ColorToken = "cdmb" | "stone";
+type ColorToken = "cdmb" | "stone" | "azul" | "ambar" | "verdeagua" | "naranja" | "indigo" | "violeta" | "fucsia";
 
 const CLASES_COLOR: Record<ColorToken, { icono: string; badge: string; barra: string; borde: string; pildora: string }> = {
+  // Recurso Hídrico — el agua ya es azul en la cabeza de cualquiera; no tenía sentido pelear esa asociación.
+  azul: { icono: "bg-blue-700 text-white", badge: "bg-blue-50 text-blue-700", barra: "bg-blue-500", borde: "border-blue-500", pildora: "bg-blue-600" },
+  // Recurso Flora — el verde institucional de la CDMB, que además ya es "plantas" para cualquiera. Doble acierto.
   cdmb: { icono: "bg-cdmb-700 text-white", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-500", borde: "border-cdmb-500", pildora: "bg-cdmb-600" },
+  // Fauna Silvestre — tono cálido y terroso, distinto del verde de flora y del azul de agua.
+  ambar: { icono: "bg-amber-700 text-white", badge: "bg-amber-50 text-amber-800", barra: "bg-amber-500", borde: "border-amber-500", pildora: "bg-amber-700" },
+  // Recurso Aire — verde azulado, evoca "atmósfera" sin repetir ni el azul del agua ni el verde de flora.
+  verdeagua: { icono: "bg-teal-700 text-white", badge: "bg-teal-50 text-teal-700", barra: "bg-teal-500", borde: "border-teal-500", pildora: "bg-teal-700" },
+  // Residuos — tono de alerta/reciclaje, sin llegar al rojo (que en el resto de la app significa "negado/rechazado").
+  naranja: { icono: "bg-orange-700 text-white", badge: "bg-orange-50 text-orange-800", barra: "bg-orange-500", borde: "border-orange-500", pildora: "bg-orange-700" },
+  // Transporte / Vehículos — azul-violeta, contenido y serio, distinto del azul puro de agua.
+  indigo: { icono: "bg-indigo-700 text-white", badge: "bg-indigo-50 text-indigo-700", barra: "bg-indigo-500", borde: "border-indigo-500", pildora: "bg-indigo-600" },
+  // Licencia Ambiental — violeta, el tono que más se asocia con lo institucional/legal.
+  violeta: { icono: "bg-violet-700 text-white", badge: "bg-violet-50 text-violet-700", barra: "bg-violet-500", borde: "border-violet-500", pildora: "bg-violet-600" },
+  // Gestión — bolsa administrativa residual; el último tono de la rueda, sin choque con ningún otro.
+  fucsia: { icono: "bg-fuchsia-700 text-white", badge: "bg-fuchsia-50 text-fuchsia-800", barra: "bg-fuchsia-500", borde: "border-fuchsia-500", pildora: "bg-fuchsia-700" },
+  // Neutro — a propósito, para lo que NO pasó por la verificación del SUIT (ver comentario arriba).
   stone: { icono: "bg-stone-600 text-white", badge: "bg-stone-100 text-stone-600", barra: "bg-stone-300", borde: "border-stone-300", pildora: "bg-stone-500" },
 };
 
@@ -83,17 +103,26 @@ const CATEGORIA_SIN_SUIT: CategoriaFija = {
   color: "stone",
 };
 
-/** Orden en que aparecen las secciones del catálogo — de mayor a menor peso entre los trámites inscritos en el SUIT. */
+/**
+ * Orden en que aparecen las secciones del catálogo — de mayor a menor peso
+ * entre los trámites inscritos en el SUIT. "Minería" existió como categoría
+ * en algún momento pero ningún trámite real cae ahí — el único candidato
+ * (M-DA-PR65, "Licencia Ambiental Temporal para Formalización Minera") es
+ * procedimentalmente una Licencia Ambiental (mismo flujo que M-DA-PR22), así
+ * que cae en "licencias" antes de llegar a esa regla. Se quitó la categoría
+ * fantasma en vez de dejarla sembrada sin uso — confundía sin aportar nada
+ * (ver `tramites/page.tsx`, que ya filtra secciones vacías, así que el bug
+ * era silencioso: la categoría simplemente nunca aparecía).
+ */
 const REGLAS: { id: string; Icono: IconComponent; etiqueta: string; color: ColorToken; palabras: string[] }[] = [
-  { id: "hidrico", Icono: Droplets, etiqueta: "Recurso Hídrico", color: "cdmb", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer"] },
+  { id: "hidrico", Icono: Droplets, etiqueta: "Recurso Hídrico", color: "azul", palabras: ["vertimiento", "agua", "hídric", "cauce", "acuífer"] },
   { id: "flora", Icono: TreePine, etiqueta: "Recurso Flora", color: "cdmb", palabras: ["forestal", "árbol", "arbol", "poda", "tala", "bosque", "plantacion", "plantación"] },
-  { id: "fauna", Icono: PawPrint, etiqueta: "Fauna Silvestre", color: "cdmb", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
-  { id: "aire", Icono: Wind, etiqueta: "Recurso Aire", color: "cdmb", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
-  { id: "residuos", Icono: Recycle, etiqueta: "Residuos", color: "cdmb", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
-  { id: "transporte", Icono: Truck, etiqueta: "Transporte / Vehículos", color: "cdmb", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
-  { id: "licencias", Icono: Scale, etiqueta: "Licencia Ambiental", color: "cdmb", palabras: ["licencia", "anla"] },
-  { id: "mineria", Icono: Mountain, etiqueta: "Minería", color: "cdmb", palabras: ["minera", "minería", "mineria"] },
-  { id: "gestion", Icono: Building2, etiqueta: "Gestión", color: "cdmb", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
+  { id: "fauna", Icono: PawPrint, etiqueta: "Fauna Silvestre", color: "ambar", palabras: ["fauna", "caza", "espec", "biodiversidad", "silvestre", "salvoconducto"] },
+  { id: "aire", Icono: Wind, etiqueta: "Recurso Aire", color: "verdeagua", palabras: ["emisiones atmosf", "gases", "diagnóstico automotor", "diagnostico automotor"] },
+  { id: "residuos", Icono: Recycle, etiqueta: "Residuos", color: "naranja", palabras: ["residuo", "aceite", "rcd", "peligroso", "pcb"] },
+  { id: "transporte", Icono: Truck, etiqueta: "Transporte / Vehículos", color: "indigo", palabras: ["vehicular", "automotor", "transporte", "hidrocarburos"] },
+  { id: "licencias", Icono: Scale, etiqueta: "Licencia Ambiental", color: "violeta", palabras: ["licencia", "anla"] },
+  { id: "gestion", Icono: Building2, etiqueta: "Gestión", color: "fucsia", palabras: ["gestión ambiental", "gestion ambiental", "inversiones"] },
 ];
 
 const OTROS: CategoriaFija = {

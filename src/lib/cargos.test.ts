@@ -36,4 +36,25 @@ describe("puedeGestionarPaso", () => {
   it("sin sesión, nunca se permite", () => {
     expect(puedeGestionarPaso(null, RESPONSABLES_RECONOCIDOS)).toBe(false);
   });
+
+  // Regresión: la palabra clave genérica "coordinador" (sin calificar) daba acceso real
+  // cruzado entre los dos coordinadores. Un paso que solo menciona al Coordinador de
+  // Seguimiento no puede quedar habilitado para el Coordinador de Evaluación.
+  it("un coordinador no puede avanzar el paso del OTRO coordinador", () => {
+    const pasoDeSeguimiento = ["Servidor responsable de la Coordinación de Seguimiento para la Sostenibilidad"];
+    const evaluacion = { rol: "FUNCIONARIO" as const, cargo: "Coordinador(a) de Evaluación para la Sostenibilidad" };
+    const seguimiento = { rol: "FUNCIONARIO" as const, cargo: "Coordinador(a) de Seguimiento para la Sostenibilidad" };
+    expect(puedeGestionarPaso(evaluacion, pasoDeSeguimiento)).toBe(false);
+    expect(puedeGestionarPaso(seguimiento, pasoDeSeguimiento)).toBe(true);
+  });
+
+  // Regresión: con la palabra clave "notificaci" se perdían los pasos redactados con el
+  // verbo ("Servidor responsable de notificar"); ahora la clave es "notific".
+  it("reconoce al Servidor de Notificaciones cuando el paso usa el verbo 'notificar'", () => {
+    const paso = ["Servidor responsable de notificar"];
+    const notificaciones = { rol: "FUNCIONARIO" as const, cargo: "Servidor(a) de Notificaciones" };
+    const correspondencia = { rol: "FUNCIONARIO" as const, cargo: "Servidor(a) de Correspondencia" };
+    expect(puedeGestionarPaso(notificaciones, paso)).toBe(true);
+    expect(puedeGestionarPaso(correspondencia, paso)).toBe(false);
+  });
 });
