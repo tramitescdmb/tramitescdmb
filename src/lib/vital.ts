@@ -70,6 +70,10 @@ async function obtenerToken(): Promise<string> {
   return tokenCache.accessToken;
 }
 
+// La forma de la respuesta la decide VITAL, no nosotros, y cambia según el endpoint (a veces un array,
+// a veces `{ solicitudes: [...] }`, a veces `{ data: [...] }`) — cada función de arriba la interpreta a
+// su manera, así que tipar esto más estricto solo movería el `any` a cada llamador sin ganar seguridad real.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function vitalFetch(path: string, params: Record<string, string | number>): Promise<any> {
   const token = await obtenerToken();
   const url = new URL(path, VITAL_BASE_URL);
@@ -228,7 +232,6 @@ export async function sincronizarTramite(opts: {
   let indice = 0;
   const tamanoPagina = 50;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const pagina = await listarSolicitudes({
       idTramite: opts.idTramite,
