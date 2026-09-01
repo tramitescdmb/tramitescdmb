@@ -20,12 +20,12 @@ export function BarrasLift({ data, emptyMessage }: { data: Item[]; emptyMessage:
         const frac = Math.min(1, Math.abs(l) / maxDesv);
         const sube = l >= 0;
         return (
-          <li key={item.label} tabIndex={0} className="group grid grid-cols-[1fr_auto] items-center gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-cdmb-400">
-            <div>
+          <li key={item.label} tabIndex={0} className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-cdmb-400">
+            <div className="min-w-0">
               <p className="mb-0.5 truncate text-xs text-stone-700" title={item.label}>
                 {item.label}
               </p>
-              <div className="relative h-2.5 rounded-full bg-stone-100">
+              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
                 <div className="absolute left-1/2 top-0 h-full w-px bg-stone-300" />
                 <div
                   className="absolute top-0 h-full rounded-full"
@@ -37,7 +37,7 @@ export function BarrasLift({ data, emptyMessage }: { data: Item[]; emptyMessage:
                 />
               </div>
             </div>
-            <span className="flex-none text-xs tabular-nums text-stone-500">
+            <span className="flex-none whitespace-nowrap text-xs tabular-nums text-stone-500">
               {item.lift.toFixed(2)}× <span className="text-stone-400">n={item.casos}</span>
             </span>
           </li>

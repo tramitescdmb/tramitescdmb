@@ -10,6 +10,7 @@ import { ForecastChart } from "@/components/charts/ForecastChart";
 import { HeatmapMesAnio } from "@/components/charts/HeatmapMesAnio";
 import { BarrasConIC } from "@/components/charts/BarrasConIC";
 import { BarrasLift } from "@/components/charts/BarrasLift";
+import { MiniColumnas } from "@/components/charts/MiniColumnas";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
 const pctSigno = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} %`);
@@ -121,11 +122,11 @@ export default async function MineriaPage() {
       {/* Estacionalidad */}
       <Card icon={Sparkles} titulo="Estacionalidad — resoluciones por mes y año" sub="El tono indica cuántas resoluciones se firmaron ese mes. Revela si la CDMB concentra decisiones en ciertas épocas.">
         <HeatmapMesAnio filas={a.heatmap} emptyMessage="Sin datos mensuales." />
-        <p className="mb-1.5 mt-3 text-xs font-medium text-stone-600">Índice estacional (1,0 = mes promedio)</p>
-        <BarChartHorizontal
-          data={a.indiceEstacional.map((mm) => ({ label: MESES[mm.mes - 1], value: Math.round(mm.indice * 100) }))}
-          emptyMessage="—"
-          formatValue={(v) => `${(v / 100).toFixed(2)}×`}
+        <p className="mb-2 mt-4 text-xs font-medium text-stone-600">Índice estacional (1,0 = mes promedio)</p>
+        <MiniColumnas
+          data={a.indiceEstacional.map((mm) => ({ label: MESES[mm.mes - 1], valor: mm.indice }))}
+          referencia={1}
+          formato={(v) => `${v.toFixed(2)}×`}
         />
       </Card>
 
