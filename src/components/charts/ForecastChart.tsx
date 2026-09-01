@@ -88,14 +88,22 @@ export function ForecastChart({
           </g>
         ))}
 
-        {[minA, ...proyeccion.map((p) => p.anio)].map((a) => (
-          <text key={a} x={x(a)} y={H - 8} textAnchor="middle" fontSize="9" fill="#8b8781">
-            {a}
-          </text>
-        ))}
-        <text x={x(ultimoHist.anio)} y={H - 8} textAnchor="middle" fontSize="9" fill="#8b8781">
-          {ultimoHist.anio}
-        </text>
+        {(() => {
+          const medio = historico[Math.floor(historico.length / 2)]?.anio;
+          const marcas = [...new Set([minA, medio, ultimoHist.anio, maxA].filter((v): v is number => typeof v === "number"))];
+          return marcas.map((a) => (
+            <text
+              key={a}
+              x={Math.min(Math.max(x(a), PADL + 8), W - PADR - 8)}
+              y={H - 8}
+              textAnchor="middle"
+              fontSize="9"
+              fill="#8b8781"
+            >
+              {a}
+            </text>
+          ));
+        })()}
       </svg>
     </div>
   );

@@ -38,7 +38,7 @@ export async function getHistoricoDashboard() {
       }),
       db.sincaResolucion.findMany({
         take: 8,
-        orderBy: [{ fechaResolucion: "desc" }, { nroSolicitud: "desc" }],
+        orderBy: [{ fechaResolucion: { sort: "desc", nulls: "last" } }, { nroSolicitud: "desc" }],
         select: {
           nroSolicitud: true,
           numeroResolucion: true,
@@ -122,7 +122,7 @@ export async function getHistoricoListado(filtros: FiltrosHistorico) {
     db.sincaResolucion.count({ where }),
     db.sincaResolucion.findMany({
       where,
-      orderBy: [{ fechaResolucion: "desc" }, { nroSolicitud: "desc" }],
+      orderBy: [{ fechaResolucion: { sort: "desc", nulls: "last" } }, { nroSolicitud: "desc" }],
       skip: (page - 1) * POR_PAGINA,
       take: POR_PAGINA,
       select: {

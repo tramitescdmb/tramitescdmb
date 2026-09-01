@@ -124,7 +124,9 @@ export async function calcularAnalitica() {
     db.$queryRaw<{ nit: string; nombre: string | null; c: bigint; anios: bigint; tipos: bigint }[]>`
       SELECT "solicitanteNit" nit, MAX("solicitanteNombre") nombre, COUNT(*) c,
              COUNT(DISTINCT "anioResolucion") anios, COUNT(DISTINCT "tipoSolicitudCodigo") tipos
-      FROM "SincaResolucion" WHERE "solicitanteNit" IS NOT NULL
+      FROM "SincaResolucion"
+      WHERE "solicitanteNit" IS NOT NULL
+        AND "solicitanteNit" !~ '^(.)\1+$'  -- descarta 9999999999, 0000000000, etc.
       GROUP BY 1 ORDER BY 3 DESC LIMIT 15`,
 
     db.sincaResolucion.findMany({ select: { proyecto: true } }),

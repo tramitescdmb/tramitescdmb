@@ -4,9 +4,10 @@ const COLOR = "#2a78d6";
 const W = 720;
 const H = 220;
 const PADL = 30;
-const PADR = 12;
+const PADR = 22;
 const PADT = 22;
 const PADB = 22;
+const clampX = (v: number) => Math.min(Math.max(v, 14), W - 14);
 
 /**
  * Área ("montaña") de un conteo anual. A diferencia de AreaTrendChart, deja
@@ -60,13 +61,13 @@ export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage:
             <line x1={p.x} y1={PADT} x2={p.x} y2={PADT + innerH} stroke={COLOR} strokeWidth={1} opacity={0} className="transition-opacity group-hover:opacity-30 group-focus-visible:opacity-30" />
             <circle cx={p.x} cy={p.y} r={2.5} fill={COLOR} opacity={mostrarValor[i] ? 1 : 0} className="transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
             {mostrarValor[i] && (
-              <text x={p.x} y={p.y - 6} textAnchor="middle" fontSize="9" fontWeight="600" fill="#3f3f46">
+              <text x={clampX(p.x)} y={p.y - 6} textAnchor="middle" fontSize="9" fontWeight="600" fill="#3f3f46">
                 {p.valor.toLocaleString("es-CO")}
               </text>
             )}
             <title>{`${p.anio}: ${p.valor.toLocaleString("es-CO")}`}</title>
             {i % pasoAnio === 0 || i === pts.length - 1 ? (
-              <text x={p.x} y={H - 6} textAnchor="middle" fontSize="9" fill="#8b8781">
+              <text x={clampX(p.x)} y={H - 6} textAnchor="middle" fontSize="9" fill="#8b8781">
                 {p.anio}
               </text>
             ) : null}

@@ -27,8 +27,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "SINCA 1.0 no está configurado." }, { status: 503 });
   }
 
+  // No se invalida la caché de análisis aquí: el TTL de 1 h ya la mantiene
+  // fresca y así el cron diario no obliga a recalcular (lento) en la siguiente
+  // visita. El botón manual sí la invalida (ver POST).
   const resultado = await sincronizarResoluciones("cron");
-  if (resultado.ok) revalidateTag("sinca-analitica");
   return NextResponse.json(resultado, { status: resultado.ok ? 200 : 500 });
 }
 
