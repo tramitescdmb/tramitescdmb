@@ -15,7 +15,7 @@ export default function TramitesAmbientalesLayout({ children }: { children: Reac
         <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
           <Leaf className="h-4 w-4" aria-hidden />
         </span>
-        <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales</h1>
+        <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
       </div>
 
       <TramitesTabs />

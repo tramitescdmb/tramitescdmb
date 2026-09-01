@@ -17,7 +17,7 @@ type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; p
 const ITEMS_PRINCIPAL: Item[] = [
   {
     href: "/",
-    label: "Trámites ambientales",
+    label: "Trámites ambientales 2.0",
     icon: Leaf,
     prefijo: ["/", "/tramites", "/expedientes", "/solicitantes"],
   },
