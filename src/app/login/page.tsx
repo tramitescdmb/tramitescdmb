@@ -15,7 +15,9 @@ export default async function LoginPage({
   const params = await searchParams;
   const error = params.error ? ERRORES[params.error] ?? params.error : null;
   const next = params.next ?? "/";
-  const modo = params.modo === "directorio-activo" ? "directorio-activo" : "institucional";
+  // Por defecto se ofrece el directorio activo de la CDMB (la mayoría de los
+  // funcionarios); la cuenta institucional queda como segunda opción.
+  const modo = params.modo === "institucional" ? "institucional" : "directorio-activo";
   const config = await getConfiguracionSitio();
   const hayDirectorioActivo = directorioActivoConfigurado();
 
@@ -84,12 +86,12 @@ export default async function LoginPage({
                 defaultValue={modo}
                 className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               >
-                <option value="institucional">Cuenta institucional</option>
                 <option value="directorio-activo">Directorio activo CDMB</option>
+                <option value="institucional">Cuenta institucional</option>
               </select>
               <p className="mt-1 text-xs text-stone-400">
-                <strong>Cuenta institucional:</strong> contraseña administrada en esta aplicación.{" "}
-                <strong>Directorio activo CDMB:</strong> usuario y contraseña de la red de la Corporación.
+                <strong>Directorio activo CDMB:</strong> usuario y contraseña de la red de la Corporación.{" "}
+                <strong>Cuenta institucional:</strong> contraseña administrada en esta aplicación.
               </p>
             </div>
           )}

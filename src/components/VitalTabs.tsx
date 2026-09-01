@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { Inbox, ListOrdered, LayoutDashboard } from "lucide-react";
 
 const TABS = [
-  { href: "/vital/recientes", label: "Recientes", icon: Inbox },
   { href: "/vital", label: "Solicitudes", icon: ListOrdered },
+  { href: "/vital/recientes", label: "Recientes", icon: Inbox },
   { href: "/vital/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 

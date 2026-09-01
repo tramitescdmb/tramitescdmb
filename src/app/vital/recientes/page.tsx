@@ -28,8 +28,7 @@ export default async function VitalRecientesPage() {
         <Inbox className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
         <p>
           Lo más reciente que ha llegado del portal de VITAL, para <strong>no perder de vista una solicitud
-          nueva</strong> mientras se resuelve la notificación por correo. Haga clic en cualquiera para ver el
-          detalle.
+          nueva</strong>.
         </p>
       </div>
 
