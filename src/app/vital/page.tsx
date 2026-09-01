@@ -4,7 +4,8 @@ import { getSession } from "@/lib/auth";
 import { vitalConfigurado, tramitesVital } from "@/lib/vital";
 import { SectionHelp } from "@/components/Field";
 
-const HOY = new Date().toISOString().slice(0, 10);
+// VITAL rechaza fecha_fin >= hoy, así que el tope por defecto es ayer.
+const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
 export default async function VitalPage({
   searchParams,
@@ -91,7 +92,7 @@ export default async function VitalPage({
                 name="fechaFin"
                 type="date"
                 required
-                defaultValue={HOY}
+                defaultValue={AYER}
                 disabled={!configurado}
                 className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50"
               />

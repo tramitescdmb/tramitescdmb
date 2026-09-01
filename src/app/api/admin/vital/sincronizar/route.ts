@@ -8,8 +8,9 @@ import { sincronizarTramite, tramitesVital, vitalConfigurado } from "@/lib/vital
 // alcance se retoma en la siguiente corrida (los upserts son idempotentes).
 export const maxDuration = 300;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
 const haceDias = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+// VITAL rechaza fecha_fin >= hoy ("no puede ser mayor a la fecha de consumo del servicio").
+const ayer = () => haceDias(1);
 
 /**
  * GET  → cron diario de Vercel. Autoriza con `Authorization: Bearer <CRON_SECRET>`.
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
 
   const desde = haceDias(45);
-  const hasta = hoy();
+  const hasta = ayer();
   const resultados: Record<string, unknown> = {};
   let ok = true;
   for (const idTramite of tramitesVital()) {
