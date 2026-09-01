@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 
 /** Datos agregados para el panel de /historico (SINCA 1.0). */
 export async function getHistoricoDashboard() {
-  const [total, conResolucion, diasRaw, porAnioRaw, porTipoRaw, porEstadoRaw, porMunicipioRaw, recientes, ultimaSync] =
+  const [total, aprobadas, conResolucion, diasRaw, porAnioRaw, porTipoRaw, porEstadoRaw, porMunicipioRaw, recientes, ultimaSync] =
     await Promise.all([
       db.sincaResolucion.count(),
+      db.sincaResolucion.count({ where: { estado: "Aprobada" } }),
       db.sincaResolucion.count({ where: { numeroResolucion: { not: null } } }),
       db.$queryRaw<{ p50: number | null; con: bigint }[]>`
         SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
@@ -65,6 +66,8 @@ export async function getHistoricoDashboard() {
 
   return {
     total,
+    aprobadas,
+    tasaAprobacion: total ? aprobadas / total : 0,
     conResolucion,
     diasResolucionP50: diasRaw[0]?.p50 != null ? Math.round(diasRaw[0].p50) : null,
     diasResolucionCobertura: total ? Number(diasRaw[0]?.con ?? 0) / total : 0,

@@ -161,11 +161,17 @@ export type SincaDocumentoEmitido = {
   caminopdf_edc: string | null; // ruta del archivo en el servidor de la CDMB (no es una URL)
   edc_caminodoc_edc: string | null;
   caminodoc_edc: string | null;
+  idempleadoelabora_emp: string | number | null;
   tipoubicacionpdf_edc: Etiquetado;
   inddefinitivo_edc: Etiquetado;
+  abogadodoc_edc: Etiquetado;
+  notificadorpdf_edc: Etiquetado;
   documentos_cdmb: {
     nombre_dcc: string | null;
     tipodoc_dcc: Etiquetado;
+    requierenotif_dcc: Etiquetado;
+    esmotivado_dcc: Etiquetado;
+    indnumeracion_dcc: Etiquetado;
     consecutivo_dcc: string | number | null;
   } | null;
   [k: string]: unknown;
@@ -198,12 +204,41 @@ export type SincaResolucionDetalleApi = {
   nroviviendas_sol: number | string | null;
   nropredios_sol: number | string | null;
   area_sol: number | string | null;
+  usuariocrea_sol: string | null;
   municipios: { nombre_mun: string | null; departamentos: { nombre_dpt: string | null } | null } | null;
   vereda: string | null;
   barrio: string | null;
-  tipo_solicitud: { tiposol_tps: string | null; nombretipo_tps: string | null } | null;
-  interesado: { nit: Record<string, unknown> | null }[] | null;
+  tipo_solicitud: { tiposol_tps: string | null; nombretipo_tps: string | null; tipotramite_tps: string | null; tiempo_dias_tps: string | number | null } | null;
+  interesado: { fechadesde_int?: string | null; nit: SincaNit | null }[] | null;
   emision_documentos: SincaDocumentoEmitido[] | null;
+  [k: string]: unknown;
+};
+
+export type SincaNit = {
+  numero_nit?: number | string | null;
+  digito_nit?: number | string | null;
+  nombre_nit?: string | null;
+  razon_soc_nit?: string | null;
+  primer_nom_nit?: string | null;
+  segundo_nom_nit?: string | null;
+  primer_ape_nit?: string | null;
+  segundo_ape_nit?: string | null;
+  direcc_nit?: string | null;
+  telef_nit?: string | null;
+  celular_nit?: string | null;
+  correo_nit?: string | null;
+  tipo_nit?: Etiquetado;
+  natur_jurid_nit?: Etiquetado;
+  regimen_nit?: Etiquetado;
+  clase_nit?: string | null;
+  gcontri_nit?: Etiquetado | string | null;
+  autoret_nit?: Etiquetado | string | null;
+  fechaact_nit?: string | null;
+  usuarioact_nit?: string | null;
+  id_user_nit?: string | null;
+  clave_ser?: string | null;
+  municipios?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
+  municipios_dom?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
   [k: string]: unknown;
 };
 

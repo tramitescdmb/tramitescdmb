@@ -6,7 +6,7 @@ import { LayoutDashboard, ListOrdered, Sparkles } from "lucide-react";
 
 const TABS = [
   { href: "/historico", label: "Panel", icon: LayoutDashboard, exacto: true },
-  { href: "/historico/analisis", label: "Análisis", icon: Sparkles, exacto: true },
+  { href: "/historico/mineria", label: "Minería de datos", icon: Sparkles, exacto: true },
   { href: "/historico/solicitudes", label: "Solicitudes", icon: ListOrdered },
 ];
 
