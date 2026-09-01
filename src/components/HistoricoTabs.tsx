@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListOrdered } from "lucide-react";
+import { LayoutDashboard, ListOrdered, Sparkles } from "lucide-react";
 
 const TABS = [
   { href: "/historico", label: "Panel", icon: LayoutDashboard, exacto: true },
+  { href: "/historico/analisis", label: "Análisis", icon: Sparkles, exacto: true },
   { href: "/historico/solicitudes", label: "Solicitudes", icon: ListOrdered },
 ];
 

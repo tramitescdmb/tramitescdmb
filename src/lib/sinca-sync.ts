@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { listarResoluciones, type SincaResolucionApi } from "@/lib/sinca";
+import { listarResoluciones, obtenerResolucionDetalle, type SincaResolucionApi } from "@/lib/sinca";
 
 /**
  * Sincroniza la tabla espejo `SincaResolucion` con el API de SINCA 1.0.
@@ -89,18 +89,86 @@ export type ResultadoSincronizacion = {
   creados: number;
   actualizados: number;
   eliminados: number;
+  enriquecidos?: number;
   duracionMs: number;
   error?: string;
 };
+
+function diffDias(desde: Date | null, hasta: Date | null): number | null {
+  if (!desde || !hasta) return null;
+  const d = Math.round((hasta.getTime() - desde.getTime()) / 86_400_000);
+  return d >= 0 && d <= 4000 ? d : null;
+}
+
+/**
+ * Trae el detalle (`GET /presinca/resoluciones/{n}`) de las filas sin enriquecer
+ * y completa `fechaRecibido`, `diasResolucion` y los datos del solicitante.
+ * `limite` acota cuántas por corrida (el cron va completando de a poco);
+ * sin límite recorre todas (script `sinca:enrich`).
+ */
+export async function enriquecerResoluciones(opts: { limite?: number; concurrencia?: number } = {}): Promise<number> {
+  const concurrencia = opts.concurrencia ?? 4;
+  const pendientes = await db.sincaResolucion.findMany({
+    where: { enriquecidoEn: null },
+    select: { nroSolicitud: true, fechaResolucion: true },
+    orderBy: { nroSolicitud: "desc" },
+    ...(opts.limite ? { take: opts.limite } : {}),
+  });
+
+  let hechos = 0;
+  for (let i = 0; i < pendientes.length; i += concurrencia) {
+    const lote = pendientes.slice(i, i + concurrencia);
+    await Promise.all(
+      lote.map(async ({ nroSolicitud, fechaResolucion }) => {
+        try {
+          const d = await obtenerResolucionDetalle(nroSolicitud);
+          const fechaRecibido = parseFecha(d?.fecharecibido_sol ?? null);
+          const nit = d?.interesado?.[0]?.nit as Record<string, unknown> | undefined;
+          const solicitanteNit = nit?.numero_nit != null ? String(nit.numero_nit) : null;
+          const solicitanteNombre =
+            (nit?.razon_soc_nit as string) ||
+            [nit?.primer_nom_nit, nit?.segundo_nom_nit, nit?.primer_ape_nit, nit?.segundo_ape_nit].filter(Boolean).join(" ") ||
+            (nit?.nombre_nit as string) ||
+            null;
+          await db.sincaResolucion.update({
+            where: { nroSolicitud },
+            data: {
+              fechaRecibido,
+              diasResolucion: diffDias(fechaRecibido, fechaResolucion),
+              solicitanteNit,
+              solicitanteNombre: solicitanteNombre?.trim() || null,
+              enriquecidoEn: new Date(),
+            },
+          });
+          hechos++;
+        } catch {
+          /* se reintenta en la próxima corrida */
+        }
+      })
+    );
+  }
+  return hechos;
+}
 
 export async function sincronizarResoluciones(disparadoPor: string): Promise<ResultadoSincronizacion> {
   const inicio = Date.now();
   const registro = await db.sincaSincronizacion.create({ data: { disparadoPor } });
 
   try {
-    const idsExistentes = new Set(
-      (await db.sincaResolucion.findMany({ select: { nroSolicitud: true } })).map((r) => r.nroSolicitud)
-    );
+    // Enriquecimiento existente (fechaRecibido, días, solicitante) — solo lo entrega
+    // el endpoint de detalle, así que hay que conservarlo al reconstruir el espejo.
+    const previos = await db.sincaResolucion.findMany({
+      select: {
+        nroSolicitud: true,
+        fechaRecibido: true,
+        diasResolucion: true,
+        solicitanteNit: true,
+        solicitanteNombre: true,
+        enriquecidoEn: true,
+      },
+    });
+    const idsExistentes = new Set(previos.map((r) => r.nroSolicitud));
+    const enriquecimientoPrevio = new Map(previos.map((r) => [r.nroSolicitud, r]));
 
     // 1. Traer TODAS las páginas del API.
     const filasPorId = new Map<number, Prisma.SincaResolucionCreateManyInput>();
@@ -113,7 +181,16 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
       ultimaPagina = pagina.last_page;
       for (const row of pagina.data) {
         if (!row?.nrosolicitud_sol) continue;
-        filasPorId.set(row.nrosolicitud_sol, aFila(row));
+        const fila = aFila(row);
+        const prev = enriquecimientoPrevio.get(row.nrosolicitud_sol);
+        if (prev?.enriquecidoEn) {
+          fila.fechaRecibido = prev.fechaRecibido;
+          fila.diasResolucion = prev.diasResolucion;
+          fila.solicitanteNit = prev.solicitanteNit;
+          fila.solicitanteNombre = prev.solicitanteNombre;
+          fila.enriquecidoEn = prev.enriquecidoEn;
+        }
+        filasPorId.set(row.nrosolicitud_sol, fila);
       }
       if (pagina.data.length === 0) break;
       page++;
@@ -138,12 +215,19 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
     const eliminados = [...idsExistentes].filter((id) => !filasPorId.has(id)).length;
     const actualizados = filas.length - creados;
 
+    // 3. Enriquecer (detalle) un lote de las que aún no lo están — así el cron
+    //    diario va completando y las nuevas quedan al día pronto. (~1200 caben
+    //    en el límite de tiempo de la función; el backfill completo se hace una
+    //    vez con `npm run sinca:enrich`.)
+    const enriquecidos = await enriquecerResoluciones({ limite: 1200 });
+
     const resultado: ResultadoSincronizacion = {
       ok: true,
       totalApi,
       creados,
       actualizados,
       eliminados,
+      enriquecidos,
       duracionMs: Date.now() - inicio,
     };
     await db.sincaSincronizacion.update({

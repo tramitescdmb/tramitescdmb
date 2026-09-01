@@ -13,7 +13,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "sinca:sync": "tsx scripts/sinca-sync.ts"
+    "sinca:sync": "tsx scripts/sinca-sync.ts",
+    "sinca:enrich": "tsx scripts/sinca-enrich.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",

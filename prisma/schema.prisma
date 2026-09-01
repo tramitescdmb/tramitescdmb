@@ -142,6 +142,14 @@ model SincaResolucion {
   cantidadInteresados Int       @default(0) // cantidad_interesado
   lat                 Float?
   lon                 Float?
+
+  // Campos que solo entrega el endpoint de detalle (GET /presinca/resoluciones/{n}),
+  // no el listado. Se llenan con el paso de enriquecimiento (src/lib/sinca-sync.ts).
+  diasResolucion      Int? // fechaResolucion - fechaRecibido, en días (tiempo de trámite)
+  solicitanteNit      String? // interesado[0].nit.numero_nit
+  solicitanteNombre   String? // razón social o nombre del interesado
+  enriquecidoEn       DateTime? // null = falta traer el detalle
+
   raw                 Json // registro original completo del API (para la ficha de detalle)
   sincronizadoEn      DateTime  @default(now())
 
@@ -151,6 +159,9 @@ model SincaResolucion {
   @@index([municipio])
   @@index([expediente])
   @@index([fechaResolucion])
+  @@index([diasResolucion])
+  @@index([solicitanteNit])
+  @@index([enriquecidoEn])
 }
 
 model SincaSincronizacion {
