@@ -49,6 +49,22 @@ export function tramitesVital(): number[] {
   return ids.length ? ids : [41];
 }
 
+/**
+ * Nombre de cada trámite VITAL por su id (los `(N)` del desplegable del sistema
+ * anterior). VITAL no expone un catálogo, así que va fijo aquí.
+ */
+export const NOMBRE_TRAMITE_VITAL: Record<number, string> = {
+  1: "DAA y/o TDR para EIA",
+  2: "Licencia Ambiental",
+  4: "Aguas Subterráneas",
+  5: "Solicitud TDR para EIA",
+  41: "Reporte de Contingencias",
+};
+
+export function nombreTramiteVital(id: number): string {
+  return NOMBRE_TRAMITE_VITAL[id] ? `(${id}) ${NOMBRE_TRAMITE_VITAL[id]}` : `Trámite ${id}`;
+}
+
 // --- Tokens: 1) sesión en el proxy Laravel  2) access_token de VITAL ---------
 
 let proxyToken: string | null = null;

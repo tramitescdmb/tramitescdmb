@@ -32,9 +32,16 @@ export async function GET(req: NextRequest) {
   const qHasta = req.nextUrl.searchParams.get("hasta");
   const desde = qDesde && fecha.test(qDesde) ? qDesde : haceDias(45);
   const hasta = qHasta && fecha.test(qHasta) ? qHasta : ayer();
+
+  // ?tramites=1,2,4,5,41 permite forzar un conjunto (backfill / descubrir cuáles existen).
+  const qTramites = req.nextUrl.searchParams.get("tramites");
+  const tramites = qTramites
+    ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
+    : tramitesVital();
+
   const resultados: Record<string, unknown> = {};
   let ok = true;
-  for (const idTramite of tramitesVital()) {
+  for (const idTramite of tramites) {
     try {
       resultados[idTramite] = await sincronizarTramite({ idTramite, fechaInicio: desde, fechaFin: hasta });
     } catch (err) {
