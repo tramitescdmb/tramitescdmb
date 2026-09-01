@@ -19,8 +19,7 @@ export default function HistoricoLayout({ children }: { children: ReactNode }) {
           <h1 className="text-xl font-semibold text-stone-900">SINCA 1.0 · Consulta histórica</h1>
         </div>
         <p className="mt-1 text-sm text-stone-500">
-          Solicitudes registradas en el sistema anterior de la CDMB (SINCA 1.0). La información se trae
-          del sistema anterior y se actualiza a diario.
+          Solicitudes registradas en el sistema anterior de la CDMB (SINCA 1.0).
         </p>
       </div>
 

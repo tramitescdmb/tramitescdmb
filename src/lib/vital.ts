@@ -31,8 +31,15 @@ const CLIENT_SECRET = process.env.VITAL_CLIENT_SECRET;
 const USERNAME = process.env.VITAL_USERNAME;
 const PASSWORD = process.env.VITAL_PASSWORD;
 
+// El proxy (`.../api/vital`) es una app Laravel/Sanctum: hay que estar logueado
+// en ella (`/admin/login`) además de tener el token de VITAL. Se reutiliza la
+// misma cuenta de servicio que SINCA salvo que se den credenciales propias.
+const PROXY_USUARIO = process.env.VITAL_PROXY_USUARIO || process.env.SINCA_API_USUARIO;
+const PROXY_PASSWORD = process.env.VITAL_PROXY_PASSWORD || process.env.SINCA_API_PASSWORD;
+const proxyLoginUrl = () => (API_URL ? `${API_URL.replace(/\/vital$/, "")}/admin/login` : null);
+
 export function vitalConfigurado(): boolean {
-  return Boolean(API_URL && XROAD_URL && XROAD_CLIENT && CLIENT_ID && CLIENT_SECRET && USERNAME && PASSWORD);
+  return Boolean(API_URL && XROAD_URL && XROAD_CLIENT && CLIENT_ID && CLIENT_SECRET && USERNAME && PASSWORD && PROXY_USUARIO && PROXY_PASSWORD);
 }
 
 /** Trámites VITAL a sincronizar (env `VITAL_TRAMITES`, coma-separado). Por defecto: 41. */
@@ -42,9 +49,30 @@ export function tramitesVital(): number[] {
   return ids.length ? ids : [41];
 }
 
-// --- Token (Sanctum/OAuth password grant vía el proxy) -----------------------
+// --- Tokens: 1) sesión en el proxy Laravel  2) access_token de VITAL ---------
 
+let proxyToken: string | null = null;
 let tokenCache: { accessToken: string; expiraEn: number } | null = null;
+
+async function obtenerProxyToken(forzar = false): Promise<string> {
+  if (!forzar && proxyToken) return proxyToken;
+  const url = proxyLoginUrl();
+  if (!url || !PROXY_USUARIO || !PROXY_PASSWORD) throw new Error("Faltan credenciales del proxy (VITAL_PROXY_* / SINCA_API_*).");
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ name: "web", email: PROXY_USUARIO, password: PROXY_PASSWORD }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+  });
+  const cuerpo = (await res.json().catch(() => null)) as { token?: string; message?: string } | null;
+  if (!res.ok || !cuerpo?.token) {
+    throw new Error(`No se pudo iniciar sesión en el proxy de VITAL (HTTP ${res.status}): ${cuerpo?.message ?? "sin detalle"}`);
+  }
+  proxyToken = cuerpo.token;
+  return proxyToken;
+}
 
 async function obtenerToken(forzar = false): Promise<string> {
   if (!vitalConfigurado()) {
@@ -53,24 +81,32 @@ async function obtenerToken(forzar = false): Promise<string> {
   const ahora = Date.now();
   if (!forzar && tokenCache && tokenCache.expiraEn - 30_000 > ahora) return tokenCache.accessToken;
 
-  const res = await fetch(`${API_URL}/wsToken`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-      "X-Road-Url": XROAD_URL!,
-      "X-Road-Client": XROAD_CLIENT!,
-    },
-    body: new URLSearchParams({
-      grant_type: "password",
-      client_id: CLIENT_ID!,
-      client_secret: CLIENT_SECRET!,
-      username: USERNAME!,
-      password: PASSWORD!,
-    }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(25_000),
-  });
+  const pedir = async (proxy: string) =>
+    fetch(`${API_URL}/wsToken`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        Authorization: `Bearer ${proxy}`,
+        "X-Road-Url": XROAD_URL!,
+        "X-Road-Client": XROAD_CLIENT!,
+      },
+      body: new URLSearchParams({
+        grant_type: "password",
+        client_id: CLIENT_ID!,
+        client_secret: CLIENT_SECRET!,
+        username: USERNAME!,
+        password: PASSWORD!,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(25_000),
+    });
+
+  let res = await pedir(await obtenerProxyToken(forzar));
+  if (res.status === 401) {
+    proxyToken = null;
+    res = await pedir(await obtenerProxyToken(true));
+  }
 
   const data = (await res.json().catch(() => null)) as { access_token?: string; expires_in?: number; message?: string } | null;
   if (!res.ok || !data?.access_token) {
@@ -98,15 +134,16 @@ function mensajeError(cuerpo: unknown): string {
 async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHeaders?: Record<string, string>): Promise<T> {
   if (!API_URL) throw new Error("VITAL_API_URL no está configurado.");
 
-  const hacer = async (token: string) =>
+  const hacer = async (proxy: string, vitalTok: string) =>
     fetch(`${API_URL}${ws}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Authorization: `Bearer ${proxy}`,
         "X-Road-Url": XROAD_URL!,
         "X-Road-Client": XROAD_CLIENT!,
-        "X-Road-Token": `Bearer ${token}`,
+        "X-Road-Token": `Bearer ${vitalTok}`,
         ...extraHeaders,
       },
       body: JSON.stringify(body),
@@ -114,8 +151,11 @@ async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHead
       signal: AbortSignal.timeout(45_000),
     });
 
-  let res = await hacer(await obtenerToken());
-  if (res.status === 401) res = await hacer(await obtenerToken(true));
+  let res = await hacer(await obtenerProxyToken(), await obtenerToken());
+  if (res.status === 401) {
+    proxyToken = null;
+    res = await hacer(await obtenerProxyToken(true), await obtenerToken(true));
+  }
 
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -192,6 +232,7 @@ async function descargarDocumentoVital(urlArchivo: string): Promise<{ buffer: Bu
       method: "POST",
       headers: {
         Accept: "*/*",
+        Authorization: `Bearer ${await obtenerProxyToken()}`,
         "X-Road-Url": urlArchivo,
         "X-Road-Client": XROAD_CLIENT!,
         "X-Road-Token": `Bearer ${await obtenerToken()}`,
