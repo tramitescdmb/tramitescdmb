@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { sincronizarTramite, tramitesVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
+import { sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
 // La sincronización recorre páginas de VITAL + descarga documentos; puede pasar
 // del límite por defecto. En el plan Hobby el tope efectivo es menor y lo que no
@@ -37,15 +37,32 @@ export async function GET(req: NextRequest) {
   const qTramites = req.nextUrl.searchParams.get("tramites");
   const tramites = qTramites
     ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
-    : tramitesVital();
+    : await tramitesASincronizar();
 
   // ?probe=1 → solo consulta la primera página de cada trámite (rápido, para
   // descubrir cuáles existen), sin traer detalle ni documentos.
   const probe = req.nextUrl.searchParams.get("probe") === "1";
 
+  // Sin filtros manuales, el cron explora ids nuevos: si el ciudadano radica en
+  // una categoría de VITAL que aún no conocemos, se detecta y se empieza a traer.
+  let descubiertos: number[] = [];
+  if (!qTramites && !probe) {
+    try {
+      descubiertos = await descubrirTramitesNuevos(15);
+      for (const id of descubiertos) {
+        await registrarAuditoria({
+          tipo: "CONFIGURACION_ACTUALIZADA",
+          descripcion: `VITAL: trámite nuevo detectado y agregado a la sincronización — ${nombreTramiteVital(id)}.`,
+        });
+      }
+    } catch {
+      /* la exploración no debe tumbar la sincronización */
+    }
+  }
+
   const resultados: Record<string, unknown> = {};
   let ok = true;
-  for (const idTramite of tramites) {
+  for (const idTramite of [...new Set([...tramites, ...descubiertos])]) {
     try {
       if (probe) {
         const p = await listarSolicitudes({ idTramite, fechaInicio: desde, fechaFin: hasta, registrosPeticion: 5 });
@@ -58,7 +75,7 @@ export async function GET(req: NextRequest) {
       resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
     }
   }
-  return NextResponse.json({ ok, ventana: { desde, hasta }, resultados }, { status: ok ? 200 : 500 });
+  return NextResponse.json({ ok, ventana: { desde, hasta }, descubiertos, resultados }, { status: ok ? 200 : 500 });
 }
 
 export async function POST(req: NextRequest) {

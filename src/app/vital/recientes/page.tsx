@@ -20,7 +20,7 @@ export default async function VitalRecientesPage() {
     return <SectionHelp>La conexión con VITAL no está configurada en este servidor.</SectionHelp>;
   }
 
-  const recientes = await getVitalUltimasRadicadas(25);
+  const recientes = await getVitalUltimasRadicadas(20);
 
   return (
     <div className="space-y-4">
@@ -54,8 +54,8 @@ export default async function VitalRecientesPage() {
                   </p>
                 </div>
                 <div className="flex-none text-right">
-                  <p className="text-sm font-medium text-stone-700">{cuandoLlego(s.fechaRadicacion)}</p>
-                  <p className="text-xs text-stone-400">{fecha(s.fechaRadicacion)}</p>
+                  <p className="text-sm font-medium text-stone-800">{fecha(s.fechaRadicacion)}</p>
+                  <p className="text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</p>
                 </div>
               </Link>
             </li>

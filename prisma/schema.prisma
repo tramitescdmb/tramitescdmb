@@ -533,6 +533,28 @@ model SolicitudVital {
   @@index([idTramiteVital])
 }
 
+/**
+ * Trámites de VITAL que la CDMB puede consultar. VITAL no expone un catálogo, así
+ * que la lista se descubre: `NOMBRE_TRAMITE_VITAL` (src/lib/vital.ts) trae los
+ * conocidos, y el cron va probando ids nuevos con `wsObtenerSolicitudes` — si
+ * alguno responde con solicitudes se agrega aquí y se empieza a sincronizar.
+ */
+model VitalTramite {
+  idTramite    Int      @id
+  nombre       String?
+  activo       Boolean  @default(true)
+  detectadoEn  DateTime @default(now())
+  ultimaRevision DateTime?
+  ultimoConteo Int?
+}
+
+/** Cursor de la exploración de ids de trámite (fila única). */
+model VitalDescubrimiento {
+  id            String   @id @default("singleton")
+  proximoId     Int      @default(1)
+  actualizadoEn DateTime @updatedAt
+}
+
 model SolicitudVitalDocumento {
   id          String   @id @default(cuid())
   solicitudId String

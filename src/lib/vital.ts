@@ -76,6 +76,58 @@ export function tramitesVital(): number[] {
   return ids.length ? ids : TRAMITES_VITAL_DISPONIBLES;
 }
 
+const MAX_ID_TRAMITE_VITAL = 160; // hasta dónde explora la búsqueda de trámites nuevos
+
+/**
+ * Lista de trámites a sincronizar: los conocidos (o los de `VITAL_TRAMITES`) más
+ * los que la exploración haya descubierto en la tabla `VitalTramite`.
+ */
+export async function tramitesASincronizar(): Promise<number[]> {
+  const detectados = await db.vitalTramite.findMany({ where: { activo: true }, select: { idTramite: true } });
+  return [...new Set([...tramitesVital(), ...detectados.map((d) => d.idTramite)])].sort((a, b) => a - b);
+}
+
+/**
+ * Explora `cantidad` ids de trámite que todavía no conocemos (avanzando un
+ * cursor circular 1..MAX). Si alguno responde con solicitudes, lo agrega a
+ * `VitalTramite` — así una categoría nueva de VITAL empieza a sincronizarse
+ * sola. Devuelve los ids recién descubiertos.
+ */
+export async function descubrirTramitesNuevos(cantidad = 15): Promise<number[]> {
+  if (!vitalConfigurado()) return [];
+  const conocidos = new Set(await tramitesASincronizar());
+  const estado = await db.vitalDescubrimiento.upsert({ where: { id: "singleton" }, create: {}, update: {} });
+
+  const desde = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const nuevos: number[] = [];
+  let id = estado.proximoId;
+  let probados = 0;
+
+  while (probados < cantidad) {
+    if (id > MAX_ID_TRAMITE_VITAL) id = 1;
+    if (!conocidos.has(id)) {
+      probados++;
+      try {
+        const p = await listarSolicitudes({ idTramite: id, fechaInicio: "2010-01-01", fechaFin: desde, registrosPeticion: 3 });
+        if (p.length > 0) {
+          await db.vitalTramite.upsert({
+            where: { idTramite: id },
+            create: { idTramite: id, nombre: p[0].nombreActividad ?? null, ultimaRevision: new Date() },
+            update: { activo: true, ultimaRevision: new Date() },
+          });
+          nuevos.push(id);
+        }
+      } catch {
+        /* "no se relaciona con la autoridad" o error de bus — se ignora, se reintentará al dar la vuelta */
+      }
+    }
+    id++;
+  }
+
+  await db.vitalDescubrimiento.update({ where: { id: "singleton" }, data: { proximoId: id } });
+  return nuevos;
+}
+
 // --- Tokens: 1) sesión en el proxy Laravel  2) access_token de VITAL ---------
 
 let proxyToken: string | null = null;
