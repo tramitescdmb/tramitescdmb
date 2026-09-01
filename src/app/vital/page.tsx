@@ -124,6 +124,7 @@ export default async function VitalPage({
                 <th className="px-4 py-2.5 font-medium">ID VITAL</th>
                 <th className="px-4 py-2.5 font-medium">id_tramite</th>
                 <th className="px-4 py-2.5 font-medium">Solicitante</th>
+                <th className="px-4 py-2.5 font-medium">Identificación</th>
                 <th className="px-4 py-2.5 font-medium">Actividad actual</th>
                 <th className="px-4 py-2.5 font-medium">Radicación</th>
                 <th className="px-4 py-2.5 font-medium">Documentos</th>
@@ -140,6 +141,7 @@ export default async function VitalPage({
                   </td>
                   <td className="px-4 py-2.5 text-stone-500">{s.idTramiteVital}</td>
                   <td className="px-4 py-2.5 text-stone-700">{s.solicitanteNombre ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-stone-500">{s.solicitanteIdentificacion ?? "—"}</td>
                   <td className="px-4 py-2.5 text-stone-700">{s.nombreActividad ?? "—"}</td>
                   <td className="px-4 py-2.5 text-stone-500">
                     {s.fechaRadicacion ? s.fechaRadicacion.toLocaleDateString("es-CO") : "—"}

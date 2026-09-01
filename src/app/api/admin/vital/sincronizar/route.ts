@@ -26,8 +26,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "VITAL no está configurado." }, { status: 503 });
   }
 
-  const desde = haceDias(45);
-  const hasta = ayer();
+  // Ventana móvil por defecto; se puede ampliar con ?desde=&hasta= para un backfill.
+  const fecha = /^\d{4}-\d{2}-\d{2}$/;
+  const qDesde = req.nextUrl.searchParams.get("desde");
+  const qHasta = req.nextUrl.searchParams.get("hasta");
+  const desde = qDesde && fecha.test(qDesde) ? qDesde : haceDias(45);
+  const hasta = qHasta && fecha.test(qHasta) ? qHasta : ayer();
   const resultados: Record<string, unknown> = {};
   let ok = true;
   for (const idTramite of tramitesVital()) {

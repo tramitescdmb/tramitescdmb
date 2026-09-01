@@ -52,7 +52,9 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         <dl className="mb-3 grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-xs text-stone-400">Nombre / razón social</dt>
-            <dd className="text-stone-800">{solicitud.solicitanteNombre ?? "—"}</dd>
+            <dd className="text-stone-800">
+              {solicitud.solicitanteNombre ?? (Array.isArray(solicitud.solicitanteRaw) && (solicitud.solicitanteRaw[0] as Record<string, unknown>)?.tipoPersona ? String((solicitud.solicitanteRaw[0] as Record<string, unknown>).tipoPersona) : "—")}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-stone-400">Identificación</dt>
