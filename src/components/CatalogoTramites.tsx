@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { LayoutGrid } from "lucide-react";
 import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
 import type { Categoria } from "@/lib/tramite-categoria";
 import type { TramiteTipo, Flujo, PasoDefinicion } from "@prisma/client";
@@ -13,14 +14,12 @@ type Conteo = { activos: number; aprobados: number; negados: number };
 /**
  * Un componente de ícono (función) no se puede pasar como prop de un Server
  * Component a este Client Component — solo datos planos y elementos ya
- * renderizados. `page.tsx` resuelve `<cat.Icono .../>` a JSX ANTES de
- * pasarlo aquí, en dos tamaños (el nav usa uno más chico que las tarjetas).
+ * renderizados. `page.tsx` resuelve `<cat.Icono .../>` a JSX ANTES de pasarlo aquí.
  */
 type CategoriaParaCliente = {
   id: string;
   etiqueta: string;
   clases: Categoria["clases"];
-  iconoChico: ReactNode;
   iconoGrande: ReactNode;
 };
 
@@ -81,18 +80,35 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
         />
       </div>
 
-      <nav className="flex flex-wrap gap-2.5" aria-label="Filtrar por categoría">
+      {/*
+        Píldoras de categoría en cuadrícula alineada, al estilo de los botones de
+        cdmb.gov.co: forma de cápsula, bloque de ícono más oscuro a la izquierda y
+        la etiqueta ocupando el resto. Siguen siendo filtros (un clic deja ver
+        solo esa categoría). El color lo pone `cat.clases.pildora`; el bloque del
+        ícono es la misma píldora con una capa negra encima.
+      */}
+      <nav
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        aria-label="Filtrar por categoría"
+      >
         <button
           type="button"
           onClick={() => setFiltro(null)}
-          className={`rounded-full border px-5 py-3 text-sm font-semibold transition active:scale-95 ${
+          aria-pressed={filtro === null}
+          className={`flex h-full items-stretch overflow-hidden rounded-full text-left shadow-sm transition active:scale-[0.98] ${
             filtro === null
-              ? "border-stone-900 bg-stone-900 text-white shadow-sm"
-              : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
+              ? "bg-stone-900 outline outline-2 outline-offset-2 outline-stone-900"
+              : "bg-stone-600 hover:shadow-md hover:brightness-95"
           }`}
         >
-          Todas <span className="opacity-70">({totalTramites})</span>
+          <span className="flex w-14 flex-none items-center justify-center bg-black/20 text-white" aria-hidden>
+            <LayoutGrid className="h-6 w-6" />
+          </span>
+          <span className="flex flex-1 items-center px-4 py-3 text-sm font-semibold leading-tight text-white">
+            Todas <span className="ml-1 font-normal text-white/70">({totalTramites})</span>
+          </span>
         </button>
+
         {secciones.map(({ cat, items }) => {
           const activo = filtro === cat.id;
           return (
@@ -101,15 +117,18 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
               type="button"
               onClick={() => setFiltro(activo ? null : cat.id)}
               aria-pressed={activo}
-              className={`flex items-center overflow-hidden rounded-full shadow-sm transition active:scale-95 ${
+              title={cat.etiqueta}
+              className={`flex h-full items-stretch overflow-hidden rounded-full text-left shadow-sm transition active:scale-[0.98] ${
                 activo ? "outline outline-2 outline-offset-2 outline-stone-900" : "hover:shadow-md hover:brightness-95"
               } ${cat.clases.pildora}`}
             >
-              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-full ${cat.clases.icono}`}>
-                {cat.iconoChico}
+              <span className="flex w-14 flex-none items-center justify-center bg-black/20 text-white" aria-hidden>
+                {cat.iconoGrande}
               </span>
-              <span className="whitespace-nowrap px-3.5 text-sm font-semibold text-white">
-                {cat.etiqueta} <span className="font-normal text-white/75">({items.length})</span>
+              <span className="flex flex-1 items-center px-4 py-3 text-sm font-semibold leading-tight text-white">
+                <span className="min-w-0">
+                  {cat.etiqueta} <span className="font-normal text-white/70">({items.length})</span>
+                </span>
               </span>
             </button>
           );

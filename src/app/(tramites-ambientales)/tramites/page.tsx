@@ -83,7 +83,6 @@ export default async function CatalogoTramitesPage() {
       id: cat.id,
       etiqueta: cat.etiqueta,
       clases: cat.clases,
-      iconoChico: <cat.Icono className="h-5 w-5" aria-hidden />,
       iconoGrande: <cat.Icono className="h-6 w-6" aria-hidden />,
     },
     items: porCategoria.get(cat.id) ?? [],
