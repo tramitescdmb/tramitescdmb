@@ -20,22 +20,25 @@ export function MiniColumnas({
   const max = Math.max(...data.map((d) => d.valor), referencia ?? 0) * 1.05;
   const refPct = referencia ? (referencia / max) * 100 : null;
 
+  const ALTO_BARRAS = 64; // px, sin contar la etiqueta del mes
+
   return (
-    <div className="relative flex items-end gap-1.5" style={{ height: 88 }}>
+    <div className="relative flex items-stretch gap-1.5">
       {refPct != null && (
-        <div className="pointer-events-none absolute inset-x-0 border-t border-dashed border-stone-300" style={{ bottom: `calc(${refPct}% + 16px)` }} />
+        <div
+          className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-stone-300"
+          style={{ bottom: `calc(16px + ${(refPct / 100) * ALTO_BARRAS}px)` }}
+        />
       )}
       {data.map((d) => {
-        const h = Math.max((d.valor / max) * 100, 2);
+        const h = Math.max(Math.round((d.valor / max) * ALTO_BARRAS), 2);
         return (
-          <div key={d.label} tabIndex={0} className="group flex flex-1 flex-col items-center outline-none" title={`${d.label}: ${formato(d.valor)}`}>
+          <div key={d.label} tabIndex={0} className="group flex flex-1 flex-col items-center justify-end outline-none" title={`${d.label}: ${formato(d.valor)}`}>
             <span className="mb-0.5 text-[9px] tabular-nums text-stone-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               {formato(d.valor)}
             </span>
-            <div className="flex w-full flex-1 items-end">
-              <div className="w-full rounded-sm transition-[filter] group-hover:brightness-110" style={{ height: `${h}%`, backgroundColor: COLOR }} />
-            </div>
-            <span className="mt-1 text-[10px] text-stone-500">{d.label}</span>
+            <div className="w-full max-w-[22px] rounded-sm transition-[filter] group-hover:brightness-110" style={{ height: h, backgroundColor: COLOR }} />
+            <span className="mt-1 text-[10px] leading-none text-stone-500">{d.label}</span>
           </div>
         );
       })}
