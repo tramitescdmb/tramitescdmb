@@ -65,10 +65,21 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         </dl>
         <details className="border-t border-stone-100 pt-3">
           <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-            Ver todos los datos del solicitante tal como los envió VITAL
+            Ver todos los datos que envió VITAL
           </summary>
-          <div className="mt-2">
-            <ListaCampos datos={solicitud.solicitanteRaw} />
+          <div className="mt-2 space-y-4">
+            {Array.isArray(solicitud.solicitanteRaw) ? (
+              (solicitud.solicitanteRaw as unknown[]).map((interesado, i) => (
+                <div key={i}>
+                  {(solicitud.solicitanteRaw as unknown[]).length > 1 && (
+                    <p className="mb-1 text-xs font-semibold text-stone-500">Interesado {i + 1}</p>
+                  )}
+                  <ListaCampos datos={interesado} />
+                </div>
+              ))
+            ) : (
+              <ListaCampos datos={solicitud.solicitanteRaw} />
+            )}
           </div>
         </details>
       </section>

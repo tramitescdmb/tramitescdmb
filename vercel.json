@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/sinca/sincronizar", "schedule": "0 7 * * *" }
+    { "path": "/api/sinca/sincronizar", "schedule": "0 7 * * *" },
+    { "path": "/api/admin/vital/sincronizar", "schedule": "30 7 * * *" }
   ]
 }

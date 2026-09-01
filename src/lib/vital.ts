@@ -2,92 +2,132 @@ import { db } from "@/lib/db";
 import { uploadDocumento } from "@/lib/storage";
 
 /**
- * Cliente de la interoperabilidad VITAL/OTIC (MinAmbiente), expuesta vía
- * X-ROAD. Basado en las historias de usuario hu-otic-vital-io-001 a 004 y
- * 009 (documentación de campos, no un Swagger real) — las RUTAS exactas de
- * cada servicio son la parte que más probablemente haya que ajustar una vez
- * se pruebe contra el ambiente real; los nombres de los parámetros y de los
- * campos de respuesta sí vienen directo de esas historias de usuario.
+ * Cliente de la interoperabilidad con VITAL (Ventanilla Integral de Trámites
+ * Ambientales en Línea, MinAmbiente).
  *
- * Alcance actual: solo lectura (traer solicitudes hacia esta plataforma).
- * Las historias 005/006/007/008 (reportar avance, asociar radicado,
- * notificar) quedaron explícitamente fuera de alcance por ahora.
+ * Replica EXACTAMENTE cómo lo hace el sistema anterior (`sinca.cdmb.gov.co`):
+ * no habla con VITAL directo, sino con un **proxy** (`.../api/vital`) que
+ * reenvía por X-Road a MinAmbiente. Ver reference-vital-sinca1 en la memoria.
+ *
+ *   SPA → proxy Laravel (VITAL_API_URL) → servidor X-Road → VITAL (MADS-8003)
+ *
+ * Cada llamada lleva 3 headers de enrutamiento:
+ *   X-Road-Url     el servicio X-Road de VITAL           (VITAL_XROAD_URL)
+ *   X-Road-Client  la identidad X-Road de la CDMB        (VITAL_XROAD_CLIENT)
+ *   X-Road-Token   Bearer <access_token> de `wsToken`
+ *
+ * Alcance: SOLO LECTURA. No se usan `wsSolicitudesEstado` / `wsSolicitudesRadicados`
+ * / `wsNotificacionesEmail` (endpoints de escritura hacia VITAL).
+ *
+ * Este módulo usa Buffer/fetch de Node — solo se importa desde rutas API y
+ * scripts, nunca desde el navegador ni desde el middleware.
  */
 
-const VITAL_TOKEN_URL = process.env.VITAL_TOKEN_URL;
-const VITAL_BASE_URL = process.env.VITAL_BASE_URL;
-const VITAL_CLIENT_ID = process.env.VITAL_CLIENT_ID;
-const VITAL_CLIENT_SECRET = process.env.VITAL_CLIENT_SECRET;
-const VITAL_USERNAME = process.env.VITAL_USERNAME;
-const VITAL_PASSWORD = process.env.VITAL_PASSWORD;
+const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
+const XROAD_URL = process.env.VITAL_XROAD_URL?.trim();
+const XROAD_CLIENT = process.env.VITAL_XROAD_CLIENT?.trim();
+const CLIENT_ID = process.env.VITAL_CLIENT_ID;
+const CLIENT_SECRET = process.env.VITAL_CLIENT_SECRET;
+const USERNAME = process.env.VITAL_USERNAME;
+const PASSWORD = process.env.VITAL_PASSWORD;
 
 export function vitalConfigurado(): boolean {
-  return Boolean(
-    VITAL_TOKEN_URL && VITAL_BASE_URL && VITAL_CLIENT_ID && VITAL_CLIENT_SECRET && VITAL_USERNAME && VITAL_PASSWORD
-  );
+  return Boolean(API_URL && XROAD_URL && XROAD_CLIENT && CLIENT_ID && CLIENT_SECRET && USERNAME && PASSWORD);
 }
 
-// El token dura 300s (hu-otic-vital-io-009) — se cachea en memoria del proceso
-// mientras dure una sincronización; en frío simplemente se pide uno nuevo.
+/** Trámites VITAL a sincronizar (env `VITAL_TRAMITES`, coma-separado). Por defecto: 41. */
+export function tramitesVital(): number[] {
+  const raw = process.env.VITAL_TRAMITES?.trim();
+  const ids = (raw ? raw.split(",") : ["41"]).map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n));
+  return ids.length ? ids : [41];
+}
+
+// --- Token (Sanctum/OAuth password grant vía el proxy) -----------------------
+
 let tokenCache: { accessToken: string; expiraEn: number } | null = null;
 
-async function obtenerToken(): Promise<string> {
+async function obtenerToken(forzar = false): Promise<string> {
   if (!vitalConfigurado()) {
-    throw new Error("La integración con VITAL no está configurada (faltan variables de entorno VITAL_*).");
+    throw new Error("La integración con VITAL no está configurada (faltan variables VITAL_*).");
   }
-
   const ahora = Date.now();
-  if (tokenCache && tokenCache.expiraEn - 30_000 > ahora) {
-    return tokenCache.accessToken;
-  }
+  if (!forzar && tokenCache && tokenCache.expiraEn - 30_000 > ahora) return tokenCache.accessToken;
 
-  const res = await fetch(VITAL_TOKEN_URL!, {
+  const res = await fetch(`${API_URL}/wsToken`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      "X-Road-Url": XROAD_URL!,
+      "X-Road-Client": XROAD_CLIENT!,
+    },
     body: new URLSearchParams({
       grant_type: "password",
-      client_id: VITAL_CLIENT_ID!,
-      client_secret: VITAL_CLIENT_SECRET!,
-      username: VITAL_USERNAME!,
-      password: VITAL_PASSWORD!,
+      client_id: CLIENT_ID!,
+      client_secret: CLIENT_SECRET!,
+      username: USERNAME!,
+      password: PASSWORD!,
     }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(25_000),
   });
 
-  if (!res.ok) {
-    const texto = await res.text().catch(() => "");
-    throw new Error(`No se pudo obtener el token de VITAL (HTTP ${res.status}): ${texto.slice(0, 300)}`);
+  const data = (await res.json().catch(() => null)) as { access_token?: string; expires_in?: number; message?: string } | null;
+  if (!res.ok || !data?.access_token) {
+    throw new Error(`No se pudo autenticar contra VITAL (HTTP ${res.status}): ${data?.message ?? "sin detalle"}`);
   }
-
-  const data = await res.json();
-  if (!data.access_token) {
-    throw new Error("VITAL respondió sin access_token — revisa client_id/client_secret/username/password.");
-  }
-
-  tokenCache = {
-    accessToken: data.access_token,
-    expiraEn: ahora + (Number(data.expires_in) || 300) * 1000,
-  };
+  tokenCache = { accessToken: data.access_token, expiraEn: ahora + (Number(data.expires_in) || 300) * 1000 };
   return tokenCache.accessToken;
 }
 
-// La forma de la respuesta la decide VITAL, no nosotros, y cambia según el endpoint (a veces un array,
-// a veces `{ solicitudes: [...] }`, a veces `{ data: [...] }`) — cada función de arriba la interpreta a
-// su manera, así que tipar esto más estricto solo movería el `any` a cada llamador sin ganar seguridad real.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function vitalFetch(path: string, params: Record<string, string | number>): Promise<any> {
-  const token = await obtenerToken();
-  const url = new URL(path, VITAL_BASE_URL);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
+// --- Llamada genérica a un servicio ws* -------------------------------------
 
-  const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const msg = data?.mensaje_error || data?.error_description || `HTTP ${res.status}`;
-    throw new Error(`VITAL (${path}): ${msg}`);
+function mensajeError(cuerpo: unknown): string {
+  if (!cuerpo || typeof cuerpo !== "object") return "error desconocido";
+  const o = cuerpo as Record<string, unknown>;
+  for (const k of Object.keys(o)) {
+    if (!/^mensajeError/i.test(k)) continue;
+    const v = o[k];
+    if (Array.isArray(v)) return v.join(" · ");
+    if (v && typeof v === "object") return String(Object.values(v)[0] ?? "");
+    if (typeof v === "string") return v;
   }
-  return data;
+  return (typeof o.message === "string" && o.message) || `HTTP`;
 }
+
+async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHeaders?: Record<string, string>): Promise<T> {
+  if (!API_URL) throw new Error("VITAL_API_URL no está configurado.");
+
+  const hacer = async (token: string) =>
+    fetch(`${API_URL}${ws}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Road-Url": XROAD_URL!,
+        "X-Road-Client": XROAD_CLIENT!,
+        "X-Road-Token": `Bearer ${token}`,
+        ...extraHeaders,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal: AbortSignal.timeout(45_000),
+    });
+
+  let res = await hacer(await obtenerToken());
+  if (res.status === 401) res = await hacer(await obtenerToken(true));
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    if (!res.ok) throw new Error(`VITAL ${ws}: HTTP ${res.status}`);
+    return (await res.arrayBuffer()) as unknown as T; // p. ej. /descargar devuelve un blob
+  }
+  const cuerpo = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`VITAL ${ws}: ${mensajeError(cuerpo)}`);
+  return cuerpo as T;
+}
+
+// --- Servicios de lectura --------------------------------------------------
 
 export type SolicitudVitalResumen = {
   idVital: string;
@@ -97,7 +137,7 @@ export type SolicitudVitalResumen = {
   nombreActividad: string | null;
 };
 
-/** hu-otic-vital-io-001 — lista de solicitudes activas, paginada de a máx. 50. */
+/** wsObtenerSolicitudes — lista de solicitudes de un trámite en un rango de fechas. */
 export async function listarSolicitudes(opts: {
   idTramite: number;
   fechaInicio: string; // AAAA-MM-DD
@@ -105,64 +145,97 @@ export async function listarSolicitudes(opts: {
   indiceRegistroInicial?: number;
   registrosPeticion?: number;
 }): Promise<SolicitudVitalResumen[]> {
-  const data = await vitalFetch("/solicitudes", {
+  const data = await vitalPost<unknown>("/wsObtenerSolicitudes", {
     id_tramite: opts.idTramite,
     fecha_inicio: opts.fechaInicio,
     fecha_fin: opts.fechaFin,
     indice_registro_inicial: opts.indiceRegistroInicial ?? 0,
     registros_peticion: opts.registrosPeticion ?? 50,
   });
-  return Array.isArray(data) ? data : (data?.solicitudes ?? data?.data ?? []);
+  const arr = Array.isArray(data) ? data : ((data as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (data as { data?: unknown[] })?.data ?? []);
+  return (arr as Record<string, unknown>[]).map((r) => ({
+    idVital: String(r.idVital ?? r.id_vital ?? ""),
+    idTramite: Number(r.idTramite ?? r.id_tramite ?? opts.idTramite),
+    idTramiteAutoridad: r.idTramiteAutoridad != null ? Number(r.idTramiteAutoridad) : null,
+    FechaRadicacion: (r.fechaRadicacion ?? r.FechaRadicacion ?? null) as string | null,
+    nombreActividad: (r.nombreActividad ?? null) as string | null,
+  })).filter((r) => r.idVital);
 }
 
-/** hu-otic-vital-io-002 — campos del formulario diligenciados por el ciudadano. */
+/** wsSolicitudes — campos del formulario diligenciado por el ciudadano. */
 async function consultarCamposSolicitud(idVital: string): Promise<unknown> {
-  const data = await vitalFetch(`/solicitudes/${encodeURIComponent(idVital)}/campos`, {});
-  return data?.camposTramite ?? data;
+  const data = await vitalPost<{ campotramite?: unknown; campoTramite?: unknown; camposTramite?: unknown }>("/wsSolicitudes", { id_vital: idVital });
+  return data?.campotramite ?? data?.campoTramite ?? data?.camposTramite ?? data;
 }
 
-/** hu-otic-vital-io-003 — datos del solicitante (persona natural o jurídica). */
-async function consultarSolicitante(idVital: string): Promise<Record<string, unknown> | null> {
-  return vitalFetch(`/solicitudes/${encodeURIComponent(idVital)}/solicitante`, {});
+/** wsSolicitante — datos del solicitante (VITAL devuelve un arreglo de interesados). */
+async function consultarSolicitante(idVital: string): Promise<Record<string, unknown>[] | null> {
+  const data = await vitalPost<unknown>("/wsSolicitante", { id_vital: idVital });
+  if (Array.isArray(data)) return data as Record<string, unknown>[];
+  if (data && typeof data === "object") return [data as Record<string, unknown>];
+  return null;
 }
 
 type DocumentoVital = { nombre_archivo: string; url_archivo: string };
 
-/** hu-otic-vital-io-004 — documentos adjuntos: la URL de descarga solo vive 1 hora. */
+/** wsDocumentos — documentos adjuntos (la url_archivo es un recurso X-Road, no una URL pública). */
 async function consultarDocumentos(idVital: string): Promise<DocumentoVital[]> {
-  const data = await vitalFetch(`/solicitudes/${encodeURIComponent(idVital)}/documentos`, {});
-  return data?.listaDocumentos ?? data?.lista_documentos ?? [];
+  const data = await vitalPost<{ listaDocumentos?: DocumentoVital[]; lista_documentos?: DocumentoVital[] }>("/wsDocumentos", { id_vital: idVital });
+  return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
 }
 
-function buildVitalStoragePath(idVital: string, fileName: string) {
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `vital/${idVital}/${Date.now()}-${safeName}`;
+/** POST /descargar con X-Road-Url = url_archivo → devuelve el archivo. */
+async function descargarDocumentoVital(urlArchivo: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  try {
+    if (!API_URL) return null;
+    const res = await fetch(`${API_URL}/descargar`, {
+      method: "POST",
+      headers: {
+        Accept: "*/*",
+        "X-Road-Url": urlArchivo,
+        "X-Road-Client": XROAD_CLIENT!,
+        "X-Road-Token": `Bearer ${await obtenerToken()}`,
+      },
+      body: "{}",
+      cache: "no-store",
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") ?? "application/octet-stream";
+    if (ct.includes("application/json")) return null; // vino un error, no un archivo
+    return { buffer: Buffer.from(await res.arrayBuffer()), mimeType: ct };
+  } catch {
+    return null;
+  }
 }
 
-function extraerNombreSolicitante(info: Record<string, unknown>): string | null {
-  if (typeof info.razon_social === "string" && info.razon_social) return info.razon_social;
-  const partes = [info.primer_nombre, info.segundo_nombre, info.primer_apellido, info.segundo_apellido].filter(
-    (p): p is string => typeof p === "string" && p.length > 0
-  );
+// --- Sincronización -------------------------------------------------------
+
+function nombreDe(info: Record<string, unknown>): string | null {
+  const razon = info.razonSocial ?? info.razon_social;
+  if (typeof razon === "string" && razon) return razon;
+  const partes = [info.primerNombre ?? info.primer_nombre, info.segundoNombre ?? info.segundo_nombre, info.primerApellido ?? info.primer_apellido, info.segundoApellido ?? info.segundo_apellido]
+    .filter((p): p is string => typeof p === "string" && p.length > 0);
   return partes.length ? partes.join(" ") : null;
 }
-
-function extraerIdentificacion(info: Record<string, unknown>): string | null {
-  const valor = info.numero_identificacion ?? info["número_identificacion"];
-  return typeof valor === "string" ? valor : null;
+function identificacionDe(info: Record<string, unknown>): string | null {
+  const v = info.numeroIdentificacion ?? info.numero_identificacion ?? info["número_identificacion"];
+  return v != null ? String(v) : null;
+}
+function correoDe(info: Record<string, unknown>): string | null {
+  const v = info.correoElectronico ?? info.correo_electronico ?? info.correo;
+  return typeof v === "string" && v ? v : null;
 }
 
-/** Trae y guarda (upsert) UNA solicitud completa: campos + solicitante + documentos nuevos. */
+/** Trae y guarda (upsert) UNA solicitud: campos + solicitante + documentos nuevos. */
 export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
-  const [campos, solicitante, documentos] = await Promise.all([
+  const [campos, solicitantes, documentos] = await Promise.all([
     consultarCamposSolicitud(resumen.idVital).catch(() => null),
     consultarSolicitante(resumen.idVital).catch(() => null),
     consultarDocumentos(resumen.idVital).catch(() => [] as DocumentoVital[]),
   ]);
 
-  const nombreSolicitante = solicitante ? extraerNombreSolicitante(solicitante) : null;
-  const identificacion = solicitante ? extraerIdentificacion(solicitante) : null;
-  const correo = solicitante && typeof solicitante.correo_electronico === "string" ? solicitante.correo_electronico : null;
+  const principal = solicitantes?.[0] ?? null;
 
   const solicitud = await db.solicitudVital.upsert({
     where: { idVital: resumen.idVital },
@@ -172,56 +245,47 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       idTramiteAutoridad: resumen.idTramiteAutoridad,
       fechaRadicacion: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
       nombreActividad: resumen.nombreActividad,
-      solicitanteNombre: nombreSolicitante,
-      solicitanteIdentificacion: identificacion,
-      solicitanteCorreo: correo,
-      solicitanteRaw: (solicitante as object | null) ?? undefined,
+      solicitanteNombre: principal ? nombreDe(principal) : null,
+      solicitanteIdentificacion: principal ? identificacionDe(principal) : null,
+      solicitanteCorreo: principal ? correoDe(principal) : null,
+      solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
     },
     update: {
+      idTramiteAutoridad: resumen.idTramiteAutoridad ?? undefined,
+      fechaRadicacion: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : undefined,
       nombreActividad: resumen.nombreActividad,
-      solicitanteNombre: nombreSolicitante,
-      solicitanteIdentificacion: identificacion,
-      solicitanteCorreo: correo,
-      solicitanteRaw: (solicitante as object | null) ?? undefined,
+      solicitanteNombre: principal ? nombreDe(principal) : undefined,
+      solicitanteIdentificacion: principal ? identificacionDe(principal) : undefined,
+      solicitanteCorreo: principal ? correoDe(principal) : undefined,
+      solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
     },
   });
 
-  // Solo se descargan documentos que todavía no tenemos (por nombre) — evita re-bajar en cada sincronización.
-  const existentes = await db.solicitudVitalDocumento.findMany({
-    where: { solicitudId: solicitud.id },
-    select: { nombre: true },
-  });
-  const nombresExistentes = new Set(existentes.map((d) => d.nombre));
+  const existentes = await db.solicitudVitalDocumento.findMany({ where: { solicitudId: solicitud.id }, select: { nombre: true } });
+  const yaTengo = new Set(existentes.map((d) => d.nombre));
 
   for (const doc of documentos) {
-    if (nombresExistentes.has(doc.nombre_archivo)) continue;
+    if (yaTengo.has(doc.nombre_archivo)) continue;
+    const archivo = await descargarDocumentoVital(doc.url_archivo);
+    if (!archivo) continue;
+    const safeName = doc.nombre_archivo.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `vital/${resumen.idVital}/${Date.now()}-${safeName}`;
     try {
-      const res = await fetch(doc.url_archivo);
-      if (!res.ok) continue;
-      const buffer = Buffer.from(await res.arrayBuffer());
-      const mimeType = res.headers.get("content-type") || "application/octet-stream";
-      const path = buildVitalStoragePath(resumen.idVital, doc.nombre_archivo);
-      await uploadDocumento(path, buffer, mimeType);
+      await uploadDocumento(path, archivo.buffer, archivo.mimeType);
       await db.solicitudVitalDocumento.create({
-        data: {
-          solicitudId: solicitud.id,
-          nombre: doc.nombre_archivo,
-          storagePath: path,
-          mimeType,
-          tamanoBytes: buffer.length,
-        },
+        data: { solicitudId: solicitud.id, nombre: doc.nombre_archivo, storagePath: path, mimeType: archivo.mimeType, tamanoBytes: archivo.buffer.length },
       });
     } catch {
-      // Si un documento puntual falla (ej. la URL de 1h ya venció), se sigue con los demás.
+      /* un documento puntual que falle no aborta el resto */
     }
   }
 
   return solicitud;
 }
 
-/** Sincroniza TODAS las solicitudes de un trámite VITAL en un rango de fechas, paginando de a 50. */
+/** Sincroniza TODAS las solicitudes de un trámite en un rango, paginando de a 50. */
 export async function sincronizarTramite(opts: {
   idTramite: number;
   fechaInicio: string;
@@ -229,16 +293,15 @@ export async function sincronizarTramite(opts: {
 }): Promise<{ total: number; errores: string[] }> {
   const errores: string[] = [];
   let total = 0;
-  let indice = 0;
-  const tamanoPagina = 50;
+  const tam = 50;
 
-  while (true) {
+  for (let indice = 0; ; indice += tam) {
     const pagina = await listarSolicitudes({
       idTramite: opts.idTramite,
       fechaInicio: opts.fechaInicio,
       fechaFin: opts.fechaFin,
       indiceRegistroInicial: indice,
-      registrosPeticion: tamanoPagina,
+      registrosPeticion: tam,
     });
     if (pagina.length === 0) break;
 
@@ -247,13 +310,10 @@ export async function sincronizarTramite(opts: {
         await sincronizarSolicitud(resumen);
         total++;
       } catch (err) {
-        errores.push(`${resumen.idVital}: ${err instanceof Error ? err.message : "error desconocido"}`);
+        errores.push(`${resumen.idVital}: ${err instanceof Error ? err.message : "error"}`);
       }
     }
-
-    if (pagina.length < tamanoPagina) break;
-    indice += tamanoPagina;
+    if (pagina.length < tam) break;
   }
-
   return { total, errores };
 }

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { vitalConfigurado } from "@/lib/vital";
+import { vitalConfigurado, tramitesVital } from "@/lib/vital";
 import { SectionHelp } from "@/components/Field";
+
+const HOY = new Date().toISOString().slice(0, 10);
 
 export default async function VitalPage({
   searchParams,
@@ -12,6 +14,7 @@ export default async function VitalPage({
   const { sincronizado, errores, error } = await searchParams;
   const session = await getSession();
   const configurado = vitalConfigurado();
+  const tramiteDefault = tramitesVital()[0] ?? 41;
 
   const solicitudes = await db.solicitudVital.findMany({
     orderBy: { ultimaSincronizacion: "desc" },
@@ -24,20 +27,20 @@ export default async function VitalPage({
         <h1 className="text-xl font-semibold text-stone-900">VITAL</h1>
         <p className="text-sm text-stone-500">
           Solicitudes radicadas por el ciudadano en la Ventanilla Integral de Trámites Ambientales en Línea
-          (VITAL) de MinAmbiente, traídas aquí para consulta. Por ahora es de solo lectura — no se reporta
-          nada de vuelta a VITAL.
+          (VITAL) de MinAmbiente, traídas aquí para consulta a través del bus de interoperabilidad X-Road de
+          la CDMB. Es de <strong>solo lectura</strong>: no se reporta nada de vuelta a VITAL. Se actualiza a
+          diario.
         </p>
       </div>
 
       {!configurado && (
         <SectionHelp>
-          La integración con VITAL todavía no está configurada — faltan las variables de entorno{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_TOKEN_URL</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_BASE_URL</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_CLIENT_ID</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_CLIENT_SECRET</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_USERNAME</code> y{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_PASSWORD</code>.
+          La conexión con VITAL todavía no está configurada en este servidor — faltan variables de entorno{" "}
+          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_API_URL</code>,{" "}
+          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_URL</code>,{" "}
+          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_CLIENT</code> y las
+          credenciales (<code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_CLIENT_ID/SECRET</code>,{" "}
+          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_USERNAME/PASSWORD</code>).
         </SectionHelp>
       )}
 
@@ -66,6 +69,7 @@ export default async function VitalPage({
                 name="idTramite"
                 type="number"
                 required
+                defaultValue={tramiteDefault}
                 disabled={!configurado}
                 className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50"
               />
@@ -76,6 +80,7 @@ export default async function VitalPage({
                 name="fechaInicio"
                 type="date"
                 required
+                defaultValue="2018-01-01"
                 disabled={!configurado}
                 className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50"
               />
@@ -86,6 +91,7 @@ export default async function VitalPage({
                 name="fechaFin"
                 type="date"
                 required
+                defaultValue={HOY}
                 disabled={!configurado}
                 className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50"
               />
