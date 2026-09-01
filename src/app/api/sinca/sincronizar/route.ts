@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarResoluciones } from "@/lib/sinca-sync";
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
   }
 
   const resultado = await sincronizarResoluciones("cron");
+  if (resultado.ok) revalidateTag("sinca-analitica");
   return NextResponse.json(resultado, { status: resultado.ok ? 200 : 500 });
 }
 
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   const resultado = await sincronizarResoluciones(`manual:${session.email}`);
+  if (resultado.ok) revalidateTag("sinca-analitica");
 
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
