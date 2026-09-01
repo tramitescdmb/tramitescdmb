@@ -4,8 +4,10 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarResoluciones } from "@/lib/sinca-sync";
 import { sincaConfigurado } from "@/lib/sinca";
 
-// La sincronización recorre ~6 páginas del API + un reemplazo por lotes; puede
-// pasar de los 10 s por defecto de Vercel.
+// La sincronización recorre ~6 páginas del API + un reemplazo por lotes + un
+// pequeño lote de enriquecimiento. Se pide más que los 10 s por defecto; en el
+// plan Hobby de Vercel el tope efectivo es menor y el enriquecimiento que no
+// alcance se retoma en la siguiente corrida (es idempotente).
 export const maxDuration = 300;
 
 /**

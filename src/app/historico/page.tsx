@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileCheck2, Stamp, CalendarClock, RefreshCw } from "lucide-react";
+import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Sparkles } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { sincaConfigurado } from "@/lib/sinca";
 import { getHistoricoDashboard } from "@/lib/sinca-data";
@@ -72,12 +72,34 @@ export default async function HistoricoPanelPage({
               value={d.serieAnual.length ? `${d.serieAnual[0].label}–${d.serieAnual[d.serieAnual.length - 1].label}` : "—"}
             />
             <StatCard
-              icon={CalendarClock}
-              label="Sin fecha de resolución válida"
-              value={d.sinFechaValida.toLocaleString("es-CO")}
-              help="Registros cuya fecha en SINCA 1.0 tiene un error de digitación (año imposible)."
+              icon={Timer}
+              label="Tiempo mediano de resolución"
+              value={d.diasResolucionP50 != null ? `${d.diasResolucionP50} días` : "en cálculo…"}
+              help={
+                d.diasResolucionP50 != null
+                  ? `Desde la radicación hasta la resolución (sobre ${(d.diasResolucionCobertura * 100).toFixed(0)} % de los registros).`
+                  : "Se calcula con la sincronización; ver la pestaña Análisis."
+              }
             />
           </div>
+
+          <Link
+            href="/historico/analisis"
+            className="flex items-center justify-between gap-3 rounded-xl border border-cdmb-200 bg-cdmb-50 px-5 py-4 transition-colors hover:bg-cdmb-100"
+          >
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-cdmb-900">
+                <Sparkles className="h-4 w-4" aria-hidden />
+                Análisis y minería de datos
+              </p>
+              <p className="mt-0.5 text-xs text-cdmb-800">
+                Pronóstico, estacionalidad, tiempos de trámite, fricción por tipo, concentración territorial y minería de texto.
+              </p>
+            </div>
+            <span className="flex-none text-sm font-medium text-cdmb-700" aria-hidden>
+              →
+            </span>
+          </Link>
 
           <section className="rounded-xl border border-stone-200 bg-white p-5">
             <h2 className="text-sm font-semibold text-stone-900">Resoluciones de fondo por año</h2>

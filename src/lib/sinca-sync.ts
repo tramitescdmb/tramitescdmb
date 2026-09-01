@@ -215,11 +215,11 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
     const eliminados = [...idsExistentes].filter((id) => !filasPorId.has(id)).length;
     const actualizados = filas.length - creados;
 
-    // 3. Enriquecer (detalle) un lote de las que aún no lo están — así el cron
-    //    diario va completando y las nuevas quedan al día pronto. (~1200 caben
-    //    en el límite de tiempo de la función; el backfill completo se hace una
-    //    vez con `npm run sinca:enrich`.)
-    const enriquecidos = await enriquecerResoluciones({ limite: 1200 });
+    // 3. Enriquecer (detalle) un lote pequeño de las que aún no lo están — para
+    //    mantener al día lo nuevo sin arriesgar el límite de tiempo de la función
+    //    serverless. El backfill completo (5.000+) se hace una sola vez con
+    //    `npm run sinca:enrich` desde una máquina, no aquí.
+    const enriquecidos = await enriquecerResoluciones({ limite: 150 });
 
     const resultado: ResultadoSincronizacion = {
       ok: true,
