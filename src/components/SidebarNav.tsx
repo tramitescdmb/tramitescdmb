@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  LibraryBig,
-  FolderOpen,
-  Users,
+  Leaf,
   Link2,
   Archive,
   UserCog,
@@ -15,13 +12,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string };
+type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string | string[] };
 
 const ITEMS_PRINCIPAL: Item[] = [
-  { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
-  { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
-  { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
-  { href: "/solicitantes", label: "Solicitantes", icon: Users },
+  {
+    href: "/",
+    label: "Trámites ambientales",
+    icon: Leaf,
+    prefijo: ["/", "/tramites", "/expedientes", "/solicitantes"],
+  },
   { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" },
 ];
 
@@ -50,7 +49,10 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const activo = (item: Item) => {
-    if (item.prefijo) return pathname === item.prefijo || pathname.startsWith(item.prefijo + "/");
+    if (item.prefijo) {
+      const prefijos = Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo];
+      return prefijos.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(p + "/")));
+    }
     if (item.exacto) return pathname === item.href;
     return pathname === item.href || pathname.startsWith(item.href + "/");
   };

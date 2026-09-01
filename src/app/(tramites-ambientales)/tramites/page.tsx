@@ -92,7 +92,7 @@ export default async function CatalogoTramitesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-stone-900">Catálogo de trámites</h1>
+        <h2 className="text-base font-semibold text-stone-900">Catálogo de trámites</h2>
         <p className="text-sm text-stone-500">
           Los {tramites.length} trámites ambientales que atiende la CDMB, organizados por recurso o tema
           — mismo criterio que usan otras Corporaciones Autónomas Regionales.

@@ -194,6 +194,23 @@ async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHead
   return cuerpo as T;
 }
 
+/**
+ * El bus X-Road de VITAL es intermitente: la misma llamada a veces devuelve
+ * datos y a veces "El campo id_tramite no se relaciona…" o 5xx. Se reintenta.
+ */
+async function vitalPostReintentando<T>(ws: string, body: Record<string, unknown>, intentos = 3): Promise<T> {
+  let ultimo: unknown;
+  for (let i = 0; i < intentos; i++) {
+    try {
+      return await vitalPost<T>(ws, body);
+    } catch (err) {
+      ultimo = err;
+      if (i < intentos - 1) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+  throw ultimo;
+}
+
 // --- Servicios de lectura --------------------------------------------------
 
 export type SolicitudVitalResumen = {
@@ -212,7 +229,7 @@ export async function listarSolicitudes(opts: {
   indiceRegistroInicial?: number;
   registrosPeticion?: number;
 }): Promise<SolicitudVitalResumen[]> {
-  const data = await vitalPost<unknown>("/wsObtenerSolicitudes", {
+  const data = await vitalPostReintentando<unknown>("/wsObtenerSolicitudes", {
     id_tramite: opts.idTramite,
     fecha_inicio: opts.fechaInicio,
     fecha_fin: opts.fechaFin,
@@ -231,13 +248,13 @@ export async function listarSolicitudes(opts: {
 
 /** wsSolicitudes — campos del formulario diligenciado por el ciudadano. */
 async function consultarCamposSolicitud(idVital: string): Promise<unknown> {
-  const data = await vitalPost<{ campotramite?: unknown; campoTramite?: unknown; camposTramite?: unknown }>("/wsSolicitudes", { id_vital: idVital });
+  const data = await vitalPostReintentando<{ campotramite?: unknown; campoTramite?: unknown; camposTramite?: unknown }>("/wsSolicitudes", { id_vital: idVital });
   return data?.campotramite ?? data?.campoTramite ?? data?.camposTramite ?? data;
 }
 
 /** wsSolicitante — datos del solicitante (VITAL devuelve un arreglo de interesados). */
 async function consultarSolicitante(idVital: string): Promise<Record<string, unknown>[] | null> {
-  const data = await vitalPost<unknown>("/wsSolicitante", { id_vital: idVital });
+  const data = await vitalPostReintentando<unknown>("/wsSolicitante", { id_vital: idVital });
   if (Array.isArray(data)) return data as Record<string, unknown>[];
   if (data && typeof data === "object") return [data as Record<string, unknown>];
   return null;
@@ -247,7 +264,7 @@ type DocumentoVital = { nombre_archivo: string; url_archivo: string };
 
 /** wsDocumentos — documentos adjuntos (la url_archivo es un recurso X-Road, no una URL pública). */
 async function consultarDocumentos(idVital: string): Promise<DocumentoVital[]> {
-  const data = await vitalPost<{ listaDocumentos?: DocumentoVital[]; lista_documentos?: DocumentoVital[] }>("/wsDocumentos", { id_vital: idVital });
+  const data = await vitalPostReintentando<{ listaDocumentos?: DocumentoVital[]; lista_documentos?: DocumentoVital[] }>("/wsDocumentos", { id_vital: idVital });
   return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
 }
 

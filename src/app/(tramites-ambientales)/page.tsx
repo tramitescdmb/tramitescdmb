@@ -21,11 +21,11 @@ export default async function DashboardPage() {
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-stone-900">
+        <h2 className="text-base font-semibold text-stone-900">
           {saludo(new Date().getHours())}{primerNombre ? `, ${primerNombre}` : ""}
-        </h1>
+        </h2>
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
 

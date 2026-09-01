@@ -1,22 +1,13 @@
 import Link from "next/link";
-import { Search, RefreshCw, Inbox } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
-import { getVitalListado, getVitalOpcionesFiltro, getVitalUltimasRadicadas, type FiltrosVital } from "@/lib/vital-data";
+import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
-const cuandoLlego = (d: Date | null) => {
-  if (!d) return "sin fecha";
-  const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
-  if (dias <= 0) return "hoy";
-  if (dias === 1) return "ayer";
-  if (dias < 30) return `hace ${dias} días`;
-  if (dias < 60) return "hace 1 mes";
-  return `hace ${Math.floor(dias / 30)} meses`;
-};
 
 export default async function VitalSolicitudesPage({
   searchParams,
@@ -39,10 +30,9 @@ export default async function VitalSolicitudesPage({
     );
   }
 
-  const [{ filas, total, page, totalPaginas, porPagina }, opciones, ultimas] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina }, opciones] = await Promise.all([
     getVitalListado(sp),
     getVitalOpcionesFiltro(),
-    getVitalUltimasRadicadas(10),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tramite || sp.anio || sp.actividad);
@@ -63,36 +53,6 @@ export default async function VitalSolicitudesPage({
         </div>
       )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
-
-      {/* Últimos radicados */}
-      {ultimas.length > 0 && (
-        <section className="rounded-xl border border-cdmb-200 bg-cdmb-50/60 p-4">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-cdmb-900">
-            <Inbox className="h-4 w-4" aria-hidden />
-            Últimos trámites radicados en VITAL
-          </h2>
-          <p className="mb-3 text-xs text-cdmb-800">
-            Lo más reciente que ha llegado del portal de VITAL. Útil para no perder de vista una solicitud
-            nueva mientras se resuelve la notificación por correo.
-          </p>
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {ultimas.map((s) => (
-              <li key={s.id}>
-                <Link href={`/vital/${s.id}`} className="flex items-start justify-between gap-3 rounded-lg border border-cdmb-200 bg-white px-3 py-2 hover:border-cdmb-400">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-stone-800">{s.idVital}</p>
-                    <p className="truncate text-xs text-stone-500">
-                      {nombreTramiteVital(s.idTramiteVital)}
-                      {s.solicitanteNombre ? ` · ${s.solicitanteNombre}` : s.solicitanteIdentificacion ? ` · ${s.solicitanteIdentificacion}` : ""}
-                    </p>
-                  </div>
-                  <span className="flex-none whitespace-nowrap text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {esAdmin && (
         <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListOrdered, LayoutDashboard } from "lucide-react";
+import { Inbox, ListOrdered, LayoutDashboard } from "lucide-react";
 
 const TABS = [
+  { href: "/vital/recientes", label: "Recientes", icon: Inbox },
   { href: "/vital", label: "Solicitudes", icon: ListOrdered },
   { href: "/vital/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
@@ -14,8 +15,10 @@ export function VitalTabs() {
   return (
     <nav className="flex gap-1 border-b border-stone-200" aria-label="Secciones de VITAL">
       {TABS.map((t) => {
-        const enDashboard = pathname.startsWith("/vital/dashboard");
-        const activo = t.href === "/vital/dashboard" ? enDashboard : !enDashboard;
+        let activo: boolean;
+        if (t.href === "/vital/dashboard") activo = pathname.startsWith("/vital/dashboard");
+        else if (t.href === "/vital/recientes") activo = pathname.startsWith("/vital/recientes");
+        else activo = !pathname.startsWith("/vital/dashboard") && !pathname.startsWith("/vital/recientes");
         const Icon = t.icon;
         return (
           <Link
