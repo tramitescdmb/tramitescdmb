@@ -45,10 +45,12 @@ export async function GET(req: NextRequest) {
 
   // Sin filtros manuales, el cron explora ids nuevos: si el ciudadano radica en
   // una categoría de VITAL que aún no conocemos, se detecta y se empieza a traer.
+  // ?descubrir=full → barre TODO el catálogo pendiente de una vez (barrido inicial).
+  const descubrirFull = req.nextUrl.searchParams.get("descubrir") === "full";
   let descubiertos: number[] = [];
-  if (!qTramites && !probe) {
+  if ((!qTramites && !probe) || descubrirFull) {
     try {
-      descubiertos = await descubrirTramitesNuevos(15);
+      descubiertos = await descubrirTramitesNuevos(40, { completo: descubrirFull });
       for (const id of descubiertos) {
         await registrarAuditoria({
           tipo: "CONFIGURACION_ACTUALIZADA",

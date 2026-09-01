@@ -43,40 +43,157 @@ export function vitalConfigurado(): boolean {
 }
 
 /**
- * Nombre de cada trámite VITAL por su id. VITAL no expone un catálogo; estos son
- * los trámites que responde la identidad autenticada de la CDMB (descubiertos
- * probando `wsObtenerSolicitudes` id por id — ver reference-vital-sinca1).
+ * Catálogo completo de trámites de VITAL (id → nombre), tal como lo expone el
+ * proxy de la CDMB en `GET /api/vital/tipo-tramites`. Copiado el 2026-09-01 y
+ * refrescable con `refrescarCatalogoTramites()` (lo corre el cron). Son ~117
+ * categorías: VITAL usa estos mismos nombres en su portal, por eso se dejan
+ * literales aunque algunos arrastren el código interno de versión del trámite.
  */
 export const NOMBRE_TRAMITE_VITAL: Record<number, string> = {
+  1: "DAA y/o TDR para EIA",
+  2: "Licencia Ambiental.",
+  4: "Aguas Subterraneas",
+  5: "Solicitud TDR para EIA",
   6: "Quejas y Denuncias",
+  7: "Liquidación Licencia Ambiental",
+  8: "Reconocimiento como Tercero Interviniente",
+  9: "Salvoconducto Único Nacional.",
+  10: "Audiencia Pública - Ciudadano",
+  11: "Liquidación de Permiso Ambiental",
+  12: "Cesión de Derechos y Trámites",
+  14: "Comuicación entre Autoridades",
+  15: "Interponer Recurso de Reposición",
+  17: "Salvoconducto Único Nacional - Renovación",
+  18: "Salvoconducto Único Nacional - Removilización",
   23: "Aprovechamiento Forestal",
+  24: "Solicitud incoder",
+  27: "Sancionatorio",
+  28: "Audiencia Pública Por Oficio",
+  29: "Ministerio del Interior",
+  30: "Concesión Aguas Subterráneas",
   31: "Concesión Aguas Superficiales",
+  32: "Emisiones Atmosféricas FF",
   33: "Prospección y Exploración",
+  34: "Vertimientos",
   35: "Enviar Información Soporte",
+  36: "Solicitud de Información",
+  37: "Generar Cobro",
   38: "Solicitud de Modificación LA",
+  39: "Resumen EIA",
+  40: "Certificado Parques",
   41: "Reporte de Contingencias",
+  42: "Beneficios Tributarios",
+  43: "Notificación electrónica",
+  44: "Beneficio Tributario Renta",
+  45: "Fuentes No Convencionales de E",
+  46: "Prueba Dinamica",
+  47: "Levantamiento de Veda",
+  48: "Sustracción de Reserva",
+  49: "Permiso de Ocupación de Cauce",
+  50: "Aprobación Nacional MDL",
+  51: "Aprobación Nacional PoA",
+  52: "Autorización Entidad Coor POA",
+  53: "Carta No-Objeción MDL",
+  54: "Carta No-Objeción PoA",
+  55: "Consideración Temprana MDL POA",
+  56: "Permiso Recolección D 3016",
+  57: "Permiso Recolección Indiv 1376",
+  58: "Sistemas Recolección Selectiva",
+  59: "Planes Devolución Pos consumo",
+  60: "Registro REDD+",
+  61: "Certificado Recoleccion Especi",
+  62: "Permiso Filmacion Parques",
+  63: "Reserva Natural Sociedad S",
+  64: "Permiso Recolección Macro 1376",
+  65: "MPM Plan de Manejo",
+  67: "Acceso Recursos Genéticos",
+  68: "Prueba Dinámica Automatico",
+  69: "Estructuras de Comunicación",
+  70: "Uso Racional de Bolsas",
   73: "Reporte Conti-Parcial / Final",
+  74: "Reporte Actividad Recuperación",
+  75: "Liquidacion Permisos",
   76: "Auto Liquidación",
-  110: "Vertimiento al Suelo",
+  77: "Registro detergentes y jabones",
+  78: "Adecuación Obras PNNCRSB",
+  79: "Solicitud Consulta Previa",
+  80: "Acreditación Laboratorios",
+  81: "Cert. Ambientales Bolsas",
+  82: "VITAL-FNCE Ley1715 Integración",
+  83: "Permiso Elementos Marcaje",
+  85: "Autorización Im-Expor no CITES",
+  86: "Autorización Movimiento RESPEL",
+  87: "Cambios Menores",
+  88: "Gestión de Envases y Empaques",
+  89: "Avance Sistema de Recolección",
+  90: "ICA-Seguimiento-Agroquímicos",
+  91: "368_Registro Programa Arqueolo",
+  92: "366_Solicitud Cambio Mayor",
+  93: "367_Solicitud Cambio Menor",
+  94: "369_Presentación Comunicación",
+  95: "370_Diagnóstico Arqueológico",
+  96: "CERT EN MATERIA DE EMISIONES",
+  97: "372_Informe Final",
+  98: "373_Plan Manejo Arqueológico",
+  99: "PAP-sol_aso_respues_subsanació",
+  100: "375_Subsanación Cambio Menor",
+  101: "376_Subsanación Informe Avance",
+  102: "377_Subsanación Informe Final",
+  103: "378_Subsanación Plan Manejo Ar",
+  104: "SOL CERTIFICADO UTILIDAD COMUN",
+  105: "371_Informe Avance",
+  106: "VITAL_VERTIMIENTO_CUERPO_A",
+  107: "348_VITAL_VERTIMIENTO_CUERPO_A",
+  108: "Reg Plan Arqueología Preventiv",
+  109: "351 Conce Aguas Superficiales",
+  110: "VITAL_VERTIMIENTO_SUELO",
+  111: "361_PROSPECCION_EXPLORACION_AG",
+  112: "363_VITAL_CONCESION_AGUAS_SUBT",
+  113: "365_PERMISO_OCUPACION_PLAYAS_C",
+  114: "365_PER_OCUPA_PLA_CAU_LECHO",
+  115: "395_Presentación Inform Cierre",
+  116: "394_Subsanación Informe Cierre",
+  117: "PLAGUICIDAS INFORME DE ACT",
+  118: "382 APROVECHAMIENTO FORESTAL",
+  119: "Reg Tenedor de Bienes Muebles",
+  120: "PRESENTACIÓN INI SRS LLANTAS",
   121: "Solicitud Cert Orden 1.3.1",
+  122: "411 Registro y gestión RAEE",
+  123: "412 Envases y empaques",
+  124: "ACTIVIDADES BAJO IMPACTO",
+  125: "416Licencia Ambiental Temporal",
+  126: "417 FUN SEGUIMIENTO AGROQUIMIC",
+  127: "Certificación Habilitación CDA",
+  128: "Permiso Ambiental Zoológicos",
+  129: "Permiso Jardines Botánicos",
+  130: "Permiso Aprovechamiento Fauna",
 };
 
-/** Todos los trámites que la CDMB puede consultar en VITAL. */
-export const TRAMITES_VITAL_DISPONIBLES = Object.keys(NOMBRE_TRAMITE_VITAL).map(Number);
+/**
+ * Trámites que ya se confirmó que la identidad de la CDMB tiene con datos en
+ * VITAL (probando `wsObtenerSolicitudes`). Son la semilla de la sincronización;
+ * el resto del catálogo se incorpora solo cuando la exploración
+ * (`descubrirTramitesNuevos`) encuentra solicitudes y lo guarda en `VitalTramite`.
+ */
+export const TRAMITES_VITAL_SEMILLA = [6, 23, 31, 33, 35, 38, 41, 73, 76, 110, 121];
+
+/** @deprecated Nombre viejo; ahora la semilla no es "todo el catálogo". */
+export const TRAMITES_VITAL_DISPONIBLES = TRAMITES_VITAL_SEMILLA;
+
+/** Ids del catálogo completo de VITAL. */
+export const IDS_CATALOGO_VITAL = Object.keys(NOMBRE_TRAMITE_VITAL).map(Number);
 
 export function nombreTramiteVital(id: number): string {
   return NOMBRE_TRAMITE_VITAL[id] ? `(${id}) ${NOMBRE_TRAMITE_VITAL[id]}` : `Trámite ${id}`;
 }
 
-/** Trámites VITAL a sincronizar (env `VITAL_TRAMITES`, coma-separado). Por defecto: todos los disponibles. */
+/** Trámites VITAL semilla de la sincronización (env `VITAL_TRAMITES`, coma-separado). */
 export function tramitesVital(): number[] {
   const raw = process.env.VITAL_TRAMITES?.trim();
-  if (!raw) return TRAMITES_VITAL_DISPONIBLES;
+  if (!raw) return TRAMITES_VITAL_SEMILLA;
   const ids = raw.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n));
-  return ids.length ? ids : TRAMITES_VITAL_DISPONIBLES;
+  return ids.length ? ids : TRAMITES_VITAL_SEMILLA;
 }
-
-const MAX_ID_TRAMITE_VITAL = 160; // hasta dónde explora la búsqueda de trámites nuevos
 
 /**
  * Lista de trámites a sincronizar: los conocidos (o los de `VITAL_TRAMITES`) más
@@ -87,44 +204,64 @@ export async function tramitesASincronizar(): Promise<number[]> {
   return [...new Set([...tramitesVital(), ...detectados.map((d) => d.idTramite)])].sort((a, b) => a - b);
 }
 
+async function registrarTramiteDescubierto(id: number, muestraActividad: string | null) {
+  await db.vitalTramite.upsert({
+    where: { idTramite: id },
+    create: { idTramite: id, nombre: NOMBRE_TRAMITE_VITAL[id] ?? muestraActividad ?? null, ultimaRevision: new Date() },
+    update: { activo: true, nombre: NOMBRE_TRAMITE_VITAL[id] ?? undefined, ultimaRevision: new Date() },
+  });
+}
+
 /**
- * Explora `cantidad` ids de trámite que todavía no conocemos (avanzando un
- * cursor circular 1..MAX). Si alguno responde con solicitudes, lo agrega a
- * `VitalTramite` — así una categoría nueva de VITAL empieza a sincronizarse
- * sola. Devuelve los ids recién descubiertos.
+ * Prueba `wsObtenerSolicitudes` (rango 2010→ayer) sobre ids del catálogo de VITAL
+ * que todavía no sincronizamos. Si alguno responde con solicitudes se agrega a
+ * `VitalTramite` y entra a la sincronización diaria — así el catálogo se completa
+ * solo con lo que la CDMB realmente tiene.
+ *
+ * - modo normal: `cantidad` ids por corrida, con cursor circular sobre el catálogo.
+ * - `completo: true`: recorre TODO el catálogo pendiente de una vez (para un
+ *   barrido inicial; puede tardar varios minutos).
+ *
+ * Devuelve los ids recién descubiertos.
  */
-export async function descubrirTramitesNuevos(cantidad = 15): Promise<number[]> {
+export async function descubrirTramitesNuevos(cantidad = 40, opts?: { completo?: boolean }): Promise<number[]> {
   if (!vitalConfigurado()) return [];
   const conocidos = new Set(await tramitesASincronizar());
-  const estado = await db.vitalDescubrimiento.upsert({ where: { id: "singleton" }, create: {}, update: {} });
+  const pendientes = IDS_CATALOGO_VITAL.filter((id) => !conocidos.has(id)).sort((a, b) => a - b);
+  if (pendientes.length === 0) return [];
 
-  const desde = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const desde = "2010-01-01";
+  const hasta = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
   const nuevos: number[] = [];
-  let id = estado.proximoId;
-  let probados = 0;
 
-  while (probados < cantidad) {
-    if (id > MAX_ID_TRAMITE_VITAL) id = 1;
-    if (!conocidos.has(id)) {
-      probados++;
-      try {
-        const p = await listarSolicitudes({ idTramite: id, fechaInicio: "2010-01-01", fechaFin: desde, registrosPeticion: 3 });
-        if (p.length > 0) {
-          await db.vitalTramite.upsert({
-            where: { idTramite: id },
-            create: { idTramite: id, nombre: p[0].nombreActividad ?? null, ultimaRevision: new Date() },
-            update: { activo: true, ultimaRevision: new Date() },
-          });
-          nuevos.push(id);
-        }
-      } catch {
-        /* "no se relaciona con la autoridad" o error de bus — se ignora, se reintentará al dar la vuelta */
+  const probar = async (id: number) => {
+    try {
+      const p = await listarSolicitudes({ idTramite: id, fechaInicio: desde, fechaFin: hasta, registrosPeticion: 3 });
+      if (p.length > 0) {
+        await registrarTramiteDescubierto(id, p[0].nombreActividad ?? null);
+        nuevos.push(id);
       }
+    } catch {
+      /* error de bus X-Road (no un "sin datos") — se reintenta en la próxima corrida */
     }
-    id++;
+  };
+
+  if (opts?.completo) {
+    for (const id of pendientes) await probar(id);
+    return nuevos;
   }
 
-  await db.vitalDescubrimiento.update({ where: { id: "singleton" }, data: { proximoId: id } });
+  const estado = await db.vitalDescubrimiento.upsert({ where: { id: "singleton" }, create: {}, update: {} });
+  let cursor = pendientes.findIndex((id) => id >= estado.proximoId);
+  if (cursor < 0) cursor = 0;
+
+  const aProbar = Math.min(cantidad, pendientes.length);
+  for (let i = 0; i < aProbar; i++) {
+    await probar(pendientes[(cursor + i) % pendientes.length]);
+  }
+
+  const siguiente = pendientes[(cursor + aProbar) % pendientes.length] ?? 1;
+  await db.vitalDescubrimiento.update({ where: { id: "singleton" }, data: { proximoId: siguiente } });
   return nuevos;
 }
 
@@ -247,8 +384,18 @@ async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHead
 }
 
 /**
+ * VITAL responde "El campo id_tramite no se relaciona con un tramite de la
+ * autoridad ambiental autenticada" cuando NO hay solicitudes de ese trámite en
+ * el rango (aparece incluso para trámites que sí tenemos, en años sin
+ * movimiento). Es una respuesta definitiva: no se reintenta y se trata como
+ * lista vacía, no como error.
+ */
+const SIN_DATOS_VITAL = /no se relaciona con un tramite|no se relaciona con el tramite|sin resultados|no se encontr/i;
+
+/**
  * El bus X-Road de VITAL es intermitente: la misma llamada a veces devuelve
- * datos y a veces "El campo id_tramite no se relaciona…" o 5xx. Se reintenta.
+ * datos y a veces se cae o da timeout. Se reintenta salvo que la respuesta sea
+ * el "sin datos" de arriba, que es definitivo.
  */
 async function vitalPostReintentando<T>(ws: string, body: Record<string, unknown>, intentos = 3): Promise<T> {
   let ultimo: unknown;
@@ -257,6 +404,7 @@ async function vitalPostReintentando<T>(ws: string, body: Record<string, unknown
       return await vitalPost<T>(ws, body);
     } catch (err) {
       ultimo = err;
+      if (err instanceof Error && SIN_DATOS_VITAL.test(err.message)) throw err;
       if (i < intentos - 1) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
     }
   }
@@ -281,13 +429,19 @@ export async function listarSolicitudes(opts: {
   indiceRegistroInicial?: number;
   registrosPeticion?: number;
 }): Promise<SolicitudVitalResumen[]> {
-  const data = await vitalPostReintentando<unknown>("/wsObtenerSolicitudes", {
-    id_tramite: opts.idTramite,
-    fecha_inicio: opts.fechaInicio,
-    fecha_fin: opts.fechaFin,
-    indice_registro_inicial: opts.indiceRegistroInicial ?? 0,
-    registros_peticion: opts.registrosPeticion ?? 50,
-  });
+  let data: unknown;
+  try {
+    data = await vitalPostReintentando<unknown>("/wsObtenerSolicitudes", {
+      id_tramite: opts.idTramite,
+      fecha_inicio: opts.fechaInicio,
+      fecha_fin: opts.fechaFin,
+      indice_registro_inicial: opts.indiceRegistroInicial ?? 0,
+      registros_peticion: opts.registrosPeticion ?? 50,
+    });
+  } catch (err) {
+    if (err instanceof Error && SIN_DATOS_VITAL.test(err.message)) return []; // no hay solicitudes en el rango
+    throw err;
+  }
   const arr = Array.isArray(data) ? data : ((data as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (data as { data?: unknown[] })?.data ?? []);
   return (arr as Record<string, unknown>[]).map((r) => ({
     idVital: String(r.idVital ?? r.id_vital ?? ""),
