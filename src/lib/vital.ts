@@ -42,27 +42,38 @@ export function vitalConfigurado(): boolean {
   return Boolean(API_URL && XROAD_URL && XROAD_CLIENT && CLIENT_ID && CLIENT_SECRET && USERNAME && PASSWORD && PROXY_USUARIO && PROXY_PASSWORD);
 }
 
-/** Trámites VITAL a sincronizar (env `VITAL_TRAMITES`, coma-separado). Por defecto: 41. */
-export function tramitesVital(): number[] {
-  const raw = process.env.VITAL_TRAMITES?.trim();
-  const ids = (raw ? raw.split(",") : ["41"]).map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n));
-  return ids.length ? ids : [41];
-}
-
 /**
- * Nombre de cada trámite VITAL por su id (los `(N)` del desplegable del sistema
- * anterior). VITAL no expone un catálogo, así que va fijo aquí.
+ * Nombre de cada trámite VITAL por su id. VITAL no expone un catálogo; estos son
+ * los trámites que responde la identidad autenticada de la CDMB (descubiertos
+ * probando `wsObtenerSolicitudes` id por id — ver reference-vital-sinca1).
  */
 export const NOMBRE_TRAMITE_VITAL: Record<number, string> = {
-  1: "DAA y/o TDR para EIA",
-  2: "Licencia Ambiental",
-  4: "Aguas Subterráneas",
-  5: "Solicitud TDR para EIA",
+  6: "Quejas y Denuncias",
+  23: "Aprovechamiento Forestal",
+  31: "Concesión Aguas Superficiales",
+  33: "Prospección y Exploración",
+  35: "Enviar Información Soporte",
+  38: "Solicitud de Modificación LA",
   41: "Reporte de Contingencias",
+  73: "Reporte Conti-Parcial / Final",
+  76: "Auto Liquidación",
+  110: "Vertimiento al Suelo",
+  121: "Solicitud Cert Orden 1.3.1",
 };
+
+/** Todos los trámites que la CDMB puede consultar en VITAL. */
+export const TRAMITES_VITAL_DISPONIBLES = Object.keys(NOMBRE_TRAMITE_VITAL).map(Number);
 
 export function nombreTramiteVital(id: number): string {
   return NOMBRE_TRAMITE_VITAL[id] ? `(${id}) ${NOMBRE_TRAMITE_VITAL[id]}` : `Trámite ${id}`;
+}
+
+/** Trámites VITAL a sincronizar (env `VITAL_TRAMITES`, coma-separado). Por defecto: todos los disponibles. */
+export function tramitesVital(): number[] {
+  const raw = process.env.VITAL_TRAMITES?.trim();
+  if (!raw) return TRAMITES_VITAL_DISPONIBLES;
+  const ids = raw.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n));
+  return ids.length ? ids : TRAMITES_VITAL_DISPONIBLES;
 }
 
 // --- Tokens: 1) sesión en el proxy Laravel  2) access_token de VITAL ---------

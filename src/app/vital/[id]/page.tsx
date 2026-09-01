@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { nombreTramiteVital } from "@/lib/vital";
 
 function ListaCampos({ datos }: { datos: unknown }) {
   if (!datos || typeof datos !== "object") {
@@ -41,7 +42,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h1>
         <p className="text-sm text-stone-500">
-          id_tramite {solicitud.idTramiteVital}
+          {nombreTramiteVital(solicitud.idTramiteVital)}
           {solicitud.idTramiteAutoridad ? ` · idTramiteAutoridad ${solicitud.idTramiteAutoridad}` : ""} ·{" "}
           {solicitud.nombreActividad ?? "Sin actividad reportada"}
         </p>
