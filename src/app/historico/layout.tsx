@@ -4,9 +4,9 @@ import { Archive, Lock } from "lucide-react";
 import { HistoricoTabs } from "@/components/HistoricoTabs";
 
 /**
- * Sección "SINCA 1.0 · Consulta histórica". Es un espejo de solo lectura del
- * sistema anterior (trámites ambientales con resolución de fondo). Ninguna
- * pantalla de aquí crea, edita ni elimina datos.
+ * Sección "SINCA 1.0 · Consulta histórica". Es un espejo de solo lectura de las
+ * solicitudes del sistema anterior. Ninguna pantalla de aquí crea, edita ni
+ * elimina datos.
  */
 export default function HistoricoLayout({ children }: { children: ReactNode }) {
   return (
@@ -19,8 +19,8 @@ export default function HistoricoLayout({ children }: { children: ReactNode }) {
           <h1 className="text-xl font-semibold text-stone-900">SINCA 1.0 · Consulta histórica</h1>
         </div>
         <p className="mt-1 text-sm text-stone-500">
-          Trámites ambientales con <strong>resolución de fondo</strong> registrados en el sistema anterior
-          de la CDMB (SINCA 1.0). La información se trae del sistema anterior y se actualiza a diario.
+          Solicitudes registradas en el sistema anterior de la CDMB (SINCA 1.0). La información se trae
+          del sistema anterior y se actualiza a diario.
         </p>
       </div>
 
