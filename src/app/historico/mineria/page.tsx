@@ -11,6 +11,7 @@ import { HeatmapMesAnio } from "@/components/charts/HeatmapMesAnio";
 import { BarrasConIC } from "@/components/charts/BarrasConIC";
 import { BarrasLift } from "@/components/charts/BarrasLift";
 import { MiniColumnas } from "@/components/charts/MiniColumnas";
+import { PipelineKDD } from "@/components/PipelineKDD";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
 const pctSigno = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} %`);
@@ -58,19 +59,8 @@ export default async function MineriaPage() {
           Inferencia estadística y aprendizaje automático sobre las {a.total.toLocaleString("es-CO")} resoluciones de fondo del
           histórico. Los algoritmos corren en el servidor y están implementados sin librerías externas para que sean auditables.
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-          {[
-            ["1 · Selección", "espejo de /presinca/resoluciones"],
-            ["2 · Preprocesado", "deduplicado, fechas con año imposible descartadas"],
-            ["3 · Transformación", "días de trámite, perfiles por municipio, bolsa de palabras"],
-            ["4 · Minería", "regresión, k-means, Naive Bayes, IQR, z-score robusto"],
-            ["5 · Interpretación", "esta página"],
-          ].map(([t, s]) => (
-            <div key={t} className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2">
-              <p className="font-semibold text-stone-700">{t}</p>
-              <p className="text-stone-500">{s}</p>
-            </div>
-          ))}
+        <div className="mt-3">
+          <PipelineKDD />
         </div>
         {a.coberturaDias < 0.9 && (
           <p className="mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
