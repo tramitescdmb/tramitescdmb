@@ -15,17 +15,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean };
+type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string };
 
 const ITEMS_PRINCIPAL: Item[] = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
   { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
   { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
   { href: "/solicitantes", label: "Solicitantes", icon: Users },
-  { href: "/vital", label: "VITAL", icon: Link2 },
+  { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" },
 ];
 
-const ITEM_HISTORICO: Item = { href: "/historico", label: "SINCA 1.0", icon: Archive };
+const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
@@ -49,7 +49,11 @@ export function SidebarNav({
   orientacion?: "vertical" | "horizontal";
 }) {
   const pathname = usePathname();
-  const activo = (href: string, exacto?: boolean) => (exacto ? pathname === href : pathname === href || pathname.startsWith(href + "/"));
+  const activo = (item: Item) => {
+    if (item.prefijo) return pathname === item.prefijo || pathname.startsWith(item.prefijo + "/");
+    if (item.exacto) return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(item.href + "/");
+  };
 
   const principal = haySinca ? [...ITEMS_PRINCIPAL, ITEM_HISTORICO] : ITEMS_PRINCIPAL;
 
@@ -58,7 +62,7 @@ export function SidebarNav({
     return (
       <nav className="flex gap-1 overflow-x-auto" aria-label="Navegación">
         {items.map((item) => (
-          <EnlaceNav key={item.href} item={item} activo={activo(item.href, item.exacto)} compacto />
+          <EnlaceNav key={item.href} item={item} activo={activo(item)} compacto />
         ))}
       </nav>
     );
@@ -72,14 +76,14 @@ export function SidebarNav({
   );
 }
 
-function Grupo({ titulo, items, activo }: { titulo?: string; items: Item[]; activo: (href: string, exacto?: boolean) => boolean }) {
+function Grupo({ titulo, items, activo }: { titulo?: string; items: Item[]; activo: (item: Item) => boolean }) {
   return (
     <div>
       {titulo && <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-400">{titulo}</p>}
       <ul className="space-y-0.5">
         {items.map((item) => (
           <li key={item.href}>
-            <EnlaceNav item={item} activo={activo(item.href, item.exacto)} />
+            <EnlaceNav item={item} activo={activo(item)} />
           </li>
         ))}
       </ul>

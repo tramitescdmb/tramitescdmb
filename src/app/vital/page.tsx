@@ -1,117 +1,101 @@
 import Link from "next/link";
-import { Link2, RefreshCw, Search } from "lucide-react";
-import { db } from "@/lib/db";
+import { Search, RefreshCw, Inbox } from "lucide-react";
 import { getSession } from "@/lib/auth";
-import { vitalConfigurado, tramitesVital, nombreTramiteVital, NOMBRE_TRAMITE_VITAL } from "@/lib/vital";
+import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
+import { getVitalListado, getVitalOpcionesFiltro, getVitalUltimasRadicadas, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-const POR_PAGINA = 30;
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+const cuandoLlego = (d: Date | null) => {
+  if (!d) return "sin fecha";
+  const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  if (dias <= 0) return "hoy";
+  if (dias === 1) return "ayer";
+  if (dias < 30) return `hace ${dias} días`;
+  if (dias < 60) return "hace 1 mes";
+  return `hace ${Math.floor(dias / 30)} meses`;
+};
 
-export default async function VitalPage({
+export default async function VitalSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sincronizado?: string; errores?: string; error?: string; tramite?: string; q?: string; page?: string }>;
+  searchParams: Promise<FiltrosVital & { sincronizado?: string; errores?: string; error?: string }>;
 }) {
   const sp = await searchParams;
-  const { sincronizado, errores, error } = sp;
   const session = await getSession();
-  const configurado = vitalConfigurado();
   const esAdmin = session?.rol === "ADMIN";
-  const tramiteDefault = tramitesVital()[0] ?? 41;
+  const configurado = vitalConfigurado();
 
-  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  const tramiteFiltro = sp.tramite && /^\d+$/.test(sp.tramite) ? parseInt(sp.tramite, 10) : null;
-  const q = sp.q?.trim();
+  if (!configurado) {
+    return (
+      <SectionHelp>
+        La conexión con VITAL todavía no está configurada en este servidor — faltan variables{" "}
+        <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_API_URL</code>,{" "}
+        <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_URL</code>,{" "}
+        <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_CLIENT</code> y las credenciales.
+      </SectionHelp>
+    );
+  }
 
-  const where = {
-    ...(tramiteFiltro ? { idTramiteVital: tramiteFiltro } : {}),
-    ...(q
-      ? {
-          OR: [
-            { idVital: { contains: q } },
-            { solicitanteNombre: { contains: q, mode: "insensitive" as const } },
-            { solicitanteIdentificacion: { contains: q } },
-            { nombreActividad: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  };
-
-  const [total, solicitudes, porTramite] = await Promise.all([
-    db.solicitudVital.count({ where }),
-    db.solicitudVital.findMany({
-      where,
-      orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
-      include: { _count: { select: { documentos: true } } },
-      skip: (page - 1) * POR_PAGINA,
-      take: POR_PAGINA,
-    }),
-    db.solicitudVital.groupBy({ by: ["idTramiteVital"], _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
+  const [{ filas, total, page, totalPaginas, porPagina }, opciones, ultimas] = await Promise.all([
+    getVitalListado(sp),
+    getVitalOpcionesFiltro(),
+    getVitalUltimasRadicadas(10),
   ]);
-  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  const totalGlobal = porTramite.reduce((s, t) => s + t._count._all, 0);
 
+  const hayFiltros = Boolean(sp.q || sp.tramite || sp.anio || sp.actividad);
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
-    if (tramiteFiltro) params.set("tramite", String(tramiteFiltro));
-    if (q) params.set("q", q);
+    for (const [k, v] of Object.entries(sp)) if (["q", "tramite", "anio", "actividad"].includes(k) && v) params.set(k, String(v));
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/vital?${s}` : "/vital";
   };
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-stone-900">
-          <Link2 className="h-5 w-5 text-cdmb-600" aria-hidden />
-          VITAL
-        </h1>
-        <p className="text-sm text-stone-500">
-          Solicitudes radicadas por el ciudadano en la Ventanilla Integral de Trámites Ambientales en Línea
-          (VITAL) de MinAmbiente, traídas por el bus de interoperabilidad X-Road de la CDMB. Es de{" "}
-          <strong>solo lectura</strong>: no se reporta nada de vuelta a VITAL.
-        </p>
-      </div>
-
-      {!configurado && (
-        <SectionHelp>
-          La conexión con VITAL todavía no está configurada en este servidor — faltan variables{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_API_URL</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_URL</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs">VITAL_XROAD_CLIENT</code> y las credenciales.
-        </SectionHelp>
-      )}
-
-      {sincronizado != null && (
+    <div className="space-y-4">
+      {sp.sincronizado != null && (
         <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
-          Sincronización completa: {sincronizado} solicitud{sincronizado === "1" ? "" : "es"} de VITAL.
-          {errores && <p className="mt-1 text-xs text-green-700">Con errores puntuales: {errores}</p>}
+          Sincronización completa: {sp.sincronizado} solicitud{sp.sincronizado === "1" ? "" : "es"} de VITAL.
+          {sp.errores && <p className="mt-1 text-xs text-green-700">Con errores puntuales: {sp.errores}</p>}
         </div>
       )}
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      {/* Resumen por tipo de trámite */}
-      {totalGlobal > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <FiltroChip href="/vital" activo={!tramiteFiltro} label="Todos" total={totalGlobal} />
-          {porTramite.map((t) => (
-            <FiltroChip
-              key={t.idTramiteVital}
-              href={`/vital?tramite=${t.idTramiteVital}`}
-              activo={tramiteFiltro === t.idTramiteVital}
-              label={NOMBRE_TRAMITE_VITAL[t.idTramiteVital] ?? `Trámite ${t.idTramiteVital}`}
-              total={t._count._all}
-            />
-          ))}
-        </div>
+      {/* Últimos radicados */}
+      {ultimas.length > 0 && (
+        <section className="rounded-xl border border-cdmb-200 bg-cdmb-50/60 p-4">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-cdmb-900">
+            <Inbox className="h-4 w-4" aria-hidden />
+            Últimos trámites radicados en VITAL
+          </h2>
+          <p className="mb-3 text-xs text-cdmb-800">
+            Lo más reciente que ha llegado del portal de VITAL. Útil para no perder de vista una solicitud
+            nueva mientras se resuelve la notificación por correo.
+          </p>
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {ultimas.map((s) => (
+              <li key={s.id}>
+                <Link href={`/vital/${s.id}`} className="flex items-start justify-between gap-3 rounded-lg border border-cdmb-200 bg-white px-3 py-2 hover:border-cdmb-400">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-stone-800">{s.idVital}</p>
+                    <p className="truncate text-xs text-stone-500">
+                      {nombreTramiteVital(s.idTramiteVital)}
+                      {s.solicitanteNombre ? ` · ${s.solicitanteNombre}` : s.solicitanteIdentificacion ? ` · ${s.solicitanteIdentificacion}` : ""}
+                    </p>
+                  </div>
+                  <span className="flex-none whitespace-nowrap text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white p-4" open={!totalGlobal}>
+        <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
           <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
             <RefreshCw className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
             Sincronizar desde VITAL
@@ -119,7 +103,7 @@ export default async function VitalPage({
           <form action="/api/admin/vital/sincronizar" method="post" className="mt-3 flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-stone-600">Trámite</label>
-              <select name="idTramite" defaultValue={tramiteFiltro ?? tramiteDefault} disabled={!configurado} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50">
+              <select name="idTramite" defaultValue={sp.tramite ?? tramitesVital()[0] ?? 41} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm">
                 {Object.entries(NOMBRE_TRAMITE_VITAL).map(([id, nombre]) => (
                   <option key={id} value={id}>({id}) {nombre}</option>
                 ))}
@@ -127,33 +111,68 @@ export default async function VitalPage({
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-stone-600">Desde</label>
-              <input name="fechaInicio" type="date" required defaultValue="2018-01-01" disabled={!configurado} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50" />
+              <input name="fechaInicio" type="date" required defaultValue="2018-01-01" className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-stone-600">Hasta</label>
-              <input name="fechaFin" type="date" required defaultValue={AYER} disabled={!configurado} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm disabled:bg-stone-50" />
+              <input name="fechaFin" type="date" required defaultValue={AYER} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
             </div>
-            <button type="submit" disabled={!configurado} className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
               Sincronizar
             </button>
           </form>
-          <p className="mt-2 text-xs text-stone-400">
-            Trae (o actualiza) las solicitudes de ese trámite en ese rango. El cron diario ya mantiene al día
-            los últimos 45 días de todos los trámites; use esto para el histórico.
-          </p>
+          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico.</p>
         </details>
       )}
 
-      {/* Buscador */}
-      <form method="get" className="flex items-center gap-2 rounded-md border border-stone-300 bg-white px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-        {tramiteFiltro && <input type="hidden" name="tramite" value={tramiteFiltro} />}
-        <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-        <input type="text" name="q" defaultValue={q ?? ""} placeholder="ID VITAL, solicitante, identificación o actividad" className="w-full text-sm outline-none" />
-        {q && (
-          <Link href={tramiteFiltro ? `/vital?tramite=${tramiteFiltro}` : "/vital"} className="text-xs text-stone-400 hover:text-stone-600">
-            limpiar
-          </Link>
-        )}
+      {/* Filtros estilo SINCA 1.0 */}
+      <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="sm:col-span-2 lg:col-span-3">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
+            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+              <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
+              <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="ID VITAL, solicitante, identificación o actividad" className="w-full text-sm outline-none" />
+            </span>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Trámite</span>
+            <select name="tramite" defaultValue={sp.tramite ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              {opciones.tramites.map((t) => (
+                <option key={t.id} value={t.id}>({t.id}) {t.nombre} ({t.total})</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Año de radicación</span>
+            <select name="anio" defaultValue={sp.anio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              {opciones.anios.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Actividad</span>
+            <select name="actividad" defaultValue={sp.actividad ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todas</option>
+              {opciones.actividades.map((a) => (
+                <option key={a.nombre} value={a.nombre}>{a.nombre} ({a.total})</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-end gap-2">
+            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+            {hayFiltros && (
+              <Link href="/vital" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+            )}
+          </div>
+        </div>
       </form>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
@@ -171,19 +190,17 @@ export default async function VitalPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {solicitudes.length === 0 ? (
+              {filas.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-stone-400">
-                    {totalGlobal === 0 ? "Todavía no se ha traído ninguna solicitud de VITAL." : "No hay solicitudes que coincidan."}
+                    {hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
                   </td>
                 </tr>
               ) : (
-                solicitudes.map((s) => (
+                filas.map((s) => (
                   <tr key={s.id} className="hover:bg-stone-50">
                     <td className="px-4 py-2.5">
-                      <Link href={`/vital/${s.id}`} className="font-medium text-cdmb-700 hover:underline">
-                        {s.idVital}
-                      </Link>
+                      <Link href={`/vital/${s.id}`} className="font-medium text-cdmb-700 hover:underline">{s.idVital}</Link>
                     </td>
                     <td className="px-4 py-2.5 text-stone-600">{nombreTramiteVital(s.idTramiteVital)}</td>
                     <td className="px-4 py-2.5 text-stone-700">{s.solicitanteNombre ?? "—"}</td>
@@ -197,21 +214,8 @@ export default async function VitalPage({
             </tbody>
           </table>
         </div>
-        <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={POR_PAGINA} hrefPagina={hrefPagina} />
+        <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
     </div>
-  );
-}
-
-function FiltroChip({ href, activo, label, total }: { href: string; activo: boolean; label: string; total: number }) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-        activo ? "border-cdmb-600 bg-cdmb-50 text-cdmb-800" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-      }`}
-    >
-      {label} <span className={activo ? "text-cdmb-600" : "text-stone-400"}>{total}</span>
-    </Link>
   );
 }
