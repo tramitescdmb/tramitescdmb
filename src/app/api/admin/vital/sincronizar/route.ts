@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { sincronizarTramite, tramitesVital, vitalConfigurado } from "@/lib/vital";
+import { sincronizarTramite, tramitesVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
 // La sincronización recorre páginas de VITAL + descarga documentos; puede pasar
 // del límite por defecto. En el plan Hobby el tope efectivo es menor y lo que no
@@ -39,11 +39,20 @@ export async function GET(req: NextRequest) {
     ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
     : tramitesVital();
 
+  // ?probe=1 → solo consulta la primera página de cada trámite (rápido, para
+  // descubrir cuáles existen), sin traer detalle ni documentos.
+  const probe = req.nextUrl.searchParams.get("probe") === "1";
+
   const resultados: Record<string, unknown> = {};
   let ok = true;
   for (const idTramite of tramites) {
     try {
-      resultados[idTramite] = await sincronizarTramite({ idTramite, fechaInicio: desde, fechaFin: hasta });
+      if (probe) {
+        const p = await listarSolicitudes({ idTramite, fechaInicio: desde, fechaFin: hasta, registrosPeticion: 5 });
+        resultados[idTramite] = { existe: p.length > 0, muestra: p.length, actividades: [...new Set(p.map((x) => x.nombreActividad))] };
+      } else {
+        resultados[idTramite] = await sincronizarTramite({ idTramite, fechaInicio: desde, fechaFin: hasta });
+      }
     } catch (err) {
       ok = false;
       resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
