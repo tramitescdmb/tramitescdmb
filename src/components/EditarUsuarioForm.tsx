@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Pencil } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
+type RolAccesoOpcion = Opcion & { todosLosTramites: boolean; tramitesCount: number };
 
 export function EditarUsuarioForm({
   usuarioId,
@@ -21,7 +23,7 @@ export function EditarUsuarioForm({
   cargoActualIds: string[];
   rolPermisosActualId: string | null;
   cargos: Opcion[];
-  roles: Opcion[];
+  roles: RolAccesoOpcion[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -30,6 +32,18 @@ export function EditarUsuarioForm({
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [rolPermisosId, setRolPermisosId] = useState(rolPermisosActualId ?? "");
+
+  // Mientras el modal está abierto, la página de atrás no debe poder scrollear
+  // — si no, el scroll horizontal de la tabla (más ancha que la pantalla) se
+  // ve/compite con el del modal y da la sensación de que todo está "cortado".
+  useEffect(() => {
+    if (!abierto) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [abierto]);
 
   function abrir() {
     // Vuelve a partir de los valores actuales cada vez que se abre, por si se
@@ -72,6 +86,8 @@ export function EditarUsuarioForm({
     }
   }
 
+  const rolSeleccionado = roles.find((r) => r.id === rolPermisosId);
+
   return (
     <>
       <button
@@ -85,12 +101,14 @@ export function EditarUsuarioForm({
 
       {abierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4" role="dialog" aria-modal="true">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-base font-semibold text-stone-900">Editar a {nombreUsuario}</h2>
-            <p className="mt-0.5 text-xs text-stone-400">Cargo(s), rol y rol de acceso dentro de la app.</p>
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-stone-100 px-6 py-4">
+              <h2 className="text-base font-semibold text-stone-900">Editar a {nombreUsuario}</h2>
+              <p className="mt-0.5 text-xs text-stone-400">Cargo(s), rol y rol de acceso dentro de la app.</p>
+            </div>
 
-            <div className="mt-5 space-y-5">
-              <label className="block">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+              <div>
                 <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone-500">Rol</span>
                 <div className="grid grid-cols-2 gap-2">
                   {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
@@ -108,16 +126,16 @@ export function EditarUsuarioForm({
                     </button>
                   ))}
                 </div>
-              </label>
+              </div>
 
-              <div>
+              <div className="border-t border-stone-100 pt-5">
                 <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone-500">
                   Cargo(s) en la CDMB
                 </span>
                 <p className="mb-2 text-xs text-stone-400">
                   Puede seleccionar uno, varios, o todos los que correspondan — se usan para saber qué pasos le corresponden.
                 </p>
-                <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
+                <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
                   {cargos.map((c) => {
                     const activo = cargoIds.has(c.id);
                     return (
@@ -139,8 +157,13 @@ export function EditarUsuarioForm({
                 </div>
               </div>
 
-              <label className="block">
+              <div className="border-t border-stone-100 pt-5">
                 <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone-500">Rol de acceso</span>
+                <p className="mb-2 text-xs text-stone-400">
+                  Restringe a cuáles trámites de &quot;Trámites ambientales 2.0&quot; puede entrar. Sin ninguno
+                  seleccionado (&quot;Sin restricción&quot;), el usuario ve todos los trámites — es el valor por
+                  defecto para todos hasta que se le asigne uno a propósito.
+                </p>
                 <select
                   value={rolPermisosId}
                   onChange={(e) => setRolPermisosId(e.target.value)}
@@ -153,28 +176,45 @@ export function EditarUsuarioForm({
                     </option>
                   ))}
                 </select>
-              </label>
+                {rolSeleccionado && (
+                  <p className="mt-1.5 text-xs text-stone-500">
+                    {rolSeleccionado.todosLosTramites
+                      ? "Este rol no restringe trámites (los tiene todos permitidos)."
+                      : `Restringido a ${rolSeleccionado.tramitesCount} trámite${rolSeleccionado.tramitesCount === 1 ? "" : "s"} — ver o cambiar cuáles en Roles.`}
+                  </p>
+                )}
+                {roles.length === 0 && (
+                  <p className="mt-1.5 text-xs text-stone-500">
+                    Aún no ha creado ningún rol de acceso.{" "}
+                    <Link href="/roles/nuevo" className="text-cdmb-700 underline hover:text-cdmb-800">
+                      Crear uno en Roles
+                    </Link>{" "}
+                    si necesita limitar a un usuario a ciertos trámites.
+                  </p>
+                )}
+              </div>
             </div>
 
-            {error && <p className="mt-4 rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-700">{error}</p>}
-
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setAbierto(false)}
-                disabled={guardando}
-                className="text-sm text-stone-500 hover:text-stone-700"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={guardar}
-                disabled={guardando}
-                className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
-              >
-                {guardando ? "Guardando…" : "Guardar"}
-              </button>
+            <div className="border-t border-stone-100 px-6 py-4">
+              {error && <p className="mb-3 rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-700">{error}</p>}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAbierto(false)}
+                  disabled={guardando}
+                  className="text-sm text-stone-500 hover:text-stone-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={guardar}
+                  disabled={guardando}
+                  className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+                >
+                  {guardando ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

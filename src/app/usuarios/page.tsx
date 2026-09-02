@@ -27,7 +27,11 @@ export default async function UsuariosPage({
   const [usuarios, cargos, roles] = await Promise.all([
     db.usuario.findMany({ orderBy: { createdAt: "asc" }, include: { cargos: true, rolPermisos: true } }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
-    db.rol.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
+    db.rol.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" },
+      include: { _count: { select: { tramites: true } } },
+    }),
   ]);
 
   return (
@@ -130,7 +134,12 @@ export default async function UsuariosPage({
                       cargoActualIds={u.cargos.map((c) => c.id)}
                       rolPermisosActualId={u.rolPermisosId}
                       cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
-                      roles={roles.map((r) => ({ id: r.id, nombre: r.nombre }))}
+                      roles={roles.map((r) => ({
+                        id: r.id,
+                        nombre: r.nombre,
+                        todosLosTramites: r.todosLosTramites,
+                        tramitesCount: r._count.tramites,
+                      }))}
                     />
                     {u.id !== session.userId && (
                       <form action={`/api/usuarios/${u.id}/toggle`} method="post">
