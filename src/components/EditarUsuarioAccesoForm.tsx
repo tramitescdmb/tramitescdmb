@@ -33,6 +33,28 @@ function EncabezadoSeccion({ icono: Icono, titulo }: { icono: typeof ShieldCheck
   );
 }
 
+/** Pastilla compacta para atajos "marcar/quitar todo" — más visible que un enlace de texto plano. */
+function BotonAtajo({
+  onClick,
+  tono,
+  children,
+}: {
+  onClick: () => void;
+  tono: "activar" | "desactivar" | "ver";
+  children: React.ReactNode;
+}) {
+  const clases = {
+    activar: "border-cdmb-200 bg-cdmb-50 text-cdmb-700 hover:border-cdmb-300 hover:bg-cdmb-100",
+    desactivar: "border-stone-200 bg-stone-50 text-stone-500 hover:bg-stone-100",
+    ver: "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100",
+  }[tono];
+  return (
+    <button type="button" onClick={onClick} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${clases}`}>
+      {children}
+    </button>
+  );
+}
+
 export function EditarUsuarioAccesoForm({
   usuarioId,
   rolActual,
@@ -201,25 +223,14 @@ export function EditarUsuarioAccesoForm({
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
-              <div className="flex gap-1.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}
-                  className="text-cdmb-700 hover:underline"
-                >
-                  Todos
-                </button>
-                <span className="text-stone-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}
-                  className="text-stone-400 hover:underline"
-                >
-                  Ninguno
-                </button>
-              </div>
+              <BotonAtajo tono="activar" onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}>
+                Todos
+              </BotonAtajo>
+              <BotonAtajo tono="desactivar" onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}>
+                Ninguno
+              </BotonAtajo>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {SECCIONES_VITAL.map((s) => {
@@ -243,25 +254,14 @@ export function EditarUsuarioAccesoForm({
             </div>
           </div>
           <div>
-            <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
-              <div className="flex gap-1.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}
-                  className="text-cdmb-700 hover:underline"
-                >
-                  Todos
-                </button>
-                <span className="text-stone-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}
-                  className="text-stone-400 hover:underline"
-                >
-                  Ninguno
-                </button>
-              </div>
+              <BotonAtajo tono="activar" onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}>
+                Todos
+              </BotonAtajo>
+              <BotonAtajo tono="desactivar" onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}>
+                Ninguno
+              </BotonAtajo>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {SECCIONES_SINCA.map((s) => {
@@ -301,31 +301,17 @@ export function EditarUsuarioAccesoForm({
           expedientes, sin poder actuar. <strong>Editar</strong>: además puede radicar, avanzar pasos,
           subir documentos y comentar.
         </p>
-        <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-stone-400">Todos los trámites:</span>
-          <button
-            type="button"
-            onClick={() => aplicarACategoria(todosLosTramites, "EDITAR")}
-            className="font-medium text-cdmb-700 hover:underline"
-          >
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-stone-400">Todos los trámites:</span>
+          <BotonAtajo tono="activar" onClick={() => aplicarACategoria(todosLosTramites, "EDITAR")}>
             Editar todos
-          </button>
-          <span className="text-stone-300">·</span>
-          <button
-            type="button"
-            onClick={() => aplicarACategoria(todosLosTramites, "VER")}
-            className="font-medium text-stone-500 hover:underline"
-          >
+          </BotonAtajo>
+          <BotonAtajo tono="ver" onClick={() => aplicarACategoria(todosLosTramites, "VER")}>
             Ver todos
-          </button>
-          <span className="text-stone-300">·</span>
-          <button
-            type="button"
-            onClick={() => aplicarACategoria(todosLosTramites, null)}
-            className="font-medium text-stone-400 hover:underline"
-          >
+          </BotonAtajo>
+          <BotonAtajo tono="desactivar" onClick={() => aplicarACategoria(todosLosTramites, null)}>
             Quitar todos
-          </button>
+          </BotonAtajo>
         </div>
 
         <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border border-stone-100 p-3">
@@ -337,18 +323,16 @@ export function EditarUsuarioAccesoForm({
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
                     {grupo.etiqueta} ({grupo.items.length})
                   </span>
-                  <div className="flex gap-1.5 text-[11px]">
-                    <button type="button" onClick={() => aplicarACategoria(grupo.items, "EDITAR")} className="text-cdmb-700 hover:underline">
+                  <div className="flex flex-wrap gap-1">
+                    <BotonAtajo tono="activar" onClick={() => aplicarACategoria(grupo.items, "EDITAR")}>
                       Editar todos
-                    </button>
-                    <span className="text-stone-300">·</span>
-                    <button type="button" onClick={() => aplicarACategoria(grupo.items, "VER")} className="text-stone-500 hover:underline">
+                    </BotonAtajo>
+                    <BotonAtajo tono="ver" onClick={() => aplicarACategoria(grupo.items, "VER")}>
                       Ver todos
-                    </button>
-                    <span className="text-stone-300">·</span>
-                    <button type="button" onClick={() => aplicarACategoria(grupo.items, null)} className="text-stone-400 hover:underline">
+                    </BotonAtajo>
+                    <BotonAtajo tono="desactivar" onClick={() => aplicarACategoria(grupo.items, null)}>
                       Quitar
-                    </button>
+                    </BotonAtajo>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
