@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListOrdered, Sparkles } from "lucide-react";
 
 const TABS = [
-  { href: "/historico/solicitudes", label: "Solicitudes", icon: ListOrdered },
-  { href: "/historico", label: "Dashboard", icon: LayoutDashboard, exacto: true },
-  { href: "/historico/mineria", label: "Minería de datos", icon: Sparkles, exacto: true },
+  { href: "/historico/solicitudes", label: "Solicitudes", icon: ListOrdered, permiso: "base" as const },
+  { href: "/historico", label: "Dashboard", icon: LayoutDashboard, exacto: true, permiso: "dashboard" as const },
+  { href: "/historico/mineria", label: "Minería de datos", icon: Sparkles, exacto: true, permiso: "mineria" as const },
 ];
 
-export function HistoricoTabs() {
+export function HistoricoTabs({ permitido }: { permitido: { base: boolean; dashboard: boolean; mineria: boolean } }) {
   const pathname = usePathname();
   return (
     <nav className="flex gap-1 border-b border-stone-200" aria-label="Secciones del histórico">
-      {TABS.map((t) => {
+      {TABS.filter((t) => permitido[t.permiso]).map((t) => {
         const activo = t.exacto ? pathname === t.href : pathname.startsWith(t.href);
         const Icon = t.icon;
         return (

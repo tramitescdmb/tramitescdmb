@@ -20,7 +20,11 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
   const [usuario, cargos, tramites] = await Promise.all([
     db.usuario.findUnique({
       where: { id },
-      include: { cargos: true, tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } } },
+      include: {
+        cargos: true,
+        tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
+        seccionesAcceso: { select: { seccion: true } },
+      },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
@@ -35,7 +39,7 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
   }));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <Link href="/usuarios" className="text-sm text-cdmb-700 hover:underline">
           ← Usuarios
@@ -63,6 +67,7 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
         rolActual={usuario.rol}
         cargoActualIds={usuario.cargos.map((c) => c.id)}
         accesoActual={usuario.tramitesAcceso.map((a) => ({ tramiteTipoId: a.tramiteTipoId, nivel: a.nivel }))}
+        seccionesActuales={usuario.seccionesAcceso.map((s) => s.seccion)}
         cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
         tramitesPorCategoria={tramitesPorCategoria}
       />

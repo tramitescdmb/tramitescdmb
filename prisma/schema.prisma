@@ -73,6 +73,7 @@ model Usuario {
   // (ver src/lib/cargos.ts), no solo el primero.
   cargos                Cargo[]
   tramitesAcceso        UsuarioTramiteAcceso[]
+  seccionesAcceso       UsuarioSeccionAcceso[]
   expedientesCreados    Expediente[]           @relation("CreadoPor")
   expedientesAsignados  Expediente[]           @relation("ResponsableActual")
   expedientesAsignacion Expediente[]           @relation("ExpedienteUsuariosAsignados")
@@ -88,10 +89,10 @@ model Usuario {
 // texto) y RolUsuario (Admin/Funcionario, permisos administrativos), esto
 // controla, trámite por trámite del catálogo de "Trámites ambientales 2.0",
 // si un funcionario puede solo VER o también EDITAR (crear/avanzar/subir
-// documentos) — no toca VITAL ni SINCA 1.0, que quedan abiertos siempre. Sin
-// ninguna fila para un trámite dado, el funcionario NO lo ve (denegado por
-// defecto) — el ADMIN siempre tiene acceso total, sin excepción. Reemplazó a
-// un primer diseño con una tabla "Rol" reutilizable (nunca llegó a usarse):
+// documentos). Sin ninguna fila para un trámite dado, el funcionario NO lo ve
+// (denegado por defecto) — el ADMIN siempre tiene acceso total, sin
+// excepción. Reemplazó a un primer diseño con una tabla "Rol" reutilizable
+// (nunca llegó a usarse):
 // con pocos usuarios reales, asignar directo por persona es más simple y
 // claro que crear roles intermedios. Ver src/lib/permisos.ts.
 // ---------------------------------------------------------------------------
@@ -112,6 +113,32 @@ model UsuarioTramiteAcceso {
 
   @@unique([usuarioId, tramiteTipoId])
   @@index([tramiteTipoId])
+}
+
+// Acceso a las secciones de solo lectura VITAL y SINCA 1.0 — a diferencia de
+// UsuarioTramiteAcceso no hay nivel (todo es consulta, nadie edita nada ahí),
+// solo si puede entrar o no a cada pestaña. VITAL agrupa "Solicitudes" y
+// "Recientes" en un solo permiso base (son la misma información, dos vistas)
+// y dashboard aparte; SINCA 1.0 tiene Solicitudes (base), Dashboard y Minería
+// de datos como tres permisos independientes — Minería de datos es la más
+// sensible (pensada para directivos, no cualquier funcionario). Denegado por
+// defecto, igual que UsuarioTramiteAcceso.
+enum SeccionSoloLectura {
+  VITAL_BASE
+  VITAL_DASHBOARD
+  SINCA_BASE
+  SINCA_DASHBOARD
+  SINCA_MINERIA
+}
+
+model UsuarioSeccionAcceso {
+  id        String             @id @default(cuid())
+  usuarioId String
+  seccion   SeccionSoloLectura
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, seccion])
 }
 
 // ---------------------------------------------------------------------------

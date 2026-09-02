@@ -2,14 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
 type Grupo = { etiqueta: string; claseBadge: string; claseBarra: string; items: TramiteOpcion[] };
 type Nivel = "VER" | "EDITAR";
+type Seccion = "VITAL_BASE" | "VITAL_DASHBOARD" | "SINCA_BASE" | "SINCA_DASHBOARD" | "SINCA_MINERIA";
 
-const BOTON_BASE = "rounded-md border px-2.5 py-1 text-xs font-medium transition";
+const BOTON_BASE = "flex-1 rounded-md border px-2 py-1 text-[11px] font-medium transition";
+
+const SECCIONES_VITAL: { valor: Seccion; etiqueta: string }[] = [
+  { valor: "VITAL_BASE", etiqueta: "Solicitudes y Recientes" },
+  { valor: "VITAL_DASHBOARD", etiqueta: "Dashboard" },
+];
+const SECCIONES_SINCA: { valor: Seccion; etiqueta: string }[] = [
+  { valor: "SINCA_BASE", etiqueta: "Solicitudes" },
+  { valor: "SINCA_DASHBOARD", etiqueta: "Dashboard" },
+  { valor: "SINCA_MINERIA", etiqueta: "Minería de datos" },
+];
 
 function EncabezadoSeccion({ icono: Icono, titulo }: { icono: typeof ShieldCheck; titulo: string }) {
   return (
@@ -27,6 +38,7 @@ export function EditarUsuarioAccesoForm({
   rolActual,
   cargoActualIds,
   accesoActual,
+  seccionesActuales,
   cargos,
   tramitesPorCategoria,
 }: {
@@ -34,6 +46,7 @@ export function EditarUsuarioAccesoForm({
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
+  seccionesActuales: Seccion[];
   cargos: Opcion[];
   tramitesPorCategoria: Grupo[];
 }) {
@@ -41,6 +54,7 @@ export function EditarUsuarioAccesoForm({
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
+  const [secciones, setSecciones] = useState<Set<Seccion>>(new Set(seccionesActuales));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -50,6 +64,15 @@ export function EditarUsuarioAccesoForm({
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }
+
+  function alternarSeccion(s: Seccion) {
+    setSecciones((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
       return next;
     });
   }
@@ -88,6 +111,7 @@ export function EditarUsuarioAccesoForm({
           rol,
           cargoIds: Array.from(cargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
+          secciones: Array.from(secciones),
         }),
       });
       if (!res.ok) {
@@ -123,8 +147,8 @@ export function EditarUsuarioAccesoForm({
         </div>
         {rol === "ADMIN" && (
           <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Como Administrador, este usuario tiene acceso total a todo — los cargos y trámites de abajo no
-            aplican mientras el rol sea Administrador.
+            Como Administrador, este usuario tiene acceso total a todo — los cargos, trámites y secciones de
+            abajo no aplican mientras el rol sea Administrador.
           </p>
         )}
       </section>
@@ -157,6 +181,65 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" />
+        <p className="mb-3 text-xs text-stone-400">
+          Solo consulta — nadie edita nada ahí, esto define únicamente si puede entrar a cada pestaña.{" "}
+          <strong>Minería de datos</strong> es la más sensible: pensada para directivos, no para cualquier
+          funcionario.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SECCIONES_VITAL.map((s) => {
+                const activo = secciones.has(s.valor);
+                return (
+                  <button
+                    key={s.valor}
+                    type="button"
+                    onClick={() => alternarSeccion(s.valor)}
+                    aria-pressed={activo}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      activo
+                        ? "border-cdmb-600 bg-cdmb-600 text-white"
+                        : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                    }`}
+                  >
+                    {s.etiqueta}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SECCIONES_SINCA.map((s) => {
+                const activo = secciones.has(s.valor);
+                return (
+                  <button
+                    key={s.valor}
+                    type="button"
+                    onClick={() => alternarSeccion(s.valor)}
+                    aria-pressed={activo}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      activo
+                        ? s.valor === "SINCA_MINERIA"
+                          ? "border-amber-600 bg-amber-600 text-white"
+                          : "border-cdmb-600 bg-cdmb-600 text-white"
+                        : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                    }`}
+                  >
+                    {s.etiqueta}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <EncabezadoSeccion icono={Layers} titulo='Trámites de "Trámites ambientales 2.0"' />
           <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
@@ -166,7 +249,7 @@ export function EditarUsuarioAccesoForm({
         <p className="-mt-1.5 mb-4 text-xs text-stone-400">
           Sin marcar, el usuario no ve el trámite. <strong>Ver</strong>: consulta el catálogo y los
           expedientes, sin poder actuar. <strong>Editar</strong>: además puede radicar, avanzar pasos,
-          subir documentos y comentar. No afecta a VITAL ni a SINCA 1.0, siempre abiertos.
+          subir documentos y comentar.
         </p>
 
         <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border border-stone-100 p-3">
@@ -174,7 +257,7 @@ export function EditarUsuarioAccesoForm({
             <div key={grupo.etiqueta} className="relative overflow-hidden rounded-lg bg-stone-50/60 pl-3">
               <span className={`absolute inset-y-0 left-0 w-1 ${grupo.claseBarra}`} aria-hidden />
               <div className="p-2">
-                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
                     {grupo.etiqueta} ({grupo.items.length})
                   </span>
@@ -192,16 +275,16 @@ export function EditarUsuarioAccesoForm({
                     </button>
                   </div>
                 </div>
-                <ul className="space-y-1">
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {grupo.items.map((t) => {
                     const nivel = acceso.get(t.id) ?? null;
                     return (
-                      <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5">
-                        <span className="min-w-0 text-sm text-stone-700">
-                          <span className="mr-1.5 text-xs text-stone-400">{t.codigo}</span>
+                      <div key={t.id} className="rounded-md border border-stone-200 bg-white p-2">
+                        <p className="mb-1.5 line-clamp-2 text-xs text-stone-700" title={t.nombre}>
+                          <span className="mr-1 text-stone-400">{t.codigo}</span>
                           {t.nombre}
-                        </span>
-                        <div className="flex flex-none gap-1">
+                        </p>
+                        <div className="flex gap-1">
                           <button
                             type="button"
                             onClick={() => ponerNivel(t.id, null)}
@@ -224,10 +307,10 @@ export function EditarUsuarioAccesoForm({
                             Editar
                           </button>
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             </div>
           ))}

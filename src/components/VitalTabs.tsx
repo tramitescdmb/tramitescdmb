@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import { Inbox, ListOrdered, LayoutDashboard } from "lucide-react";
 
 const TABS = [
-  { href: "/vital", label: "Solicitudes", icon: ListOrdered },
-  { href: "/vital/recientes", label: "Recientes", icon: Inbox },
-  { href: "/vital/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/vital", label: "Solicitudes", icon: ListOrdered, permiso: "base" as const },
+  { href: "/vital/recientes", label: "Recientes", icon: Inbox, permiso: "base" as const },
+  { href: "/vital/dashboard", label: "Dashboard", icon: LayoutDashboard, permiso: "dashboard" as const },
 ];
 
-export function VitalTabs() {
+export function VitalTabs({ permitido }: { permitido: { base: boolean; dashboard: boolean } }) {
   const pathname = usePathname();
   return (
     <nav className="flex gap-1 border-b border-stone-200" aria-label="Secciones de VITAL">
-      {TABS.map((t) => {
+      {TABS.filter((t) => permitido[t.permiso]).map((t) => {
         let activo: boolean;
         if (t.href === "/vital/dashboard") activo = pathname.startsWith("/vital/dashboard");
         else if (t.href === "/vital/recientes") activo = pathname.startsWith("/vital/recientes");

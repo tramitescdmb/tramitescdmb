@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Search, RefreshCw } from "lucide-react";
 import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
@@ -16,6 +18,10 @@ export default async function VitalSolicitudesPage({
 }) {
   const sp = await searchParams;
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
+  }
   const esAdmin = session?.rol === "ADMIN";
   const configurado = vitalConfigurado();
 

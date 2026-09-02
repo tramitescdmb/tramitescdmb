@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Inbox } from "lucide-react";
 import { vitalConfigurado, nombreTramiteVital } from "@/lib/vital";
 import { getVitalUltimasRadicadas } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" }) : "—");
 const cuandoLlego = (d: Date | null) => {
@@ -16,6 +19,11 @@ const cuandoLlego = (d: Date | null) => {
 };
 
 export default async function VitalRecientesPage() {
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
+  }
   if (!vitalConfigurado()) {
     return <SectionHelp>La conexión con VITAL no está configurada en este servidor.</SectionHelp>;
   }

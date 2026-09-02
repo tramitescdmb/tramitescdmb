@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { TrendingUp, Timer, Scale, MapPinned, Sparkles, Boxes, AlertTriangle, GitBranch, Brain } from "lucide-react";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getAnalitica } from "@/lib/sinca-analitica";
 import { getMineria } from "@/lib/sinca-mineria";
 import { sincaConfigurado } from "@/lib/sinca";
@@ -36,6 +39,11 @@ function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale;
 }
 
 export default async function MineriaPage() {
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "SINCA_MINERIA")) redirect("/");
+  }
   if (!sincaConfigurado()) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }

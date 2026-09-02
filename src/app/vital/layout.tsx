@@ -1,14 +1,26 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { Link2, Lock } from "lucide-react";
 import { VitalTabs } from "@/components/VitalTabs";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 /**
  * Sección VITAL: solicitudes traídas de la Ventanilla Integral de Trámites
- * Ambientales en Línea (MinAmbiente) por X-Road. Solo lectura. Abierta a
- * cualquier funcionario — el Rol de acceso (sección Roles) solo restringe
- * trámites dentro de "Trámites ambientales 2.0", no esta sección.
+ * Ambientales en Línea (MinAmbiente) por X-Road. Solo lectura. El acceso se
+ * configura por pestaña desde /usuarios/[id] (denegado por defecto, como los
+ * trámites de "Trámites ambientales 2.0") — el ADMIN siempre entra a todo.
  */
-export default function VitalLayout({ children }: { children: ReactNode }) {
+export default async function VitalLayout({ children }: { children: ReactNode }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const permitido = {
+    base: puedeAccederSeccion(permisos, "VITAL_BASE"),
+    dashboard: puedeAccederSeccion(permisos, "VITAL_DASHBOARD"),
+  };
+  if (!permitido.base && !permitido.dashboard) redirect("/");
+
   return (
     <div className="space-y-4">
       <div>
@@ -34,7 +46,7 @@ export default function VitalLayout({ children }: { children: ReactNode }) {
         </p>
       </div>
 
-      <VitalTabs />
+      <VitalTabs permitido={permitido} />
 
       {children}
     </div>

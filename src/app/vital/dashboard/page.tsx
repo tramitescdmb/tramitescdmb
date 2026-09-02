@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Inbox, FileStack, Layers, CalendarClock } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getVitalDashboard } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
@@ -12,6 +15,11 @@ const fechaHora = (d: Date | null) =>
   d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
 export default async function VitalDashboardPage() {
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "VITAL_DASHBOARD")) redirect("/");
+  }
   if (!vitalConfigurado()) {
     return <SectionHelp>La conexión con VITAL no está configurada en este servidor.</SectionHelp>;
   }

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Sparkles, Hash } from "lucide-react";
 import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
 import { getHistoricoDashboard } from "@/lib/sinca-data";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
@@ -14,6 +16,10 @@ const num = (v: number) => v.toLocaleString("es-CO");
 export default async function HistoricoPanelPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const { ok, error } = await searchParams;
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "SINCA_DASHBOARD")) redirect("/");
+  }
   const esAdmin = session?.rol === "ADMIN";
 
   if (!sincaConfigurado()) {

@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
 import { getHistoricoListado, getHistoricoOpcionesFiltro, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
 import { Paginador } from "@/components/Paginador";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 function fecha(d: Date | null) {
   return d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -13,6 +16,11 @@ export default async function HistoricoSolicitudesPage({
 }: {
   searchParams: Promise<FiltrosHistorico>;
 }) {
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "SINCA_BASE")) redirect("/");
+  }
   if (!sincaConfigurado()) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }

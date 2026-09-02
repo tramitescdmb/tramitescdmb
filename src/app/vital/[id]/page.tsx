@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { nombreTramiteVital } from "@/lib/vital";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
 const txt = (v: unknown): string | null => {
@@ -220,6 +222,12 @@ function CamposFormulario({ datos }: { datos: unknown }) {
 
 export default async function VitalDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
+  }
 
   const solicitud = await db.solicitudVital.findUnique({
     where: { id },

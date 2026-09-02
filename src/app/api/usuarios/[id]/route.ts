@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
+const SECCIONES_VALIDAS: SeccionSoloLectura[] = ["VITAL_BASE", "VITAL_DASHBOARD", "SINCA_BASE", "SINCA_DASHBOARD", "SINCA_MINERIA"];
 
 /**
- * Editar cargo(s)/rol/acceso por trámite de un usuario YA EXISTENTE — antes no
- * existía (solo se podía crear o activar/desactivar), lo que dejaba sin forma
- * de configurar a un funcionario que ya entró por Directorio Activo.
+ * Editar cargo(s)/rol/acceso por trámite y por sección de un usuario YA
+ * EXISTENTE — antes no existía (solo se podía crear o activar/desactivar),
+ * lo que dejaba sin forma de configurar a un funcionario que ya entró por
+ * Directorio Activo.
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,6 +39,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           NIVELES_VALIDOS.includes((a as { nivel?: unknown }).nivel as NivelAccesoTramite)
       )
     : undefined;
+  const secciones: SeccionSoloLectura[] | undefined = Array.isArray(body.secciones)
+    ? body.secciones.filter((s: unknown): s is SeccionSoloLectura => SECCIONES_VALIDAS.includes(s as SeccionSoloLectura))
+    : undefined;
 
   if (cargoIds && cargoIds.length > 0) {
     const encontrados = await db.cargo.count({ where: { id: { in: cargoIds } } });
@@ -61,13 +66,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         });
       }
     }
+    if (secciones) {
+      await tx.usuarioSeccionAcceso.deleteMany({ where: { usuarioId: id } });
+      if (secciones.length > 0) {
+        await tx.usuarioSeccionAcceso.createMany({
+          data: secciones.map((seccion) => ({ usuarioId: id, seccion })),
+        });
+      }
+    }
   });
 
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",
     descripcion: `${session.nombre} actualizó a "${usuario.nombre}" (${usuario.email}): rol ${rol}${
       accesoTramites ? `, ${accesoTramites.length} trámite(s) con acceso` : ""
-    }.`,
+    }${secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""}.`,
     usuarioId: session.userId,
   });
 

@@ -14,16 +14,13 @@ import {
 
 type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string | string[] };
 
-const ITEMS_PRINCIPAL: Item[] = [
-  {
-    href: "/",
-    label: "Trámites ambientales 2.0",
-    icon: Leaf,
-    prefijo: ["/", "/tramites", "/expedientes", "/solicitantes"],
-  },
-  { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" },
-];
-
+const ITEM_TRAMITES: Item = {
+  href: "/",
+  label: "Trámites ambientales 2.0",
+  icon: Leaf,
+  prefijo: ["/", "/tramites", "/expedientes", "/solicitantes"],
+};
+const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
 
 const ITEMS_ADMIN: Item[] = [
@@ -40,11 +37,15 @@ const ITEMS_ADMIN: Item[] = [
  */
 export function SidebarNav({
   esAdmin,
-  haySinca = false,
+  mostrarVital = false,
+  mostrarSinca = false,
   orientacion = "vertical",
 }: {
   esAdmin: boolean;
-  haySinca?: boolean;
+  /** VITAL tiene al menos una pestaña permitida para este usuario. */
+  mostrarVital?: boolean;
+  /** SINCA 1.0 está configurado en este despliegue Y tiene al menos una pestaña permitida. */
+  mostrarSinca?: boolean;
   orientacion?: "vertical" | "horizontal";
 }) {
   const pathname = usePathname();
@@ -57,7 +58,7 @@ export function SidebarNav({
     return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 
-  const principal = haySinca ? [...ITEMS_PRINCIPAL, ITEM_HISTORICO] : ITEMS_PRINCIPAL;
+  const principal = [ITEM_TRAMITES, ...(mostrarVital ? [ITEM_VITAL] : []), ...(mostrarSinca ? [ITEM_HISTORICO] : [])];
 
   if (orientacion === "horizontal") {
     const items = [...principal, ...(esAdmin ? ITEMS_ADMIN : [])];

@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ArrowLeft, MapPin, FileText, Building2, ClipboardList, Download, ScrollText } from "lucide-react";
 import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi, type SincaNit } from "@/lib/sinca";
 
@@ -60,6 +61,10 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
   if (!base) notFound();
 
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSeccion(permisos, "SINCA_BASE")) redirect("/");
+  }
   const esAdmin = session?.rol === "ADMIN";
 
   let d: SincaResolucionDetalleApi | null = null;

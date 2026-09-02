@@ -1,14 +1,28 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { Archive, Lock } from "lucide-react";
 import { HistoricoTabs } from "@/components/HistoricoTabs";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 /**
  * Sección "SINCA 1.0 · Consulta histórica". Es un espejo de solo lectura de las
  * solicitudes del sistema anterior. Ninguna pantalla de aquí crea, edita ni
- * elimina datos. Abierta a cualquier funcionario — el Rol de acceso (sección
- * Roles) solo restringe trámites dentro de "Trámites ambientales 2.0".
+ * elimina datos. El acceso se configura por pestaña desde /usuarios/[id]
+ * (denegado por defecto) — "Minería de datos" es la más sensible, pensada
+ * para directivos, no cualquier funcionario. El ADMIN siempre entra a todo.
  */
-export default function HistoricoLayout({ children }: { children: ReactNode }) {
+export default async function HistoricoLayout({ children }: { children: ReactNode }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const permitido = {
+    base: puedeAccederSeccion(permisos, "SINCA_BASE"),
+    dashboard: puedeAccederSeccion(permisos, "SINCA_DASHBOARD"),
+    mineria: puedeAccederSeccion(permisos, "SINCA_MINERIA"),
+  };
+  if (!permitido.base && !permitido.dashboard && !permitido.mineria) redirect("/");
+
   return (
     <div className="space-y-4">
       <div>
@@ -33,7 +47,7 @@ export default function HistoricoLayout({ children }: { children: ReactNode }) {
         </p>
       </div>
 
-      <HistoricoTabs />
+      <HistoricoTabs permitido={permitido} />
 
       {children}
     </div>
