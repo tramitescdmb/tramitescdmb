@@ -5,7 +5,7 @@ import { generarNumeroExpediente } from "@/lib/expedientes";
 import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 
 type DocumentoInput = {
   path: string;
@@ -103,8 +103,8 @@ export async function POST(req: NextRequest) {
   if (!tramite) return NextResponse.json({ error: "Trámite no encontrado." }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, tramite.id)) {
-    return NextResponse.json({ error: "Su rol de acceso no le permite radicar expedientes de este trámite." }, { status: 403 });
+  if (!puedeEditarTramite(permisos, tramite.id)) {
+    return NextResponse.json({ error: "No tiene permiso de edición sobre este trámite." }, { status: 403 });
   }
 
   const flujo = tramite.flujos.find((f) => f.id === flujoId);

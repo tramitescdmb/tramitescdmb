@@ -39,7 +39,7 @@ export default async function ExpedientesPage({
   ]);
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramites = permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites;
-  const tramiteIdsPermitidos = permisos?.tramiteIds ? Array.from(permisos.tramiteIds) : null;
+  const tramiteIdsPermitidos = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
 
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);

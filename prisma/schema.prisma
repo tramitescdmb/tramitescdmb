@@ -68,20 +68,14 @@ model Usuario {
   // alta solos la primera vez que inician sesión por directorio activo.
   directorioActivo Boolean @default(false)
 
-  // Rol de ACCESO (módulos/trámites permitidos, ver modelo Rol) — distinto del
-  // campo `rol` de arriba (RolUsuario: Admin/Funcionario, permiso dentro de la
-  // app). Opcional: sin Rol asignado, el usuario queda sin restricción (igual
-  // que hoy) — el control solo aplica cuando un admin se lo asigna explícito.
-  rolPermisosId String?
-
   // Un funcionario puede tener varios cargos a la vez (ej. cubre dos puestos
   // en un área pequeña) — se usan TODOS para el resaltado/bloqueo por paso
   // (ver src/lib/cargos.ts), no solo el primero.
   cargos                Cargo[]
-  rolPermisos           Rol?                  @relation(fields: [rolPermisosId], references: [id])
-  expedientesCreados    Expediente[]          @relation("CreadoPor")
-  expedientesAsignados  Expediente[]          @relation("ResponsableActual")
-  expedientesAsignacion Expediente[]          @relation("ExpedienteUsuariosAsignados")
+  tramitesAcceso        UsuarioTramiteAcceso[]
+  expedientesCreados    Expediente[]           @relation("CreadoPor")
+  expedientesAsignados  Expediente[]           @relation("ResponsableActual")
+  expedientesAsignacion Expediente[]           @relation("ExpedienteUsuariosAsignados")
   documentos            ExpedienteDocumento[]
   eventos               ExpedienteEvento[]
   registrosAuditoria    RegistroAuditoria[]
@@ -89,40 +83,34 @@ model Usuario {
 }
 
 // ---------------------------------------------------------------------------
-// Roles de ACCESO (sección "Roles", admin-only): a diferencia de Cargo (el
-// puesto real, usado para resaltar/bloquear pasos por texto) y RolUsuario
-// (Admin/Funcionario, permisos administrativos), esto controla a cuáles
-// trámites concretos del catálogo de "Trámites ambientales 2.0" tiene acceso
-// un funcionario — no toca VITAL ni SINCA 1.0, que quedan abiertos siempre.
-// Ver src/lib/permisos.ts para cómo se aplica.
+// Acceso por trámite (admin-only, se configura desde /usuarios/[id]): a
+// diferencia de Cargo (el puesto real, usado para resaltar/bloquear pasos por
+// texto) y RolUsuario (Admin/Funcionario, permisos administrativos), esto
+// controla, trámite por trámite del catálogo de "Trámites ambientales 2.0",
+// si un funcionario puede solo VER o también EDITAR (crear/avanzar/subir
+// documentos) — no toca VITAL ni SINCA 1.0, que quedan abiertos siempre. Sin
+// ninguna fila para un trámite dado, el funcionario NO lo ve (denegado por
+// defecto) — el ADMIN siempre tiene acceso total, sin excepción. Reemplazó a
+// un primer diseño con una tabla "Rol" reutilizable (nunca llegó a usarse):
+// con pocos usuarios reales, asignar directo por persona es más simple y
+// claro que crear roles intermedios. Ver src/lib/permisos.ts.
 // ---------------------------------------------------------------------------
 
-model Rol {
-  id          String  @id @default(cuid())
-  nombre      String  @unique
-  descripcion String?
-
-  // true (por defecto) = sin restricción de trámite dentro de "Trámites
-  // ambientales"; false = solo los trámites marcados en RolTramite.
-  todosLosTramites Boolean @default(true)
-
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  usuarios Usuario[]
-  tramites RolTramite[]
+enum NivelAccesoTramite {
+  VER
+  EDITAR
 }
 
-model RolTramite {
-  id            String @id @default(cuid())
-  rolId         String
+model UsuarioTramiteAcceso {
+  id            String             @id @default(cuid())
+  usuarioId     String
   tramiteTipoId String
+  nivel         NivelAccesoTramite
 
-  rol         Rol         @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   tramiteTipo TramiteTipo @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
 
-  @@unique([rolId, tramiteTipoId])
+  @@unique([usuarioId, tramiteTipoId])
   @@index([tramiteTipoId])
 }
 
@@ -139,8 +127,6 @@ enum TipoAuditoria {
   USUARIO_ACTIVADO
   USUARIO_DESACTIVADO
   USUARIO_ACTUALIZADO
-  ROL_CREADO
-  ROL_ACTUALIZADO
   CONFIGURACION_ACTUALIZADA
 }
 
@@ -253,7 +239,7 @@ model TramiteTipo {
   flujos               Flujo[]
   documentosRequeridos DocumentoRequeridoDefinicion[]
   expedientes          Expediente[]
-  rolesConAcceso       RolTramite[]
+  usuariosConAcceso    UsuarioTramiteAcceso[]
 }
 
 model DocumentoRequeridoDefinicion {

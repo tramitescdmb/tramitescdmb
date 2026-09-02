@@ -4,8 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { Field, SectionHelp } from "@/components/Field";
 import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icons";
-import { EditarUsuarioForm } from "@/components/EditarUsuarioForm";
-import { UserPlus, Briefcase } from "lucide-react";
+import { UserPlus, Briefcase, Pencil } from "lucide-react";
 
 const iconSm = "h-4 w-4";
 
@@ -24,14 +23,12 @@ export default async function UsuariosPage({
   if (session.rol !== "ADMIN") redirect("/");
 
   const { error, ok } = await searchParams;
-  const [usuarios, cargos, roles] = await Promise.all([
-    db.usuario.findMany({ orderBy: { createdAt: "asc" }, include: { cargos: true, rolPermisos: true } }),
-    db.cargo.findMany({ orderBy: { orden: "asc" } }),
-    db.rol.findMany({
-      where: { activo: true },
-      orderBy: { nombre: "asc" },
-      include: { _count: { select: { tramites: true } } },
+  const [usuarios, cargos] = await Promise.all([
+    db.usuario.findMany({
+      orderBy: { createdAt: "asc" },
+      include: { cargos: true, tramitesAcceso: { select: { nivel: true } } },
     }),
+    db.cargo.findMany({ orderBy: { orden: "asc" } }),
   ]);
 
   return (
@@ -44,17 +41,14 @@ export default async function UsuariosPage({
       </div>
 
       <SectionHelp>
-        Rol <strong>Administrador</strong>: además de gestionar expedientes, puede crear otros usuarios y
-        desactivarlos. Rol <strong>Funcionario</strong>: puede crear y avanzar expedientes, pero no
-        administra usuarios.
+        Rol <strong>Administrador</strong>: acceso total a todo, sin excepción — incluye crear/desactivar
+        usuarios. Rol <strong>Funcionario</strong>: solo ve y gestiona los trámites que se le asignen
+        explícitamente en &quot;Editar&quot; — sin nada asignado, no ve ninguno.
         <br />
         Los usuarios marcados como <strong>Directorio activo</strong> se crean solos la primera vez que
-        ingresan con las credenciales de la red de la CDMB; su contraseña no se administra aquí. Use
-        &quot;Editar&quot; en cualquier usuario para asignarle uno o varios cargos, cambiarle el rol, o
-        darle un <strong>Rol de acceso</strong> — creado en la sección{" "}
-        <Link href="/roles" className="underline hover:text-cdmb-700">Roles</Link>, define a qué
-        trámites de Trámites ambientales 2.0 puede entrar. Sin un Rol de acceso asignado, el usuario
-        no tiene restricción.
+        ingresan con las credenciales de la red de la CDMB (rol Funcionario, sin cargo ni trámites);
+        entre a &quot;Editar&quot; para asignarle cargo(s) y los trámites a los que puede entrar, con
+        nivel Ver (solo consulta) o Editar (puede actuar).
       </SectionHelp>
 
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -67,7 +61,7 @@ export default async function UsuariosPage({
               <th className="px-4 py-3 font-medium">Usuario</th>
               <th className="px-4 py-3 font-medium">Cargo(s)</th>
               <th className="px-4 py-3 font-medium">Rol</th>
-              <th className="px-4 py-3 font-medium">Rol de acceso</th>
+              <th className="px-4 py-3 font-medium">Trámites</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium"></th>
             </tr>
@@ -115,7 +109,18 @@ export default async function UsuariosPage({
                     {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-stone-600">{u.rolPermisos?.nombre ?? "Sin restricción"}</td>
+                <td className="px-4 py-3 text-stone-600">
+                  {u.rol === "ADMIN" ? (
+                    <span className="text-xs text-stone-400">Acceso total</span>
+                  ) : u.tramitesAcceso.length === 0 ? (
+                    <span className="text-xs text-amber-700">Sin trámites asignados</span>
+                  ) : (
+                    <span className="text-xs">
+                      {u.tramitesAcceso.filter((a) => a.nivel === "EDITAR").length} editar ·{" "}
+                      {u.tramitesAcceso.filter((a) => a.nivel === "VER").length} ver
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -127,20 +132,13 @@ export default async function UsuariosPage({
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <EditarUsuarioForm
-                      usuarioId={u.id}
-                      nombreUsuario={u.nombre}
-                      rolActual={u.rol}
-                      cargoActualIds={u.cargos.map((c) => c.id)}
-                      rolPermisosActualId={u.rolPermisosId}
-                      cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
-                      roles={roles.map((r) => ({
-                        id: r.id,
-                        nombre: r.nombre,
-                        todosLosTramites: r.todosLosTramites,
-                        tramitesCount: r._count.tramites,
-                      }))}
-                    />
+                    <Link
+                      href={`/usuarios/${u.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700"
+                    >
+                      <Pencil className="h-3 w-3" aria-hidden />
+                      Editar
+                    </Link>
                     {u.id !== session.userId && (
                       <form action={`/api/usuarios/${u.id}/toggle`} method="post">
                         <button className="text-xs text-stone-500 hover:text-cdmb-700 hover:underline">

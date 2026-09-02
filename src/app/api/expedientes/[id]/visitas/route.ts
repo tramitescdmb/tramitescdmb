@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
-import { puedeAccederExpediente } from "@/lib/permisos";
+import { puedeEditarExpediente } from "@/lib/permisos";
 
 /** Registra un punto de geoposición capturado en campo (GPS del dispositivo) durante un paso del expediente. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  if (!(await puedeAccederExpediente(session.userId, id))) {
+  if (!(await puedeEditarExpediente(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
   }
 

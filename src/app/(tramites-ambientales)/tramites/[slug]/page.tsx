@@ -7,7 +7,7 @@ import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
 import { getSession } from "@/lib/auth";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
 
 /**
  * Algunos trámites (ej. M-DA-PR21: Concesión de Aguas Superficiales vs.
@@ -60,9 +60,11 @@ export default async function TramiteDetallePage({
   if (!tramite) notFound();
 
   const session = await getSession();
+  let puedeRadicar = true;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederTramite(permisos, tramite.id)) notFound();
+    puedeRadicar = puedeEditarTramite(permisos, tramite.id);
   }
 
   /**
@@ -335,17 +337,24 @@ export default async function TramiteDetallePage({
               </p>
             )}
             {tramite.flujos.length > 0 ? (
-              <>
-                <p className="mb-2 text-sm text-cdmb-900">
-                  ¿Va a radicar una solicitud nueva? Cree el expediente aquí.
+              puedeRadicar ? (
+                <>
+                  <p className="mb-2 text-sm text-cdmb-900">
+                    ¿Va a radicar una solicitud nueva? Cree el expediente aquí.
+                  </p>
+                  <Link
+                    href={flujoEnfocado ? `/tramites/${tramite.slug}/nuevo?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}/nuevo`}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                  >
+                    + Iniciar nuevo expediente
+                  </Link>
+                </>
+              ) : (
+                <p className="text-sm text-cdmb-900">
+                  🔒 Solo puede consultar este trámite — no tiene permiso para radicar ni editar sus
+                  expedientes.
                 </p>
-                <Link
-                  href={flujoEnfocado ? `/tramites/${tramite.slug}/nuevo?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}/nuevo`}
-                  className="inline-flex w-full items-center justify-center rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
-                >
-                  + Iniciar nuevo expediente
-                </Link>
-              </>
+              )
             ) : (
               <>
                 <p className="mb-2 text-sm text-cdmb-900">

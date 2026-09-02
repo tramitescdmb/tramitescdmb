@@ -9,7 +9,7 @@ import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico, cargosEnTexto, puedeGestionarPaso } from "@/lib/cargos";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
@@ -70,9 +70,11 @@ export default async function ExpedienteDetallePage({
   if (!expediente) notFound();
 
   const session = await getSession();
+  let puedeEditar = true;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
+    puedeEditar = puedeEditarTramite(permisos, expediente.tramiteTipoId);
   }
   const pasos = expediente.flujo.pasos;
   const currentIndex = pasos.findIndex((p) => p.numero === expediente.pasoActualNumero);
@@ -80,7 +82,7 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargos, pasoActual.responsables) : false;
-  const puedeAvanzar = pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
+  const puedeAvanzar = puedeEditar && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const visitasDelPasoActual = pasoActual
     ? expediente.visitasTecnicas.filter((v) => v.pasoNumero === pasoActual.numero)
@@ -121,6 +123,12 @@ export default async function ExpedienteDetallePage({
         </div>
       </div>
 
+      {!puedeEditar && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+          👁️ Solo puede consultar este expediente — su acceso a este trámite es de solo lectura. No puede
+          adjuntar documentos, comentar, ni avanzar pasos.
+        </div>
+      )}
       {error === "sin-permiso-paso" && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           🔒 No pudo avanzarse el paso: según el procedimiento, este paso le corresponde a{" "}
@@ -253,13 +261,15 @@ export default async function ExpedienteDetallePage({
               </dl>
 
               {/* Subir documento de este paso */}
-              <div className="mt-4 border-t border-stone-100 pt-4">
-                <SubirDocumentoPasoForm
-                  expedienteId={expediente.id}
-                  pasoNumero={pasoActual.numero}
-                  documentosDelPaso={pasoActual.documentos}
-                />
-              </div>
+              {puedeEditar && (
+                <div className="mt-4 border-t border-stone-100 pt-4">
+                  <SubirDocumentoPasoForm
+                    expedienteId={expediente.id}
+                    pasoNumero={pasoActual.numero}
+                    documentosDelPaso={pasoActual.documentos}
+                  />
+                </div>
+              )}
 
               {/* Geoposición de la visita técnica — disponible en cualquier paso, no todos los
                   trámites lo requieren pero la mayoría sí tiene un paso de "visita técnica" que
@@ -285,12 +295,16 @@ export default async function ExpedienteDetallePage({
                     ))}
                   </ul>
                 )}
-                <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />
+                {puedeEditar && <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />}
               </div>
 
               {/* Acciones para avanzar */}
               <div className="mt-4 border-t border-stone-100 pt-4">
-                {!puedeAvanzar ? (
+                {!puedeEditar ? (
+                  <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                    👁️ Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
+                  </p>
+                ) : !puedeAvanzar ? (
                   <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                     🔒 Este paso solo puede avanzarlo{" "}
                     <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
@@ -457,16 +471,18 @@ export default async function ExpedienteDetallePage({
             <p className="mb-3 text-xs text-stone-500">
               La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
             </p>
-            <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
-              <input
-                name="texto"
-                placeholder="Agregar una nota o comentario al expediente…"
-                className="flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-              />
-              <button type="submit" className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
-                Comentar
-              </button>
-            </form>
+            {puedeEditar && (
+              <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
+                <input
+                  name="texto"
+                  placeholder="Agregar una nota o comentario al expediente…"
+                  className="flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                />
+                <button type="submit" className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
+                  Comentar
+                </button>
+              </form>
+            )}
 
             <ol>
               {expediente.eventos.map((ev, idx) => {
@@ -541,11 +557,13 @@ export default async function ExpedienteDetallePage({
                           </div>
                           {(() => {
                             const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
-                            const puede = puedeIntentarEliminarDocumento({
-                              esAdmin: session?.rol === "ADMIN",
-                              esQuienLoSubio: session?.userId === doc.subidoPorId,
-                              etapaAbierta: abierta,
-                            });
+                            const puede =
+                              puedeEditar &&
+                              puedeIntentarEliminarDocumento({
+                                esAdmin: session?.rol === "ADMIN",
+                                esQuienLoSubio: session?.userId === doc.subidoPorId,
+                                etapaAbierta: abierta,
+                              });
                             return (
                               <EliminarDocumentoBoton
                                 documentoId={doc.id}

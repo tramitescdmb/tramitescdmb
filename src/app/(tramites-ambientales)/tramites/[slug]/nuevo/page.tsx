@@ -5,7 +5,7 @@ import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
 import { getSession } from "@/lib/auth";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 
 export default async function NuevoExpedientePage({
   params,
@@ -24,7 +24,7 @@ export default async function NuevoExpedientePage({
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
-    if (!puedeAccederTramite(permisos, tramite.id)) notFound();
+    if (!puedeEditarTramite(permisos, tramite.id)) notFound();
   }
 
   // Si se llega desde una tarjeta de un flujo específico (ej. "Concesión de Aguas Superficiales"),
