@@ -77,6 +77,17 @@ export function EditarUsuarioAccesoForm({
     });
   }
 
+  function marcarSecciones(valores: Seccion[], marcar: boolean) {
+    setSecciones((prev) => {
+      const next = new Set(prev);
+      for (const v of valores) {
+        if (marcar) next.add(v);
+        else next.delete(v);
+      }
+      return next;
+    });
+  }
+
   function ponerNivel(tramiteId: string, nivel: Nivel | null) {
     setAcceso((prev) => {
       const next = new Map(prev);
@@ -98,6 +109,7 @@ export function EditarUsuarioAccesoForm({
   }
 
   const totalConAcceso = acceso.size;
+  const todosLosTramites = tramitesPorCategoria.flatMap((g) => g.items);
 
   async function guardar() {
     setGuardando(true);
@@ -189,7 +201,26 @@ export function EditarUsuarioAccesoForm({
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
+              <div className="flex gap-1.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}
+                  className="text-cdmb-700 hover:underline"
+                >
+                  Todos
+                </button>
+                <span className="text-stone-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}
+                  className="text-stone-400 hover:underline"
+                >
+                  Ninguno
+                </button>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {SECCIONES_VITAL.map((s) => {
                 const activo = secciones.has(s.valor);
@@ -212,7 +243,26 @@ export function EditarUsuarioAccesoForm({
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
+              <div className="flex gap-1.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}
+                  className="text-cdmb-700 hover:underline"
+                >
+                  Todos
+                </button>
+                <span className="text-stone-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}
+                  className="text-stone-400 hover:underline"
+                >
+                  Ninguno
+                </button>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {SECCIONES_SINCA.map((s) => {
                 const activo = secciones.has(s.valor);
@@ -246,11 +296,37 @@ export function EditarUsuarioAccesoForm({
             {totalConAcceso} con acceso
           </span>
         </div>
-        <p className="-mt-1.5 mb-4 text-xs text-stone-400">
+        <p className="-mt-1.5 mb-2 text-xs text-stone-400">
           Sin marcar, el usuario no ve el trámite. <strong>Ver</strong>: consulta el catálogo y los
           expedientes, sin poder actuar. <strong>Editar</strong>: además puede radicar, avanzar pasos,
           subir documentos y comentar.
         </p>
+        <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-stone-400">Todos los trámites:</span>
+          <button
+            type="button"
+            onClick={() => aplicarACategoria(todosLosTramites, "EDITAR")}
+            className="font-medium text-cdmb-700 hover:underline"
+          >
+            Editar todos
+          </button>
+          <span className="text-stone-300">·</span>
+          <button
+            type="button"
+            onClick={() => aplicarACategoria(todosLosTramites, "VER")}
+            className="font-medium text-stone-500 hover:underline"
+          >
+            Ver todos
+          </button>
+          <span className="text-stone-300">·</span>
+          <button
+            type="button"
+            onClick={() => aplicarACategoria(todosLosTramites, null)}
+            className="font-medium text-stone-400 hover:underline"
+          >
+            Quitar todos
+          </button>
+        </div>
 
         <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border border-stone-100 p-3">
           {tramitesPorCategoria.map((grupo) => (
