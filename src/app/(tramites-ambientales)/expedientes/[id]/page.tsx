@@ -8,7 +8,8 @@ import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico, cargosEnTexto, puedeGestionarPaso } from "@/lib/cargos";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
-import { documentoEtapaAbierta } from "@/lib/documentos";
+import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
@@ -69,6 +70,10 @@ export default async function ExpedienteDetallePage({
   if (!expediente) notFound();
 
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
+  }
   const pasos = expediente.flujo.pasos;
   const currentIndex = pasos.findIndex((p) => p.numero === expediente.pasoActualNumero);
   const pasoActual = currentIndex >= 0 ? pasos[currentIndex] : null;
@@ -532,8 +537,11 @@ export default async function ExpedienteDetallePage({
                           </div>
                           {(() => {
                             const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
-                            const puede =
-                              session?.rol === "ADMIN" || (abierta && session?.userId === doc.subidoPorId);
+                            const puede = puedeIntentarEliminarDocumento({
+                              esAdmin: session?.rol === "ADMIN",
+                              esQuienLoSubio: session?.userId === doc.subidoPorId,
+                              etapaAbierta: abierta,
+                            });
                             return (
                               <EliminarDocumentoBoton
                                 documentoId={doc.id}

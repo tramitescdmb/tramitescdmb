@@ -6,6 +6,8 @@ import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 /**
  * Algunos trámites (ej. M-DA-PR21: Concesión de Aguas Superficiales vs.
@@ -56,6 +58,12 @@ export default async function TramiteDetallePage({
   ]);
 
   if (!tramite) notFound();
+
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederTramite(permisos, tramite.id)) notFound();
+  }
 
   /**
    * Cuando se llega desde una tarjeta del catálogo que representa UN flujo

@@ -134,8 +134,8 @@
     {
       "orden": 20,
       "nombre": "Constancia de pago para la prestación del servicio de evaluación de la licencia ambiental",
-      "obligatorio": true,
-      "notas": "Se remite al usuario únicamente cuando haya allegado toda la documentación anteriormente enunciada"
+      "obligatorio": false,
+      "notas": "No se aporta al radicar: la CDMB la remite al usuario únicamente cuando haya allegado toda la documentación anteriormente enunciada"
     }
   ],
   "flujos": [

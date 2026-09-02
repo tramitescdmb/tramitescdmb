@@ -4,6 +4,8 @@ import { SectionHelp } from "@/components/Field";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 export default async function NuevoExpedientePage({
   params,
@@ -18,6 +20,12 @@ export default async function NuevoExpedientePage({
   const tramite = await getTramitePorSlug(slug);
 
   if (!tramite) notFound();
+
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederTramite(permisos, tramite.id)) notFound();
+  }
 
   // Si se llega desde una tarjeta de un flujo específico (ej. "Concesión de Aguas Superficiales"),
   // ese flujo ya quedó decidido — no hace falta volver a preguntar "Tipo de solicitud".

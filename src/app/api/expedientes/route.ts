@@ -5,6 +5,7 @@ import { generarNumeroExpediente } from "@/lib/expedientes";
 import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 type DocumentoInput = {
   path: string;
@@ -12,6 +13,7 @@ type DocumentoInput = {
   descripcion?: string | null;
   mimeType: string;
   tamanoBytes: number;
+  documentoRequeridoId?: string;
 };
 
 export async function POST(req: NextRequest) {
@@ -93,12 +95,36 @@ export async function POST(req: NextRequest) {
 
   const tramite = await db.tramiteTipo.findUnique({
     where: { id: tramiteTipoId },
-    include: { flujos: { include: { pasos: { orderBy: { numero: "asc" }, take: 1 } } } },
+    include: {
+      flujos: { include: { pasos: { orderBy: { numero: "asc" }, take: 1 } } },
+      documentosRequeridos: true,
+    },
   });
   if (!tramite) return NextResponse.json({ error: "Trámite no encontrado." }, { status: 404 });
 
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAccederTramite(permisos, tramite.id)) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite radicar expedientes de este trámite." }, { status: 403 });
+  }
+
   const flujo = tramite.flujos.find((f) => f.id === flujoId);
   if (!flujo) return NextResponse.json({ error: "Flujo no encontrado." }, { status: 404 });
+
+  // Los documentos marcados "obligatorio" (aplicables al tipo de solicitante elegido, ej. el
+  // recibo/constancia de pago) deben venir cargados para poder radicar — no basta con mostrar la
+  // etiqueta "Obligatorio" en el formulario, hay que impedir la radicación si falta alguno.
+  const idsDocumentosAportados = new Set(
+    (documentos || []).map((d) => d.documentoRequeridoId).filter((id): id is string => Boolean(id))
+  );
+  const documentosFaltantes = tramite.documentosRequeridos.filter(
+    (d) => d.obligatorio && (d.aplicaA === null || d.aplicaA === solicitante.tipo) && !idsDocumentosAportados.has(d.id)
+  );
+  if (documentosFaltantes.length > 0) {
+    return NextResponse.json(
+      { error: `Faltan documentos obligatorios para radicar: ${documentosFaltantes.map((d) => d.nombre).join(", ")}.` },
+      { status: 400 }
+    );
+  }
 
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
   const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);

@@ -6,7 +6,9 @@ import { TramitesTabs } from "@/components/TramitesTabs";
  * Sección "Trámites ambientales": el panel, el catálogo de trámites, los
  * expedientes y los solicitantes — la operación diaria de la CDMB. Es un route
  * group (no cambia las URLs: `/`, `/tramites`, `/expedientes`, `/solicitantes`),
- * solo agrega la cabecera y las pestañas comunes.
+ * solo agrega la cabecera y las pestañas comunes. El Rol de acceso restringe
+ * a CUÁLES trámites concretos se puede entrar (ver `/tramites`, `/expedientes`
+ * y sus páginas de detalle), no el acceso a la sección en sí.
  */
 export default function TramitesAmbientalesLayout({ children }: { children: ReactNode }) {
   return (

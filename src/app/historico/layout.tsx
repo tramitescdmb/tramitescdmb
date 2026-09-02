@@ -5,7 +5,8 @@ import { HistoricoTabs } from "@/components/HistoricoTabs";
 /**
  * Sección "SINCA 1.0 · Consulta histórica". Es un espejo de solo lectura de las
  * solicitudes del sistema anterior. Ninguna pantalla de aquí crea, edita ni
- * elimina datos.
+ * elimina datos. Abierta a cualquier funcionario — el Rol de acceso (sección
+ * Roles) solo restringe trámites dentro de "Trámites ambientales 2.0".
  */
 export default function HistoricoLayout({ children }: { children: ReactNode }) {
   return (

@@ -200,3 +200,23 @@ export const CATEGORIAS_ORDEN: Categoria[] = [
   categoriaDesdeFija(CATEGORIA_SIN_SUIT),
   categoriaDesdeFija(CATEGORIA_PRUEBA),
 ];
+
+/**
+ * Agrupa trámites por categoría (mismo criterio que el catálogo) para listas
+ * de selección simples — ej. el checklist de trámites de un Rol de acceso,
+ * que no necesita íconos/colores, solo la etiqueta para agrupar visualmente.
+ */
+export function agruparTramitesPorCategoria<T extends { id: string; codigo: string; nombre: string; suitNumeros: string[]; flujos: { suitNumero: string | null }[] }>(
+  tramites: T[]
+): { etiqueta: string; items: T[] }[] {
+  const porCategoria = new Map<string, T[]>();
+  for (const t of tramites) {
+    const cat = categoriaTramite(t.nombre, t.codigo, todosLosSuitNumeros(t));
+    const lista = porCategoria.get(cat.id) ?? [];
+    lista.push(t);
+    porCategoria.set(cat.id, lista);
+  }
+  return CATEGORIAS_ORDEN.map((cat) => ({ etiqueta: cat.etiqueta, items: porCategoria.get(cat.id) ?? [] })).filter(
+    (g) => g.items.length > 0
+  );
+}

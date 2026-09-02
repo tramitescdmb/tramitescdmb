@@ -9,6 +9,7 @@ import {
   UserCog,
   ShieldCheck,
   Palette,
+  KeySquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
+  { href: "/roles", label: "Roles", icon: KeySquare },
   { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
   { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
 ];

@@ -3,6 +3,7 @@ import { EstadoExpediente } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { puedeGestionarPaso } from "@/lib/cargos";
+import { puedeAccederExpediente } from "@/lib/permisos";
 
 const ESTADOS_TERMINALES: EstadoExpediente[] = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
 
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  if (!(await puedeAccederExpediente(session.userId, id))) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
+  }
 
   const form = await req.formData();
   const siguientePasoRaw = form.get("siguientePasoNumero");

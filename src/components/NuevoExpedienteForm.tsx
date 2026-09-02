@@ -198,6 +198,13 @@ export function NuevoExpedienteForm({
       setError("Debe seleccionarse el municipio donde se adelantará el trámite. La CDMB solo tiene competencia dentro de su jurisdicción.");
       return;
     }
+    const documentosFaltantes = documentosAplicables.filter((doc) => documentoRequerido(doc) && !archivosPorDoc[doc.id]);
+    if (documentosFaltantes.length > 0) {
+      setError(
+        `Faltan documentos obligatorios para radicar: ${documentosFaltantes.map((d) => d.nombre).join(", ")}.`
+      );
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -208,6 +215,7 @@ export function NuevoExpedienteForm({
         descripcion?: string | null;
         mimeType: string;
         tamanoBytes: number;
+        documentoRequeridoId?: string;
       }> = [];
 
       for (const doc of documentosRequeridos) {
@@ -216,7 +224,7 @@ export function NuevoExpedienteForm({
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
           const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
-          documentos.push({ ...subido, descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre });
+          documentos.push({ ...subido, descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre, documentoRequeridoId: doc.id });
         }
       }
 
@@ -683,8 +691,9 @@ export function NuevoExpedienteForm({
           <h2 className="text-sm font-semibold text-stone-900">3. Documentos</h2>
           <p className="text-xs text-stone-500">
             Cargue los documentos aportados por el solicitante — sin importar el tamaño del archivo, se
-            almacena directamente en el sistema. Si falta algún documento, el expediente puede crearse de
-            igual forma y completarse posteriormente.
+            almacena directamente en el sistema. Los marcados como <strong>Obligatorio</strong> (por
+            ejemplo, el recibo o constancia de pago) deben adjuntarse para poder radicar el expediente;
+            los demás pueden completarse posteriormente.
           </p>
         </div>
 

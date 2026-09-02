@@ -3,6 +3,8 @@ import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN } from "@/lib/tramite-categoria";
 import { CatalogoTramites, type EntradaCatalogo } from "@/components/CatalogoTramites";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -47,10 +49,13 @@ function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPor
 }
 
 export default async function CatalogoTramitesPage() {
-  const [tramites, porEstado] = await Promise.all([
+  const [todosLosTramites, porEstado, session] = await Promise.all([
     getCatalogoTramites(),
     db.expediente.groupBy({ by: ["tramiteTipoId", "flujoId", "estado"], _count: { _all: true } }),
+    getSession(),
   ]);
+  const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
+  const tramites = permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites;
 
   const conteoPorTramite = new Map<string, Conteo>();
   const conteoPorFlujo = new Map<string, Conteo>();

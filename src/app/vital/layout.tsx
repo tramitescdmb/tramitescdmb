@@ -4,7 +4,9 @@ import { VitalTabs } from "@/components/VitalTabs";
 
 /**
  * Sección VITAL: solicitudes traídas de la Ventanilla Integral de Trámites
- * Ambientales en Línea (MinAmbiente) por X-Road. Solo lectura.
+ * Ambientales en Línea (MinAmbiente) por X-Road. Solo lectura. Abierta a
+ * cualquier funcionario — el Rol de acceso (sección Roles) solo restringe
+ * trámites dentro de "Trámites ambientales 2.0", no esta sección.
  */
 export default function VitalLayout({ children }: { children: ReactNode }) {
   return (

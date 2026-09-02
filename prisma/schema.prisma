@@ -45,10 +45,10 @@ enum RolUsuario {
  * src/lib/cargos.ts para las palabras clave de coincidencia con cada paso.
  */
 model Cargo {
-  id      String    @id @default(cuid())
-  nombre  String    @unique
-  orden   Int       @default(0)
-  usuarios Usuario[]
+  id                    String       @id @default(cuid())
+  nombre                String       @unique
+  orden                 Int          @default(0)
+  usuarios              Usuario[]
   expedientesAsignacion Expediente[] @relation("ExpedienteCargosAsignados")
 }
 
@@ -69,14 +69,59 @@ model Usuario {
   // alta solos la primera vez que inician sesión por directorio activo.
   directorioActivo Boolean @default(false)
 
-  cargo                Cargo?            @relation(fields: [cargoId], references: [id])
-  expedientesCreados   Expediente[]      @relation("CreadoPor")
-  expedientesAsignados Expediente[]      @relation("ResponsableActual")
-  expedientesAsignacion Expediente[]     @relation("ExpedienteUsuariosAsignados")
-  documentos           ExpedienteDocumento[]
-  eventos              ExpedienteEvento[]
-  registrosAuditoria   RegistroAuditoria[]
-  visitasTecnicas      VisitaTecnica[]
+  // Rol de ACCESO (módulos/trámites permitidos, ver modelo Rol) — distinto del
+  // campo `rol` de arriba (RolUsuario: Admin/Funcionario, permiso dentro de la
+  // app). Opcional: sin Rol asignado, el usuario queda sin restricción (igual
+  // que hoy) — el control solo aplica cuando un admin se lo asigna explícito.
+  rolPermisosId String?
+
+  cargo                 Cargo?                @relation(fields: [cargoId], references: [id])
+  rolPermisos           Rol?                  @relation(fields: [rolPermisosId], references: [id])
+  expedientesCreados    Expediente[]          @relation("CreadoPor")
+  expedientesAsignados  Expediente[]          @relation("ResponsableActual")
+  expedientesAsignacion Expediente[]          @relation("ExpedienteUsuariosAsignados")
+  documentos            ExpedienteDocumento[]
+  eventos               ExpedienteEvento[]
+  registrosAuditoria    RegistroAuditoria[]
+  visitasTecnicas       VisitaTecnica[]
+}
+
+// ---------------------------------------------------------------------------
+// Roles de ACCESO (sección "Roles", admin-only): a diferencia de Cargo (el
+// puesto real, usado para resaltar/bloquear pasos por texto) y RolUsuario
+// (Admin/Funcionario, permisos administrativos), esto controla a cuáles
+// trámites concretos del catálogo de "Trámites ambientales 2.0" tiene acceso
+// un funcionario — no toca VITAL ni SINCA 1.0, que quedan abiertos siempre.
+// Ver src/lib/permisos.ts para cómo se aplica.
+// ---------------------------------------------------------------------------
+
+model Rol {
+  id          String  @id @default(cuid())
+  nombre      String  @unique
+  descripcion String?
+
+  // true (por defecto) = sin restricción de trámite dentro de "Trámites
+  // ambientales"; false = solo los trámites marcados en RolTramite.
+  todosLosTramites Boolean @default(true)
+
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usuarios Usuario[]
+  tramites RolTramite[]
+}
+
+model RolTramite {
+  id            String @id @default(cuid())
+  rolId         String
+  tramiteTipoId String
+
+  rol         Rol         @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  tramiteTipo TramiteTipo @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+
+  @@unique([rolId, tramiteTipoId])
+  @@index([tramiteTipoId])
 }
 
 // ---------------------------------------------------------------------------
@@ -91,16 +136,19 @@ enum TipoAuditoria {
   USUARIO_CREADO
   USUARIO_ACTIVADO
   USUARIO_DESACTIVADO
+  USUARIO_ACTUALIZADO
+  ROL_CREADO
+  ROL_ACTUALIZADO
   CONFIGURACION_ACTUALIZADA
 }
 
 model RegistroAuditoria {
-  id           String         @id @default(cuid())
+  id           String        @id @default(cuid())
   tipo         TipoAuditoria
-  descripcion  String         @db.Text
+  descripcion  String        @db.Text
   usuarioId    String? // quién hizo la acción; null si el login fallido no correspondía a ningún usuario real
   emailIntento String? // correo usado en un intento de login (exitoso o no), aunque no exista el usuario
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime      @default(now())
 
   usuario Usuario? @relation(fields: [usuarioId], references: [id])
 
@@ -145,13 +193,13 @@ model SincaResolucion {
 
   // Campos que solo entrega el endpoint de detalle (GET /presinca/resoluciones/{n}),
   // no el listado. Se llenan con el paso de enriquecimiento (src/lib/sinca-sync.ts).
-  diasResolucion      Int? // fechaResolucion - fechaRecibido, en días (tiempo de trámite)
-  solicitanteNit      String? // interesado[0].nit.numero_nit
-  solicitanteNombre   String? // razón social o nombre del interesado
-  enriquecidoEn       DateTime? // null = falta traer el detalle
+  diasResolucion    Int? // fechaResolucion - fechaRecibido, en días (tiempo de trámite)
+  solicitanteNit    String? // interesado[0].nit.numero_nit
+  solicitanteNombre String? // razón social o nombre del interesado
+  enriquecidoEn     DateTime? // null = falta traer el detalle
 
-  raw                 Json // registro original completo del API (para la ficha de detalle)
-  sincronizadoEn      DateTime  @default(now())
+  raw            Json // registro original completo del API (para la ficha de detalle)
+  sincronizadoEn DateTime @default(now())
 
   @@index([anioResolucion])
   @@index([tipoSolicitudCodigo])
@@ -165,16 +213,16 @@ model SincaResolucion {
 }
 
 model SincaSincronizacion {
-  id             String   @id @default(cuid())
-  iniciadoEn     DateTime @default(now())
-  terminadoEn    DateTime?
-  ok             Boolean  @default(false)
-  totalApi       Int?
-  creados        Int?
-  actualizados   Int?
-  eliminados     Int?
-  mensajeError   String?  @db.Text
-  disparadoPor   String? // "cron", "manual:<usuario>", "script"
+  id           String    @id @default(cuid())
+  iniciadoEn   DateTime  @default(now())
+  terminadoEn  DateTime?
+  ok           Boolean   @default(false)
+  totalApi     Int?
+  creados      Int?
+  actualizados Int?
+  eliminados   Int?
+  mensajeError String?   @db.Text
+  disparadoPor String? // "cron", "manual:<usuario>", "script"
 }
 
 // ---------------------------------------------------------------------------
@@ -182,35 +230,36 @@ model SincaSincronizacion {
 // ---------------------------------------------------------------------------
 
 model TramiteTipo {
-  id                        String   @id @default(cuid())
-  codigo                    String   @unique // ej. M-DA-PR05
-  version                   String
-  fecha                     DateTime
-  proceso                   String
-  nombre                    String
-  nombreCompleto            String
-  slug                      String   @unique
-  archivoFuente             String
-  objeto                    String   @db.Text
-  resumen                   String?  @db.Text // frase natural "Este trámite..." para la UI (objeto es la redacción formal del PDF)
-  alcance                   String   @db.Text
-  autoridadResponsabilidad  String   @db.Text
-  suitNumeros               String[] @default([]) // número(s) de ficha en el SUIT (Sistema Único de Información de Trámites), si está inscrito — algunos trámites tienen más de uno (ej. concesión de aguas superficiales + subterráneas por separado)
-  activo                    Boolean  @default(true)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  codigo                   String   @unique // ej. M-DA-PR05
+  version                  String
+  fecha                    DateTime
+  proceso                  String
+  nombre                   String
+  nombreCompleto           String
+  slug                     String   @unique
+  archivoFuente            String
+  objeto                   String   @db.Text
+  resumen                  String?  @db.Text // frase natural "Este trámite..." para la UI (objeto es la redacción formal del PDF)
+  alcance                  String   @db.Text
+  autoridadResponsabilidad String   @db.Text
+  suitNumeros              String[] @default([]) // número(s) de ficha en el SUIT (Sistema Único de Información de Trámites), si está inscrito — algunos trámites tienen más de uno (ej. concesión de aguas superficiales + subterráneas por separado)
+  activo                   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
-  flujos              Flujo[]
+  flujos               Flujo[]
   documentosRequeridos DocumentoRequeridoDefinicion[]
-  expedientes         Expediente[]
+  expedientes          Expediente[]
+  rolesConAcceso       RolTramite[]
 }
 
 model DocumentoRequeridoDefinicion {
-  id            String  @id @default(cuid())
+  id            String           @id @default(cuid())
   tramiteTipoId String
   orden         Int
   nombre        String
-  obligatorio   Boolean @default(true)
+  obligatorio   Boolean          @default(true)
   notas         String?
   aplicaA       TipoSolicitante? // null = aplica a cualquier solicitante; si no, solo es obligatorio para ese tipo (ej. "Certificado de Existencia y Representación Legal" solo para JURIDICA)
 
@@ -220,16 +269,16 @@ model DocumentoRequeridoDefinicion {
 }
 
 model Flujo {
-  id            String  @id @default(cuid())
-  tramiteTipoId String
-  codigo        String // inicio | renovacion | ...
-  nombre        String
+  id             String  @id @default(cuid())
+  tramiteTipoId  String
+  codigo         String // inicio | renovacion | ...
+  nombre         String
   esFlujoInicial Boolean @default(false)
-  orden         Int     @default(0)
-  suitNumero    String? // ficha del SUIT específica de ESTE flujo, cuando el SUIT registra cada modalidad por separado (ej. M-DA-PR21: "Concesión de Aguas Superficiales" y "Concesión de Aguas Subterráneas" son un solo procedimiento/PDF pero dos fichas SUIT distintas)
-  resumen       String? @db.Text // frase natural de ESTE flujo, para cuando se ve enfocado en un solo flujo (?flujo=...) y no debe mencionar la otra modalidad
+  orden          Int     @default(0)
+  suitNumero     String? // ficha del SUIT específica de ESTE flujo, cuando el SUIT registra cada modalidad por separado (ej. M-DA-PR21: "Concesión de Aguas Superficiales" y "Concesión de Aguas Subterráneas" son un solo procedimiento/PDF pero dos fichas SUIT distintas)
+  resumen        String? @db.Text // frase natural de ESTE flujo, para cuando se ve enfocado en un solo flujo (?flujo=...) y no debe mencionar la otra modalidad
 
-  tramiteTipo TramiteTipo    @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+  tramiteTipo TramiteTipo      @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
   pasos       PasoDefinicion[]
   expedientes Expediente[]
 
@@ -237,11 +286,11 @@ model Flujo {
 }
 
 model PasoDefinicion {
-  id          String   @id @default(cuid())
-  flujoId     String
-  numero      Int
-  titulo      String
-  descripcion String   @db.Text
+  id           String   @id @default(cuid())
+  flujoId      String
+  numero       Int
+  titulo       String
+  descripcion  String   @db.Text
   responsables String[]
   documentos   String[]
   tiempo       String?
@@ -295,23 +344,21 @@ enum ClaseSolicitud {
  * preguntar "¿qué otros trámites tiene esta NIT con la CDMB?". Ahora, al
  * radicar, se busca por identificación — si ya existe se reutiliza (y se
  * actualizan los datos de contacto), si no existe se crea aquí.
- *
  * El régimen tributario y "gran contribuyente" NO son decorativos: la CDMB
  * a veces le paga a estos mismos terceros (o cobra estampillas), y el
  * régimen determina retenciones/beneficios — por eso se guardan aquí y no
  * en cada Expediente. A propósito no se replicó el formulario contable
  * completo del sistema viejo (clave contable, RUP, actividad económica...)
  * — eso vive en el sistema contable real de la CDMB, no en SINCA.
- *
  * `Expediente.solicitanteNombre/Identificacion/...` se mantienen aparte
  * (no se borran): son la foto de cómo era el solicitante EN ESE MOMENTO,
  * que para un trámite regulatorio es lo correcto conservar aunque el
  * tercero cambie de nombre o dirección después.
  */
 model Solicitante {
-  id     String          @id @default(cuid())
-  tipo   TipoSolicitante
-  identificacion String  @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
+  id                String             @id @default(cuid())
+  tipo              TipoSolicitante
+  identificacion    String             @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
   // Separados para poder buscar por nombre o por apellido (persona natural) — para persona
   // jurídica normalmente solo aplica razonSocial, pero se deja nombres/apellidos libres por si
   // hace falta guardar el nombre de un contacto/representante. Validado en la app según `tipo`,
@@ -332,10 +379,10 @@ model Solicitante {
 }
 
 model Expediente {
-  id             String   @id @default(cuid())
-  numero         String   @unique // ej. M-DA-PR05-2026-0001
-  tramiteTipoId  String
-  flujoId        String
+  id            String @id @default(cuid())
+  numero        String @unique // ej. M-DA-PR05-2026-0001
+  tramiteTipoId String
+  flujoId       String
 
   solicitanteId             String? // vínculo al registro maestro por NIT/cédula (ver Solicitante) — null en expedientes creados antes de este campo
   solicitanteTipo           TipoSolicitante @default(NATURAL)
@@ -347,7 +394,7 @@ model Expediente {
   predioDireccion           String? // dirección del predio o del lugar donde se desarrolla el proyecto
   municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
 
-  claseSolicitud   ClaseSolicitud? // Nueva / Renovación — el PDF del procedimiento no siempre lo distingue como flujo aparte
+  claseSolicitud ClaseSolicitud? // Nueva / Renovación — el PDF del procedimiento no siempre lo distingue como flujo aparte
 
   // Datos del predio que el procedimiento oficial no siempre pide como tal, pero que sí importan
   // para la decisión real (ej. el área determina cuánta agua se puede conceder) o son identificadores
@@ -390,16 +437,16 @@ model Expediente {
   createdById         String
   responsableActualId String?
 
-  fechaRadicacion      DateTime  @default(now())
+  fechaRadicacion       DateTime @default(now())
   fechaUltimoMovimiento DateTime @default(now())
-  createdAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  tramiteTipo      TramiteTipo @relation(fields: [tramiteTipoId], references: [id])
-  flujo            Flujo       @relation(fields: [flujoId], references: [id])
-  creadoPor        Usuario     @relation("CreadoPor", fields: [createdById], references: [id])
-  responsableActual Usuario?   @relation("ResponsableActual", fields: [responsableActualId], references: [id])
-  solicitante      Solicitante? @relation(fields: [solicitanteId], references: [id])
+  tramiteTipo       TramiteTipo  @relation(fields: [tramiteTipoId], references: [id])
+  flujo             Flujo        @relation(fields: [flujoId], references: [id])
+  creadoPor         Usuario      @relation("CreadoPor", fields: [createdById], references: [id])
+  responsableActual Usuario?     @relation("ResponsableActual", fields: [responsableActualId], references: [id])
+  solicitante       Solicitante? @relation(fields: [solicitanteId], references: [id])
 
   documentos      ExpedienteDocumento[]
   eventos         ExpedienteEvento[]
@@ -425,16 +472,16 @@ model Expediente {
 }
 
 model ExpedienteDocumento {
-  id            String   @id @default(cuid())
-  expedienteId  String
-  pasoNumero    Int?
-  nombre        String
-  descripcion   String?
-  storagePath   String
-  mimeType      String
-  tamanoBytes   Int
-  subidoPorId   String
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  expedienteId String
+  pasoNumero   Int?
+  nombre       String
+  descripcion  String?
+  storagePath  String
+  mimeType     String
+  tamanoBytes  Int
+  subidoPorId  String
+  createdAt    DateTime @default(now())
 
   expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   subidoPor  Usuario    @relation(fields: [subidoPorId], references: [id])
@@ -454,15 +501,15 @@ enum TipoEvento {
 }
 
 model ExpedienteEvento {
-  id             String     @id @default(cuid())
+  id             String            @id @default(cuid())
   expedienteId   String
   tipo           TipoEvento
-  descripcion    String     @db.Text
+  descripcion    String            @db.Text
   pasoNumero     Int?
   estadoAnterior EstadoExpediente?
   estadoNuevo    EstadoExpediente?
   usuarioId      String
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime          @default(now())
 
   expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   usuario    Usuario    @relation(fields: [usuarioId], references: [id])
@@ -493,7 +540,7 @@ model VisitaTecnica {
   cartesianaY    Float?
   cartesianaZ    Float?
   precisionM     Float? // exactitud reportada por el GPS del dispositivo (navigator.geolocation) — informativa, no se valida
-  nota           String? @db.Text
+  nota           String?  @db.Text
   capturadoPorId String
   createdAt      DateTime @default(now())
 
@@ -524,11 +571,11 @@ model SolicitudVital {
   solicitanteIdentificacion String?
   solicitanteCorreo         String?
   solicitanteRaw            Json? // respuesta completa de hu-otic-vital-io-003, tal cual (persona natural o jurídica)
-  camposTramite              Json? // respuesta completa de hu-otic-vital-io-002, tal cual (campos del formulario)
+  camposTramite             Json? // respuesta completa de hu-otic-vital-io-002, tal cual (campos del formulario)
 
   documentos           SolicitudVitalDocumento[]
-  ultimaSincronizacion DateTime @default(now()) @updatedAt
-  createdAt            DateTime @default(now())
+  ultimaSincronizacion DateTime                  @default(now()) @updatedAt
+  createdAt            DateTime                  @default(now())
 
   @@index([idTramiteVital])
 }
@@ -540,15 +587,17 @@ model SolicitudVital {
  * alguno responde con solicitudes se agrega aquí y se empieza a sincronizar.
  */
 model VitalTramite {
-  idTramite    Int      @id
-  nombre       String?
-  activo       Boolean  @default(true)
-  detectadoEn  DateTime @default(now())
+  idTramite      Int       @id
+  nombre         String?
+  activo         Boolean   @default(true)
+  detectadoEn    DateTime  @default(now())
   ultimaRevision DateTime?
-  ultimoConteo Int?
+  ultimoConteo   Int?
 }
 
-/** Cursor de la exploración de ids de trámite (fila única). */
+/**
+ * Cursor de la exploración de ids de trámite (fila única).
+ */
 model VitalDescubrimiento {
   id            String   @id @default("singleton")
   proximoId     Int      @default(1)

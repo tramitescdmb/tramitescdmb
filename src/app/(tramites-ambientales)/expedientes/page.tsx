@@ -6,6 +6,7 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { Paginador } from "@/components/Paginador";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 const POR_PAGINA = 30;
 
@@ -28,7 +29,7 @@ export default async function ExpedientesPage({
 }) {
   const { estado, q, tramite, municipio, asignados, page: pageParam } = await searchParams;
 
-  const [tramites, session] = await Promise.all([
+  const [todosLosTramites, session] = await Promise.all([
     db.tramiteTipo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
@@ -36,6 +37,9 @@ export default async function ExpedientesPage({
     }),
     getSession(),
   ]);
+  const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
+  const tramites = permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites;
+  const tramiteIdsPermitidos = permisos?.tramiteIds ? Array.from(permisos.tramiteIds) : null;
 
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);
@@ -45,6 +49,7 @@ export default async function ExpedientesPage({
   const soloMios = asignados === "mi" && Boolean(session);
 
   const filtros: Prisma.ExpedienteWhereInput[] = [];
+  if (tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: tramiteIdsPermitidos } });
   if (estado) filtros.push({ estado: estado as (typeof ESTADOS)[number] });
   if (tramite) filtros.push({ tramiteTipoId: tramite });
   if (municipio) filtros.push({ municipio });

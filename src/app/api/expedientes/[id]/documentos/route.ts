@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { puedeAccederExpediente } from "@/lib/permisos";
 
 type ArchivoInput = { path: string; nombre: string; mimeType: string; tamanoBytes: number; descripcion?: string | null };
 
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  if (!(await puedeAccederExpediente(session.userId, id))) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });

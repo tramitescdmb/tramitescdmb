@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { deleteDocumento } from "@/lib/storage";
-import { documentoEtapaAbierta } from "@/lib/documentos";
+import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,28 +21,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const etapaAbierta = documentoEtapaAbierta(documento.pasoNumero, documento.expediente.pasoActualNumero);
   const esAdmin = session.rol === "ADMIN";
 
-  if (etapaAbierta) {
-    // Dentro de la etapa actual: quien lo subió puede corregir su propio error, o un admin.
-    if (!esAdmin && session.userId !== documento.subidoPorId) {
-      return NextResponse.json(
-        { error: "Solo quien subió el documento o un administrador puede eliminarlo." },
-        { status: 403 }
-      );
-    }
-  } else {
-    // Etapa ya cerrada: solo un admin, y con el oficio de solicitud del Subdirector de por medio.
-    if (!esAdmin) {
-      return NextResponse.json(
-        { error: "Esta etapa ya se cerró — solo un administrador puede eliminar este documento." },
-        { status: 403 }
-      );
-    }
-    if (!oficio) {
-      return NextResponse.json(
-        { error: "La etapa ya se cerró: se necesita el oficio de solicitud del Subdirector para eliminar este documento." },
-        { status: 400 }
-      );
-    }
+  // Regla de acceso: dentro de la etapa abierta, quien subió el documento o un admin. Una vez
+  // la etapa se cierra, NINGÚN usuario puede eliminarlo por su cuenta — ni siquiera quien lo
+  // subió — solo un administrador, y ni él sin el oficio de autorización (verificado abajo).
+  if (!puedeIntentarEliminarDocumento({ esAdmin, esQuienLoSubio: session.userId === documento.subidoPorId, etapaAbierta })) {
+    return NextResponse.json(
+      etapaAbierta
+        ? { error: "Solo quien subió el documento o un administrador puede eliminarlo." }
+        : { error: "Esta etapa ya se cerró — solo un administrador puede eliminar este documento, y únicamente con el oficio de solicitud del Subdirector." },
+      { status: 403 }
+    );
+  }
+
+  if (!etapaAbierta && !oficio) {
+    // Etapa ya cerrada: ni siquiera un admin puede eliminar sin el oficio de solicitud del Subdirector.
+    return NextResponse.json(
+      { error: "La etapa ya se cerró: se necesita el oficio de solicitud del Subdirector para eliminar este documento." },
+      { status: 400 }
+    );
   }
 
   await deleteDocumento(documento.storagePath).catch(() => {
