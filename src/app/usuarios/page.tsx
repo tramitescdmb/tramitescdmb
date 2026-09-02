@@ -91,6 +91,7 @@ export default async function UsuariosPage({
                   <div className="flex items-center justify-end gap-3">
                     <EditarUsuarioForm
                       usuarioId={u.id}
+                      nombreUsuario={u.nombre}
                       rolActual={u.rol}
                       cargoActualId={u.cargoId}
                       rolPermisosActualId={u.rolPermisosId}
