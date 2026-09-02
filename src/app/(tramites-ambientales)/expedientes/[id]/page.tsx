@@ -63,7 +63,7 @@ export default async function ExpedienteDetallePage({
         solicitante: true,
       },
     }),
-    db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargo: { select: { nombre: true } } } }),
+    db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargos: { select: { nombre: true } } } }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
   ]);
 
@@ -79,7 +79,7 @@ export default async function ExpedienteDetallePage({
   const pasoActual = currentIndex >= 0 ? pasos[currentIndex] : null;
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
-  const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargo, pasoActual.responsables) : false;
+  const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargos, pasoActual.responsables) : false;
   const puedeAvanzar = pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const visitasDelPasoActual = pasoActual
@@ -222,7 +222,7 @@ export default async function ExpedienteDetallePage({
                 </p>
                 {esMiPaso && (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    ✋ Corresponde a su cargo ({session?.cargo})
+                    ✋ Corresponde a su cargo ({session?.cargos.join(", ")})
                   </span>
                 )}
               </div>
@@ -294,7 +294,11 @@ export default async function ExpedienteDetallePage({
                   <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                     🔒 Este paso solo puede avanzarlo{" "}
                     <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
-                    {session?.cargo ? <> — su cargo actual es &quot;{session.cargo}&quot;.</> : " — no tiene un cargo asignado."}{" "}
+                    {session && session.cargos.length > 0 ? (
+                      <> — su(s) cargo(s) actual(es): &quot;{session.cargos.join(", ")}&quot;.</>
+                    ) : (
+                      " — no tiene un cargo asignado."
+                    )}{" "}
                     Puede seguir adjuntando documentos y registrando la visita técnica; para avanzar el paso, pídale
                     a la persona con ese cargo (o a un administrador) que lo haga.
                   </p>
@@ -624,7 +628,9 @@ export default async function ExpedienteDetallePage({
                             defaultChecked={expediente.usuariosAsignados.some((a) => a.id === u.id)}
                           />
                           {u.nombre}
-                          {u.cargo && <span className="text-xs text-stone-400"> — {u.cargo.nombre}</span>}
+                          {u.cargos.length > 0 && (
+                            <span className="text-xs text-stone-400"> — {u.cargos.map((c) => c.nombre).join(", ")}</span>
+                          )}
                         </label>
                       ))}
                     </div>

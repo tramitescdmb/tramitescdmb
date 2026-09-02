@@ -61,7 +61,9 @@ export async function NavBar() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-stone-800">{session.nombre}</p>
-              <p className="truncate text-xs text-stone-400">{session.cargo ?? session.rol}</p>
+              <p className="truncate text-xs text-stone-400">
+                {session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario"}
+              </p>
             </div>
           </div>
           <div className="mt-1 px-2">{salir}</div>

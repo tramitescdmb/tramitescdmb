@@ -23,7 +23,8 @@ export type SessionPayload = {
   email: string;
   nombre: string;
   rol: "ADMIN" | "FUNCIONARIO";
-  cargo: string | null;
+  /** Nombres de TODOS los cargos del funcionario — puede tener varios a la vez. */
+  cargos: string[];
 };
 
 export async function createSessionCookie(payload: SessionPayload) {
@@ -60,7 +61,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       email: payload.email as string,
       nombre: payload.nombre as string,
       rol: payload.rol as "ADMIN" | "FUNCIONARIO",
-      cargo: (payload.cargo as string | null) ?? null,
+      cargos: Array.isArray(payload.cargos) ? (payload.cargos as string[]) : [],
     };
   } catch {
     return null;
@@ -75,7 +76,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       email: payload.email as string,
       nombre: payload.nombre as string,
       rol: payload.rol as "ADMIN" | "FUNCIONARIO",
-      cargo: (payload.cargo as string | null) ?? null,
+      cargos: Array.isArray(payload.cargos) ? (payload.cargos as string[]) : [],
     };
   } catch {
     return null;

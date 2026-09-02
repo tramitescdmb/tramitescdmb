@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   // --- Ingreso institucional (contraseña de esta app) -------------------------
-  const usuario = await db.usuario.findUnique({ where: { email: identidad }, include: { cargo: true } });
+  const usuario = await db.usuario.findUnique({ where: { email: identidad }, include: { cargos: true } });
 
   if (usuario && usuario.directorioActivo) {
     await registrarAuditoria({
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     email: usuario.email,
     nombre: usuario.nombre,
     rol: usuario.rol,
-    cargo: usuario.cargo?.nombre ?? null,
+    cargos: usuario.cargos.map((c) => c.nombre),
   });
 
   await registrarAuditoria({
@@ -143,7 +143,7 @@ async function ingresarPorDirectorioActivo(
     return fail(resultado.mensaje);
   }
 
-  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, include: { cargo: true } });
+  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, include: { cargos: true } });
 
   if (existente && !existente.activo) {
     await registrarAuditoria({
@@ -174,7 +174,7 @@ async function ingresarPorDirectorioActivo(
         rol: "FUNCIONARIO",
         directorioActivo: true,
       },
-      include: { cargo: true },
+      include: { cargos: true },
     });
 
     await registrarAuditoria({
@@ -192,7 +192,7 @@ async function ingresarPorDirectorioActivo(
     email: usuario.email,
     nombre: usuario.nombre,
     rol: usuario.rol,
-    cargo: usuario.cargo?.nombre ?? null,
+    cargos: usuario.cargos.map((c) => c.nombre),
   });
   await guardarTokenDirectorioActivo(resultado.token);
 

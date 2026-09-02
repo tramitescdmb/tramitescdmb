@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const nombre = String(form.get("nombre") || "").trim();
   const password = String(form.get("password") || "");
   const rol = String(form.get("rol") || "FUNCIONARIO") as "ADMIN" | "FUNCIONARIO";
-  const cargoId = String(form.get("cargoId") || "").trim() || null;
+  const cargoIds = form.getAll("cargoIds").map(String);
 
   const url = new URL("/usuarios", req.url);
 
@@ -31,7 +31,13 @@ export async function POST(req: NextRequest) {
   }
 
   const nuevo = await db.usuario.create({
-    data: { email, nombre, rol, cargoId, passwordHash: await hashPassword(password) },
+    data: {
+      email,
+      nombre,
+      rol,
+      passwordHash: await hashPassword(password),
+      cargos: { connect: cargoIds.map((id) => ({ id })) },
+    },
   });
 
   await registrarAuditoria({

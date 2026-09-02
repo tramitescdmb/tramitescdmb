@@ -21,7 +21,7 @@ function expediente(over: Partial<ExpedientePendientes> = {}): ExpedientePendien
   };
 }
 
-const funcionario: SesionPendientes = { userId: "u1", rol: "FUNCIONARIO", cargo: COORD_EVAL };
+const funcionario: SesionPendientes = { userId: "u1", rol: "FUNCIONARIO", cargos: [COORD_EVAL] };
 
 describe("clasificarPendientes", () => {
   it("cuenta los expedientes activos asignados al usuario (por usuario o por cargo)", () => {
@@ -56,7 +56,7 @@ describe("clasificarPendientes", () => {
     const r = clasificarPendientes([e], funcionario);
     expect(r.gestionPaso).toHaveLength(0);
 
-    const notificador: SesionPendientes = { userId: "u2", rol: "FUNCIONARIO", cargo: NOTIFICADOR };
+    const notificador: SesionPendientes = { userId: "u2", rol: "FUNCIONARIO", cargos: [NOTIFICADOR] };
     const r2 = clasificarPendientes([e], notificador);
     expect(r2.gestionPaso).toHaveLength(1);
   });
@@ -93,7 +93,7 @@ describe("clasificarPendientes", () => {
   });
 
   it("el ADMIN ve todas las decisiones e informaciones adicionales, aunque no le estén asignadas", () => {
-    const admin: SesionPendientes = { userId: "admin", rol: "ADMIN", cargo: null };
+    const admin: SesionPendientes = { userId: "admin", rol: "ADMIN", cargos: [] };
     const decision = expediente({
       id: "dec",
       pasos: [{ numero: 1, titulo: "Decidir", responsables: ["Director General"], documentos: [], esDecision: true }],

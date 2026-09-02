@@ -58,7 +58,6 @@ model Usuario {
   nombre       String
   passwordHash String
   rol          RolUsuario @default(FUNCIONARIO)
-  cargoId      String?
   activo       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
@@ -75,7 +74,10 @@ model Usuario {
   // que hoy) — el control solo aplica cuando un admin se lo asigna explícito.
   rolPermisosId String?
 
-  cargo                 Cargo?                @relation(fields: [cargoId], references: [id])
+  // Un funcionario puede tener varios cargos a la vez (ej. cubre dos puestos
+  // en un área pequeña) — se usan TODOS para el resaltado/bloqueo por paso
+  // (ver src/lib/cargos.ts), no solo el primero.
+  cargos                Cargo[]
   rolPermisos           Rol?                  @relation(fields: [rolPermisosId], references: [id])
   expedientesCreados    Expediente[]          @relation("CreadoPor")
   expedientesAsignados  Expediente[]          @relation("ResponsableActual")

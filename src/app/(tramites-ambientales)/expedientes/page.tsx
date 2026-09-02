@@ -66,7 +66,7 @@ export default async function ExpedientesPage({
     filtros.push({
       OR: [
         { usuariosAsignados: { some: { id: session.userId } } },
-        ...(session.cargo ? [{ cargosAsignados: { some: { nombre: session.cargo } } }] : []),
+        ...(session.cargos.length > 0 ? [{ cargosAsignados: { some: { nombre: { in: session.cargos } } } }] : []),
       ],
     });
   }

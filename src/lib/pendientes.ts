@@ -61,7 +61,7 @@ export type ExpedientePendientes = {
 export type SesionPendientes = {
   userId: string;
   rol: "ADMIN" | "FUNCIONARIO";
-  cargo: string | null;
+  cargos: string[];
 };
 
 export type ItemPendiente = {
@@ -101,13 +101,14 @@ export function clasificarPendientes(
 
   const asignadoAlUsuario = (e: ExpedientePendientes) =>
     e.usuariosAsignadosIds.includes(sesion.userId) ||
-    (sesion.cargo != null && e.cargosAsignadosNombres.includes(sesion.cargo));
+    sesion.cargos.some((c) => e.cargosAsignadosNombres.includes(c));
 
-  /** ¿Este paso le corresponde por su cargo o porque el expediente está asignado a su nombre? */
+  /** ¿Este paso le corresponde por alguno de sus cargos o porque el expediente está asignado a su nombre? */
   const leCorresponde = (e: ExpedientePendientes, paso: PasoPendientes) => {
     if (asignadoAlUsuario(e)) return true;
-    if (sesion.cargo == null) return false;
-    return cargosEnTexto(paso.responsables.join(" | ")).includes(sesion.cargo);
+    if (sesion.cargos.length === 0) return false;
+    const cargosDelPaso = cargosEnTexto(paso.responsables.join(" | "));
+    return sesion.cargos.some((c) => cargosDelPaso.includes(c));
   };
 
   const item = (e: ExpedientePendientes, paso: PasoPendientes, detalle?: string): ItemPendiente => ({

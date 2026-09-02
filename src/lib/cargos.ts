@@ -103,13 +103,15 @@ export function normalizar(texto: string) {
     .replace(/[̀-ͯ]/g, ""); // quita tildes (marcas combinantes) para comparar sin depender de acentos exactos
 }
 
-/** ¿El cargo del usuario aparece mencionado (por palabra clave) en el texto de responsables de un paso? */
-export function cargoCoincideConPaso(nombreCargo: string | null | undefined, responsables: string[]) {
-  if (!nombreCargo) return false;
-  const cargo = CARGOS_CDMB.find((c) => c.nombre === nombreCargo);
-  if (!cargo || cargo.palabrasClave.length === 0) return false;
+/** ¿Alguno de los cargos del usuario aparece mencionado (por palabra clave) en el texto de responsables de un paso? */
+export function cargoCoincideConPaso(cargosUsuario: string[] | null | undefined, responsables: string[]) {
+  if (!cargosUsuario || cargosUsuario.length === 0) return false;
   const textoResponsables = normalizar(responsables.join(" | "));
-  return cargo.palabrasClave.some((palabra) => textoResponsables.includes(normalizar(palabra)));
+  return cargosUsuario.some((nombreCargo) => {
+    const cargo = CARGOS_CDMB.find((c) => c.nombre === nombreCargo);
+    if (!cargo || cargo.palabrasClave.length === 0) return false;
+    return cargo.palabrasClave.some((palabra) => textoResponsables.includes(normalizar(palabra)));
+  });
 }
 
 /**
@@ -166,17 +168,18 @@ export function cargosEnTexto(texto: string): string[] {
  *   bloquear sin poder identificar con certeza a quién le corresponde dejaría el
  *   trámite sin nadie que pueda avanzarlo.
  * - Si sí se reconoce uno o más cargos, solo un funcionario con alguno de esos
- *   cargos asignados puede avanzar el paso.
+ *   cargos asignados puede avanzar el paso (un funcionario puede tener varios
+ *   cargos a la vez — basta con que UNO coincida).
  */
 export function puedeGestionarPaso(
-  session: { rol: "ADMIN" | "FUNCIONARIO"; cargo: string | null } | null | undefined,
+  session: { rol: "ADMIN" | "FUNCIONARIO"; cargos: string[] } | null | undefined,
   responsables: string[]
 ): boolean {
   if (!session) return false;
   if (session.rol === "ADMIN") return true;
   const cargosDelPaso = cargosEnTexto(responsables.join(" | "));
   if (cargosDelPaso.length === 0) return true;
-  return session.cargo != null && cargosDelPaso.includes(session.cargo);
+  return session.cargos.some((c) => cargosDelPaso.includes(c));
 }
 
 /** Cargos canónicos únicos mencionados en cualquier paso de una lista de flujos. */
