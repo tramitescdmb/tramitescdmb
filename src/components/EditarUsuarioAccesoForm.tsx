@@ -2,13 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ShieldCheck, Briefcase, Layers } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
-type Grupo = { etiqueta: string; items: TramiteOpcion[] };
+type Grupo = { etiqueta: string; claseBadge: string; claseBarra: string; items: TramiteOpcion[] };
 type Nivel = "VER" | "EDITAR";
 
 const BOTON_BASE = "rounded-md border px-2.5 py-1 text-xs font-medium transition";
+
+function EncabezadoSeccion({ icono: Icono, titulo }: { icono: typeof ShieldCheck; titulo: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2.5">
+      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
+        <Icono className="h-4 w-4" aria-hidden />
+      </span>
+      <span className="text-sm font-semibold text-stone-900">{titulo}</span>
+    </div>
+  );
+}
 
 export function EditarUsuarioAccesoForm({
   usuarioId,
@@ -94,7 +106,7 @@ export function EditarUsuarioAccesoForm({
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-stone-500">Rol</span>
+        <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" />
         <div className="grid max-w-sm grid-cols-2 gap-2">
           {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
             <button
@@ -110,7 +122,7 @@ export function EditarUsuarioAccesoForm({
           ))}
         </div>
         {rol === "ADMIN" && (
-          <p className="mt-2 text-xs text-amber-700">
+          <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
             Como Administrador, este usuario tiene acceso total a todo — los cargos y trámites de abajo no
             aplican mientras el rol sea Administrador.
           </p>
@@ -118,8 +130,8 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone-500">Cargo(s) en la CDMB</span>
-        <p className="mb-2 text-xs text-stone-400">
+        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" />
+        <p className="mb-2.5 text-xs text-stone-400">
           Puede seleccionar uno, varios, o todos los que correspondan — se usan para saber qué pasos le corresponden dentro de un trámite.
         </p>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
@@ -145,79 +157,78 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
-              Trámites de &quot;Trámites ambientales 2.0&quot;
-            </span>
-            <p className="mt-1 text-xs text-stone-400">
-              Sin marcar, el usuario no ve el trámite. <strong>Ver</strong>: consulta el catálogo y los
-              expedientes, sin poder actuar. <strong>Editar</strong>: además puede radicar, avanzar pasos,
-              subir documentos y comentar. No afecta a VITAL ni a SINCA 1.0, siempre abiertos.
-            </p>
-          </div>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <EncabezadoSeccion icono={Layers} titulo='Trámites de "Trámites ambientales 2.0"' />
           <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
             {totalConAcceso} con acceso
           </span>
         </div>
+        <p className="-mt-1.5 mb-4 text-xs text-stone-400">
+          Sin marcar, el usuario no ve el trámite. <strong>Ver</strong>: consulta el catálogo y los
+          expedientes, sin poder actuar. <strong>Editar</strong>: además puede radicar, avanzar pasos,
+          subir documentos y comentar. No afecta a VITAL ni a SINCA 1.0, siempre abiertos.
+        </p>
 
-        <div className="mt-4 max-h-[34rem] space-y-4 overflow-y-auto rounded-lg border border-stone-100 p-3">
+        <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border border-stone-100 p-3">
           {tramitesPorCategoria.map((grupo) => (
-            <div key={grupo.etiqueta}>
-              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                  {grupo.etiqueta} ({grupo.items.length})
-                </p>
-                <div className="flex gap-1.5 text-[11px]">
-                  <button type="button" onClick={() => aplicarACategoria(grupo.items, "EDITAR")} className="text-cdmb-700 hover:underline">
-                    Editar todos
-                  </button>
-                  <span className="text-stone-300">·</span>
-                  <button type="button" onClick={() => aplicarACategoria(grupo.items, "VER")} className="text-stone-500 hover:underline">
-                    Ver todos
-                  </button>
-                  <span className="text-stone-300">·</span>
-                  <button type="button" onClick={() => aplicarACategoria(grupo.items, null)} className="text-stone-400 hover:underline">
-                    Quitar
-                  </button>
+            <div key={grupo.etiqueta} className="relative overflow-hidden rounded-lg bg-stone-50/60 pl-3">
+              <span className={`absolute inset-y-0 left-0 w-1 ${grupo.claseBarra}`} aria-hidden />
+              <div className="p-2">
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
+                    {grupo.etiqueta} ({grupo.items.length})
+                  </span>
+                  <div className="flex gap-1.5 text-[11px]">
+                    <button type="button" onClick={() => aplicarACategoria(grupo.items, "EDITAR")} className="text-cdmb-700 hover:underline">
+                      Editar todos
+                    </button>
+                    <span className="text-stone-300">·</span>
+                    <button type="button" onClick={() => aplicarACategoria(grupo.items, "VER")} className="text-stone-500 hover:underline">
+                      Ver todos
+                    </button>
+                    <span className="text-stone-300">·</span>
+                    <button type="button" onClick={() => aplicarACategoria(grupo.items, null)} className="text-stone-400 hover:underline">
+                      Quitar
+                    </button>
+                  </div>
                 </div>
+                <ul className="space-y-1">
+                  {grupo.items.map((t) => {
+                    const nivel = acceso.get(t.id) ?? null;
+                    return (
+                      <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5">
+                        <span className="min-w-0 text-sm text-stone-700">
+                          <span className="mr-1.5 text-xs text-stone-400">{t.codigo}</span>
+                          {t.nombre}
+                        </span>
+                        <div className="flex flex-none gap-1">
+                          <button
+                            type="button"
+                            onClick={() => ponerNivel(t.id, null)}
+                            className={`${BOTON_BASE} ${nivel === null ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 text-stone-400 hover:bg-stone-50"}`}
+                          >
+                            Sin acceso
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ponerNivel(t.id, "VER")}
+                            className={`${BOTON_BASE} ${nivel === "VER" ? "border-sky-600 bg-sky-600 text-white" : "border-stone-200 text-stone-500 hover:bg-sky-50"}`}
+                          >
+                            Ver
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ponerNivel(t.id, "EDITAR")}
+                            className={`${BOTON_BASE} ${nivel === "EDITAR" ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 text-stone-500 hover:bg-cdmb-50"}`}
+                          >
+                            Editar
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              <ul className="space-y-1">
-                {grupo.items.map((t) => {
-                  const nivel = acceso.get(t.id) ?? null;
-                  return (
-                    <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-stone-50">
-                      <span className="min-w-0 text-sm text-stone-700">
-                        <span className="mr-1.5 text-xs text-stone-400">{t.codigo}</span>
-                        {t.nombre}
-                      </span>
-                      <div className="flex flex-none gap-1">
-                        <button
-                          type="button"
-                          onClick={() => ponerNivel(t.id, null)}
-                          className={`${BOTON_BASE} ${nivel === null ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 text-stone-400 hover:bg-stone-50"}`}
-                        >
-                          Sin acceso
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => ponerNivel(t.id, "VER")}
-                          className={`${BOTON_BASE} ${nivel === "VER" ? "border-sky-600 bg-sky-600 text-white" : "border-stone-200 text-stone-500 hover:bg-sky-50"}`}
-                        >
-                          Ver
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => ponerNivel(t.id, "EDITAR")}
-                          className={`${BOTON_BASE} ${nivel === "EDITAR" ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 text-stone-500 hover:bg-cdmb-50"}`}
-                        >
-                          Editar
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
             </div>
           ))}
         </div>

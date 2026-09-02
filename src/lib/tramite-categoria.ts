@@ -203,12 +203,14 @@ export const CATEGORIAS_ORDEN: Categoria[] = [
 
 /**
  * Agrupa trámites por categoría (mismo criterio que el catálogo) para listas
- * de selección simples — ej. el checklist de trámites de un Rol de acceso,
- * que no necesita íconos/colores, solo la etiqueta para agrupar visualmente.
+ * de selección — ej. el checklist de trámites de acceso de un usuario.
+ * `clases` son solo strings de Tailwind (sin el ícono, que es un componente y
+ * no puede cruzar de Server a Client Component como prop) — sirven para darle
+ * a cada grupo el mismo acento de color que ya usa el catálogo.
  */
 export function agruparTramitesPorCategoria<T extends { id: string; codigo: string; nombre: string; suitNumeros: string[]; flujos: { suitNumero: string | null }[] }>(
   tramites: T[]
-): { etiqueta: string; items: T[] }[] {
+): { etiqueta: string; clases: Categoria["clases"]; items: T[] }[] {
   const porCategoria = new Map<string, T[]>();
   for (const t of tramites) {
     const cat = categoriaTramite(t.nombre, t.codigo, todosLosSuitNumeros(t));
@@ -216,7 +218,9 @@ export function agruparTramitesPorCategoria<T extends { id: string; codigo: stri
     lista.push(t);
     porCategoria.set(cat.id, lista);
   }
-  return CATEGORIAS_ORDEN.map((cat) => ({ etiqueta: cat.etiqueta, items: porCategoria.get(cat.id) ?? [] })).filter(
-    (g) => g.items.length > 0
-  );
+  return CATEGORIAS_ORDEN.map((cat) => ({
+    etiqueta: cat.etiqueta,
+    clases: cat.clases,
+    items: porCategoria.get(cat.id) ?? [],
+  })).filter((g) => g.items.length > 0);
 }

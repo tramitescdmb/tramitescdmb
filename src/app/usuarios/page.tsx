@@ -5,12 +5,49 @@ import { getSession } from "@/lib/auth";
 import { Field, SectionHelp } from "@/components/Field";
 import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icons";
 import { UserPlus, Briefcase, Pencil } from "lucide-react";
+import { getCatalogoTramites } from "@/lib/tramites-data";
+import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 
 const iconSm = "h-4 w-4";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
+
+type AccesoTramite = { tramiteTipoId: string; nivel: "VER" | "EDITAR" };
+
+/**
+ * Resumen legible del acceso de un usuario: si cubre completo una o varias
+ * categorías del catálogo (ej. "Recurso Hídrico"), se muestra el nombre de
+ * la categoría en vez de un conteo — más claro que "5 editar · 0 ver" para
+ * alguien que piensa en "le di todo lo de Recurso Hídrico", que es como lo
+ * describe el jefe de oficina. Si el acceso es parcial o mixto, cae al
+ * conteo simple.
+ */
+function resumenAcceso(
+  accesos: AccesoTramite[],
+  categoriaDeId: Map<string, string>,
+  totalPorCategoria: Map<string, number>
+): { tipo: "categorias"; categorias: string[] } | { tipo: "conteo"; editar: number; ver: number } {
+  const porCategoria = new Map<string, number>();
+  for (const a of accesos) {
+    const cat = categoriaDeId.get(a.tramiteTipoId);
+    if (!cat) continue;
+    porCategoria.set(cat, (porCategoria.get(cat) ?? 0) + 1);
+  }
+  const categoriasCompletas = Array.from(porCategoria.entries())
+    .filter(([cat, count]) => count === totalPorCategoria.get(cat))
+    .map(([cat]) => cat);
+
+  if (categoriasCompletas.length > 0 && categoriasCompletas.length === porCategoria.size) {
+    return { tipo: "categorias", categorias: categoriasCompletas };
+  }
+  return {
+    tipo: "conteo",
+    editar: accesos.filter((a) => a.nivel === "EDITAR").length,
+    ver: accesos.filter((a) => a.nivel === "VER").length,
+  };
 }
 
 export default async function UsuariosPage({
@@ -23,13 +60,21 @@ export default async function UsuariosPage({
   if (session.rol !== "ADMIN") redirect("/");
 
   const { error, ok } = await searchParams;
-  const [usuarios, cargos] = await Promise.all([
+  const [usuarios, cargos, catalogo] = await Promise.all([
     db.usuario.findMany({
       orderBy: { createdAt: "asc" },
-      include: { cargos: true, tramitesAcceso: { select: { nivel: true } } },
+      include: { cargos: true, tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } } },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
+    getCatalogoTramites(),
   ]);
+
+  const categoriaDeId = new Map<string, string>();
+  const totalPorCategoria = new Map<string, number>();
+  for (const grupo of agruparTramitesPorCategoria(catalogo)) {
+    totalPorCategoria.set(grupo.etiqueta, grupo.items.length);
+    for (const t of grupo.items) categoriaDeId.set(t.id, grupo.etiqueta);
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -115,10 +160,25 @@ export default async function UsuariosPage({
                   ) : u.tramitesAcceso.length === 0 ? (
                     <span className="text-xs text-amber-700">Sin trámites asignados</span>
                   ) : (
-                    <span className="text-xs">
-                      {u.tramitesAcceso.filter((a) => a.nivel === "EDITAR").length} editar ·{" "}
-                      {u.tramitesAcceso.filter((a) => a.nivel === "VER").length} ver
-                    </span>
+                    (() => {
+                      const resumen = resumenAcceso(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
+                      if (resumen.tipo === "categorias") {
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {resumen.categorias.map((cat) => (
+                              <span key={cat} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
+                                {cat}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return (
+                        <span className="text-xs">
+                          {resumen.editar} editar · {resumen.ver} ver
+                        </span>
+                      );
+                    })()
                   )}
                 </td>
                 <td className="px-4 py-3">

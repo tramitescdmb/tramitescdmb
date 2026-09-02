@@ -6,6 +6,11 @@ import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
+
 export default async function EditarUsuarioPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -24,6 +29,8 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
 
   const tramitesPorCategoria = agruparTramitesPorCategoria(tramites).map((g) => ({
     etiqueta: g.etiqueta,
+    claseBadge: g.clases.badge,
+    claseBarra: g.clases.barra,
     items: g.items.map((t) => ({ id: t.id, codigo: t.codigo, nombre: t.nombre })),
   }));
 
@@ -33,15 +40,22 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
         <Link href="/usuarios" className="text-sm text-cdmb-700 hover:underline">
           ← Usuarios
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-stone-900">
-          Editar a {usuario.nombre}
-          {usuario.directorioActivo && (
-            <span className="ml-2 rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700 align-middle">
-              Directorio activo
-            </span>
-          )}
-        </h1>
-        <p className="text-sm text-stone-500">{usuario.email}</p>
+        <div className="mt-2 flex items-center gap-3">
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-cdmb-100 text-sm font-semibold text-cdmb-800">
+            {iniciales(usuario.nombre)}
+          </span>
+          <div>
+            <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
+              {usuario.nombre}
+              {usuario.directorioActivo && (
+                <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">
+                  Directorio activo
+                </span>
+              )}
+            </h1>
+            <p className="text-sm text-stone-500">{usuario.email}</p>
+          </div>
+        </div>
       </div>
 
       <EditarUsuarioAccesoForm
