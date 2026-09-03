@@ -97,6 +97,22 @@ export default async function ExpedientesPage({
   };
   const hrefPagina = (p: number) => conFiltro({ page: p > 1 ? String(p) : undefined });
 
+  // Frase legible de lo que dio el filtro, siempre visible (no solo cuando hay
+  // más de una página) — ver la nota en Paginador.tsx sobre por qué ese "Mostrando
+  // X–Y de Z" antes desaparecía por completo con un resultado de una sola página.
+  const clausulasFiltro: string[] = [];
+  if (tramite) {
+    const t = tramites.find((x) => x.id === tramite);
+    clausulasFiltro.push(`de ${t ? `${t.codigo} — ${t.nombre}` : tramite}`);
+  }
+  if (municipio) clausulasFiltro.push(`en ${municipio}`);
+  if (estado) clausulasFiltro.push(`en estado "${estado.replaceAll("_", " ")}"`);
+  if (soloMios) clausulasFiltro.push("asignados a usted");
+  if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
+  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
+    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
+  }.`;
+
   return (
     <div className="space-y-6">
       <div>
@@ -193,6 +209,8 @@ export default async function ExpedientesPage({
         ))}
       </div>
 
+      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         {expedientes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay expedientes con este filtro.</p>
@@ -200,6 +218,7 @@ export default async function ExpedientesPage({
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
+                <th className="px-4 py-2.5 font-medium">#</th>
                 <th className="px-4 py-2.5 font-medium">Número</th>
                 <th className="px-4 py-2.5 font-medium">Trámite</th>
                 <th className="px-4 py-2.5 font-medium">Solicitante</th>
@@ -210,8 +229,9 @@ export default async function ExpedientesPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {expedientes.map((exp) => (
+              {expedientes.map((exp, i) => (
                 <tr key={exp.id} className="hover:bg-stone-50">
+                  <td className="px-4 py-2.5 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
                   <td className="px-4 py-2.5">
                     <Link href={`/expedientes/${exp.id}`} className="font-medium text-cdmb-700 hover:underline">
                       {exp.numero}

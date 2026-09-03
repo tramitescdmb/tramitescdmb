@@ -45,6 +45,22 @@ export default async function VitalSolicitudesPage({
 
   const hayFiltros = Boolean(sp.q || sp.tramite || sp.anio || sp.actividad);
   const CAMPOS_FILTRO = ["q", "tramite", "anio", "actividad"] as const;
+
+  // Frase legible de lo que dio el filtro — el "Mostrando X–Y de Z" del
+  // paginador se ocultaba por completo si el resultado cabía en una sola
+  // página, dejando sin ninguna pista de cuántos había en total para decidir
+  // si convenía cambiar la Vista a 100/150/200/Todos.
+  const clausulasFiltro: string[] = [];
+  if (sp.tramite) {
+    const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
+    clausulasFiltro.push(`de ${tramite ? `(${tramite.id}) ${tramite.nombre}` : nombreTramiteVital(Number(sp.tramite))}`);
+  }
+  if (sp.anio) clausulasFiltro.push(`del año ${sp.anio}`);
+  if (sp.actividad) clausulasFiltro.push(`en la actividad "${sp.actividad}"`);
+  if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
+  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
+    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
+  }.`;
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v) params.set(k, String(v));
@@ -161,11 +177,14 @@ export default async function VitalSolicitudesPage({
         </div>
       </form>
 
+      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
+                <th className="px-4 py-2.5 font-medium">#</th>
                 <th className="px-4 py-2.5 font-medium">ID VITAL</th>
                 <th className="px-4 py-2.5 font-medium">Trámite</th>
                 <th className="px-4 py-2.5 font-medium">Solicitante</th>
@@ -178,13 +197,14 @@ export default async function VitalSolicitudesPage({
             <tbody className="divide-y divide-stone-100">
               {filas.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-stone-400">
+                  <td colSpan={8} className="px-4 py-10 text-center text-stone-400">
                     {hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
                   </td>
                 </tr>
               ) : (
-                filas.map((s) => (
+                filas.map((s, i) => (
                   <tr key={s.id} className="hover:bg-stone-50">
+                    <td className="px-4 py-2.5 text-stone-400">{(page - 1) * porPagina + i + 1}</td>
                     <td className="px-4 py-2.5">
                       <Link href={`/vital/${s.id}`} className="font-medium text-cdmb-700 hover:underline">{s.idVital}</Link>
                     </td>

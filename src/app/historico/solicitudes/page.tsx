@@ -61,6 +61,23 @@ export default async function HistoricoSolicitudesPage({
 
   const hayFiltros = Boolean(filtros.q || filtros.anio || filtros.tipo || filtros.municipio || filtros.estado);
 
+  // Frase legible de lo que dio el filtro — antes solo se veía el "Mostrando
+  // X–Y de Z" del paginador, y ese se ocultaba por completo si el resultado
+  // cabía en una sola página, dejando sin ninguna pista de cuántos había en
+  // total para decidir si convenía cambiar la Vista a 100/150/200/Todos.
+  const clausulasFiltro: string[] = [];
+  if (filtros.tipo) {
+    const tipo = opciones.tipos.find((t) => t.codigo === filtros.tipo);
+    clausulasFiltro.push(`de ${tipo?.nombre ?? filtros.tipo}`);
+  }
+  if (filtros.anio) clausulasFiltro.push(`del año ${filtros.anio}`);
+  if (filtros.municipio) clausulasFiltro.push(`en ${filtros.municipio}`);
+  if (filtros.estado) clausulasFiltro.push(`en estado "${filtros.estado}"`);
+  if (filtros.q) clausulasFiltro.push(`que coinciden con "${filtros.q}"`);
+  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
+    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
+  }.`;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -136,11 +153,14 @@ export default async function HistoricoSolicitudesPage({
         </div>
       </form>
 
+      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
+                <th className="px-4 py-2.5 font-medium">#</th>
                 <th className="px-4 py-2.5 font-medium">Solicitud</th>
                 <th className="px-4 py-2.5 font-medium">Resolución</th>
                 <th className="px-4 py-2.5 font-medium">Fecha</th>
@@ -152,13 +172,14 @@ export default async function HistoricoSolicitudesPage({
             <tbody className="divide-y divide-stone-100">
               {filas.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-stone-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-stone-400">
                     No hay resoluciones que coincidan con los filtros.
                   </td>
                 </tr>
               ) : (
-                filas.map((r) => (
+                filas.map((r, i) => (
                   <tr key={r.nroSolicitud} className="hover:bg-stone-50">
+                    <td className="px-4 py-2.5 text-stone-400">{(page - 1) * porPagina + i + 1}</td>
                     <td className="px-4 py-2.5">
                       <Link href={`/historico/solicitudes/${r.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
                         {r.nroSolicitud}

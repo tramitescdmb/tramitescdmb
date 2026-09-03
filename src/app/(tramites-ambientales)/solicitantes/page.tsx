@@ -65,6 +65,14 @@ export default async function SolicitantesPage({
     return qs ? `/solicitantes?${qs}` : "/solicitantes";
   };
 
+  // Frase legible de lo que dio el filtro, siempre visible.
+  const clausulasFiltro: string[] = [];
+  if (municipio) clausulasFiltro.push(`en ${municipio}`);
+  if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
+  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
+    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
+  }.`;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -132,6 +140,8 @@ export default async function SolicitantesPage({
         )}
       </form>
 
+      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         {solicitantes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">
@@ -141,6 +151,7 @@ export default async function SolicitantesPage({
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
+                <th className="px-4 py-2.5 font-medium">#</th>
                 <th className="px-4 py-2.5 font-medium">Identificación</th>
                 <th className="px-4 py-2.5 font-medium">Nombre / razón social</th>
                 <th className="px-4 py-2.5 font-medium">Régimen tributario</th>
@@ -149,8 +160,9 @@ export default async function SolicitantesPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {solicitantes.map((s) => (
+              {solicitantes.map((s, i) => (
                 <tr key={s.id} className="transition-colors hover:bg-stone-50">
+                  <td className="px-4 py-2.5 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
                   <td className="px-4 py-2.5">
                     <Link href={`/solicitantes/${s.id}`} className="font-medium text-cdmb-700 hover:underline">
                       {s.identificacion}
