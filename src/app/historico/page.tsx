@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Sparkles, Hash } from "lucide-react";
+import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
@@ -74,17 +74,6 @@ export default async function HistoricoPanelPage({ searchParams }: { searchParam
             />
             <Kpi icon={Hash} label="Con N.º de resolución" value={num(d.conResolucion)} />
           </div>
-
-          <Link
-            href="/historico/mineria"
-            className="flex items-center justify-between gap-3 rounded-xl border border-cdmb-200 bg-cdmb-50 px-4 py-2.5 text-sm transition-colors hover:bg-cdmb-100"
-          >
-            <span className="flex items-center gap-2 font-medium text-cdmb-900">
-              <Sparkles className="h-4 w-4" aria-hidden />
-              Minería de datos — pronóstico, ML, KDD, estacionalidad, anomalías, minería de texto
-            </span>
-            <span className="flex-none font-medium text-cdmb-700" aria-hidden>→</span>
-          </Link>
 
           <section className="rounded-xl border border-stone-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-stone-900">Solicitudes por año</h2>
