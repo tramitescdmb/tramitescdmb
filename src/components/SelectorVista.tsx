@@ -1,24 +1,51 @@
+"use client";
+
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { OPCIONES_VISTA, type OpcionVista } from "@/lib/vista-lista";
 
-/** "Ver: 50 · 100 · 150 · 200 · Todos" — va junto al paginador, al pie de la tabla. */
-export function SelectorVista({ vistaActual, hrefVista }: { vistaActual: OpcionVista; hrefVista: (vista: OpcionVista) => string }) {
+const ETIQUETAS: Record<OpcionVista, string> = {
+  "50": "50 registros",
+  "100": "100 registros",
+  "150": "150 registros",
+  "200": "200 registros",
+  todos: "Todos los registros",
+};
+
+/**
+ * "Ver: [50 registros ▾]" — desplegable junto al paginador, al pie de la
+ * tabla. Client Component: arma el destino leyendo la URL actual con los
+ * hooks de navegación (no puede recibir una función como prop desde el
+ * Server Component que lo llama — las funciones no cruzan esa frontera).
+ */
+export function SelectorVista({ vistaActual }: { vistaActual: OpcionVista }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function cambiarVista(v: OpcionVista) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("vista", v);
+    params.delete("page"); // el tamaño cambió: vuelve a la página 1
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-t border-stone-100 px-4 py-2.5 text-sm">
-      <span className="text-xs text-stone-400">Ver:</span>
-      {OPCIONES_VISTA.map((v) => (
-        <a
-          key={v}
-          href={hrefVista(v)}
-          aria-current={v === vistaActual ? "true" : undefined}
-          className={`rounded-md border px-2.5 py-1 text-xs font-medium transition ${
-            v === vistaActual
-              ? "border-cdmb-600 bg-cdmb-600 text-white"
-              : "border-stone-300 text-stone-700 hover:bg-stone-50"
-          }`}
-        >
-          {v === "todos" ? "Todos" : v}
-        </a>
-      ))}
+    <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 px-4 py-2.5 text-sm">
+      <label htmlFor="selector-vista" className="text-xs text-stone-500">
+        Ver:
+      </label>
+      <select
+        id="selector-vista"
+        value={vistaActual}
+        onChange={(e) => cambiarVista(e.target.value as OpcionVista)}
+        className="rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+      >
+        {OPCIONES_VISTA.map((v) => (
+          <option key={v} value={v}>
+            {ETIQUETAS[v]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

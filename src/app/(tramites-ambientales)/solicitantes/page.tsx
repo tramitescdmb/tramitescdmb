@@ -7,6 +7,7 @@ import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { Paginador } from "@/components/Paginador";
+import { ResumenResultados } from "@/components/ResumenResultados";
 
 const POR_PAGINA = 30;
 
@@ -69,9 +70,7 @@ export default async function SolicitantesPage({
   const clausulasFiltro: string[] = [];
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
-  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
-    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
-  }.`;
+  const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
     <div className="space-y-6">
@@ -140,7 +139,7 @@ export default async function SolicitantesPage({
         )}
       </form>
 
-      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+      <ResumenResultados total={total} detalle={detalleFiltro} />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         {solicitantes.length === 0 ? (

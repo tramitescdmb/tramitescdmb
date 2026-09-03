@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { Paginador } from "@/components/Paginador";
+import { ResumenResultados } from "@/components/ResumenResultados";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
@@ -109,9 +110,7 @@ export default async function ExpedientesPage({
   if (estado) clausulasFiltro.push(`en estado "${estado.replaceAll("_", " ")}"`);
   if (soloMios) clausulasFiltro.push("asignados a usted");
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
-  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
-    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
-  }.`;
+  const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
     <div className="space-y-6">
@@ -209,7 +208,7 @@ export default async function ExpedientesPage({
         ))}
       </div>
 
-      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+      <ResumenResultados total={total} detalle={detalleFiltro} />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         {expedientes.length === 0 ? (

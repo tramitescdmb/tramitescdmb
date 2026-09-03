@@ -6,6 +6,7 @@ import { sincaConfigurado } from "@/lib/sinca";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
+import { ResumenResultados } from "@/components/ResumenResultados";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -42,14 +43,6 @@ export default async function HistoricoSolicitudesPage({
     const qs = params.toString();
     return qs ? `/historico/solicitudes?${qs}` : "/historico/solicitudes";
   };
-  const hrefVista = (v: string) => {
-    const params = new URLSearchParams();
-    for (const [k, val] of Object.entries(filtros)) {
-      if (k !== "page" && k !== "vista" && typeof val === "string" && val) params.set(k, val);
-    }
-    params.set("vista", v);
-    return `/historico/solicitudes?${params.toString()}`;
-  };
   const hrefDescarga = () => {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(filtros)) {
@@ -74,9 +67,7 @@ export default async function HistoricoSolicitudesPage({
   if (filtros.municipio) clausulasFiltro.push(`en ${filtros.municipio}`);
   if (filtros.estado) clausulasFiltro.push(`en estado "${filtros.estado}"`);
   if (filtros.q) clausulasFiltro.push(`que coinciden con "${filtros.q}"`);
-  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
-    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
-  }.`;
+  const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
     <div className="space-y-4">
@@ -153,7 +144,7 @@ export default async function HistoricoSolicitudesPage({
         </div>
       </form>
 
-      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+      <ResumenResultados total={total} detalle={detalleFiltro} />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
@@ -202,7 +193,7 @@ export default async function HistoricoSolicitudesPage({
             </tbody>
           </table>
         </div>
-        <SelectorVista vistaActual={vista} hrefVista={hrefVista} />
+        <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
     </div>

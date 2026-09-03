@@ -9,6 +9,7 @@ import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
+import { ResumenResultados } from "@/components/ResumenResultados";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -58,9 +59,7 @@ export default async function VitalSolicitudesPage({
   if (sp.anio) clausulasFiltro.push(`del año ${sp.anio}`);
   if (sp.actividad) clausulasFiltro.push(`en la actividad "${sp.actividad}"`);
   if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
-  const resumenFiltro = `${total} resultado${total === 1 ? "" : "s"}${
-    clausulasFiltro.length > 0 ? ` ${clausulasFiltro.join(" ")}` : " en total"
-  }.`;
+  const detalleFiltro = clausulasFiltro.join(" ");
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v) params.set(k, String(v));
@@ -68,12 +67,6 @@ export default async function VitalSolicitudesPage({
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/vital?${s}` : "/vital";
-  };
-  const hrefVista = (v: string) => {
-    const params = new URLSearchParams();
-    for (const [k, val] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && val) params.set(k, String(val));
-    params.set("vista", v);
-    return `/vital?${params.toString()}`;
   };
   const hrefDescarga = () => {
     const params = new URLSearchParams();
@@ -177,7 +170,7 @@ export default async function VitalSolicitudesPage({
         </div>
       </form>
 
-      <p className="px-1 text-sm text-stone-600">{resumenFiltro}</p>
+      <ResumenResultados total={total} detalle={detalleFiltro} />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
@@ -220,7 +213,7 @@ export default async function VitalSolicitudesPage({
             </tbody>
           </table>
         </div>
-        <SelectorVista vistaActual={vista} hrefVista={hrefVista} />
+        <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
     </div>
