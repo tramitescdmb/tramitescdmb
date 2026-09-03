@@ -59,7 +59,10 @@ export default async function EditarUsuarioPage({
             <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
               {usuario.nombre}
               {usuario.directorioActivo && (
-                <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">
+                <span
+                  className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
+                  title="Ingresa con las credenciales de la red CDMB, no con una contraseña local"
+                >
                   Directorio activo
                 </span>
               )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
@@ -43,6 +44,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const secciones: SeccionSoloLectura[] | undefined = Array.isArray(body.secciones)
     ? body.secciones.filter((s: unknown): s is SeccionSoloLectura => SECCIONES_VALIDAS.includes(s as SeccionSoloLectura))
     : undefined;
+  const password = typeof body.password === "string" && body.password ? body.password : undefined;
+
+  if (password && password.length < 8) {
+    return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres." }, { status: 400 });
+  }
+  if (password && usuario.directorioActivo) {
+    return NextResponse.json(
+      { error: "Este usuario ingresa por Directorio Activo; no tiene contraseña local que cambiar." },
+      { status: 400 }
+    );
+  }
 
   if (cargoIds && cargoIds.length > 0) {
     const encontrados = await db.cargo.count({ where: { id: { in: cargoIds } } });
@@ -51,6 +63,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  const passwordHash = password ? await hashPassword(password) : undefined;
+
   await db.$transaction(async (tx) => {
     await tx.usuario.update({
       where: { id },
@@ -58,6 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         rol,
         ...(nombre ? { nombre } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
+        ...(passwordHash ? { passwordHash } : {}),
       },
     });
     if (accesoTramites) {
@@ -82,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     tipo: "USUARIO_ACTUALIZADO",
     descripcion: `${session.nombre} actualizó a "${usuario.nombre}" (${usuario.email}): rol ${rol}${
       accesoTramites ? `, ${accesoTramites.length} trámite(s) con acceso` : ""
-    }${secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""}.`,
+    }${secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""}${passwordHash ? ", contraseña restablecida" : ""}.`,
     usuarioId: session.userId,
   });
 
