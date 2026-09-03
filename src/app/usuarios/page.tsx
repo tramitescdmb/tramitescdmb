@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { Field, SectionHelp } from "@/components/Field";
+import { Field } from "@/components/Field";
 import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icons";
-import { UserPlus, Briefcase, Pencil } from "lucide-react";
+import { UserPlus, Briefcase, Pencil, ChevronDown } from "lucide-react";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { Paginador } from "@/components/Paginador";
@@ -124,17 +124,6 @@ export default async function UsuariosPage({
         </a>
       </div>
 
-      <SectionHelp>
-        Rol <strong>Administrador</strong>: acceso total a todo, sin excepción — incluye crear/desactivar
-        usuarios. Rol <strong>Funcionario</strong>: solo ve y gestiona los trámites que se le asignen
-        explícitamente en &quot;Editar&quot; — sin nada asignado, no ve ninguno.
-        <br />
-        Los usuarios marcados como <strong>Directorio activo</strong> se crean solos la primera vez que
-        ingresan con las credenciales de la red de la CDMB (rol Funcionario, sin cargo ni trámites);
-        entre a &quot;Editar&quot; para asignarle cargo(s) y los trámites a los que puede entrar, con
-        nivel Ver (solo consulta) o Editar (puede actuar).
-      </SectionHelp>
-
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
@@ -159,6 +148,9 @@ export default async function UsuariosPage({
       </form>
 
       <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+          Usuarios registrados ({total})
+        </p>
         {usuarios.length === 0 && (
           <p className="rounded-2xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400">
             No hay usuarios con este filtro.
@@ -303,20 +295,21 @@ export default async function UsuariosPage({
         </div>
       </div>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
+      <details className="group rounded-2xl border border-dashed border-cdmb-300 bg-cdmb-50/40 p-5">
+        <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
             <UserPlus className="h-4 w-4" aria-hidden />
           </span>
-          <div>
-            <h2 className="text-sm font-semibold text-stone-900">Crear usuario nuevo</h2>
+          <div className="flex-1">
+            <h2 className="text-sm font-semibold text-stone-900">+ Crear usuario nuevo</h2>
             <p className="text-xs text-stone-400">
               Al guardar, pasa directo a la página de este usuario para asignarle los trámites y el acceso
               a VITAL/SINCA 1.0.
             </p>
           </div>
-        </div>
-        <form action="/api/usuarios" method="post" className="space-y-4">
+          <ChevronDown className="h-4 w-4 flex-none text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <form action="/api/usuarios" method="post" className="mt-5 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nombre completo" required icon={<IconUser className={iconSm} />} help="Como debe aparecer en la bitácora de los expedientes.">
               <input
@@ -378,7 +371,7 @@ export default async function UsuariosPage({
             Crear usuario
           </button>
         </form>
-      </section>
+      </details>
     </div>
   );
 }

@@ -7,7 +7,8 @@ import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVit
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
-import { VistaYDescargaCsv } from "@/components/VistaYDescargaCsv";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { SelectorVista } from "@/components/SelectorVista";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -67,6 +68,10 @@ export default async function VitalSolicitudesPage({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <DescargarCsvBoton href={hrefDescarga()} cantidad={vista} />
+      </div>
+
       {sp.sincronizado != null && (
         <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           Sincronización completa: {sp.sincronizado} solicitud{sp.sincronizado === "1" ? "" : "es"} de VITAL.
@@ -156,8 +161,6 @@ export default async function VitalSolicitudesPage({
         </div>
       </form>
 
-      <VistaYDescargaCsv vistaActual={vista} hrefVista={hrefVista} hrefDescarga={hrefDescarga()} />
-
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -197,6 +200,7 @@ export default async function VitalSolicitudesPage({
             </tbody>
           </table>
         </div>
+        <SelectorVista vistaActual={vista} hrefVista={hrefVista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
     </div>

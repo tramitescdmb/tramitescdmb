@@ -4,7 +4,8 @@ import { Search } from "lucide-react";
 import { getHistoricoListado, getHistoricoOpcionesFiltro, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
 import { Paginador } from "@/components/Paginador";
-import { VistaYDescargaCsv } from "@/components/VistaYDescargaCsv";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { SelectorVista } from "@/components/SelectorVista";
 import { getSession } from "@/lib/auth";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -62,6 +63,10 @@ export default async function HistoricoSolicitudesPage({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <DescargarCsvBoton href={hrefDescarga()} cantidad={vista} />
+      </div>
+
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="sm:col-span-2 lg:col-span-3">
@@ -131,8 +136,6 @@ export default async function HistoricoSolicitudesPage({
         </div>
       </form>
 
-      <VistaYDescargaCsv vistaActual={vista} hrefVista={hrefVista} hrefDescarga={hrefDescarga()} />
-
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -178,6 +181,7 @@ export default async function HistoricoSolicitudesPage({
             </tbody>
           </table>
         </div>
+        <SelectorVista vistaActual={vista} hrefVista={hrefVista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
     </div>
