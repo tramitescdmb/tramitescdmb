@@ -218,6 +218,7 @@ export type SincaNit = {
   numero_nit?: number | string | null;
   digito_nit?: number | string | null;
   nombre_nit?: string | null;
+  apell_nit?: string | null;
   razon_soc_nit?: string | null;
   primer_nom_nit?: string | null;
   segundo_nom_nit?: string | null;
@@ -239,8 +240,57 @@ export type SincaNit = {
   clave_ser?: string | null;
   municipios?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
   municipios_dom?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
+  // Forma plana que devuelve /presinca/nit (además de la anidada "municipios" de arriba, usada en otros endpoints).
+  departamento?: string | null;
+  municipio?: string | null;
+  departamento_dom?: string | null;
+  municipio_dom?: string | null;
   [k: string]: unknown;
 };
+
+// --- Registro de NIT/cédulas ------------------------------------------------
+// `GET /presinca/nit` — registro de terceros (personas y empresas) de SINCA
+// 1.0, independiente de las solicitudes; se puede buscar por número de NIT,
+// cédula o nombre/razón social.
+
+export type OpcionesBusquedaNit = {
+  perPage?: number;
+  page?: number;
+  column?: string;
+  order?: "ASC" | "DESC";
+  search?: string;
+};
+
+/**
+ * Cada fila es en realidad una vinculación NIT↔solicitud (el mismo NIT se
+ * repite una vez por cada solicitud a la que ha estado asociado), no un
+ * registro único por tercero.
+ */
+export type SincaNitListado = SincaNit & {
+  rn: string;
+  nrosolicitud_sol: number | string;
+  fechadesde_int: string | null;
+  fechahasta_int: string | null;
+};
+
+export async function buscarNits(opts: OpcionesBusquedaNit = {}): Promise<PaginadorApi<SincaNitListado>> {
+  const params = new URLSearchParams({
+    per_page: String(opts.perPage ?? 30),
+    page: String(opts.page ?? 1),
+    column: opts.column ?? "nombre_nit",
+    order: opts.order ?? "ASC",
+  });
+  if (opts.search) params.set("search", opts.search);
+
+  const res = await fetchConToken(`/presinca/nit?${params.toString()}`);
+  const cuerpo = (await res.json().catch(() => null)) as PaginadorApi<SincaNitListado> | { message?: string } | null;
+
+  if (!res.ok || !cuerpo || !("data" in cuerpo)) {
+    const msg = (cuerpo as { message?: string } | null)?.message ?? `HTTP ${res.status}`;
+    throw new Error(`SINCA 1.0 /presinca/nit falló: ${msg}`);
+  }
+  return cuerpo;
+}
 
 /** `null` si el API responde 404 para ese número de solicitud. */
 export async function obtenerResolucionDetalle(nroSolicitud: number): Promise<SincaResolucionDetalleApi | null> {

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListOrdered, Sparkles } from "lucide-react";
+import { LayoutDashboard, ListOrdered, Sparkles, IdCard } from "lucide-react";
 
 const TABS = [
   { href: "/historico/solicitudes", label: "Solicitudes", icon: ListOrdered, permiso: "base" as const },
+  { href: "/historico/nits", label: "NIT / Terceros", icon: IdCard, permiso: "base" as const },
   { href: "/historico", label: "Dashboard", icon: LayoutDashboard, exacto: true, permiso: "dashboard" as const },
   { href: "/historico/mineria", label: "Minería de datos", icon: Sparkles, exacto: true, permiso: "mineria" as const },
 ];
