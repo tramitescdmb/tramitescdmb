@@ -150,19 +150,19 @@ export default async function SolicitantesPage({
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
-                <th className="px-4 py-2.5 font-medium">#</th>
-                <th className="px-4 py-2.5 font-medium">Identificación</th>
-                <th className="px-4 py-2.5 font-medium">Nombre / razón social</th>
-                <th className="px-4 py-2.5 font-medium">Régimen tributario</th>
-                <th className="px-4 py-2.5 font-medium">Municipio</th>
-                <th className="px-4 py-2.5 font-medium">Expedientes</th>
+                <th className="px-2.5 py-2 font-medium">#</th>
+                <th className="px-2.5 py-2 font-medium">Identificación</th>
+                <th className="px-2.5 py-2 font-medium">Nombre / razón social</th>
+                <th className="px-2.5 py-2 font-medium">Régimen tributario</th>
+                <th className="px-2.5 py-2 font-medium">Municipio</th>
+                <th className="px-2.5 py-2 font-medium">Expedientes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {solicitantes.map((s, i) => (
                 <tr key={s.id} className="transition-colors hover:bg-stone-50">
-                  <td className="px-4 py-2.5 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-2.5 py-2 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
+                  <td className="px-2.5 py-2">
                     <Link href={`/solicitantes/${s.id}`} className="font-medium text-cdmb-700 hover:underline">
                       {s.identificacion}
                     </Link>
@@ -170,7 +170,7 @@ export default async function SolicitantesPage({
                       {s.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-stone-700">
+                  <td className="max-w-[220px] truncate px-2.5 py-2 text-stone-700" title={nombreCompletoSolicitante(s)}>
                     {nombreCompletoSolicitante(s)}
                     {s.granContribuyente && (
                       <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -178,9 +178,9 @@ export default async function SolicitantesPage({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-stone-500">{regimenTributarioLabel(s.regimenTributario)}</td>
-                  <td className="px-4 py-2.5 text-stone-500">{s.municipio}</td>
-                  <td className="px-4 py-2.5 text-stone-500">{s._count.expedientes}</td>
+                  <td className="px-2.5 py-2 text-stone-500">{regimenTributarioLabel(s.regimenTributario)}</td>
+                  <td className="px-2.5 py-2 text-stone-500">{s.municipio}</td>
+                  <td className="px-2.5 py-2 text-stone-500">{s._count.expedientes}</td>
                 </tr>
               ))}
             </tbody>
