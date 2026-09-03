@@ -11,12 +11,19 @@ function iniciales(nombre: string) {
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
 }
 
-export default async function EditarUsuarioPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditarUsuarioPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ok?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") redirect("/");
 
   const { id } = await params;
+  const { ok } = await searchParams;
   const [usuario, cargos, tramites] = await Promise.all([
     db.usuario.findUnique({
       where: { id },
@@ -61,6 +68,8 @@ export default async function EditarUsuarioPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </div>
+
+      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
       <EditarUsuarioAccesoForm
         usuarioId={usuario.id}

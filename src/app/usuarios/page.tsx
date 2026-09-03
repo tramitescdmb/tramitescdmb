@@ -63,18 +63,28 @@ function resumenAcceso(
 export default async function UsuariosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ok?: string; page?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string; page?: string; q?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") redirect("/");
 
-  const { error, ok, page: pageParam } = await searchParams;
+  const { error, ok, page: pageParam, q } = await searchParams;
   const pagina = Math.max(1, Number(pageParam) || 1);
+  const busqueda = q?.trim();
+  const where = busqueda
+    ? {
+        OR: [
+          { nombre: { contains: busqueda, mode: "insensitive" as const } },
+          { email: { contains: busqueda, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
 
   const [total, usuarios, cargos, catalogo] = await Promise.all([
-    db.usuario.count(),
+    db.usuario.count({ where }),
     db.usuario.findMany({
+      where,
       orderBy: { createdAt: "asc" },
       include: {
         cargos: true,
@@ -128,7 +138,32 @@ export default async function UsuariosPage({
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
+      <form action="/usuarios" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+        <div className="min-w-[220px] flex-1">
+          <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
+          <input
+            name="q"
+            defaultValue={busqueda ?? ""}
+            placeholder="Nombre o correo…"
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          />
+        </div>
+        <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+          Buscar
+        </button>
+        {busqueda && (
+          <Link href="/usuarios" className="text-sm text-stone-500 hover:text-stone-700">
+            Quitar búsqueda
+          </Link>
+        )}
+      </form>
+
       <div className="space-y-3">
+        {usuarios.length === 0 && (
+          <p className="rounded-2xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400">
+            No hay usuarios con este filtro.
+          </p>
+        )}
         {usuarios.map((u) => (
           <div key={u.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -257,7 +292,13 @@ export default async function UsuariosPage({
             totalPaginas={totalPaginas}
             total={total}
             porPagina={POR_PAGINA}
-            hrefPagina={(p) => (p > 1 ? `/usuarios?page=${p}` : "/usuarios")}
+            hrefPagina={(p) => {
+              const params = new URLSearchParams();
+              if (busqueda) params.set("q", busqueda);
+              if (p > 1) params.set("page", String(p));
+              const qs = params.toString();
+              return qs ? `/usuarios?${qs}` : "/usuarios";
+            }}
           />
         </div>
       </div>
@@ -267,7 +308,13 @@ export default async function UsuariosPage({
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
             <UserPlus className="h-4 w-4" aria-hidden />
           </span>
-          <h2 className="text-sm font-semibold text-stone-900">Crear usuario nuevo</h2>
+          <div>
+            <h2 className="text-sm font-semibold text-stone-900">Crear usuario nuevo</h2>
+            <p className="text-xs text-stone-400">
+              Al guardar, pasa directo a la página de este usuario para asignarle los trámites y el acceso
+              a VITAL/SINCA 1.0.
+            </p>
+          </div>
         </div>
         <form action="/api/usuarios" method="post" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
