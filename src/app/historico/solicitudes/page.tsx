@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { getHistoricoListado, getHistoricoOpcionesFiltro, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
 import { Paginador } from "@/components/Paginador";
+import { DescargarCsvLimite } from "@/components/DescargarCsvLimite";
 import { getSession } from "@/lib/auth";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -113,6 +114,17 @@ export default async function HistoricoSolicitudesPage({
           </div>
         </div>
       </form>
+
+      <DescargarCsvLimite
+        href={(limite) => {
+          const params = new URLSearchParams();
+          for (const [k, v] of Object.entries(filtros)) {
+            if (k !== "page" && typeof v === "string" && v) params.set(k, v);
+          }
+          params.set("limite", limite);
+          return `/api/historico/exportar?${params.toString()}`;
+        }}
+      />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">

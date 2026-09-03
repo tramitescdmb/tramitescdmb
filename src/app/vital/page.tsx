@@ -7,6 +7,7 @@ import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVit
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
+import { DescargarCsvLimite } from "@/components/DescargarCsvLimite";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -140,6 +141,15 @@ export default async function VitalSolicitudesPage({
           </div>
         </div>
       </form>
+
+      <DescargarCsvLimite
+        href={(limite) => {
+          const params = new URLSearchParams();
+          for (const [k, v] of Object.entries(sp)) if (["q", "tramite", "anio", "actividad"].includes(k) && v) params.set(k, String(v));
+          params.set("limite", limite);
+          return `/api/vital/exportar?${params.toString()}`;
+        }}
+      />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">

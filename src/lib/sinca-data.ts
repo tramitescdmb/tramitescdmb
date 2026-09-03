@@ -92,10 +92,7 @@ export type FiltrosHistorico = {
 
 const POR_PAGINA = 25;
 
-/** Listado paginado de /historico/solicitudes con los filtros de la barra. */
-export async function getHistoricoListado(filtros: FiltrosHistorico) {
-  const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
-
+export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.SincaResolucionWhereInput {
   const where: Prisma.SincaResolucionWhereInput = {};
   const and: Prisma.SincaResolucionWhereInput[] = [];
 
@@ -117,6 +114,13 @@ export async function getHistoricoListado(filtros: FiltrosHistorico) {
   if (filtros.municipio?.trim()) and.push({ municipio: filtros.municipio.trim() });
   if (filtros.estado?.trim()) and.push({ estado: filtros.estado.trim() });
   if (and.length > 0) where.AND = and;
+  return where;
+}
+
+/** Listado paginado de /historico/solicitudes con los filtros de la barra. */
+export async function getHistoricoListado(filtros: FiltrosHistorico) {
+  const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
+  const where = construirWhereHistorico(filtros);
 
   const [total, filas] = await Promise.all([
     db.sincaResolucion.count({ where }),

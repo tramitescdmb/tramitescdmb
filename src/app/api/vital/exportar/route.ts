@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { construirWhereVital, type FiltrosVital } from "@/lib/vital-data";
+import { nombreTramiteVital } from "@/lib/vital";
+
+const LIMITE_MAXIMO = 5000; // tope de protección si alguien pide "todos" con una base enorme
+
+function celda(valor: string | number | null | undefined): string {
+  const texto = valor == null ? "" : String(valor);
+  return `"${texto.replace(/"/g, '""')}"`;
+}
+
+/** Exporta el listado de solicitudes de VITAL (con los mismos filtros de la pantalla) a CSV. */
+export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAccederSeccion(permisos, "VITAL_BASE")) {
+    return NextResponse.json({ error: "No tiene acceso a VITAL." }, { status: 403 });
+  }
+
+  const sp = req.nextUrl.searchParams;
+  const filtros: FiltrosVital = {
+    q: sp.get("q") ?? undefined,
+    tramite: sp.get("tramite") ?? undefined,
+    anio: sp.get("anio") ?? undefined,
+    actividad: sp.get("actividad") ?? undefined,
+  };
+  const limiteParam = sp.get("limite");
+  const take = limiteParam === "todos" || !limiteParam ? LIMITE_MAXIMO : Math.min(Number(limiteParam) || 50, LIMITE_MAXIMO);
+
+  const where = construirWhereVital(filtros);
+  const filas = await db.solicitudVital.findMany({
+    where,
+    orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
+    take,
+    include: { _count: { select: { documentos: true } } },
+  });
+
+  const encabezados = [
+    "ID VITAL",
+    "Trámite",
+    "Id trámite autoridad",
+    "Solicitante",
+    "Identificación",
+    "Correo",
+    "Fecha de radicación",
+    "Última actividad",
+    "Documentos",
+    "Última sincronización",
+  ];
+
+  const filasCsv = filas.map((s) =>
+    [
+      s.idVital,
+      nombreTramiteVital(s.idTramiteVital),
+      s.idTramiteAutoridad,
+      s.solicitanteNombre,
+      s.solicitanteIdentificacion,
+      s.solicitanteCorreo,
+      s.fechaRadicacion?.toISOString().slice(0, 10),
+      s.nombreActividad,
+      s._count.documentos,
+      s.ultimaSincronizacion.toISOString().slice(0, 10),
+    ]
+      .map(celda)
+      .join(",")
+  );
+
+  const BOM = String.fromCharCode(0xfeff);
+  const csv = BOM + [encabezados.map(celda).join(","), ...filasCsv].join("\r\n");
+
+  return new NextResponse(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="vital-${new Date().toISOString().slice(0, 10)}.csv"`,
+    },
+  });
+}

@@ -8,7 +8,7 @@ const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "s
 export type FiltrosVital = { q?: string; tramite?: string; anio?: string; actividad?: string; page?: string };
 const POR_PAGINA = 30;
 
-function construirWhere(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
+export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
   if (f.q?.trim()) {
     const q = f.q.trim();
@@ -33,7 +33,7 @@ function construirWhere(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
 /** Listado paginado de /vital con la barra de filtros. */
 export async function getVitalListado(filtros: FiltrosVital) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
-  const where = construirWhere(filtros);
+  const where = construirWhereVital(filtros);
 
   const [total, filas] = await Promise.all([
     db.solicitudVital.count({ where }),
