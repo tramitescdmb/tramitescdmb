@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { EditarSolicitanteForm } from "@/components/EditarSolicitanteForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
@@ -14,6 +15,10 @@ export default async function SolicitanteDetallePage({
 }) {
   const { id } = await params;
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSolicitantes(permisos)) redirect("/");
+  }
 
   const solicitante = await db.solicitante.findUnique({
     where: { id },

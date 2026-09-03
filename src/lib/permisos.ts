@@ -53,6 +53,17 @@ export function puedeAccederSeccion(permisos: PermisosUsuario, seccion: SeccionS
 }
 
 /**
+ * "Solicitantes" es un registro maestro compartido entre TODOS los trámites
+ * (no está atado a uno en particular) — a diferencia del catálogo o los
+ * expedientes, que ya filtran trámite por trámite. Un FUNCIONARIO sin acceso
+ * a ningún trámite no tiene por qué poder buscar/ver los datos de contacto
+ * de solicitantes de trámites que ni siquiera puede ver.
+ */
+export function puedeAccederSolicitantes(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.tramites.size > 0;
+}
+
+/**
  * Defensa en profundidad para las rutas de API que actúan sobre UN expediente
  * ya existente (avanzar, comentario, documentos, visitas...): además de que
  * la UI oculta el formulario, esto bloquea la llamada directa a la API si el

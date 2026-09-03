@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
@@ -17,6 +19,10 @@ export default async function SolicitantesPage({
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);
   const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSolicitantes(permisos)) redirect("/");
+  }
 
   const where = {
     ...(busqueda

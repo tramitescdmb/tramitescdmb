@@ -1,7 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NuevoSolicitanteForm } from "@/components/NuevoSolicitanteForm";
+import { getSession } from "@/lib/auth";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 
-export default function NuevoSolicitantePage() {
+export default async function NuevoSolicitantePage() {
+  const session = await getSession();
+  if (session) {
+    const permisos = await obtenerPermisosUsuario(session.userId);
+    if (!puedeAccederSolicitantes(permisos)) redirect("/");
+  }
+
   return (
     <div className="space-y-6">
       <div>

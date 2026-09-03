@@ -8,14 +8,15 @@ const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
   { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
   { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
-  { href: "/solicitantes", label: "Solicitantes", icon: Users },
+  { href: "/solicitantes", label: "Solicitantes", icon: Users, requiereTramite: true },
 ];
 
-export function TramitesTabs() {
+export function TramitesTabs({ mostrarSolicitantes = true }: { mostrarSolicitantes?: boolean }) {
   const pathname = usePathname();
+  const tabs = mostrarSolicitantes ? TABS : TABS.filter((t) => !t.requiereTramite);
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-stone-200" aria-label="Trámites ambientales">
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const activo = t.exacto ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
         const Icon = t.icon;
         return (
