@@ -10,6 +10,7 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { TablaVital } from "@/components/tablas/TablaVital";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -174,52 +175,20 @@ export default async function VitalSolicitudesPage({
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-2.5 py-2 font-medium">#</th>
-                <th className="px-2.5 py-2 font-medium">ID VITAL</th>
-                <th className="px-2.5 py-2 font-medium">Trámite</th>
-                <th className="px-2.5 py-2 font-medium">Solicitante</th>
-                <th className="px-2.5 py-2 font-medium">Identificación</th>
-                <th className="px-2.5 py-2 font-medium">Radicación</th>
-                <th className="px-2.5 py-2 font-medium">Actividad</th>
-                <th className="px-2.5 py-2 font-medium">Docs.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {filas.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-2.5 py-10 text-center text-stone-400">
-                    {hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
-                  </td>
-                </tr>
-              ) : (
-                filas.map((s, i) => (
-                  <tr key={s.id} className="hover:bg-stone-50">
-                    <td className="px-2.5 py-2 text-stone-400">{(page - 1) * porPagina + i + 1}</td>
-                    <td className="max-w-[130px] truncate px-2.5 py-2">
-                      <Link href={`/vital/${s.id}`} className="font-medium text-cdmb-700 hover:underline" title={s.idVital}>
-                        {s.idVital}
-                      </Link>
-                    </td>
-                    <td className="max-w-[170px] truncate px-2.5 py-2 text-stone-600" title={nombreTramiteVital(s.idTramiteVital)}>
-                      {nombreTramiteVital(s.idTramiteVital)}
-                    </td>
-                    <td className="max-w-[140px] truncate px-2.5 py-2 text-stone-700" title={s.solicitanteNombre ?? undefined}>
-                      {s.solicitanteNombre ?? "—"}
-                    </td>
-                    <td className="px-2.5 py-2 text-stone-500">{s.solicitanteIdentificacion ?? "—"}</td>
-                    <td className="whitespace-nowrap px-2.5 py-2 text-stone-500">{fecha(s.fechaRadicacion)}</td>
-                    <td className="max-w-[150px] truncate px-2.5 py-2 text-stone-600" title={s.nombreActividad ?? undefined}>
-                      {s.nombreActividad ?? "—"}
-                    </td>
-                    <td className="px-2.5 py-2 text-center text-stone-500">{s._count.documentos || "—"}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <TablaVital
+            filas={filas.map((s, i) => ({
+              id: s.id,
+              numero: (page - 1) * porPagina + i + 1,
+              idVital: s.idVital,
+              tramite: nombreTramiteVital(s.idTramiteVital),
+              solicitante: s.solicitanteNombre,
+              identificacion: s.solicitanteIdentificacion,
+              radicacion: fecha(s.fechaRadicacion),
+              actividad: s.nombreActividad,
+              docs: s._count.documentos,
+            }))}
+            sinResultadosTexto={hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
+          />
         </div>
         <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />

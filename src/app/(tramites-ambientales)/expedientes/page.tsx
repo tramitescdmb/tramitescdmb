@@ -2,10 +2,9 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { EstadoBadge } from "@/components/EstadoBadge";
-import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { TablaExpedientes } from "@/components/tablas/TablaExpedientes";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
@@ -214,53 +213,23 @@ export default async function ExpedientesPage({
         {expedientes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay expedientes con este filtro.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-2.5 py-2 font-medium">#</th>
-                <th className="px-2.5 py-2 font-medium">Número</th>
-                <th className="px-2.5 py-2 font-medium">Trámite</th>
-                <th className="px-2.5 py-2 font-medium">Solicitante</th>
-                <th className="px-2.5 py-2 font-medium">Municipio</th>
-                <th className="px-2.5 py-2 font-medium">Avance</th>
-                <th className="px-2.5 py-2 font-medium">Estado</th>
-                <th className="px-2.5 py-2 font-medium">Último movimiento</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {expedientes.map((exp, i) => (
-                <tr key={exp.id} className="hover:bg-stone-50">
-                  <td className="px-2.5 py-2 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
-                  <td className="px-2.5 py-2">
-                    <Link href={`/expedientes/${exp.id}`} className="font-medium text-cdmb-700 hover:underline">
-                      {exp.numero}
-                    </Link>
-                  </td>
-                  <td className="max-w-[170px] truncate px-2.5 py-2 text-stone-700" title={exp.tramiteTipo.nombre}>
-                    {exp.tramiteTipo.nombre}
-                  </td>
-                  <td className="max-w-[150px] truncate px-2.5 py-2 text-stone-700" title={exp.solicitanteNombre}>
-                    {exp.solicitanteNombre}
-                    <span className="block text-xs text-stone-400">{exp.solicitanteIdentificacion}</span>
-                  </td>
-                  <td className="px-2.5 py-2 text-stone-500">{exp.municipio}</td>
-                  <td className="min-w-[140px] px-2.5 py-2">
-                    <ProgresoExpediente
-                      pasoActualNumero={exp.pasoActualNumero}
-                      totalPasos={exp.flujo.pasos.length}
-                      estado={exp.estado}
-                    />
-                  </td>
-                  <td className="px-2.5 py-2">
-                    <EstadoBadge estado={exp.estado} />
-                  </td>
-                  <td className="whitespace-nowrap px-2.5 py-2 text-stone-500">
-                    {exp.fechaUltimoMovimiento.toLocaleDateString("es-CO")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <TablaExpedientes
+              filas={expedientes.map((exp, i) => ({
+                id: exp.id,
+                numero: (pagina - 1) * POR_PAGINA + i + 1,
+                numeroExpediente: exp.numero,
+                tramiteNombre: exp.tramiteTipo.nombre,
+                solicitanteNombre: exp.solicitanteNombre,
+                solicitanteIdentificacion: exp.solicitanteIdentificacion,
+                municipio: exp.municipio,
+                pasoActualNumero: exp.pasoActualNumero,
+                totalPasos: exp.flujo.pasos.length,
+                estado: exp.estado,
+                fechaUltimoMovimiento: exp.fechaUltimoMovimiento.toLocaleDateString("es-CO"),
+              }))}
+            />
+          </div>
         )}
         <Paginador
           paginaActual={pagina}

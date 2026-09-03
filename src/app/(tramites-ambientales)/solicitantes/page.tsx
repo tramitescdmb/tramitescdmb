@@ -8,6 +8,7 @@ import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { TablaSolicitantes } from "@/components/tablas/TablaSolicitantes";
 
 const POR_PAGINA = 30;
 
@@ -147,44 +148,22 @@ export default async function SolicitantesPage({
             {hayFiltros ? "Ningún solicitante coincide con ese filtro." : "Todavía no hay solicitantes registrados."}
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-2.5 py-2 font-medium">#</th>
-                <th className="px-2.5 py-2 font-medium">Identificación</th>
-                <th className="px-2.5 py-2 font-medium">Nombre / razón social</th>
-                <th className="px-2.5 py-2 font-medium">Régimen tributario</th>
-                <th className="px-2.5 py-2 font-medium">Municipio</th>
-                <th className="px-2.5 py-2 font-medium">Expedientes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {solicitantes.map((s, i) => (
-                <tr key={s.id} className="transition-colors hover:bg-stone-50">
-                  <td className="px-2.5 py-2 text-stone-400">{(pagina - 1) * POR_PAGINA + i + 1}</td>
-                  <td className="px-2.5 py-2">
-                    <Link href={`/solicitantes/${s.id}`} className="font-medium text-cdmb-700 hover:underline">
-                      {s.identificacion}
-                    </Link>
-                    <span className="block text-xs text-stone-400">
-                      {s.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
-                    </span>
-                  </td>
-                  <td className="max-w-[220px] truncate px-2.5 py-2 text-stone-700" title={nombreCompletoSolicitante(s)}>
-                    {nombreCompletoSolicitante(s)}
-                    {s.granContribuyente && (
-                      <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        Gran contribuyente
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2.5 py-2 text-stone-500">{regimenTributarioLabel(s.regimenTributario)}</td>
-                  <td className="px-2.5 py-2 text-stone-500">{s.municipio}</td>
-                  <td className="px-2.5 py-2 text-stone-500">{s._count.expedientes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <TablaSolicitantes
+              filas={solicitantes.map((s, i) => ({
+                id: s.id,
+                numero: (pagina - 1) * POR_PAGINA + i + 1,
+                identificacion: s.identificacion,
+                tipoPersonaTexto: s.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural",
+                nombreCompleto: nombreCompletoSolicitante(s),
+                granContribuyente: s.granContribuyente,
+                regimenTributario: regimenTributarioLabel(s.regimenTributario),
+                municipio: s.municipio,
+                totalExpedientes: s._count.expedientes,
+              }))}
+              sinResultadosTexto={hayFiltros ? "Ningún solicitante coincide con ese filtro." : "Todavía no hay solicitantes registrados."}
+            />
+          </div>
         )}
         <Paginador
           paginaActual={pagina}

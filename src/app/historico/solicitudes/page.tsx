@@ -7,6 +7,7 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { TablaSincaSolicitudes } from "@/components/tablas/TablaSincaSolicitudes";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -148,50 +149,20 @@ export default async function HistoricoSolicitudesPage({
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-2.5 py-2 font-medium">#</th>
-                <th className="px-2.5 py-2 font-medium">Solicitud</th>
-                <th className="px-2.5 py-2 font-medium">Resolución</th>
-                <th className="px-2.5 py-2 font-medium">Fecha</th>
-                <th className="px-2.5 py-2 font-medium">Tipo</th>
-                <th className="px-2.5 py-2 font-medium">Municipio</th>
-                <th className="px-2.5 py-2 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {filas.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-2.5 py-10 text-center text-stone-400">
-                    No hay resoluciones que coincidan con los filtros.
-                  </td>
-                </tr>
-              ) : (
-                filas.map((r, i) => (
-                  <tr key={r.nroSolicitud} className="hover:bg-stone-50">
-                    <td className="px-2.5 py-2 text-stone-400">{(page - 1) * porPagina + i + 1}</td>
-                    <td className="px-2.5 py-2">
-                      <Link href={`/historico/solicitudes/${r.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
-                        {r.nroSolicitud}
-                      </Link>
-                      {r.expediente && <span className="block text-xs text-stone-400">Exp. {r.expediente}</span>}
-                    </td>
-                    <td className="px-2.5 py-2 text-stone-700">{r.numeroResolucion ?? "—"}</td>
-                    <td className="whitespace-nowrap px-2.5 py-2 text-stone-600">{fecha(r.fechaResolucion)}</td>
-                    <td className="max-w-[160px] truncate px-2.5 py-2 text-stone-600" title={r.tipoSolicitudNombre ?? undefined}>
-                      {r.tipoSolicitudNombre ?? "—"}
-                      {r.tipoSolicitudCodigo && <span className="ml-1 text-xs text-stone-400">({r.tipoSolicitudCodigo})</span>}
-                    </td>
-                    <td className="px-2.5 py-2 text-stone-600">{r.municipio ?? "—"}</td>
-                    <td className="px-2.5 py-2">
-                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{r.estado ?? "—"}</span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <TablaSincaSolicitudes
+            filas={filas.map((r, i) => ({
+              nroSolicitud: r.nroSolicitud,
+              numero: (page - 1) * porPagina + i + 1,
+              expediente: r.expediente,
+              numeroResolucion: r.numeroResolucion,
+              fecha: fecha(r.fechaResolucion),
+              tipoNombre: r.tipoSolicitudNombre,
+              tipoCodigo: r.tipoSolicitudCodigo,
+              municipio: r.municipio,
+              estado: r.estado,
+            }))}
+            sinResultadosTexto="No hay resoluciones que coincidan con los filtros."
+          />
         </div>
         <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
