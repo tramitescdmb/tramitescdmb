@@ -70,12 +70,14 @@ export async function GET(req: NextRequest) {
       s.createdAt.toISOString().slice(0, 10),
     ]
       .map(celda)
-      .join(",")
+      .join(";")
   );
 
   // BOM al inicio (U+FEFF) para que Excel detecte UTF-8 y no dañe las tildes/eñes.
+  // Separador ";" (no ",") porque Excel en configuración regional en español
+  // usa la coma como separador decimal y espera punto y coma en el CSV.
   const BOM = String.fromCharCode(0xfeff);
-  const csv = BOM + [encabezados.map(celda).join(","), ...filas].join("\r\n");
+  const csv = BOM + [encabezados.map(celda).join(";"), ...filas].join("\r\n");
 
   return new NextResponse(csv, {
     headers: {

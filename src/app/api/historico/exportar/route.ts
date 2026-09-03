@@ -124,11 +124,13 @@ export async function GET(req: NextRequest) {
       `/historico/solicitudes/${r.nroSolicitud}`,
     ]
       .map(celda)
-      .join(",")
+      .join(";")
   );
 
+  // Separador ";" (no ",") porque Excel en configuración regional en español
+  // usa la coma como separador decimal y espera punto y coma en el CSV.
   const BOM = String.fromCharCode(0xfeff);
-  const csv = BOM + [encabezados.map(celda).join(","), ...filasCsv].join("\r\n");
+  const csv = BOM + [encabezados.map(celda).join(";"), ...filasCsv].join("\r\n");
 
   return new NextResponse(csv, {
     headers: {
