@@ -7,14 +7,22 @@ import { sincaConfigurado } from "@/lib/sinca";
 import { getHistoricoDashboard } from "@/lib/sinca-data";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const fechaHora = (d: Date | null | undefined) =>
   d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 const num = (v: number) => v.toLocaleString("es-CO");
 
-export default async function HistoricoPanelPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
-  const { ok, error } = await searchParams;
+export default async function HistoricoPanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; error?: string } & FiltrosPeriodo>;
+}) {
+  const sp = await searchParams;
+  const { ok, error } = sp;
+  const { rango, etiqueta, valor } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -30,8 +38,9 @@ export default async function HistoricoPanelPage({ searchParams }: { searchParam
     );
   }
 
-  const d = await getHistoricoDashboard();
+  const d = await getHistoricoDashboard(rango);
   const sinDatos = d.total === 0;
+  const selector = <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />;
 
   const botonSync = esAdmin ? (
     <form action="/api/sinca/sincronizar" method="post">
@@ -47,13 +56,17 @@ export default async function HistoricoPanelPage({ searchParams }: { searchParam
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
+      {selector}
+
       {sinDatos ? (
         <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
           <p className="text-sm text-stone-600">
-            Todavía no se ha traído el histórico de SINCA 1.0.
-            {esAdmin ? " Use el botón para hacer la primera carga." : " Un administrador debe hacer la primera carga."}
+            {rango
+              ? "No hay resoluciones en el período seleccionado."
+              : "Todavía no se ha traído el histórico de SINCA 1.0."}
+            {!rango && (esAdmin ? " Use el botón para hacer la primera carga." : " Un administrador debe hacer la primera carga.")}
           </p>
-          {esAdmin && <div className="mt-4 flex justify-center">{botonSync}</div>}
+          {!rango && esAdmin && <div className="mt-4 flex justify-center">{botonSync}</div>}
         </div>
       ) : (
         <>
@@ -77,7 +90,9 @@ export default async function HistoricoPanelPage({ searchParams }: { searchParam
 
           <section className="rounded-xl border border-stone-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-stone-900">Solicitudes por año</h2>
-            <p className="mb-2 text-xs text-stone-500">Por fecha de la resolución de fondo. Pase el mouse para ver cualquier año.</p>
+            <p className="mb-2 text-xs text-stone-500">
+              {rango ? `${etiqueta}, por` : "Por"} fecha de la resolución de fondo. Pase el mouse para ver cualquier año.
+            </p>
             <AreaAnual data={d.serieAnual.map((s) => ({ anio: Number(s.label), valor: s.value }))} emptyMessage="Sin datos por año." />
           </section>
 

@@ -9,12 +9,16 @@ import { SectionHelp } from "@/components/Field";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 const fechaHora = (d: Date | null) =>
   d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
-export default async function VitalDashboardPage() {
+export default async function VitalDashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+  const sp = await searchParams;
+  const { rango, etiqueta, valor } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -24,18 +28,24 @@ export default async function VitalDashboardPage() {
     return <SectionHelp>La conexión con VITAL no está configurada en este servidor.</SectionHelp>;
   }
 
-  const d = await getVitalDashboard();
+  const d = await getVitalDashboard(rango);
   if (d.total === 0) {
     return (
-      <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
-        Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la
-        pestaña Solicitudes.
-      </p>
+      <div className="space-y-4">
+        <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
+        <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
+          {rango
+            ? "No hay solicitudes de VITAL en el período seleccionado."
+            : "Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la pestaña Solicitudes."}
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
+
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Kpi icon={Inbox} label="Solicitudes traídas" value={num(d.total)} />
         <Kpi icon={Layers} label="Tipos de trámite" value={num(d.tramitesDistintos)} />
@@ -49,7 +59,7 @@ export default async function VitalDashboardPage() {
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
-        <p className="mb-2 text-xs text-stone-500">Últimos 24 meses, por fecha de radicación en VITAL.</p>
+        <p className="mb-2 text-xs text-stone-500">{rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.</p>
         <AreaTrendChart data={d.serieMensual} emptyMessage="Sin datos mensuales." />
       </section>
 

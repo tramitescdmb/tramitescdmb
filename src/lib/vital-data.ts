@@ -1,10 +1,12 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { NOMBRE_TRAMITE_VITAL, nombreTramiteVital } from "@/lib/vital";
 import { parsePorPagina } from "@/lib/vista-lista";
+import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
 const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0));
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const MAX_MESES_SERIE = 120;
 
 export type FiltrosVital = { q?: string; tramite?: string; anio?: string; actividad?: string; page?: string; vista?: string };
 
@@ -91,15 +93,26 @@ export async function getVitalUltimasRadicadas(n = 10) {
 }
 
 /** Datos agregados para /vital/dashboard. */
-export async function getVitalDashboard() {
+/**
+ * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
+ * Con un rango, todo el tablero queda acotado a `fechaRadicacion` dentro de
+ * [desde, hasta) — incluida la serie mensual, que pasa a recorrer
+ * exactamente ese rango en vez de un trailing fijo de 24 meses.
+ */
+export async function getVitalDashboard(periodo: RangoPeriodo = null) {
+  const filtroFecha: Prisma.SolicitudVitalWhereInput = periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {};
+  const condicionMensualSql = periodo
+    ? Prisma.sql`"fechaRadicacion" >= ${periodo.desde} AND "fechaRadicacion" < ${periodo.hasta}`
+    : Prisma.sql`"fechaRadicacion" >= now() - interval '24 months'`;
+
   const [total, conDocs, porTramiteRaw, porActividadRaw, mensualRaw, anualRaw, recurrentesRaw, ultimaSyncRaw] =
     await Promise.all([
-      db.solicitudVital.count(),
-      db.solicitudVital.count({ where: { documentos: { some: {} } } }),
-      db.solicitudVital.groupBy({ by: ["idTramiteVital"], _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
+      db.solicitudVital.count({ where: filtroFecha }),
+      db.solicitudVital.count({ where: { ...filtroFecha, documentos: { some: {} } } }),
+      db.solicitudVital.groupBy({ by: ["idTramiteVital"], where: filtroFecha, _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
       db.solicitudVital.groupBy({
         by: ["nombreActividad"],
-        where: { nombreActividad: { not: null } },
+        where: { ...filtroFecha, nombreActividad: { not: null } },
         _count: { _all: true },
         orderBy: { _count: { nombreActividad: "desc" } },
         take: 10,
@@ -107,11 +120,11 @@ export async function getVitalDashboard() {
       db.$queryRaw<{ mes: Date; c: bigint }[]>`
         SELECT date_trunc('month', "fechaRadicacion") mes, COUNT(*) c
         FROM "SolicitudVital"
-        WHERE "fechaRadicacion" >= now() - interval '24 months'
+        WHERE ${condicionMensualSql}
         GROUP BY 1 ORDER BY 1`,
       db.$queryRaw<{ anio: number; c: bigint }[]>`
         SELECT EXTRACT(YEAR FROM "fechaRadicacion")::int anio, COUNT(*) c
-        FROM "SolicitudVital" WHERE "fechaRadicacion" IS NOT NULL
+        FROM "SolicitudVital" WHERE "fechaRadicacion" IS NOT NULL AND ${condicionMensualSql}
         GROUP BY 1 ORDER BY 1`,
       db.$queryRaw<{ nit: string; nombre: string | null; c: bigint; tramites: bigint }[]>`
         SELECT "solicitanteIdentificacion" nit, MAX("solicitanteNombre") nombre, COUNT(*) c,
@@ -120,15 +133,21 @@ export async function getVitalDashboard() {
         WHERE "solicitanteIdentificacion" IS NOT NULL
           AND "solicitanteIdentificacion" NOT IN ('00000001', '0', '1', '9999999999')
           AND length("solicitanteIdentificacion") >= 5
+          AND ${condicionMensualSql}
         GROUP BY 1 ORDER BY 3 DESC LIMIT 10`,
       db.solicitudVital.aggregate({ _max: { ultimaSincronizacion: true } }),
     ]);
 
-  // serie mensual completa (últimos 24 meses, con ceros)
-  const ahora = new Date();
+  // serie mensual: recorre exactamente el rango elegido (o el trailing de 24 meses de siempre si es "Total").
+  const hastaSerie = periodo ? new Date(periodo.hasta.getTime() - 1) : new Date();
+  const desdeSerie = periodo ? periodo.desde : new Date(hastaSerie.getFullYear(), hastaSerie.getMonth() - 23, 1);
+  const totalMeses = Math.min(
+    MAX_MESES_SERIE,
+    Math.max(1, (hastaSerie.getFullYear() - desdeSerie.getFullYear()) * 12 + (hastaSerie.getMonth() - desdeSerie.getMonth()) + 1)
+  );
   const serieMensual: { label: string; value: number }[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+  for (let i = 0; i < totalMeses; i++) {
+    const d = new Date(desdeSerie.getFullYear(), desdeSerie.getMonth() + i, 1);
     const fila = mensualRaw.find((m) => {
       const md = new Date(m.mes);
       return md.getUTCFullYear() === d.getFullYear() && md.getUTCMonth() === d.getMonth();

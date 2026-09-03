@@ -9,6 +9,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getPendientes } from "@/lib/pendientes";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { MisPendientes } from "@/components/MisPendientes";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 
 function saludo(hora: number) {
   if (hora < 12) return "Buenos días";
@@ -21,11 +23,13 @@ function horaBogota(): number {
   return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+  const sp = await searchParams;
+  const { rango, etiqueta, valor } = resolverPeriodo(sp);
   const session = await getSession();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
-  const [d, pendientes] = await Promise.all([getDashboardData(tramiteIds), getPendientes(session)]);
+  const [d, pendientes] = await Promise.all([getDashboardData(tramiteIds, rango), getPendientes(session)]);
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
@@ -36,6 +40,8 @@ export default async function DashboardPage() {
         </h2>
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
+
+      <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       <MisPendientes resumen={pendientes} />
 
@@ -56,7 +62,9 @@ export default async function DashboardPage() {
 
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
-        <p className="mb-4 text-xs text-stone-500">Últimos 12 meses, por fecha de radicación del expediente.</p>
+        <p className="mb-4 text-xs text-stone-500">
+          {rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.
+        </p>
         <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
       </div>
 

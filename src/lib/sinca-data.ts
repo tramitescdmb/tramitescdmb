@@ -1,43 +1,59 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { parsePorPagina } from "@/lib/vista-lista";
+import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
-/** Datos agregados para el panel de /historico (SINCA 1.0). */
-export async function getHistoricoDashboard() {
+/**
+ * Datos agregados para el panel de /historico (SINCA 1.0). `periodo`: `null`
+ * = Total, todo el histórico (comportamiento de siempre). Con un rango, todo
+ * el tablero queda acotado a `fechaResolucion` dentro de [desde, hasta).
+ */
+export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
+  const filtroFecha: Prisma.SincaResolucionWhereInput = periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {};
+
   const [total, aprobadas, conResolucion, diasRaw, porAnioRaw, porTipoRaw, porEstadoRaw, porMunicipioRaw, recientes, ultimaSync] =
     await Promise.all([
-      db.sincaResolucion.count(),
-      db.sincaResolucion.count({ where: { estado: "Aprobada" } }),
-      db.sincaResolucion.count({ where: { numeroResolucion: { not: null } } }),
-      db.$queryRaw<{ p50: number | null; con: bigint }[]>`
-        SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
-               COUNT("diasResolucion") con
-        FROM "SincaResolucion"`,
+      db.sincaResolucion.count({ where: filtroFecha }),
+      db.sincaResolucion.count({ where: { ...filtroFecha, estado: "Aprobada" } }),
+      db.sincaResolucion.count({ where: { ...filtroFecha, numeroResolucion: { not: null } } }),
+      periodo
+        ? db.$queryRaw<{ p50: number | null; con: bigint }[]>`
+            SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
+                   COUNT("diasResolucion") con
+            FROM "SincaResolucion"
+            WHERE "fechaResolucion" >= ${periodo.desde} AND "fechaResolucion" < ${periodo.hasta}`
+        : db.$queryRaw<{ p50: number | null; con: bigint }[]>`
+            SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
+                   COUNT("diasResolucion") con
+            FROM "SincaResolucion"`,
       db.sincaResolucion.groupBy({
         by: ["anioResolucion"],
         _count: { _all: true },
-        where: { anioResolucion: { not: null } },
+        where: { ...filtroFecha, anioResolucion: { not: null } },
         orderBy: { anioResolucion: "asc" },
       }),
       db.sincaResolucion.groupBy({
         by: ["tipoSolicitudNombre"],
+        where: filtroFecha,
         _count: { _all: true },
         orderBy: { _count: { tipoSolicitudNombre: "desc" } },
         take: 10,
       }),
       db.sincaResolucion.groupBy({
         by: ["estado"],
+        where: filtroFecha,
         _count: { _all: true },
         orderBy: { _count: { estado: "desc" } },
       }),
       db.sincaResolucion.groupBy({
         by: ["municipio"],
+        where: { ...filtroFecha, municipio: { not: null } },
         _count: { _all: true },
-        where: { municipio: { not: null } },
         orderBy: { _count: { municipio: "desc" } },
         take: 10,
       }),
       db.sincaResolucion.findMany({
+        where: filtroFecha,
         take: 8,
         orderBy: [{ fechaResolucion: { sort: "desc", nulls: "last" } }, { nroSolicitud: "desc" }],
         select: {
