@@ -7,8 +7,10 @@ import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icon
 import { UserPlus, Briefcase, Pencil } from "lucide-react";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
+import { Paginador } from "@/components/Paginador";
 
 const iconSm = "h-4 w-4";
+const POR_PAGINA = 15;
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -61,14 +63,17 @@ function resumenAcceso(
 export default async function UsuariosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ok?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string; page?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") redirect("/");
 
-  const { error, ok } = await searchParams;
-  const [usuarios, cargos, catalogo] = await Promise.all([
+  const { error, ok, page: pageParam } = await searchParams;
+  const pagina = Math.max(1, Number(pageParam) || 1);
+
+  const [total, usuarios, cargos, catalogo] = await Promise.all([
+    db.usuario.count(),
     db.usuario.findMany({
       orderBy: { createdAt: "asc" },
       include: {
@@ -76,10 +81,13 @@ export default async function UsuariosPage({
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
       },
+      take: POR_PAGINA,
+      skip: (pagina - 1) * POR_PAGINA,
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
   ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const categoriaDeId = new Map<string, string>();
   const totalPorCategoria = new Map<string, number>();
@@ -120,140 +128,138 @@ export default async function UsuariosPage({
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
-      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <table className="w-full min-w-[1080px] text-sm">
-          <thead className="border-b border-stone-100 bg-stone-50/80 text-left text-xs uppercase tracking-wide text-stone-500">
-            <tr>
-              <th className="px-4 py-3 font-medium">Usuario</th>
-              <th className="px-4 py-3 font-medium">Cargo(s)</th>
-              <th className="px-4 py-3 font-medium">Rol</th>
-              <th className="px-4 py-3 font-medium">Trámites</th>
-              <th className="px-4 py-3 font-medium">VITAL / SINCA 1.0</th>
-              <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100">
-            {usuarios.map((u) => (
-              <tr key={u.id} className="transition-colors hover:bg-stone-50/60">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
-                      {iniciales(u.nombre)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-1.5 font-medium text-stone-800">
-                        {u.nombre}
-                        {u.directorioActivo && (
-                          <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
-                            Directorio activo
-                          </span>
-                        )}
-                      </p>
-                      <p className="truncate text-xs text-stone-400">{u.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  {u.cargos.length === 0 ? (
-                    <span className="text-xs text-stone-400">—</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {u.cargos.map((c) => (
-                        <span key={c.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
-                          {c.nombre}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      u.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"
-                    }`}
-                  >
-                    {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-stone-600">
-                  {u.rol === "ADMIN" ? (
-                    <span className="text-xs text-stone-400">Acceso total</span>
-                  ) : u.tramitesAcceso.length === 0 ? (
-                    <span className="text-xs text-amber-700">Sin trámites asignados</span>
-                  ) : (
-                    (() => {
-                      const resumen = resumenAcceso(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
-                      if (resumen.tipo === "categorias") {
-                        return (
-                          <div className="flex flex-wrap gap-1">
-                            {resumen.categorias.map((cat) => (
-                              <span key={cat} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
-                                {cat}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      }
-                      return (
-                        <span className="text-xs">
-                          {resumen.editar} editar · {resumen.ver} ver
-                        </span>
-                      );
-                    })()
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {u.rol === "ADMIN" ? (
-                    <span className="text-xs text-stone-400">Acceso total</span>
-                  ) : u.seccionesAcceso.length === 0 ? (
-                    <span className="text-xs text-amber-700">Sin acceso</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {u.seccionesAcceso.map((s) => (
-                        <span
-                          key={s.seccion}
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            s.seccion === "SINCA_MINERIA" ? "bg-amber-50 text-amber-800" : "bg-sky-50 text-sky-700"
-                          }`}
-                        >
-                          {ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      u.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"
-                    }`}
-                  >
-                    {u.activo ? "Activo" : "Inactivo"}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/usuarios/${u.id}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700"
-                    >
-                      <Pencil className="h-3 w-3" aria-hidden />
-                      Editar
-                    </Link>
-                    {u.id !== session.userId && (
-                      <form action={`/api/usuarios/${u.id}/toggle`} method="post">
-                        <button className="text-xs text-stone-500 hover:text-cdmb-700 hover:underline">
-                          {u.activo ? "Desactivar" : "Activar"}
-                        </button>
-                      </form>
+      <div className="space-y-3">
+        {usuarios.map((u) => (
+          <div key={u.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
+                  {iniciales(u.nombre)}
+                </span>
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-1.5 font-medium text-stone-800">
+                    {u.nombre}
+                    {u.directorioActivo && (
+                      <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
+                        Directorio activo
+                      </span>
                     )}
+                  </p>
+                  <p className="truncate text-xs text-stone-400">{u.email}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    u.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"
+                  }`}
+                >
+                  {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    u.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"
+                  }`}
+                >
+                  {u.activo ? "Activo" : "Inactivo"}
+                </span>
+                <Link
+                  href={`/usuarios/${u.id}`}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700"
+                >
+                  <Pencil className="h-3 w-3" aria-hidden />
+                  Editar
+                </Link>
+                {u.id !== session.userId && (
+                  <form action={`/api/usuarios/${u.id}/toggle`} method="post">
+                    <button className="text-xs text-stone-500 hover:text-cdmb-700 hover:underline">
+                      {u.activo ? "Desactivar" : "Activar"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 border-t border-stone-100 pt-3 sm:grid-cols-3">
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
+                {u.cargos.length === 0 ? (
+                  <span className="text-xs text-stone-400">—</span>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {u.cargos.map((c) => (
+                      <span key={c.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+                        {c.nombre}
+                      </span>
+                    ))}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
+                {u.rol === "ADMIN" ? (
+                  <span className="text-xs text-stone-400">Acceso total</span>
+                ) : u.tramitesAcceso.length === 0 ? (
+                  <span className="text-xs text-amber-700">Sin trámites asignados</span>
+                ) : (
+                  (() => {
+                    const resumen = resumenAcceso(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
+                    if (resumen.tipo === "categorias") {
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {resumen.categorias.map((cat) => (
+                            <span key={cat} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return (
+                      <span className="text-xs">
+                        {resumen.editar} editar · {resumen.ver} ver
+                      </span>
+                    );
+                  })()
+                )}
+              </div>
+
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
+                {u.rol === "ADMIN" ? (
+                  <span className="text-xs text-stone-400">Acceso total</span>
+                ) : u.seccionesAcceso.length === 0 ? (
+                  <span className="text-xs text-amber-700">Sin acceso</span>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {u.seccionesAcceso.map((s) => (
+                      <span
+                        key={s.seccion}
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          s.seccion === "SINCA_MINERIA" ? "bg-amber-50 text-amber-800" : "bg-sky-50 text-sky-700"
+                        }`}
+                      >
+                        {ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
+          <Paginador
+            paginaActual={pagina}
+            totalPaginas={totalPaginas}
+            total={total}
+            porPagina={POR_PAGINA}
+            hrefPagina={(p) => (p > 1 ? `/usuarios?page=${p}` : "/usuarios")}
+          />
+        </div>
       </div>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
