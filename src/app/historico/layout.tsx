@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { Archive, Lock } from "lucide-react";
 import { HistoricoTabs } from "@/components/HistoricoTabs";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 /**

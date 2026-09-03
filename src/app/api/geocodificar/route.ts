@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 
 /**
  * Proxy a Nominatim (buscador de OpenStreetMap, gratis, sin API key). Se

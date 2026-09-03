@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { Leaf } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 
 /**
@@ -14,11 +15,18 @@ import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos
  * (muestran contenido vacío si no hay acceso a nada); "Solicitantes" sí se
  * oculta del todo porque es un registro compartido entre TODOS los trámites,
  * no filtrado uno por uno (ver puedeAccederSolicitantes).
+ *
+ * El redirect si no hay sesión es obligatorio aquí (no solo defensivo): con
+ * verificarSesion(), "sin sesión" también pasa a significar "cuenta
+ * desactivada mientras la cookie seguía viva" — sin este corte, ese caso
+ * caería en las páginas hijas, que asumen sesión presente y no restringen
+ * nada cuando no la hay.
  */
 export default async function TramitesAmbientalesLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
-  const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
-  const mostrarSolicitantes = !permisos || puedeAccederSolicitantes(permisos);
+  if (!session) redirect("/login");
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
 
   return (
     <div className="space-y-4">

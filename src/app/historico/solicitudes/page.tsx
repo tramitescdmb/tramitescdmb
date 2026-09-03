@@ -6,7 +6,7 @@ import { sincaConfigurado } from "@/lib/sinca";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 function fecha(d: Date | null) {

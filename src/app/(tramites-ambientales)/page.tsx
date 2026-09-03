@@ -5,7 +5,7 @@ import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { getPendientes } from "@/lib/pendientes";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { MisPendientes } from "@/components/MisPendientes";

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
 import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
+import { getSession, type SessionPayload } from "@/lib/auth";
 
 /**
  * Acceso ya resuelto para un usuario. Tanto los trámites de "Trámites
@@ -17,24 +18,76 @@ export type PermisosUsuario = {
   secciones: Set<SeccionSoloLectura>;
 };
 
-export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
+type UsuarioFresco = {
+  activo: boolean;
+  rol: "ADMIN" | "FUNCIONARIO";
+  cargos: string[];
+  tramitesAcceso: { tramiteTipoId: string; nivel: NivelAccesoTramite }[];
+  seccionesAcceso: { seccion: SeccionSoloLectura }[];
+} | null;
+
+/**
+ * Lee el usuario fresco de la base UNA vez por solicitud (cache() la dedupe
+ * entre obtenerPermisosUsuario y verificarSesion, aunque ambas se llamen por
+ * separado). Es la fuente de verdad para todo lo que la cookie de sesión NO
+ * puede reflejar al instante: `activo`, `rol` y `cargos` quedan fijos en el
+ * JWT desde el login (dura 7 días) — sin esto, desactivar a alguien o
+ * cambiarle el rol/cargo no tendría efecto real hasta su próximo login.
+ */
+const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco> => {
   const usuario = await db.usuario.findUnique({
     where: { id: userId },
     select: {
+      activo: true,
       rol: true,
+      cargos: { select: { nombre: true } },
       tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
       seccionesAcceso: { select: { seccion: true } },
     },
   });
+  if (!usuario) return null;
+  return {
+    activo: usuario.activo,
+    rol: usuario.rol,
+    cargos: usuario.cargos.map((c) => c.nombre),
+    tramitesAcceso: usuario.tramitesAcceso,
+    seccionesAcceso: usuario.seccionesAcceso,
+  };
+});
 
-  const esAdmin = usuario?.rol === "ADMIN";
+export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
+  const usuario = await obtenerUsuarioFresco(userId);
+  // Una cuenta desactivada se trata como sin ningún acceso, sin importar su
+  // rol — defensa en profundidad además de verificarSesion() (que ya
+  // debería haber cortado el paso antes de llegar aquí).
+  const esAdmin = Boolean(usuario?.activo) && usuario?.rol === "ADMIN";
   const tramites = new Map<string, NivelAccesoTramite>();
   const secciones = new Set<SeccionSoloLectura>();
-  if (!esAdmin) {
-    for (const t of usuario?.tramitesAcceso ?? []) tramites.set(t.tramiteTipoId, t.nivel);
-    for (const s of usuario?.seccionesAcceso ?? []) secciones.add(s.seccion);
+  if (usuario?.activo && !esAdmin) {
+    for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
+    for (const s of usuario.seccionesAcceso) secciones.add(s.seccion);
   }
   return { esAdmin, tramites, secciones };
+});
+
+/**
+ * Reemplazo de getSession() para todo lo que decide acceso (páginas y rutas
+ * de API): además de leer la cookie, confirma contra la base que la cuenta
+ * sigue activa y trae el rol/cargos AL DÍA, no la foto de hace hasta 7 días
+ * que guarda el JWT. Devuelve null si no hay sesión o si la cuenta fue
+ * desactivada mientras tanto — tratar ambos casos igual (como "no hay
+ * sesión") es correcto en todos los puntos de entrada existentes, que ya
+ * redirigen a /login o devuelven 401 cuando esto es null.
+ *
+ * getSession() en sí (src/lib/auth.ts) se deja intacto y sin tocar la base:
+ * lo usa también el middleware en Edge Runtime, que no puede cargar Prisma.
+ */
+export const verificarSesion = cache(async (): Promise<SessionPayload | null> => {
+  const session = await getSession();
+  if (!session) return null;
+  const usuario = await obtenerUsuarioFresco(session.userId);
+  if (!usuario || !usuario.activo) return null;
+  return { userId: session.userId, email: session.email, nombre: session.nombre, rol: usuario.rol, cargos: usuario.cargos };
 });
 
 /** ¿Puede ver (al menos lectura) este trámite? */

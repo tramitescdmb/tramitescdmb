@@ -4,7 +4,7 @@ import { SectionHelp } from "@/components/Field";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 
 export default async function NuevoExpedientePage({

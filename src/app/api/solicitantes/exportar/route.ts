@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 
 function celda(valor: string | number | null | undefined): string {

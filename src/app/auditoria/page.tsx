@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { SectionHelp } from "@/components/Field";
 
 const ETIQUETAS_TIPO: Record<string, { icono: string; texto: string }> = {

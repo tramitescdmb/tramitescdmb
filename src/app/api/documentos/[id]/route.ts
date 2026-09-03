@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 

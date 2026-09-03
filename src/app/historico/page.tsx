@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Sparkles, Hash } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
 import { getHistoricoDashboard } from "@/lib/sinca-data";

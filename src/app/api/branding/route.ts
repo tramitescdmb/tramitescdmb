@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { getBrandingPublicUrl, deleteBranding } from "@/lib/branding-storage";
 import { registrarAuditoria } from "@/lib/auditoria";
 

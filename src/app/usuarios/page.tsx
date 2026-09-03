@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { Field } from "@/components/Field";
 import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icons";
 import { UserPlus, Briefcase, Pencil, ChevronDown } from "lucide-react";

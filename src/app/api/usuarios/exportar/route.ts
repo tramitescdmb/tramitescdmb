@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);

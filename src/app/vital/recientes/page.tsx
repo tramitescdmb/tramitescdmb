@@ -4,7 +4,7 @@ import { Inbox } from "lucide-react";
 import { vitalConfigurado, nombreTramiteVital } from "@/lib/vital";
 import { getVitalUltimasRadicadas } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" }) : "—");

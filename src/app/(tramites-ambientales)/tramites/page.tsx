@@ -3,7 +3,7 @@ import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN } from "@/lib/tramite-categoria";
 import { CatalogoTramites, type EntradaCatalogo } from "@/components/CatalogoTramites";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];

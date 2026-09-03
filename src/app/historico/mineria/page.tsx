@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TrendingUp, Timer, Scale, MapPinned, Sparkles, Boxes, AlertTriangle, GitBranch, Brain } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getAnalitica } from "@/lib/sinca-analitica";
 import { getMineria } from "@/lib/sinca-mineria";

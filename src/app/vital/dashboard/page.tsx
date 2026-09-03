@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Inbox, FileStack, Layers, CalendarClock } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getVitalDashboard } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";

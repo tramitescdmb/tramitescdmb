@@ -6,7 +6,7 @@ import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos";
 import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
 
 /**

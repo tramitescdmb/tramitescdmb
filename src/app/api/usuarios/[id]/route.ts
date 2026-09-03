@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
 import { registrarAuditoria } from "@/lib/auditoria";
 

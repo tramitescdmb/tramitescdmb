@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { nombreTramiteVital } from "@/lib/vital";
-import { getSession } from "@/lib/auth";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
