@@ -17,6 +17,14 @@ function iniciales(nombre: string) {
 
 type AccesoTramite = { tramiteTipoId: string; nivel: "VER" | "EDITAR" };
 
+const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
+  VITAL_BASE: "VITAL: Solicitudes",
+  VITAL_DASHBOARD: "VITAL: Dashboard",
+  SINCA_BASE: "SINCA: Solicitudes",
+  SINCA_DASHBOARD: "SINCA: Dashboard",
+  SINCA_MINERIA: "SINCA: Minería",
+};
+
 /**
  * Resumen legible del acceso de un usuario: si cubre completo una o varias
  * categorías del catálogo (ej. "Recurso Hídrico"), se muestra el nombre de
@@ -63,7 +71,11 @@ export default async function UsuariosPage({
   const [usuarios, cargos, catalogo] = await Promise.all([
     db.usuario.findMany({
       orderBy: { createdAt: "asc" },
-      include: { cargos: true, tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } } },
+      include: {
+        cargos: true,
+        tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
+        seccionesAcceso: { select: { seccion: true } },
+      },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
@@ -78,11 +90,20 @@ export default async function UsuariosPage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Usuarios</h1>
-        <p className="text-sm text-stone-500">
-          Funcionarios de la CDMB que pueden ingresar a esta aplicación para gestionar trámites.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-stone-900">Usuarios</h1>
+          <p className="text-sm text-stone-500">
+            Funcionarios de la CDMB que pueden ingresar a esta aplicación para gestionar trámites.
+          </p>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- descarga de archivo (ruta de API), no una página */}
+        <a
+          href="/api/usuarios/exportar"
+          className="flex-none rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95"
+        >
+          ⬇ Descargar CSV
+        </a>
       </div>
 
       <SectionHelp>
@@ -100,13 +121,14 @@ export default async function UsuariosPage({
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
       <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full min-w-[1080px] text-sm">
           <thead className="border-b border-stone-100 bg-stone-50/80 text-left text-xs uppercase tracking-wide text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">Usuario</th>
               <th className="px-4 py-3 font-medium">Cargo(s)</th>
               <th className="px-4 py-3 font-medium">Rol</th>
               <th className="px-4 py-3 font-medium">Trámites</th>
+              <th className="px-4 py-3 font-medium">VITAL / SINCA 1.0</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium"></th>
             </tr>
@@ -179,6 +201,26 @@ export default async function UsuariosPage({
                         </span>
                       );
                     })()
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {u.rol === "ADMIN" ? (
+                    <span className="text-xs text-stone-400">Acceso total</span>
+                  ) : u.seccionesAcceso.length === 0 ? (
+                    <span className="text-xs text-amber-700">Sin acceso</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {u.seccionesAcceso.map((s) => (
+                        <span
+                          key={s.seccion}
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            s.seccion === "SINCA_MINERIA" ? "bg-amber-50 text-amber-800" : "bg-sky-50 text-sky-700"
+                          }`}
+                        >
+                          {ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </td>
                 <td className="px-4 py-3">
