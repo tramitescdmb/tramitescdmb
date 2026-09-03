@@ -1,12 +1,12 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { NOMBRE_TRAMITE_VITAL, nombreTramiteVital } from "@/lib/vital";
+import { parsePorPagina } from "@/lib/vista-lista";
 
 const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0));
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-export type FiltrosVital = { q?: string; tramite?: string; anio?: string; actividad?: string; page?: string };
-const POR_PAGINA = 30;
+export type FiltrosVital = { q?: string; tramite?: string; anio?: string; actividad?: string; page?: string; vista?: string };
 
 export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
@@ -30,9 +30,10 @@ export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhere
   return and.length ? { AND: and } : {};
 }
 
-/** Listado paginado de /vital con la barra de filtros. */
+/** Listado paginado de /vital con la barra de filtros. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
 export async function getVitalListado(filtros: FiltrosVital) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
+  const { porPagina, vista } = parsePorPagina(filtros.vista);
   const where = construirWhereVital(filtros);
 
   const [total, filas] = await Promise.all([
@@ -40,13 +41,13 @@ export async function getVitalListado(filtros: FiltrosVital) {
     db.solicitudVital.findMany({
       where,
       orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
-      skip: (page - 1) * POR_PAGINA,
-      take: POR_PAGINA,
+      skip: (page - 1) * porPagina,
+      take: porPagina,
       include: { _count: { select: { documentos: true } } },
     }),
   ]);
 
-  return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / POR_PAGINA)), porPagina: POR_PAGINA };
+  return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista };
 }
 
 export async function getVitalOpcionesFiltro() {

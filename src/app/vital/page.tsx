@@ -7,7 +7,7 @@ import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVit
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
-import { DescargarCsvLimite } from "@/components/DescargarCsvLimite";
+import { VistaYDescargaCsv } from "@/components/VistaYDescargaCsv";
 
 const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -37,18 +37,32 @@ export default async function VitalSolicitudesPage({
     );
   }
 
-  const [{ filas, total, page, totalPaginas, porPagina }, opciones] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
     getVitalListado(sp),
     getVitalOpcionesFiltro(),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tramite || sp.anio || sp.actividad);
+  const CAMPOS_FILTRO = ["q", "tramite", "anio", "actividad"] as const;
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(sp)) if (["q", "tramite", "anio", "actividad"].includes(k) && v) params.set(k, String(v));
+    for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v) params.set(k, String(v));
+    if (sp.vista) params.set("vista", sp.vista);
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/vital?${s}` : "/vital";
+  };
+  const hrefVista = (v: string) => {
+    const params = new URLSearchParams();
+    for (const [k, val] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && val) params.set(k, String(val));
+    params.set("vista", v);
+    return `/vital?${params.toString()}`;
+  };
+  const hrefDescarga = () => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v) params.set(k, String(v));
+    params.set("limite", vista);
+    return `/api/vital/exportar?${params.toString()}`;
   };
 
   return (
@@ -142,14 +156,7 @@ export default async function VitalSolicitudesPage({
         </div>
       </form>
 
-      <DescargarCsvLimite
-        href={(limite) => {
-          const params = new URLSearchParams();
-          for (const [k, v] of Object.entries(sp)) if (["q", "tramite", "anio", "actividad"].includes(k) && v) params.set(k, String(v));
-          params.set("limite", limite);
-          return `/api/vital/exportar?${params.toString()}`;
-        }}
-      />
+      <VistaYDescargaCsv vistaActual={vista} hrefVista={hrefVista} hrefDescarga={hrefDescarga()} />
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <div className="overflow-x-auto">

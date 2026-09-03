@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { parsePorPagina } from "@/lib/vista-lista";
 
 /** Datos agregados para el panel de /historico (SINCA 1.0). */
 export async function getHistoricoDashboard() {
@@ -88,9 +89,8 @@ export type FiltrosHistorico = {
   municipio?: string;
   estado?: string;
   page?: string;
+  vista?: string;
 };
-
-const POR_PAGINA = 25;
 
 export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.SincaResolucionWhereInput {
   const where: Prisma.SincaResolucionWhereInput = {};
@@ -117,9 +117,10 @@ export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.Sinca
   return where;
 }
 
-/** Listado paginado de /historico/solicitudes con los filtros de la barra. */
+/** Listado paginado de /historico/solicitudes con los filtros de la barra. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
 export async function getHistoricoListado(filtros: FiltrosHistorico) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
+  const { porPagina, vista } = parsePorPagina(filtros.vista);
   const where = construirWhereHistorico(filtros);
 
   const [total, filas] = await Promise.all([
@@ -127,8 +128,8 @@ export async function getHistoricoListado(filtros: FiltrosHistorico) {
     db.sincaResolucion.findMany({
       where,
       orderBy: [{ fechaResolucion: { sort: "desc", nulls: "last" } }, { nroSolicitud: "desc" }],
-      skip: (page - 1) * POR_PAGINA,
-      take: POR_PAGINA,
+      skip: (page - 1) * porPagina,
+      take: porPagina,
       select: {
         nroSolicitud: true,
         numeroResolucion: true,
@@ -147,8 +148,9 @@ export async function getHistoricoListado(filtros: FiltrosHistorico) {
     filas,
     total,
     page,
-    totalPaginas: Math.max(1, Math.ceil(total / POR_PAGINA)),
-    porPagina: POR_PAGINA,
+    totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
+    porPagina,
+    vista,
   };
 }
 
