@@ -31,14 +31,13 @@ export type Analitica = Awaited<ReturnType<typeof calcularAnalitica>>;
 
 /**
  * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
- * Con un rango, acota a `fechaResolucion` dentro de [desde, hasta) SOLO los
- * paneles descriptivos (KPIs, tiempo de resolución, fricción, concentración
- * territorial, recurrentes, minería de texto). El pronóstico (regresión), la
- * estacionalidad y el "volumen últimos 12 meses" quedan SIEMPRE sobre todo el
- * histórico — necesitan varios años de datos para ser válidos, y lo mismo
- * aplica a `calcularMineria()` (clústeres, Naive Bayes, cambio de régimen,
- * anomalías), que por eso no recibe `periodo` en absoluto. Ver la pregunta
- * resuelta con el usuario antes de este cambio.
+ * Con un rango, acota TODO a `fechaResolucion` dentro de [desde, hasta) —
+ * KPIs, tiempo de resolución, fricción, concentración territorial,
+ * recurrentes, minería de texto, pronóstico, estacionalidad y "volumen
+ * últimos 12 meses" (ese último se interpreta relativo al FIN del período,
+ * no a hoy, cuando hay uno activo). Con un período corto el pronóstico
+ * puede quedar sin suficientes años completos — ya se apaga solo en ese
+ * caso (`pronostico` queda `null`, la tarjeta se oculta).
  */
 export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const anioActual = new Date().getUTCFullYear();
@@ -83,7 +82,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
       WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
 
-    // Regresión lineal de resoluciones/año (años completos) — SIEMPRE sobre todo el histórico.
+    // Regresión lineal de resoluciones/año (años completos, dentro del período elegido).
     db.$queryRaw<
       { slope: number; intercept: number; r2: number; avgx: number; sxx: number; syy: number; cnt: bigint }[]
     >`
@@ -92,15 +91,15 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
       FROM (
         SELECT "anioResolucion" y, COUNT(*)::float c
         FROM "SincaResolucion"
-        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual}
+        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo}
         GROUP BY 1
       ) t`,
 
-    // Estacionalidad y "volumen últimos 12 meses" — SIEMPRE sobre todo el histórico.
+    // Estacionalidad y "volumen últimos 12 meses", dentro del período elegido.
     db.$queryRaw<{ anio: number; mes: number; c: bigint }[]>`
       SELECT EXTRACT(YEAR FROM "fechaResolucion")::int anio,
              EXTRACT(MONTH FROM "fechaResolucion")::int mes, COUNT(*) c
-      FROM "SincaResolucion" WHERE "fechaResolucion" IS NOT NULL
+      FROM "SincaResolucion" WHERE "fechaResolucion" IS NOT NULL ${condPeriodo}
       GROUP BY 1, 2`,
 
     db.$queryRaw<{ bucket: string; c: bigint }[]>`
@@ -176,11 +175,14 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const hhiNorm = kMun > 1 ? (hhi - 1 / kMun) / (1 - 1 / kMun) : 0;
   const top5Mun = totMun > 0 ? concentracionRaw.slice(0, 5).reduce((a, r) => a + n(r.c), 0) / totMun : 0;
 
-  // Volumen últimos 12 meses vs 12 previos
+  // Volumen últimos 12 meses vs 12 previos — relativo al FIN del período elegido
+  // (o a hoy, en Total). Con un período más corto de 24 meses, "prev12" queda en 0
+  // (nada de eso entró en la consulta filtrada) y cambio12 se apaga solo (null → "—").
   const mesesOrden = serieMensualRaw
     .map((r) => ({ ym: r.anio * 12 + (r.mes - 1), c: n(r.c) }))
     .sort((a, b) => a.ym - b.ym);
-  const hoyYm = new Date().getUTCFullYear() * 12 + new Date().getUTCMonth();
+  const finRef = periodo ? new Date(periodo.hasta.getTime() - 1) : new Date();
+  const hoyYm = finRef.getUTCFullYear() * 12 + finRef.getUTCMonth();
   const ventana = (desde: number, hasta: number) =>
     mesesOrden.filter((m) => m.ym > desde && m.ym <= hasta).reduce((a, m) => a + m.c, 0);
   const ult12 = ventana(hoyYm - 12, hoyYm);
@@ -201,7 +203,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
     const historico = (
       await db.$queryRaw<{ anio: number; c: bigint }[]>`
         SELECT "anioResolucion" anio, COUNT(*) c FROM "SincaResolucion"
-        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual}
+        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo}
         GROUP BY 1 ORDER BY 1`
     ).map((r) => ({ anio: r.anio, valor: n(r.c) }));
     const proyeccion = [anioActual, anioActual + 1, anioActual + 2].map((y) => {

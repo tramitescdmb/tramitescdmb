@@ -1,17 +1,23 @@
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
 /**
  * Minería de datos / KDD sobre el histórico SINCA 1.0.
  *
- * Todo corre en el servidor sobre las ~5.000 filas del espejo (una sola lectura
- * de columnas livianas). Los algoritmos van implementados a mano — sin librerías
- * de ML — para que sean auditables:
+ * Todo corre en el servidor sobre las filas del espejo dentro del período
+ * elegido (o todo el histórico si es Total). Los algoritmos van
+ * implementados a mano — sin librerías de ML — para que sean auditables:
  *   - k-means  → segmentación de municipios por perfil de trámite
  *   - z-score robusto (mediana/MAD) → meses atípicos
  *   - vallas de Tukey (IQR) → resoluciones con tiempo de trámite atípico
  *   - Naive Bayes → factores que suben/bajan la probabilidad de aprobación
  *   - regresión de dos segmentos → año de quiebre en la actividad
+ *
+ * Con un período corto estas técnicas pueden quedar sin suficientes datos
+ * para ser válidas (ej. el pronóstico exige años completos) — cada una ya
+ * se apaga sola en ese caso (ver los `if` de tamaño mínimo más abajo), la
+ * página solo oculta la tarjeta correspondiente.
  */
 
 type Fila = {
@@ -85,8 +91,10 @@ function kmeans(vectores: number[][], k: number, iteraciones = 40) {
 
 export type Mineria = Awaited<ReturnType<typeof calcularMineria>>;
 
-export async function calcularMineria() {
+export async function calcularMineria(periodo: RangoPeriodo = null) {
+  const filtroFecha = periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {};
   const filas: Fila[] = await db.sincaResolucion.findMany({
+    where: filtroFecha,
     select: {
       anioResolucion: true,
       tipoSolicitudCodigo: true,
@@ -184,7 +192,7 @@ export async function calcularMineria() {
   const iqr = q3 - q1;
   const vallaAlta = q3 + 1.5 * iqr;
   const atipicosLentos = await db.sincaResolucion.findMany({
-    where: { diasResolucion: { gt: Math.round(vallaAlta) } },
+    where: { ...filtroFecha, diasResolucion: { gt: Math.round(vallaAlta) } },
     orderBy: { diasResolucion: "desc" },
     take: 8,
     select: { nroSolicitud: true, numeroResolucion: true, diasResolucion: true, tipoSolicitudNombre: true, municipio: true, fechaResolucion: true },

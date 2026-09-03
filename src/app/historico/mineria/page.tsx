@@ -52,16 +52,13 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
-  // getMineria() (clústeres, Naive Bayes, cambio de régimen, anomalías) no recibe período —
-  // esas técnicas necesitan todo el histórico para ser válidas, ver la nota junto a esas tarjetas.
-  const [a, m] = await Promise.all([getAnalitica(rango), getMineria()]);
+  const [a, m] = await Promise.all([getAnalitica(rango), getMineria(rango)]);
   if (a.totalGeneral === 0) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
   }
 
   const g = a.pronostico;
   const selector = <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />;
-  const notaHistoricoCompleto = rango ? " Siempre sobre todo el histórico." : "";
 
   return (
     <div className="space-y-4">
@@ -74,25 +71,16 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
           Minería de datos y descubrimiento de conocimiento (KDD)
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          Inferencia estadística y aprendizaje automático sobre{" "}
-          {rango ? (
-            <>
-              las {a.total.toLocaleString("es-CO")} resoluciones de fondo del período seleccionado ({etiqueta}
-              ). Los paneles de pronóstico, estacionalidad y aprendizaje automático más abajo siempre usan las{" "}
-              {a.totalGeneral.toLocaleString("es-CO")} de todo el histórico — un período corto no alcanza para ser
-              estadísticamente válido en esas técnicas.
-            </>
-          ) : (
-            <>las {a.total.toLocaleString("es-CO")} resoluciones de fondo del histórico.</>
-          )}{" "}
-          Los algoritmos corren en el servidor y están implementados sin librerías externas para que sean auditables.
+          Inferencia estadística y aprendizaje automático sobre las {a.total.toLocaleString("es-CO")} resoluciones de fondo
+          {rango ? ` del período seleccionado (${etiqueta}).` : " del histórico."} Los algoritmos corren en el servidor y
+          están implementados sin librerías externas para que sean auditables.
         </p>
         <div className="mt-3">
           <PipelineKDD />
         </div>
         {rango && a.total === 0 && (
           <p className="mt-2 rounded-md bg-stone-50 px-3 py-1.5 text-xs text-stone-600">
-            No hay resoluciones en el período seleccionado — los paneles descriptivos de abajo quedarán en cero.
+            No hay resoluciones en el período seleccionado.
           </p>
         )}
         {a.total > 0 && a.coberturaDias < 0.9 && (
@@ -111,7 +99,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
           icon={TrendingUp}
           label="Volumen últimos 12 meses"
           valor={a.volumen.ult12.toLocaleString("es-CO")}
-          sub={`${pctSigno(a.volumen.cambio12)} vs. 12 meses previos${notaHistoricoCompleto}`}
+          sub={`${pctSigno(a.volumen.cambio12)} vs. 12 meses previos`}
         />
         <Kpi icon={MapPinned} label="Concentración (top 5 municipios)" valor={pct(a.concentracion.top5)} sub={`HHI ${a.concentracion.hhi.toFixed(2)}`} />
       </div>
@@ -121,7 +109,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         <Card
           icon={TrendingUp}
           titulo="Proyección de resoluciones por año"
-          sub={`Regresión lineal sobre años completos (R² = ${g.r2.toFixed(2)}). Banda = intervalo de predicción del 95 %.${notaHistoricoCompleto}`}
+          sub={`Regresión lineal sobre años completos (R² = ${g.r2.toFixed(2)}). Banda = intervalo de predicción del 95 %.`}
         >
           <ForecastChart historico={g.historico} proyeccion={g.proyeccion} emptyMessage="Sin suficientes años." />
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
@@ -136,7 +124,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
 
       {/* Punto de quiebre */}
       {m.quiebre && (
-        <Card icon={GitBranch} titulo="Cambio de régimen en la actividad" sub={`Regresión de dos segmentos: el año que mejor parte la serie en dos tendencias distintas.${notaHistoricoCompleto}`}>
+        <Card icon={GitBranch} titulo="Cambio de régimen en la actividad" sub={`Regresión de dos segmentos: el año que mejor parte la serie en dos tendencias distintas.`}>
           <p className="text-sm text-stone-700">
             La actividad {m.quiebre.pendienteAntes >= 0 ? "creció" : "bajó"} a un ritmo de{" "}
             <strong>{Math.abs(Math.round(m.quiebre.pendienteAntes))} resoluciones/año</strong> hasta{" "}
@@ -151,7 +139,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
       <Card
         icon={Sparkles}
         titulo="Estacionalidad — resoluciones por mes y año"
-        sub={`El tono indica cuántas resoluciones se firmaron ese mes. Revela si la CDMB concentra decisiones en ciertas épocas.${notaHistoricoCompleto}`}
+        sub={`El tono indica cuántas resoluciones se firmaron ese mes. Revela si la CDMB concentra decisiones en ciertas épocas.`}
       >
         <HeatmapMesAnio filas={a.heatmap} emptyMessage="Sin datos mensuales." />
         <p className="mb-2 mt-4 text-xs font-medium text-stone-600">Índice estacional (1,0 = mes promedio)</p>
@@ -166,7 +154,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
       <Card
         icon={Boxes}
         titulo="Segmentación de municipios (k-means)"
-        sub={`Agrupa los ${m.clusters.municipiosAnalizados} municipios con ≥ 10 resoluciones según su mezcla de tipos de trámite. Perfiles descubiertos, no definidos a mano.${notaHistoricoCompleto}`}
+        sub={`Agrupa los ${m.clusters.municipiosAnalizados} municipios con ≥ 10 resoluciones según su mezcla de tipos de trámite. Perfiles descubiertos, no definidos a mano.`}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {m.clusters.grupos.map((c, i) => (
@@ -191,10 +179,10 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
 
       {/* ML: Naive Bayes aprobación */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card icon={Brain} titulo="Qué sube la probabilidad de aprobación" sub={`Naive Bayes · razón de verosimilitud (lift) frente a la tasa base de ${pct(m.aprobacion.base)}.${notaHistoricoCompleto}`}>
+        <Card icon={Brain} titulo="Qué sube la probabilidad de aprobación" sub={`Naive Bayes · razón de verosimilitud (lift) frente a la tasa base de ${pct(m.aprobacion.base)}.`}>
           <BarrasLift data={m.aprobacion.suben.map((f) => ({ label: `${f.valor} · ${f.factor}`, lift: f.lift, casos: f.casos }))} emptyMessage="—" />
         </Card>
-        <Card icon={Brain} titulo="Qué la baja" sub={`Los mismos factores, ordenados por el que más reduce la probabilidad de aprobación.${notaHistoricoCompleto}`}>
+        <Card icon={Brain} titulo="Qué la baja" sub={`Los mismos factores, ordenados por el que más reduce la probabilidad de aprobación.`}>
           <BarrasLift data={m.aprobacion.bajan.map((f) => ({ label: `${f.valor} · ${f.factor}`, lift: f.lift, casos: f.casos }))} emptyMessage="—" />
         </Card>
       </div>
@@ -204,7 +192,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         <Card
           icon={AlertTriangle}
           titulo="Meses atípicos"
-          sub={`Desviación robusta (mediana / MAD). Se marcan los meses con |z| ≥ 3,5 — picos o caídas que no son ruido normal.${notaHistoricoCompleto}`}
+          sub={`Desviación robusta (mediana / MAD). Se marcan los meses con |z| ≥ 3,5 — picos o caídas que no son ruido normal.`}
         >
           {m.anomaliasMes.length === 0 ? (
             <p className="text-sm text-stone-500">Sin meses atípicos.</p>
@@ -225,7 +213,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         <Card
           icon={AlertTriangle}
           titulo="Trámites con tiempo atípico"
-          sub={`Vallas de Tukey: por encima de ${m.tiemposAtipicos.vallaAlta.toLocaleString("es-CO")} días (Q3 + 1,5·RIC). Son el ${pct(m.tiemposAtipicos.pct)} de los casos.${notaHistoricoCompleto}`}
+          sub={`Vallas de Tukey: por encima de ${m.tiemposAtipicos.vallaAlta.toLocaleString("es-CO")} días (Q3 + 1,5·RIC). Son el ${pct(m.tiemposAtipicos.pct)} de los casos.`}
         >
           {m.tiemposAtipicos.casos.length === 0 ? (
             <p className="text-sm text-stone-500">Sin casos atípicos.</p>
