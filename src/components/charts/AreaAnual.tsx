@@ -56,7 +56,16 @@ export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage:
         <path d={lineaPath} fill="none" stroke={COLOR} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
         {pts.map((p, i) => (
-          <g key={p.anio} tabIndex={0} className="group outline-none">
+          // Tooltip nativo vía el atributo `title`, no un <title> hijo: React 19 trata
+          // <title> como el título del documento y lo vacía al renderizar en el servidor
+          // (children sí llegan por hidratación) — error de hidratación en cada carga.
+          <g
+            key={p.anio}
+            tabIndex={0}
+            className="group outline-none"
+            // @ts-expect-error -- `title` es un atributo HTML global válido en SVG (tooltip nativo del navegador); el tipado de SVGProps de React no lo incluye.
+            title={`${p.anio}: ${p.valor.toLocaleString("es-CO")}`}
+          >
             <rect x={p.x - innerW / data.length / 2} y={PADT} width={innerW / data.length} height={innerH} fill="transparent" />
             <line x1={p.x} y1={PADT} x2={p.x} y2={PADT + innerH} stroke={COLOR} strokeWidth={1} opacity={0} className="transition-opacity group-hover:opacity-30 group-focus-visible:opacity-30" />
             <circle cx={p.x} cy={p.y} r={2.5} fill={COLOR} opacity={mostrarValor[i] ? 1 : 0} className="transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
@@ -65,7 +74,6 @@ export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage:
                 {p.valor.toLocaleString("es-CO")}
               </text>
             )}
-            <title>{`${p.anio}: ${p.valor.toLocaleString("es-CO")}`}</title>
             {i % pasoAnio === 0 || i === pts.length - 1 ? (
               <text x={clampX(p.x)} y={H - 6} textAnchor="middle" fontSize="9" fill="#8b8781">
                 {p.anio}

@@ -2,57 +2,41 @@
 
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { CalendarRange } from "lucide-react";
-
-const OPCIONES = [
-  { valor: "total", etiqueta: "Total (todo el histórico)" },
-  { valor: "1m", etiqueta: "Último mes" },
-  { valor: "3m", etiqueta: "Últimos 3 meses" },
-  { valor: "6m", etiqueta: "Últimos 6 meses" },
-  { valor: "1a", etiqueta: "Último año" },
-  { valor: "2a", etiqueta: "Últimos 2 años" },
-  { valor: "4a", etiqueta: "Últimos 4 años" },
-  { valor: "personalizado", etiqueta: "Personalizado…" },
-];
+import { CalendarRange, X } from "lucide-react";
 
 /**
- * Selector de período de un dashboard: atajos (mes/años) + un rango con
- * calendario para revisar por vigencias específicas. Cambia la URL
- * (?periodo=&desde=&hasta=), así que la página vuelve a renderizar en el
- * servidor con los datos ya filtrados — no hay estado que sincronizar aparte.
+ * Selector de período de un dashboard: por defecto Total (todo el
+ * histórico); con las dos fechas + Aplicar se acota a ese rango con
+ * calendario (mínimo un mes, se ajusta solo). Cambia la URL
+ * (?desde=&hasta=), así que la página vuelve a renderizar en el servidor
+ * con los datos ya filtrados — no hay estado que sincronizar aparte.
  */
-export function SelectorPeriodo({ valorActual, desdeActual, hastaActual }: { valorActual: string; desdeActual?: string; hastaActual?: string }) {
+export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: string; hastaActual?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [mostrarCalendario, setMostrarCalendario] = useState(valorActual === "personalizado");
   const [desde, setDesde] = useState(desdeActual ?? "");
   const [hasta, setHasta] = useState(hastaActual ?? "");
+  const activo = Boolean(desdeActual && hastaActual);
 
   function irA(params: URLSearchParams) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  function cambiarOpcion(v: string) {
-    if (v === "personalizado") {
-      setMostrarCalendario(true);
-      return;
-    }
-    setMostrarCalendario(false);
+  function aplicar() {
+    if (!desde || !hasta) return;
     const params = new URLSearchParams(searchParams.toString());
-    if (v === "total") params.delete("periodo");
-    else params.set("periodo", v);
-    params.delete("desde");
-    params.delete("hasta");
+    params.set("desde", desde);
+    params.set("hasta", hasta);
     irA(params);
   }
 
-  function aplicarPersonalizado() {
-    if (!desde || !hasta) return;
+  function quitar() {
+    setDesde("");
+    setHasta("");
     const params = new URLSearchParams(searchParams.toString());
-    params.set("periodo", "personalizado");
-    params.set("desde", desde);
-    params.set("hasta", hasta);
+    params.delete("desde");
+    params.delete("hasta");
     irA(params);
   }
 
@@ -62,44 +46,41 @@ export function SelectorPeriodo({ valorActual, desdeActual, hastaActual }: { val
         <CalendarRange className="h-4 w-4 text-cdmb-600" aria-hidden />
         Período
       </span>
-      <select
-        value={valorActual}
-        onChange={(e) => cambiarOpcion(e.target.value)}
-        className="rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+      <input
+        type="date"
+        value={desde}
+        onChange={(e) => setDesde(e.target.value)}
+        aria-label="Desde"
+        className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+      />
+      <span className="text-xs text-stone-400">a</span>
+      <input
+        type="date"
+        value={hasta}
+        onChange={(e) => setHasta(e.target.value)}
+        aria-label="Hasta"
+        className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+      />
+      <button
+        type="button"
+        onClick={aplicar}
+        disabled={!desde || !hasta}
+        className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {OPCIONES.map((o) => (
-          <option key={o.valor} value={o.valor}>
-            {o.etiqueta}
-          </option>
-        ))}
-      </select>
-      {mostrarCalendario && (
-        <>
-          <input
-            type="date"
-            value={desde}
-            onChange={(e) => setDesde(e.target.value)}
-            aria-label="Desde"
-            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
-          <span className="text-xs text-stone-400">a</span>
-          <input
-            type="date"
-            value={hasta}
-            onChange={(e) => setHasta(e.target.value)}
-            aria-label="Hasta"
-            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
-          <button
-            type="button"
-            onClick={aplicarPersonalizado}
-            disabled={!desde || !hasta}
-            className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Aplicar
-          </button>
-          <span className="text-xs text-stone-400">Mínimo un mes — un rango más corto se ajusta.</span>
-        </>
+        Aplicar
+      </button>
+      {activo ? (
+        <button
+          type="button"
+          onClick={quitar}
+          title="Quitar el filtro y volver a ver todo el histórico"
+          className="flex items-center gap-1 rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 transition hover:bg-stone-50"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+          Ver total
+        </button>
+      ) : (
+        <span className="text-xs text-stone-400">Sin filtro — mostrando todo el histórico. Mínimo un mes.</span>
       )}
     </div>
   );

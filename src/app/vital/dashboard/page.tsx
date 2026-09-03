@@ -18,7 +18,7 @@ const fechaHora = (d: Date | null) =>
 
 export default async function VitalDashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;
-  const { rango, etiqueta, valor } = resolverPeriodo(sp);
+  const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -32,7 +32,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
   if (d.total === 0) {
     return (
       <div className="space-y-4">
-        <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
+        <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
         <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
           {rango
             ? "No hay solicitudes de VITAL en el período seleccionado."
@@ -44,7 +44,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-4">
-      <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Kpi icon={Inbox} label="Solicitudes traídas" value={num(d.total)} />

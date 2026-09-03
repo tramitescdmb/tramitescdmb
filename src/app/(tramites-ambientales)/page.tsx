@@ -25,7 +25,7 @@ function horaBogota(): number {
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;
-  const { rango, etiqueta, valor } = resolverPeriodo(sp);
+  const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
@@ -41,7 +41,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
 
-      <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       <MisPendientes resumen={pendientes} />
 

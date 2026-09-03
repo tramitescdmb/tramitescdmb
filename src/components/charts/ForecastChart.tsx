@@ -80,11 +80,17 @@ export function ForecastChart({
           <circle key={p.anio} cx={x(p.anio)} cy={y(p.valor)} r={2.5} fill={COLOR} />
         ))}
         {proyeccion.map((p) => (
-          <g key={p.anio} tabIndex={0} className="group outline-none">
+          // Tooltip nativo vía el atributo `title`, no un <title> hijo: React 19 trata
+          // <title> como el título del documento y lo vacía al renderizar en el servidor
+          // (children sí llegan por hidratación) — error de hidratación en cada carga.
+          <g
+            key={p.anio}
+            tabIndex={0}
+            className="group outline-none"
+            // @ts-expect-error -- `title` es un atributo HTML global válido en SVG (tooltip nativo del navegador); el tipado de SVGProps de React no lo incluye.
+            title={`${p.anio}: ${p.valor.toLocaleString("es-CO")} (entre ${p.lo.toLocaleString("es-CO")} y ${p.hi.toLocaleString("es-CO")})`}
+          >
             <circle cx={x(p.anio)} cy={y(p.valor)} r={3} fill="#fcfcfb" stroke={COLOR} strokeWidth={2} />
-            <title>
-              {p.anio}: {p.valor.toLocaleString("es-CO")} (entre {p.lo.toLocaleString("es-CO")} y {p.hi.toLocaleString("es-CO")})
-            </title>
           </g>
         ))}
 

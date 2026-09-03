@@ -42,7 +42,7 @@ function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale;
 
 export default async function MineriaPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;
-  const { rango, etiqueta, valor } = resolverPeriodo(sp);
+  const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -60,7 +60,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
   }
 
   const g = a.pronostico;
-  const selector = <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />;
+  const selector = <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />;
   const notaHistoricoCompleto = rango ? " Siempre sobre todo el histórico." : "";
 
   return (

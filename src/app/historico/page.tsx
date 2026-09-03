@@ -22,7 +22,7 @@ export default async function HistoricoPanelPage({
 }) {
   const sp = await searchParams;
   const { ok, error } = sp;
-  const { rango, etiqueta, valor } = resolverPeriodo(sp);
+  const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -40,7 +40,7 @@ export default async function HistoricoPanelPage({
 
   const d = await getHistoricoDashboard(rango);
   const sinDatos = d.total === 0;
-  const selector = <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />;
+  const selector = <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />;
 
   const botonSync = esAdmin ? (
     <form action="/api/sinca/sincronizar" method="post">
