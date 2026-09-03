@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { obtenerResolucionDetalle, descargarArchivoResolucion, sincaConfigurado } from "@/lib/sinca";
+import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 export const maxDuration = 60;
 
@@ -15,6 +16,10 @@ export const maxDuration = 60;
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ nro: string; idx: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAccederSeccion(permisos, "SINCA_BASE")) {
+    return NextResponse.json({ error: "No tiene acceso a SINCA 1.0." }, { status: 403 });
+  }
   if (!sincaConfigurado()) return NextResponse.json({ error: "SINCA 1.0 no está configurado." }, { status: 503 });
 
   const { nro, idx } = await params;
