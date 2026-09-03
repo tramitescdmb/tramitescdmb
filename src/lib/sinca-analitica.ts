@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
 /**
  * Analítica del histórico SINCA 1.0 — inferencia estadística y minería de datos
@@ -27,10 +29,25 @@ function wilson(exitos: number, total: number): { p: number; lo: number; hi: num
 
 export type Analitica = Awaited<ReturnType<typeof calcularAnalitica>>;
 
-export async function calcularAnalitica() {
+/**
+ * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
+ * Con un rango, acota a `fechaResolucion` dentro de [desde, hasta) SOLO los
+ * paneles descriptivos (KPIs, tiempo de resolución, fricción, concentración
+ * territorial, recurrentes, minería de texto). El pronóstico (regresión), la
+ * estacionalidad y el "volumen últimos 12 meses" quedan SIEMPRE sobre todo el
+ * histórico — necesitan varios años de datos para ser válidos, y lo mismo
+ * aplica a `calcularMineria()` (clústeres, Naive Bayes, cambio de régimen,
+ * anomalías), que por eso no recibe `periodo` en absoluto. Ver la pregunta
+ * resuelta con el usuario antes de este cambio.
+ */
+export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const anioActual = new Date().getUTCFullYear();
+  const condPeriodo = periodo
+    ? Prisma.sql`AND "fechaResolucion" >= ${periodo.desde} AND "fechaResolucion" < ${periodo.hasta}`
+    : Prisma.empty;
 
   const [
+    totalGeneralRaw,
     kpiRaw,
     coberturaRaw,
     aprobacionRaw,
@@ -45,25 +62,28 @@ export async function calcularAnalitica() {
     recurrentesRaw,
     proyectos,
   ] = await Promise.all([
+    db.sincaResolucion.count(),
+
     db.$queryRaw<{ total: bigint; con_dias: bigint; p50: number | null; p90: number | null }[]>`
       SELECT COUNT(*) total,
              COUNT("diasResolucion") con_dias,
              percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
              percentile_cont(0.9) WITHIN GROUP (ORDER BY "diasResolucion") p90
-      FROM "SincaResolucion"`,
+      FROM "SincaResolucion" WHERE true ${condPeriodo}`,
 
     db.$queryRaw<{ enriquecidas: bigint; con_nit: bigint }[]>`
-      SELECT COUNT("enriquecidoEn") enriquecidas, COUNT("solicitanteNit") con_nit FROM "SincaResolucion"`,
+      SELECT COUNT("enriquecidoEn") enriquecidas, COUNT("solicitanteNit") con_nit
+      FROM "SincaResolucion" WHERE true ${condPeriodo}`,
 
     db.$queryRaw<{ total: bigint; aprobadas: bigint }[]>`
       SELECT COUNT(*) total, COUNT(*) FILTER (WHERE estado = 'Aprobada') aprobadas
-      FROM "SincaResolucion" WHERE estado IS NOT NULL`,
+      FROM "SincaResolucion" WHERE estado IS NOT NULL ${condPeriodo}`,
 
     db.$queryRaw<{ municipio: string; c: bigint }[]>`
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
-      WHERE municipio IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`,
+      WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
 
-    // Regresión lineal de resoluciones/año (años completos)
+    // Regresión lineal de resoluciones/año (años completos) — SIEMPRE sobre todo el histórico.
     db.$queryRaw<
       { slope: number; intercept: number; r2: number; avgx: number; sxx: number; syy: number; cnt: bigint }[]
     >`
@@ -76,6 +96,7 @@ export async function calcularAnalitica() {
         GROUP BY 1
       ) t`,
 
+    // Estacionalidad y "volumen últimos 12 meses" — SIEMPRE sobre todo el histórico.
     db.$queryRaw<{ anio: number; mes: number; c: bigint }[]>`
       SELECT EXTRACT(YEAR FROM "fechaResolucion")::int anio,
              EXTRACT(MONTH FROM "fechaResolucion")::int mes, COUNT(*) c
@@ -91,7 +112,7 @@ export async function calcularAnalitica() {
         WHEN "diasResolucion" <= 1460 THEN '2-4 años'
         ELSE 'más de 4 años' END bucket,
         COUNT(*) c
-      FROM "SincaResolucion" WHERE "diasResolucion" IS NOT NULL GROUP BY 1`,
+      FROM "SincaResolucion" WHERE "diasResolucion" IS NOT NULL ${condPeriodo} GROUP BY 1`,
 
     db.$queryRaw<{ anio: number; p50: number; p90: number; c: bigint }[]>`
       SELECT "anioResolucion" anio,
@@ -99,7 +120,7 @@ export async function calcularAnalitica() {
              percentile_cont(0.9) WITHIN GROUP (ORDER BY "diasResolucion") p90,
              COUNT(*) c
       FROM "SincaResolucion"
-      WHERE "diasResolucion" IS NOT NULL AND "anioResolucion" IS NOT NULL
+      WHERE "diasResolucion" IS NOT NULL AND "anioResolucion" IS NOT NULL ${condPeriodo}
       GROUP BY 1 ORDER BY 1`,
 
     db.$queryRaw<{ tipo: string; p50: number; c: bigint }[]>`
@@ -107,19 +128,19 @@ export async function calcularAnalitica() {
              percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
              COUNT(*) c
       FROM "SincaResolucion"
-      WHERE "diasResolucion" IS NOT NULL AND "tipoSolicitudNombre" IS NOT NULL
+      WHERE "diasResolucion" IS NOT NULL AND "tipoSolicitudNombre" IS NOT NULL ${condPeriodo}
       GROUP BY 1 HAVING COUNT(*) >= 15 ORDER BY 2 DESC LIMIT 12`,
 
     db.$queryRaw<{ tipo: string; total: bigint; no_aprobadas: bigint }[]>`
       SELECT "tipoSolicitudNombre" tipo, COUNT(*) total,
              COUNT(*) FILTER (WHERE estado <> 'Aprobada') no_aprobadas
       FROM "SincaResolucion"
-      WHERE "tipoSolicitudNombre" IS NOT NULL AND estado IS NOT NULL
+      WHERE "tipoSolicitudNombre" IS NOT NULL AND estado IS NOT NULL ${condPeriodo}
       GROUP BY 1 HAVING COUNT(*) >= 20 ORDER BY 2 DESC LIMIT 12`,
 
     db.$queryRaw<{ municipio: string; c: bigint }[]>`
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
-      WHERE municipio IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`,
+      WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
 
     db.$queryRaw<{ nit: string; nombre: string | null; c: bigint; anios: bigint; tipos: bigint }[]>`
       SELECT "solicitanteNit" nit, MAX("solicitanteNombre") nombre, COUNT(*) c,
@@ -128,10 +149,15 @@ export async function calcularAnalitica() {
       WHERE "solicitanteNit" IS NOT NULL
         AND length("solicitanteNit") >= 5
         AND "solicitanteNit" NOT IN ('9999999999', '99999999', '999999999', '0000000000', '00000000', '1111111111', '12345678', '123456789')
+        ${condPeriodo}
       GROUP BY 1 ORDER BY 3 DESC LIMIT 15`,
 
-    db.sincaResolucion.findMany({ select: { proyecto: true } }),
+    db.sincaResolucion.findMany({
+      where: periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : undefined,
+      select: { proyecto: true },
+    }),
   ]);
+  const totalGeneral = totalGeneralRaw;
 
   // KPI tiempo de resolución
   const diasP50 = kpiRaw[0]?.p50 != null ? Math.round(kpiRaw[0].p50) : null;
@@ -148,7 +174,7 @@ export async function calcularAnalitica() {
   const hhi = concentracionRaw.reduce((a, r) => a + Math.pow(n(r.c) / totMun, 2), 0);
   const kMun = concentracionRaw.length;
   const hhiNorm = kMun > 1 ? (hhi - 1 / kMun) / (1 - 1 / kMun) : 0;
-  const top5Mun = concentracionRaw.slice(0, 5).reduce((a, r) => a + n(r.c), 0) / totMun;
+  const top5Mun = totMun > 0 ? concentracionRaw.slice(0, 5).reduce((a, r) => a + n(r.c), 0) / totMun : 0;
 
   // Volumen últimos 12 meses vs 12 previos
   const mesesOrden = serieMensualRaw
@@ -228,6 +254,7 @@ export async function calcularAnalitica() {
 
   return {
     total,
+    totalGeneral,
     coberturaDias,
     coberturaNit,
     enriquecidas: n(coberturaRaw[0]?.enriquecidas),

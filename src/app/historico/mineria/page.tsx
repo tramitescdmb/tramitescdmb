@@ -15,6 +15,8 @@ import { BarrasConIC } from "@/components/charts/BarrasConIC";
 import { BarrasLift } from "@/components/charts/BarrasLift";
 import { MiniColumnas } from "@/components/charts/MiniColumnas";
 import { PipelineKDD } from "@/components/PipelineKDD";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
 const pctSigno = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} %`);
@@ -38,7 +40,9 @@ function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale;
   );
 }
 
-export default async function MineriaPage() {
+export default async function MineriaPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+  const sp = await searchParams;
+  const { rango, etiqueta, valor } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -48,15 +52,21 @@ export default async function MineriaPage() {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
-  const [a, m] = await Promise.all([getAnalitica(), getMineria()]);
-  if (a.total === 0) {
+  // getMineria() (clústeres, Naive Bayes, cambio de régimen, anomalías) no recibe período —
+  // esas técnicas necesitan todo el histórico para ser válidas, ver la nota junto a esas tarjetas.
+  const [a, m] = await Promise.all([getAnalitica(rango), getMineria()]);
+  if (a.totalGeneral === 0) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
   }
 
   const g = a.pronostico;
+  const selector = <SelectorPeriodo valorActual={valor} desdeActual={sp.desde} hastaActual={sp.hasta} />;
+  const notaHistoricoCompleto = rango ? " Siempre sobre todo el histórico." : "";
 
   return (
     <div className="space-y-4">
+      {selector}
+
       {/* Encabezado + proceso KDD */}
       <div>
         <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
@@ -64,13 +74,28 @@ export default async function MineriaPage() {
           Minería de datos y descubrimiento de conocimiento (KDD)
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          Inferencia estadística y aprendizaje automático sobre las {a.total.toLocaleString("es-CO")} resoluciones de fondo del
-          histórico. Los algoritmos corren en el servidor y están implementados sin librerías externas para que sean auditables.
+          Inferencia estadística y aprendizaje automático sobre{" "}
+          {rango ? (
+            <>
+              las {a.total.toLocaleString("es-CO")} resoluciones de fondo del período seleccionado ({etiqueta}
+              ). Los paneles de pronóstico, estacionalidad y aprendizaje automático más abajo siempre usan las{" "}
+              {a.totalGeneral.toLocaleString("es-CO")} de todo el histórico — un período corto no alcanza para ser
+              estadísticamente válido en esas técnicas.
+            </>
+          ) : (
+            <>las {a.total.toLocaleString("es-CO")} resoluciones de fondo del histórico.</>
+          )}{" "}
+          Los algoritmos corren en el servidor y están implementados sin librerías externas para que sean auditables.
         </p>
         <div className="mt-3">
           <PipelineKDD />
         </div>
-        {a.coberturaDias < 0.9 && (
+        {rango && a.total === 0 && (
+          <p className="mt-2 rounded-md bg-stone-50 px-3 py-1.5 text-xs text-stone-600">
+            No hay resoluciones en el período seleccionado — los paneles descriptivos de abajo quedarán en cero.
+          </p>
+        )}
+        {a.total > 0 && a.coberturaDias < 0.9 && (
           <p className="mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
             El tiempo de trámite se calcula sobre el {pct(a.coberturaDias)} de los registros; el resto se completa con la
             sincronización diaria.
@@ -82,7 +107,12 @@ export default async function MineriaPage() {
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <Kpi icon={Scale} label="Tasa de aprobación" valor={pct(a.aprobacion.p)} sub={`IC 95 %: ${pct(a.aprobacion.lo)}–${pct(a.aprobacion.hi)}`} />
         <Kpi icon={Timer} label="Tiempo de resolución (mediana)" valor={a.diasP50 != null ? `${a.diasP50} d` : "—"} sub={a.diasP90 != null ? `p90 ≤ ${a.diasP90} d` : "en cálculo…"} />
-        <Kpi icon={TrendingUp} label="Volumen últimos 12 meses" valor={a.volumen.ult12.toLocaleString("es-CO")} sub={`${pctSigno(a.volumen.cambio12)} vs. 12 meses previos`} />
+        <Kpi
+          icon={TrendingUp}
+          label="Volumen últimos 12 meses"
+          valor={a.volumen.ult12.toLocaleString("es-CO")}
+          sub={`${pctSigno(a.volumen.cambio12)} vs. 12 meses previos${notaHistoricoCompleto}`}
+        />
         <Kpi icon={MapPinned} label="Concentración (top 5 municipios)" valor={pct(a.concentracion.top5)} sub={`HHI ${a.concentracion.hhi.toFixed(2)}`} />
       </div>
 
@@ -91,7 +121,7 @@ export default async function MineriaPage() {
         <Card
           icon={TrendingUp}
           titulo="Proyección de resoluciones por año"
-          sub={`Regresión lineal sobre años completos (R² = ${g.r2.toFixed(2)}). Banda = intervalo de predicción del 95 %.`}
+          sub={`Regresión lineal sobre años completos (R² = ${g.r2.toFixed(2)}). Banda = intervalo de predicción del 95 %.${notaHistoricoCompleto}`}
         >
           <ForecastChart historico={g.historico} proyeccion={g.proyeccion} emptyMessage="Sin suficientes años." />
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
@@ -106,7 +136,7 @@ export default async function MineriaPage() {
 
       {/* Punto de quiebre */}
       {m.quiebre && (
-        <Card icon={GitBranch} titulo="Cambio de régimen en la actividad" sub="Regresión de dos segmentos: el año que mejor parte la serie en dos tendencias distintas.">
+        <Card icon={GitBranch} titulo="Cambio de régimen en la actividad" sub={`Regresión de dos segmentos: el año que mejor parte la serie en dos tendencias distintas.${notaHistoricoCompleto}`}>
           <p className="text-sm text-stone-700">
             La actividad {m.quiebre.pendienteAntes >= 0 ? "creció" : "bajó"} a un ritmo de{" "}
             <strong>{Math.abs(Math.round(m.quiebre.pendienteAntes))} resoluciones/año</strong> hasta{" "}
@@ -118,7 +148,11 @@ export default async function MineriaPage() {
       )}
 
       {/* Estacionalidad */}
-      <Card icon={Sparkles} titulo="Estacionalidad — resoluciones por mes y año" sub="El tono indica cuántas resoluciones se firmaron ese mes. Revela si la CDMB concentra decisiones en ciertas épocas.">
+      <Card
+        icon={Sparkles}
+        titulo="Estacionalidad — resoluciones por mes y año"
+        sub={`El tono indica cuántas resoluciones se firmaron ese mes. Revela si la CDMB concentra decisiones en ciertas épocas.${notaHistoricoCompleto}`}
+      >
         <HeatmapMesAnio filas={a.heatmap} emptyMessage="Sin datos mensuales." />
         <p className="mb-2 mt-4 text-xs font-medium text-stone-600">Índice estacional (1,0 = mes promedio)</p>
         <MiniColumnas
@@ -132,7 +166,7 @@ export default async function MineriaPage() {
       <Card
         icon={Boxes}
         titulo="Segmentación de municipios (k-means)"
-        sub={`Agrupa los ${m.clusters.municipiosAnalizados} municipios con ≥ 10 resoluciones según su mezcla de tipos de trámite. Perfiles descubiertos, no definidos a mano.`}
+        sub={`Agrupa los ${m.clusters.municipiosAnalizados} municipios con ≥ 10 resoluciones según su mezcla de tipos de trámite. Perfiles descubiertos, no definidos a mano.${notaHistoricoCompleto}`}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {m.clusters.grupos.map((c, i) => (
@@ -157,17 +191,21 @@ export default async function MineriaPage() {
 
       {/* ML: Naive Bayes aprobación */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card icon={Brain} titulo="Qué sube la probabilidad de aprobación" sub={`Naive Bayes · razón de verosimilitud (lift) frente a la tasa base de ${pct(m.aprobacion.base)}.`}>
+        <Card icon={Brain} titulo="Qué sube la probabilidad de aprobación" sub={`Naive Bayes · razón de verosimilitud (lift) frente a la tasa base de ${pct(m.aprobacion.base)}.${notaHistoricoCompleto}`}>
           <BarrasLift data={m.aprobacion.suben.map((f) => ({ label: `${f.valor} · ${f.factor}`, lift: f.lift, casos: f.casos }))} emptyMessage="—" />
         </Card>
-        <Card icon={Brain} titulo="Qué la baja" sub="Los mismos factores, ordenados por el que más reduce la probabilidad de aprobación.">
+        <Card icon={Brain} titulo="Qué la baja" sub={`Los mismos factores, ordenados por el que más reduce la probabilidad de aprobación.${notaHistoricoCompleto}`}>
           <BarrasLift data={m.aprobacion.bajan.map((f) => ({ label: `${f.valor} · ${f.factor}`, lift: f.lift, casos: f.casos }))} emptyMessage="—" />
         </Card>
       </div>
 
       {/* ML: anomalías */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card icon={AlertTriangle} titulo="Meses atípicos" sub="Desviación robusta (mediana / MAD). Se marcan los meses con |z| ≥ 3,5 — picos o caídas que no son ruido normal.">
+        <Card
+          icon={AlertTriangle}
+          titulo="Meses atípicos"
+          sub={`Desviación robusta (mediana / MAD). Se marcan los meses con |z| ≥ 3,5 — picos o caídas que no son ruido normal.${notaHistoricoCompleto}`}
+        >
           {m.anomaliasMes.length === 0 ? (
             <p className="text-sm text-stone-500">Sin meses atípicos.</p>
           ) : (
@@ -184,7 +222,11 @@ export default async function MineriaPage() {
           )}
         </Card>
 
-        <Card icon={AlertTriangle} titulo="Trámites con tiempo atípico" sub={`Vallas de Tukey: por encima de ${m.tiemposAtipicos.vallaAlta.toLocaleString("es-CO")} días (Q3 + 1,5·RIC). Son el ${pct(m.tiemposAtipicos.pct)} de los casos.`}>
+        <Card
+          icon={AlertTriangle}
+          titulo="Trámites con tiempo atípico"
+          sub={`Vallas de Tukey: por encima de ${m.tiemposAtipicos.vallaAlta.toLocaleString("es-CO")} días (Q3 + 1,5·RIC). Son el ${pct(m.tiemposAtipicos.pct)} de los casos.${notaHistoricoCompleto}`}
+        >
           {m.tiemposAtipicos.casos.length === 0 ? (
             <p className="text-sm text-stone-500">Sin casos atípicos.</p>
           ) : (
