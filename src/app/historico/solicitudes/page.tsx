@@ -73,7 +73,7 @@ export default async function HistoricoSolicitudesPage({
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <DescargarCsvBoton href={hrefDescarga()} cantidad={vista} />
+        <DescargarCsvBoton href={hrefDescarga()} />
       </div>
 
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">

@@ -79,7 +79,7 @@ export default async function VitalSolicitudesPage({
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <DescargarCsvBoton href={hrefDescarga()} cantidad={vista} />
+        <DescargarCsvBoton href={hrefDescarga()} />
       </div>
 
       {sp.sincronizado != null && (
