@@ -73,6 +73,8 @@ export default async function EditarUsuarioPage({
 
       <EditarUsuarioAccesoForm
         usuarioId={usuario.id}
+        nombreActual={usuario.nombre}
+        directorioActivo={usuario.directorioActivo}
         rolActual={usuario.rol}
         cargoActualIds={usuario.cargos.map((c) => c.id)}
         accesoActual={usuario.tramitesAcceso.map((a) => ({ tramiteTipoId: a.tramiteTipoId, nivel: a.nivel }))}

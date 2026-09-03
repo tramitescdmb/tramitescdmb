@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 
 const MESES_CORTOS = [
@@ -15,25 +16,44 @@ const MESES_CORTOS = [
   "dic",
 ];
 
-export async function getDashboardData() {
+/**
+ * `tramiteIds`: `null` = sin restricción (ADMIN); un arreglo (incluso vacío)
+ * = un FUNCIONARIO, solo cuenta/lista expedientes de esos trámites — antes
+ * el panel mostraba totales y actividad de TODA la CDMB sin importar el
+ * acceso real del usuario, lo que contradice el modelo "denegado por
+ * defecto" de los trámites (ver [[project-acceso-por-tramite]]).
+ */
+export async function getDashboardData(tramiteIds: string[] | null) {
+  const filtroTramite: Prisma.ExpedienteWhereInput = tramiteIds ? { tramiteTipoId: { in: tramiteIds } } : {};
+  // `false` cuando tramiteIds es un arreglo vacío (funcionario sin ningún trámite asignado) hace que
+  // el WHERE no devuelva ninguna fila — SQL válido, evita un IN () vacío (que sería un error de sintaxis).
+  const condicionesSql: Prisma.Sql[] = [Prisma.sql`"fechaRadicacion" >= now() - interval '12 months'`];
+  if (tramiteIds) {
+    condicionesSql.push(tramiteIds.length > 0 ? Prisma.sql`"tramiteTipoId" IN (${Prisma.join(tramiteIds)})` : Prisma.sql`false`);
+  }
+  const whereSql = Prisma.join(condicionesSql, " AND ");
+
   const [totalTramites, totalExpedientes, porEstado, recientes, porMunicipioRaw, porTramiteRaw, mensualRaw] =
     await Promise.all([
-      db.tramiteTipo.count({ where: { activo: true } }),
-      db.expediente.count(),
-      db.expediente.groupBy({ by: ["estado"], _count: { _all: true } }),
+      tramiteIds ? tramiteIds.length : db.tramiteTipo.count({ where: { activo: true } }),
+      db.expediente.count({ where: filtroTramite }),
+      db.expediente.groupBy({ by: ["estado"], where: filtroTramite, _count: { _all: true } }),
       db.expediente.findMany({
+        where: filtroTramite,
         take: 8,
         orderBy: { fechaUltimoMovimiento: "desc" },
         include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true } } } } },
       }),
       db.expediente.groupBy({
         by: ["municipio"],
+        where: filtroTramite,
         _count: { _all: true },
         orderBy: { _count: { municipio: "desc" } },
         take: 10,
       }),
       db.expediente.groupBy({
         by: ["tramiteTipoId"],
+        where: filtroTramite,
         _count: { _all: true },
         orderBy: { _count: { tramiteTipoId: "desc" } },
         take: 10,
@@ -41,7 +61,7 @@ export async function getDashboardData() {
       db.$queryRaw<{ mes: Date; total: bigint }[]>`
         SELECT date_trunc('month', "fechaRadicacion") as mes, COUNT(*)::bigint as total
         FROM "Expediente"
-        WHERE "fechaRadicacion" >= now() - interval '12 months'
+        WHERE ${whereSql}
         GROUP BY 1
       `,
     ]);

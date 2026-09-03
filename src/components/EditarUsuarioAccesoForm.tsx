@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, UserRound } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -57,6 +57,8 @@ function BotonAtajo({
 
 export function EditarUsuarioAccesoForm({
   usuarioId,
+  nombreActual,
+  directorioActivo,
   rolActual,
   cargoActualIds,
   accesoActual,
@@ -65,6 +67,8 @@ export function EditarUsuarioAccesoForm({
   tramitesPorCategoria,
 }: {
   usuarioId: string;
+  nombreActual: string;
+  directorioActivo: boolean;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
@@ -73,6 +77,7 @@ export function EditarUsuarioAccesoForm({
   tramitesPorCategoria: Grupo[];
 }) {
   const router = useRouter();
+  const [nombre, setNombre] = useState(nombreActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
@@ -134,6 +139,10 @@ export function EditarUsuarioAccesoForm({
   const todosLosTramites = tramitesPorCategoria.flatMap((g) => g.items);
 
   async function guardar() {
+    if (!nombre.trim()) {
+      setError("Debe indicarse el nombre completo.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     setOk(false);
@@ -142,6 +151,7 @@ export function EditarUsuarioAccesoForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nombre: nombre.trim(),
           rol,
           cargoIds: Array.from(cargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
@@ -163,6 +173,22 @@ export function EditarUsuarioAccesoForm({
 
   return (
     <div className="space-y-6">
+      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={UserRound} titulo="Nombre completo" />
+        <input
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Nombre y apellidos"
+          className="w-full max-w-sm rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        />
+        {directorioActivo && (
+          <p className="mt-2 text-xs text-stone-400">
+            Este usuario entra por Directorio Activo — el sistema de la CDMB no entrega el nombre real, solo el
+            usuario de red, así que quedó con un nombre provisional al crearse. Corríjalo aquí.
+          </p>
+        )}
+      </section>
+
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" />
         <div className="grid max-w-sm grid-cols-2 gap-2">

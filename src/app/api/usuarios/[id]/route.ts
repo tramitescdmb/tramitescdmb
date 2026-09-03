@@ -27,6 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   const rol = body.rol === "ADMIN" || body.rol === "FUNCIONARIO" ? body.rol : usuario.rol;
+  const nombre = typeof body.nombre === "string" && body.nombre.trim() ? body.nombre.trim() : undefined;
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
     : undefined;
@@ -55,6 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: {
         rol,
+        ...(nombre ? { nombre } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
       },
     });

@@ -42,20 +42,24 @@ export async function GET(req: NextRequest) {
   const encabezados = [
     "ID VITAL",
     "Trámite",
-    "Id trámite autoridad",
+    "Id de trámite (VITAL)",
+    "Id trámite autoridad (CDMB)",
     "Solicitante",
     "Identificación",
     "Correo",
     "Fecha de radicación",
     "Última actividad",
-    "Documentos",
+    "Cantidad de documentos",
+    "Primera sincronización",
     "Última sincronización",
+    "Enlace en la app",
   ];
 
   const filasCsv = filas.map((s) =>
     [
       s.idVital,
       nombreTramiteVital(s.idTramiteVital),
+      s.idTramiteVital,
       s.idTramiteAutoridad,
       s.solicitanteNombre,
       s.solicitanteIdentificacion,
@@ -63,7 +67,9 @@ export async function GET(req: NextRequest) {
       s.fechaRadicacion?.toISOString().slice(0, 10),
       s.nombreActividad,
       s._count.documentos,
+      s.createdAt.toISOString().slice(0, 10),
       s.ultimaSincronizacion.toISOString().slice(0, 10),
+      `/vital/${s.id}`,
     ]
       .map(celda)
       .join(",")

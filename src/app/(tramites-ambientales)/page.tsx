@@ -7,6 +7,7 @@ import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { getSession } from "@/lib/auth";
 import { getPendientes } from "@/lib/pendientes";
+import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { MisPendientes } from "@/components/MisPendientes";
 
 function saludo(hora: number) {
@@ -15,16 +16,23 @@ function saludo(hora: number) {
   return "Buenas noches";
 }
 
+/** Hora local en Bogotá (UTC-5, sin horario de verano) — el servidor corre en UTC, no en la hora de Colombia. */
+function horaBogota(): number {
+  return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
+}
+
 export default async function DashboardPage() {
   const session = await getSession();
-  const [d, pendientes] = await Promise.all([getDashboardData(), getPendientes(session)]);
+  const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
+  const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
+  const [d, pendientes] = await Promise.all([getDashboardData(tramiteIds), getPendientes(session)]);
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-base font-semibold text-stone-900">
-          {saludo(new Date().getHours())}{primerNombre ? `, ${primerNombre}` : ""}
+          {saludo(horaBogota())}{primerNombre ? `, ${primerNombre}` : ""}
         </h2>
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
@@ -63,7 +71,7 @@ export default async function DashboardPage() {
 
         <div className="rounded-xl border border-stone-200 bg-white p-5">
           <h2 className="text-sm font-semibold text-stone-900">Trámites más solicitados</h2>
-          <p className="mb-4 text-xs text-stone-500">Cuáles de los 30 trámites concentran más expedientes.</p>
+          <p className="mb-4 text-xs text-stone-500">Cuáles de sus {d.totalTramites} trámites concentran más expedientes.</p>
           <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
         </div>
       </div>
