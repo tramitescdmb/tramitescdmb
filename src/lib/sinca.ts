@@ -262,6 +262,29 @@ export type OpcionesBusquedaNit = {
 };
 
 /**
+ * Columnas por las que `/presinca/nit` acepta ordenar — lista cerrada, la
+ * confirma el propio API rechazando cualquier otra con 422 ("El column es
+ * inválido. Los valores permitidos son: ..."). No soporta filtrar por
+ * municipio/año/tipo/régimen del lado del servidor, solo `search` (nit,
+ * cédula o nombre) y estas columnas para `column`/`order`.
+ */
+export const SINCA_NIT_COLUMNAS = [
+  { value: "nombre_nit", label: "Nombre / razón social" },
+  { value: "apell_nit", label: "Apellido / complemento del nombre" },
+  { value: "numero_nit", label: "Número de NIT" },
+  { value: "digito_nit", label: "Dígito de verificación" },
+  { value: "tipo_id_nit", label: "Tipo de identificación" },
+  { value: "nrosolicitud_sol", label: "N.º de solicitud" },
+  { value: "fechadesde_int", label: "Fecha de vinculación" },
+  { value: "fechahasta_int", label: "Fecha fin de vinculación" },
+] as const;
+export type SincaNitColumna = (typeof SINCA_NIT_COLUMNAS)[number]["value"];
+const SINCA_NIT_COLUMNAS_VALIDAS: readonly string[] = SINCA_NIT_COLUMNAS.map((c) => c.value);
+export function esColumnaNitValida(v: string): v is SincaNitColumna {
+  return SINCA_NIT_COLUMNAS_VALIDAS.includes(v);
+}
+
+/**
  * Cada fila es en realidad una vinculación NIT↔solicitud (el mismo NIT se
  * repite una vez por cada solicitud a la que ha estado asociado), no un
  * registro único por tercero.
