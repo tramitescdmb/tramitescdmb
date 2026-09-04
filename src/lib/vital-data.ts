@@ -8,9 +8,10 @@ const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0))
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MAX_MESES_SERIE = 120;
 
-export type FiltrosVital = { q?: string; tramite?: string; anio?: string; actividad?: string; page?: string; vista?: string };
+export type FiltrosVital = { q?: string; tramite?: string; actividad?: string; page?: string; vista?: string };
 
-export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
+/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. */
+export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
   if (f.q?.trim()) {
     const q = f.q.trim();
@@ -25,18 +26,15 @@ export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhere
   }
   if (f.tramite && /^\d+$/.test(f.tramite)) and.push({ idTramiteVital: parseInt(f.tramite, 10) });
   if (f.actividad?.trim()) and.push({ nombreActividad: f.actividad.trim() });
-  if (f.anio && /^\d{4}$/.test(f.anio)) {
-    const y = parseInt(f.anio, 10);
-    and.push({ fechaRadicacion: { gte: new Date(Date.UTC(y, 0, 1)), lt: new Date(Date.UTC(y + 1, 0, 1)) } });
-  }
+  if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
 
 /** Listado paginado de /vital con la barra de filtros. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
-export async function getVitalListado(filtros: FiltrosVital) {
+export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const where = construirWhereVital(filtros);
+  const where = construirWhereVital(filtros, rango);
 
   const [total, filas] = await Promise.all([
     db.solicitudVital.count({ where }),
@@ -53,7 +51,7 @@ export async function getVitalListado(filtros: FiltrosVital) {
 }
 
 export async function getVitalOpcionesFiltro() {
-  const [tramites, actividades, anios] = await Promise.all([
+  const [tramites, actividades] = await Promise.all([
     db.solicitudVital.groupBy({ by: ["idTramiteVital"], _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
     db.solicitudVital.groupBy({
       by: ["nombreActividad"],
@@ -61,15 +59,10 @@ export async function getVitalOpcionesFiltro() {
       _count: { _all: true },
       orderBy: { _count: { nombreActividad: "desc" } },
     }),
-    db.$queryRaw<{ anio: number; c: bigint }[]>`
-      SELECT EXTRACT(YEAR FROM "fechaRadicacion")::int anio, COUNT(*) c
-      FROM "SolicitudVital" WHERE "fechaRadicacion" IS NOT NULL
-      GROUP BY 1 ORDER BY 1 DESC`,
   ]);
   return {
     tramites: tramites.map((t) => ({ id: t.idTramiteVital, nombre: NOMBRE_TRAMITE_VITAL[t.idTramiteVital] ?? `Trámite ${t.idTramiteVital}`, total: t._count._all })),
     actividades: actividades.map((a) => ({ nombre: a.nombreActividad!, total: a._count._all })),
-    anios: anios.map((a) => a.anio),
   };
 }
 

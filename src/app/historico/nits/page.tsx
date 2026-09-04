@@ -3,24 +3,22 @@ import { redirect } from "next/navigation";
 import { Search, AlertTriangle } from "lucide-react";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
-import { contarVinculadas, OPCIONES_ORDEN_NIT, type EntidadNit } from "@/lib/sinca-nit";
+import { OPCIONES_ORDEN_NIT, REGIMENES_NIT, procesarFiltrosNit, filtrarYOrdenarEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
 import { parsePorPagina } from "@/lib/vista-lista";
-import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { TablaNits } from "@/components/tablas/TablaNits";
 import { EstadisticasNit } from "@/components/EstadisticasNit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
-const REGIMENES = ["Responsable de Iva", "No responsable de Iva", "Otro"] as const;
-const ANIO_MIN = 1990;
-const ORDENES_VALIDOS = new Set(OPCIONES_ORDEN_NIT.map((o) => o.value as string));
-
-type Filtros = {
+type Filtros = FiltrosPeriodo & {
   q?: string;
-  anio?: string;
   municipio?: string;
   tipo?: string;
   regimen?: string;
@@ -42,60 +40,25 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   }
 
   const filtros = await searchParams;
-  const q = filtros.q?.trim();
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const anio = filtros.anio && /^\d{4}$/.test(filtros.anio) ? parseInt(filtros.anio, 10) : undefined;
-  const municipio = filtros.municipio?.trim() || undefined;
-  const tipo = filtros.tipo === "N" || filtros.tipo === "C" ? filtros.tipo : undefined;
-  const regimen = filtros.regimen && (REGIMENES as readonly string[]).includes(filtros.regimen) ? filtros.regimen : undefined;
-  // "1" = con al menos una vinculación, "0" = sin ninguna (candidatos a revisar para depurar).
-  const vinculacion = filtros.vinculadas === "1" ? "con" : filtros.vinculadas === "0" ? "sin" : undefined;
-
-  // Si el usuario no eligió un orden explícito y filtró "con vinculación", el orden por defecto
-  // pasa a ser esa cantidad descendente (el que más tiene, primero) — es lo que tiene sentido ahí.
-  // Para "sin vinculación" no aplica (ahí todos quedan en 0), así que se deja el orden normal.
-  const orden = filtros.orden && ORDENES_VALIDOS.has(filtros.orden) ? filtros.orden : vinculacion === "con" ? "vinculadas" : "nombre_nit";
-  const direccion: "ASC" | "DESC" = filtros.dir ? (filtros.dir === "DESC" ? "DESC" : "ASC") : orden === "vinculadas" ? "DESC" : "ASC";
+  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(filtros);
+  const f = procesarFiltrosNit(filtros);
 
   // Todo el listado sale de un único snapshot cacheado (ver src/lib/sinca-nit-stats.ts): el API de
   // SINCA 1.0 no tiene forma de "darme ya agrupado por tercero" ni de ordenar por cantidad de
   // vinculadas, así que agrupar es algo que solo se puede hacer de este lado — y haciéndolo sobre
   // el registro COMPLETO (no una muestra acotada) los totales de aquí, de la paginación y del panel
-  // de estadísticas de abajo siempre cuadran entre sí.
+  // de estadísticas de abajo siempre cuadran entre sí. El filtro/orden en sí vive en sinca-nit.ts
+  // (`filtrarYOrdenarEntidadesNit`) para que la exportación a CSV use exactamente la misma lógica.
   let entidades: EntidadNit[] = [];
   let error = false;
   try {
     const snapshot = await obtenerSnapshotNit();
-    entidades = snapshot.entidades;
+    entidades = filtrarYOrdenarEntidadesNit(snapshot.entidades, f, rango);
   } catch {
     error = true;
   }
-
-  if (q) {
-    const qNorm = q.toUpperCase();
-    entidades = entidades.filter(
-      (e) => e.nombre.toUpperCase().includes(qNorm) || e.identificacion.toUpperCase().includes(qNorm)
-    );
-  }
-  if (anio) entidades = entidades.filter((e) => e.vinculaciones.some((v) => v.anio === anio));
-  if (municipio) {
-    entidades = entidades.filter((e) =>
-      municipio === FUERA_DE_JURISDICCION ? !esMunicipioValido(e.municipio ?? "") : e.municipio === municipio
-    );
-  }
-  if (tipo) entidades = entidades.filter((e) => e.tipoValue === tipo);
-  if (regimen) entidades = entidades.filter((e) => e.regimen === regimen);
-  if (vinculacion === "con") entidades = entidades.filter((e) => contarVinculadas(e) > 0);
-  if (vinculacion === "sin") entidades = entidades.filter((e) => contarVinculadas(e) === 0);
-
-  const dirFactor = direccion === "DESC" ? -1 : 1;
-  entidades = [...entidades].sort((a, b) => {
-    if (orden === "vinculadas") return dirFactor * (contarVinculadas(a) - contarVinculadas(b));
-    if (orden === "numero_nit") return dirFactor * ((a.numeroNit ?? 0) - (b.numeroNit ?? 0));
-    if (orden === "tipo_id_nit") return dirFactor * (a.tipoValue ?? "").localeCompare(b.tipoValue ?? "");
-    return dirFactor * a.nombre.localeCompare(b.nombre, "es");
-  });
 
   const totalFiltrado = entidades.length;
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
@@ -111,34 +74,45 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
     const qs = params.toString();
     return qs ? `/historico/nits?${qs}` : "/historico/nits";
   };
+  const hrefDescarga = () => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filtros)) {
+      if (k !== "page" && k !== "vista" && typeof v === "string" && v) params.set(k, v);
+    }
+    return `/api/historico/nits/exportar?${params.toString()}`;
+  };
 
-  const hayFiltros = Boolean(q || anio || municipio || tipo || regimen || vinculacion);
+  const hayFiltros = Boolean(f.q || rango || f.municipio || f.tipo || f.regimen || f.vinculacion);
   const clausulasFiltro: string[] = [];
-  if (vinculacion === "con") clausulasFiltro.push("con al menos una solicitud vinculada");
-  if (vinculacion === "sin") clausulasFiltro.push("sin ninguna solicitud vinculada");
-  if (tipo) clausulasFiltro.push(tipo === "N" ? "tipo NIT (empresa)" : "tipo cédula (persona)");
-  if (regimen) clausulasFiltro.push(`régimen "${regimen}"`);
-  if (municipio) clausulasFiltro.push(`en ${municipio}`);
-  if (anio) clausulasFiltro.push(`vinculados en ${anio}`);
-  if (q) clausulasFiltro.push(`que coinciden con "${q}"`);
+  if (f.vinculacion === "con") clausulasFiltro.push("con al menos una solicitud vinculada");
+  if (f.vinculacion === "sin") clausulasFiltro.push("sin ninguna solicitud vinculada");
+  if (f.tipo) clausulasFiltro.push(f.tipo === "N" ? "tipo NIT (empresa)" : "tipo cédula (persona)");
+  if (f.regimen) clausulasFiltro.push(`régimen "${f.regimen}"`);
+  if (f.municipio) clausulasFiltro.push(`en ${f.municipio}`);
+  if (rango) clausulasFiltro.push(`vinculados entre ${etiquetaPeriodo}`);
+  if (f.q) clausulasFiltro.push(`que coinciden con "${f.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
-
-  const anios: number[] = [];
-  for (let y = new Date().getFullYear(); y >= ANIO_MIN; y--) anios.push(y);
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
-        <p className="text-sm text-stone-500">
-          Registro histórico de terceros de SINCA 1.0 (personas y empresas). Busque por número de NIT, cédula o
-          nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto: <strong>Solicitudes</strong> es
-          el total a las que ha quedado vinculado, y <strong>Vinculadas</strong> cuántas de esas ya tienen el detalle
-          completo disponible en esta plataforma (con resolución de fondo) — entre al NIT para verlas.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
+          <p className="text-sm text-stone-500">
+            Registro histórico de terceros de SINCA 1.0 (personas y empresas). Busque por número de NIT, cédula o
+            nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto: <strong>Solicitudes</strong>{" "}
+            es el total a las que ha quedado vinculado, y <strong>Vinculadas</strong> cuántas de esas ya tienen el
+            detalle completo disponible en esta plataforma (con resolución de fondo) — entre al NIT para verlas.
+          </p>
+        </div>
+        <DescargarCsvBoton href={hrefDescarga()} />
       </div>
 
+      <SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />
+
       <form method="get" className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
+        {filtros.desde && <input type="hidden" name="desde" value={filtros.desde} />}
+        {filtros.hasta && <input type="hidden" name="hasta" value={filtros.hasta} />}
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
           <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
@@ -146,24 +120,14 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
             <input
               type="text"
               name="q"
-              defaultValue={q ?? ""}
+              defaultValue={f.q ?? ""}
               placeholder="Número de NIT, cédula o nombre / razón social"
               className="w-full text-sm outline-none"
             />
           </span>
         </label>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Año de vinculación</span>
-            <select name="anio" defaultValue={filtros.anio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              {anios.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </label>
-
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Municipio</span>
             <select name="municipio" defaultValue={filtros.municipio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
@@ -188,7 +152,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
             <span className="mb-1 block text-xs font-medium text-stone-600">Régimen tributario</span>
             <select name="regimen" defaultValue={filtros.regimen ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
               <option value="">Todos</option>
-              {REGIMENES.map((r) => (
+              {REGIMENES_NIT.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
@@ -207,7 +171,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Ordenar por</span>
-            <select name="orden" defaultValue={orden} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="orden" defaultValue={f.orden} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
               {OPCIONES_ORDEN_NIT.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
@@ -215,7 +179,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
           </label>
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Dirección</span>
-            <select name="dir" defaultValue={direccion} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="dir" defaultValue={f.direccion} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
               <option value="ASC">Ascendente</option>
               <option value="DESC">Descendente</option>
             </select>

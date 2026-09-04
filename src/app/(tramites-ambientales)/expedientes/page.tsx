@@ -4,9 +4,11 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { TablaExpedientes } from "@/components/tablas/TablaExpedientes";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 
 const POR_PAGINA = 30;
 
@@ -25,9 +27,13 @@ const ESTADOS = [
 export default async function ExpedientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; q?: string; tramite?: string; municipio?: string; asignados?: string; page?: string }>;
+  searchParams: Promise<
+    FiltrosPeriodo & { estado?: string; q?: string; tramite?: string; municipio?: string; asignados?: string; page?: string }
+  >;
 }) {
-  const { estado, q, tramite, municipio, asignados, page: pageParam } = await searchParams;
+  const sp = await searchParams;
+  const { estado, q, tramite, municipio, asignados, page: pageParam } = sp;
+  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
 
   const [todosLosTramites, session] = await Promise.all([
     db.tramiteTipo.findMany({
@@ -53,6 +59,7 @@ export default async function ExpedientesPage({
   if (estado) filtros.push({ estado: estado as (typeof ESTADOS)[number] });
   if (tramite) filtros.push({ tramiteTipoId: tramite });
   if (municipio) filtros.push({ municipio });
+  if (rango) filtros.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   if (busqueda) {
     filtros.push({
       OR: [
@@ -84,11 +91,12 @@ export default async function ExpedientesPage({
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
-  const hayFiltrosExtra = Boolean(busqueda || tramite || municipio);
-  // El GET conserva estado/q/tramite/municipio a la vez — helper para armar los links de los pills de estado sin perder los otros filtros.
+  const hayFiltrosExtra = Boolean(busqueda || tramite || municipio || rango);
+  // El GET conserva estado/q/tramite/municipio/desde/hasta a la vez — helper para armar los links de
+  // los pills de estado sin perder los otros filtros.
   const conFiltro = (extra: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
-    const actuales = { estado, q, tramite, municipio, asignados, ...extra };
+    const actuales = { estado, q, tramite, municipio, asignados, desde: sp.desde, hasta: sp.hasta, ...extra };
     for (const [k, v] of Object.entries(actuales)) {
       if (v) params.set(k, v);
     }
@@ -107,6 +115,7 @@ export default async function ExpedientesPage({
   }
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
   if (estado) clausulasFiltro.push(`en estado "${estado.replaceAll("_", " ")}"`);
+  if (rango) clausulasFiltro.push(`radicados entre ${etiquetaPeriodo}`);
   if (soloMios) clausulasFiltro.push("asignados a usted");
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
@@ -130,9 +139,13 @@ export default async function ExpedientesPage({
         </div>
       )}
 
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+
       <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
         {soloMios && <input type="hidden" name="asignados" value="mi" />}
+        {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
+        {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="min-w-[220px] flex-1">
           <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
           <input
@@ -179,7 +192,10 @@ export default async function ExpedientesPage({
           Buscar
         </button>
         {hayFiltrosExtra && (
-          <Link href={conFiltro({ q: undefined, tramite: undefined, municipio: undefined })} className="text-sm text-stone-500 hover:text-stone-700">
+          <Link
+            href={conFiltro({ q: undefined, tramite: undefined, municipio: undefined, desde: undefined, hasta: undefined })}
+            className="text-sm text-stone-500 hover:text-stone-700"
+          >
             Quitar filtros de búsqueda
           </Link>
         )}

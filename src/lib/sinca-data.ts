@@ -100,7 +100,6 @@ export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
 
 export type FiltrosHistorico = {
   q?: string;
-  anio?: string;
   tipo?: string;
   municipio?: string;
   estado?: string;
@@ -108,7 +107,8 @@ export type FiltrosHistorico = {
   vista?: string;
 };
 
-export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.SincaResolucionWhereInput {
+/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaResolucion`. */
+export function construirWhereHistorico(filtros: FiltrosHistorico, rango: RangoPeriodo = null): Prisma.SincaResolucionWhereInput {
   const where: Prisma.SincaResolucionWhereInput = {};
   const and: Prisma.SincaResolucionWhereInput[] = [];
 
@@ -125,7 +125,7 @@ export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.Sinca
       ],
     });
   }
-  if (filtros.anio && /^\d{4}$/.test(filtros.anio)) and.push({ anioResolucion: parseInt(filtros.anio, 10) });
+  if (rango) and.push({ fechaResolucion: { gte: rango.desde, lt: rango.hasta } });
   if (filtros.tipo?.trim()) and.push({ tipoSolicitudCodigo: filtros.tipo.trim() });
   if (filtros.municipio?.trim()) and.push({ municipio: filtros.municipio.trim() });
   if (filtros.estado?.trim()) and.push({ estado: filtros.estado.trim() });
@@ -134,10 +134,10 @@ export function construirWhereHistorico(filtros: FiltrosHistorico): Prisma.Sinca
 }
 
 /** Listado paginado de /historico/solicitudes con los filtros de la barra. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
-export async function getHistoricoListado(filtros: FiltrosHistorico) {
+export async function getHistoricoListado(filtros: FiltrosHistorico, rango: RangoPeriodo = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const where = construirWhereHistorico(filtros);
+  const where = construirWhereHistorico(filtros, rango);
 
   const [total, filas] = await Promise.all([
     db.sincaResolucion.count({ where }),
@@ -172,7 +172,7 @@ export async function getHistoricoListado(filtros: FiltrosHistorico) {
 
 /** Opciones para los desplegables de filtro (valores realmente presentes en los datos). */
 export async function getHistoricoOpcionesFiltro() {
-  const [tipos, municipios, estados, anios] = await Promise.all([
+  const [tipos, municipios, estados] = await Promise.all([
     db.sincaResolucion.groupBy({
       by: ["tipoSolicitudCodigo", "tipoSolicitudNombre"],
       _count: { _all: true },
@@ -191,19 +191,12 @@ export async function getHistoricoOpcionesFiltro() {
       _count: { _all: true },
       orderBy: { estado: "asc" },
     }),
-    db.sincaResolucion.groupBy({
-      by: ["anioResolucion"],
-      where: { anioResolucion: { not: null } },
-      _count: { _all: true },
-      orderBy: { anioResolucion: "desc" },
-    }),
   ]);
 
   return {
     tipos: tipos.map((t) => ({ codigo: t.tipoSolicitudCodigo!, nombre: t.tipoSolicitudNombre ?? t.tipoSolicitudCodigo!, total: t._count._all })),
     municipios: municipios.map((m) => ({ nombre: m.municipio!, total: m._count._all })),
     estados: estados.map((e) => ({ nombre: e.estado!, total: e._count._all })),
-    anios: anios.map((a) => a.anioResolucion as number),
   };
 }
 

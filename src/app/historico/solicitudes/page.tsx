@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
 import { getHistoricoListado, getHistoricoOpcionesFiltro, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaSincaSolicitudes } from "@/components/tablas/TablaSincaSolicitudes";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -15,10 +17,12 @@ function fecha(d: Date | null) {
   return d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 }
 
+type Filtros = FiltrosHistorico & FiltrosPeriodo;
+
 export default async function HistoricoSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<FiltrosHistorico>;
+  searchParams: Promise<Filtros>;
 }) {
   const session = await getSession();
   if (session) {
@@ -30,8 +34,9 @@ export default async function HistoricoSolicitudesPage({
   }
 
   const filtros = await searchParams;
+  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(filtros);
   const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
-    getHistoricoListado(filtros),
+    getHistoricoListado(filtros, rango),
     getHistoricoOpcionesFiltro(),
   ]);
 
@@ -53,7 +58,7 @@ export default async function HistoricoSolicitudesPage({
     return `/api/historico/exportar?${params.toString()}`;
   };
 
-  const hayFiltros = Boolean(filtros.q || filtros.anio || filtros.tipo || filtros.municipio || filtros.estado);
+  const hayFiltros = Boolean(filtros.q || rango || filtros.tipo || filtros.municipio || filtros.estado);
 
   // Frase legible de lo que dio el filtro — antes solo se veía el "Mostrando
   // X–Y de Z" del paginador, y ese se ocultaba por completo si el resultado
@@ -64,7 +69,7 @@ export default async function HistoricoSolicitudesPage({
     const tipo = opciones.tipos.find((t) => t.codigo === filtros.tipo);
     clausulasFiltro.push(`de ${tipo?.nombre ?? filtros.tipo}`);
   }
-  if (filtros.anio) clausulasFiltro.push(`del año ${filtros.anio}`);
+  if (rango) clausulasFiltro.push(`entre ${etiquetaPeriodo}`);
   if (filtros.municipio) clausulasFiltro.push(`en ${filtros.municipio}`);
   if (filtros.estado) clausulasFiltro.push(`en estado "${filtros.estado}"`);
   if (filtros.q) clausulasFiltro.push(`que coinciden con "${filtros.q}"`);
@@ -76,7 +81,11 @@ export default async function HistoricoSolicitudesPage({
         <DescargarCsvBoton href={hrefDescarga()} />
       </div>
 
+      <SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />
+
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+        {filtros.desde && <input type="hidden" name="desde" value={filtros.desde} />}
+        {filtros.hasta && <input type="hidden" name="hasta" value={filtros.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="sm:col-span-2 lg:col-span-3">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
@@ -90,16 +99,6 @@ export default async function HistoricoSolicitudesPage({
                 className="w-full text-sm outline-none"
               />
             </span>
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Año de la resolución</span>
-            <select name="anio" defaultValue={filtros.anio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              {opciones.anios.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
           </label>
 
           <label>

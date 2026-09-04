@@ -5,10 +5,12 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
 
@@ -18,7 +20,7 @@ const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-d
 export default async function VitalSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<FiltrosVital & { sincronizado?: string; errores?: string; error?: string }>;
+  searchParams: Promise<FiltrosVital & FiltrosPeriodo & { sincronizado?: string; errores?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession();
@@ -40,13 +42,14 @@ export default async function VitalSolicitudesPage({
     );
   }
 
+  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
   const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
-    getVitalListado(sp),
+    getVitalListado(sp, rango),
     getVitalOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tramite || sp.anio || sp.actividad);
-  const CAMPOS_FILTRO = ["q", "tramite", "anio", "actividad"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tramite || rango || sp.actividad);
+  const CAMPOS_FILTRO = ["q", "tramite", "actividad", "desde", "hasta"] as const;
 
   // Frase legible de lo que dio el filtro — el "Mostrando X–Y de Z" del
   // paginador se ocultaba por completo si el resultado cabía en una sola
@@ -57,7 +60,7 @@ export default async function VitalSolicitudesPage({
     const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
     clausulasFiltro.push(`de ${tramite ? `(${tramite.id}) ${tramite.nombre}` : nombreTramiteVital(Number(sp.tramite))}`);
   }
-  if (sp.anio) clausulasFiltro.push(`del año ${sp.anio}`);
+  if (rango) clausulasFiltro.push(`entre ${etiquetaPeriodo}`);
   if (sp.actividad) clausulasFiltro.push(`en la actividad "${sp.actividad}"`);
   if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
@@ -89,6 +92,8 @@ export default async function VitalSolicitudesPage({
         </div>
       )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       {esAdmin && (
         <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
@@ -123,6 +128,8 @@ export default async function VitalSolicitudesPage({
 
       {/* Filtros estilo SINCA 1.0 */}
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+        {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
+        {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="sm:col-span-2 lg:col-span-3">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
@@ -138,16 +145,6 @@ export default async function VitalSolicitudesPage({
               <option value="">Todos</option>
               {opciones.tramites.map((t) => (
                 <option key={t.id} value={t.id}>({t.id}) {t.nombre} ({t.total})</option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Año de radicación</span>
-            <select name="anio" defaultValue={sp.anio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              {opciones.anios.map((a) => (
-                <option key={a} value={a}>{a}</option>
               ))}
             </select>
           </label>

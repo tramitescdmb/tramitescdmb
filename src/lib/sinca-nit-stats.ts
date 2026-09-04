@@ -2,7 +2,15 @@ import { buscarNits } from "@/lib/sinca";
 import { agruparEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
 import { db } from "@/lib/db";
 
+// Subir cada vez que cambie qué campos trae `EntidadNit`/`VinculacionNit` (ver sinca-nit.ts) — la
+// fila cacheada en la base no se re-valida por forma, solo por tiempo, así que sin esto un cambio
+// de forma queda usando datos con el campo nuevo vacío/ausente hasta que la caché expire sola
+// (probado en vivo: al agregar `fechaDesdeIso` para el período, el filtro daba 0 resultados
+// siempre porque la fila ya guardada no lo tenía todavía).
+const VERSION_SNAPSHOT = 2;
+
 export type SnapshotNit = {
+  version: number;
   entidades: EntidadNit[];
   totalVinculaciones: number;
   calculadoEn: string;
@@ -34,7 +42,13 @@ async function calcularSnapshotNit(): Promise<SnapshotNit> {
   ]);
   const disponibles = new Set(locales.map((x) => x.nroSolicitud));
   const entidades = agruparEntidadesNit(r.data, disponibles);
-  return { entidades, totalVinculaciones: r.total, calculadoEn: new Date().toISOString() };
+  return { version: VERSION_SNAPSHOT, entidades, totalVinculaciones: r.total, calculadoEn: new Date().toISOString() };
+}
+
+function vigente(snapshot: SnapshotNit | undefined | null, calculadoEn?: Date): snapshot is SnapshotNit {
+  if (!snapshot || snapshot.version !== VERSION_SNAPSHOT) return false;
+  if (calculadoEn && Date.now() - calculadoEn.getTime() >= VIGENCIA_MS) return false;
+  return true;
 }
 
 /**
@@ -43,13 +57,13 @@ async function calcularSnapshotNit(): Promise<SnapshotNit> {
  * fallaba en silencio (no cacheaba nada y recalculaba en cada visita, ~20s cada vez).
  */
 export async function obtenerSnapshotNit(): Promise<SnapshotNit> {
-  if (enMemoria && Date.now() < enMemoria.hasta) return enMemoria.snapshot;
+  if (vigente(enMemoria?.snapshot) && enMemoria && Date.now() < enMemoria.hasta) return enMemoria.snapshot;
 
   const existente = await db.sincaNitSnapshot.findUnique({ where: { id: ID_SNAPSHOT } });
-  if (existente && Date.now() - existente.calculadoEn.getTime() < VIGENCIA_MS) {
-    const snapshot = existente.datos as unknown as SnapshotNit;
-    enMemoria = { snapshot, hasta: Date.now() + VIGENCIA_MS };
-    return snapshot;
+  const snapshotGuardado = existente?.datos as unknown as SnapshotNit | undefined;
+  if (vigente(snapshotGuardado, existente?.calculadoEn)) {
+    enMemoria = { snapshot: snapshotGuardado, hasta: Date.now() + VIGENCIA_MS };
+    return snapshotGuardado;
   }
 
   const snapshot = await calcularSnapshotNit();

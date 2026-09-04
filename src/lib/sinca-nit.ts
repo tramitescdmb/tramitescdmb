@@ -1,4 +1,8 @@
 import type { SincaNitListado, SincaNitColumna } from "@/lib/sinca";
+import type { RangoPeriodo } from "@/lib/periodo-dashboard";
+import { FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
+
+export const REGIMENES_NIT = ["Responsable de Iva", "No responsable de Iva", "Otro"] as const;
 
 /**
  * Opciones de orden que se muestran en /historico/nits — subconjunto de las columnas que el API
@@ -17,7 +21,10 @@ export type VinculacionNit = {
   nroSolicitud: number | null;
   fechaDesde: string;
   fechaHasta: string;
-  anio: number | null;
+  /** ISO 8601, para filtrar por período — el snapshot pasa por JSON (DB), así que no se puede
+   * guardar un Date real (se serializa a string de todos modos); se compara reconstruyendo el
+   * Date en el momento del filtro, nunca confiando en que este campo siga siendo un Date. */
+  fechaDesdeIso: string | null;
   tieneDetalle: boolean;
 };
 
@@ -67,10 +74,11 @@ export function fechaNit(v: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export function anioNit(v: string | null | undefined): number | null {
+/** Normaliza "YYYY-MM-DD HH:mm:ss" (formato del API) a ISO 8601, para poder comparar por rango. */
+export function fechaIsoNit(v: string | null | undefined): string | null {
   if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.getUTCFullYear();
+  const d = new Date(v.replace(" ", "T"));
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 /**
@@ -106,7 +114,7 @@ export function agruparEntidadesNit(filas: SincaNitListado[], disponibles: Set<n
       nroSolicitud,
       fechaDesde: fechaNit(n.fechadesde_int),
       fechaHasta: fechaNit(n.fechahasta_int),
-      anio: anioNit(n.fechadesde_int),
+      fechaDesdeIso: fechaIsoNit(n.fechadesde_int),
       tieneDetalle: nroSolicitud != null && disponibles.has(nroSolicitud),
     };
     const existente = mapa.get(clave);
@@ -136,4 +144,83 @@ export function agruparEntidadesNit(filas: SincaNitListado[], disponibles: Set<n
     });
   }
   return [...mapa.values()];
+}
+
+export type FiltrosBrutosNit = {
+  q?: string;
+  municipio?: string;
+  tipo?: string;
+  regimen?: string;
+  vinculadas?: string;
+  orden?: string;
+  dir?: string;
+};
+
+export type FiltrosNit = {
+  q?: string;
+  municipio?: string;
+  tipo?: "N" | "C";
+  regimen?: string;
+  vinculacion?: "con" | "sin";
+  orden: string;
+  direccion: "ASC" | "DESC";
+};
+
+const ORDENES_VALIDOS_NIT = new Set(OPCIONES_ORDEN_NIT.map((o) => o.value as string));
+
+/**
+ * Interpreta los parámetros crudos de la URL — usada tanto por /historico/nits como por su
+ * exportación a CSV, para que ambas apliquen exactamente los mismos filtros sin duplicar la
+ * lógica (y sin que se puedan desincronizar en un cambio futuro).
+ */
+export function procesarFiltrosNit(filtros: FiltrosBrutosNit): FiltrosNit {
+  const q = filtros.q?.trim() || undefined;
+  const municipio = filtros.municipio?.trim() || undefined;
+  const tipo = filtros.tipo === "N" || filtros.tipo === "C" ? filtros.tipo : undefined;
+  const regimen = filtros.regimen && (REGIMENES_NIT as readonly string[]).includes(filtros.regimen) ? filtros.regimen : undefined;
+  // "1" = con al menos una vinculación, "0" = sin ninguna (candidatos a revisar para depurar).
+  const vinculacion = filtros.vinculadas === "1" ? ("con" as const) : filtros.vinculadas === "0" ? ("sin" as const) : undefined;
+  // Si no se eligió un orden explícito y se filtró "con vinculación", el orden por defecto pasa a
+  // ser esa cantidad descendente (el que más tiene, primero) — para "sin vinculación" no aplica
+  // (ahí todos quedan en 0), así que se deja el orden normal.
+  const orden = filtros.orden && ORDENES_VALIDOS_NIT.has(filtros.orden) ? filtros.orden : vinculacion === "con" ? "vinculadas" : "nombre_nit";
+  const direccion: "ASC" | "DESC" = filtros.dir ? (filtros.dir === "DESC" ? "DESC" : "ASC") : orden === "vinculadas" ? "DESC" : "ASC";
+  return { q, municipio, tipo, regimen, vinculacion, orden, direccion };
+}
+
+/** Aplica los filtros ya interpretados (`procesarFiltrosNit`) + el período sobre el snapshot completo. */
+export function filtrarYOrdenarEntidadesNit(entidadesIn: EntidadNit[], f: FiltrosNit, rango: RangoPeriodo): EntidadNit[] {
+  let entidades = entidadesIn;
+
+  if (f.q) {
+    const qNorm = f.q.toUpperCase();
+    entidades = entidades.filter((e) => e.nombre.toUpperCase().includes(qNorm) || e.identificacion.toUpperCase().includes(qNorm));
+  }
+  if (rango) {
+    entidades = entidades.filter((e) =>
+      e.vinculaciones.some((v) => {
+        if (!v.fechaDesdeIso) return false;
+        const t = new Date(v.fechaDesdeIso).getTime();
+        return t >= rango.desde.getTime() && t < rango.hasta.getTime();
+      })
+    );
+  }
+  if (f.municipio) {
+    const municipio = f.municipio;
+    entidades = entidades.filter((e) =>
+      municipio === FUERA_DE_JURISDICCION ? !esMunicipioValido(e.municipio ?? "") : e.municipio === municipio
+    );
+  }
+  if (f.tipo) entidades = entidades.filter((e) => e.tipoValue === f.tipo);
+  if (f.regimen) entidades = entidades.filter((e) => e.regimen === f.regimen);
+  if (f.vinculacion === "con") entidades = entidades.filter((e) => contarVinculadas(e) > 0);
+  if (f.vinculacion === "sin") entidades = entidades.filter((e) => contarVinculadas(e) === 0);
+
+  const dirFactor = f.direccion === "DESC" ? -1 : 1;
+  return [...entidades].sort((a, b) => {
+    if (f.orden === "vinculadas") return dirFactor * (contarVinculadas(a) - contarVinculadas(b));
+    if (f.orden === "numero_nit") return dirFactor * ((a.numeroNit ?? 0) - (b.numeroNit ?? 0));
+    if (f.orden === "tipo_id_nit") return dirFactor * (a.tipoValue ?? "").localeCompare(b.tipoValue ?? "");
+    return dirFactor * a.nombre.localeCompare(b.nombre, "es");
+  });
 }
