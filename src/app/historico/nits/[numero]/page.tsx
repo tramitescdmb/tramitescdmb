@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, Building2, User, MapPin, Phone, Smartphone, Mail, Home, ReceiptText, BadgeCheck, ClipboardList, CalendarClock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Building2, User, MapPin, ReceiptText, ClipboardList, CalendarClock, AlertTriangle } from "lucide-react";
 import { buscarNits, sincaConfigurado, type SincaNitListado } from "@/lib/sinca";
 import { agruparEntidadesNit } from "@/lib/sinca-nit";
 import { TOPE_VISTA_TODOS } from "@/lib/vista-lista";

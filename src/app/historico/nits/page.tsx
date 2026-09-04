@@ -248,6 +248,12 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
           )}
 
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+            {filas.length > 0 && filas.length < filasPagina.length && (
+              <p className="border-b border-stone-100 px-4 py-2 text-xs text-stone-400">
+                Esta página trae {filasPagina.length} solicitudes, agrupadas en {filas.length} terceros distintos — por eso se ven
+                menos filas de las que eligió en &quot;Ver&quot;.
+              </p>
+            )}
             <div className="overflow-x-auto">
               <TablaNits filas={filas} sinResultadosTexto={hayFiltros ? "Ningún tercero coincide con esos filtros." : "No hay registros."} />
             </div>
