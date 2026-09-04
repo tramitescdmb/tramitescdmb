@@ -474,30 +474,52 @@ async function consultarDocumentos(idVital: string): Promise<DocumentoVital[]> {
   return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
 }
 
-/** POST /descargar con X-Road-Url = url_archivo → devuelve el archivo. */
-async function descargarDocumentoVital(urlArchivo: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
-  try {
-    if (!API_URL) return null;
-    const res = await fetch(`${API_URL}/descargar`, {
-      method: "POST",
-      headers: {
-        Accept: "*/*",
-        Authorization: `Bearer ${await obtenerProxyToken()}`,
-        "X-Road-Url": urlArchivo,
-        "X-Road-Client": XROAD_CLIENT!,
-        "X-Road-Token": `Bearer ${await obtenerToken()}`,
-      },
-      body: "{}",
-      cache: "no-store",
-      signal: AbortSignal.timeout(60_000),
-    });
-    if (!res.ok) return null;
-    const ct = res.headers.get("content-type") ?? "application/octet-stream";
-    if (ct.includes("application/json")) return null; // vino un error, no un archivo
-    return { buffer: Buffer.from(await res.arrayBuffer()), mimeType: ct };
-  } catch {
-    return null;
+/**
+ * POST /descargar con X-Road-Url = url_archivo → devuelve el archivo.
+ *
+ * No usa `vitalPostReintentando` (que solo distingue "sin datos" de todo lo demás) porque acá hace
+ * falta distinguir un 403 de un timeout/5xx transitorio: confirmado en vivo que **todo** intento de
+ * descarga desde que existe esta integración devuelve 403 "El usuario no tiene los permisos
+ * correctos" — el X-Road de la CDMB tiene acceso a wsObtenerSolicitudes/wsSolicitudes/wsSolicitante/
+ * wsDocumentos, pero no al servicio de descarga de archivos. Es un permiso que falta configurar del
+ * lado de X-Road, no algo que reintentar vaya a arreglar — así que un 403 no se reintenta y se
+ * registra una sola vez; el resto de errores (red, timeout, 5xx) sí se reintenta, igual que las
+ * demás llamadas a VITAL.
+ */
+async function descargarDocumentoVital(urlArchivo: string, intentos = 3): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  if (!API_URL) return null;
+  for (let i = 0; i < intentos; i++) {
+    try {
+      const res = await fetch(`${API_URL}/descargar`, {
+        method: "POST",
+        headers: {
+          Accept: "*/*",
+          Authorization: `Bearer ${await obtenerProxyToken()}`,
+          "X-Road-Url": urlArchivo,
+          "X-Road-Client": XROAD_CLIENT!,
+          "X-Road-Token": `Bearer ${await obtenerToken()}`,
+        },
+        body: "{}",
+        cache: "no-store",
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (res.status === 403) {
+        console.error(`[VITAL] descarga sin permisos (403) — falta habilitar el servicio de descarga de archivos en X-Road para la CDMB.`);
+        return null;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const ct = res.headers.get("content-type") ?? "application/octet-stream";
+      if (ct.includes("application/json")) throw new Error("VITAL respondió un error en vez de un archivo");
+      return { buffer: Buffer.from(await res.arrayBuffer()), mimeType: ct };
+    } catch (err) {
+      if (i === intentos - 1) {
+        console.error(`[VITAL] no se pudo descargar un documento tras ${intentos} intentos:`, err instanceof Error ? err.message : err);
+        return null;
+      }
+      await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    }
   }
+  return null;
 }
 
 // --- Sincronización -------------------------------------------------------
@@ -541,6 +563,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       solicitanteCorreo: principal ? correoDe(principal) : null,
       solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
+      documentosReportados: documentos.length,
     },
     update: {
       idTramiteAutoridad: resumen.idTramiteAutoridad ?? undefined,
@@ -551,6 +574,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       solicitanteCorreo: principal ? correoDe(principal) : undefined,
       solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
+      documentosReportados: documentos.length,
     },
   });
 

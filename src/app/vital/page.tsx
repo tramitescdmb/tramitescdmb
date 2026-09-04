@@ -5,12 +5,10 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
-import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
-import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
 
@@ -20,7 +18,7 @@ const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-d
 export default async function VitalSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<FiltrosVital & FiltrosPeriodo & { sincronizado?: string; errores?: string; error?: string }>;
+  searchParams: Promise<FiltrosVital & { sincronizado?: string; errores?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession();
@@ -42,14 +40,13 @@ export default async function VitalSolicitudesPage({
     );
   }
 
-  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
   const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
-    getVitalListado(sp, rango),
+    getVitalListado(sp),
     getVitalOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tramite || rango || sp.actividad);
-  const CAMPOS_FILTRO = ["q", "tramite", "actividad", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tramite);
+  const CAMPOS_FILTRO = ["q", "tramite"] as const;
 
   // Frase legible de lo que dio el filtro — el "Mostrando X–Y de Z" del
   // paginador se ocultaba por completo si el resultado cabía en una sola
@@ -60,8 +57,6 @@ export default async function VitalSolicitudesPage({
     const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
     clausulasFiltro.push(`de ${tramite ? `(${tramite.id}) ${tramite.nombre}` : nombreTramiteVital(Number(sp.tramite))}`);
   }
-  if (rango) clausulasFiltro.push(`entre ${etiquetaPeriodo}`);
-  if (sp.actividad) clausulasFiltro.push(`en la actividad "${sp.actividad}"`);
   if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
   const hrefPagina = (p: number) => {
@@ -93,8 +88,6 @@ export default async function VitalSolicitudesPage({
       )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
-
       {esAdmin && (
         <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
           <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
@@ -105,6 +98,7 @@ export default async function VitalSolicitudesPage({
             <div>
               <label className="mb-1 block text-xs font-medium text-stone-600">Trámite</label>
               <select name="idTramite" defaultValue={sp.tramite ?? tramitesVital()[0] ?? 41} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm">
+                <option value="todos">Todos los trámites</option>
                 {Object.entries(NOMBRE_TRAMITE_VITAL).map(([id, nombre]) => (
                   <option key={id} value={id}>({id}) {nombre}</option>
                 ))}
@@ -122,14 +116,12 @@ export default async function VitalSolicitudesPage({
               Sincronizar
             </button>
           </form>
-          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico.</p>
+          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico. &quot;Todos los trámites&quot; puede tardar varios minutos.</p>
         </details>
       )}
 
       {/* Filtros estilo SINCA 1.0 */}
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
-        {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
-        {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="sm:col-span-2 lg:col-span-3">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
@@ -145,16 +137,6 @@ export default async function VitalSolicitudesPage({
               <option value="">Todos</option>
               {opciones.tramites.map((t) => (
                 <option key={t.id} value={t.id}>({t.id}) {t.nombre} ({t.total})</option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Actividad</span>
-            <select name="actividad" defaultValue={sp.actividad ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todas</option>
-              {opciones.actividades.map((a) => (
-                <option key={a.nombre} value={a.nombre}>{a.nombre} ({a.total})</option>
               ))}
             </select>
           </label>

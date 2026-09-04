@@ -159,6 +159,7 @@ export default async function HistoricoSolicitudesPage({
               tipoCodigo: r.tipoSolicitudCodigo,
               municipio: r.municipio,
               estado: r.estado,
+              nit: r.solicitanteNit,
             }))}
             sinResultadosTexto="No hay resoluciones que coincidan con los filtros."
           />

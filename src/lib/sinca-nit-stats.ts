@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 // fila cacheada en la base no se re-valida por forma, solo por tiempo, así que sin esto un cambio
 // de forma queda usando datos con el campo nuevo vacío/ausente hasta que la caché expire sola
 // (probado en vivo: al agregar `fechaDesdeIso` para el período, el filtro daba 0 resultados
-// siempre porque la fila ya guardada no lo tenía todavía).
-const VERSION_SNAPSHOT = 2;
+// siempre porque la fila ya guardada no lo tenía todavía). v3: se quitó `fechaDesdeIso` al
+// eliminar el filtro de período de NIT (no aplicaba lógicamente para esta entidad).
+const VERSION_SNAPSHOT = 3;
 
 export type SnapshotNit = {
   version: number;
@@ -52,6 +53,24 @@ function vigente(snapshot: SnapshotNit | undefined | null, calculadoEn?: Date): 
 }
 
 /**
+ * Fuerza el recálculo completo contra el API (ignora si el snapshot guardado seguía vigente) y
+ * lo deja guardado tanto en la fila de base como en memoria del proceso. La usa tanto el cron
+ * diario como el botón "Sincronizar" manual de /historico/nits — es la única vía por la que un
+ * NIT/vinculación nuevo en SINCA 1.0 llega a aparecer aquí (ver nota en la sección de sincronizar
+ * sobre por qué hace falta un cron y no basta con que "llegue solo").
+ */
+export async function refrescarSnapshotNit(): Promise<SnapshotNit> {
+  const snapshot = await calcularSnapshotNit();
+  await db.sincaNitSnapshot.upsert({
+    where: { id: ID_SNAPSHOT },
+    create: { id: ID_SNAPSHOT, datos: snapshot, calculadoEn: new Date() },
+    update: { datos: snapshot, calculadoEn: new Date() },
+  });
+  enMemoria = { snapshot, hasta: Date.now() + VIGENCIA_MS };
+  return snapshot;
+}
+
+/**
  * Guardado en una tabla propia (`SincaNitSnapshot`, fila única) en vez de con `unstable_cache`:
  * el payload agrupado pesa ~12MB, por encima de los 2MB que esa caché admite — probado en vivo,
  * fallaba en silencio (no cacheaba nada y recalculaba en cada visita, ~20s cada vez).
@@ -66,12 +85,5 @@ export async function obtenerSnapshotNit(): Promise<SnapshotNit> {
     return snapshotGuardado;
   }
 
-  const snapshot = await calcularSnapshotNit();
-  await db.sincaNitSnapshot.upsert({
-    where: { id: ID_SNAPSHOT },
-    create: { id: ID_SNAPSHOT, datos: snapshot, calculadoEn: new Date() },
-    update: { datos: snapshot, calculadoEn: new Date() },
-  });
-  enMemoria = { snapshot, hasta: Date.now() + VIGENCIA_MS };
-  return snapshot;
+  return refrescarSnapshotNit();
 }

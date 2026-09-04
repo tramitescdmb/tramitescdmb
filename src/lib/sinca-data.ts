@@ -156,6 +156,7 @@ export async function getHistoricoListado(filtros: FiltrosHistorico, rango: Rang
         municipio: true,
         expediente: true,
         proyecto: true,
+        solicitanteNit: true,
       },
     }),
   ]);

@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarResoluciones } from "@/lib/sinca-sync";
 import { sincaConfigurado } from "@/lib/sinca";
+import { refrescarSnapshotNit } from "@/lib/sinca-nit-stats";
 
 // La sincronización recorre ~6 páginas del API + un reemplazo por lotes + un
 // pequeño lote de enriquecimiento. Se pide más que los 10 s por defecto; en el
@@ -31,7 +32,20 @@ export async function GET(req: NextRequest) {
   // fresca y así el cron diario no obliga a recalcular (lento) en la siguiente
   // visita. El botón manual sí la invalida (ver POST).
   const resultado = await sincronizarResoluciones("cron");
-  return NextResponse.json(resultado, { status: resultado.ok ? 200 : 500 });
+
+  // Encadenado aquí (no un cron aparte en vercel.json) para que una resolución de fondo nueva
+  // sobre un NIT ya existente quede vinculada el mismo día, justo después de traerla: el snapshot
+  // de NIT/Terceros no se entera solo de datos nuevos, hay que recalcularlo (ver sinca-nit-stats.ts).
+  // Si esto falla no se marca la sincronización de resoluciones (lo importante) como fallida — el
+  // snapshot de NIT igual se recalcula solo en la próxima visita a /historico/nits (TTL de 12 h).
+  let nit: { ok: boolean; error?: string } = { ok: true };
+  try {
+    await refrescarSnapshotNit();
+  } catch (err) {
+    nit = { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  return NextResponse.json({ ...resultado, nit }, { status: resultado.ok ? 200 : 500 });
 }
 
 export async function POST(req: NextRequest) {

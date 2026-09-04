@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
-const ENCABEZADOS = ["#", "Solicitud", "Resolución", "Fecha", "Tipo", "Municipio", "Estado"];
-const ANCHOS_DEFECTO = [36, 110, 100, 150, 150, 110, 110];
+const ENCABEZADOS = ["#", "Solicitud", "Resolución", "Fecha", "Tipo", "Municipio", "Estado", "NIT/Cédula"];
+const ANCHOS_DEFECTO = [36, 110, 100, 150, 150, 110, 110, 110];
 
 export type FilaSinca = {
   nroSolicitud: number;
@@ -17,6 +17,7 @@ export type FilaSinca = {
   tipoCodigo: string | null;
   municipio: string | null;
   estado: string | null;
+  nit: string | null;
 };
 
 /** Tabla de solicitudes de SINCA 1.0 con columnas redimensionables (ancho recordado por navegador). */
@@ -61,6 +62,15 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
               <td className="truncate px-2.5 py-2 text-stone-600">{f.municipio ?? "—"}</td>
               <td className="truncate px-2.5 py-2">
                 <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{f.estado ?? "—"}</span>
+              </td>
+              <td className="truncate px-2.5 py-2">
+                {f.nit ? (
+                  <Link href={`/historico/nits/${f.nit}`} className="text-cdmb-700 hover:underline">
+                    {f.nit}
+                  </Link>
+                ) : (
+                  <span className="text-stone-400">—</span>
+                )}
               </td>
             </tr>
           ))

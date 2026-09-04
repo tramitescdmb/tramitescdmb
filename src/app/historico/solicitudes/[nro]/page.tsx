@@ -24,13 +24,19 @@ const txt = (v: unknown): string | null => {
 const etq = (v: unknown): string | null => (v && typeof v === "object" && "label" in v ? txt((v as { label: unknown }).label) : txt(v));
 const archivoDe = (c: string | null | undefined) => (c ? c.split(/[\\/]/).pop() || c : null);
 
-function Campo({ k, v }: { k: string; v: string | null }) {
+function Campo({ k, v, href }: { k: string; v: string | null; href?: string }) {
   if (!v) return null;
   return (
     <div className="min-w-0">
       <dt className="text-[11px] leading-tight text-stone-400">{k}</dt>
       <dd className="truncate text-sm text-stone-800" title={v}>
-        {v}
+        {href ? (
+          <Link href={href} className="text-cdmb-700 hover:underline">
+            {v}
+          </Link>
+        ) : (
+          v
+        )}
       </dd>
     </div>
   );
@@ -86,6 +92,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
     txt(nit?.nombre_nit) ||
     base.representanteLegal;
   const nitId = nit?.numero_nit ? `${nit.numero_nit}${nit.digito_nit != null ? `-${nit.digito_nit}` : ""}` : base.idRepresentante;
+  const nitNumero = nit?.numero_nit != null && Number.isFinite(Number(nit.numero_nit)) ? Number(nit.numero_nit) : null;
 
   return (
     <div className="space-y-4">
@@ -212,7 +219,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         <Tarjeta icon={Building2} titulo="Interesado">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
             <Campo k="Nombre / razón social" v={nombreInt} />
-            <Campo k="Identificación" v={nitId} />
+            <Campo k="Identificación" v={nitId} href={nitNumero != null ? `/historico/nits/${nitNumero}` : undefined} />
             <Campo k="Tipo de ID" v={etq(nit?.tipo_nit)} />
             <Campo k="Tipo de persona" v={etq(nit?.natur_jurid_nit)} />
             <Campo k="Régimen" v={etq(nit?.regimen_nit)} />

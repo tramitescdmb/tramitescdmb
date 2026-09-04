@@ -87,7 +87,8 @@ export async function POST(req: NextRequest) {
   }
 
   const form = await req.formData();
-  const idTramite = Number(form.get("idTramite"));
+  const idTramiteRaw = String(form.get("idTramite") || "");
+  const todos = idTramiteRaw === "todos";
   const fechaInicio = String(form.get("fechaInicio") || "");
   const fechaFin = String(form.get("fechaFin") || "");
   const volver = new URL("/vital", req.url);
@@ -96,20 +97,27 @@ export async function POST(req: NextRequest) {
     volver.searchParams.set("error", "La conexión con VITAL no está configurada en este servidor.");
     return NextResponse.redirect(volver, { status: 303 });
   }
-  if (!idTramite || !fechaInicio || !fechaFin) {
+  if (!idTramiteRaw || !fechaInicio || !fechaFin || (!todos && !Number(idTramiteRaw))) {
     volver.searchParams.set("error", "Faltan id_tramite, fecha de inicio o fecha de fin.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
   try {
-    const resultado = await sincronizarTramite({ idTramite, fechaInicio, fechaFin });
+    const tramites = todos ? await tramitesASincronizar() : [Number(idTramiteRaw)];
+    let total = 0;
+    const errores: string[] = [];
+    for (const idTramite of tramites) {
+      const resultado = await sincronizarTramite({ idTramite, fechaInicio, fechaFin });
+      total += resultado.total;
+      errores.push(...resultado.errores);
+    }
     await registrarAuditoria({
       tipo: "CONFIGURACION_ACTUALIZADA",
-      descripcion: `${session.nombre} sincronizó VITAL (trámite ${idTramite}, ${fechaInicio}–${fechaFin}): ${resultado.total} solicitudes${resultado.errores.length ? `, ${resultado.errores.length} con error` : ""}.`,
+      descripcion: `${session.nombre} sincronizó VITAL (${todos ? `todos los trámites (${tramites.length})` : `trámite ${idTramiteRaw}`}, ${fechaInicio}–${fechaFin}): ${total} solicitudes${errores.length ? `, ${errores.length} con error` : ""}.`,
       usuarioId: session.userId,
     });
-    volver.searchParams.set("sincronizado", String(resultado.total));
-    if (resultado.errores.length) volver.searchParams.set("errores", resultado.errores.slice(0, 5).join(" | "));
+    volver.searchParams.set("sincronizado", String(total));
+    if (errores.length) volver.searchParams.set("errores", errores.slice(0, 5).join(" | "));
     return NextResponse.redirect(volver, { status: 303 });
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "Error inesperado al sincronizar con VITAL.");

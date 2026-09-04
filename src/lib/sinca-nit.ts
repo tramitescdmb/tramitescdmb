@@ -1,5 +1,4 @@
 import type { SincaNitListado, SincaNitColumna } from "@/lib/sinca";
-import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 import { FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
 
 export const REGIMENES_NIT = ["Responsable de Iva", "No responsable de Iva", "Otro"] as const;
@@ -15,16 +14,13 @@ export const OPCIONES_ORDEN_NIT = [
   { value: "numero_nit" as SincaNitColumna, label: "Número de NIT" },
   { value: "tipo_id_nit" as SincaNitColumna, label: "Tipo de identificación" },
   { value: "vinculadas" as const, label: "Vinculadas (cantidad)" },
+  { value: "solicitudes" as const, label: "Solicitudes (cantidad)" },
 ] as const;
 
 export type VinculacionNit = {
   nroSolicitud: number | null;
   fechaDesde: string;
   fechaHasta: string;
-  /** ISO 8601, para filtrar por período — el snapshot pasa por JSON (DB), así que no se puede
-   * guardar un Date real (se serializa a string de todos modos); se compara reconstruyendo el
-   * Date en el momento del filtro, nunca confiando en que este campo siga siendo un Date. */
-  fechaDesdeIso: string | null;
   tieneDetalle: boolean;
 };
 
@@ -74,13 +70,6 @@ export function fechaNit(v: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-/** Normaliza "YYYY-MM-DD HH:mm:ss" (formato del API) a ISO 8601, para poder comparar por rango. */
-export function fechaIsoNit(v: string | null | undefined): string | null {
-  if (!v) return null;
-  const d = new Date(v.replace(" ", "T"));
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
-
 /**
  * SINCA 1.0 devuelve etiquetas corruptas en gran contribuyente/autorretenedor
  * ("no se D", "no lo se D"...) en vez de Sí/No — mostrar eso tal cual
@@ -114,7 +103,6 @@ export function agruparEntidadesNit(filas: SincaNitListado[], disponibles: Set<n
       nroSolicitud,
       fechaDesde: fechaNit(n.fechadesde_int),
       fechaHasta: fechaNit(n.fechahasta_int),
-      fechaDesdeIso: fechaIsoNit(n.fechadesde_int),
       tieneDetalle: nroSolicitud != null && disponibles.has(nroSolicitud),
     };
     const existente = mapa.get(clave);
@@ -188,22 +176,13 @@ export function procesarFiltrosNit(filtros: FiltrosBrutosNit): FiltrosNit {
   return { q, municipio, tipo, regimen, vinculacion, orden, direccion };
 }
 
-/** Aplica los filtros ya interpretados (`procesarFiltrosNit`) + el período sobre el snapshot completo. */
-export function filtrarYOrdenarEntidadesNit(entidadesIn: EntidadNit[], f: FiltrosNit, rango: RangoPeriodo): EntidadNit[] {
+/** Aplica los filtros ya interpretados (`procesarFiltrosNit`) sobre el snapshot completo. */
+export function filtrarYOrdenarEntidadesNit(entidadesIn: EntidadNit[], f: FiltrosNit): EntidadNit[] {
   let entidades = entidadesIn;
 
   if (f.q) {
     const qNorm = f.q.toUpperCase();
     entidades = entidades.filter((e) => e.nombre.toUpperCase().includes(qNorm) || e.identificacion.toUpperCase().includes(qNorm));
-  }
-  if (rango) {
-    entidades = entidades.filter((e) =>
-      e.vinculaciones.some((v) => {
-        if (!v.fechaDesdeIso) return false;
-        const t = new Date(v.fechaDesdeIso).getTime();
-        return t >= rango.desde.getTime() && t < rango.hasta.getTime();
-      })
-    );
   }
   if (f.municipio) {
     const municipio = f.municipio;
@@ -219,6 +198,7 @@ export function filtrarYOrdenarEntidadesNit(entidadesIn: EntidadNit[], f: Filtro
   const dirFactor = f.direccion === "DESC" ? -1 : 1;
   return [...entidades].sort((a, b) => {
     if (f.orden === "vinculadas") return dirFactor * (contarVinculadas(a) - contarVinculadas(b));
+    if (f.orden === "solicitudes") return dirFactor * (a.vinculaciones.length - b.vinculaciones.length);
     if (f.orden === "numero_nit") return dirFactor * ((a.numeroNit ?? 0) - (b.numeroNit ?? 0));
     if (f.orden === "tipo_id_nit") return dirFactor * (a.tipoValue ?? "").localeCompare(b.tipoValue ?? "");
     return dirFactor * a.nombre.localeCompare(b.nombre, "es");

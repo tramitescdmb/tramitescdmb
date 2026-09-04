@@ -13,6 +13,7 @@ import {
   FileText,
   Download,
   CalendarClock,
+  AlertTriangle,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { nombreTramiteVital } from "@/lib/vital";
@@ -135,6 +136,20 @@ function esPersonaJuridica(i: Interesado): boolean {
   return tp.includes("jur") || Boolean(txt(i.razonSocial));
 }
 
+// VITAL suele repetir el mismo interesado 2+ veces dentro de `solicitanteRaw` (confirmado en
+// datos reales) — sin este filtro la tarjeta de Solicitante mostraba la misma persona duplicada.
+function dedupeInteresados(lista: Interesado[]): Interesado[] {
+  const vistos = new Set<string>();
+  const resultado: Interesado[] = [];
+  for (const i of lista) {
+    const clave = txt(i.numeroIdentificacion) ?? txt(i.identificacion) ?? JSON.stringify(i);
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    resultado.push(i);
+  }
+  return resultado;
+}
+
 function DatosInteresado({ i }: { i: Interesado }) {
   const nombre = nombreInteresado(i);
   const id = txt(i.numeroIdentificacion) ?? txt(i.identificacion);
@@ -168,7 +183,9 @@ function DatosInteresado({ i }: { i: Interesado }) {
           <p className="truncate text-sm font-medium text-stone-900" title={nombre ?? undefined}>
             {nombre ?? txt(i.tipoPersona) ?? "Solicitante sin nombre reportado"}
           </p>
-          {txt(i.tipoPersona) && <p className="text-xs text-stone-400">{txt(i.tipoPersona)}</p>}
+          {/* Solo como subtítulo si no es ya lo que se muestra arriba (si no hay nombre, la línea
+              principal cae en tipoPersona y repetirlo abajo mostraría el mismo texto dos veces). */}
+          {nombre && txt(i.tipoPersona) && <p className="text-xs text-stone-400">{txt(i.tipoPersona)}</p>}
         </div>
       </div>
 
@@ -235,15 +252,22 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   });
   if (!solicitud) notFound();
 
-  const interesados: Interesado[] = Array.isArray(solicitud.solicitanteRaw)
-    ? (solicitud.solicitanteRaw as Interesado[])
-    : solicitud.solicitanteRaw && typeof solicitud.solicitanteRaw === "object"
-      ? [solicitud.solicitanteRaw as Interesado]
-      : [];
+  const interesados: Interesado[] = dedupeInteresados(
+    Array.isArray(solicitud.solicitanteRaw)
+      ? (solicitud.solicitanteRaw as Interesado[])
+      : solicitud.solicitanteRaw && typeof solicitud.solicitanteRaw === "object"
+        ? [solicitud.solicitanteRaw as Interesado]
+        : []
+  );
 
   const fechaRad = solicitud.fechaRadicacion
     ? solicitud.fechaRadicacion.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })
     : null;
+
+  // VITAL puede reportar más documentos (wsDocumentos) de los que quedaron guardados: el servicio
+  // de descarga de VITAL viene fallando por permisos (ver nota en sincronizarSolicitud/vital.ts) —
+  // mejor avisarlo que mostrar "sin documentos" como si el trámite no tuviera ninguno adjunto.
+  const documentosFaltantes = Math.max(0, (solicitud.documentosReportados ?? 0) - solicitud.documentos.length);
 
   return (
     <div className="space-y-4">
@@ -300,9 +324,19 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
       {/* Documentos */}
       <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${solicitud.documentos.length})`}>
-        {solicitud.documentos.length === 0 ? (
+        {documentosFaltantes > 0 && (
+          <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+            <p>
+              VITAL reporta {documentosFaltantes} documento{documentosFaltantes === 1 ? "" : "s"} adjunto{documentosFaltantes === 1 ? "" : "s"} más
+              que no {documentosFaltantes === 1 ? "se pudo" : "se pudieron"} descargar — es un problema de permisos del servicio de VITAL, no de
+              esta plataforma. Informe al área de sistemas.
+            </p>
+          </div>
+        )}
+        {solicitud.documentos.length === 0 && documentosFaltantes === 0 ? (
           <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
-        ) : (
+        ) : solicitud.documentos.length > 0 ? (
           <ul className="space-y-2">
             {solicitud.documentos.map((doc) => (
               <li
@@ -327,7 +361,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </Tarjeta>
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">

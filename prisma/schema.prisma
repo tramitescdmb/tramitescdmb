@@ -597,6 +597,14 @@ model SolicitudVital {
   solicitanteRaw            Json? // respuesta completa de hu-otic-vital-io-003, tal cual (persona natural o jurídica)
   camposTramite             Json? // respuesta completa de hu-otic-vital-io-002, tal cual (campos del formulario)
 
+  // Cuántos documentos reportó wsDocumentos en la última sincronización — puede ser mayor que
+  // `documentos.length` si la descarga falló (confirmado en vivo: el servicio /descargar de VITAL
+  // devuelve 403 "sin permisos" para TODA descarga hasta ahora, aunque wsDocumentos sí lista los
+  // archivos). Null = todavía no se sincronizó con esta columna. Sirve para poder avisar en el
+  // detalle que hay un adjunto que VITAL reporta pero no se pudo traer, en vez de mostrar "sin
+  // documentos" como si el trámite realmente no tuviera ninguno.
+  documentosReportados Int?
+
   documentos           SolicitudVitalDocumento[]
   ultimaSincronizacion DateTime                  @default(now()) @updatedAt
   createdAt            DateTime                  @default(now())

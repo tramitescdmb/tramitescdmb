@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, AlertTriangle } from "lucide-react";
+import { Search, AlertTriangle, RefreshCw } from "lucide-react";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
 import { OPCIONES_ORDEN_NIT, REGIMENES_NIT, procesarFiltrosNit, filtrarYOrdenarEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
 import { parsePorPagina } from "@/lib/vista-lista";
-import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
-import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { TablaNits } from "@/components/tablas/TablaNits";
@@ -17,7 +15,10 @@ import { EstadisticasNit } from "@/components/EstadisticasNit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
-type Filtros = FiltrosPeriodo & {
+const fechaHora = (v: string | null | undefined) =>
+  v ? new Date(v).toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+type Filtros = {
   q?: string;
   municipio?: string;
   tipo?: string;
@@ -27,6 +28,8 @@ type Filtros = FiltrosPeriodo & {
   dir?: string;
   page?: string;
   vista?: string;
+  ok?: string;
+  error?: string;
 };
 
 export default async function HistoricoNitsPage({ searchParams }: { searchParams: Promise<Filtros> }) {
@@ -35,6 +38,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederSeccion(permisos, "SINCA_BASE")) redirect("/");
   }
+  const esAdmin = session?.rol === "ADMIN";
   if (!sincaConfigurado()) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
@@ -42,7 +46,6 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const filtros = await searchParams;
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(filtros);
   const f = procesarFiltrosNit(filtros);
 
   // Todo el listado sale de un único snapshot cacheado (ver src/lib/sinca-nit-stats.ts): el API de
@@ -53,9 +56,11 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   // (`filtrarYOrdenarEntidadesNit`) para que la exportación a CSV use exactamente la misma lógica.
   let entidades: EntidadNit[] = [];
   let error = false;
+  let calculadoEn: string | null = null;
   try {
     const snapshot = await obtenerSnapshotNit();
-    entidades = filtrarYOrdenarEntidadesNit(snapshot.entidades, f, rango);
+    calculadoEn = snapshot.calculadoEn;
+    entidades = filtrarYOrdenarEntidadesNit(snapshot.entidades, f);
   } catch {
     error = true;
   }
@@ -68,7 +73,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(filtros)) {
-      if (k !== "page" && typeof v === "string" && v) params.set(k, v);
+      if (k !== "page" && k !== "ok" && k !== "error" && typeof v === "string" && v) params.set(k, v);
     }
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
@@ -77,19 +82,18 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const hrefDescarga = () => {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(filtros)) {
-      if (k !== "page" && k !== "vista" && typeof v === "string" && v) params.set(k, v);
+      if (k !== "page" && k !== "vista" && k !== "ok" && k !== "error" && typeof v === "string" && v) params.set(k, v);
     }
     return `/api/historico/nits/exportar?${params.toString()}`;
   };
 
-  const hayFiltros = Boolean(f.q || rango || f.municipio || f.tipo || f.regimen || f.vinculacion);
+  const hayFiltros = Boolean(f.q || f.municipio || f.tipo || f.regimen || f.vinculacion);
   const clausulasFiltro: string[] = [];
   if (f.vinculacion === "con") clausulasFiltro.push("con al menos una solicitud vinculada");
   if (f.vinculacion === "sin") clausulasFiltro.push("sin ninguna solicitud vinculada");
   if (f.tipo) clausulasFiltro.push(f.tipo === "N" ? "tipo NIT (empresa)" : "tipo cédula (persona)");
   if (f.regimen) clausulasFiltro.push(`régimen "${f.regimen}"`);
   if (f.municipio) clausulasFiltro.push(`en ${f.municipio}`);
-  if (rango) clausulasFiltro.push(`vinculados entre ${etiquetaPeriodo}`);
   if (f.q) clausulasFiltro.push(`que coinciden con "${f.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
 
@@ -108,11 +112,25 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <DescargarCsvBoton href={hrefDescarga()} />
       </div>
 
-      <SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />
+      {filtros.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
+      {filtros.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}
+
+      {esAdmin && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs text-stone-500">
+          <span>
+            Último recálculo de este registro: <span className="font-medium text-stone-700">{fechaHora(calculadoEn)}</span>. El
+            cron diario lo mantiene al día automáticamente (incluye resoluciones de fondo nuevas sobre NIT ya existentes).
+          </span>
+          <form action="/api/historico/nits/sincronizar" method="post">
+            <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+              Sincronizar ahora
+            </button>
+          </form>
+        </div>
+      )}
 
       <form method="get" className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-        {filtros.desde && <input type="hidden" name="desde" value={filtros.desde} />}
-        {filtros.hasta && <input type="hidden" name="hasta" value={filtros.hasta} />}
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
           <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">

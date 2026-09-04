@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
 import { procesarFiltrosNit, filtrarYOrdenarEntidadesNit, contarVinculadas, type FiltrosBrutosNit } from "@/lib/sinca-nit";
-import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -33,14 +32,12 @@ export async function GET(req: NextRequest) {
     orden: sp.get("orden") ?? undefined,
     dir: sp.get("dir") ?? undefined,
   };
-  const filtrosPeriodo: FiltrosPeriodo = { desde: sp.get("desde") ?? undefined, hasta: sp.get("hasta") ?? undefined };
-  const { rango } = resolverPeriodo(filtrosPeriodo);
   const f = procesarFiltrosNit(filtrosBrutos);
 
   let entidades;
   try {
     const snapshot = await obtenerSnapshotNit();
-    entidades = filtrarYOrdenarEntidadesNit(snapshot.entidades, f, rango);
+    entidades = filtrarYOrdenarEntidadesNit(snapshot.entidades, f);
   } catch {
     return NextResponse.json({ error: "No se pudo consultar el registro de NIT de SINCA 1.0." }, { status: 502 });
   }

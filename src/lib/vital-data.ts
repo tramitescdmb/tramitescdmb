@@ -8,10 +8,9 @@ const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0))
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MAX_MESES_SERIE = 120;
 
-export type FiltrosVital = { q?: string; tramite?: string; actividad?: string; page?: string; vista?: string };
+export type FiltrosVital = { q?: string; tramite?: string; page?: string; vista?: string };
 
-/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. */
-export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
+export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
   if (f.q?.trim()) {
     const q = f.q.trim();
@@ -25,16 +24,14 @@ export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null)
     });
   }
   if (f.tramite && /^\d+$/.test(f.tramite)) and.push({ idTramiteVital: parseInt(f.tramite, 10) });
-  if (f.actividad?.trim()) and.push({ nombreActividad: f.actividad.trim() });
-  if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
 
 /** Listado paginado de /vital con la barra de filtros. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
-export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo = null) {
+export async function getVitalListado(filtros: FiltrosVital) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const where = construirWhereVital(filtros, rango);
+  const where = construirWhereVital(filtros);
 
   const [total, filas] = await Promise.all([
     db.solicitudVital.count({ where }),
@@ -51,18 +48,13 @@ export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo
 }
 
 export async function getVitalOpcionesFiltro() {
-  const [tramites, actividades] = await Promise.all([
-    db.solicitudVital.groupBy({ by: ["idTramiteVital"], _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
-    db.solicitudVital.groupBy({
-      by: ["nombreActividad"],
-      where: { nombreActividad: { not: null } },
-      _count: { _all: true },
-      orderBy: { _count: { nombreActividad: "desc" } },
-    }),
-  ]);
+  const tramites = await db.solicitudVital.groupBy({
+    by: ["idTramiteVital"],
+    _count: { _all: true },
+    orderBy: { _count: { idTramiteVital: "desc" } },
+  });
   return {
     tramites: tramites.map((t) => ({ id: t.idTramiteVital, nombre: NOMBRE_TRAMITE_VITAL[t.idTramiteVital] ?? `Trámite ${t.idTramiteVital}`, total: t._count._all })),
-    actividades: actividades.map((a) => ({ nombre: a.nombreActividad!, total: a._count._all })),
   };
 }
 
