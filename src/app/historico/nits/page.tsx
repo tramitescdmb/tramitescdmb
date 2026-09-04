@@ -10,6 +10,7 @@ import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaNits } from "@/components/tablas/TablaNits";
+import { EstadisticasNit } from "@/components/EstadisticasNit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -59,41 +60,39 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const direccion: "ASC" | "DESC" = filtros.dir ? (filtros.dir === "DESC" ? "DESC" : "ASC") : ordenarPorVinculadas ? "DESC" : "ASC";
 
   // El API de SINCA 1.0 solo filtra por `search` (nit/cédula/nombre) y no tiene noción de
-  // "vinculadas" (confirmado probando año/municipio/tipo/régimen en vivo — los ignora). Con
-  // cualquiera de esos filtros u órdenes activo, se trae un lote acotado que coincide con la
-  // búsqueda, se agrupa entero y se filtra/ordena/pagina por tercero en memoria; sin ellos, se
-  // sigue pidiendo la página exacta al API como antes (más liviano).
-  const necesitaLoteCompleto = Boolean(anio || municipio || tipo || regimen || soloVinculados || ordenarPorVinculadas);
-
+  // "vinculadas"; tampoco puede pedirle "dame la página N ya agrupada por tercero", porque
+  // agrupar es algo que solo se puede hacer del lado de acá. Por eso SIEMPRE se trae un lote
+  // acotado que coincide con la búsqueda, se agrupa entero y se filtra/ordena/pagina por tercero
+  // en memoria — paginar ANTES de agrupar (como se hacía antes) hacía que "Ver: 50" mostrara a
+  // veces 28 filas y a veces 47, según cuántas de esas 50 solicitudes crudas resultaran ser del
+  // mismo tercero; agrupando primero, cada página trae siempre la cantidad elegida en "Ver".
+  //
   // Al ordenar por vinculadas, la "Dirección" elegida es la del conteo (más vinculadas primero o
   // al revés) — no debe además invertir qué 5.000 filas se traen del API, o cambiar esa dirección
   // cambiaría silenciosamente la muestra sobre la que se calcula el conteo. Por eso el pedido al
   // API siempre va en un orden fijo (nombre ascendente) cuando se ordena por vinculadas.
   const ordenApi: "ASC" | "DESC" = ordenarPorVinculadas ? "ASC" : direccion;
 
-  let totalCrudo = 0; // total de vinculaciones que cumplen `search` en el API, antes de cualquier filtro de esta página
+  let totalCrudo = 0; // total de vinculaciones que cumplen `search` en el API, antes de agrupar/filtrar por tercero
   let filasBase: SincaNitListado[] = [];
   let truncado = false;
   let error = false;
   try {
-    if (necesitaLoteCompleto) {
-      const r = await buscarNits({ search: q, page: 1, perPage: TOPE_VISTA_TODOS, column: columna, order: ordenApi });
-      totalCrudo = r.total;
-      truncado = r.total > TOPE_VISTA_TODOS;
-      filasBase = r.data.filter((n) => {
-        if (anio && anioNit(n.fechadesde_int) !== anio) return false;
-        if (municipio) {
-          if (municipio === FUERA_DE_JURISDICCION ? esMunicipioValido(n.municipio ?? "") : n.municipio !== municipio) return false;
-        }
-        if (tipo && n.tipo_nit?.value !== tipo) return false;
-        if (regimen && n.regimen_nit?.label !== regimen) return false;
-        return true;
-      });
-    } else {
-      const r = await buscarNits({ search: q, page, perPage: porPagina, column: columna, order: ordenApi });
-      totalCrudo = r.total;
-      filasBase = r.data;
-    }
+    const r = await buscarNits({ search: q, page: 1, perPage: TOPE_VISTA_TODOS, column: columna, order: ordenApi });
+    totalCrudo = r.total;
+    truncado = r.total > TOPE_VISTA_TODOS;
+    filasBase =
+      anio || municipio || tipo || regimen
+        ? r.data.filter((n) => {
+            if (anio && anioNit(n.fechadesde_int) !== anio) return false;
+            if (municipio) {
+              if (municipio === FUERA_DE_JURISDICCION ? esMunicipioValido(n.municipio ?? "") : n.municipio !== municipio) return false;
+            }
+            if (tipo && n.tipo_nit?.value !== tipo) return false;
+            if (regimen && n.regimen_nit?.label !== regimen) return false;
+            return true;
+          })
+        : r.data;
   } catch {
     error = true;
   }
@@ -121,9 +120,9 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
     entidades = [...entidades].sort((a, b) => factor * (contarVinculadas(a) - contarVinculadas(b)));
   }
 
-  const totalFiltrado = necesitaLoteCompleto ? entidades.length : totalCrudo;
+  const totalFiltrado = entidades.length;
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
-  const entidadesPagina = necesitaLoteCompleto ? entidades.slice((page - 1) * porPagina, page * porPagina) : entidades;
+  const entidadesPagina = entidades.slice((page - 1) * porPagina, page * porPagina);
   const filas = entidadesPagina.map((e, i) => ({ ...e, numero: (page - 1) * porPagina + i + 1 }));
 
   const hrefPagina = (p: number) => {
@@ -278,26 +277,22 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
             <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <AlertTriangle className="h-4 w-4 flex-none text-amber-600" aria-hidden />
               <p>
-                Año, municipio, tipo, régimen, vinculadas y el orden por vinculadas se calculan sobre una muestra de{" "}
-                {TOPE_VISTA_TODOS.toLocaleString("es-CO")} resultados que coinciden con la búsqueda (hay{" "}
-                {totalCrudo.toLocaleString("es-CO")} en total) — si no encuentra lo que busca, acote más con el campo Buscar.
+                Este listado se calcula sobre una muestra de {TOPE_VISTA_TODOS.toLocaleString("es-CO")} solicitudes que coinciden
+                con la búsqueda (hay {totalCrudo.toLocaleString("es-CO")} en total) — use el campo Buscar para acotar y ver más
+                terceros distintos.
               </p>
             </div>
           )}
 
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-            {!necesitaLoteCompleto && filas.length > 0 && filas.length < filasBase.length && (
-              <p className="border-b border-stone-100 px-4 py-2 text-xs text-stone-400">
-                Esta página trae {filasBase.length} solicitudes, agrupadas en {filas.length} terceros distintos — por eso se ven
-                menos filas de las que eligió en &quot;Ver&quot;.
-              </p>
-            )}
             <div className="overflow-x-auto">
               <TablaNits filas={filas} sinResultadosTexto={hayFiltros ? "Ningún tercero coincide con esos filtros." : "No hay registros."} />
             </div>
             <SelectorVista vistaActual={vista} />
             <Paginador paginaActual={page} totalPaginas={totalPaginas} total={totalFiltrado} porPagina={porPagina} hrefPagina={hrefPagina} />
           </div>
+
+          <EstadisticasNit />
         </>
       )}
     </div>

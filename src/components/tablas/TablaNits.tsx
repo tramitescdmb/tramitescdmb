@@ -15,7 +15,7 @@ const ENCABEZADOS = [
   { texto: "S", title: "Solicitudes: total de solicitudes a las que ha quedado vinculado este tercero" },
   { texto: "V", title: "Vinculadas: cuántas de esas solicitudes tienen el detalle completo disponible en esta plataforma" },
 ];
-const ANCHOS_DEFECTO = [36, 130, 300, 110, 150, 120, 48, 48];
+const ANCHOS_DEFECTO = [30, 115, 210, 70, 115, 95, 38, 38];
 
 export type FilaNit = EntidadNit & { numero: number };
 
