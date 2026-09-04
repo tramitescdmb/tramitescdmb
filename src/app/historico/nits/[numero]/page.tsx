@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, Building2, User, MapPin, ReceiptText, ClipboardList, CalendarClock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Building2, User, MapPin, ReceiptText, ClipboardList, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { buscarNits, sincaConfigurado, type SincaNitListado } from "@/lib/sinca";
 import { agruparEntidadesNit } from "@/lib/sinca-nit";
 import { TOPE_VISTA_TODOS } from "@/lib/vista-lista";
@@ -128,18 +128,14 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
               )}
               <ul className="divide-y divide-stone-100">
                 {ordenadas.map((v, i) => (
-                  <li
-                    key={`${v.nroSolicitud}-${i}`}
-                    className={`flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm ${
-                      v.tieneDetalle ? "bg-cdmb-50" : ""
-                    }`}
-                  >
+                  <li key={`${v.nroSolicitud}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-2 text-sm">
                     <span className="flex items-center gap-2">
                       {v.nroSolicitud && v.tieneDetalle ? (
                         <Link
                           href={`/historico/solicitudes/${v.nroSolicitud}`}
-                          className="inline-flex items-center gap-1 rounded-md bg-cdmb-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-cdmb-700"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100"
                         >
+                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
                           Ver solicitud {v.nroSolicitud}
                         </Link>
                       ) : (
@@ -148,7 +144,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
                         </span>
                       )}
                     </span>
-                    <span className={`text-xs ${v.tieneDetalle ? "text-cdmb-700" : "text-stone-400"}`}>
+                    <span className={`text-xs ${v.tieneDetalle ? "text-emerald-700" : "text-stone-400"}`}>
                       {v.fechaDesde || "—"}
                       {v.fechaHasta ? ` – ${v.fechaHasta}` : ""}
                     </span>

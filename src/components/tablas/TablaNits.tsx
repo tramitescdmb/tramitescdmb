@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
-import type { EntidadNit } from "@/lib/sinca-nit";
+import { contarVinculadas, type EntidadNit } from "@/lib/sinca-nit";
 
 const ENCABEZADOS = [
   { texto: "#" },
@@ -44,7 +44,7 @@ export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sin
           </tr>
         ) : (
           filas.map((f) => {
-            const vinculadas = f.vinculaciones.filter((v) => v.tieneDetalle).length;
+            const vinculadas = contarVinculadas(f);
             return (
               <tr key={f.clave} className="hover:bg-stone-50">
                 <td className="truncate px-2.5 py-1 text-stone-400">{f.numero}</td>
@@ -67,7 +67,7 @@ export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sin
                 <td className="truncate px-2.5 py-1 text-stone-600">{f.municipio ?? "—"}</td>
                 <td className="truncate px-2.5 py-1 text-stone-600">{f.vinculaciones.length}</td>
                 <td
-                  className={`truncate px-2.5 py-1 ${vinculadas > 0 ? "font-semibold text-cdmb-700" : "text-stone-300"}`}
+                  className={`truncate px-2.5 py-1 ${vinculadas > 0 ? "font-semibold text-emerald-700" : "text-stone-300"}`}
                   title={vinculadas > 0 ? "Solicitudes con detalle disponible en esta plataforma" : "Ninguna de sus solicitudes tiene detalle disponible en esta plataforma"}
                 >
                   {vinculadas}

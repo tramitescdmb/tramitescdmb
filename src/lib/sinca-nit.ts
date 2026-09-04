@@ -1,4 +1,17 @@
-import type { SincaNitListado } from "@/lib/sinca";
+import type { SincaNitListado, SincaNitColumna } from "@/lib/sinca";
+
+/**
+ * Opciones de orden que se muestran en /historico/nits — subconjunto de las columnas que el API
+ * realmente admite (`SINCA_NIT_COLUMNAS` en sinca.ts), acotado a las que corresponden a algo
+ * visible en la tabla agrupada por tercero (nombre, NIT, tipo). "vinculadas" no es una columna
+ * del API: es un orden calculado aquí mismo, sobre la cantidad de solicitudes con detalle.
+ */
+export const OPCIONES_ORDEN_NIT = [
+  { value: "nombre_nit" as SincaNitColumna, label: "Nombre / razón social" },
+  { value: "numero_nit" as SincaNitColumna, label: "Número de NIT" },
+  { value: "tipo_id_nit" as SincaNitColumna, label: "Tipo de identificación" },
+  { value: "vinculadas" as const, label: "Vinculadas (cantidad)" },
+] as const;
 
 export type VinculacionNit = {
   nroSolicitud: number | null;
@@ -79,6 +92,10 @@ export function siNoLimpio(e: unknown): string | null {
  * `disponibles`: nroSolicitud que sí tienen detalle en el espejo local — pasar
  * un Set vacío si esa pantalla no va a enlazar solicitudes individuales.
  */
+export function contarVinculadas(e: EntidadNit): number {
+  return e.vinculaciones.filter((v) => v.tieneDetalle).length;
+}
+
 export function agruparEntidadesNit(filas: SincaNitListado[], disponibles: Set<number>): EntidadNit[] {
   const mapa = new Map<string, EntidadNit>();
   for (const n of filas) {
