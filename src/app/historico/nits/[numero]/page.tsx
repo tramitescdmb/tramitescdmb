@@ -2,10 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ArrowLeft, Building2, User, MapPin, ReceiptText, ClipboardList, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { buscarNits, sincaConfigurado, type SincaNitListado } from "@/lib/sinca";
-import { agruparEntidadesNit } from "@/lib/sinca-nit";
-import { TOPE_VISTA_TODOS } from "@/lib/vista-lista";
-import { db } from "@/lib/db";
+import { sincaConfigurado } from "@/lib/sinca";
+import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -44,23 +42,15 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
   if (!sincaConfigurado()) return null;
 
   // No existe un endpoint de detalle por NIT (probado en vivo: /presinca/nit/{numero} da 404) —
-  // se reconstruye buscando ese número exacto en el mismo listado y agrupando sus filas.
-  let filas: SincaNitListado[] = [];
+  // se busca dentro del mismo snapshot cacheado que usa el listado (ver sinca-nit-stats.ts).
+  let entidad;
   try {
-    const r = await buscarNits({ search: numero, perPage: TOPE_VISTA_TODOS, page: 1 });
-    filas = r.data.filter((n) => String(n.numero_nit) === numero);
+    const { entidades } = await obtenerSnapshotNit();
+    entidad = entidades.find((e) => e.numeroNit === Number(numero));
   } catch {
-    filas = [];
+    entidad = undefined;
   }
-  if (filas.length === 0) notFound();
-
-  const idsSolicitud = [...new Set(filas.map((n) => Number(n.nrosolicitud_sol)).filter(Number.isFinite))];
-  const disponibles = new Set(
-    (await db.sincaResolucion.findMany({ where: { nroSolicitud: { in: idsSolicitud } }, select: { nroSolicitud: true } })).map(
-      (r) => r.nroSolicitud
-    )
-  );
-  const entidad = agruparEntidadesNit(filas, disponibles)[0];
+  if (!entidad) notFound();
   const Icono = entidad.tipoValue === "C" ? User : Building2;
 
   return (

@@ -17,6 +17,7 @@ export type VinculacionNit = {
   nroSolicitud: number | null;
   fechaDesde: string;
   fechaHasta: string;
+  anio: number | null;
   tieneDetalle: boolean;
 };
 
@@ -105,6 +106,7 @@ export function agruparEntidadesNit(filas: SincaNitListado[], disponibles: Set<n
       nroSolicitud,
       fechaDesde: fechaNit(n.fechadesde_int),
       fechaHasta: fechaNit(n.fechahasta_int),
+      anio: anioNit(n.fechadesde_int),
       tieneDetalle: nroSolicitud != null && disponibles.has(nroSolicitud),
     };
     const existente = mapa.get(clave);

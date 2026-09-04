@@ -240,6 +240,15 @@ model SincaSincronizacion {
   disparadoPor String? // "cron", "manual:<usuario>", "script"
 }
 
+/// Fila única (id fijo) con el registro completo de NIT/terceros de SINCA 1.0 ya agrupado por
+/// tercero — recalcularlo recorre las ~33 mil filas del API (~20s), así que se guarda aquí en
+/// vez de con unstable_cache: el payload agrupado pesa más de los 2MB que esa caché admite.
+model SincaNitSnapshot {
+  id          String   @id @default("actual")
+  datos       Json
+  calculadoEn DateTime @default(now())
+}
+
 // ---------------------------------------------------------------------------
 // Catálogo de trámites (datos de referencia, sembrados desde data/tramites/*.json)
 // ---------------------------------------------------------------------------

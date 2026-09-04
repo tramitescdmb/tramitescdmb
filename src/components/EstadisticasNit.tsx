@@ -62,10 +62,7 @@ export function EstadisticasNit() {
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <h3 className="text-sm font-semibold text-stone-900">Estadísticas del registro completo</h3>
-      <p className="mb-3 text-xs text-stone-500">
-        Sobre los {datos ? num(datos.totalVinculaciones) : "…"} vinculaciones de todo SINCA 1.0 (no solo lo filtrado arriba) — para
-        evaluar si conviene depurar los terceros que nunca han quedado vinculados a una solicitud con detalle disponible aquí.
-      </p>
+      <p className="mb-3 text-xs text-stone-500">Terceros distintos en todo SINCA 1.0, con o sin ninguna solicitud vinculada.</p>
 
       {error ? (
         <p className="text-sm text-stone-400">No se pudieron calcular las estadísticas. Intente de nuevo más tarde.</p>

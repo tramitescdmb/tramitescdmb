@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sincaConfigurado } from "@/lib/sinca";
-import { obtenerEstadisticasNit } from "@/lib/sinca-nit-stats";
+import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
+import { contarVinculadas } from "@/lib/sinca-nit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
@@ -12,8 +13,18 @@ export async function GET() {
   if (!sincaConfigurado()) return NextResponse.json({ message: "SINCA 1.0 no está configurado." }, { status: 503 });
 
   try {
-    const estadisticas = await obtenerEstadisticasNit();
-    return NextResponse.json(estadisticas);
+    const { entidades, totalVinculaciones, calculadoEn } = await obtenerSnapshotNit();
+    const totalTerceros = entidades.length;
+    const conVinculacion = entidades.filter((e) => contarVinculadas(e) > 0).length;
+    const sinVinculacion = totalTerceros - conVinculacion;
+    return NextResponse.json({
+      totalTerceros,
+      conVinculacion,
+      sinVinculacion,
+      porcentajeSinVinculacion: totalTerceros > 0 ? sinVinculacion / totalTerceros : 0,
+      totalVinculaciones,
+      calculadoEn,
+    });
   } catch {
     return NextResponse.json({ message: "No se pudieron calcular las estadísticas." }, { status: 502 });
   }

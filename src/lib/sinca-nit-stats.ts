@@ -1,56 +1,63 @@
-import { unstable_cache } from "next/cache";
 import { buscarNits } from "@/lib/sinca";
+import { agruparEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
 import { db } from "@/lib/db";
 
-export type EstadisticasNit = {
-  totalTerceros: number;
-  conVinculacion: number;
-  sinVinculacion: number;
-  porcentajeSinVinculacion: number;
+export type SnapshotNit = {
+  entidades: EntidadNit[];
   totalVinculaciones: number;
   calculadoEn: string;
 };
 
+const ID_SNAPSHOT = "actual";
+const VIGENCIA_MS = 12 * 3600 * 1000; // 12 horas
+
+// Leer la fila de ~11MB desde Postgres (aunque ya esté calculada) toma varios segundos —
+// se guarda también en memoria del propio proceso para que las visitas seguidas (paginar,
+// cambiar un filtro) no repitan esa lectura cada vez. Se pierde al reiniciar el servidor o
+// en una instancia nueva de Vercel, lo cual está bien: en ese caso simplemente vuelve a leer
+// de la base (sigue siendo mucho más rápido que recalcular contra el API).
+let enMemoria: { snapshot: SnapshotNit; hasta: number } | null = null;
+
 /**
- * Barre TODO el registro de NIT/terceros de SINCA 1.0 (33k+ filas, una llamada con
- * `per_page=-1` — tarda ~20s) para contar cuántos terceros distintos hay y cuántos de
- * esos no tienen ninguna solicitud con detalle disponible en la plataforma. Pensado
- * para análisis puntual (ej. evaluar si tiene sentido depurar los que nunca se usan),
- * no para consultarse en cada carga de página — por eso va cacheado varias horas
- * (`obtenerEstadisticasNit`, más abajo) y se sirve desde una ruta aparte que el listado
- * carga de forma independiente, para no demorar la tabla principal.
+ * Barre TODO el registro de NIT/terceros de SINCA 1.0 (33k+ filas, una sola llamada con
+ * `per_page=-1` — tarda ~20s) y lo agrupa por tercero. Tanto el listado (/historico/nits) como
+ * el panel de estadísticas leen de este mismo snapshot en vez de volver a golpear el API cada uno
+ * por su lado — antes el listado traía solo una muestra acotada (5.000 filas) para poder paginar
+ * rápido, y el panel de estadísticas escaneaba el total completo por separado: dos números de
+ * "total" distintos en la misma pantalla, que es justo lo que generó la confusión. Con una sola
+ * fuente, el listado, su paginación y las estadísticas siempre cuadran entre sí.
  */
-async function calcularEstadisticasNit(): Promise<EstadisticasNit> {
+async function calcularSnapshotNit(): Promise<SnapshotNit> {
   const [r, locales] = await Promise.all([
     buscarNits({ perPage: -1, page: 1 }),
     db.sincaResolucion.findMany({ select: { nroSolicitud: true } }),
   ]);
   const disponibles = new Set(locales.map((x) => x.nroSolicitud));
-
-  const tieneVinculo = new Map<string, boolean>();
-  for (const n of r.data) {
-    const clave = n.numero_nit != null ? String(n.numero_nit) : `sin-nit-${n.rn}`;
-    const nro = n.nrosolicitud_sol ? Number(n.nrosolicitud_sol) : null;
-    const disponible = nro != null && disponibles.has(nro);
-    tieneVinculo.set(clave, (tieneVinculo.get(clave) ?? false) || disponible);
-  }
-
-  let conVinculacion = 0;
-  for (const v of tieneVinculo.values()) if (v) conVinculacion++;
-  const totalTerceros = tieneVinculo.size;
-  const sinVinculacion = totalTerceros - conVinculacion;
-
-  return {
-    totalTerceros,
-    conVinculacion,
-    sinVinculacion,
-    porcentajeSinVinculacion: totalTerceros > 0 ? sinVinculacion / totalTerceros : 0,
-    totalVinculaciones: r.total,
-    calculadoEn: new Date().toISOString(),
-  };
+  const entidades = agruparEntidadesNit(r.data, disponibles);
+  return { entidades, totalVinculaciones: r.total, calculadoEn: new Date().toISOString() };
 }
 
-export const obtenerEstadisticasNit = unstable_cache(calcularEstadisticasNit, ["sinca-nit-estadisticas"], {
-  revalidate: 3600 * 12,
-  tags: ["sinca-nit-estadisticas"],
-});
+/**
+ * Guardado en una tabla propia (`SincaNitSnapshot`, fila única) en vez de con `unstable_cache`:
+ * el payload agrupado pesa ~12MB, por encima de los 2MB que esa caché admite — probado en vivo,
+ * fallaba en silencio (no cacheaba nada y recalculaba en cada visita, ~20s cada vez).
+ */
+export async function obtenerSnapshotNit(): Promise<SnapshotNit> {
+  if (enMemoria && Date.now() < enMemoria.hasta) return enMemoria.snapshot;
+
+  const existente = await db.sincaNitSnapshot.findUnique({ where: { id: ID_SNAPSHOT } });
+  if (existente && Date.now() - existente.calculadoEn.getTime() < VIGENCIA_MS) {
+    const snapshot = existente.datos as unknown as SnapshotNit;
+    enMemoria = { snapshot, hasta: Date.now() + VIGENCIA_MS };
+    return snapshot;
+  }
+
+  const snapshot = await calcularSnapshotNit();
+  await db.sincaNitSnapshot.upsert({
+    where: { id: ID_SNAPSHOT },
+    create: { id: ID_SNAPSHOT, datos: snapshot, calculadoEn: new Date() },
+    update: { datos: snapshot, calculadoEn: new Date() },
+  });
+  enMemoria = { snapshot, hasta: Date.now() + VIGENCIA_MS };
+  return snapshot;
+}
