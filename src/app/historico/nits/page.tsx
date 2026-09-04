@@ -49,11 +49,13 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const municipio = filtros.municipio?.trim() || undefined;
   const tipo = filtros.tipo === "N" || filtros.tipo === "C" ? filtros.tipo : undefined;
   const regimen = filtros.regimen && (REGIMENES as readonly string[]).includes(filtros.regimen) ? filtros.regimen : undefined;
-  const soloVinculados = filtros.vinculadas === "1";
+  // "1" = con al menos una vinculación, "0" = sin ninguna (candidatos a revisar para depurar).
+  const vinculacion = filtros.vinculadas === "1" ? "con" : filtros.vinculadas === "0" ? "sin" : undefined;
 
-  // Si el usuario no eligió un orden explícito y activó "solo vinculados", el orden por defecto
+  // Si el usuario no eligió un orden explícito y filtró "con vinculación", el orden por defecto
   // pasa a ser esa cantidad descendente (el que más tiene, primero) — es lo que tiene sentido ahí.
-  const orden = filtros.orden && ORDENES_VALIDOS.has(filtros.orden) ? filtros.orden : soloVinculados ? "vinculadas" : "nombre_nit";
+  // Para "sin vinculación" no aplica (ahí todos quedan en 0), así que se deja el orden normal.
+  const orden = filtros.orden && ORDENES_VALIDOS.has(filtros.orden) ? filtros.orden : vinculacion === "con" ? "vinculadas" : "nombre_nit";
   const direccion: "ASC" | "DESC" = filtros.dir ? (filtros.dir === "DESC" ? "DESC" : "ASC") : orden === "vinculadas" ? "DESC" : "ASC";
 
   // Todo el listado sale de un único snapshot cacheado (ver src/lib/sinca-nit-stats.ts): el API de
@@ -84,7 +86,8 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   }
   if (tipo) entidades = entidades.filter((e) => e.tipoValue === tipo);
   if (regimen) entidades = entidades.filter((e) => e.regimen === regimen);
-  if (soloVinculados) entidades = entidades.filter((e) => contarVinculadas(e) > 0);
+  if (vinculacion === "con") entidades = entidades.filter((e) => contarVinculadas(e) > 0);
+  if (vinculacion === "sin") entidades = entidades.filter((e) => contarVinculadas(e) === 0);
 
   const dirFactor = direccion === "DESC" ? -1 : 1;
   entidades = [...entidades].sort((a, b) => {
@@ -109,9 +112,10 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
     return qs ? `/historico/nits?${qs}` : "/historico/nits";
   };
 
-  const hayFiltros = Boolean(q || anio || municipio || tipo || regimen || soloVinculados);
+  const hayFiltros = Boolean(q || anio || municipio || tipo || regimen || vinculacion);
   const clausulasFiltro: string[] = [];
-  if (soloVinculados) clausulasFiltro.push("con al menos una solicitud vinculada");
+  if (vinculacion === "con") clausulasFiltro.push("con al menos una solicitud vinculada");
+  if (vinculacion === "sin") clausulasFiltro.push("sin ninguna solicitud vinculada");
   if (tipo) clausulasFiltro.push(tipo === "N" ? "tipo NIT (empresa)" : "tipo cédula (persona)");
   if (regimen) clausulasFiltro.push(`régimen "${regimen}"`);
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
@@ -192,16 +196,11 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Vinculadas</span>
-            <span className="flex h-[38px] items-center gap-2 rounded-md border border-stone-300 bg-white px-3">
-              <input
-                type="checkbox"
-                name="vinculadas"
-                value="1"
-                defaultChecked={soloVinculados}
-                className="h-4 w-4 rounded border-stone-300 text-cdmb-600 focus:ring-cdmb-500"
-              />
-              <span className="text-sm text-stone-700">Solo con vinculadas</span>
-            </span>
+            <select name="vinculadas" defaultValue={filtros.vinculadas ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              <option value="1">Con al menos una vinculación</option>
+              <option value="0">Sin ninguna vinculación</option>
+            </select>
           </label>
         </div>
 
