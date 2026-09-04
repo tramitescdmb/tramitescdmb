@@ -2,63 +2,18 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search, AlertTriangle } from "lucide-react";
 import { buscarNits, sincaConfigurado, esColumnaNitValida, SINCA_NIT_COLUMNAS, type SincaNitListado, type SincaNitColumna } from "@/lib/sinca";
+import { agruparEntidadesNit, anioNit } from "@/lib/sinca-nit";
 import { parsePorPagina, TOPE_VISTA_TODOS } from "@/lib/vista-lista";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
-import { db } from "@/lib/db";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
-import { TarjetasNit, type EntidadNit } from "@/components/TarjetasNit";
+import { TablaNits } from "@/components/tablas/TablaNits";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 const REGIMENES = ["Responsable de Iva", "No responsable de Iva", "Otro"] as const;
 const ANIO_MIN = 1990;
-
-function texto(v: string | null | undefined): string {
-  return v?.trim() || "";
-}
-
-function nombreNit(n: SincaNitListado): string {
-  return (
-    texto(n.razon_soc_nit) ||
-    [n.primer_nom_nit, n.segundo_nom_nit, n.primer_ape_nit, n.segundo_ape_nit].map(texto).filter(Boolean).join(" ") ||
-    texto(n.nombre_nit) ||
-    "—"
-  );
-}
-
-function identificacion(n: SincaNitListado): string {
-  if (!n.numero_nit) return "—";
-  const dv = n.digito_nit != null && n.digito_nit !== "" ? `-${n.digito_nit}` : "";
-  return `${n.numero_nit}${dv}`;
-}
-
-function fecha(v: string | null | undefined): string {
-  if (!v) return "";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-/**
- * SINCA 1.0 devuelve etiquetas corruptas en gran contribuyente/autorretenedor
- * ("no se D", "no lo se D"...) en vez de Sí/No — mostrar eso tal cual
- * confundiría más de lo que informa, así que solo se muestra cuando la
- * etiqueta es reconocible; si no, se omite el campo en la tarjeta.
- */
-function siNoLimpio(e: unknown): string | null {
-  if (!e || typeof e !== "object") return null;
-  const label = (e as { label?: string | null }).label?.trim().toUpperCase();
-  if (label === "SI" || label === "SÍ") return "Sí";
-  if (label === "NO") return "No";
-  return null;
-}
-
-function anioDe(v: string | null | undefined): number | null {
-  if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.getUTCFullYear();
-}
 
 type Filtros = {
   q?: string;
@@ -110,7 +65,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
       totalCrudo = r.total;
       truncado = r.total > TOPE_VISTA_TODOS;
       filasApi = r.data.filter((n) => {
-        if (anio && anioDe(n.fechadesde_int) !== anio) return false;
+        if (anio && anioNit(n.fechadesde_int) !== anio) return false;
         if (municipio) {
           if (municipio === FUERA_DE_JURISDICCION ? esMunicipioValido(n.municipio ?? "") : n.municipio !== municipio) return false;
         }
@@ -132,57 +87,11 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
   const filasPagina = hayFiltroSecundario ? filasApi.slice((page - 1) * porPagina, page * porPagina) : filasApi;
 
-  // El detalle de una solicitud solo existe en el espejo local si tiene resolución de fondo —
-  // se verifica antes de enlazar para no producir 404 (el registro de NIT cubre TODAS las
-  // solicitudes históricas, un universo mucho más amplio que ese espejo).
-  const idsSolicitud = [...new Set(filasPagina.map((n) => Number(n.nrosolicitud_sol)).filter(Number.isFinite))];
-  const disponibles =
-    idsSolicitud.length > 0
-      ? new Set(
-          (await db.sincaResolucion.findMany({ where: { nroSolicitud: { in: idsSolicitud } }, select: { nroSolicitud: true } })).map(
-            (r) => r.nroSolicitud
-          )
-        )
-      : new Set<number>();
-
   // Agrupa por tercero: un mismo NIT puede repetirse una vez por cada solicitud a la que ha
-  // estado vinculado — se muestra una sola tarjeta con todas sus solicitudes adentro.
-  const entidadesPorClave = new Map<string, EntidadNit>();
-  for (const n of filasPagina) {
-    const clave = n.numero_nit != null ? String(n.numero_nit) : `sin-nit-${n.rn}`;
-    const nroSolicitud = n.nrosolicitud_sol ? Number(n.nrosolicitud_sol) : null;
-    const vinc = {
-      nroSolicitud,
-      fechaDesde: fecha(n.fechadesde_int),
-      fechaHasta: fecha(n.fechahasta_int),
-      tieneDetalle: nroSolicitud != null && disponibles.has(nroSolicitud),
-    };
-    const existente = entidadesPorClave.get(clave);
-    if (existente) {
-      existente.vinculaciones.push(vinc);
-      continue;
-    }
-    entidadesPorClave.set(clave, {
-      clave,
-      identificacion: identificacion(n),
-      nombre: nombreNit(n),
-      tipoLabel: n.tipo_nit?.label ?? null,
-      tipoValue: n.tipo_nit?.value === "C" ? "C" : n.tipo_nit?.value === "N" ? "N" : null,
-      regimen: n.regimen_nit?.label ?? null,
-      granContribuyente: siNoLimpio(n.gcontri_nit),
-      autorretenedor: siNoLimpio(n.autoret_nit),
-      direccion: texto(n.direcc_nit) || null,
-      telefono: texto(n.telef_nit) || null,
-      celular: texto(n.celular_nit) || null,
-      correo: texto(n.correo_nit) || null,
-      municipio: texto(n.municipio) || null,
-      departamento: texto(n.departamento) || null,
-      actualizado: fecha(n.fechaact_nit) || null,
-      actualizadoPor: texto(n.usuarioact_nit) || null,
-      vinculaciones: [vinc],
-    });
-  }
-  const entidades = [...entidadesPorClave.values()];
+  // estado vinculado — el listado muestra una sola fila por tercero, con la cantidad; el detalle
+  // de cada solicitud vinculada (con su enlace, cuando existe) se ve al entrar a la ficha del NIT.
+  const entidades = agruparEntidadesNit(filasPagina, new Set());
+  const filas = entidades.map((e, i) => ({ ...e, numero: (page - 1) * porPagina + i + 1 }));
 
   const hrefPagina = (p: number) => {
     const params = new URLSearchParams();
@@ -212,8 +121,8 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
         <p className="text-sm text-stone-500">
           Registro histórico de terceros de SINCA 1.0 (personas y empresas). Busque por número de NIT, cédula o
-          nombre, y afine con los filtros de abajo. Cada tarjeta es un tercero distinto, con todas las solicitudes a
-          las que ha quedado vinculado.
+          nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto — entre a su NIT para ver todos
+          sus datos y las solicitudes a las que ha quedado vinculado.
         </p>
       </div>
 
@@ -323,12 +232,10 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
             </div>
           )}
 
-          <TarjetasNit
-            entidades={entidades}
-            sinResultadosTexto={hayFiltros ? "Ningún tercero coincide con esos filtros." : "No hay registros."}
-          />
-
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+            <div className="overflow-x-auto">
+              <TablaNits filas={filas} sinResultadosTexto={hayFiltros ? "Ningún tercero coincide con esos filtros." : "No hay registros."} />
+            </div>
             <SelectorVista vistaActual={vista} />
             <Paginador paginaActual={page} totalPaginas={totalPaginas} total={totalFiltrado} porPagina={porPagina} hrefPagina={hrefPagina} />
           </div>
