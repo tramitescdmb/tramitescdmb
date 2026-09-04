@@ -12,11 +12,15 @@ import { refrescarSnapshotNit } from "@/lib/sinca-nit-stats";
 // alcance se retoma en la siguiente corrida (es idempotente).
 export const maxDuration = 300;
 
+// A qué página puede volver el botón "Sincronizar ahora" — allow-list explícita para no armar un
+// redirect abierto con lo que venga en el campo `volver` del formulario.
+const RUTAS_VOLVER = new Set(["/historico", "/historico/solicitudes"]);
+
 /**
  * GET  → lo llama el cron diario de Vercel. Se autoriza con el header
  *        `Authorization: Bearer <CRON_SECRET>` (Vercel lo agrega solo cuando
  *        existe la variable CRON_SECRET).
- * POST → botón "Sincronizar ahora" del panel /historico. Solo ADMIN.
+ * POST → botón "Sincronizar ahora" del panel /historico o de /historico/solicitudes. Solo ADMIN.
  */
 export async function GET(req: NextRequest) {
   const secreto = process.env.CRON_SECRET;
@@ -54,7 +58,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Solo un administrador puede sincronizar." }, { status: 403 });
   }
 
-  const volver = new URL("/historico", req.url);
+  const form = await req.formData().catch(() => null);
+  const volverRaw = String(form?.get("volver") || "/historico");
+  const volver = new URL(RUTAS_VOLVER.has(volverRaw) ? volverRaw : "/historico", req.url);
   if (!sincaConfigurado()) {
     volver.searchParams.set("error", "La conexión con SINCA 1.0 no está configurada en este servidor.");
     return NextResponse.redirect(volver, { status: 303 });

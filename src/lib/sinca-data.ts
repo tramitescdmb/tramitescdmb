@@ -98,6 +98,11 @@ export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
   };
 }
 
+/** Último registro de sincronización (cron o manual) — para mostrar el estado en /historico/solicitudes. */
+export async function getUltimaSincronizacion() {
+  return db.sincaSincronizacion.findFirst({ orderBy: { iniciadoEn: "desc" } });
+}
+
 export type FiltrosHistorico = {
   q?: string;
   tipo?: string;

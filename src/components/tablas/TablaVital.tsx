@@ -5,7 +5,7 @@ import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
 const ENCABEZADOS = ["#", "ID VITAL", "Trámite", "Solicitante", "Identificación", "Radicación", "Actividad", "Docs."];
-const ANCHOS_DEFECTO = [36, 170, 170, 130, 90, 150, 120, 56];
+const ANCHOS_DEFECTO = [36, 170, 170, 130, 120, 120, 120, 56];
 
 export type FilaVital = {
   id: string;
@@ -21,7 +21,10 @@ export type FilaVital = {
 
 /** Tabla de solicitudes de VITAL con columnas redimensionables (ancho recordado por navegador). */
 export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; sinResultadosTexto: string }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("vital-solicitudes", ANCHOS_DEFECTO);
+  // Clave nueva (antes "vital-solicitudes"): un ancho ya guardado en el navegador pisaba el ajuste
+  // a ANCHOS_DEFECTO (ver feedback-caches-grandes-y-anchos-tabla) — Identificación se quedaba en 90
+  // aunque el código ya pidiera 120, y su valor truncaba con "...".
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("vital-solicitudes-v2", ANCHOS_DEFECTO);
 
   return (
     <table className="w-full table-fixed text-sm">
@@ -29,7 +32,7 @@ export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; 
         <tr>
           {ENCABEZADOS.map((titulo, i) => (
             <th key={titulo} className="relative px-2.5 py-2 font-medium" style={{ width: anchos[i] }}>
-              {titulo}
+              <span className="block truncate" title={titulo}>{titulo}</span>
               <ManijaRedimension anchoActual={anchos[i]} onCambiar={(a) => cambiarAncho(i, a)} onRestablecer={() => restablecer(i)} />
             </th>
           ))}

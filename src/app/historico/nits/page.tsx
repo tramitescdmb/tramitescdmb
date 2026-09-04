@@ -99,51 +99,34 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
-          <p className="text-sm text-stone-500">
-            Registro histórico de terceros de SINCA 1.0 (personas y empresas). Busque por número de NIT, cédula o
-            nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto: <strong>Solicitudes</strong>{" "}
-            es el total a las que ha quedado vinculado, y <strong>Vinculadas</strong> cuántas de esas ya tienen el
-            detalle completo disponible en esta plataforma (con resolución de fondo) — entre al NIT para verlas.
-          </p>
-        </div>
-        <DescargarCsvBoton href={hrefDescarga()} />
+      <div>
+        <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
+        <p className="text-sm text-stone-500">
+          Terceros de SINCA 1.0 (personas y empresas), agrupados por NIT o cédula — entre a uno para ver sus
+          solicitudes vinculadas.
+        </p>
       </div>
 
       {filtros.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
       {filtros.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}
 
-      {esAdmin && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs text-stone-500">
-          <span>
-            Último recálculo de este registro: <span className="font-medium text-stone-700">{fechaHora(calculadoEn)}</span>. El
-            cron diario lo mantiene al día automáticamente (incluye resoluciones de fondo nuevas sobre NIT ya existentes).
-          </span>
-          <form action="/api/historico/nits/sincronizar" method="post">
-            <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-              Sincronizar ahora
-            </button>
-          </form>
-        </div>
-      )}
-
       <form method="get" className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-          <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-            <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-            <input
-              type="text"
-              name="q"
-              defaultValue={f.q ?? ""}
-              placeholder="Número de NIT, cédula o nombre / razón social"
-              className="w-full text-sm outline-none"
-            />
-          </span>
-        </label>
+        <div className="flex items-end gap-2">
+          <label className="flex-1">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
+            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+              <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
+              <input
+                type="text"
+                name="q"
+                defaultValue={f.q ?? ""}
+                placeholder="Número de NIT, cédula o nombre / razón social"
+                className="w-full text-sm outline-none"
+              />
+            </span>
+          </label>
+          <DescargarCsvBoton href={hrefDescarga()} />
+        </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label>
@@ -235,6 +218,21 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
           <EstadisticasNit />
         </>
+      )}
+
+      {esAdmin && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs text-stone-500">
+          <span>
+            Último recálculo de este registro: <span className="font-medium text-stone-700">{fechaHora(calculadoEn)}</span>. El
+            cron diario lo mantiene al día automáticamente (incluye resoluciones de fondo nuevas sobre NIT ya existentes).
+          </span>
+          <form action="/api/historico/nits/sincronizar" method="post">
+            <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+              Sincronizar ahora
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search } from "lucide-react";
-import { getHistoricoListado, getHistoricoOpcionesFiltro, type FiltrosHistorico } from "@/lib/sinca-data";
+import { Search, RefreshCw } from "lucide-react";
+import { getHistoricoListado, getHistoricoOpcionesFiltro, getUltimaSincronizacion, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { Paginador } from "@/components/Paginador";
@@ -16,8 +16,10 @@ import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 function fecha(d: Date | null) {
   return d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 }
+const fechaHora = (d: Date | null | undefined) =>
+  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
-type Filtros = FiltrosHistorico & FiltrosPeriodo;
+type Filtros = FiltrosHistorico & FiltrosPeriodo & { ok?: string; error?: string };
 
 export default async function HistoricoSolicitudesPage({
   searchParams,
@@ -29,15 +31,17 @@ export default async function HistoricoSolicitudesPage({
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederSeccion(permisos, "SINCA_BASE")) redirect("/");
   }
+  const esAdmin = session?.rol === "ADMIN";
   if (!sincaConfigurado()) {
     return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
   const filtros = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(filtros);
-  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones, ultimaSync] = await Promise.all([
     getHistoricoListado(filtros, rango),
     getHistoricoOpcionesFiltro(),
+    getUltimaSincronizacion(),
   ]);
 
   const hrefPagina = (p: number) => {
@@ -77,9 +81,8 @@ export default async function HistoricoSolicitudesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <DescargarCsvBoton href={hrefDescarga()} />
-      </div>
+      {filtros.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
+      {filtros.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}
 
       <SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />
 
@@ -87,19 +90,22 @@ export default async function HistoricoSolicitudesPage({
         {filtros.desde && <input type="hidden" name="desde" value={filtros.desde} />}
         {filtros.hasta && <input type="hidden" name="hasta" value={filtros.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="sm:col-span-2 lg:col-span-3">
-            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-              <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-              <input
-                type="text"
-                name="q"
-                defaultValue={filtros.q ?? ""}
-                placeholder="Número de solicitud, expediente, número de resolución, proyecto o representante"
-                className="w-full text-sm outline-none"
-              />
-            </span>
-          </label>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+            <label className="flex-1">
+              <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
+              <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+                <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={filtros.q ?? ""}
+                  placeholder="Número de solicitud, expediente, número de resolución, proyecto o representante"
+                  className="w-full text-sm outline-none"
+                />
+              </span>
+            </label>
+            <DescargarCsvBoton href={hrefDescarga()} />
+          </div>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Tipo de trámite</span>
@@ -167,6 +173,24 @@ export default async function HistoricoSolicitudesPage({
         <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
+
+      {esAdmin && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs text-stone-500">
+          <span>
+            Última actualización:{" "}
+            <span className="font-medium text-stone-700">{fechaHora(ultimaSync?.terminadoEn ?? ultimaSync?.iniciadoEn)}</span>
+            {ultimaSync && !ultimaSync.ok && <span className="ml-1.5 text-red-600">(falló)</span>}
+            {ultimaSync?.disparadoPor === "cron" ? " · automática (cron diario)" : ultimaSync?.disparadoPor?.startsWith("manual") ? " · manual" : ""}
+          </span>
+          <form action="/api/sinca/sincronizar" method="post">
+            <input type="hidden" name="volver" value="/historico/solicitudes" />
+            <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+              Sincronizar ahora
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,7 +10,8 @@ const MAX_MESES_SERIE = 120;
 
 export type FiltrosVital = { q?: string; tramite?: string; page?: string; vista?: string };
 
-export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhereInput {
+/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. */
+export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
   if (f.q?.trim()) {
     const q = f.q.trim();
@@ -24,14 +25,15 @@ export function construirWhereVital(f: FiltrosVital): Prisma.SolicitudVitalWhere
     });
   }
   if (f.tramite && /^\d+$/.test(f.tramite)) and.push({ idTramiteVital: parseInt(f.tramite, 10) });
+  if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
 
 /** Listado paginado de /vital con la barra de filtros. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
-export async function getVitalListado(filtros: FiltrosVital) {
+export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const where = construirWhereVital(filtros);
+  const where = construirWhereVital(filtros, rango);
 
   const [total, filas] = await Promise.all([
     db.solicitudVital.count({ where }),

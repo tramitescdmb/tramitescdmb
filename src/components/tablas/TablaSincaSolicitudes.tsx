@@ -30,7 +30,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
         <tr>
           {ENCABEZADOS.map((titulo, i) => (
             <th key={titulo} className="relative px-2.5 py-2 font-medium" style={{ width: anchos[i] }}>
-              {titulo}
+              <span className="block truncate" title={titulo}>{titulo}</span>
               <ManijaRedimension anchoActual={anchos[i]} onCambiar={(a) => cambiarAncho(i, a)} onRestablecer={() => restablecer(i)} />
             </th>
           ))}

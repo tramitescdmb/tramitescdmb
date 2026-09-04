@@ -5,10 +5,12 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
+import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
 
@@ -18,7 +20,7 @@ const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-d
 export default async function VitalSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<FiltrosVital & { sincronizado?: string; errores?: string; error?: string }>;
+  searchParams: Promise<FiltrosVital & FiltrosPeriodo & { sincronizado?: string; errores?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession();
@@ -40,13 +42,14 @@ export default async function VitalSolicitudesPage({
     );
   }
 
+  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
   const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
-    getVitalListado(sp),
+    getVitalListado(sp, rango),
     getVitalOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tramite);
-  const CAMPOS_FILTRO = ["q", "tramite"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tramite || rango);
+  const CAMPOS_FILTRO = ["q", "tramite", "desde", "hasta"] as const;
 
   // Frase legible de lo que dio el filtro — el "Mostrando X–Y de Z" del
   // paginador se ocultaba por completo si el resultado cabía en una sola
@@ -57,6 +60,7 @@ export default async function VitalSolicitudesPage({
     const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
     clausulasFiltro.push(`de ${tramite ? `(${tramite.id}) ${tramite.nombre}` : nombreTramiteVital(Number(sp.tramite))}`);
   }
+  if (rango) clausulasFiltro.push(`entre ${etiquetaPeriodo}`);
   if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
   const hrefPagina = (p: number) => {
@@ -76,10 +80,6 @@ export default async function VitalSolicitudesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <DescargarCsvBoton href={hrefDescarga()} />
-      </div>
-
       {sp.sincronizado != null && (
         <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           Sincronización completa: {sp.sincronizado} solicitud{sp.sincronizado === "1" ? "" : "es"} de VITAL.
@@ -88,48 +88,23 @@ export default async function VitalSolicitudesPage({
       )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
-          <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
-            <RefreshCw className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
-            Sincronizar desde VITAL
-          </summary>
-          <form action="/api/admin/vital/sincronizar" method="post" className="mt-3 flex flex-wrap items-end gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">Trámite</label>
-              <select name="idTramite" defaultValue={sp.tramite ?? tramitesVital()[0] ?? 41} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm">
-                <option value="todos">Todos los trámites</option>
-                {Object.entries(NOMBRE_TRAMITE_VITAL).map(([id, nombre]) => (
-                  <option key={id} value={id}>({id}) {nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">Desde</label>
-              <input name="fechaInicio" type="date" required defaultValue="2018-01-01" className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">Hasta</label>
-              <input name="fechaFin" type="date" required defaultValue={AYER} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
-            </div>
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
-              Sincronizar
-            </button>
-          </form>
-          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico. &quot;Todos los trámites&quot; puede tardar varios minutos.</p>
-        </details>
-      )}
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       {/* Filtros estilo SINCA 1.0 */}
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+        {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
+        {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="sm:col-span-2 lg:col-span-3">
-            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-              <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-              <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="ID VITAL, solicitante, identificación o actividad" className="w-full text-sm outline-none" />
-            </span>
-          </label>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+            <label className="flex-1">
+              <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
+              <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+                <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
+                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="ID VITAL, solicitante, identificación o actividad" className="w-full text-sm outline-none" />
+              </span>
+            </label>
+            <DescargarCsvBoton href={hrefDescarga()} />
+          </div>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Trámite</span>
@@ -172,6 +147,38 @@ export default async function VitalSolicitudesPage({
         <SelectorVista vistaActual={vista} />
         <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
       </div>
+
+      {esAdmin && (
+        <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
+          <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
+            <RefreshCw className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
+            Sincronizar desde VITAL
+          </summary>
+          <form action="/api/admin/vital/sincronizar" method="post" className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">Trámite</label>
+              <select name="idTramite" defaultValue={sp.tramite ?? tramitesVital()[0] ?? 41} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm">
+                <option value="todos">Todos los trámites</option>
+                {Object.entries(NOMBRE_TRAMITE_VITAL).map(([id, nombre]) => (
+                  <option key={id} value={id}>({id}) {nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">Desde</label>
+              <input name="fechaInicio" type="date" required defaultValue="2018-01-01" className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">Hasta</label>
+              <input name="fechaFin" type="date" required defaultValue={AYER} className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+            </div>
+            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+              Sincronizar
+            </button>
+          </form>
+          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico. &quot;Todos los trámites&quot; puede tardar varios minutos.</p>
+        </details>
+      )}
     </div>
   );
 }

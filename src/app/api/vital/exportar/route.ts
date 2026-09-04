@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { construirWhereVital, type FiltrosVital } from "@/lib/vital-data";
 import { nombreTramiteVital } from "@/lib/vital";
+import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 
 const LIMITE_MAXIMO = 5000; // tope de protección si alguien pide "todos" con una base enorme
 
@@ -26,10 +27,12 @@ export async function GET(req: NextRequest) {
     q: sp.get("q") ?? undefined,
     tramite: sp.get("tramite") ?? undefined,
   };
+  const filtrosPeriodo: FiltrosPeriodo = { desde: sp.get("desde") ?? undefined, hasta: sp.get("hasta") ?? undefined };
+  const { rango } = resolverPeriodo(filtrosPeriodo);
   const limiteParam = sp.get("limite");
   const take = limiteParam === "todos" || !limiteParam ? LIMITE_MAXIMO : Math.min(Number(limiteParam) || 50, LIMITE_MAXIMO);
 
-  const where = construirWhereVital(filtros);
+  const where = construirWhereVital(filtros, rango);
   const filas = await db.solicitudVital.findMany({
     where,
     orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
