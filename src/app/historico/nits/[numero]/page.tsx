@@ -115,27 +115,49 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
 
       {/* Solicitudes vinculadas */}
       <Tarjeta icon={ClipboardList} titulo={`Solicitudes vinculadas (${entidad.vinculaciones.length})`}>
-        <ul className="divide-y divide-stone-100">
-          {entidad.vinculaciones.map((v, i) => (
-            <li key={`${v.nroSolicitud}-${i}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-              <span className="flex items-center gap-2">
-                {v.nroSolicitud && v.tieneDetalle ? (
-                  <Link href={`/historico/solicitudes/${v.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
-                    Solicitud {v.nroSolicitud}
-                  </Link>
-                ) : (
-                  <span className="font-medium text-stone-600" title={v.nroSolicitud ? "Sin resolución de fondo en el histórico" : undefined}>
-                    Solicitud {v.nroSolicitud ?? "—"}
-                  </span>
-                )}
-              </span>
-              <span className="text-xs text-stone-400">
-                {v.fechaDesde || "—"}
-                {v.fechaHasta ? ` – ${v.fechaHasta}` : ""}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {(() => {
+          const conDetalle = entidad.vinculaciones.filter((v) => v.tieneDetalle).length;
+          // Las que sí tienen detalle van primero, para no tener que buscarlas entre el resto.
+          const ordenadas = [...entidad.vinculaciones].sort((a, b) => Number(b.tieneDetalle) - Number(a.tieneDetalle));
+          return (
+            <>
+              {conDetalle > 0 && (
+                <p className="mb-2 text-xs text-stone-400">
+                  {conDetalle} de {entidad.vinculaciones.length} tienen el detalle completo disponible aquí (resaltadas abajo).
+                </p>
+              )}
+              <ul className="divide-y divide-stone-100">
+                {ordenadas.map((v, i) => (
+                  <li
+                    key={`${v.nroSolicitud}-${i}`}
+                    className={`flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm ${
+                      v.tieneDetalle ? "bg-cdmb-50" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {v.nroSolicitud && v.tieneDetalle ? (
+                        <Link
+                          href={`/historico/solicitudes/${v.nroSolicitud}`}
+                          className="inline-flex items-center gap-1 rounded-md bg-cdmb-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-cdmb-700"
+                        >
+                          Ver solicitud {v.nroSolicitud}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-stone-500" title={v.nroSolicitud ? "Sin resolución de fondo en el histórico" : undefined}>
+                          Solicitud {v.nroSolicitud ?? "—"}
+                        </span>
+                      )}
+                    </span>
+                    <span className={`text-xs ${v.tieneDetalle ? "text-cdmb-700" : "text-stone-400"}`}>
+                      {v.fechaDesde || "—"}
+                      {v.fechaHasta ? ` – ${v.fechaHasta}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          );
+        })()}
       </Tarjeta>
 
       {(entidad.actualizado || entidad.actualizadoPor) && (

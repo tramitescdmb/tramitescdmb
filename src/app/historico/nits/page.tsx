@@ -5,6 +5,7 @@ import { buscarNits, sincaConfigurado, esColumnaNitValida, SINCA_NIT_COLUMNAS, t
 import { agruparEntidadesNit, anioNit } from "@/lib/sinca-nit";
 import { parsePorPagina, TOPE_VISTA_TODOS } from "@/lib/vista-lista";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
+import { db } from "@/lib/db";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
@@ -87,10 +88,23 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
   const filasPagina = hayFiltroSecundario ? filasApi.slice((page - 1) * porPagina, page * porPagina) : filasApi;
 
+  // El detalle de una solicitud solo existe en el espejo local si tiene resolución de fondo — se
+  // calcula aquí (no solo en la ficha) para poder mostrar en el listado cuántas de las solicitudes
+  // de cada tercero sí tienen ese detalle, y así no perder tiempo entrando a las que no tienen nada.
+  const idsSolicitud = [...new Set(filasPagina.map((n) => Number(n.nrosolicitud_sol)).filter(Number.isFinite))];
+  const disponibles =
+    idsSolicitud.length > 0
+      ? new Set(
+          (await db.sincaResolucion.findMany({ where: { nroSolicitud: { in: idsSolicitud } }, select: { nroSolicitud: true } })).map(
+            (r) => r.nroSolicitud
+          )
+        )
+      : new Set<number>();
+
   // Agrupa por tercero: un mismo NIT puede repetirse una vez por cada solicitud a la que ha
-  // estado vinculado — el listado muestra una sola fila por tercero, con la cantidad; el detalle
-  // de cada solicitud vinculada (con su enlace, cuando existe) se ve al entrar a la ficha del NIT.
-  const entidades = agruparEntidadesNit(filasPagina, new Set());
+  // estado vinculado — el listado muestra una sola fila por tercero, con la cantidad total y
+  // cuántas de esas sí tienen detalle; la lista completa se ve al entrar a la ficha del NIT.
+  const entidades = agruparEntidadesNit(filasPagina, disponibles);
   const filas = entidades.map((e, i) => ({ ...e, numero: (page - 1) * porPagina + i + 1 }));
 
   const hrefPagina = (p: number) => {
@@ -121,8 +135,9 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
         <p className="text-sm text-stone-500">
           Registro histórico de terceros de SINCA 1.0 (personas y empresas). Busque por número de NIT, cédula o
-          nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto — entre a su NIT para ver todos
-          sus datos y las solicitudes a las que ha quedado vinculado.
+          nombre, y afine con los filtros de abajo. Cada fila es un tercero distinto: <strong>Solicitudes</strong> es
+          el total a las que ha quedado vinculado, y <strong>Vinculadas</strong> cuántas de esas ya tienen el detalle
+          completo disponible en esta plataforma (con resolución de fondo) — entre al NIT para verlas.
         </p>
       </div>
 

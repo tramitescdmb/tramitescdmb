@@ -5,8 +5,8 @@ import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 import type { EntidadNit } from "@/lib/sinca-nit";
 
-const ENCABEZADOS = ["#", "NIT / Cédula", "Nombre / Razón social", "Tipo", "Régimen", "Municipio", "Solicitudes"];
-const ANCHOS_DEFECTO = [36, 130, 300, 130, 170, 130, 100];
+const ENCABEZADOS = ["#", "NIT / Cédula", "Nombre / Razón social", "Tipo", "Régimen", "Municipio", "Solicitudes", "Vinculadas"];
+const ANCHOS_DEFECTO = [36, 130, 280, 120, 160, 120, 100, 110];
 
 export type FilaNit = EntidadNit & { numero: number };
 
@@ -55,6 +55,23 @@ export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sin
               </td>
               <td className="truncate px-2.5 py-2 text-stone-600">{f.municipio ?? "—"}</td>
               <td className="truncate px-2.5 py-2 text-stone-600">{f.vinculaciones.length}</td>
+              <td className="truncate px-2.5 py-2">
+                {(() => {
+                  const vinculadas = f.vinculaciones.filter((v) => v.tieneDetalle).length;
+                  return vinculadas > 0 ? (
+                    <span
+                      className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-semibold text-cdmb-800"
+                      title="Solicitudes con detalle disponible en esta plataforma"
+                    >
+                      {vinculadas}
+                    </span>
+                  ) : (
+                    <span className="text-stone-300" title="Ninguna de sus solicitudes tiene detalle disponible en esta plataforma">
+                      0
+                    </span>
+                  );
+                })()}
+              </td>
             </tr>
           ))
         )}
