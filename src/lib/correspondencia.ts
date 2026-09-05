@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
-import type { MedioComunicacion, TipoSolicitante } from "@prisma/client";
+import type { MedioComunicacion, TipoSolicitante, Prisma } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
+import { hashContenidoFirma } from "@/lib/firma";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -42,39 +43,42 @@ export type EntradaRadicacionRecibida = {
   radicadoPorId: string;
 };
 
+/** Vincula al maestro Solicitante SOLO si el tercero viene identificado y con municipio
+ * (Solicitante.municipio es obligatorio) — si no, queda solo el snapshot en la comunicación,
+ * sin ensuciar el maestro con datos incompletos de un tercero ocasional. Compartido entre
+ * remitente (recibida) y destinatario (enviada). */
+async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: EntradaTercero): Promise<string | null> {
+  const ident = tercero.identificacion?.trim() || null;
+  const muni = tercero.municipio?.trim() || null;
+  if (!ident || !muni) return null;
+  const esJuridica = tercero.tipo === "JURIDICA";
+  const solicitante = await tx.solicitante.upsert({
+    where: { identificacion: ident },
+    create: {
+      tipo: tercero.tipo,
+      identificacion: ident,
+      razonSocial: esJuridica ? tercero.nombre : null,
+      nombres: esJuridica ? null : tercero.nombre,
+      email: tercero.email ?? null,
+      telefono: tercero.telefono ?? null,
+      direccion: tercero.direccion ?? null,
+      municipio: muni,
+    },
+    update: {
+      email: tercero.email ?? undefined,
+      telefono: tercero.telefono ?? undefined,
+      direccion: tercero.direccion ?? undefined,
+    },
+  });
+  return solicitante.id;
+}
+
 export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("RECIBIDA", new Date().getFullYear(), tx);
-
-    // Se vincula al maestro Solicitante SOLO si el remitente viene identificado
-    // y con municipio (Solicitante.municipio es obligatorio). Si no, se guarda
-    // únicamente el snapshot en la comunicación — no se ensucia el maestro con
-    // datos incompletos de un remitente ocasional.
-    let terceroId: string | null = null;
     const ident = entrada.tercero.identificacion?.trim() || null;
     const muni = entrada.tercero.municipio?.trim() || null;
-    if (ident && muni) {
-      const esJuridica = entrada.tercero.tipo === "JURIDICA";
-      const solicitante = await tx.solicitante.upsert({
-        where: { identificacion: ident },
-        create: {
-          tipo: entrada.tercero.tipo,
-          identificacion: ident,
-          razonSocial: esJuridica ? entrada.tercero.nombre : null,
-          nombres: esJuridica ? null : entrada.tercero.nombre,
-          email: entrada.tercero.email ?? null,
-          telefono: entrada.tercero.telefono ?? null,
-          direccion: entrada.tercero.direccion ?? null,
-          municipio: muni,
-        },
-        update: {
-          email: entrada.tercero.email ?? undefined,
-          telefono: entrada.tercero.telefono ?? undefined,
-          direccion: entrada.tercero.direccion ?? undefined,
-        },
-      });
-      terceroId = solicitante.id;
-    }
+    const terceroId = await resolverOCrearTercero(tx, entrada.tercero);
 
     const comunicacion = await tx.comunicacion.create({
       data: {
@@ -103,21 +107,152 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
       },
     });
 
-    if (entrada.documentos?.length) {
-      await tx.comunicacionDocumento.createMany({
-        data: entrada.documentos.map((doc) => ({
-          comunicacionId: comunicacion.id,
-          nombre: doc.nombre,
-          descripcion: doc.descripcion ?? null,
-          storagePath: doc.path,
-          mimeType: doc.mimeType,
-          tamanoBytes: doc.tamanoBytes,
-          hashSha256: doc.hashSha256 ?? null,
-          subidoPorId: entrada.radicadoPorId,
-        })),
-      });
+    await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
+
+    return comunicacion;
+  });
+}
+
+async function crearDocumentos(tx: Prisma.TransactionClient, comunicacionId: string, documentos: EntradaDocumento[] | undefined, subidoPorId: string) {
+  if (!documentos?.length) return;
+  await tx.comunicacionDocumento.createMany({
+    data: documentos.map((doc) => ({
+      comunicacionId,
+      nombre: doc.nombre,
+      descripcion: doc.descripcion ?? null,
+      storagePath: doc.path,
+      mimeType: doc.mimeType,
+      tamanoBytes: doc.tamanoBytes,
+      hashSha256: doc.hashSha256 ?? null,
+      subidoPorId,
+    })),
+  });
+}
+
+/** Crea la Firma electrónica (hash) del contenido exacto que se radica, en la misma transacción. */
+async function firmarEnTransaccion(
+  tx: Prisma.TransactionClient,
+  datos: { comunicacionId: string; usuarioId: string; radicado: string; asunto: string; contenido: string | null }
+) {
+  const fechaHora = new Date();
+  const hashContenido = hashContenidoFirma({ radicado: datos.radicado, asunto: datos.asunto, contenido: datos.contenido, fechaIso: fechaHora.toISOString() });
+  await tx.firma.create({
+    data: { usuarioId: datos.usuarioId, comunicacionId: datos.comunicacionId, fechaHora, hashContenido, tipo: "ELECTRONICA_HASH" },
+  });
+}
+
+export type EntradaRadicacionEnviada = {
+  asunto: string;
+  contenido: string; // cuerpo del oficio — se firma junto con el asunto y el radicado
+  folios: number;
+  anexosDescripcion?: string | null;
+  medio?: MedioComunicacion | null;
+  destinatario: EntradaTercero;
+  dependenciaOrigenId?: string | null;
+  serieId?: string | null;
+  subserieId?: string | null;
+  respondeAId?: string | null; // radica en respuesta a una RECIBIDA — la marca como RESPONDIDA
+  documentos?: EntradaDocumento[];
+  radicadoPorId: string;
+};
+
+export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
+  return db.$transaction(async (tx) => {
+    const { radicado, anio } = await generarRadicado("ENVIADA", new Date().getFullYear(), tx);
+    const ident = entrada.destinatario.identificacion?.trim() || null;
+    const muni = entrada.destinatario.municipio?.trim() || null;
+    const terceroId = await resolverOCrearTercero(tx, entrada.destinatario);
+
+    if (entrada.respondeAId) {
+      const original = await tx.comunicacion.findUnique({ where: { id: entrada.respondeAId }, select: { id: true, tipo: true } });
+      if (!original || original.tipo !== "RECIBIDA") throw new Error("La comunicación a la que responde no existe o no es una recibida.");
+    }
+
+    const comunicacion = await tx.comunicacion.create({
+      data: {
+        tipo: "ENVIADA",
+        radicado,
+        anio,
+        medio: entrada.medio ?? null,
+        origen: "VENTANILLA",
+        estado: "RADICADA",
+        asunto: entrada.asunto,
+        contenido: entrada.contenido,
+        folios: entrada.folios,
+        anexosDescripcion: entrada.anexosDescripcion ?? null,
+        terceroId,
+        terceroTipo: entrada.destinatario.tipo,
+        terceroTipoIdentificacion: entrada.destinatario.tipoIdentificacion ?? null,
+        terceroIdentificacion: ident,
+        terceroNombre: entrada.destinatario.nombre,
+        terceroEmail: entrada.destinatario.email ?? null,
+        terceroTelefono: entrada.destinatario.telefono ?? null,
+        terceroDireccion: entrada.destinatario.direccion ?? null,
+        terceroMunicipio: muni,
+        dependenciaOrigenId: entrada.dependenciaOrigenId ?? null,
+        serieId: entrada.serieId ?? null,
+        subserieId: entrada.subserieId ?? null,
+        respondeAId: entrada.respondeAId ?? null,
+        radicadoPorId: entrada.radicadoPorId,
+      },
+    });
+
+    await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
+    await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });
+
+    if (entrada.respondeAId) {
+      await tx.comunicacion.update({ where: { id: entrada.respondeAId }, data: { estado: "RESPONDIDA" } });
     }
 
     return comunicacion;
   });
+}
+
+export type EntradaRadicacionInterna = {
+  asunto: string;
+  contenido: string; // cuerpo del memorando — se firma junto con el asunto y el radicado
+  folios: number;
+  dependenciaOrigenId: string;
+  dependenciaDestinoId: string;
+  serieId?: string | null;
+  subserieId?: string | null;
+  documentos?: EntradaDocumento[];
+  radicadoPorId: string;
+};
+
+/** Memorando interno entre dependencias — se firma en la misma transacción (Ley 527/1999). */
+export async function radicarInterna(entrada: EntradaRadicacionInterna) {
+  return db.$transaction(async (tx) => {
+    const { radicado, anio } = await generarRadicado("INTERNA", new Date().getFullYear(), tx);
+
+    const comunicacion = await tx.comunicacion.create({
+      data: {
+        tipo: "INTERNA",
+        radicado,
+        anio,
+        origen: "VENTANILLA",
+        estado: "RADICADA",
+        asunto: entrada.asunto,
+        contenido: entrada.contenido,
+        folios: entrada.folios,
+        dependenciaOrigenId: entrada.dependenciaOrigenId,
+        dependenciaDestinoId: entrada.dependenciaDestinoId,
+        serieId: entrada.serieId ?? null,
+        subserieId: entrada.subserieId ?? null,
+        radicadoPorId: entrada.radicadoPorId,
+      },
+    });
+
+    await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
+    await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });
+
+    return comunicacion;
+  });
+}
+
+/** Archiva una comunicación ya radicada dentro de un expediente (unificación con Trámites 2.0). */
+export async function archivarEnExpediente(comunicacionId: string, expedienteId: string) {
+  const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });
+  if (!expediente) throw new Error("El expediente no existe.");
+  return db.comunicacion.update({ where: { id: comunicacionId }, data: { expedienteId } });
 }

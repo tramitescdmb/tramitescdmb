@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, PlusCircle } from "lucide-react";
+import { Search, PlusCircle, Send, FileEdit } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
@@ -21,6 +21,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   ARCHIVADA: "Archivada",
   ANULADA: "Anulada",
 };
+const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
 const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
@@ -42,14 +43,15 @@ export default async function CorrespondenciaBandejaPage({
     getCorrespondenciaOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.estado || sp.dependencia || rango);
-  const CAMPOS_FILTRO = ["q", "estado", "dependencia", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
+  if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
   if (sp.estado) clausulas.push(`en estado "${ETIQUETA_ESTADO[sp.estado] ?? sp.estado}"`);
   if (sp.dependencia) {
     const dep = opciones.dependencias.find((d) => d.id === sp.dependencia);
-    if (dep) clausulas.push(`dirigidas a ${dep.nombre}`);
+    if (dep) clausulas.push(`relacionadas con ${dep.nombre}`);
   }
   if (rango) clausulas.push(`radicadas entre ${etiquetaPeriodo}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
@@ -80,17 +82,27 @@ export default async function CorrespondenciaBandejaPage({
       <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
             <label className="flex-1">
               <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
               <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
                 <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, remitente, identificación o asunto" className="w-full text-sm outline-none" />
+                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, identificación o asunto" className="w-full text-sm outline-none" />
               </span>
             </label>
             <DescargarCsvBoton href={hrefDescarga()} />
           </div>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Tipo</span>
+            <select name="tipo" defaultValue={sp.tipo ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              {opciones.tipos.map((t) => (
+                <option key={t} value={t}>{ETIQUETA_TIPO[t] ?? t}</option>
+              ))}
+            </select>
+          </label>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Estado</span>
@@ -103,7 +115,7 @@ export default async function CorrespondenciaBandejaPage({
           </label>
 
           <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia destino</span>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia</span>
             <select name="dependencia" defaultValue={sp.dependencia ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
               <option value="">Todas</option>
               {opciones.dependencias.map((d) => (
@@ -121,13 +133,23 @@ export default async function CorrespondenciaBandejaPage({
         </div>
       </form>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
         {puedeRadicarUsuario && (
-          <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
-            <PlusCircle className="h-4 w-4" aria-hidden />
-            Radicar recibida
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+              <PlusCircle className="h-4 w-4" aria-hidden />
+              Radicar recibida
+            </Link>
+            <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Send className="h-4 w-4" aria-hidden />
+              Radicar enviada
+            </Link>
+            <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <FileEdit className="h-4 w-4" aria-hidden />
+              Nuevo memorando
+            </Link>
+          </div>
         )}
       </div>
 
@@ -137,12 +159,12 @@ export default async function CorrespondenciaBandejaPage({
             filas={filas.map((c, i) => ({
               id: c.id,
               numero: (page - 1) * porPagina + i + 1,
+              tipo: c.tipo,
               radicado: c.radicado,
               fecha: fecha(c.fechaRadicacion),
-              remitente: c.terceroNombre,
+              tercero: c.tipo === "INTERNA" ? [c.dependenciaOrigen?.nombre, c.dependenciaDestino?.nombre].filter(Boolean).join(" → ") : c.terceroNombre,
               asunto: c.asunto,
               estado: c.estado,
-              dependencia: c.dependenciaDestino?.nombre ?? null,
               docs: c._count.documentos,
             }))}
             sinResultadosTexto={hayFiltros ? "No hay comunicaciones que coincidan." : "Todavía no se ha radicado correspondencia."}

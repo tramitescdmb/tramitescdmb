@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
+import { listarDependenciasActivas } from "@/lib/dependencias";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 
 function iniciales(nombre: string) {
@@ -24,7 +25,7 @@ export default async function EditarUsuarioPage({
 
   const { id } = await params;
   const { ok } = await searchParams;
-  const [usuario, cargos, tramites] = await Promise.all([
+  const [usuario, cargos, tramites, dependencias] = await Promise.all([
     db.usuario.findUnique({
       where: { id },
       include: {
@@ -35,6 +36,7 @@ export default async function EditarUsuarioPage({
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
+    listarDependenciasActivas(),
   ]);
   if (!usuario) notFound();
 
@@ -84,6 +86,9 @@ export default async function EditarUsuarioPage({
         seccionesActuales={usuario.seccionesAcceso.map((s) => s.seccion)}
         cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
         tramitesPorCategoria={tramitesPorCategoria}
+        dependenciaActualId={usuario.dependenciaId}
+        rolCorrespondenciaActual={usuario.rolCorrespondencia}
+        dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
       />
     </div>
   );

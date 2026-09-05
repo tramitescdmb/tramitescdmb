@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
-const ENCABEZADOS = ["#", "Radicado", "Fecha", "Remitente", "Asunto", "Estado", "Dependencia", "Docs."];
-const ANCHOS_DEFECTO = [36, 150, 110, 180, 260, 110, 160, 56];
+const ENCABEZADOS = ["#", "Tipo", "Radicado", "Fecha", "Tercero / dependencia", "Asunto", "Estado", "Docs."];
+const ANCHOS_DEFECTO = [36, 90, 150, 110, 190, 250, 110, 56];
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada",
@@ -17,21 +17,27 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   ANULADA: "Anulada",
 };
 
+const ETIQUETA_TIPO: Record<string, { texto: string; clase: string }> = {
+  RECIBIDA: { texto: "Recibida", clase: "bg-sky-50 text-sky-700" },
+  ENVIADA: { texto: "Enviada", clase: "bg-emerald-50 text-emerald-700" },
+  INTERNA: { texto: "Memorando", clase: "bg-violet-50 text-violet-700" },
+};
+
 export type FilaCorrespondencia = {
   id: string;
   numero: number;
+  tipo: string;
   radicado: string;
   fecha: string;
-  remitente: string | null;
+  tercero: string | null;
   asunto: string;
   estado: string;
-  dependencia: string | null;
   docs: number;
 };
 
-/** Tabla de correspondencia recibida — columnas redimensionables (ancho recordado por navegador). */
+/** Tabla de correspondencia (recibida/enviada/interna) — columnas redimensionables (ancho recordado por navegador). */
 export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: FilaCorrespondencia[]; sinResultadosTexto: string }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-recibida", ANCHOS_DEFECTO);
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v2", ANCHOS_DEFECTO);
 
   return (
     <table className="w-full table-fixed text-sm">
@@ -53,24 +59,29 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
             </td>
           </tr>
         ) : (
-          filas.map((f) => (
-            <tr key={f.id} className="hover:bg-stone-50">
-              <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
-              <td className="truncate px-2.5 py-2">
-                <Link href={`/correspondencia/${f.id}`} className="font-medium text-cdmb-700 hover:underline" title={f.radicado}>
-                  {f.radicado}
-                </Link>
-              </td>
-              <td className="truncate px-2.5 py-2 text-stone-500">{f.fecha}</td>
-              <td className="truncate px-2.5 py-2 text-stone-700" title={f.remitente ?? undefined}>{f.remitente ?? "—"}</td>
-              <td className="truncate px-2.5 py-2 text-stone-600" title={f.asunto}>{f.asunto}</td>
-              <td className="truncate px-2.5 py-2">
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{ETIQUETA_ESTADO[f.estado] ?? f.estado}</span>
-              </td>
-              <td className="truncate px-2.5 py-2 text-stone-600" title={f.dependencia ?? undefined}>{f.dependencia ?? "—"}</td>
-              <td className="truncate px-2.5 py-2 text-center text-stone-500">{f.docs || "—"}</td>
-            </tr>
-          ))
+          filas.map((f) => {
+            const tipo = ETIQUETA_TIPO[f.tipo] ?? { texto: f.tipo, clase: "bg-stone-100 text-stone-600" };
+            return (
+              <tr key={f.id} className="hover:bg-stone-50">
+                <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
+                <td className="truncate px-2.5 py-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tipo.clase}`}>{tipo.texto}</span>
+                </td>
+                <td className="truncate px-2.5 py-2">
+                  <Link href={`/correspondencia/${f.id}`} className="font-medium text-cdmb-700 hover:underline" title={f.radicado}>
+                    {f.radicado}
+                  </Link>
+                </td>
+                <td className="truncate px-2.5 py-2 text-stone-500">{f.fecha}</td>
+                <td className="truncate px-2.5 py-2 text-stone-700" title={f.tercero ?? undefined}>{f.tercero ?? "—"}</td>
+                <td className="truncate px-2.5 py-2 text-stone-600" title={f.asunto}>{f.asunto}</td>
+                <td className="truncate px-2.5 py-2">
+                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{ETIQUETA_ESTADO[f.estado] ?? f.estado}</span>
+                </td>
+                <td className="truncate px-2.5 py-2 text-center text-stone-500">{f.docs || "—"}</td>
+              </tr>
+            );
+          })
         )}
       </tbody>
     </table>

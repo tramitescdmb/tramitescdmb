@@ -768,6 +768,7 @@ model Dependencia {
   series      SerieDocumental[]
 
   comunicacionesDestino Comunicacion[] @relation("ComunicacionDependenciaDestino")
+  comunicacionesOrigen  Comunicacion[] @relation("ComunicacionDependenciaOrigen")
   distribuciones        Distribucion[]
 
   @@index([parentId])
@@ -841,6 +842,7 @@ model Comunicacion {
   estado          EstadoComunicacion @default(RADICADA)
 
   asunto            String  @db.Text
+  contenido         String? @db.Text // cuerpo del oficio/memorando (ENVIADA/INTERNA) — RECIBIDA no lo usa, su contenido es el documento externo adjunto
   folios            Int     @default(1)
   anexosDescripcion String?
 
@@ -856,11 +858,13 @@ model Comunicacion {
   terceroDireccion          String?
   terceroMunicipio          String?
 
-  dependenciaDestinoId String? // a qué dependencia de la CDMB va dirigida
+  dependenciaOrigenId  String? // quién envía (ENVIADA/INTERNA) — la dependencia que redacta
+  dependenciaDestinoId String? // a qué dependencia de la CDMB va dirigida (RECIBIDA) o destino (INTERNA)
   serieId              String? // clasificación TRD
   subserieId           String?
   expedienteId         String? // archivada dentro de un expediente (unificación)
   vitalRelacionado     String? // idVital relacionado, si aplica (columna VITAL_REC del legado)
+  respondeAId          String? // ENVIADA que responde a una comunicación RECIBIDA — enlaza el ciclo completo
 
   fechaVencimiento DateTime? // término de ley (se calcula en Fase 3 con días hábiles)
   radicadoPorId    String?
@@ -868,11 +872,14 @@ model Comunicacion {
   updatedAt        DateTime  @updatedAt
 
   tercero            Solicitante?        @relation(fields: [terceroId], references: [id])
+  dependenciaOrigen  Dependencia?        @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino Dependencia?        @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
   serie              SerieDocumental?    @relation(fields: [serieId], references: [id])
   subserie           SubserieDocumental? @relation(fields: [subserieId], references: [id])
   expediente         Expediente?         @relation(fields: [expedienteId], references: [id])
   radicadoPor        Usuario?            @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
+  respondeA          Comunicacion?       @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
+  respuestas         Comunicacion[]      @relation("ComunicacionRespuesta")
 
   documentos     ComunicacionDocumento[]
   distribuciones Distribucion[]
@@ -880,6 +887,8 @@ model Comunicacion {
 
   @@index([tipo])
   @@index([anio])
+  @@index([dependenciaOrigenId])
+  @@index([respondeAId])
   @@index([estado])
   @@index([fechaRadicacion])
   @@index([dependenciaDestinoId])

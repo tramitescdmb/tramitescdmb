@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
@@ -7,6 +7,12 @@ import { registrarAuditoria } from "@/lib/auditoria";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
 const SECCIONES_VALIDAS: SeccionSoloLectura[] = ["VITAL_BASE", "VITAL_DASHBOARD", "SINCA_BASE", "SINCA_DASHBOARD", "SINCA_MINERIA"];
+const ROLES_CORRESPONDENCIA_VALIDOS: RolCorrespondencia[] = [
+  "OPERADOR_VENTANILLA",
+  "FUNCIONARIO_DEPENDENCIA",
+  "JEFE_DEPENDENCIA",
+  "ADMIN_ARCHIVO",
+];
 
 /**
  * Editar cargo(s)/rol/acceso por trámite y por sección de un usuario YA
@@ -46,6 +52,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     : undefined;
   const password = typeof body.password === "string" && body.password ? body.password : undefined;
 
+  // SGDEA / Correspondencia — el campo del body es `undefined` cuando no se envió (no tocar) y
+  // `null`/cadena vacía cuando se envió para quitarlo, así que se distinguen con "in body".
+  const dependenciaId: string | null | undefined = "dependenciaId" in body
+    ? (typeof body.dependenciaId === "string" && body.dependenciaId ? body.dependenciaId : null)
+    : undefined;
+  const rolCorrespondencia: RolCorrespondencia | null | undefined = "rolCorrespondencia" in body
+    ? (ROLES_CORRESPONDENCIA_VALIDOS.includes(body.rolCorrespondencia) ? body.rolCorrespondencia : null)
+    : undefined;
+
+  if (dependenciaId) {
+    const dep = await db.dependencia.findUnique({ where: { id: dependenciaId }, select: { id: true } });
+    if (!dep) return NextResponse.json({ error: "La dependencia seleccionada no existe." }, { status: 400 });
+  }
+
   if (password && password.length < 8) {
     return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres." }, { status: 400 });
   }
@@ -73,6 +93,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(nombre ? { nombre } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash } : {}),
+        ...(dependenciaId !== undefined ? { dependenciaId } : {}),
+        ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
       },
     });
     if (accesoTramites) {

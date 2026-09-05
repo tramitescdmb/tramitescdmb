@@ -2,13 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2 } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
 type Grupo = { etiqueta: string; claseBadge: string; claseBarra: string; items: TramiteOpcion[] };
 type Nivel = "VER" | "EDITAR";
 type Seccion = "VITAL_BASE" | "VITAL_DASHBOARD" | "SINCA_BASE" | "SINCA_DASHBOARD" | "SINCA_MINERIA";
+type RolCorrespondencia = "OPERADOR_VENTANILLA" | "FUNCIONARIO_DEPENDENCIA" | "JEFE_DEPENDENCIA" | "ADMIN_ARCHIVO";
+
+const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayuda: string }[] = [
+  { valor: "OPERADOR_VENTANILLA", etiqueta: "Operador de ventanilla", ayuda: "Radica correspondencia y la distribuye a cualquier dependencia." },
+  { valor: "FUNCIONARIO_DEPENDENCIA", etiqueta: "Funcionario de dependencia", ayuda: "Recibe y gestiona lo que le distribuyan a su dependencia." },
+  { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia", ayuda: "Además puede repartir dentro de su propia dependencia." },
+  { valor: "ADMIN_ARCHIVO", etiqueta: "Administrador de archivo", ayuda: "Administra dependencias y TRD/CCD; ve todo el módulo." },
+];
 
 const BOTON_BASE = "flex-1 rounded-md border px-2 py-1 text-[11px] font-medium transition";
 
@@ -28,6 +36,7 @@ const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-cargos", etiqueta: "Cargos" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
+  { id: "seccion-correspondencia", etiqueta: "Correspondencia" },
   { id: "seccion-tramites", etiqueta: "Trámites" },
 ];
 
@@ -95,6 +104,9 @@ export function EditarUsuarioAccesoForm({
   seccionesActuales,
   cargos,
   tramitesPorCategoria,
+  dependenciaActualId,
+  rolCorrespondenciaActual,
+  dependencias,
 }: {
   usuarioId: string;
   nombreActual: string;
@@ -105,6 +117,9 @@ export function EditarUsuarioAccesoForm({
   seccionesActuales: Seccion[];
   cargos: Opcion[];
   tramitesPorCategoria: Grupo[];
+  dependenciaActualId?: string | null;
+  rolCorrespondenciaActual?: RolCorrespondencia | null;
+  dependencias?: Opcion[];
 }) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreActual);
@@ -112,6 +127,8 @@ export function EditarUsuarioAccesoForm({
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
   const [secciones, setSecciones] = useState<Set<Seccion>>(new Set(seccionesActuales));
+  const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
+  const [rolCorrespondencia, setRolCorrespondencia] = useState<RolCorrespondencia | "">(rolCorrespondenciaActual ?? "");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -204,6 +221,8 @@ export function EditarUsuarioAccesoForm({
           cargoIds: Array.from(cargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
           secciones: Array.from(secciones),
+          dependenciaId: dependenciaId || null,
+          rolCorrespondencia: rolCorrespondencia || null,
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
       });
@@ -441,6 +460,62 @@ export function EditarUsuarioAccesoForm({
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
+        <p className="mb-3 text-xs text-stone-400">
+          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <Building2 className="h-3.5 w-3.5" aria-hidden /> Dependencia
+            </p>
+            <select
+              value={dependenciaId}
+              onChange={(e) => setDependenciaId(e.target.value)}
+              className="w-full max-w-xs rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            >
+              <option value="">— Sin dependencia —</option>
+              {(dependencias ?? []).map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Rol dentro del módulo</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setRolCorrespondencia("")}
+                aria-pressed={rolCorrespondencia === ""}
+                title="Sin acceso al módulo de correspondencia"
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  rolCorrespondencia === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
+                }`}
+              >
+                Sin acceso
+              </button>
+              {ROLES_CORRESPONDENCIA.map((r) => (
+                <button
+                  key={r.valor}
+                  type="button"
+                  onClick={() => setRolCorrespondencia(r.valor)}
+                  aria-pressed={rolCorrespondencia === r.valor}
+                  title={r.ayuda}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    rolCorrespondencia === r.valor
+                      ? "border-cdmb-600 bg-cdmb-600 text-white"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                  }`}
+                >
+                  {r.etiqueta}
+                </button>
+              ))}
             </div>
           </div>
         </div>

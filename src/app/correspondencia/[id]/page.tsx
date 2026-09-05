@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2 } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir } from "@/lib/permisos";
@@ -18,6 +18,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación",
 };
+const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
 
 const fechaHora = (d: Date | null | undefined) =>
   d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -62,10 +63,15 @@ export default async function CorrespondenciaDetallePage({
     where: { id },
     include: {
       documentos: { orderBy: { createdAt: "asc" } },
+      dependenciaOrigen: { select: { nombre: true } },
       dependenciaDestino: { select: { nombre: true } },
       serie: { select: { codigo: true, nombre: true } },
       subserie: { select: { codigo: true, nombre: true } },
       radicadoPor: { select: { nombre: true } },
+      expediente: { select: { id: true, numero: true } },
+      respondeA: { select: { id: true, radicado: true, asunto: true } },
+      respuestas: { select: { id: true, radicado: true, asunto: true } },
+      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true } } } },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
         include: { dependencia: { select: { nombre: true } }, usuario: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
@@ -93,6 +99,8 @@ export default async function CorrespondenciaDetallePage({
       ])
     : [[], []];
 
+  const tieneTercero = c.tipo !== "INTERNA";
+
   return (
     <div className="space-y-4">
       <Link href="/correspondencia" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
@@ -105,7 +113,10 @@ export default async function CorrespondenciaDetallePage({
 
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>
+            <p className="text-xs text-stone-400">{ETIQUETA_TIPO[c.tipo] ?? c.tipo}</p>
+          </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">{ETIQUETA_ESTADO[c.estado] ?? c.estado}</span>
             <Link href={`/correspondencia/${id}/constancia`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
@@ -115,37 +126,80 @@ export default async function CorrespondenciaDetallePage({
           </div>
         </div>
         <p className="mt-1.5 text-sm text-stone-700">{c.asunto}</p>
+        {c.contenido && <p className="mt-2 whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-sm text-stone-700">{c.contenido}</p>}
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="Fecha de radicación" v={fechaHora(c.fechaRadicacion)} />
           <Campo k="Medio" v={c.medio} />
           <Campo k="Folios" v={c.folios} />
           <Campo k="Anexos" v={c.anexosDescripcion} />
           <Campo k="Radicado por" v={c.radicadoPor?.nombre} />
+          <Campo k="Dependencia origen" v={c.dependenciaOrigen?.nombre} />
           <Campo k="Dependencia destino" v={c.dependenciaDestino?.nombre} />
           <Campo k="Serie (TRD)" v={c.serie ? `${c.serie.codigo} — ${c.serie.nombre}` : null} />
           <Campo k="Subserie" v={c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : null} />
+          <Campo
+            k="Archivada en expediente"
+            v={c.expediente ? <Link href={`/expedientes/${c.expediente.id}`} className="text-cdmb-700 hover:underline">{c.expediente.numero}</Link> : null}
+          />
+          <Campo
+            k="Responde a"
+            v={c.respondeA ? <Link href={`/correspondencia/${c.respondeA.id}`} className="text-cdmb-700 hover:underline">{c.respondeA.radicado}</Link> : null}
+          />
         </dl>
+        {c.respuestas.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+            <Reply className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <span className="text-xs text-stone-500">Respondida por:</span>
+            {c.respuestas.map((r) => (
+              <Link key={r.id} href={`/correspondencia/${r.id}`} className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-700 hover:underline">
+                {r.radicado}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
-      <Tarjeta titulo="Remitente">
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
-            {c.terceroTipo === "JURIDICA" ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-stone-900">{c.terceroNombre ?? "—"}</p>
-            <p className="text-xs text-stone-400">
-              {[c.terceroTipoIdentificacion, c.terceroIdentificacion].filter(Boolean).join(" ")}
-              {c.terceroMunicipio ? ` · ${c.terceroMunicipio}` : ""}
-            </p>
+      {tieneTercero && (
+        <Tarjeta titulo={c.tipo === "ENVIADA" ? "Destinatario" : "Remitente"}>
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
+              {c.terceroTipo === "JURIDICA" ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-stone-900">{c.terceroNombre ?? "—"}</p>
+              <p className="text-xs text-stone-400">
+                {[c.terceroTipoIdentificacion, c.terceroIdentificacion].filter(Boolean).join(" ")}
+                {c.terceroMunicipio ? ` · ${c.terceroMunicipio}` : ""}
+              </p>
+            </div>
           </div>
-        </div>
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-          <Campo k="Correo" v={c.terceroEmail} />
-          <Campo k="Teléfono" v={c.terceroTelefono} />
-          <Campo k="Dirección" v={c.terceroDireccion} />
-        </dl>
-      </Tarjeta>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+            <Campo k="Correo" v={c.terceroEmail} />
+            <Campo k="Teléfono" v={c.terceroTelefono} />
+            <Campo k="Dirección" v={c.terceroDireccion} />
+          </dl>
+        </Tarjeta>
+      )}
+
+      {c.firmas.length > 0 && (
+        <Tarjeta titulo="Firma electrónica">
+          <ul className="space-y-2">
+            {c.firmas.map((f) => (
+              <li key={f.id} className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
+                <PenTool className="mt-0.5 h-4 w-4 flex-none text-emerald-700" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-sm text-stone-800">
+                    Firmado por <span className="font-medium">{f.usuario.nombre}</span> el {fechaHora(f.fechaHora)}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-stone-500" title={f.hashContenido}>
+                    Firma electrónica con hash (Ley 527/1999) · SHA-256 {f.hashContenido.slice(0, 16)}…
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Tarjeta>
+      )}
 
       <Tarjeta titulo={`Documentos adjuntos (${c.documentos.length})`}>
         {c.documentos.length === 0 ? (
@@ -225,6 +279,33 @@ export default async function CorrespondenciaDetallePage({
           </form>
         )}
       </Tarjeta>
+
+      {puedeDistribuirUsuario && (
+        <Tarjeta titulo="Expediente electrónico">
+          {c.expediente ? (
+            <p className="text-sm text-stone-600">
+              Ya está archivada en el expediente{" "}
+              <Link href={`/expedientes/${c.expediente.id}`} className="font-medium text-cdmb-700 hover:underline">{c.expediente.numero}</Link>.
+            </p>
+          ) : (
+            <>
+              <p className="mb-3 text-xs text-stone-400">
+                Archive esta comunicación dentro de un expediente de Trámites Ambientales 2.0 (unificación) indicando su número.
+              </p>
+              <form action={`/api/correspondencia/${id}/archivar`} method="post" className="flex flex-wrap items-end gap-3">
+                <label className="min-w-[220px] flex-1">
+                  <span className="mb-1 block text-xs font-medium text-stone-600">Número de expediente</span>
+                  <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                </label>
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+                  <Archive className="h-3.5 w-3.5" aria-hidden />
+                  Archivar
+                </button>
+              </form>
+            </>
+          )}
+        </Tarjeta>
+      )}
 
       <Tarjeta titulo="Bitácora de auditoría (inalterable)">
         <ul className="divide-y divide-stone-100">

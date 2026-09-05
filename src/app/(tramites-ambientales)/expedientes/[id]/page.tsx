@@ -61,6 +61,7 @@ export default async function ExpedienteDetallePage({
         usuariosAsignados: true,
         cargosAsignados: true,
         solicitante: true,
+        comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, tipo: true, radicado: true, asunto: true, fechaRadicacion: true, estado: true } },
       },
     }),
     db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargos: { select: { nombre: true } } } }),
@@ -464,6 +465,27 @@ export default async function ExpedienteDetallePage({
             </form>
             )}
           </section>
+
+          {/* Correspondencia asociada (SGDEA) — unificación con Trámites 2.0 */}
+          {expediente.comunicaciones.length > 0 && (
+            <section className="rounded-xl border border-stone-200 bg-white p-4">
+              <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
+              <p className="mb-3 text-xs text-stone-500">Comunicaciones del módulo de Correspondencia archivadas en este expediente.</p>
+              <ul className="space-y-1.5">
+                {expediente.comunicaciones.map((com) => (
+                  <li key={com.id}>
+                    <Link href={`/correspondencia/${com.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50">
+                      <span className="min-w-0 truncate">
+                        <span className="font-medium text-cdmb-700">{com.radicado}</span>
+                        <span className="ml-2 text-stone-500">{com.asunto}</span>
+                      </span>
+                      <span className="flex-none text-xs text-stone-400">{formatoFechaHistoria.format(com.fechaRadicacion)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Historia del expediente — línea de tiempo */}
           <section className="rounded-xl border border-stone-200 bg-white p-4">

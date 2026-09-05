@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, PlusCircle, Settings2 } from "lucide-react";
+import { Inbox, Settings2 } from "lucide-react";
 
 type Permitido = { bandeja: boolean; radicar: boolean; admin: boolean };
 
 const TABS = [
   { href: "/correspondencia", label: "Bandeja", icon: Inbox, permiso: "bandeja" as const, prefijoExacto: true },
-  { href: "/correspondencia/nueva", label: "Radicar recibida", icon: PlusCircle, permiso: "radicar" as const },
   { href: "/correspondencia/admin", label: "Administración", icon: Settings2, permiso: "admin" as const },
 ];
 

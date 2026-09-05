@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const filtros: FiltrosCorrespondencia = {
     q: sp.get("q") ?? undefined,
+    tipo: sp.get("tipo") ?? undefined,
     estado: sp.get("estado") ?? undefined,
     dependencia: sp.get("dependencia") ?? undefined,
   };
@@ -38,20 +39,22 @@ export async function GET(req: NextRequest) {
     where,
     orderBy: [{ fechaRadicacion: "desc" }, { radicado: "desc" }],
     take,
-    include: { dependenciaDestino: { select: { nombre: true } }, _count: { select: { documentos: true } } },
+    include: { dependenciaDestino: { select: { nombre: true } }, dependenciaOrigen: { select: { nombre: true } }, _count: { select: { documentos: true } } },
   });
 
   const encabezados = [
+    "Tipo",
     "Radicado",
     "Año",
     "Fecha de radicación",
     "Estado",
     "Medio",
-    "Remitente",
+    "Tercero (remitente/destinatario)",
     "Tipo de ID",
     "Identificación",
     "Asunto",
     "Folios",
+    "Dependencia origen",
     "Dependencia destino",
     "Documentos",
     "Enlace en la app",
@@ -59,6 +62,7 @@ export async function GET(req: NextRequest) {
 
   const filasCsv = filas.map((c) =>
     [
+      c.tipo,
       c.radicado,
       c.anio,
       c.fechaRadicacion.toISOString().slice(0, 10),
@@ -69,6 +73,7 @@ export async function GET(req: NextRequest) {
       c.terceroIdentificacion,
       c.asunto,
       c.folios,
+      c.dependenciaOrigen?.nombre,
       c.dependenciaDestino?.nombre,
       c._count.documentos,
       `/correspondencia/${c.id}`,
