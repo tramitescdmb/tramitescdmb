@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { puedeAccederTramite, puedeEditarTramite, puedeAccederSeccion, type PermisosUsuario } from "./permisos";
 
-const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set() };
-const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set() };
+const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null };
+const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null };
 const conAcceso: PermisosUsuario = {
   esAdmin: false,
   tramites: new Map([
@@ -10,6 +10,8 @@ const conAcceso: PermisosUsuario = {
     ["t2", "VER"],
   ]),
   secciones: new Set(["VITAL_BASE", "SINCA_BASE"]),
+  correspondencia: null,
+  dependenciaId: null,
 };
 
 describe("puedeAccederTramite", () => {

@@ -213,10 +213,51 @@ async function seedConfiguracionSitio() {
   console.log("Configuración del sitio (fila singleton) lista.");
 }
 
+// SGDEA — organigrama mínimo editable (derivado de la estructura real de la CDMB)
+// + una serie "sin clasificar" para no bloquear la radicación mientras se cargan
+// las TRD reales desde el admin. Todo es upsert idempotente por código.
+async function seedCorrespondencia() {
+  const dependencias: { codigo: string; nombre: string; parent?: string; nivel: number; orden: number }[] = [
+    { codigo: "DG", nombre: "Dirección General", nivel: 0, orden: 0 },
+    { codigo: "SG", nombre: "Secretaría General", parent: "DG", nivel: 1, orden: 1 },
+    { codigo: "SEYCA", nombre: "Subdirección de Evaluación y Control Ambiental (SEYCA)", parent: "DG", nivel: 1, orden: 2 },
+    { codigo: "SPGA", nombre: "Subdirección de Planeación y Gestión Ambiental", parent: "DG", nivel: 1, orden: 3 },
+    { codigo: "SADM", nombre: "Subdirección Administrativa y Financiera", parent: "DG", nivel: 1, orden: 4 },
+    { codigo: "GD", nombre: "Grupo de Gestión Documental", parent: "SG", nivel: 2, orden: 5 },
+    { codigo: "VENT", nombre: "Ventanilla Única de Correspondencia", parent: "GD", nivel: 3, orden: 6 },
+    { codigo: "JUR", nombre: "Grupo Jurídico", parent: "SG", nivel: 2, orden: 7 },
+  ];
+  const idPorCodigo = new Map<string, string>();
+  for (const d of dependencias) {
+    const parentId = d.parent ? idPorCodigo.get(d.parent) ?? null : null;
+    const fila = await db.dependencia.upsert({
+      where: { codigo: d.codigo },
+      create: { codigo: d.codigo, nombre: d.nombre, parentId, nivel: d.nivel, orden: d.orden },
+      update: { nombre: d.nombre, parentId, nivel: d.nivel, orden: d.orden },
+    });
+    idPorCodigo.set(d.codigo, fila.id);
+  }
+
+  // Serie/subserie por defecto para poder radicar sin TRD cargada aún.
+  const serie = await db.serieDocumental.upsert({
+    where: { codigo_version: { codigo: "SIN-CLASIF", version: "1" } },
+    create: { codigo: "SIN-CLASIF", nombre: "Sin clasificar (pendiente TRD)", version: "1" },
+    update: {},
+  });
+  await db.subserieDocumental.upsert({
+    where: { serieId_codigo: { serieId: serie.id, codigo: "GEN" } },
+    create: { serieId: serie.id, codigo: "GEN", nombre: "General", retencionGestionAnios: 0, retencionCentralAnios: 0 },
+    update: {},
+  });
+
+  console.log(`Sembradas ${dependencias.length} dependencias + serie por defecto "Sin clasificar".`);
+}
+
 async function main() {
   await seedTramites();
   await seedCargos();
   await seedConfiguracionSitio();
+  await seedCorrespondencia();
   await seedAdmin();
 }
 

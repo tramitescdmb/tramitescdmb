@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from "@prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
 
 /**
@@ -16,6 +16,10 @@ export type PermisosUsuario = {
   tramites: Map<string, NivelAccesoTramite>;
   /** VITAL/SINCA 1.0, todo consulta (sin nivel) — vacío para un FUNCIONARIO sin nada configurado. */
   secciones: Set<SeccionSoloLectura>;
+  /** Rol dentro del módulo de correspondencia (SGDEA). null = sin acceso (salvo ADMIN). */
+  correspondencia: RolCorrespondencia | null;
+  /** Dependencia (oficina) a la que pertenece el funcionario, si tiene. */
+  dependenciaId: string | null;
 };
 
 type UsuarioFresco = {
@@ -24,6 +28,8 @@ type UsuarioFresco = {
   cargos: string[];
   tramitesAcceso: { tramiteTipoId: string; nivel: NivelAccesoTramite }[];
   seccionesAcceso: { seccion: SeccionSoloLectura }[];
+  rolCorrespondencia: RolCorrespondencia | null;
+  dependenciaId: string | null;
 } | null;
 
 /**
@@ -43,6 +49,8 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       cargos: { select: { nombre: true } },
       tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
       seccionesAcceso: { select: { seccion: true } },
+      rolCorrespondencia: true,
+      dependenciaId: true,
     },
   });
   if (!usuario) return null;
@@ -52,6 +60,8 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     cargos: usuario.cargos.map((c) => c.nombre),
     tramitesAcceso: usuario.tramitesAcceso,
     seccionesAcceso: usuario.seccionesAcceso,
+    rolCorrespondencia: usuario.rolCorrespondencia,
+    dependenciaId: usuario.dependenciaId,
   };
 });
 
@@ -67,7 +77,13 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
     for (const s of usuario.seccionesAcceso) secciones.add(s.seccion);
   }
-  return { esAdmin, tramites, secciones };
+  return {
+    esAdmin,
+    tramites,
+    secciones,
+    correspondencia: usuario?.activo ? usuario.rolCorrespondencia : null,
+    dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
+  };
 });
 
 /**
@@ -129,4 +145,33 @@ export async function puedeEditarExpediente(userId: string, expedienteId: string
   const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { tramiteTipoId: true } });
   if (!expediente) return true;
   return puedeEditarTramite(permisos, expediente.tramiteTipoId);
+}
+
+// --- Módulo de correspondencia (SGDEA) ----------------------------------------
+// Denegado por defecto, igual que trámites y secciones: sin un rol de
+// correspondencia asignado (y sin ser ADMIN) no se entra al módulo.
+
+/** ¿Puede entrar al módulo de correspondencia (ver la bandeja/listado)? */
+export function puedeAccederCorrespondencia(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.correspondencia !== null;
+}
+
+/** ¿Puede radicar en la ventanilla (operador de ventanilla o admin de archivo)? */
+export function puedeRadicar(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.correspondencia === "OPERADOR_VENTANILLA" || permisos.correspondencia === "ADMIN_ARCHIVO";
+}
+
+/** ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? */
+export function puedeDistribuir(permisos: PermisosUsuario): boolean {
+  return (
+    permisos.esAdmin ||
+    permisos.correspondencia === "OPERADOR_VENTANILLA" ||
+    permisos.correspondencia === "JEFE_DEPENDENCIA" ||
+    permisos.correspondencia === "ADMIN_ARCHIVO"
+  );
+}
+
+/** ¿Puede administrar el archivo (TRD/CCD, dependencias)? */
+export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
 }

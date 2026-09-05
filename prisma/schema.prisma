@@ -81,6 +81,23 @@ model Usuario {
   eventos               ExpedienteEvento[]
   registrosAuditoria    RegistroAuditoria[]
   visitasTecnicas       VisitaTecnica[]
+
+  // --- SGDEA / Correspondencia (ver bloque al final del archivo) ---
+  // Dependencia (oficina) a la que pertenece el funcionario, y rol dentro del
+  // módulo de correspondencia (null + no ADMIN = sin acceso al módulo).
+  dependenciaId      String?
+  rolCorrespondencia RolCorrespondencia?
+
+  dependencia             Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
+  dependenciasResponsable Dependencia[]           @relation("DependenciaResponsable")
+  comunicacionesRadicadas Comunicacion[]          @relation("ComunicacionRadicadaPor")
+  comunicacionDocumentos  ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
+  distribucionesRecibidas Distribucion[]          @relation("DistribucionUsuario")
+  distribucionesAsignadas Distribucion[]          @relation("DistribucionAsignadoPor")
+  firmas                  Firma[]                 @relation("FirmaUsuario")
+  auditoriasDoc           AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
+
+  @@index([dependenciaId])
 }
 
 // ---------------------------------------------------------------------------
@@ -399,7 +416,8 @@ model Solicitante {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
-  expedientes Expediente[]
+  expedientes    Expediente[]
+  comunicaciones Comunicacion[] // como remitente/destinatario en el módulo de correspondencia
 }
 
 model Expediente {
@@ -488,6 +506,9 @@ model Expediente {
    */
   usuariosAsignados Usuario[] @relation("ExpedienteUsuariosAsignados")
   cargosAsignados   Cargo[]   @relation("ExpedienteCargosAsignados")
+
+  // Comunicaciones (correspondencia/memorandos) archivadas dentro de este expediente — unificación SGDEA.
+  comunicaciones Comunicacion[]
 
   @@index([tramiteTipoId])
   @@index([estado])
@@ -648,4 +669,307 @@ model SolicitudVitalDocumento {
   solicitud SolicitudVital @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
 
   @@index([solicitudId])
+}
+
+// ===========================================================================
+// SGDEA — Sistema de Gestión de Documentos Electrónicos de Archivo
+// (Correspondencia y gestión documental, conforme al marco del AGN:
+//  Ley 594/2000, Acuerdo 060/2001, Acuerdos 03/2015 y 01/2024, MoReq).
+// Fase 1: núcleo archivístico + ventanilla de correspondencia RECIBIDA.
+// Ver plan y memoria reference-oracle-legacy-cdmb (sistema COR que reemplaza).
+// ===========================================================================
+
+// Rol del funcionario DENTRO del módulo de correspondencia (independiente de
+// RolUsuario/Cargo). null + no ADMIN = sin acceso al módulo (denegado por
+// defecto, mismo criterio que UsuarioTramiteAcceso/UsuarioSeccionAcceso).
+enum RolCorrespondencia {
+  OPERADOR_VENTANILLA // radica y reparte en la ventanilla única
+  FUNCIONARIO_DEPENDENCIA // recibe y responde lo distribuido a su dependencia
+  JEFE_DEPENDENCIA // además reparte dentro de su dependencia
+  ADMIN_ARCHIVO // administra TRD/CCD, dependencias y ve todo
+}
+
+// Disposición final de una subserie documental (TRD) — Acuerdo 004/2019 AGN.
+enum DisposicionFinal {
+  CONSERVACION_TOTAL
+  ELIMINACION
+  SELECCION
+  MICROFILMACION_DIGITALIZACION
+}
+
+enum TipoComunicacion {
+  RECIBIDA // entra a la entidad
+  ENVIADA // sale de la entidad (Fase 2)
+  INTERNA // memorando entre dependencias (Fase 2)
+}
+
+enum EstadoComunicacion {
+  RADICADA // recién radicada en ventanilla
+  EN_REPARTO // pendiente de distribuir
+  ASIGNADA // distribuida a dependencia/funcionario
+  EN_TRAMITE // en gestión
+  RESPONDIDA
+  ARCHIVADA
+  ANULADA // anulada con justificación (no se borra: queda trazada)
+}
+
+enum OrigenComunicacion {
+  VENTANILLA // radicada por un operador
+  WEB_PQRSD // formulario público (Fase 3)
+  MIGRACION_COR // importada del Oracle legado (Fase 4)
+  CORREO_ELECTRONICO
+  OTRO
+}
+
+enum MedioComunicacion {
+  FISICO
+  CORREO_ELECTRONICO
+  WEB
+  FAX
+  PRESENCIAL
+  TELEFONICO
+  OTRO
+}
+
+// Acciones registradas en la bitácora inalterable (incluye LEE y EXPORTA, que
+// la auditoría de cuenta RegistroAuditoria no captura).
+enum AccionAuditoriaDoc {
+  CREA
+  LEE
+  MODIFICA
+  EXPORTA
+  ELIMINA
+  DISTRIBUYE
+  FIRMA
+  CLASIFICA
+  ARCHIVA
+  ANULA
+}
+
+// Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
+// Fase 1 se siembra con una estructura mínima derivada de los cargos reales,
+// editable desde el admin.
+model Dependencia {
+  id                   String   @id @default(cuid())
+  codigo               String   @unique
+  nombre               String
+  parentId             String?
+  nivel                Int      @default(0)
+  responsableUsuarioId String?
+  activo               Boolean  @default(true)
+  orden                Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  parent      Dependencia?      @relation("DependenciaJerarquia", fields: [parentId], references: [id])
+  hijos       Dependencia[]     @relation("DependenciaJerarquia")
+  responsable Usuario?          @relation("DependenciaResponsable", fields: [responsableUsuarioId], references: [id])
+  usuarios    Usuario[]         @relation("UsuarioDependencia")
+  series      SerieDocumental[]
+
+  comunicacionesDestino Comunicacion[] @relation("ComunicacionDependenciaDestino")
+  distribuciones        Distribucion[]
+
+  @@index([parentId])
+}
+
+// Serie documental (TRD/CCD). Versionada: se pueden tener la TRD anterior y la
+// nueva a la vez (vigenteDesde/Hasta) para migrar clasificaciones entre versiones.
+model SerieDocumental {
+  id            String    @id @default(cuid())
+  codigo        String
+  nombre        String
+  dependenciaId String?
+  version       String    @default("1")
+  vigenteDesde  DateTime  @default(now())
+  vigenteHasta  DateTime?
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  dependencia    Dependencia?         @relation(fields: [dependenciaId], references: [id])
+  subseries      SubserieDocumental[]
+  comunicaciones Comunicacion[]
+
+  @@unique([codigo, version])
+  @@index([dependenciaId])
+}
+
+model SubserieDocumental {
+  id                    String            @id @default(cuid())
+  serieId               String
+  codigo                String
+  nombre                String
+  retencionGestionAnios Int               @default(0)
+  retencionCentralAnios Int               @default(0)
+  disposicionFinal      DisposicionFinal?
+  procedimiento         String?           @db.Text
+  activo                Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  serie          SerieDocumental @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  comunicaciones Comunicacion[]
+
+  @@unique([serieId, codigo])
+  @@index([serieId])
+}
+
+// Secuencia de radicación ATÓMICA e inalterable — una fila por (serie, año).
+// El consecutivo se obtiene con un UPDATE ... { increment: 1 } sobre esta fila
+// (row-lock), NO con un COUNT(*) como en src/lib/expedientes.ts (que es
+// race-prone). Ver src/lib/radicado.ts.
+model ConsecutivoRadicado {
+  id           String   @id @default(cuid())
+  serie        String // "R" recibida, "E" enviada, "I" interna
+  anio         Int
+  ultimoNumero Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([serie, anio])
+}
+
+// Comunicación oficial radicada. Fase 1 usa tipo RECIBIDA; ENVIADA/INTERNA en Fase 2.
+model Comunicacion {
+  id              String             @id @default(cuid())
+  tipo            TipoComunicacion
+  radicado        String             @unique // ej. CDMB-R-2026-000123
+  anio            Int
+  fechaRadicacion DateTime           @default(now())
+  medio           MedioComunicacion?
+  origen          OrigenComunicacion @default(VENTANILLA)
+  estado          EstadoComunicacion @default(RADICADA)
+
+  asunto            String  @db.Text
+  folios            Int     @default(1)
+  anexosDescripcion String?
+
+  // Tercero (remitente si RECIBIDA / destinatario si ENVIADA): FK opcional al
+  // maestro Solicitante + snapshot "foto del momento" (mismo patrón que Expediente).
+  terceroId                 String?
+  terceroTipo               TipoSolicitante?
+  terceroTipoIdentificacion String? // CC, CE, NIT, PA, TI, ANONIMO (texto libre; no hay enum de tipo-id en el proyecto)
+  terceroIdentificacion     String?
+  terceroNombre             String?
+  terceroEmail              String?
+  terceroTelefono           String?
+  terceroDireccion          String?
+  terceroMunicipio          String?
+
+  dependenciaDestinoId String? // a qué dependencia de la CDMB va dirigida
+  serieId              String? // clasificación TRD
+  subserieId           String?
+  expedienteId         String? // archivada dentro de un expediente (unificación)
+  vitalRelacionado     String? // idVital relacionado, si aplica (columna VITAL_REC del legado)
+
+  fechaVencimiento DateTime? // término de ley (se calcula en Fase 3 con días hábiles)
+  radicadoPorId    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tercero            Solicitante?        @relation(fields: [terceroId], references: [id])
+  dependenciaDestino Dependencia?        @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
+  serie              SerieDocumental?    @relation(fields: [serieId], references: [id])
+  subserie           SubserieDocumental? @relation(fields: [subserieId], references: [id])
+  expediente         Expediente?         @relation(fields: [expedienteId], references: [id])
+  radicadoPor        Usuario?            @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
+
+  documentos     ComunicacionDocumento[]
+  distribuciones Distribucion[]
+  firmas         Firma[]
+
+  @@index([tipo])
+  @@index([anio])
+  @@index([estado])
+  @@index([fechaRadicacion])
+  @@index([dependenciaDestinoId])
+  @@index([expedienteId])
+}
+
+// Adjunto de una comunicación. Igual patrón que ExpedienteDocumento + hash
+// SHA-256 del contenido (integridad/preservación, MoReq).
+model ComunicacionDocumento {
+  id             String   @id @default(cuid())
+  comunicacionId String
+  nombre         String
+  descripcion    String?
+  storagePath    String
+  mimeType       String
+  tamanoBytes    Int
+  hashSha256     String? // integridad del archivo tal como se recibió
+  subidoPorId    String?
+  createdAt      DateTime @default(now())
+
+  comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  subidoPor    Usuario?     @relation("ComunicacionDocumentoSubidoPor", fields: [subidoPorId], references: [id])
+
+  @@index([comunicacionId])
+}
+
+// Distribución/reparto de una comunicación a una dependencia y/o funcionario.
+model Distribucion {
+  id              String    @id @default(cuid())
+  comunicacionId  String
+  dependenciaId   String?
+  usuarioId       String?
+  instrucciones   String?   @db.Text
+  termino         Int? // días para responder (se convierte a fechaVencimiento en Fase 3)
+  fechaAsignacion DateTime  @default(now())
+  fechaAcuse      DateTime? // cuándo el destinatario dio acuse de recibido
+  asignadoPorId   String?
+  createdAt       DateTime  @default(now())
+
+  comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  dependencia  Dependencia? @relation(fields: [dependenciaId], references: [id])
+  usuario      Usuario?     @relation("DistribucionUsuario", fields: [usuarioId], references: [id])
+  asignadoPor  Usuario?     @relation("DistribucionAsignadoPor", fields: [asignadoPorId], references: [id])
+
+  @@index([comunicacionId])
+  @@index([dependenciaId])
+  @@index([usuarioId])
+}
+
+// Firma electrónica con hash (Ley 527/1999 + Decreto 2364/2012): identidad del
+// firmante + marca de tiempo + hash SHA-256 del contenido firmado. No es firma
+// digital con certificado de CA. Usada en Fase 2 (salientes/memorandos).
+model Firma {
+  id             String   @id @default(cuid())
+  usuarioId      String
+  fechaHora      DateTime @default(now())
+  hashContenido  String
+  tipo           String   @default("ELECTRONICA_HASH")
+  comunicacionId String?
+  documentoId    String?
+  ip             String?
+
+  usuario      Usuario       @relation("FirmaUsuario", fields: [usuarioId], references: [id])
+  comunicacion Comunicacion? @relation(fields: [comunicacionId], references: [id])
+
+  @@index([comunicacionId])
+  @@index([usuarioId])
+}
+
+// Bitácora inalterable con cadena de hash. Cada fila encadena su `hash` con el
+// `hashAnterior` (hash de la fila previa por `secuencia`): alterar/borrar una
+// fila rompe la cadena y `verificarCadena()` lo detecta. Registra también LEE y
+// EXPORTA. Ver src/lib/auditoria-doc.ts.
+model AuditoriaDoc {
+  id           String             @id @default(cuid())
+  secuencia    Int                @unique @default(autoincrement())
+  entidad      String // "Comunicacion", "ComunicacionDocumento", ...
+  entidadId    String
+  accion       AccionAuditoriaDoc
+  usuarioId    String?
+  ip           String?
+  userAgent    String?
+  detalle      String?            @db.Text
+  hashAnterior String?
+  hash         String
+  createdAt    DateTime           @default(now())
+
+  usuario Usuario? @relation("AuditoriaDocUsuario", fields: [usuarioId], references: [id])
+
+  @@index([entidad, entidadId])
+  @@index([usuarioId])
+  @@index([createdAt])
 }

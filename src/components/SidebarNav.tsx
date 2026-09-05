@@ -6,6 +6,7 @@ import {
   Leaf,
   Link2,
   Archive,
+  Mail,
   UserCog,
   ShieldCheck,
   Palette,
@@ -22,6 +23,7 @@ const ITEM_TRAMITES: Item = {
 };
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
+const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia", label: "Correspondencia", icon: Mail, prefijo: "/correspondencia" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
@@ -39,6 +41,7 @@ export function SidebarNav({
   esAdmin,
   mostrarVital = false,
   mostrarSinca = false,
+  mostrarCorrespondencia = false,
   orientacion = "vertical",
 }: {
   esAdmin: boolean;
@@ -46,6 +49,8 @@ export function SidebarNav({
   mostrarVital?: boolean;
   /** SINCA 1.0 está configurado en este despliegue Y tiene al menos una pestaña permitida. */
   mostrarSinca?: boolean;
+  /** El usuario tiene acceso al módulo de correspondencia (SGDEA). */
+  mostrarCorrespondencia?: boolean;
   orientacion?: "vertical" | "horizontal";
 }) {
   const pathname = usePathname();
@@ -58,7 +63,12 @@ export function SidebarNav({
     return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 
-  const principal = [ITEM_TRAMITES, ...(mostrarVital ? [ITEM_VITAL] : []), ...(mostrarSinca ? [ITEM_HISTORICO] : [])];
+  const principal = [
+    ITEM_TRAMITES,
+    ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
+    ...(mostrarVital ? [ITEM_VITAL] : []),
+    ...(mostrarSinca ? [ITEM_HISTORICO] : []),
+  ];
 
   if (orientacion === "horizontal") {
     const items = [...principal, ...(esAdmin ? ITEMS_ADMIN : [])];

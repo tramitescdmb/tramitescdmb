@@ -3,7 +3,7 @@ import { LogOut } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { SidebarNav } from "@/components/SidebarNav";
 
 function iniciales(nombre: string) {
@@ -31,6 +31,7 @@ export async function NavBar() {
     (puedeAccederSeccion(permisos, "SINCA_BASE") ||
       puedeAccederSeccion(permisos, "SINCA_DASHBOARD") ||
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
+  const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
 
   const marca = (
     <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-cdmb-800">
@@ -60,7 +61,7 @@ export async function NavBar() {
       {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana. */}
       <aside className="sticky top-0 hidden h-screen w-64 flex-none flex-col border-r border-stone-200 bg-white lg:flex">
         <div className="border-b border-stone-100 px-4 py-4">{marca}</div>
-        <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} />
+        <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} />
         <div className="border-t border-stone-100 p-3">
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
             <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
@@ -84,7 +85,7 @@ export async function NavBar() {
           {salir}
         </div>
         <div className="border-t border-stone-100 px-3 py-1.5">
-          <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} orientacion="horizontal" />
+          <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} orientacion="horizontal" />
         </div>
       </header>
     </>
