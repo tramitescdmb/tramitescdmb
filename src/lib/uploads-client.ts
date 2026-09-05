@@ -49,3 +49,35 @@ export async function subirArchivoDirecto(
     tamanoBytes: file.size,
   };
 }
+
+/**
+ * Igual que subirArchivoDirecto, pero para el formulario público de PQRSD (sin
+ * sesión): pega a /api/pqrsd/upload-sign, una ruta de firma separada con su
+ * propio límite de envíos por IP.
+ */
+export async function subirArchivoPublico(folder: string, file: File): Promise<ArchivoSubido> {
+  if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
+  if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
+
+  const signRes = await fetch("/api/pqrsd/upload-sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder, fileName: file.name }),
+  });
+  if (!signRes.ok) {
+    const body = await signRes.json().catch(() => ({}));
+    throw new Error(body.error || `No se pudo preparar la subida de "${file.name}".`);
+  }
+  const { path, token } = await signRes.json();
+
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
+
+  return {
+    path,
+    nombre: file.name,
+    mimeType: file.type || "application/octet-stream",
+    tamanoBytes: file.size,
+  };
+}

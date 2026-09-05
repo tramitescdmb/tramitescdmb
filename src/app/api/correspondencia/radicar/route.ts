@@ -3,9 +3,11 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import type { MedioComunicacion, TipoSolicitante } from "@prisma/client";
+import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
+import type { MedioComunicacion, TipoPQRSD, TipoSolicitante } from "@prisma/client";
 
 const MEDIOS: MedioComunicacion[] = ["FISICO", "CORREO_ELECTRONICO", "WEB", "FAX", "PRESENCIAL", "TELEFONICO", "OTRO"];
+const TIPOS_PQRSD = Object.keys(TERMINO_DIAS_HABILES) as TipoPQRSD[];
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -28,6 +30,8 @@ export async function POST(req: NextRequest) {
   const terceroTipo = (body.terceroTipo === "JURIDICA" ? "JURIDICA" : "NATURAL") as TipoSolicitante;
   const medioRaw = String(body.medio ?? "");
   const medio = (MEDIOS as string[]).includes(medioRaw) ? (medioRaw as MedioComunicacion) : null;
+  const tipoPqrsdRaw = String(body.tipoPqrsd ?? "");
+  const tipoPqrsd = (TIPOS_PQRSD as string[]).includes(tipoPqrsdRaw) ? (tipoPqrsdRaw as TipoPQRSD) : null;
 
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
   if (!terceroNombre) return NextResponse.json({ error: "El nombre/razón social del remitente es obligatorio." }, { status: 400 });
@@ -65,6 +69,7 @@ export async function POST(req: NextRequest) {
       dependenciaDestinoId: body.dependenciaDestinoId ? String(body.dependenciaDestinoId) : null,
       serieId: body.serieId ? String(body.serieId) : null,
       subserieId: body.subserieId ? String(body.subserieId) : null,
+      tipoPqrsd,
       documentos,
       radicadoPorId: session.userId,
     });

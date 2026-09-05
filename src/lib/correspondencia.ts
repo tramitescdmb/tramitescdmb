@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
-import type { MedioComunicacion, TipoSolicitante, Prisma } from "@prisma/client";
+import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
+import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -32,15 +33,18 @@ export type EntradaDocumento = {
 
 export type EntradaRadicacionRecibida = {
   asunto: string;
+  contenido?: string | null; // narración de una PQRSD (Fase 3) — el resto de recibidas no lo usa
   folios: number;
   anexosDescripcion?: string | null;
   medio?: MedioComunicacion | null;
+  origen?: OrigenComunicacion | null; // VENTANILLA por defecto; WEB_PQRSD cuando llega del formulario público
   tercero: EntradaTercero;
   dependenciaDestinoId?: string | null;
   serieId?: string | null;
   subserieId?: string | null;
+  tipoPqrsd?: TipoPQRSD | null; // clasifica la PQRSD y fija su término de ley (Fase 3)
   documentos?: EntradaDocumento[];
-  radicadoPorId: string;
+  radicadoPorId: string | null; // null = radicada anónimamente desde el formulario público
 };
 
 /** Vincula al maestro Solicitante SOLO si el tercero viene identificado y con municipio
@@ -79,16 +83,21 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
     const ident = entrada.tercero.identificacion?.trim() || null;
     const muni = entrada.tercero.municipio?.trim() || null;
     const terceroId = await resolverOCrearTercero(tx, entrada.tercero);
+    const fechaRadicacion = new Date();
+    const terminoDiasHabiles = entrada.tipoPqrsd ? TERMINO_DIAS_HABILES[entrada.tipoPqrsd] : null;
+    const fechaVencimiento = entrada.tipoPqrsd ? calcularVencimiento(fechaRadicacion, entrada.tipoPqrsd) : null;
 
     const comunicacion = await tx.comunicacion.create({
       data: {
         tipo: "RECIBIDA",
         radicado,
         anio,
+        fechaRadicacion,
         medio: entrada.medio ?? null,
-        origen: "VENTANILLA",
+        origen: entrada.origen ?? "VENTANILLA",
         estado: "RADICADA",
         asunto: entrada.asunto,
+        contenido: entrada.contenido ?? null,
         folios: entrada.folios,
         anexosDescripcion: entrada.anexosDescripcion ?? null,
         terceroId,
@@ -103,6 +112,9 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
         dependenciaDestinoId: entrada.dependenciaDestinoId ?? null,
         serieId: entrada.serieId ?? null,
         subserieId: entrada.subserieId ?? null,
+        tipoPqrsd: entrada.tipoPqrsd ?? null,
+        terminoDiasHabiles,
+        fechaVencimiento,
         radicadoPorId: entrada.radicadoPorId,
       },
     });
@@ -113,7 +125,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   });
 }
 
-async function crearDocumentos(tx: Prisma.TransactionClient, comunicacionId: string, documentos: EntradaDocumento[] | undefined, subidoPorId: string) {
+async function crearDocumentos(tx: Prisma.TransactionClient, comunicacionId: string, documentos: EntradaDocumento[] | undefined, subidoPorId: string | null) {
   if (!documentos?.length) return;
   await tx.comunicacionDocumento.createMany({
     data: documentos.map((doc) => ({
@@ -255,4 +267,36 @@ export async function archivarEnExpediente(comunicacionId: string, expedienteId:
   const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });
   if (!expediente) throw new Error("El expediente no existe.");
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { expedienteId } });
+}
+
+/** Suspende el término de ley (Art. 17 CPACA) mientras se espera información adicional del peticionario. */
+export async function suspenderTermino(comunicacionId: string) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, estado: true, fechaVencimiento: true },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (!c.fechaVencimiento) throw new Error("Esta comunicación no tiene un término de ley que suspender.");
+  if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") throw new Error("El término ya está suspendido.");
+  return db.comunicacion.update({
+    where: { id: comunicacionId },
+    data: { estado: "INFORMACION_ADICIONAL_REQUERIDA", fechaSuspensionTermino: new Date() },
+  });
+}
+
+/** Reactiva un término suspendido: se reanuda por los días hábiles que faltaban, no se reinicia (Art. 17 CPACA). */
+export async function reactivarTermino(comunicacionId: string) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, estado: true, fechaRadicacion: true, fechaSuspensionTermino: true, terminoDiasHabiles: true },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.estado !== "INFORMACION_ADICIONAL_REQUERIDA" || !c.fechaSuspensionTermino || !c.terminoDiasHabiles) {
+    throw new Error("Esta comunicación no tiene un término suspendido.");
+  }
+  const fechaVencimiento = calcularVencimientoTrasReactivar(c.fechaRadicacion, c.fechaSuspensionTermino, new Date(), c.terminoDiasHabiles);
+  return db.comunicacion.update({
+    where: { id: comunicacionId },
+    data: { estado: "EN_TRAMITE", fechaSuspensionTermino: null, fechaVencimiento },
+  });
 }

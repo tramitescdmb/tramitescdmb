@@ -4,14 +4,15 @@ import Link from "next/link";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
-const ENCABEZADOS = ["#", "Tipo", "Radicado", "Fecha", "Tercero / dependencia", "Asunto", "Estado", "Docs."];
-const ANCHOS_DEFECTO = [36, 90, 150, 110, 190, 250, 110, 56];
+const ENCABEZADOS = ["#", "Tipo", "Radicado", "Fecha", "Tercero / dependencia", "Asunto", "Estado", "Vence", "Docs."];
+const ANCHOS_DEFECTO = [36, 90, 150, 110, 180, 220, 110, 110, 56];
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada",
   EN_REPARTO: "En reparto",
   ASIGNADA: "Asignada",
   EN_TRAMITE: "En trámite",
+  INFORMACION_ADICIONAL_REQUERIDA: "Info. requerida",
   RESPONDIDA: "Respondida",
   ARCHIVADA: "Archivada",
   ANULADA: "Anulada",
@@ -32,12 +33,13 @@ export type FilaCorrespondencia = {
   tercero: string | null;
   asunto: string;
   estado: string;
+  vencimiento: { texto: string; clase: string } | null;
   docs: number;
 };
 
 /** Tabla de correspondencia (recibida/enviada/interna) — columnas redimensionables (ancho recordado por navegador). */
 export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: FilaCorrespondencia[]; sinResultadosTexto: string }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v2", ANCHOS_DEFECTO);
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v3", ANCHOS_DEFECTO);
 
   return (
     <table className="w-full table-fixed text-sm">
@@ -77,6 +79,13 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                 <td className="truncate px-2.5 py-2 text-stone-600" title={f.asunto}>{f.asunto}</td>
                 <td className="truncate px-2.5 py-2">
                   <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{ETIQUETA_ESTADO[f.estado] ?? f.estado}</span>
+                </td>
+                <td className="truncate px-2.5 py-2">
+                  {f.vencimiento ? (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.vencimiento.clase}`}>{f.vencimiento.texto}</span>
+                  ) : (
+                    <span className="text-stone-300">—</span>
+                  )}
                 </td>
                 <td className="truncate px-2.5 py-2 text-center text-stone-500">{f.docs || "—"}</td>
               </tr>

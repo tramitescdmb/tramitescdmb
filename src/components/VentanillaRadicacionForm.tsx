@@ -11,6 +11,16 @@ type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; subseries: Subserie[] };
 
 const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI", "ANONIMO", "OTRO"];
+const TIPOS_PQRSD = [
+  { value: "", label: "— No es PQRSD —" },
+  { value: "PETICION_GENERAL", label: "Petición (15 días hábiles)" },
+  { value: "PETICION_DOCUMENTOS", label: "Petición de documentos/información (10 días hábiles)" },
+  { value: "CONSULTA", label: "Consulta (30 días hábiles)" },
+  { value: "QUEJA", label: "Queja (15 días hábiles)" },
+  { value: "RECLAMO", label: "Reclamo (15 días hábiles)" },
+  { value: "SUGERENCIA", label: "Sugerencia (15 días hábiles)" },
+  { value: "DENUNCIA", label: "Denuncia (15 días hábiles)" },
+];
 const MEDIOS = [
   { value: "FISICO", label: "Físico" },
   { value: "CORREO_ELECTRONICO", label: "Correo electrónico" },
@@ -54,6 +64,7 @@ export function VentanillaRadicacionForm({
   const [folios, setFolios] = useState(1);
   const [anexos, setAnexos] = useState("");
   const [dependenciaId, setDependenciaId] = useState("");
+  const [tipoPqrsd, setTipoPqrsd] = useState("");
   const [serieId, setSerieId] = useState("");
   const [subserieId, setSubserieId] = useState("");
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -106,6 +117,7 @@ export function VentanillaRadicacionForm({
           terceroDireccion: direccion.trim() || null,
           terceroMunicipio: municipio || null,
           dependenciaDestinoId: dependenciaId || null,
+          tipoPqrsd: tipoPqrsd || null,
           serieId: serieId || null,
           subserieId: subserieId || null,
           documentos,
@@ -209,6 +221,14 @@ export function VentanillaRadicacionForm({
               <option value="">— Sin asignar —</option>
               {dependencias.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className={labelCls}>Tipo PQRSD</span>
+            <select value={tipoPqrsd} onChange={(e) => setTipoPqrsd(e.target.value)} className={inputCls}>
+              {TIPOS_PQRSD.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </label>

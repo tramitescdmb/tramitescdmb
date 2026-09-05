@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { estadoVencimiento } from "@/lib/pqrsd";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
@@ -17,6 +18,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   EN_REPARTO: "En reparto",
   ASIGNADA: "Asignada",
   EN_TRAMITE: "En trámite",
+  INFORMACION_ADICIONAL_REQUERIDA: "Info. requerida",
   RESPONDIDA: "Respondida",
   ARCHIVADA: "Archivada",
   ANULADA: "Anulada",
@@ -165,6 +167,7 @@ export default async function CorrespondenciaBandejaPage({
               tercero: c.tipo === "INTERNA" ? [c.dependenciaOrigen?.nombre, c.dependenciaDestino?.nombre].filter(Boolean).join(" → ") : c.terceroNombre,
               asunto: c.asunto,
               estado: c.estado,
+              vencimiento: estadoVencimiento(c.fechaVencimiento),
               docs: c._count.documentos,
             }))}
             sinResultadosTexto={hayFiltros ? "No hay comunicaciones que coincidan." : "Todavía no se ha radicado correspondencia."}

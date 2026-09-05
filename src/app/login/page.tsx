@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { IconUser, IconLock, IconShieldCheck } from "@/components/icons";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { directorioActivoConfigurado } from "@/lib/directorio-activo";
@@ -103,6 +104,14 @@ export default async function LoginPage({
             Ingresar
           </button>
         </form>
+
+        <p className="mt-5 border-t border-stone-100 pt-4 text-center text-xs text-stone-500">
+          ¿Es ciudadano y quiere radicar una petición, queja, reclamo, sugerencia o denuncia?{" "}
+          <Link href="/pqrsd" className="font-medium text-cdmb-700 hover:underline">
+            Hágalo aquí, sin necesidad de iniciar sesión
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

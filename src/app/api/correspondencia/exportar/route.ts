@@ -56,6 +56,8 @@ export async function GET(req: NextRequest) {
     "Folios",
     "Dependencia origen",
     "Dependencia destino",
+    "Tipo PQRSD",
+    "Vencimiento",
     "Documentos",
     "Enlace en la app",
   ];
@@ -75,6 +77,8 @@ export async function GET(req: NextRequest) {
       c.folios,
       c.dependenciaOrigen?.nombre,
       c.dependenciaDestino?.nombre,
+      c.tipoPqrsd ?? "",
+      c.fechaVencimiento ? c.fechaVencimiento.toISOString().slice(0, 10) : "",
       c._count.documentos,
       `/correspondencia/${c.id}`,
     ]

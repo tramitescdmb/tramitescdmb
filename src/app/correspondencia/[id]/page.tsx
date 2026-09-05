@@ -1,22 +1,24 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
+import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
 import { headers } from "next/headers";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada", EN_REPARTO: "En reparto", ASIGNADA: "Asignada", EN_TRAMITE: "En trámite",
-  RESPONDIDA: "Respondida", ARCHIVADA: "Archivada", ANULADA: "Anulada",
+  INFORMACION_ADICIONAL_REQUERIDA: "Información adicional requerida", RESPONDIDA: "Respondida",
+  ARCHIVADA: "Archivada", ANULADA: "Anulada",
 };
 const ETIQUETA_ACCION: Record<string, string> = {
   CREA: "Radicación", LEE: "Consulta", MODIFICA: "Modificación", EXPORTA: "Exportación",
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
-  ARCHIVA: "Archivo", ANULA: "Anulación",
+  ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
 
@@ -100,6 +102,7 @@ export default async function CorrespondenciaDetallePage({
     : [[], []];
 
   const tieneTercero = c.tipo !== "INTERNA";
+  const vencimiento = estadoVencimiento(c.fechaVencimiento);
 
   return (
     <div className="space-y-4">
@@ -115,9 +118,18 @@ export default async function CorrespondenciaDetallePage({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>
-            <p className="text-xs text-stone-400">{ETIQUETA_TIPO[c.tipo] ?? c.tipo}</p>
+            <p className="text-xs text-stone-400">
+              {ETIQUETA_TIPO[c.tipo] ?? c.tipo}
+              {c.tipoPqrsd ? ` · ${ETIQUETA_TIPO_PQRSD[c.tipoPqrsd]}` : ""}
+            </p>
           </div>
           <div className="flex items-center gap-2">
+            {vencimiento && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${vencimiento.clase}`}>
+                <Clock className="h-3 w-3" aria-hidden />
+                {vencimiento.texto}
+              </span>
+            )}
             <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">{ETIQUETA_ESTADO[c.estado] ?? c.estado}</span>
             <Link href={`/correspondencia/${id}/constancia`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
               <Printer className="h-3.5 w-3.5" aria-hidden />
@@ -132,9 +144,11 @@ export default async function CorrespondenciaDetallePage({
           <Campo k="Medio" v={c.medio} />
           <Campo k="Folios" v={c.folios} />
           <Campo k="Anexos" v={c.anexosDescripcion} />
-          <Campo k="Radicado por" v={c.radicadoPor?.nombre} />
+          <Campo k="Radicado por" v={c.radicadoPor?.nombre ?? (c.origen === "WEB_PQRSD" ? "Ciudadano (formulario público)" : null)} />
           <Campo k="Dependencia origen" v={c.dependenciaOrigen?.nombre} />
           <Campo k="Dependencia destino" v={c.dependenciaDestino?.nombre} />
+          <Campo k="Término de ley" v={c.terminoDiasHabiles ? `${c.terminoDiasHabiles} días hábiles` : null} />
+          <Campo k="Vence" v={c.fechaVencimiento ? fechaHora(c.fechaVencimiento) : null} />
           <Campo k="Serie (TRD)" v={c.serie ? `${c.serie.codigo} — ${c.serie.nombre}` : null} />
           <Campo k="Subserie" v={c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : null} />
           <Campo
@@ -279,6 +293,37 @@ export default async function CorrespondenciaDetallePage({
           </form>
         )}
       </Tarjeta>
+
+      {puedeDistribuirUsuario && c.fechaVencimiento && c.estado !== "ANULADA" && (
+        <Tarjeta titulo="Término de ley">
+          <p className="text-sm text-stone-600">
+            {vencimiento?.texto === "Vencido" ? "El término de respuesta venció" : "Vence"} el{" "}
+            <span className="font-medium">{fechaHora(c.fechaVencimiento)}</span>
+            {c.terminoDiasHabiles ? ` (${c.terminoDiasHabiles} días hábiles desde la radicación)` : ""}.
+          </p>
+          {c.estado === "INFORMACION_ADICIONAL_REQUERIDA" ? (
+            <>
+              <p className="mt-1 text-xs text-stone-400">
+                Suspendido desde el {fechaHora(c.fechaSuspensionTermino)}: al reactivarlo, el término se reanuda por los días
+                hábiles que faltaban, no se reinicia (Art. 17 CPACA).
+              </p>
+              <form action={`/api/correspondencia/${id}/reactivar`} method="post" className="mt-3">
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                  <PlayCircle className="h-3.5 w-3.5" aria-hidden />
+                  Reactivar término
+                </button>
+              </form>
+            </>
+          ) : (
+            <form action={`/api/correspondencia/${id}/suspender`} method="post" className="mt-3">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <PauseCircle className="h-3.5 w-3.5" aria-hidden />
+                Suspender (solicitar información adicional)
+              </button>
+            </form>
+          )}
+        </Tarjeta>
+      )}
 
       {puedeDistribuirUsuario && (
         <Tarjeta titulo="Expediente electrónico">

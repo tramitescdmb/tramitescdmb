@@ -708,6 +708,7 @@ enum EstadoComunicacion {
   EN_REPARTO // pendiente de distribuir
   ASIGNADA // distribuida a dependencia/funcionario
   EN_TRAMITE // en gestión
+  INFORMACION_ADICIONAL_REQUERIDA // término de ley suspendido (Art. 17 CPACA) hasta que el peticionario responda
   RESPONDIDA
   ARCHIVADA
   ANULADA // anulada con justificación (no se borra: queda trazada)
@@ -719,6 +720,18 @@ enum OrigenComunicacion {
   MIGRACION_COR // importada del Oracle legado (Fase 4)
   CORREO_ELECTRONICO
   OTRO
+}
+
+// Clasificación PQRSD (Ley 1755/2015, que modificó el Título II del CPACA — Ley
+// 1437/2011). El término de respuesta depende del tipo, no es uniforme.
+enum TipoPQRSD {
+  PETICION_GENERAL // interés general o particular — 15 días hábiles
+  PETICION_DOCUMENTOS // copia/consulta de documentos — 10 días hábiles
+  CONSULTA // 30 días hábiles
+  QUEJA // 15 días hábiles
+  RECLAMO // 15 días hábiles
+  SUGERENCIA // 15 días hábiles
+  DENUNCIA // 15 días hábiles (puede derivar a control interno disciplinario)
 }
 
 enum MedioComunicacion {
@@ -744,6 +757,8 @@ enum AccionAuditoriaDoc {
   CLASIFICA
   ARCHIVA
   ANULA
+  SUSPENDE // suspende el término de ley (Art. 17 CPACA)
+  REACTIVA
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -842,9 +857,17 @@ model Comunicacion {
   estado          EstadoComunicacion @default(RADICADA)
 
   asunto            String  @db.Text
-  contenido         String? @db.Text // cuerpo del oficio/memorando (ENVIADA/INTERNA) — RECIBIDA no lo usa, su contenido es el documento externo adjunto
+  contenido         String? @db.Text // cuerpo del oficio/memorando (ENVIADA/INTERNA); en RECIBIDA solo se usa para la narración de una PQRSD (el resto llega como documento adjunto)
   folios            Int     @default(1)
   anexosDescripcion String?
+
+  // PQRSD (Fase 3, Ley 1755/2015): solo aplica a RECIBIDA. `terminoDiasHabiles`
+  // queda fijado al radicar (según el tipo) para poder recalcular el vencimiento
+  // si el término se suspende y se reactiva (Art. 17 CPACA) sin tener que volver
+  // a mirar la tabla de términos por tipo más adelante.
+  tipoPqrsd              TipoPQRSD?
+  terminoDiasHabiles     Int?
+  fechaSuspensionTermino DateTime?
 
   // Tercero (remitente si RECIBIDA / destinatario si ENVIADA): FK opcional al
   // maestro Solicitante + snapshot "foto del momento" (mismo patrón que Expediente).
@@ -893,6 +916,7 @@ model Comunicacion {
   @@index([fechaRadicacion])
   @@index([dependenciaDestinoId])
   @@index([expedienteId])
+  @@index([fechaVencimiento])
 }
 
 // Adjunto de una comunicación. Igual patrón que ExpedienteDocumento + hash
@@ -981,4 +1005,18 @@ model AuditoriaDoc {
   @@index([entidad, entidadId])
   @@index([usuarioId])
   @@index([createdAt])
+}
+
+// Límite de envíos públicos sin autenticación (formulario PQRSD, Fase 3). No hay
+// CAPTCHA de terceros en el proyecto (exigiría una cuenta/API key externa) — este
+// conteo por IP+ruta, combinado con honeypot y tiempo mínimo de llenado en el
+// propio formulario, es la defensa contra abuso. Persistido en base (no en
+// memoria): en Vercel cada invocación puede caer en una instancia distinta.
+model IntentoEnvioPublico {
+  id        String   @id @default(cuid())
+  ip        String
+  ruta      String
+  createdAt DateTime @default(now())
+
+  @@index([ip, ruta, createdAt])
 }
