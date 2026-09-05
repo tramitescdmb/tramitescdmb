@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
-import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { Field, SectionHelp } from "@/components/Field";
+import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -18,16 +20,6 @@ const MEDIOS = [
   { value: "FAX", label: "Fax" },
   { value: "OTRO", label: "Otro" },
 ];
-
-async function sha256Hex(file: File): Promise<string | null> {
-  try {
-    const buf = await file.arrayBuffer();
-    const hash = await crypto.subtle.digest("SHA-256", buf);
-    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  } catch {
-    return null;
-  }
-}
 
 export function RadicarEnviadaForm({
   dependencias,
@@ -59,6 +51,7 @@ export function RadicarEnviadaForm({
   const [respondeAId, setRespondeAId] = useState("");
   const [archivos, setArchivos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
+  const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const subseries = useMemo(() => series.find((s) => s.id === serieId)?.subseries ?? [], [series, serieId]);
@@ -82,14 +75,15 @@ export function RadicarEnviadaForm({
     if (!contenido.trim()) return setError("El contenido del oficio es obligatorio: es lo que queda firmado.");
     if (!nombre.trim()) return setError("El nombre o razón social del destinatario es obligatorio.");
     setEnviando(true);
+    setProgreso({ pct: 0, texto: "Preparando…" });
     try {
       const folder = crypto.randomUUID();
-      const documentos: { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null }[] = [];
-      for (const file of archivos) {
-        const subido = await subirArchivoDirecto(folder, file, { nuevo: true });
-        const hashSha256 = await sha256Hex(file);
-        documentos.push({ path: subido.path, nombre: subido.nombre, mimeType: subido.mimeType, tamanoBytes: subido.tamanoBytes, hashSha256 });
-      }
+      const documentos = await subirDocumentosConProgreso(
+        archivos,
+        (f, file) => subirArchivoDirecto(f, file, { nuevo: true }),
+        folder,
+        (pct, texto) => setProgreso({ pct, texto })
+      );
 
       const resp = await fetch("/api/correspondencia/radicar-enviada", {
         method: "POST",
@@ -116,15 +110,16 @@ export function RadicarEnviadaForm({
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudo radicar.");
+      setProgreso({ pct: 100, texto: "Listo." });
       router.push(`/correspondencia/${data.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo radicar la comunicación.");
+      setProgreso(null);
       setEnviando(false);
     }
   }
 
   const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
-  const labelCls = "mb-1 block text-xs font-medium text-stone-600";
 
   return (
     <div className="space-y-4">
@@ -145,93 +140,90 @@ export function RadicarEnviadaForm({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Destinatario</h2>
+        <SectionHelp>A quién va dirigido este oficio de salida.</SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label>
-            <span className={labelCls}>Tipo de persona</span>
+          <Field label="Tipo de persona" help="Natural: una persona. Jurídica: una empresa o entidad.">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
               <option value="NATURAL">Natural</option>
               <option value="JURIDICA">Jurídica</option>
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Tipo de identificación</span>
+          </Field>
+          <Field label="Tipo de identificación">
             <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
               {["CC", "CE", "NIT", "PA", "TI", "OTRO"].map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Identificación</span>
+          </Field>
+          <Field label="Identificación">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>{tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} *</span>
-            <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
-          </label>
-          <label>
-            <span className={labelCls}>Municipio</span>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} required>
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
+          <Field label="Municipio">
             <select value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={inputCls}>
               <option value="">— Sin especificar —</option>
               {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Correo electrónico</span>
+          </Field>
+          <Field label="Correo electrónico" help="Para enviarle también una copia digital si aplica.">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
-          </label>
-          <label>
-            <span className={labelCls}>Teléfono</span>
+          </Field>
+          <Field label="Teléfono">
             <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>Dirección</span>
-            <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-          </label>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Dirección" help="Dirección física de envío, si el medio es físico.">
+              <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
         </div>
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Oficio</h2>
+        <SectionHelp>
+          Al radicar, este oficio queda firmado electrónicamente con un hash SHA-256 (Ley 527/1999): el asunto y el
+          contenido tal como quedan escritos aquí no se pueden modificar después sin que se detecte.
+        </SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="sm:col-span-2 lg:col-span-4">
-            <span className={labelCls}>Asunto *</span>
-            <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
-          </label>
-          <label className="sm:col-span-2 lg:col-span-4">
-            <span className={labelCls}>Contenido *</span>
-            <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del oficio…" />
-            <p className="mt-1 text-[11px] text-stone-400">Este texto, junto con el asunto y el radicado, es lo que queda firmado con hash SHA-256.</p>
-          </label>
-          <label>
-            <span className={labelCls}>Medio de envío</span>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Asunto" required>
+              <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Contenido" required help="Cuerpo del oficio. Junto con el asunto y el radicado, es lo que queda firmado con hash SHA-256.">
+              <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del oficio…" />
+            </Field>
+          </div>
+          <Field label="Medio de envío" help="Cómo se va a entregar este oficio.">
             <select value={medio} onChange={(e) => setMedio(e.target.value)} className={inputCls}>
               {MEDIOS.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>N.º de folios</span>
+          </Field>
+          <Field label="N.º de folios">
             <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
-          </label>
-          <label>
-            <span className={labelCls}>Dependencia que emite</span>
+          </Field>
+          <Field label="Dependencia que emite" help="Área de la CDMB que redacta y firma este oficio.">
             <select value={dependenciaOrigenId} onChange={(e) => setDependenciaOrigenId(e.target.value)} className={inputCls}>
               <option value="">— Sin especificar —</option>
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Serie documental (TRD)</span>
+          </Field>
+          <Field label="Serie documental (TRD)" help="Clasificación archivística. Si no sabe cuál usar, déjela 'Sin clasificar'.">
             <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
               <option value="">— Sin clasificar —</option>
               {series.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Subserie</span>
+          </Field>
+          <Field label="Subserie">
             <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
               <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
               {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
             </select>
-          </label>
+          </Field>
         </div>
       </section>
 
@@ -255,6 +247,8 @@ export function RadicarEnviadaForm({
           </ul>
         )}
       </section>
+
+      {progreso && <BarraProgresoEnvio pct={progreso.pct} texto={progreso.texto} />}
 
       <div className="flex items-center gap-3">
         <button

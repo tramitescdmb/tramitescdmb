@@ -4,10 +4,10 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeries, ETIQUETA_DISPOSICION } from "@/lib/trd";
+import { Field, SectionHelp } from "@/components/Field";
 
 const DISPOSICIONES = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
-const labelCls = "mb-1 block text-xs font-medium text-stone-600";
 
 export default async function CorrespondenciaAdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -32,23 +32,27 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
           <Building2 className="h-4 w-4 text-cdmb-600" aria-hidden /> Dependencias (organigrama)
         </h2>
+        <SectionHelp>
+          El organigrama determina a quién se le puede distribuir una comunicación y quién puede firmar memorandos en
+          nombre de cada área. Una dependencia inactiva deja de aparecer para asignar cosas nuevas, pero no borra su
+          historial.
+        </SectionHelp>
 
         <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-4">
-          <label>
-            <span className={labelCls}>Código *</span>
+          <Field label="Código" required help="Sigla corta y única, ej. SEYCA.">
             <input name="codigo" className={inputCls} placeholder="Ej. SEYCA" required />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>Nombre *</span>
-            <input name="nombre" className={inputCls} required />
-          </label>
-          <label>
-            <span className={labelCls}>Depende de</span>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Nombre" required>
+              <input name="nombre" className={inputCls} required />
+            </Field>
+          </div>
+          <Field label="Depende de" help="La dependencia jerárquicamente superior, si tiene. Déjelo vacío si es de primer nivel.">
             <select name="parentId" className={inputCls}>
               <option value="">— Ninguna (nivel raíz) —</option>
               {dependenciasActivas.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
-          </label>
+          </Field>
           <div className="sm:col-span-4">
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
               <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar dependencia
@@ -97,27 +101,33 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
           <FolderTree className="h-4 w-4 text-cdmb-600" aria-hidden /> Tablas de Retención Documental (TRD/CCD)
         </h2>
+        <SectionHelp>
+          La TRD clasifica cada comunicación por el tipo de asunto que trata (una &quot;serie&quot;, ej. Contratos) y
+          define por cuánto tiempo debe conservarse antes de transferirla o eliminarla (Acuerdo 060/2001 AGN). Puede
+          tener varias versiones de una misma serie a la vez — útil para migrar de una TRD antigua a una nueva sin
+          perder la clasificación de lo ya radicado.
+        </SectionHelp>
 
         <form action="/api/correspondencia/series" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-4">
-          <label>
-            <span className={labelCls}>Código de serie *</span>
+          <Field label="Código de serie" required>
             <input name="codigo" className={inputCls} placeholder="Ej. 100" required />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>Nombre *</span>
-            <input name="nombre" className={inputCls} placeholder="Ej. Contratos" required />
-          </label>
-          <label>
-            <span className={labelCls}>Versión</span>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Nombre" required>
+              <input name="nombre" className={inputCls} placeholder="Ej. Contratos" required />
+            </Field>
+          </div>
+          <Field label="Versión" help="Súbala al crear una TRD nueva sin perder la anterior — ambas quedan disponibles.">
             <input name="version" className={inputCls} defaultValue="1" />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>Dependencia productora</span>
-            <select name="dependenciaId" className={inputCls}>
-              <option value="">— Ninguna —</option>
-              {dependenciasActivas.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
-            </select>
-          </label>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Dependencia productora" help="El área dueña de este tipo de documentos.">
+              <select name="dependenciaId" className={inputCls}>
+                <option value="">— Ninguna —</option>
+                {dependenciasActivas.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
+              </select>
+            </Field>
+          </div>
           <div className="sm:col-span-4">
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
               <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar serie
@@ -126,6 +136,13 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </form>
 
         <div className="space-y-3">
+          {series.length > 0 && (
+            <p className="text-xs text-stone-400">
+              Al agregar una subserie: <strong>Gestión</strong> = años que se guarda en la oficina que la produjo;{" "}
+              <strong>Central</strong> = años adicionales en el archivo central después; <strong>Disposición</strong> = qué
+              pasa al cumplirse ambos plazos (conservar siempre, eliminar, seleccionar una muestra, o microfilmar/digitalizar).
+            </p>
+          )}
           {series.length === 0 && <p className="rounded-xl border border-stone-200 bg-white p-6 text-center text-sm text-stone-400">Aún no hay series documentales. Agregue la primera arriba.</p>}
           {series.map((s) => (
             <div key={s.id} className="overflow-hidden rounded-xl border border-stone-200 bg-white">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
+import { Field, SectionHelp } from "@/components/Field";
 
 type Resultado = {
   radicado: string;
@@ -10,6 +11,17 @@ type Resultado = {
   tipo: string | null;
   fechaRadicacion: string;
   fechaVencimiento: string | null;
+};
+
+const EXPLICACION_ESTADO: Record<string, string> = {
+  "Radicada": "Se recibió y todavía no se ha asignado a nadie para atenderla.",
+  "En reparto": "Está pendiente de asignarse a una dependencia o funcionario.",
+  "Asignada": "Ya se asignó a quien la va a atender.",
+  "En trámite": "Un funcionario la está gestionando.",
+  "Se le solicitó información adicional": "La CDMB necesita más información suya para poder continuar. Revise el medio de contacto que indicó.",
+  "Respondida": "Ya se le dio respuesta.",
+  "Archivada": "Se cerró y quedó guardada.",
+  "Anulada": "Se anuló esta solicitud.",
 };
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
@@ -45,21 +57,21 @@ export function PqrsdConsultarForm() {
   }
 
   const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
-  const labelCls = "mb-1 block text-xs font-medium text-stone-600";
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         {error && <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        <SectionHelp>
+          Pedimos los dos datos (no solo el radicado) para que nadie más pueda consultar el estado de su solicitud.
+        </SectionHelp>
         <div className="space-y-3">
-          <label>
-            <span className={labelCls}>Radicado</span>
+          <Field label="Radicado" help="El número que le entregamos al radicar, ej. CDMB-R-2026-000123.">
             <input value={radicado} onChange={(e) => setRadicado(e.target.value)} className={inputCls} placeholder="CDMB-R-2026-000123" />
-          </label>
-          <label>
-            <span className={labelCls}>Identificación</span>
+          </Field>
+          <Field label="Identificación" help="El mismo documento o NIT con el que radicó la solicitud.">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
-          </label>
+          </Field>
         </div>
         <button
           type="button"
@@ -96,6 +108,9 @@ export function PqrsdConsultarForm() {
               </div>
             )}
           </dl>
+          {EXPLICACION_ESTADO[resultado.estado] && (
+            <p className="mt-3 border-t border-stone-100 pt-3 text-xs text-stone-500">{EXPLICACION_ESTADO[resultado.estado]}</p>
+          )}
         </div>
       )}
     </div>

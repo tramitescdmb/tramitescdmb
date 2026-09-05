@@ -3,30 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Upload, X, CheckCircle2 } from "lucide-react";
-import { subirArchivoPublico } from "@/lib/uploads-client";
+import { subirArchivoPublico, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { Field, SectionHelp } from "@/components/Field";
+import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
 const TIPOS_PQRSD = [
-  { value: "PETICION_GENERAL", label: "Petición" },
-  { value: "PETICION_DOCUMENTOS", label: "Petición de copia de documentos o información" },
-  { value: "CONSULTA", label: "Consulta" },
-  { value: "QUEJA", label: "Queja" },
-  { value: "RECLAMO", label: "Reclamo" },
-  { value: "SUGERENCIA", label: "Sugerencia" },
-  { value: "DENUNCIA", label: "Denuncia" },
+  { value: "PETICION_GENERAL", label: "Petición", ayuda: "Pide que la CDMB haga algo o le entregue información. Responde en 15 días hábiles." },
+  { value: "PETICION_DOCUMENTOS", label: "Petición de copia de documentos", ayuda: "Pide copia de un documento específico que tenga la CDMB. Responde en 10 días hábiles." },
+  { value: "CONSULTA", label: "Consulta", ayuda: "Pregunta sobre un tema de competencia de la CDMB, sin pedir un trámite puntual. Responde en 30 días hábiles." },
+  { value: "QUEJA", label: "Queja", ayuda: "Manifiesta inconformidad con la conducta de un servidor de la CDMB. Responde en 15 días hábiles." },
+  { value: "RECLAMO", label: "Reclamo", ayuda: "Exige que se corrija o se cumpla algo que no se hizo bien. Responde en 15 días hábiles." },
+  { value: "SUGERENCIA", label: "Sugerencia", ayuda: "Propone una idea o mejora para la entidad. Responde en 15 días hábiles." },
+  { value: "DENUNCIA", label: "Denuncia", ayuda: "Pone en conocimiento un posible hecho irregular. Responde en 15 días hábiles." },
 ];
 const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI"];
-
-async function sha256Hex(file: File): Promise<string | null> {
-  try {
-    const buf = await file.arrayBuffer();
-    const hash = await crypto.subtle.digest("SHA-256", buf);
-    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  } catch {
-    return null;
-  }
-}
 
 export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [tsCarga] = useState(() => Date.now());
@@ -44,8 +36,11 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [archivos, setArchivos] = useState<File[]>([]);
   const [sitioWeb, setSitioWeb] = useState(""); // honeypot — un ciudadano real nunca llena esto
   const [enviando, setEnviando] = useState(false);
+  const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<{ radicado: string; fechaVencimiento: string | null } | null>(null);
+
+  const ayudaTipo = TIPOS_PQRSD.find((t) => t.value === tipoPqrsd)?.ayuda;
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
@@ -71,14 +66,10 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
     if (!email.trim() && !telefono.trim()) return setError("Indique al menos un medio de contacto (correo o teléfono).");
 
     setEnviando(true);
+    setProgreso({ pct: 0, texto: "Preparando…" });
     try {
       const folder = crypto.randomUUID();
-      const documentos: { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null }[] = [];
-      for (const file of archivos) {
-        const subido = await subirArchivoPublico(folder, file);
-        const hashSha256 = await sha256Hex(file);
-        documentos.push({ path: subido.path, nombre: subido.nombre, mimeType: subido.mimeType, tamanoBytes: subido.tamanoBytes, hashSha256 });
-      }
+      const documentos = await subirDocumentosConProgreso(archivos, subirArchivoPublico, folder, (pct, texto) => setProgreso({ pct, texto }));
 
       const resp = await fetch("/api/pqrsd/radicar", {
         method: "POST",
@@ -101,16 +92,17 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudo radicar la solicitud.");
+      setProgreso({ pct: 100, texto: "Listo." });
       setResultado({ radicado: data.radicado, fechaVencimiento: data.fechaVencimiento ?? null });
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo radicar la solicitud.");
+      setProgreso(null);
     } finally {
       setEnviando(false);
     }
   }
 
   const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
-  const labelCls = "mb-1 block text-xs font-medium text-stone-600";
 
   if (resultado) {
     return (
@@ -124,6 +116,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         {resultado.fechaVencimiento && (
           <p className="mt-1 text-xs text-stone-500">
             Fecha estimada de respuesta: {new Date(resultado.fechaVencimiento).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}
+            {" "}— es una fecha límite calculada en días hábiles, no una fecha exacta garantizada.
           </p>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3 print:hidden">
@@ -142,16 +135,24 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Tipo de solicitud</h2>
+        <SectionHelp>
+          Elija la que mejor describa lo que quiere: una petición pide algo, una queja se refiere a la conducta de un
+          servidor, un reclamo exige corregir algo mal hecho, una sugerencia propone una mejora y una denuncia
+          reporta un posible hecho irregular. Si tiene dudas, elija &quot;Petición&quot;.
+        </SectionHelp>
         <select value={tipoPqrsd} onChange={(e) => setTipoPqrsd(e.target.value)} className={inputCls}>
           <option value="">— Seleccione —</option>
-          {TIPOS_PQRSD.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
+          {TIPOS_PQRSD.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
         </select>
+        {ayudaTipo && <p className="mt-1.5 text-xs text-stone-500">{ayudaTipo}</p>}
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Sus datos</h2>
+        <SectionHelp>
+          Necesitamos su identificación, municipio y un medio de contacto para poder responderle y para que después
+          pueda consultar el estado de su solicitud con su radicado.
+        </SectionHelp>
         {/* Honeypot: invisible para una persona, pero presente en el DOM para un bot que llena todos los campos. */}
         <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
           <label>
@@ -160,46 +161,42 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
           </label>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label>
-            <span className={labelCls}>Tipo de persona</span>
+          <Field label="Tipo de persona" help="Natural: usted como persona. Jurídica: una empresa o entidad.">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
               <option value="NATURAL">Natural</option>
               <option value="JURIDICA">Jurídica</option>
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Tipo de identificación</span>
+          </Field>
+          <Field label="Tipo de identificación">
             <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
               {TIPOS_ID.map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Identificación *</span>
+          </Field>
+          <Field label="Identificación" required help="Número de documento o NIT.">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
-          </label>
-          <label className="sm:col-span-2">
-            <span className={labelCls}>{tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} *</span>
-            <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
-          </label>
-          <label>
-            <span className={labelCls}>Municipio *</span>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} required>
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
+          <Field label="Municipio" required>
             <select value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={inputCls}>
               <option value="">— Seleccione —</option>
               {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
-          </label>
-          <label>
-            <span className={labelCls}>Correo electrónico</span>
+          </Field>
+          <Field label="Correo electrónico" help="Por aquí le avisamos la respuesta, si lo indica.">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
-          </label>
-          <label>
-            <span className={labelCls}>Teléfono</span>
+          </Field>
+          <Field label="Teléfono">
             <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
-          </label>
-          <label className="sm:col-span-2 lg:col-span-3">
-            <span className={labelCls}>Dirección</span>
-            <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-          </label>
+          </Field>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Field label="Dirección">
+              <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
         </div>
         <p className="mt-2 text-xs text-stone-400">Indique correo o teléfono: es el medio por el que la CDMB le responderá.</p>
       </section>
@@ -207,19 +204,18 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Su solicitud</h2>
         <div className="space-y-3">
-          <label>
-            <span className={labelCls}>Asunto *</span>
+          <Field label="Asunto" required help="Resumen de una línea de lo que necesita.">
             <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
-          </label>
-          <label>
-            <span className={labelCls}>Descripción *</span>
-            <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={6} className={inputCls} placeholder="Describa con el mayor detalle posible su petición, queja, reclamo, sugerencia o denuncia…" />
-          </label>
+          </Field>
+          <Field label="Descripción" required help="Cuente con el mayor detalle posible qué pasó y qué espera que haga la CDMB.">
+            <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={6} className={inputCls} placeholder="Describa su petición, queja, reclamo, sugerencia o denuncia…" />
+          </Field>
         </div>
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos de soporte (opcional)</h2>
+        <p className="mb-2 text-xs text-stone-500">Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí.</p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos
@@ -238,6 +234,8 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
           </ul>
         )}
       </section>
+
+      {progreso && <BarraProgresoEnvio pct={progreso.pct} texto={progreso.texto} />}
 
       <div className="flex items-center gap-3">
         <button

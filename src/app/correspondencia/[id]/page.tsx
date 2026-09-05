@@ -8,6 +8,8 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir } 
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
+import { Field, SectionHelp } from "@/components/Field";
+import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { headers } from "next/headers";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
@@ -137,7 +139,10 @@ export default async function CorrespondenciaDetallePage({
             </Link>
           </div>
         </div>
-        <p className="mt-1.5 text-sm text-stone-700">{c.asunto}</p>
+        <div className="mt-3 max-w-md">
+          <ProgresoCorrespondencia estado={c.estado} tamaño="grande" />
+        </div>
+        <p className="mt-3 text-sm text-stone-700">{c.asunto}</p>
         {c.contenido && <p className="mt-2 whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-sm text-stone-700">{c.contenido}</p>}
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="Fecha de radicación" v={fechaHora(c.fechaRadicacion)} />
@@ -175,6 +180,9 @@ export default async function CorrespondenciaDetallePage({
 
       {tieneTercero && (
         <Tarjeta titulo={c.tipo === "ENVIADA" ? "Destinatario" : "Remitente"}>
+          <SectionHelp>
+            {c.tipo === "ENVIADA" ? "A quién se le envió este oficio." : "Quién envió esta comunicación a la CDMB."}
+          </SectionHelp>
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
               {c.terceroTipo === "JURIDICA" ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
@@ -197,6 +205,11 @@ export default async function CorrespondenciaDetallePage({
 
       {c.firmas.length > 0 && (
         <Tarjeta titulo="Firma electrónica">
+          <SectionHelp>
+            Firma electrónica con hash (no es firma digital con certificado): al radicar, se calculó una huella
+            SHA-256 del asunto, el contenido y el radicado. Si alguno cambiara después, la huella dejaría de coincidir
+            y quedaría en evidencia — así se garantiza que el contenido firmado es el original (Ley 527/1999).
+          </SectionHelp>
           <ul className="space-y-2">
             {c.firmas.map((f) => (
               <li key={f.id} className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
@@ -216,6 +229,12 @@ export default async function CorrespondenciaDetallePage({
       )}
 
       <Tarjeta titulo={`Documentos adjuntos (${c.documentos.length})`}>
+        {c.documentos.length > 0 && (
+          <SectionHelp>
+            El código SHA-256 debajo de cada archivo es su huella de integridad: si el archivo se altera, la huella
+            cambia y ya no coincide con la calculada al subirlo.
+          </SectionHelp>
+        )}
         {c.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">La comunicación no tiene documentos adjuntos.</p>
         ) : (
@@ -244,6 +263,7 @@ export default async function CorrespondenciaDetallePage({
       </Tarjeta>
 
       <Tarjeta titulo="Distribución / reparto">
+        <SectionHelp>Aquí queda registrado a qué dependencia o funcionario se le asignó esta comunicación para que la atienda.</SectionHelp>
         {c.distribuciones.length === 0 ? (
           <p className="text-sm text-stone-400">Sin distribuir todavía.</p>
         ) : (
@@ -262,28 +282,26 @@ export default async function CorrespondenciaDetallePage({
 
         {puedeDistribuirUsuario && c.estado !== "ANULADA" && (
           <form action={`/api/correspondencia/${id}/distribuir`} method="post" className="mt-4 grid grid-cols-1 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label>
-              <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia</span>
+            <Field label="Dependencia" help="El área que debe atenderla.">
               <select name="dependenciaId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
                 <option value="">— Ninguna —</option>
                 {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-medium text-stone-600">Funcionario</span>
+            </Field>
+            <Field label="Funcionario" help="La persona puntual a cargo, si ya se sabe quién.">
               <select name="usuarioId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
                 <option value="">— Ninguno —</option>
                 {usuarios.map((u) => (<option key={u.id} value={u.id}>{u.nombre}</option>))}
               </select>
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-medium text-stone-600">Término (días)</span>
+            </Field>
+            <Field label="Término (días)" help="Días que tiene para atenderla, si aplica un plazo interno distinto al de ley.">
               <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </label>
-            <label className="sm:col-span-2 lg:col-span-4">
-              <span className="mb-1 block text-xs font-medium text-stone-600">Instrucciones</span>
-              <input name="instrucciones" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </label>
+            </Field>
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Field label="Instrucciones" help="Indicaciones puntuales para quien la va a gestionar.">
+                <input name="instrucciones" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
             <div>
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
                 <Send className="h-3.5 w-3.5" aria-hidden />
@@ -296,6 +314,12 @@ export default async function CorrespondenciaDetallePage({
 
       {puedeDistribuirUsuario && c.fechaVencimiento && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Término de ley">
+          <SectionHelp>
+            Fecha límite legal de respuesta (Ley 1755/2015), contada en días hábiles desde la radicación. Si necesita
+            pedirle más información al peticionario para poder resolver, use &quot;Suspender&quot;: el plazo se
+            congela hasta que responda y luego se reanuda por lo que faltaba (Art. 17 CPACA) — no se reinicia desde
+            cero ni sigue corriendo mientras espera.
+          </SectionHelp>
           <p className="text-sm text-stone-600">
             {vencimiento?.texto === "Vencido" ? "El término de respuesta venció" : "Vence"} el{" "}
             <span className="font-medium">{fechaHora(c.fechaVencimiento)}</span>
@@ -334,14 +358,16 @@ export default async function CorrespondenciaDetallePage({
             </p>
           ) : (
             <>
-              <p className="mb-3 text-xs text-stone-400">
-                Archive esta comunicación dentro de un expediente de Trámites Ambientales 2.0 (unificación) indicando su número.
-              </p>
+              <SectionHelp>
+                Archivar une esta comunicación con un expediente de Trámites Ambientales 2.0 — así quedan juntos en
+                un solo historial, aunque nacieron en módulos distintos. Escriba el número exacto del expediente.
+              </SectionHelp>
               <form action={`/api/correspondencia/${id}/archivar`} method="post" className="flex flex-wrap items-end gap-3">
-                <label className="min-w-[220px] flex-1">
-                  <span className="mb-1 block text-xs font-medium text-stone-600">Número de expediente</span>
-                  <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-                </label>
+                <div className="min-w-[220px] flex-1">
+                  <Field label="Número de expediente">
+                    <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                  </Field>
+                </div>
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
                   <Archive className="h-3.5 w-3.5" aria-hidden />
                   Archivar
@@ -353,6 +379,10 @@ export default async function CorrespondenciaDetallePage({
       )}
 
       <Tarjeta titulo="Bitácora de auditoría (inalterable)">
+        <SectionHelp>
+          Registro de todo lo que ha pasado con esta comunicación: quién la radicó, quién la consultó, la distribuyó,
+          la firmó o la archivó, y cuándo. Nadie puede borrar ni editar un registro sin que quede evidencia.
+        </SectionHelp>
         <ul className="divide-y divide-stone-100">
           {bitacora.map((b) => (
             <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">

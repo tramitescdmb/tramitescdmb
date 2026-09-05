@@ -6,6 +6,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } fro
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
+import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { SelectorVista } from "@/components/SelectorVista";
@@ -78,6 +79,12 @@ export default async function CorrespondenciaBandejaPage({
     <div className="space-y-4">
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      <SectionHelp>
+        Bandeja de toda la correspondencia: recibida (entra), enviada (sale) y memorandos (entre dependencias). La
+        columna &quot;Progreso&quot; muestra en qué etapa va cada una, y &quot;Vence&quot; el semáforo del plazo de
+        ley cuando es una PQRSD: gris = a tiempo, ámbar = vence en 3 días hábiles o menos, rojo = vencida.
+      </SectionHelp>
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
