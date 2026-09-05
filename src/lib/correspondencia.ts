@@ -263,6 +263,15 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   });
 }
 
+/** Anula un radicado erróneo dejando motivo (Ley 594/2000: nunca se borra, se anula con constancia). */
+export async function anularComunicacion(comunicacionId: string, motivo: string) {
+  const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, estado: true } });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.estado === "ANULADA") throw new Error("Esta comunicación ya está anulada.");
+  if (!motivo.trim()) throw new Error("Debe indicar el motivo de la anulación.");
+  return db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
+}
+
 /** Archiva una comunicación ya radicada dentro de un expediente (unificación con Trámites 2.0). */
 export async function archivarEnExpediente(comunicacionId: string, expedienteId: string) {
   const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });

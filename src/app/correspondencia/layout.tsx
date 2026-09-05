@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { Mail, ShieldCheck } from "lucide-react";
+import { Mail, ShieldCheck, ExternalLink } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -38,6 +38,26 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
           Ventanilla única de radicación y gestión documental electrónica (SGDEA), conforme al Acuerdo 060/2001 del AGN.
           Toda acción queda en una bitácora de auditoría inalterable.
         </p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <a
+            href="/pqrsd"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            Ver formulario público de PQRSD
+          </a>
+          <a
+            href="https://claude.ai/code/artifact/d14c3aa6-f64f-4fe1-9db9-64ee523f80e0"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            Matriz de cumplimiento MoReq/AGN
+          </a>
+        </div>
       </div>
 
       <CorrespondenciaTabs permitido={permitido} />

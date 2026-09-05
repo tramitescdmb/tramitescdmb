@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
@@ -97,6 +97,7 @@ export default async function CorrespondenciaDetallePage({
   });
 
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
+  const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
   const [dependencias, usuarios] = puedeDistribuirUsuario
     ? await Promise.all([
         listarDependenciasActivas(),
@@ -116,6 +117,16 @@ export default async function CorrespondenciaDetallePage({
 
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      {c.estado === "ANULADA" && (
+        <div className="flex items-start gap-2 rounded-md border border-stone-300 bg-stone-100 px-3 py-2 text-sm text-stone-700">
+          <Ban className="mt-0.5 h-4 w-4 flex-none text-stone-500" aria-hidden />
+          <span>
+            <strong>Esta comunicación está anulada.</strong> {c.motivoAnulacion ? `Motivo: ${c.motivoAnulacion}` : ""} No se borró:
+            queda trazada como constancia (Ley 594/2000).
+          </span>
+        </div>
+      )}
 
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -264,14 +275,21 @@ export default async function CorrespondenciaDetallePage({
       </Tarjeta>
 
       <Tarjeta titulo="Distribución / reparto">
-        <SectionHelp>Aquí queda registrado a qué dependencia o funcionario se le asignó esta comunicación para que la atienda.</SectionHelp>
+        <SectionHelp>
+          Aquí queda registrado a qué dependencia o funcionario se le asignó esta comunicación para que la atienda.
+          Para corregir o reasignarla, vuelva a distribuirla abajo: el reparto más reciente (primero en la lista) es
+          el vigente, y los anteriores quedan como historial, no se pierden.
+        </SectionHelp>
         {c.distribuciones.length === 0 ? (
           <p className="text-sm text-stone-400">Sin distribuir todavía.</p>
         ) : (
           <ul className="space-y-2">
-            {c.distribuciones.map((d) => (
+            {c.distribuciones.map((d, i) => (
               <li key={d.id} className="rounded-lg border border-stone-200 px-3 py-2 text-sm">
-                <p className="font-medium text-stone-800">{[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}</p>
+                <p className="flex items-center gap-2 font-medium text-stone-800">
+                  {[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}
+                  {i === 0 && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
+                </p>
                 <p className="text-xs text-stone-500">
                   {fechaHora(d.fechaAsignacion)}{d.asignadoPor ? ` · por ${d.asignadoPor.nombre}` : ""}{d.termino ? ` · término ${d.termino} días` : ""}
                 </p>
@@ -376,6 +394,27 @@ export default async function CorrespondenciaDetallePage({
               </form>
             </>
           )}
+        </Tarjeta>
+      )}
+
+      {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
+        <Tarjeta titulo="Anulación">
+          <SectionHelp>
+            Use esto solo si esta comunicación se radicó por error (ej. duplicada, o con datos de otra persona). No
+            se borra: queda marcada como anulada, con el motivo, y se conserva en la bitácora — es una constancia
+            permanente de que fue anulada, no un borrado (Ley 594/2000).
+          </SectionHelp>
+          <form action={`/api/correspondencia/${id}/anular`} method="post" className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[260px] flex-1">
+              <Field label="Motivo" required help="Por qué se anula este radicado.">
+                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
+              <Ban className="h-3.5 w-3.5" aria-hidden />
+              Anular esta comunicación
+            </button>
+          </form>
         </Tarjeta>
       )}
 

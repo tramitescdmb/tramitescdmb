@@ -872,6 +872,9 @@ model Comunicacion {
   terminoDiasHabiles     Int?
   fechaSuspensionTermino DateTime?
 
+  // Anulación (Ley 594/2000: nunca se borra un radicado, se anula con motivo y queda trazado).
+  motivoAnulacion String? @db.Text
+
   // Tercero (remitente si RECIBIDA / destinatario si ENVIADA): FK opcional al
   // maestro Solicitante + snapshot "foto del momento" (mismo patrón que Expediente).
   terceroId                 String?
