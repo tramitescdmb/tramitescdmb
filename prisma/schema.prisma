@@ -96,6 +96,7 @@ model Usuario {
   distribucionesAsignadas Distribucion[]          @relation("DistribucionAsignadoPor")
   firmas                  Firma[]                 @relation("FirmaUsuario")
   auditoriasDoc           AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
+  actasEliminacionAprobadas ActaEliminacion[]     @relation("ActaEliminacionAprobadaPor")
 
   @@index([dependenciaId])
 }
@@ -759,6 +760,8 @@ enum AccionAuditoriaDoc {
   ANULA
   SUSPENDE // suspende el término de ley (Art. 17 CPACA)
   REACTIVA
+  TRANSFIERE // pasa del archivo de gestión al archivo central
+  DISPONE // ejecuta la disposición final (conserva/elimina/selecciona/microfilma)
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -894,6 +897,15 @@ model Comunicacion {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
+  // Disposición final (Fase 4, Acuerdo 004/2019 AGN): retención contada desde
+  // fechaRadicacion usando retencionGestionAnios/retencionCentralAnios de la
+  // subserie. La eliminación/selección exige un acta (ActaEliminacion); la
+  // conservación total/microfilmación no destruyen nada en este sistema, solo
+  // marcan fechaDisposicionFinal.
+  transferidaCentralEn  DateTime?
+  fechaDisposicionFinal DateTime?
+  actaEliminacionId     String?
+
   tercero            Solicitante?        @relation(fields: [terceroId], references: [id])
   dependenciaOrigen  Dependencia?        @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino Dependencia?        @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
@@ -903,6 +915,7 @@ model Comunicacion {
   radicadoPor        Usuario?            @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
   respondeA          Comunicacion?       @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
   respuestas         Comunicacion[]      @relation("ComunicacionRespuesta")
+  actaEliminacion    ActaEliminacion?    @relation(fields: [actaEliminacionId], references: [id])
 
   documentos     ComunicacionDocumento[]
   distribuciones Distribucion[]
@@ -917,6 +930,27 @@ model Comunicacion {
   @@index([dependenciaDestinoId])
   @@index([expedienteId])
   @@index([fechaVencimiento])
+  @@index([actaEliminacionId])
+}
+
+// Acta formal que autoriza eliminar o seleccionar (eliminación parcial) un lote de
+// comunicaciones ya vencidas en su retención (Acuerdo 004/2019 AGN). El original se
+// destruye, pero el registro del sistema (radicado, asunto, fechas) se conserva
+// como evidencia de qué existió y bajo qué autorización se dispuso — nunca se borra
+// la fila de Comunicacion en sí.
+model ActaEliminacion {
+  id            String   @id @default(cuid())
+  numero        Int      @unique @default(autoincrement())
+  fecha         DateTime @default(now())
+  responsable   String // nombre de quien aprueba (comité de archivo), texto libre
+  motivacion    String?  @db.Text
+  aprobadaPorId String?
+  createdAt     DateTime @default(now())
+
+  aprobadaPor    Usuario?       @relation("ActaEliminacionAprobadaPor", fields: [aprobadaPorId], references: [id])
+  comunicaciones Comunicacion[]
+
+  @@index([fecha])
 }
 
 // Adjunto de una comunicación. Igual patrón que ExpedienteDocumento + hash

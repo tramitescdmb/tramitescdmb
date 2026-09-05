@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Settings2 } from "lucide-react";
+import { Inbox, Settings2, Archive } from "lucide-react";
 
 type Permitido = { bandeja: boolean; radicar: boolean; admin: boolean };
 
 const TABS = [
   { href: "/correspondencia", label: "Bandeja", icon: Inbox, permiso: "bandeja" as const, prefijoExacto: true },
+  { href: "/correspondencia/disposicion", label: "Disposición final", icon: Archive, permiso: "admin" as const },
   { href: "/correspondencia/admin", label: "Administración", icon: Settings2, permiso: "admin" as const },
 ];
 
@@ -18,7 +19,11 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
       {TABS.filter((t) => permitido[t.permiso]).map((t) => {
         const activo =
           t.href === "/correspondencia"
-            ? pathname === "/correspondencia" || (pathname.startsWith("/correspondencia/") && !pathname.startsWith("/correspondencia/nueva") && !pathname.startsWith("/correspondencia/admin"))
+            ? pathname === "/correspondencia" ||
+              (pathname.startsWith("/correspondencia/") &&
+                !pathname.startsWith("/correspondencia/nueva") &&
+                !pathname.startsWith("/correspondencia/admin") &&
+                !pathname.startsWith("/correspondencia/disposicion"))
             : pathname.startsWith(t.href);
         const Icon = t.icon;
         return (

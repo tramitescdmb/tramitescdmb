@@ -3,6 +3,7 @@ import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante,
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
+import { REQUIERE_ACTA } from "@/lib/disposicion-final";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -298,5 +299,54 @@ export async function reactivarTermino(comunicacionId: string) {
   return db.comunicacion.update({
     where: { id: comunicacionId },
     data: { estado: "EN_TRAMITE", fechaSuspensionTermino: null, fechaVencimiento },
+  });
+}
+
+/** Transferencia del archivo de gestión al archivo central (Acuerdo 004/2019 AGN) — solo deja constancia de la fecha. */
+export async function transferirACentral(comunicacionId: string) {
+  const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, transferidaCentralEn: true } });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.transferidaCentralEn) throw new Error("Ya fue transferida al archivo central.");
+  return db.comunicacion.update({ where: { id: comunicacionId }, data: { transferidaCentralEn: new Date() } });
+}
+
+export type EntradaDisposicionFinal = {
+  comunicacionId: string;
+  responsable: string; // quien aprueba (comité de archivo) — exigido solo si la disposición requiere acta
+  motivacion?: string | null;
+  aprobadaPorId?: string | null;
+};
+
+/**
+ * Ejecuta la disposición final de una comunicación según lo que diga la TRD de su
+ * subserie. Eliminación/selección exigen un acta (se crea una por ejecución); la
+ * comunicación en sí NUNCA se borra de la base — solo queda marcada con la fecha
+ * y, si aplica, enlazada al acta que autorizó destruir el original.
+ */
+export async function ejecutarDisposicionFinal(entrada: EntradaDisposicionFinal) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: entrada.comunicacionId },
+    select: { id: true, fechaDisposicionFinal: true, subserie: { select: { disposicionFinal: true } } },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.fechaDisposicionFinal) throw new Error("Ya se ejecutó la disposición final de esta comunicación.");
+  const disposicion = c.subserie?.disposicionFinal;
+  if (!disposicion) throw new Error("La subserie de esta comunicación no tiene una disposición final definida en la TRD.");
+
+  if (!REQUIERE_ACTA[disposicion]) {
+    return db.comunicacion.update({ where: { id: c.id }, data: { fechaDisposicionFinal: new Date() } });
+  }
+
+  if (!entrada.responsable.trim()) throw new Error("Esta disposición (eliminación/selección) exige indicar quién la aprueba.");
+  return db.$transaction(async (tx) => {
+    const acta = await tx.actaEliminacion.create({
+      data: {
+        responsable: entrada.responsable.trim(),
+        motivacion: entrada.motivacion?.trim() || null,
+        aprobadaPorId: entrada.aprobadaPorId ?? null,
+        comunicaciones: { connect: { id: c.id } },
+      },
+    });
+    return tx.comunicacion.update({ where: { id: c.id }, data: { fechaDisposicionFinal: new Date(), actaEliminacionId: acta.id } });
   });
 }
