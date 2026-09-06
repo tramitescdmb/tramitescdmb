@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { refreshSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/sinca/sincronizar", "/api/admin/vital/sincronizar"];
 // Ventanilla pública de PQRSD (Fase 3, sin autenticación) y su API: única zona
@@ -19,15 +19,26 @@ export async function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const resultado = token ? await refreshSessionToken(token) : null;
 
-  if (!session) {
+  if (!resultado) {
     const loginUrl = new URL("/login", req.url);
     if (pathname !== "/") loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const res = NextResponse.redirect(loginUrl);
+    if (token) res.cookies.delete(SESSION_COOKIE_NAME); // token vencido (inactividad o tope de 7 días) o inválido
+    return res;
   }
 
-  return NextResponse.next();
+  // Renueva la ventana de inactividad (MoReq 6.21/6.34) en cada petición autenticada.
+  const res = NextResponse.next();
+  res.cookies.set(SESSION_COOKIE_NAME, resultado.nuevoToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: resultado.maxAge,
+  });
+  return res;
 }
 
 export const config = {
