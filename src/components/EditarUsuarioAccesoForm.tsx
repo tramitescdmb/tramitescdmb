@@ -32,9 +32,9 @@ const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
 
 const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-nombre", etiqueta: "Nombre" },
+  { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
   { id: "seccion-cargos", etiqueta: "Cargos" },
-  { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
   { id: "seccion-correspondencia", etiqueta: "Correspondencia" },
   { id: "seccion-tramites", etiqueta: "Trámites" },
@@ -277,56 +277,6 @@ export function EditarUsuarioAccesoForm({
         )}
       </section>
 
-      <section id="seccion-rol" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" ayuda="Administrador: acceso total. Funcionario: solo lo asignado abajo." />
-        <div className="grid max-w-sm grid-cols-2 gap-2">
-          {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
-            <button
-              key={valor}
-              type="button"
-              onClick={() => setRol(valor)}
-              title={valor === "ADMIN" ? "Acceso total, sin restricciones" : "Solo ve y gestiona lo que se le asigne abajo"}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                rol === valor ? "border-cdmb-600 bg-cdmb-50 text-cdmb-800" : "border-stone-200 text-stone-600 hover:bg-stone-50"
-              }`}
-            >
-              {valor === "ADMIN" ? "Administrador" : "Funcionario"}
-            </button>
-          ))}
-        </div>
-        {rol === "ADMIN" && (
-          <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Acceso total automático — los cargos, trámites y secciones de abajo quedan sin efecto.
-          </p>
-        )}
-      </section>
-
-      <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" ayuda="Determina qué pasos de un trámite puede gestionar." />
-        <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
-          {cargos.map((c) => {
-            const activo = cargoIds.has(c.id);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => alternarCargo(c.id)}
-                aria-pressed={activo}
-                title={activo ? `Quitar el cargo "${c.nombre}"` : `Asignar el cargo "${c.nombre}"`}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  activo
-                    ? "border-cdmb-600 bg-cdmb-600 text-white"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                }`}
-              >
-                {c.nombre}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       {!directorioActivo && (
         <section id="seccion-contrasena" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={KeyRound} titulo="Contraseña" ayuda="Defina una nueva contraseña para entregársela al usuario." />
@@ -387,6 +337,56 @@ export function EditarUsuarioAccesoForm({
           </div>
         </section>
       )}
+
+      <section id="seccion-rol" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" ayuda="Administrador: acceso total. Funcionario: solo lo asignado abajo." />
+        <div className="grid max-w-sm grid-cols-2 gap-2">
+          {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
+            <button
+              key={valor}
+              type="button"
+              onClick={() => setRol(valor)}
+              title={valor === "ADMIN" ? "Acceso total, sin restricciones" : "Solo ve y gestiona lo que se le asigne abajo"}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                rol === valor ? "border-cdmb-600 bg-cdmb-50 text-cdmb-800" : "border-stone-200 text-stone-600 hover:bg-stone-50"
+              }`}
+            >
+              {valor === "ADMIN" ? "Administrador" : "Funcionario"}
+            </button>
+          ))}
+        </div>
+        {rol === "ADMIN" && (
+          <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Acceso total automático — los cargos, trámites y secciones de abajo quedan sin efecto.
+          </p>
+        )}
+      </section>
+
+      <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" ayuda="Determina qué pasos de un trámite puede gestionar." />
+        <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
+        <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
+          {cargos.map((c) => {
+            const activo = cargoIds.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => alternarCargo(c.id)}
+                aria-pressed={activo}
+                title={activo ? `Quitar el cargo "${c.nombre}"` : `Asignar el cargo "${c.nombre}"`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  activo
+                    ? "border-cdmb-600 bg-cdmb-600 text-white"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                }`}
+              >
+                {c.nombre}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section id="seccion-lectura" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" ayuda="Solo consulta: define a qué pestañas puede entrar." />
