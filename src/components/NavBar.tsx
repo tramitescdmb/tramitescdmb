@@ -5,6 +5,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { SidebarNav } from "@/components/SidebarNav";
+import { MobileNav } from "@/components/MobileNav";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -14,9 +15,11 @@ function iniciales(nombre: string) {
 /**
  * Navegación de la app: un sidebar fijo a la izquierda desde `lg:` para
  * arriba (pensado para un funcionario que trabaja 8 horas seguidas frente al
- * panel — la navegación siempre visible ahorra scroll e ir/volver), y una
- * barra superior compacta con la misma lista en pantallas más chicas (no hay
- * espacio para un sidebar completo, y esta app no es el foco de uso móvil).
+ * panel — la navegación siempre visible ahorra scroll e ir/volver), y en
+ * pantallas más chicas una barra superior mínima (marca + botón de menú) que
+ * abre el mismo menú como un panel lateral (`MobileNav`) — antes era una fila
+ * horizontal con toda la navegación, que se cortaba con nombres largos como
+ * "Correspondencia y Archivo (SGDEA)".
  */
 export async function NavBar() {
   const session = await getSession();
@@ -32,6 +35,7 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_DASHBOARD") ||
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
+  const subtitulo = session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario";
 
   const marca = (
     <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-cdmb-800">
@@ -69,28 +73,26 @@ export async function NavBar() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-stone-800">{session.nombre}</p>
-              <p className="truncate text-xs text-stone-400">
-                {session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario"}
-              </p>
+              <p className="truncate text-xs text-stone-400">{subtitulo}</p>
             </div>
           </Link>
           <div className="mt-1 px-2">{salir}</div>
         </div>
       </aside>
 
-      {/* Pantallas chicas: barra superior compacta con la misma navegación. */}
+      {/* Pantallas chicas: solo la marca y el botón de menú — el resto vive en el panel que abre. */}
       <header className="border-b border-cdmb-100 bg-white lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}
-          <div className="flex items-center gap-2">
-            <Link href="/mi-cuenta" className="text-xs font-medium text-stone-500 hover:text-cdmb-700 hover:underline">
-              Mi cuenta
-            </Link>
-            {salir}
-          </div>
-        </div>
-        <div className="border-t border-stone-100 px-3 py-1.5">
-          <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} orientacion="horizontal" />
+          <MobileNav
+            esAdmin={esAdmin}
+            mostrarVital={mostrarVital}
+            mostrarSinca={mostrarSinca}
+            mostrarCorrespondencia={mostrarCorrespondencia}
+            nombre={session.nombre}
+            subtitulo={subtitulo}
+            iniciales={iniciales(session.nombre)}
+          />
         </div>
       </header>
     </>

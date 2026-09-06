@@ -24,7 +24,7 @@ const ITEM_TRAMITES: Item = {
 };
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
-const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia", label: "Correspondencia y Archivo (SGDEA)", icon: Mail, prefijo: "/correspondencia" };
+const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
@@ -34,9 +34,8 @@ const ITEMS_ADMIN: Item[] = [
 ];
 
 /**
- * Lista de navegación compartida entre el sidebar de escritorio y la barra
- * compacta de pantallas chicas — la única diferencia es el contenedor que la
- * envuelve (columna vs. fila), así que el resaltado del enlace activo (que
+ * Lista de navegación compartida entre el sidebar de escritorio y el menú
+ * (drawer) de pantallas chicas — el resaltado del enlace activo (que
  * necesita usePathname, por eso "use client") vive en un solo lugar.
  */
 export function SidebarNav({
@@ -44,7 +43,6 @@ export function SidebarNav({
   mostrarVital = false,
   mostrarSinca = false,
   mostrarCorrespondencia = false,
-  orientacion = "vertical",
 }: {
   esAdmin: boolean;
   /** VITAL tiene al menos una pestaña permitida para este usuario. */
@@ -53,7 +51,6 @@ export function SidebarNav({
   mostrarSinca?: boolean;
   /** El usuario tiene acceso al módulo de correspondencia (SGDEA). */
   mostrarCorrespondencia?: boolean;
-  orientacion?: "vertical" | "horizontal";
 }) {
   const pathname = usePathname();
   const activo = (item: Item) => {
@@ -71,17 +68,6 @@ export function SidebarNav({
     ...(mostrarVital ? [ITEM_VITAL] : []),
     ...(mostrarSinca ? [ITEM_HISTORICO] : []),
   ];
-
-  if (orientacion === "horizontal") {
-    const items = [...principal, ...(esAdmin ? ITEMS_ADMIN : [])];
-    return (
-      <nav className="flex gap-1 overflow-x-auto" aria-label="Navegación">
-        {items.map((item) => (
-          <EnlaceNav key={item.href} item={item} activo={activo(item)} compacto />
-        ))}
-      </nav>
-    );
-  }
 
   return (
     <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Navegación">
@@ -106,15 +92,15 @@ function Grupo({ titulo, items, activo }: { titulo?: string; items: Item[]; acti
   );
 }
 
-function EnlaceNav({ item, activo, compacto }: { item: Item; activo: boolean; compacto?: boolean }) {
+function EnlaceNav({ item, activo }: { item: Item; activo: boolean }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
       aria-current={activo ? "page" : undefined}
-      className={`flex items-center gap-3 whitespace-nowrap rounded-lg font-medium transition-colors ${
-        compacto ? "px-3 py-2 text-sm" : "px-3 py-2.5 text-sm"
-      } ${activo ? "bg-cdmb-50 text-cdmb-800" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`}
+      className={`flex items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+        activo ? "bg-cdmb-50 text-cdmb-800" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+      }`}
     >
       <Icon className={`h-[18px] w-[18px] flex-none ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
       {item.label}
