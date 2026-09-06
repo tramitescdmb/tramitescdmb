@@ -107,6 +107,8 @@ export function EditarUsuarioAccesoForm({
   dependenciaActualId,
   rolCorrespondenciaActual,
   dependencias,
+  politicaPassword,
+  vigenciaPassword,
 }: {
   usuarioId: string;
   nombreActual: string;
@@ -120,6 +122,8 @@ export function EditarUsuarioAccesoForm({
   dependenciaActualId?: string | null;
   rolCorrespondenciaActual?: RolCorrespondencia | null;
   dependencias?: Opcion[];
+  politicaPassword: { longitudMinima: number; longitudMaxima: number };
+  vigenciaPassword?: { vencida: boolean; diasRestantes: number | null };
 }) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreActual);
@@ -204,8 +208,8 @@ export function EditarUsuarioAccesoForm({
       setError("Debe indicarse el nombre completo.");
       return;
     }
-    if (nuevaContrasena && nuevaContrasena.length < 8) {
-      setError("La nueva contraseña debe tener al menos 8 caracteres.");
+    if (nuevaContrasena && nuevaContrasena.length < politicaPassword.longitudMinima) {
+      setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
       return;
     }
     setGuardando(true);
@@ -328,15 +332,25 @@ export function EditarUsuarioAccesoForm({
           <EncabezadoSeccion icono={KeyRound} titulo="Contraseña" ayuda="Defina una nueva contraseña para entregársela al usuario." />
           <p className="mb-3 text-xs text-stone-400">
             Se aplica al hacer clic en «Guardar cambios», al final de la página. Déjela vacía si no quiere cambiarla.
+            Debe tener entre {politicaPassword.longitudMinima} y {politicaPassword.longitudMaxima} caracteres; la
+            política completa (mayúsculas, números, histórico) se define en Administración → Seguridad.
           </p>
+          {vigenciaPassword?.diasRestantes != null && (
+            <p className={`mb-3 text-xs font-medium ${vigenciaPassword.vencida ? "text-red-700" : "text-amber-700"}`}>
+              {vigenciaPassword.vencida
+                ? "La contraseña actual ya venció — se recomienda restablecerla."
+                : `La contraseña actual vence en ${vigenciaPassword.diasRestantes} día(s).`}
+            </p>
+          )}
           <div className="flex max-w-md flex-wrap items-center gap-2">
             <div className="relative min-w-[200px] flex-1">
               <input
                 type={mostrarContrasena ? "text" : "password"}
                 value={nuevaContrasena}
                 onChange={(e) => setNuevaContrasena(e.target.value)}
-                placeholder="Nueva contraseña (mín. 8 caracteres)"
+                placeholder={`Nueva contraseña (mín. ${politicaPassword.longitudMinima} caracteres)`}
                 autoComplete="new-password"
+                maxLength={politicaPassword.longitudMaxima}
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 pr-9 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               />
               <button

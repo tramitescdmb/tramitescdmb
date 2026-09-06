@@ -352,43 +352,75 @@ export async function transferirACentral(comunicacionId: string) {
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { transferidaCentralEn: new Date() } });
 }
 
-export type EntradaDisposicionFinal = {
-  comunicacionId: string;
-  responsable: string; // quien aprueba (comité de archivo) — exigido solo si la disposición requiere acta
+export type EntradaDisposicionFinalLote = {
+  comunicacionIds: string[];
+  responsable: string;
   motivacion?: string | null;
   aprobadaPorId?: string | null;
 };
 
-/**
- * Ejecuta la disposición final de una comunicación según lo que diga la TRD de su
- * subserie. Eliminación/selección exigen un acta (se crea una por ejecución); la
- * comunicación en sí NUNCA se borra de la base — solo queda marcada con la fecha
- * y, si aplica, enlazada al acta que autorizó destruir el original.
- */
-export async function ejecutarDisposicionFinal(entrada: EntradaDisposicionFinal) {
-  const c = await db.comunicacion.findUnique({
-    where: { id: entrada.comunicacionId },
-    select: { id: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } } },
-  });
-  if (!c) throw new Error("La comunicación no existe.");
-  if (c.fechaDisposicionFinal) throw new Error("Ya se ejecutó la disposición final de esta comunicación.");
-  const disposiciones = c.subserie?.disposicionesFinal ?? [];
-  if (disposiciones.length === 0) throw new Error("La subserie de esta comunicación no tiene una disposición final definida en la TRD.");
+export type ResultadoDisposicionFinalLote = {
+  dispuestas: { id: string; radicado: string; requirioActa: boolean }[];
+  omitidas: { id: string; motivo: string }[];
+  actaId: string | null;
+};
 
-  if (!algunaRequiereActa(disposiciones)) {
-    return db.comunicacion.update({ where: { id: c.id }, data: { fechaDisposicionFinal: new Date() } });
+/**
+ * Ejecuta la disposición final de una o varias comunicaciones a la vez según
+ * lo que diga la TRD de cada una (MoReq 2.9: selección de expedientes vencidos
+ * "individual o por lotes" — un lote de un solo elemento cubre el caso
+ * individual). Las que exigen acta (eliminación/selección) comparten UNA sola
+ * acta — el modelo ActaEliminacion.comunicaciones ya está pensado para un
+ * lote. Las que no la exigen (conservación/microfilmación) solo quedan
+ * marcadas con la fecha. La comunicación en sí NUNCA se borra de la base.
+ */
+export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFinalLote): Promise<ResultadoDisposicionFinalLote> {
+  const comunicaciones = await db.comunicacion.findMany({
+    where: { id: { in: entrada.comunicacionIds } },
+    select: { id: true, radicado: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } } },
+  });
+  const porId = new Map(comunicaciones.map((c) => [c.id, c]));
+
+  const idsSinActa: string[] = [];
+  const idsConActa: string[] = [];
+  const omitidas: { id: string; motivo: string }[] = [];
+
+  for (const id of entrada.comunicacionIds) {
+    const c = porId.get(id);
+    if (!c) { omitidas.push({ id, motivo: "No existe." }); continue; }
+    if (c.fechaDisposicionFinal) { omitidas.push({ id, motivo: `${c.radicado}: ya tiene disposición final ejecutada.` }); continue; }
+    const disposiciones = c.subserie?.disposicionesFinal ?? [];
+    if (disposiciones.length === 0) { omitidas.push({ id, motivo: `${c.radicado}: su subserie no tiene disposición final definida en la TRD.` }); continue; }
+    if (algunaRequiereActa(disposiciones)) idsConActa.push(id);
+    else idsSinActa.push(id);
   }
 
-  if (!entrada.responsable.trim()) throw new Error("Esta disposición (eliminación/selección) exige indicar quién la aprueba.");
-  return db.$transaction(async (tx) => {
-    const acta = await tx.actaEliminacion.create({
-      data: {
-        responsable: entrada.responsable.trim(),
-        motivacion: entrada.motivacion?.trim() || null,
-        aprobadaPorId: entrada.aprobadaPorId ?? null,
-        comunicaciones: { connect: { id: c.id } },
-      },
-    });
-    return tx.comunicacion.update({ where: { id: c.id }, data: { fechaDisposicionFinal: new Date(), actaEliminacionId: acta.id } });
+  if (idsConActa.length > 0 && !entrada.responsable.trim()) {
+    throw new Error("Hay comunicaciones seleccionadas cuya disposición (eliminación/selección) exige indicar quién la aprueba.");
+  }
+
+  let actaId: string | null = null;
+  await db.$transaction(async (tx) => {
+    if (idsSinActa.length > 0) {
+      await tx.comunicacion.updateMany({ where: { id: { in: idsSinActa } }, data: { fechaDisposicionFinal: new Date() } });
+    }
+    if (idsConActa.length > 0) {
+      const acta = await tx.actaEliminacion.create({
+        data: {
+          responsable: entrada.responsable.trim(),
+          motivacion: entrada.motivacion?.trim() || null,
+          aprobadaPorId: entrada.aprobadaPorId ?? null,
+          comunicaciones: { connect: idsConActa.map((id) => ({ id })) },
+        },
+      });
+      actaId = acta.id;
+      await tx.comunicacion.updateMany({ where: { id: { in: idsConActa } }, data: { fechaDisposicionFinal: new Date() } });
+    }
   });
+
+  const dispuestas = [
+    ...idsSinActa.map((id) => ({ id, radicado: porId.get(id)!.radicado, requirioActa: false })),
+    ...idsConActa.map((id) => ({ id, radicado: porId.get(id)!.radicado, requirioActa: true })),
+  ];
+  return { dispuestas, omitidas, actaId };
 }

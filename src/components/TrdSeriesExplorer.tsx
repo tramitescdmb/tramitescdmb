@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, CheckSquare, Square, PencilLine } from "lucide-react";
 
 const ETIQUETA_DISPOSICION: Record<string, string> = {
   CONSERVACION_TOTAL: "Conservación total",
@@ -44,8 +45,72 @@ function serieCoincide(s: SerieVista, termino: string) {
 }
 
 export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
+  const router = useRouter();
   const [filtro, setFiltro] = useState("");
   const termino = filtro.trim().toLowerCase();
+
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [gestion, setGestion] = useState("");
+  const [central, setCentral] = useState("");
+  const [cambiarDisposicion, setCambiarDisposicion] = useState(false);
+  const [disposicionesNuevas, setDisposicionesNuevas] = useState<Set<string>>(new Set());
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resumen, setResumen] = useState<string | null>(null);
+
+  function alternarSeleccion(id: string) {
+    setSeleccion((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function alternarDisposicionNueva(d: string) {
+    setDisposicionesNuevas((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  }
+
+  async function aplicarCambioMasivo() {
+    if (seleccion.size === 0) return;
+    if (!gestion.trim() && !central.trim() && !cambiarDisposicion) {
+      setError("Indique al menos un cambio a aplicar: gestión, central, o la disposición final.");
+      return;
+    }
+    setEnviando(true);
+    setError(null);
+    setResumen(null);
+    try {
+      const res = await fetch("/api/correspondencia/subseries", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subserieIds: Array.from(seleccion),
+          ...(gestion.trim() ? { retencionGestionAnios: Number(gestion) } : {}),
+          ...(central.trim() ? { retencionCentralAnios: Number(central) } : {}),
+          ...(cambiarDisposicion ? { disposicionesFinal: Array.from(disposicionesNuevas) } : {}),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo aplicar el cambio.");
+      setResumen(`${body.actualizadas} subserie(s) actualizada(s).`);
+      setSeleccion(new Set());
+      setGestion("");
+      setCentral("");
+      setCambiarDisposicion(false);
+      setDisposicionesNuevas(new Set());
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   const grupoCoincideEnCabecera = (g: GrupoVista) => coincide(g.codigo, termino) || coincide(g.nombre, termino);
 
@@ -62,6 +127,11 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
   }, [grupos, termino]);
 
   const totalSeries = grupos.reduce((acc, g) => acc + g.series.length, 0);
+  const idsVisibles = useMemo(
+    () => grupoFiltrados.flatMap((g) => g.series.flatMap((s) => s.subseries.map((ss) => ss.id))),
+    [grupoFiltrados]
+  );
+  const todasVisiblesSeleccionadas = idsVisibles.length > 0 && idsVisibles.every((id) => seleccion.has(id));
 
   return (
     <div className="space-y-3">
@@ -80,12 +150,24 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
         <span className="whitespace-nowrap text-xs text-stone-400">
           {termino ? `${grupoFiltrados.reduce((a, g) => a + g.series.length, 0)} de ${totalSeries} series` : `${totalSeries} series en ${grupos.length} dependencias`}
         </span>
+        {idsVisibles.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setSeleccion(todasVisiblesSeleccionadas ? new Set() : new Set(idsVisibles))}
+            className="flex flex-none items-center gap-1.5 whitespace-nowrap text-xs font-medium text-cdmb-700 hover:underline"
+          >
+            {todasVisiblesSeleccionadas ? <CheckSquare className="h-3.5 w-3.5" aria-hidden /> : <Square className="h-3.5 w-3.5" aria-hidden />}
+            {todasVisiblesSeleccionadas ? "Quitar selección" : `Seleccionar las ${idsVisibles.length} visibles`}
+          </button>
+        )}
       </div>
 
       <p className="text-xs text-stone-400">
         Al agregar una subserie: <strong>Gestión</strong> = años que se guarda en la oficina que la produjo;{" "}
         <strong>Central</strong> = años adicionales en el archivo central después; <strong>Disposición</strong> = qué pasa
         al cumplirse ambos plazos (conservar siempre, eliminar, seleccionar una muestra, o microfilmar/digitalizar).
+        Marque el cuadro de una o varias subseries (incluso de distintas series o dependencias) para editar su
+        retención o disposición a todas a la vez.
       </p>
 
       {grupoFiltrados.length === 0 && (
@@ -114,7 +196,16 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-stone-100">
                       {s.subseries.map((ss) => (
-                        <tr key={ss.id}>
+                        <tr key={ss.id} className={seleccion.has(ss.id) ? "bg-cdmb-50/60" : undefined}>
+                          <td className="w-8 px-4 py-1.5">
+                            <input
+                              type="checkbox"
+                              checked={seleccion.has(ss.id)}
+                              onChange={() => alternarSeleccion(ss.id)}
+                              className="rounded border-stone-300"
+                              aria-label={`Seleccionar subserie ${ss.codigo}`}
+                            />
+                          </td>
                           <td className="px-4 py-1.5 font-medium text-stone-600">{ss.codigo}</td>
                           <td className="px-4 py-1.5 text-stone-800">{ss.nombre}</td>
                           <td className="px-4 py-1.5 text-xs text-stone-500">Gestión {ss.retencionGestionAnios}a · Central {ss.retencionCentralAnios}a</td>
@@ -152,6 +243,57 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
           </div>
         </details>
       ))}
+
+      {seleccion.size > 0 && (
+        <div className="sticky bottom-3 z-10 rounded-xl border border-cdmb-200 bg-white p-4 shadow-lg">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-stone-800">
+              <PencilLine className="h-4 w-4 text-cdmb-600" aria-hidden />
+              {seleccion.size} subserie(s) seleccionada(s)
+            </p>
+            <button type="button" onClick={() => setSeleccion(new Set())} className="text-xs text-stone-500 hover:text-cdmb-700 hover:underline">
+              Quitar selección
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-stone-400">
+            Deje en blanco lo que no quiera cambiar. Se aplica a todas las seleccionadas por igual.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-stone-600">Gestión (años)</span>
+              <input type="number" min={0} value={gestion} onChange={(e) => setGestion(e.target.value)} placeholder="Sin cambio" className={inputCls} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-stone-600">Central (años)</span>
+              <input type="number" min={0} value={central} onChange={(e) => setCentral(e.target.value)} placeholder="Sin cambio" className={inputCls} />
+            </label>
+          </div>
+          <label className="mt-3 flex items-center gap-2 text-xs font-medium text-stone-700">
+            <input type="checkbox" checked={cambiarDisposicion} onChange={(e) => setCambiarDisposicion(e.target.checked)} className="rounded border-stone-300" />
+            También reemplazar la disposición final de todas las seleccionadas
+          </label>
+          {cambiarDisposicion && (
+            <div className="mt-2 flex flex-wrap gap-3 rounded-md bg-stone-50 p-2.5">
+              {DISPOSICIONES.map((d) => (
+                <label key={d} className="flex items-center gap-1.5 text-xs text-stone-700">
+                  <input type="checkbox" checked={disposicionesNuevas.has(d)} onChange={() => alternarDisposicionNueva(d)} className="rounded border-stone-300" />
+                  {ETIQUETA_DISPOSICION[d]}
+                </label>
+              ))}
+            </div>
+          )}
+          {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+          {resumen && <p className="mt-2 text-xs text-green-700">{resumen}</p>}
+          <button
+            type="button"
+            onClick={aplicarCambioMasivo}
+            disabled={enviando}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {enviando ? "Aplicando…" : `Aplicar a ${seleccion.size} subserie(s)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

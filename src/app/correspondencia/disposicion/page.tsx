@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRightCircle, Archive, FileWarning } from "lucide-react";
+import { ArrowRightCircle, FileWarning } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { getPendientesArchivisticos, listarActasEliminacion } from "@/lib/disposicion-final-data";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
-import { Field, SectionHelp } from "@/components/Field";
+import { SectionHelp } from "@/components/Field";
+import { DisposicionLoteForm, type ItemDisposicionPendiente } from "@/components/DisposicionLoteForm";
 
 const fecha = (d: Date | null | undefined) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
@@ -21,6 +22,20 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
     getPendientesArchivisticos(),
     listarActasEliminacion(),
   ]);
+
+  const itemsDisposicion: ItemDisposicionPendiente[] = pendientesDisposicion.map((c) => {
+    const disposiciones = c.subserie?.disposicionesFinal ?? [];
+    return {
+      id: c.id,
+      radicado: c.radicado,
+      asunto: c.asunto,
+      serieSubserie: `${c.serie?.codigo ?? "—"} / ${c.subserie?.codigo ?? "—"}`,
+      fechaFinCentral: fecha(c.fechaFinCentral),
+      etiquetas: disposiciones.map((d) => ETIQUETA_DISPOSICION[d]).join(" + "),
+      exigeActa: algunaRequiereActa(disposiciones),
+      sinDisposicionDefinida: disposiciones.length === 0,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -72,61 +87,13 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         </h2>
         <SectionHelp>
           Eliminar o seleccionar destruye el original: por eso esas dos exigen indicar quién lo aprueba y quedan con
-          un acta formal. Conservar o microfilmar/digitalizar no destruyen nada en este sistema — solo marcan la fecha.
+          un acta formal (una sola acta si dispone varias a la vez). Conservar o microfilmar/digitalizar no destruyen
+          nada en este sistema — solo marcan la fecha. Puede seleccionar una o varias y ejecutarlas juntas.
         </SectionHelp>
-        {pendientesDisposicion.length === 0 ? (
+        {itemsDisposicion.length === 0 ? (
           <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay comunicaciones pendientes de disposición final por ahora.</p>
         ) : (
-          <div className="space-y-2">
-            {pendientesDisposicion.map((c) => {
-              const disposiciones = c.subserie?.disposicionesFinal ?? [];
-              const exigeActa = algunaRequiereActa(disposiciones);
-              const etiquetas = disposiciones.map((d) => ETIQUETA_DISPOSICION[d]).join(" + ");
-              return (
-                <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
-                      <p className="truncate text-xs text-stone-500">{c.asunto}</p>
-                      <p className="text-[11px] text-stone-400">
-                        {c.serie?.codigo} / {c.subserie?.codigo} — cumplió su retención el {fecha(c.fechaFinCentral)}
-                      </p>
-                    </div>
-                    <span className="flex-none rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
-                      {disposiciones.length > 0 ? etiquetas : "Sin disposición definida en la TRD"}
-                    </span>
-                  </div>
-                  {disposiciones.length === 0 ? (
-                    <p className="mt-2 text-xs text-amber-700">Configure la disposición final de esta subserie en Administración antes de poder ejecutarla.</p>
-                  ) : exigeActa ? (
-                    <form action={`/api/correspondencia/${c.id}/disponer`} method="post" className="mt-3 grid grid-cols-1 gap-2 border-t border-stone-100 pt-3 sm:grid-cols-3">
-                      <Field label="Aprobada por" required help="Nombre de quien autoriza en el comité de archivo.">
-                        <input name="responsable" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-                      </Field>
-                      <div className="sm:col-span-2">
-                        <Field label="Motivación" help="Por qué se dispone así este documento.">
-                          <input name="motivacion" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-                        </Field>
-                      </div>
-                      <div className="sm:col-span-3">
-                        <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700">
-                          <Archive className="h-3.5 w-3.5" aria-hidden />
-                          Ejecutar {etiquetas.toLowerCase()} (crea acta)
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <form action={`/api/correspondencia/${c.id}/disponer`} method="post" className="mt-3 border-t border-stone-100 pt-3">
-                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
-                        <Archive className="h-3.5 w-3.5" aria-hidden />
-                        Marcar {etiquetas.toLowerCase()}
-                      </button>
-                    </form>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <DisposicionLoteForm items={itemsDisposicion} />
         )}
       </section>
 

@@ -13,6 +13,13 @@ const VACIA = {
   logoPotenciaPath: null,
   loginMaxIntentos: 5,
   loginVentanaMinutos: 15,
+  passwordLongitudMinima: 8,
+  passwordLongitudMaxima: 72,
+  passwordRequiereMayuscula: false,
+  passwordRequiereNumero: false,
+  passwordRequiereEspecial: false,
+  passwordHistorialCantidad: 0,
+  passwordVigenciaDias: null,
 } as const;
 
 /**

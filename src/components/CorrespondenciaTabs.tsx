@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Settings2, Archive, FolderOpen, BarChart3 } from "lucide-react";
+import { Inbox, Settings2, Archive, FolderOpen, BarChart3, History } from "lucide-react";
 
 type Permitido = { bandeja: boolean; expedientes: boolean; radicar: boolean; admin: boolean };
 
@@ -11,6 +11,7 @@ const TABS = [
   { href: "/correspondencia/expedientes", label: "Expedientes", icon: FolderOpen, permiso: "expedientes" as const },
   { href: "/correspondencia/disposicion", label: "Disposición final", icon: Archive, permiso: "admin" as const },
   { href: "/correspondencia/reportes", label: "Reportes", icon: BarChart3, permiso: "admin" as const },
+  { href: "/correspondencia/bitacora", label: "Bitácora", icon: History, permiso: "admin" as const },
   { href: "/correspondencia/admin", label: "Administración", icon: Settings2, permiso: "admin" as const },
 ];
 
@@ -27,7 +28,8 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
                 !pathname.startsWith("/correspondencia/admin") &&
                 !pathname.startsWith("/correspondencia/disposicion") &&
                 !pathname.startsWith("/correspondencia/expedientes") &&
-                !pathname.startsWith("/correspondencia/reportes"))
+                !pathname.startsWith("/correspondencia/reportes") &&
+                !pathname.startsWith("/correspondencia/bitacora"))
             : pathname.startsWith(t.href);
         const Icon = t.icon;
         return (

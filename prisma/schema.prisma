@@ -30,6 +30,18 @@ model ConfiguracionSitio {
   loginMaxIntentos    Int @default(5)
   loginVentanaMinutos Int @default(15)
 
+  // Política de contraseñas (MoReq 6.29/6.32/6.35): antes solo se exigía un
+  // mínimo de 8 caracteres fijo en código. Solo se aplica al FIJAR una
+  // contraseña nueva (creación o restablecimiento por un ADMIN) — nunca
+  // revalida contraseñas ya existentes, eso no es posible sobre un hash.
+  passwordLongitudMinima    Int      @default(8)
+  passwordLongitudMaxima    Int      @default(72) // bcrypt ignora bytes después del 72, sin importar el valor aquí
+  passwordRequiereMayuscula Boolean  @default(false)
+  passwordRequiereNumero    Boolean  @default(false)
+  passwordRequiereEspecial  Boolean  @default(false)
+  passwordHistorialCantidad Int      @default(0) // 0 = no revisar contraseñas anteriores
+  passwordVigenciaDias      Int? // null = no vence
+
   updatedAt DateTime @updatedAt
 }
 
@@ -63,6 +75,10 @@ model Usuario {
   email        String     @unique
   nombre       String
   passwordHash String
+  // Cuándo se fijó la contraseña actual (creación o último restablecimiento
+  // por un ADMIN) — base para calcular la vigencia (MoReq 6.35). Null en
+  // cuentas que ya existían antes de este campo: se trata como "sin vencer".
+  passwordCambiadaEn DateTime?
   rol          RolUsuario @default(FUNCIONARIO)
   activo       Boolean    @default(true)
   createdAt    DateTime   @default(now())
@@ -87,6 +103,7 @@ model Usuario {
   eventos               ExpedienteEvento[]
   registrosAuditoria    RegistroAuditoria[]
   visitasTecnicas       VisitaTecnica[]
+  historialPasswords    HistorialPassword[]
 
   // --- SGDEA / Correspondencia (ver bloque al final del archivo) ---
   // Dependencia (oficina) a la que pertenece el funcionario, y rol dentro del
@@ -108,6 +125,22 @@ model Usuario {
   actasEliminacionAprobadas       ActaEliminacion[]       @relation("ActaEliminacionAprobadaPor")
 
   @@index([dependenciaId])
+}
+
+// Contraseñas anteriores de un usuario (MoReq 6.30), para impedir que
+// restablezca a una que ya usó. Solo se consulta cuando
+// ConfiguracionSitio.passwordHistorialCantidad > 0; se recorta a esa cantidad
+// en cada cambio (ver src/lib/password-policy.ts). El passwordHash ACTUAL del
+// usuario vive en Usuario, no aquí — esta tabla solo guarda las reemplazadas.
+model HistorialPassword {
+  id        String   @id @default(cuid())
+  usuarioId String
+  hash      String
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, createdAt])
 }
 
 // ---------------------------------------------------------------------------

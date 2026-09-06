@@ -3,6 +3,8 @@ import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from 
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
+import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPassword } from "@/lib/password-policy";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
@@ -66,14 +68,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!dep) return NextResponse.json({ error: "La dependencia seleccionada no existe." }, { status: 400 });
   }
 
-  if (password && password.length < 8) {
-    return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres." }, { status: 400 });
-  }
-  if (password && usuario.directorioActivo) {
-    return NextResponse.json(
-      { error: "Este usuario ingresa por Directorio Activo; no tiene contraseña local que cambiar." },
-      { status: 400 }
-    );
+  const config = await getConfiguracionSitio();
+  if (password) {
+    const errorPassword = validarPoliticaPassword(password, config);
+    if (errorPassword) return NextResponse.json({ error: errorPassword }, { status: 400 });
+    if (usuario.directorioActivo) {
+      return NextResponse.json(
+        { error: "Este usuario ingresa por Directorio Activo; no tiene contraseña local que cambiar." },
+        { status: 400 }
+      );
+    }
+    if (await passwordEnHistorial(usuario.id, usuario.passwordHash, password, config.passwordHistorialCantidad)) {
+      return NextResponse.json(
+        { error: `Ya usó esa contraseña antes. Elija una distinta a las últimas ${config.passwordHistorialCantidad}.` },
+        { status: 400 }
+      );
+    }
   }
 
   if (cargoIds && cargoIds.length > 0) {
@@ -84,6 +94,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const passwordHash = password ? await hashPassword(password) : undefined;
+  if (passwordHash) {
+    // Guarda el hash SALIENTE en el histórico antes de sobrescribirlo.
+    await registrarHistorialPassword(usuario.id, usuario.passwordHash, config.passwordHistorialCantidad);
+  }
 
   await db.$transaction(async (tx) => {
     await tx.usuario.update({
@@ -92,7 +106,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         rol,
         ...(nombre ? { nombre } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
-        ...(passwordHash ? { passwordHash } : {}),
+        ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
       },

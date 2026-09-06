@@ -17,15 +17,38 @@ export async function POST(req: NextRequest) {
   const maxIntentos = Math.min(20, Math.max(3, Number(form.get("loginMaxIntentos")) || 5));
   const ventanaMinutos = Math.min(120, Math.max(1, Number(form.get("loginVentanaMinutos")) || 15));
 
+  const longitudMinima = Math.min(64, Math.max(6, Number(form.get("passwordLongitudMinima")) || 8));
+  const longitudMaxima = Math.min(128, Math.max(longitudMinima, Number(form.get("passwordLongitudMaxima")) || 72));
+  const requiereMayuscula = form.get("passwordRequiereMayuscula") === "on";
+  const requiereNumero = form.get("passwordRequiereNumero") === "on";
+  const requiereEspecial = form.get("passwordRequiereEspecial") === "on";
+  const historialCantidad = Math.min(10, Math.max(0, Number(form.get("passwordHistorialCantidad")) || 0));
+  const vigenciaRaw = Number(form.get("passwordVigenciaDias"));
+  const vigenciaDias = vigenciaRaw > 0 ? Math.min(3650, vigenciaRaw) : null;
+
+  const datos = {
+    loginMaxIntentos: maxIntentos,
+    loginVentanaMinutos: ventanaMinutos,
+    passwordLongitudMinima: longitudMinima,
+    passwordLongitudMaxima: longitudMaxima,
+    passwordRequiereMayuscula: requiereMayuscula,
+    passwordRequiereNumero: requiereNumero,
+    passwordRequiereEspecial: requiereEspecial,
+    passwordHistorialCantidad: historialCantidad,
+    passwordVigenciaDias: vigenciaDias,
+  };
+
   await db.configuracionSitio.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", loginMaxIntentos: maxIntentos, loginVentanaMinutos: ventanaMinutos },
-    update: { loginMaxIntentos: maxIntentos, loginVentanaMinutos: ventanaMinutos },
+    create: { id: "singleton", ...datos },
+    update: datos,
   });
 
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
-    descripcion: `${session.nombre} cambió el límite de acceso a ${maxIntentos} intentos fallidos por ${ventanaMinutos} minutos.`,
+    descripcion: `${session.nombre} actualizó la política de seguridad: acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
+      [requiereMayuscula && "mayúscula", requiereNumero && "número", requiereEspecial && "especial"].filter(Boolean).join("+") || "sin reglas de complejidad"
+    }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"}.`,
     usuarioId: session.userId,
   });
 

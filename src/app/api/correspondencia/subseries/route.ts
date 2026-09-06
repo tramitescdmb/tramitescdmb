@@ -52,3 +52,60 @@ export async function POST(req: NextRequest) {
   volver.searchParams.set("ok", `Subserie ${codigo} creada.`);
   return NextResponse.redirect(volver, { status: 303 });
 }
+
+/**
+ * Cambia retención y/o disposición final de VARIAS subseries a la vez, aunque
+ * sean de series o dependencias distintas (MoReq 1.39: "modificar tiempos de
+ * retención para un conjunto de series/expedientes"). Antes solo se podía
+ * corregir una subserie repitiendo toda la TRD por CSV; esto edita en el
+ * sitio. Cada campo omitido en el body se deja sin tocar.
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAdministrarArchivo(permisos)) {
+    return NextResponse.json({ error: "No tiene permiso para administrar las TRD." }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const subserieIds: string[] = Array.isArray(body?.subserieIds)
+    ? body.subserieIds.filter((v: unknown): v is string => typeof v === "string")
+    : [];
+  if (subserieIds.length === 0) {
+    return NextResponse.json({ error: "No hay subseries seleccionadas." }, { status: 400 });
+  }
+
+  const data: { retencionGestionAnios?: number; retencionCentralAnios?: number; disposicionesFinal?: DisposicionFinal[] } = {};
+  if (typeof body?.retencionGestionAnios === "number" && Number.isFinite(body.retencionGestionAnios)) {
+    data.retencionGestionAnios = Math.max(0, Math.floor(body.retencionGestionAnios));
+  }
+  if (typeof body?.retencionCentralAnios === "number" && Number.isFinite(body.retencionCentralAnios)) {
+    data.retencionCentralAnios = Math.max(0, Math.floor(body.retencionCentralAnios));
+  }
+  if (Array.isArray(body?.disposicionesFinal)) {
+    data.disposicionesFinal = body.disposicionesFinal.filter(
+      (v: unknown): v is DisposicionFinal => (DISPOSICIONES as string[]).includes(v as string)
+    );
+  }
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "No se indicó ningún cambio a aplicar." }, { status: 400 });
+  }
+
+  const resultado = await db.subserieDocumental.updateMany({ where: { id: { in: subserieIds } }, data });
+
+  const cambios = [
+    data.retencionGestionAnios !== undefined && `gestión→${data.retencionGestionAnios}a`,
+    data.retencionCentralAnios !== undefined && `central→${data.retencionCentralAnios}a`,
+    data.disposicionesFinal !== undefined && `disposición→${data.disposicionesFinal.join("+") || "ninguna"}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  await registrarAuditoria({
+    tipo: "CONFIGURACION_ACTUALIZADA",
+    descripcion: `${session.nombre} actualizó ${resultado.count} subserie(s) en lote: ${cambios}.`,
+    usuarioId: session.userId,
+  });
+
+  return NextResponse.json({ ok: true, actualizadas: resultado.count });
+}

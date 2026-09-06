@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
+import { validarPoliticaPassword } from "@/lib/password-policy";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 export async function POST(req: NextRequest) {
@@ -19,8 +21,15 @@ export async function POST(req: NextRequest) {
 
   const url = new URL("/usuarios", req.url);
 
-  if (!email || !nombre || password.length < 8) {
-    url.searchParams.set("error", "Revisa los campos: correo, nombre y una contraseña de al menos 8 caracteres.");
+  if (!email || !nombre) {
+    url.searchParams.set("error", "Revisa los campos: correo y nombre son obligatorios.");
+    return NextResponse.redirect(url, { status: 303 });
+  }
+
+  const config = await getConfiguracionSitio();
+  const errorPassword = validarPoliticaPassword(password, config);
+  if (errorPassword) {
+    url.searchParams.set("error", errorPassword);
     return NextResponse.redirect(url, { status: 303 });
   }
 
@@ -36,6 +45,7 @@ export async function POST(req: NextRequest) {
       nombre,
       rol,
       passwordHash: await hashPassword(password),
+      passwordCambiadaEn: new Date(),
       cargos: { connect: cargoIds.map((id) => ({ id })) },
     },
   });

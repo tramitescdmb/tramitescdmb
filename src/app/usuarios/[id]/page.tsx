@@ -5,6 +5,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { listarDependenciasActivas } from "@/lib/dependencias";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
+import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 
 function iniciales(nombre: string) {
@@ -25,7 +27,7 @@ export default async function EditarUsuarioPage({
 
   const { id } = await params;
   const { ok } = await searchParams;
-  const [usuario, cargos, tramites, dependencias] = await Promise.all([
+  const [usuario, cargos, tramites, dependencias, config] = await Promise.all([
     db.usuario.findUnique({
       where: { id },
       include: {
@@ -37,6 +39,7 @@ export default async function EditarUsuarioPage({
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
     listarDependenciasActivas(),
+    getConfiguracionSitio(),
   ]);
   if (!usuario) notFound();
 
@@ -89,6 +92,10 @@ export default async function EditarUsuarioPage({
         dependenciaActualId={usuario.dependenciaId}
         rolCorrespondenciaActual={usuario.rolCorrespondencia}
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
+        politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
+        vigenciaPassword={
+          usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)
+        }
       />
     </div>
   );
