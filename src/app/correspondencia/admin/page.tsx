@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Building2, FolderTree, Plus, Upload } from "lucide-react";
+import { Building2, FolderTree, Plus, Upload, Download } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
@@ -131,8 +131,14 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {/* TRD / CCD */}
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <FolderTree className="h-4 w-4 text-cdmb-600" aria-hidden /> Tablas de Retención Documental (TRD/CCD)
+        <h2 className="flex items-center justify-between gap-2 text-base font-semibold text-stone-900">
+          <span className="flex items-center gap-2">
+            <FolderTree className="h-4 w-4 text-cdmb-600" aria-hidden /> Tablas de Retención Documental (TRD/CCD)
+          </span>
+          <a href="/api/correspondencia/trd/exportar" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+            <Download className="h-3.5 w-3.5" aria-hidden />
+            Descargar TRD (CSV)
+          </a>
         </h2>
         <SectionHelp>
           La TRD clasifica cada comunicación por el tipo de asunto que trata (una &quot;serie&quot;, ej. Contratos) y

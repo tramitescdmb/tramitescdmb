@@ -46,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     ip,
     userAgent,
     detalle: `Exportó el índice electrónico de ${expediente.numero} (${expediente.documentos.length} documento(s))`,
-  });
+  }).catch((err) => { console.error("No se pudo registrar en la bitácora la exportación del índice:", err); });
 
   const encabezado = [
     `"Expediente";${celda(expediente.numero)}`,

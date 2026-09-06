@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Mail, ShieldCheck, ExternalLink } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeAdministrarArchivo } from "@/lib/permisos";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 /**
  * Módulo de Correspondencia y Gestión Documental (SGDEA). Denegado por defecto:
@@ -13,7 +15,20 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederCorrespondencia(permisos)) redirect("/");
+  if (!puedeAccederCorrespondencia(permisos)) {
+    // MoReq 6.9: registrar el intento de entrar a un módulo sin permiso.
+    const { ip, userAgent } = datosPeticion(await headers());
+    await registrarAuditoriaDoc({
+      entidad: "Acceso",
+      entidadId: "correspondencia",
+      accion: "ACCESO_DENEGADO",
+      usuarioId: session.userId,
+      ip,
+      userAgent,
+      detalle: `${session.nombre} intentó entrar al módulo de correspondencia sin tener un rol asignado`,
+    });
+    redirect("/");
+  }
 
   const permitido = {
     bandeja: true,

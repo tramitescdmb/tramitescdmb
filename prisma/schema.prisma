@@ -771,6 +771,7 @@ enum AccionAuditoriaDoc {
   REACTIVA
   TRANSFIERE // pasa del archivo de gestión al archivo central
   DISPONE // ejecuta la disposición final (conserva/elimina/selecciona/microfilma)
+  ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.

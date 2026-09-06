@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { parsearCsvTrd, importarTrd } from "@/lib/trd-import";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 /**
  * Importa una TRD completa desde un archivo CSV (plantilla propia del sistema).
@@ -52,10 +53,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const resultado = await importarTrd(filas, { modo, version });
-    await registrarAuditoria({
-      tipo: "CONFIGURACION_ACTUALIZADA",
-      descripcion: `${session.nombre} importó una TRD ${modo === "vigente" ? "vigente" : "histórica"} (versión "${version}"): ${resultado.filasProcesadas} filas, ${resultado.dependenciasCreadas} dependencias nuevas, ${resultado.seriesCreadas} series nuevas, ${resultado.subseriesCreadas} subseries nuevas, ${resultado.subseriesActualizadas} actualizadas.`,
+    const descripcion = `${session.nombre} importó una TRD ${modo === "vigente" ? "vigente" : "histórica"} (versión "${version}"): ${resultado.filasProcesadas} filas, ${resultado.dependenciasCreadas} dependencias nuevas, ${resultado.seriesCreadas} series nuevas, ${resultado.subseriesCreadas} subseries nuevas, ${resultado.subseriesActualizadas} actualizadas.`;
+    await registrarAuditoria({ tipo: "CONFIGURACION_ACTUALIZADA", descripcion, usuarioId: session.userId });
+    const { ip, userAgent } = datosPeticion(req.headers);
+    await registrarAuditoriaDoc({
+      entidad: "SerieDocumental",
+      entidadId: `trd-import-${version}`,
+      accion: "CREA",
       usuarioId: session.userId,
+      ip,
+      userAgent,
+      detalle: descripcion,
     });
     const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} actualizadas${resultado.errores.length ? ` · ${resultado.errores.length} filas con problemas (revise el log del servidor)` : ""}.`;
     if (resultado.errores.length > 0) {
