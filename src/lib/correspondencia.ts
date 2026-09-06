@@ -364,6 +364,28 @@ export async function reactivarTermino(comunicacionId: string) {
   });
 }
 
+/**
+ * Aplaza una disposición final ya vencida, con motivo obligatorio (MoReq 2.11)
+ * — ej. mientras dura un proceso judicial o disciplinario sobre lo que
+ * contiene la comunicación. Deja de aparecer como pendiente hasta la fecha
+ * indicada; no reinicia el conteo de retención, solo pausa la ejecución.
+ */
+export async function aplazarDisposicion(comunicacionId: string, hasta: Date, motivo: string) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, estado: true, fechaDisposicionFinal: true },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.estado === "ANULADA") throw new Error("No se puede aplazar la disposición de una comunicación anulada.");
+  if (c.fechaDisposicionFinal) throw new Error("Esta comunicación ya tiene ejecutada su disposición final.");
+  if (!motivo.trim()) throw new Error("Debe indicar el motivo del aplazamiento.");
+  if (hasta.getTime() <= Date.now()) throw new Error("La fecha de aplazamiento debe ser futura.");
+  return db.comunicacion.update({
+    where: { id: comunicacionId },
+    data: { disposicionAplazadaHasta: hasta, motivoAplazamiento: motivo.trim() },
+  });
+}
+
 /** Transferencia del archivo de gestión al archivo central (Acuerdo 004/2019 AGN) — solo deja constancia de la fecha. */
 export async function transferirACentral(comunicacionId: string) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, transferidaCentralEn: true } });

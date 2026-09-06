@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const historialCantidad = Math.min(10, Math.max(0, Number(form.get("passwordHistorialCantidad")) || 0));
   const vigenciaRaw = Number(form.get("passwordVigenciaDias"));
   const vigenciaDias = vigenciaRaw > 0 ? Math.min(3650, vigenciaRaw) : null;
+  const vigenciaMinimaDias = Math.min(365, Math.max(0, Math.floor(Number(form.get("passwordVigenciaMinimaDias")) || 0)));
 
   // MoReq 3.1: formatos de captura permitidos, antes fijos en código. Se acepta una lista
   // separada por comas o espacios ("pdf, jpg, docx"); se normaliza y, si queda vacía (el
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
     passwordRequiereEspecial: requiereEspecial,
     passwordHistorialCantidad: historialCantidad,
     passwordVigenciaDias: vigenciaDias,
+    passwordVigenciaMinimaDias: vigenciaMinimaDias,
     extensionesPermitidas: extensionesFinal,
   };
 
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
     tipo: "CONFIGURACION_ACTUALIZADA",
     descripcion: `${session.nombre} actualizó la política de seguridad: acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
       [requiereMayuscula && "mayúscula", requiereNumero && "número", requiereEspecial && "especial"].filter(Boolean).join("+") || "sin reglas de complejidad"
-    }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"}; formatos permitidos: ${extensionesFinal.join(", ")}.`,
+    }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"} (mínima ${vigenciaMinimaDias || "sin mínimo"}); formatos permitidos: ${extensionesFinal.join(", ")}.`,
     usuarioId: session.userId,
   });
 

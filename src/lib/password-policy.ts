@@ -9,6 +9,7 @@ export type PoliticaPassword = {
   passwordRequiereEspecial: boolean;
   passwordHistorialCantidad: number;
   passwordVigenciaDias: number | null;
+  passwordVigenciaMinimaDias: number;
 };
 
 /**
@@ -117,4 +118,21 @@ export function estadoVigenciaPassword(
   const vencePorMs = passwordCambiadaEn.getTime() + vigenciaDias * 24 * 60 * 60 * 1000;
   const diasRestantes = Math.ceil((vencePorMs - Date.now()) / (24 * 60 * 60 * 1000));
   return { vencida: diasRestantes <= 0, diasRestantes };
+}
+
+/**
+ * Vigencia MÍNIMA (MoReq 6.35): evita que el propio usuario cicle contraseñas
+ * de un tirón para saltarse el histórico (6.30). Solo aplica al cambio que
+ * hace el propio usuario sobre SU cuenta — un ADMIN que restablece la
+ * contraseña de otro (p. ej. porque la olvidó) nunca debe quedar bloqueado
+ * por esto. `vigenciaMinimaDias <= 0` desactiva la revisión.
+ */
+export function puedeCambiarPorVigenciaMinima(
+  passwordCambiadaEn: Date | null,
+  vigenciaMinimaDias: number
+): { puede: boolean; diasFaltantes: number } {
+  if (vigenciaMinimaDias <= 0 || !passwordCambiadaEn) return { puede: true, diasFaltantes: 0 };
+  const puedeDesdeMs = passwordCambiadaEn.getTime() + vigenciaMinimaDias * 24 * 60 * 60 * 1000;
+  const diasFaltantes = Math.ceil((puedeDesdeMs - Date.now()) / (24 * 60 * 60 * 1000));
+  return { puede: diasFaltantes <= 0, diasFaltantes: Math.max(0, diasFaltantes) };
 }

@@ -41,6 +41,7 @@ model ConfiguracionSitio {
   passwordRequiereEspecial  Boolean  @default(false)
   passwordHistorialCantidad Int      @default(0) // 0 = no revisar contraseñas anteriores
   passwordVigenciaDias      Int? // null = no vence
+  passwordVigenciaMinimaDias Int     @default(0) // 0 = sin mínimo; evita ciclar contraseñas para saltarse el histórico. Solo aplica al cambio por el propio usuario, no a un restablecimiento por ADMIN.
 
   // Formatos de captura permitidos al subir un documento (MoReq 3.1) — antes una
   // lista fija en código (src/lib/uploads-config.ts). Vacío ([]) se trata como
@@ -821,6 +822,7 @@ enum AccionAuditoriaDoc {
   TRANSFIERE // pasa del archivo de gestión al archivo central
   DISPONE // ejecuta la disposición final (conserva/elimina/selecciona/microfilma)
   ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
+  APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -994,6 +996,13 @@ model Comunicacion {
   transferidaCentralEn  DateTime?
   fechaDisposicionFinal DateTime?
   actaEliminacionId     String?
+
+  // Aplazamiento de la disposición final ya vencida (MoReq 2.11) — con motivo
+  // auditado, ej. mientras dura un proceso judicial o disciplinario sobre lo
+  // que contiene. Mientras disposicionAplazadaHasta sea futura, no aparece
+  // como pendiente de disposición aunque ya haya cumplido su retención.
+  disposicionAplazadaHasta DateTime?
+  motivoAplazamiento       String?   @db.Text
 
   // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
   nivelAcceso           NivelAccesoInformacion @default(PUBLICA)

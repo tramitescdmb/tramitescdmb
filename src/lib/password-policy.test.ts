@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validarPoliticaPassword, estadoVigenciaPassword, type PoliticaPassword } from "./password-policy";
+import { validarPoliticaPassword, estadoVigenciaPassword, puedeCambiarPorVigenciaMinima, type PoliticaPassword } from "./password-policy";
 
 const POLITICA_BASE: PoliticaPassword = {
   passwordLongitudMinima: 8,
@@ -9,6 +9,7 @@ const POLITICA_BASE: PoliticaPassword = {
   passwordRequiereEspecial: false,
   passwordHistorialCantidad: 0,
   passwordVigenciaDias: null,
+  passwordVigenciaMinimaDias: 0,
 };
 
 describe("validarPoliticaPassword", () => {
@@ -74,5 +75,28 @@ describe("estadoVigenciaPassword", () => {
     const r = estadoVigenciaPassword(hace100Dias, 90);
     expect(r.vencida).toBe(true);
     expect(r.diasRestantes).toBeLessThanOrEqual(0);
+  });
+});
+
+describe("puedeCambiarPorVigenciaMinima", () => {
+  it("siempre permite si la vigencia mínima está desactivada (0)", () => {
+    expect(puedeCambiarPorVigenciaMinima(new Date(), 0)).toEqual({ puede: true, diasFaltantes: 0 });
+  });
+
+  it("siempre permite si no se conoce cuándo se fijó la contraseña", () => {
+    expect(puedeCambiarPorVigenciaMinima(null, 5)).toEqual({ puede: true, diasFaltantes: 0 });
+  });
+
+  it("no permite si todavía no se cumple la vigencia mínima", () => {
+    const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000);
+    const r = puedeCambiarPorVigenciaMinima(haceUnaHora, 5);
+    expect(r.puede).toBe(false);
+    expect(r.diasFaltantes).toBeGreaterThanOrEqual(4);
+  });
+
+  it("permite si ya pasó la vigencia mínima configurada", () => {
+    const hace10Dias = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+    const r = puedeCambiarPorVigenciaMinima(hace10Dias, 5);
+    expect(r).toEqual({ puede: true, diasFaltantes: 0 });
   });
 });

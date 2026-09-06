@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRightCircle, FileWarning } from "lucide-react";
+import { ArrowRightCircle, FileWarning, Clock } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
-import { getPendientesArchivisticos, listarActasEliminacion } from "@/lib/disposicion-final-data";
+import { getPendientesArchivisticos, listarActasEliminacion, getDisposicionesAplazadas } from "@/lib/disposicion-final-data";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
-import { SectionHelp } from "@/components/Field";
+import { Field, SectionHelp } from "@/components/Field";
 import { DisposicionLoteForm, type ItemDisposicionPendiente } from "@/components/DisposicionLoteForm";
 
 const fecha = (d: Date | null | undefined) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -18,10 +18,12 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
   if (!puedeAdministrarArchivo(permisos)) redirect("/correspondencia");
 
   const sp = await searchParams;
-  const [{ pendientesTransferencia, pendientesDisposicion }, actas] = await Promise.all([
+  const [{ pendientesTransferencia, pendientesDisposicion }, actas, aplazadas] = await Promise.all([
     getPendientesArchivisticos(),
     listarActasEliminacion(),
+    getDisposicionesAplazadas(),
   ]);
+  const manana = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const itemsDisposicion: ItemDisposicionPendiente[] = pendientesDisposicion.map((c) => {
     const disposiciones = c.subserie?.disposicionesFinal ?? [];
@@ -93,9 +95,64 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         {itemsDisposicion.length === 0 ? (
           <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay comunicaciones pendientes de disposición final por ahora.</p>
         ) : (
-          <DisposicionLoteForm items={itemsDisposicion} />
+          <>
+            <DisposicionLoteForm items={itemsDisposicion} />
+            <details className="group rounded-xl border border-dashed border-stone-300 bg-stone-50/60 p-4">
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-stone-700 [&::-webkit-details-marker]:hidden">
+                <Clock className="h-4 w-4 text-stone-500" aria-hidden />
+                Aplazar la disposición de una en particular
+              </summary>
+              <SectionHelp>
+                Para cuando NO se debe ejecutar todavía pese a que ya cumplió su retención — ej. hay un
+                proceso judicial o disciplinario en curso sobre lo que contiene. Deja de aparecer arriba
+                hasta la fecha indicada, con el motivo siempre auditado.
+              </SectionHelp>
+              {itemsDisposicion.map((it) => (
+                <form
+                  key={it.id}
+                  action={`/api/correspondencia/${it.id}/aplazar-disposicion`}
+                  method="post"
+                  className="mt-3 grid grid-cols-1 gap-3 rounded-lg border border-stone-200 bg-white p-3 sm:grid-cols-[1fr_auto_auto]"
+                >
+                  <div className="min-w-0 self-center">
+                    <p className="truncate text-sm font-medium text-stone-800">{it.radicado}</p>
+                    <p className="truncate text-xs text-stone-500">{it.asunto}</p>
+                  </div>
+                  <Field label="Hasta">
+                    <input type="date" name="hasta" min={manana} required className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+                  </Field>
+                  <Field label="Motivo">
+                    <input type="text" name="motivo" required placeholder="Motivo del aplazamiento" className="w-56 rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+                  </Field>
+                  <button type="submit" className="sm:col-span-3 justify-self-start rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
+                    Aplazar
+                  </button>
+                </form>
+              ))}
+            </details>
+          </>
         )}
       </section>
+
+      {aplazadas.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
+            <Clock className="h-4 w-4 text-cdmb-600" aria-hidden />
+            Disposiciones aplazadas ({aplazadas.length})
+          </h2>
+          <div className="space-y-2">
+            {aplazadas.map((c) => (
+              <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
+                <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
+                <p className="truncate text-xs text-stone-500">{c.asunto}</p>
+                <p className="mt-1 text-[11px] text-stone-400">
+                  Aplazada hasta {fecha(c.disposicionAplazadaHasta)} — {c.motivoAplazamiento}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-stone-900">Actas de eliminación ({actas.length})</h2>

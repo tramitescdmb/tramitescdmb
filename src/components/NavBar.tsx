@@ -63,7 +63,7 @@ export async function NavBar() {
         <div className="border-b border-stone-100 px-4 py-4">{marca}</div>
         <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} />
         <div className="border-t border-stone-100 p-3">
-          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+          <Link href="/mi-cuenta" className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-stone-50">
             <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
               {iniciales(session.nombre)}
             </span>
@@ -73,7 +73,7 @@ export async function NavBar() {
                 {session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario"}
               </p>
             </div>
-          </div>
+          </Link>
           <div className="mt-1 px-2">{salir}</div>
         </div>
       </aside>
@@ -82,7 +82,12 @@ export async function NavBar() {
       <header className="border-b border-cdmb-100 bg-white lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}
-          {salir}
+          <div className="flex items-center gap-2">
+            <Link href="/mi-cuenta" className="text-xs font-medium text-stone-500 hover:text-cdmb-700 hover:underline">
+              Mi cuenta
+            </Link>
+            {salir}
+          </div>
         </div>
         <div className="border-t border-stone-100 px-3 py-1.5">
           <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} orientacion="horizontal" />

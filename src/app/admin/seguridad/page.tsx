@@ -62,6 +62,12 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
             <Field label="Vigencia en días" help="Vacío o 0 = nunca vence. Se avisa en la ficha del usuario.">
               <input type="number" name="passwordVigenciaDias" min={0} max={3650} defaultValue={config.passwordVigenciaDias ?? ""} className={inputCls} />
             </Field>
+            <Field
+              label="Vigencia mínima en días"
+              help="0 desactiva. Evita que el propio usuario cicle contraseñas para saltarse el histórico. No aplica cuando un administrador restablece la contraseña de otro."
+            >
+              <input type="number" name="passwordVigenciaMinimaDias" min={0} max={365} defaultValue={config.passwordVigenciaMinimaDias} className={inputCls} />
+            </Field>
           </div>
           <div className="mt-4 flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-sm text-stone-700">

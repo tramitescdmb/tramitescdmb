@@ -9,6 +9,7 @@ import { calcularFaseArchivistica } from "@/lib/disposicion-final";
  * retención cero, y mostrarlas inundaría el panel de falsos pendientes.
  */
 export async function getPendientesArchivisticos() {
+  const ahora = new Date();
   const comunicaciones = await db.comunicacion.findMany({
     where: {
       fechaDisposicionFinal: null,
@@ -35,12 +36,23 @@ export async function getPendientesArchivisticos() {
     if (fase === "TRANSFERENCIA_PENDIENTE" && !c.transferidaCentralEn) {
       pendientesTransferencia.push({ ...c, fechaFinGestion });
     }
-    if (fase === "DISPOSICION_PENDIENTE") {
+    // Una disposición aplazada (MoReq 2.11) deja de aparecer como pendiente
+    // mientras dure el aplazamiento, aunque ya haya cumplido su retención.
+    if (fase === "DISPOSICION_PENDIENTE" && !(c.disposicionAplazadaHasta && c.disposicionAplazadaHasta > ahora)) {
       pendientesDisposicion.push({ ...c, fechaFinCentral });
     }
   }
 
   return { pendientesTransferencia, pendientesDisposicion };
+}
+
+/** Disposiciones finales actualmente aplazadas (vigentes) — para que no queden invisibles del todo. */
+export async function getDisposicionesAplazadas() {
+  return db.comunicacion.findMany({
+    where: { disposicionAplazadaHasta: { gt: new Date() } },
+    select: { id: true, radicado: true, asunto: true, disposicionAplazadaHasta: true, motivoAplazamiento: true },
+    orderBy: { disposicionAplazadaHasta: "asc" },
+  });
 }
 
 export async function listarActasEliminacion() {
