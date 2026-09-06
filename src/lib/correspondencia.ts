@@ -272,6 +272,39 @@ export async function anularComunicacion(comunicacionId: string, motivo: string)
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
 }
 
+/**
+ * Reclasifica una comunicación ya radicada a otra serie/subserie de la TRD, dejando motivo (MoReq req.
+ * 1.30-1.32: reubicar en la clasificación con auditoría y motivo). No reclasifica retroactivamente lo que
+ * ya se calculó con la clasificación anterior (ej. términos de ley ya corridos) — solo cambia hacia
+ * adelante cuál regla de retención/disposición aplica.
+ */
+export async function reclasificarComunicacion(comunicacionId: string, subserieId: string, motivo: string) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: {
+      id: true,
+      estado: true,
+      serie: { select: { codigo: true } },
+      subserie: { select: { codigo: true, nombre: true } },
+    },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.estado === "ANULADA") throw new Error("No se puede reclasificar una comunicación anulada.");
+  if (!motivo.trim()) throw new Error("Debe indicar el motivo de la reclasificación.");
+
+  const subserie = await db.subserieDocumental.findUnique({
+    where: { id: subserieId },
+    select: { id: true, codigo: true, nombre: true, serieId: true, serie: { select: { codigo: true, nombre: true } } },
+  });
+  if (!subserie) throw new Error("La subserie seleccionada no existe.");
+
+  const anterior = c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : "sin clasificar";
+  const nueva = `${subserie.codigo} — ${subserie.nombre} (${subserie.serie.nombre})`;
+
+  await db.comunicacion.update({ where: { id: comunicacionId }, data: { serieId: subserie.serieId, subserieId: subserie.id } });
+  return { anterior, nueva };
+}
+
 /** Archiva una comunicación ya radicada dentro de un expediente (unificación con Trámites 2.0). */
 export async function archivarEnExpediente(comunicacionId: string, expedienteId: string) {
   const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });

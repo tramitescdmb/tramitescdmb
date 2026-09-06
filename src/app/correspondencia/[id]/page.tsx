@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
+import { listarSeriesVigentes } from "@/lib/trd";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
 import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
@@ -104,6 +105,7 @@ export default async function CorrespondenciaDetallePage({
         db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
       ])
     : [[], []];
+  const seriesVigentes = puedeAdministrarArchivoUsuario ? await listarSeriesVigentes() : [];
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento);
@@ -394,6 +396,41 @@ export default async function CorrespondenciaDetallePage({
               </form>
             </>
           )}
+        </Tarjeta>
+      )}
+
+      {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
+        <Tarjeta titulo="Reclasificación (TRD)">
+          <SectionHelp>
+            Use esto si esta comunicación quedó clasificada en la serie o subserie equivocada. No se pierde lo
+            anterior: el cambio queda en la bitácora con el motivo, la clasificación anterior y la nueva — desde
+            ahora aplican los tiempos de retención de la nueva subserie.
+          </SectionHelp>
+          <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[260px] flex-1">
+              <Field label="Nueva subserie" required>
+                <select name="subserieId" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                  <option value="" disabled>— Seleccione —</option>
+                  {seriesVigentes.map((s) => (
+                    <optgroup key={s.id} label={`${s.codigo} — ${s.nombre}`}>
+                      {s.subseries.map((ss) => (
+                        <option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div className="min-w-[260px] flex-1">
+              <Field label="Motivo" required help="Por qué se reclasifica este radicado.">
+                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <FolderTree className="h-3.5 w-3.5" aria-hidden />
+              Reclasificar
+            </button>
+          </form>
         </Tarjeta>
       )}
 
