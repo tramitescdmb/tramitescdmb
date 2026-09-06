@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
-import { extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { verificarLimiteEnvio } from "@/lib/anti-abuso";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
@@ -23,8 +24,9 @@ export async function POST(req: NextRequest) {
   if (!UUID_RE.test(folder) || !fileName) {
     return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
   }
-  if (!extensionPermitida(fileName)) {
-    return NextResponse.json({ error: mensajeTipoNoPermitido(fileName) }, { status: 400 });
+  const { extensionesPermitidas } = await getConfiguracionSitio();
+  if (!extensionPermitidaEn(fileName, extensionesPermitidas)) {
+    return NextResponse.json({ error: mensajeTipoNoPermitidoEn(fileName, extensionesPermitidas) }, { status: 400 });
   }
 
   const existente = await db.expediente.findUnique({ where: { id: folder }, select: { id: true } });

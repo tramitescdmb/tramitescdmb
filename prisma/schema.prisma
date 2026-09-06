@@ -42,6 +42,11 @@ model ConfiguracionSitio {
   passwordHistorialCantidad Int      @default(0) // 0 = no revisar contraseñas anteriores
   passwordVigenciaDias      Int? // null = no vence
 
+  // Formatos de captura permitidos al subir un documento (MoReq 3.1) — antes una
+  // lista fija en código (src/lib/uploads-config.ts). Vacío ([]) se trata como
+  // "usar los valores por defecto de fábrica", nunca como "no permitir nada".
+  extensionesPermitidas String[] @default(["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"])
+
   updatedAt DateTime @updatedAt
 }
 

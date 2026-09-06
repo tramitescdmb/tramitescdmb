@@ -20,6 +20,7 @@ const VACIA = {
   passwordRequiereEspecial: false,
   passwordHistorialCantidad: 0,
   passwordVigenciaDias: null,
+  extensionesPermitidas: ["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"],
 } as const;
 
 /**

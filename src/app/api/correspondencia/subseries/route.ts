@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 import type { DisposicionFinal } from "@prisma/client";
 
 const DISPOSICIONES: DisposicionFinal[] = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
@@ -35,8 +37,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(volver, { status: 303 });
   }
 
+  let nuevaSubserie;
   try {
-    await db.subserieDocumental.create({
+    nuevaSubserie = await db.subserieDocumental.create({
       data: { serieId, codigo, nombre, retencionGestionAnios, retencionCentralAnios, disposicionesFinal },
     });
   } catch {
@@ -49,6 +52,18 @@ export async function POST(req: NextRequest) {
     descripcion: `${session.nombre} creó la subserie ${serie.codigo}.${codigo} — ${nombre}.`,
     usuarioId: session.userId,
   });
+
+  const { ip: ip1, userAgent: userAgent1 } = datosPeticion(await headers());
+  await registrarAuditoriaDoc({
+    entidad: "SubserieDocumental",
+    entidadId: nuevaSubserie.id,
+    accion: "CREA",
+    usuarioId: session.userId,
+    ip: ip1,
+    userAgent: userAgent1,
+    detalle: `Creó la subserie ${serie.codigo}.${codigo} — ${nombre} (gestión ${retencionGestionAnios}a, central ${retencionCentralAnios}a)`,
+  }).catch((err) => console.error("registrarAuditoriaDoc (crear subserie) falló:", err));
+
   volver.searchParams.set("ok", `Subserie ${codigo} creada.`);
   return NextResponse.redirect(volver, { status: 303 });
 }
@@ -92,6 +107,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No se indicó ningún cambio a aplicar." }, { status: 400 });
   }
 
+  const afectadas = await db.subserieDocumental.findMany({
+    where: { id: { in: subserieIds } },
+    select: { id: true, codigo: true, serie: { select: { codigo: true } } },
+  });
+
   const resultado = await db.subserieDocumental.updateMany({ where: { id: { in: subserieIds } }, data });
 
   const cambios = [
@@ -106,6 +126,22 @@ export async function PATCH(req: NextRequest) {
     descripcion: `${session.nombre} actualizó ${resultado.count} subserie(s) en lote: ${cambios}.`,
     usuarioId: session.userId,
   });
+
+  const { ip, userAgent } = datosPeticion(await headers());
+  const detalleLote = afectadas.length > 1 ? ` (lote de ${afectadas.length}, ${cambios})` : ` (${cambios})`;
+  await Promise.all(
+    afectadas.map((s) =>
+      registrarAuditoriaDoc({
+        entidad: "SubserieDocumental",
+        entidadId: s.id,
+        accion: "MODIFICA",
+        usuarioId: session.userId,
+        ip,
+        userAgent,
+        detalle: `Actualizó ${s.serie.codigo}.${s.codigo}${detalleLote}`,
+      }).catch((err) => console.error("registrarAuditoriaDoc (editar subserie en lote) falló:", err))
+    )
+  );
 
   return NextResponse.json({ ok: true, actualizadas: resultado.count });
 }

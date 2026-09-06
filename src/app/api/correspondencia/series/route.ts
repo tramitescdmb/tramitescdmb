@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 
 /** Crea una serie documental (TRD). Versión "1" por defecto. */
 export async function POST(req: NextRequest) {
@@ -26,8 +28,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(volver, { status: 303 });
   }
 
+  let nuevaSerie;
   try {
-    await db.serieDocumental.create({ data: { codigo, nombre, version, dependenciaId } });
+    nuevaSerie = await db.serieDocumental.create({ data: { codigo, nombre, version, dependenciaId } });
   } catch {
     volver.searchParams.set("error", `Ya existe la serie ${codigo} versión ${version}.`);
     return NextResponse.redirect(volver, { status: 303 });
@@ -38,6 +41,18 @@ export async function POST(req: NextRequest) {
     descripcion: `${session.nombre} creó la serie documental ${codigo} (v${version}) — ${nombre}.`,
     usuarioId: session.userId,
   });
+
+  const { ip, userAgent } = datosPeticion(await headers());
+  await registrarAuditoriaDoc({
+    entidad: "SerieDocumental",
+    entidadId: nuevaSerie.id,
+    accion: "CREA",
+    usuarioId: session.userId,
+    ip,
+    userAgent,
+    detalle: `Creó la serie ${codigo} (v${version}) — ${nombre}`,
+  }).catch((err) => console.error("registrarAuditoriaDoc (crear serie) falló:", err));
+
   volver.searchParams.set("ok", `Serie ${codigo} creada.`);
   return NextResponse.redirect(volver, { status: 303 });
 }

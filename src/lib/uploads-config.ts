@@ -38,3 +38,21 @@ export function mensajeTipoNoPermitido(fileName: string): string {
 export function mensajeArchivoDemasiadoGrande(fileName: string): string {
   return `"${fileName}" pesa más de ${TAMANO_MAXIMO_BYTES / (1024 * 1024)} MB, el máximo permitido por archivo.`;
 }
+
+/**
+ * Igual que extensionPermitida()/mensajeTipoNoPermitido(), pero contra la lista
+ * configurable desde Administración → Seguridad (MoReq 3.1) en vez de la fija
+ * de arriba. Solo se usa en el servidor (las rutas de firma de subida) — el
+ * <input accept> del navegador sigue mostrando la lista de fábrica como pista;
+ * el servidor es quien de verdad decide, así que un cambio de configuración
+ * queda aplicado igual aunque el `accept` del formulario no se haya refrescado.
+ */
+export function extensionPermitidaEn(fileName: string, lista: readonly string[]): boolean {
+  const efectiva = lista.length > 0 ? lista : EXTENSIONES_PERMITIDAS;
+  return efectiva.includes(extensionDe(fileName));
+}
+
+export function mensajeTipoNoPermitidoEn(fileName: string, lista: readonly string[]): string {
+  const efectiva = lista.length > 0 ? lista : EXTENSIONES_PERMITIDAS;
+  return `"${fileName}" no es un tipo de archivo permitido. Se aceptan: ${efectiva.join(", ")}.`;
+}

@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
-import { extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 /** Firma de subida para un archivo que va DIRECTO a un expediente documental (no vía correspondencia). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,8 +23,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => null);
   const fileName = body?.fileName ? String(body.fileName) : "";
   if (!fileName) return NextResponse.json({ error: "Falta fileName." }, { status: 400 });
-  if (!extensionPermitida(fileName)) {
-    return NextResponse.json({ error: mensajeTipoNoPermitido(fileName) }, { status: 400 });
+  const { extensionesPermitidas } = await getConfiguracionSitio();
+  if (!extensionPermitidaEn(fileName, extensionesPermitidas)) {
+    return NextResponse.json({ error: mensajeTipoNoPermitidoEn(fileName, extensionesPermitidas) }, { status: 400 });
   }
 
   const path = buildStoragePath(id, fileName);

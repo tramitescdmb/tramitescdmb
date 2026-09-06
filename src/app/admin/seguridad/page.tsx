@@ -16,9 +16,9 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-stone-900">Seguridad de acceso</h1>
+        <h1 className="text-xl font-semibold text-stone-900">Seguridad</h1>
         <p className="text-sm text-stone-500">
-          Límite de intentos fallidos al iniciar sesión, para todas las cuentas de la aplicación.
+          Acceso, contraseñas y formatos de archivo permitidos — para toda la aplicación, no solo Correspondencia.
         </p>
       </div>
 
@@ -76,6 +76,29 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
               <input type="checkbox" name="passwordRequiereEspecial" defaultChecked={config.passwordRequiereEspecial} className="rounded border-stone-300" />
               Exigir un carácter especial
             </label>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-stone-900">Formatos de archivo permitidos</h2>
+          <SectionHelp>
+            Extensiones que se aceptan al subir un documento, en cualquier módulo (Correspondencia,
+            expedientes, PQRSD, trámites). Sepárelas con comas o espacios, sin el punto — ej.{" "}
+            <span className="font-mono">pdf, jpg, docx</span>. El navegador solo sugiere estos formatos;
+            quien de verdad los exige es el servidor, así que un archivo con otra extensión se rechaza
+            aunque alguien intente saltarse el formulario. Si deja el campo vacío se restablecen los
+            valores de fábrica.
+          </SectionHelp>
+          <div className="mt-3">
+            <Field label="Extensiones permitidas">
+              <input
+                type="text"
+                name="extensionesPermitidas"
+                defaultValue={config.extensionesPermitidas.join(", ")}
+                placeholder="pdf, jpg, jpeg, png, doc, docx, xls, xlsx"
+                className={inputCls}
+              />
+            </Field>
           </div>
         </div>
 

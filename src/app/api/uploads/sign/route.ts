@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
-import { extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -20,9 +21,11 @@ export async function POST(req: NextRequest) {
   }
 
   // El navegador ya valida esto (src/lib/uploads-client.ts), pero esa validación se puede saltar
-  // (otro cliente HTTP, devtools) — el servidor es quien de verdad decide qué se puede subir.
-  if (!extensionPermitida(fileName)) {
-    return NextResponse.json({ error: mensajeTipoNoPermitido(fileName) }, { status: 400 });
+  // (otro cliente HTTP, devtools) — el servidor es quien de verdad decide qué se puede subir,
+  // contra la lista configurable desde Administración → Seguridad (MoReq 3.1).
+  const { extensionesPermitidas } = await getConfiguracionSitio();
+  if (!extensionPermitidaEn(fileName, extensionesPermitidas)) {
+    return NextResponse.json({ error: mensajeTipoNoPermitidoEn(fileName, extensionesPermitidas) }, { status: 400 });
   }
 
   // El expedienteId siempre queda como carpeta del archivo en Storage — se exige que

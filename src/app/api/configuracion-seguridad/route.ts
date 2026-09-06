@@ -26,6 +26,21 @@ export async function POST(req: NextRequest) {
   const vigenciaRaw = Number(form.get("passwordVigenciaDias"));
   const vigenciaDias = vigenciaRaw > 0 ? Math.min(3650, vigenciaRaw) : null;
 
+  // MoReq 3.1: formatos de captura permitidos, antes fijos en código. Se acepta una lista
+  // separada por comas o espacios ("pdf, jpg, docx"); se normaliza y, si queda vacía (el
+  // admin borró todo por error), se cae a los valores de fábrica — nunca a "nada permitido".
+  const EXTENSIONES_POR_DEFECTO = ["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"];
+  const extensionesTexto = String(form.get("extensionesPermitidas") || "");
+  const extensionesPermitidas = Array.from(
+    new Set(
+      extensionesTexto
+        .split(/[,\s]+/)
+        .map((e) => e.trim().toLowerCase().replace(/^\./, "").replace(/[^a-z0-9]/g, ""))
+        .filter(Boolean)
+    )
+  );
+  const extensionesFinal = extensionesPermitidas.length > 0 ? extensionesPermitidas : EXTENSIONES_POR_DEFECTO;
+
   const datos = {
     loginMaxIntentos: maxIntentos,
     loginVentanaMinutos: ventanaMinutos,
@@ -36,6 +51,7 @@ export async function POST(req: NextRequest) {
     passwordRequiereEspecial: requiereEspecial,
     passwordHistorialCantidad: historialCantidad,
     passwordVigenciaDias: vigenciaDias,
+    extensionesPermitidas: extensionesFinal,
   };
 
   await db.configuracionSitio.upsert({
@@ -48,7 +64,7 @@ export async function POST(req: NextRequest) {
     tipo: "CONFIGURACION_ACTUALIZADA",
     descripcion: `${session.nombre} actualizó la política de seguridad: acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
       [requiereMayuscula && "mayúscula", requiereNumero && "número", requiereEspecial && "especial"].filter(Boolean).join("+") || "sin reglas de complejidad"
-    }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"}.`,
+    }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"}; formatos permitidos: ${extensionesFinal.join(", ")}.`,
     usuarioId: session.userId,
   });
 
