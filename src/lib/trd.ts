@@ -11,6 +11,7 @@ export async function listarSeriesVigentes() {
     where: { activo: true, vigenteHasta: null },
     orderBy: [{ codigo: "asc" }],
     include: {
+      dependencia: { select: { id: true, nombre: true } },
       subseries: { where: { activo: true }, orderBy: { codigo: "asc" } },
     },
   });

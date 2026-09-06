@@ -106,6 +106,22 @@ export default async function CorrespondenciaDetallePage({
       ])
     : [[], []];
   const seriesVigentes = puedeAdministrarArchivoUsuario ? await listarSeriesVigentes() : [];
+  const gruposReclasificacion = (() => {
+    const mapa = new Map<string, { nombre: string; opciones: { id: string; label: string }[] }>();
+    const sinDependencia: { id: string; label: string }[] = [];
+    for (const s of seriesVigentes) {
+      const opciones = s.subseries.map((ss) => ({ id: ss.id, label: `${ss.codigo} — ${ss.nombre}` }));
+      if (!s.dependencia) {
+        sinDependencia.push(...opciones);
+        continue;
+      }
+      if (!mapa.has(s.dependencia.id)) mapa.set(s.dependencia.id, { nombre: s.dependencia.nombre, opciones: [] });
+      mapa.get(s.dependencia.id)!.opciones.push(...opciones);
+    }
+    const grupos = Array.from(mapa.values());
+    if (sinDependencia.length > 0) grupos.push({ nombre: "Sin dependencia asignada", opciones: sinDependencia });
+    return grupos;
+  })();
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento);
@@ -411,10 +427,10 @@ export default async function CorrespondenciaDetallePage({
               <Field label="Nueva subserie" required>
                 <select name="subserieId" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
                   <option value="" disabled>— Seleccione —</option>
-                  {seriesVigentes.map((s) => (
-                    <optgroup key={s.id} label={`${s.codigo} — ${s.nombre}`}>
-                      {s.subseries.map((ss) => (
-                        <option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>
+                  {gruposReclasificacion.map((g) => (
+                    <optgroup key={g.nombre} label={g.nombre}>
+                      {g.opciones.map((o) => (
+                        <option key={o.id} value={o.id}>{o.label}</option>
                       ))}
                     </optgroup>
                   ))}

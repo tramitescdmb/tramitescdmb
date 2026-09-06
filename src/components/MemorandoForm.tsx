@@ -10,7 +10,7 @@ import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; subseries: Subserie[] };
+type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
 
 export function MemorandoForm({
   dependencias,
@@ -34,7 +34,18 @@ export function MemorandoForm({
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const subseries = useMemo(() => series.find((s) => s.id === serieId)?.subseries ?? [], [series, serieId]);
+  const seriesDeDependencia = useMemo(() => {
+    const sinDependencia = series.filter((s) => !s.dependenciaId);
+    if (!dependenciaOrigenId) return sinDependencia;
+    return [...series.filter((s) => s.dependenciaId === dependenciaOrigenId), ...sinDependencia];
+  }, [series, dependenciaOrigenId]);
+  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
+
+  function cambiarDependenciaOrigen(nuevoId: string) {
+    setDependenciaOrigenId(nuevoId);
+    setSerieId("");
+    setSubserieId("");
+  }
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
@@ -106,7 +117,7 @@ export function MemorandoForm({
         </SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Dependencia de origen" required help="Quién firma este memorando.">
-            <select value={dependenciaOrigenId} onChange={(e) => setDependenciaOrigenId(e.target.value)} className={inputCls}>
+            <select value={dependenciaOrigenId} onChange={(e) => cambiarDependenciaOrigen(e.target.value)} className={inputCls}>
               <option value="">— Seleccione —</option>
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
@@ -120,20 +131,6 @@ export function MemorandoForm({
           <Field label="N.º de folios">
             <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
           </Field>
-          <Field label="Serie documental (TRD)" help="Clasificación archivística. Si no sabe cuál usar, déjela 'Sin clasificar'.">
-            <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
-              <option value="">— Sin clasificar —</option>
-              {series.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-            </select>
-          </Field>
-          {subseries.length > 0 && (
-            <Field label="Subserie">
-              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls}>
-                <option value="">— Seleccione —</option>
-                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-              </select>
-            </Field>
-          )}
           <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Asunto" required>
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
@@ -142,6 +139,28 @@ export function MemorandoForm({
           <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Contenido" required help="Cuerpo del memorando. Junto con el asunto y el radicado, es lo que queda firmado con hash SHA-256.">
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del memorando…" />
+            </Field>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-stone-100 pt-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación (TRD)</h3>
+          <SectionHelp>
+            Las series disponibles son las propias de la dependencia de origen elegida arriba — la TRD clasifica lo
+            que cada dependencia produce. Si aún no la elige, solo puede clasificar como &quot;Sin clasificar&quot;.
+          </SectionHelp>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Serie documental (TRD)" help="Series propias de la dependencia de origen.">
+              <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
+                <option value="">— Sin clasificar —</option>
+                {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
+              </select>
+            </Field>
+            <Field label="Subserie">
+              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
+                <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
+                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
+              </select>
             </Field>
           </div>
         </div>

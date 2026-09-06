@@ -10,7 +10,7 @@ import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; subseries: Subserie[] };
+type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
 
 const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI", "ANONIMO", "OTRO"];
 const TIPOS_PQRSD = [
@@ -64,7 +64,18 @@ export function VentanillaRadicacionForm({
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const subseries = useMemo(() => series.find((s) => s.id === serieId)?.subseries ?? [], [series, serieId]);
+  const seriesDeDependencia = useMemo(() => {
+    const sinDependencia = series.filter((s) => !s.dependenciaId);
+    if (!dependenciaId) return sinDependencia;
+    return [...series.filter((s) => s.dependenciaId === dependenciaId), ...sinDependencia];
+  }, [series, dependenciaId]);
+  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
+
+  function cambiarDependencia(nuevoId: string) {
+    setDependenciaId(nuevoId);
+    setSerieId("");
+    setSubserieId("");
+  }
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
@@ -201,32 +212,45 @@ export function VentanillaRadicacionForm({
               <input value={anexos} onChange={(e) => setAnexos(e.target.value)} className={inputCls} placeholder="Ej. 1 CD, 2 planos" />
             </Field>
           </div>
-          <Field label="Dependencia destino" help="A qué área de la CDMB le corresponde atenderla. Puede dejarla sin asignar y distribuirla después.">
-            <select value={dependenciaId} onChange={(e) => setDependenciaId(e.target.value)} className={inputCls}>
-              <option value="">— Sin asignar —</option>
-              {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
-            </select>
-          </Field>
-          <Field
-            label="Tipo PQRSD"
-            help="Selecciónelo SOLO si es una petición, queja, reclamo, sugerencia o denuncia de un ciudadano — el sistema calcula automáticamente la fecha límite de respuesta (Ley 1755 de 2015)."
-          >
-            <select value={tipoPqrsd} onChange={(e) => setTipoPqrsd(e.target.value)} className={inputCls}>
-              {TIPOS_PQRSD.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
-            </select>
-          </Field>
-          <Field label="Serie documental (TRD)" help="Clasificación archivística. Si no sabe cuál usar, déjela 'Sin clasificar' — se puede corregir después.">
-            <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
-              <option value="">— Sin clasificar —</option>
-              {series.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-            </select>
-          </Field>
-          <Field label="Subserie">
-            <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
-              <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
-              {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-            </select>
-          </Field>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field
+              label="Tipo PQRSD"
+              help="Selecciónelo SOLO si es una petición, queja, reclamo, sugerencia o denuncia de un ciudadano — el sistema calcula automáticamente la fecha límite de respuesta (Ley 1755 de 2015). No tiene relación con la serie documental de abajo."
+            >
+              <select value={tipoPqrsd} onChange={(e) => setTipoPqrsd(e.target.value)} className={inputCls}>
+                {TIPOS_PQRSD.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-stone-100 pt-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y destino (TRD)</h3>
+          <SectionHelp>
+            Elija primero la dependencia destino: la serie documental disponible depende de esa área, porque la TRD
+            clasifica lo que cada dependencia produce — por eso cada una tiene su propia lista de series. Si la deja
+            sin asignar, solo puede clasificar como &quot;Sin clasificar&quot; (se corrige después desde el detalle).
+          </SectionHelp>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field label="Dependencia destino" help="A qué área de la CDMB le corresponde atenderla. Puede dejarla sin asignar y distribuirla después.">
+              <select value={dependenciaId} onChange={(e) => cambiarDependencia(e.target.value)} className={inputCls}>
+                <option value="">— Sin asignar —</option>
+                {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
+              </select>
+            </Field>
+            <Field label="Serie documental (TRD)" help="Series propias de la dependencia elegida arriba.">
+              <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
+                <option value="">— Sin clasificar —</option>
+                {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
+              </select>
+            </Field>
+            <Field label="Subserie">
+              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
+                <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
+                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
+              </select>
+            </Field>
+          </div>
         </div>
       </section>
 
