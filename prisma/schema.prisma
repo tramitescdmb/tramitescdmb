@@ -810,28 +810,51 @@ model SerieDocumental {
   subseries      SubserieDocumental[]
   comunicaciones Comunicacion[]
 
-  @@unique([codigo, version])
+  // El código de serie NO es único por sí solo: es una categoría universal
+  // (ej. "20 ACTAS") que CADA dependencia produce por su cuenta, con sus
+  // propias subseries y tiempos de retención — así es la TRD real de la CDMB.
+  @@unique([dependenciaId, codigo, version])
   @@index([dependenciaId])
 }
 
 model SubserieDocumental {
-  id                    String            @id @default(cuid())
+  id                    String             @id @default(cuid())
   serieId               String
   codigo                String
   nombre                String
-  retencionGestionAnios Int               @default(0)
-  retencionCentralAnios Int               @default(0)
-  disposicionFinal      DisposicionFinal?
-  procedimiento         String?           @db.Text
-  activo                Boolean           @default(true)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  retencionGestionAnios Int                @default(0)
+  retencionCentralAnios Int                @default(0)
+  // Varias a la vez son el caso REAL más común en la TRD de la CDMB (ej.
+  // conservación total + microfilmación/digitalización juntas) — nunca fue un
+  // valor único en la práctica, por eso es un arreglo y no un enum solo.
+  disposicionesFinal    DisposicionFinal[]
+  procedimiento         String?            @db.Text
+  activo                Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
-  serie          SerieDocumental @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  serie          SerieDocumental         @relation(fields: [serieId], references: [id], onDelete: Cascade)
   comunicaciones Comunicacion[]
+  tiposDocumentales TipoDocumental[]
 
   @@unique([serieId, codigo])
   @@index([serieId])
+}
+
+// Tercer nivel de la TRD (Serie > Subserie > Tipo documental): qué documentos
+// concretos se esperan dentro de una subserie (ej. "Acta de reunión" dentro de
+// la subserie "Actas de Comité Directivo"). Solo referencial/descriptivo por
+// ahora (MoReq 1.42) — no se exige seleccionar uno al radicar.
+model TipoDocumental {
+  id                 String  @id @default(cuid())
+  subserieId         String
+  nombre             String
+  soportePapel       Boolean @default(false)
+  soporteElectronico Boolean @default(false)
+
+  subserie SubserieDocumental @relation(fields: [subserieId], references: [id], onDelete: Cascade)
+
+  @@index([subserieId])
 }
 
 // Secuencia de radicación ATÓMICA e inalterable — una fila por (serie, año).

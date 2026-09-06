@@ -4,7 +4,7 @@ import { ArrowRightCircle, Archive, FileWarning } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { getPendientesArchivisticos, listarActasEliminacion } from "@/lib/disposicion-final-data";
-import { REQUIERE_ACTA } from "@/lib/disposicion-final";
+import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
 
@@ -79,8 +79,9 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {pendientesDisposicion.map((c) => {
-              const disposicion = c.subserie?.disposicionFinal;
-              const exigeActa = disposicion ? REQUIERE_ACTA[disposicion] : false;
+              const disposiciones = c.subserie?.disposicionesFinal ?? [];
+              const exigeActa = algunaRequiereActa(disposiciones);
+              const etiquetas = disposiciones.map((d) => ETIQUETA_DISPOSICION[d]).join(" + ");
               return (
                 <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -92,10 +93,10 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                       </p>
                     </div>
                     <span className="flex-none rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
-                      {disposicion ? ETIQUETA_DISPOSICION[disposicion] : "Sin disposición definida en la TRD"}
+                      {disposiciones.length > 0 ? etiquetas : "Sin disposición definida en la TRD"}
                     </span>
                   </div>
-                  {!disposicion ? (
+                  {disposiciones.length === 0 ? (
                     <p className="mt-2 text-xs text-amber-700">Configure la disposición final de esta subserie en Administración antes de poder ejecutarla.</p>
                   ) : exigeActa ? (
                     <form action={`/api/correspondencia/${c.id}/disponer`} method="post" className="mt-3 grid grid-cols-1 gap-2 border-t border-stone-100 pt-3 sm:grid-cols-3">
@@ -110,7 +111,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                       <div className="sm:col-span-3">
                         <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700">
                           <Archive className="h-3.5 w-3.5" aria-hidden />
-                          Ejecutar {ETIQUETA_DISPOSICION[disposicion].toLowerCase()} (crea acta)
+                          Ejecutar {etiquetas.toLowerCase()} (crea acta)
                         </button>
                       </div>
                     </form>
@@ -118,7 +119,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                     <form action={`/api/correspondencia/${c.id}/disponer`} method="post" className="mt-3 border-t border-stone-100 pt-3">
                       <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                         <Archive className="h-3.5 w-3.5" aria-hidden />
-                        Marcar {ETIQUETA_DISPOSICION[disposicion].toLowerCase()}
+                        Marcar {etiquetas.toLowerCase()}
                       </button>
                     </form>
                   )}

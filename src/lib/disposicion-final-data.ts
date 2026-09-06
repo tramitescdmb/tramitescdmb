@@ -16,7 +16,7 @@ export async function getPendientesArchivisticos() {
       subserie: { retencionGestionAnios: { gt: 0 } },
     },
     include: {
-      subserie: { select: { codigo: true, nombre: true, retencionGestionAnios: true, retencionCentralAnios: true, disposicionFinal: true } },
+      subserie: { select: { codigo: true, nombre: true, retencionGestionAnios: true, retencionCentralAnios: true, disposicionesFinal: true } },
       serie: { select: { codigo: true, nombre: true } },
     },
     orderBy: { fechaRadicacion: "asc" },

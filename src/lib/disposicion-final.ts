@@ -42,3 +42,13 @@ export const REQUIERE_ACTA: Record<DisposicionFinal, boolean> = {
   SELECCION: true,
   MICROFILMACION_DIGITALIZACION: false,
 };
+
+/**
+ * Una subserie puede tener VARIAS disposiciones a la vez (el caso real más común
+ * en la TRD de la CDMB: conservación total + microfilmación/digitalización
+ * juntas). Si CUALQUIERA de ellas es eliminación o selección, destruye el
+ * original y por lo tanto exige acta — aunque además se conserve o digitalice.
+ */
+export function algunaRequiereActa(disposiciones: DisposicionFinal[]): boolean {
+  return disposiciones.some((d) => REQUIERE_ACTA[d]);
+}

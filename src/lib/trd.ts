@@ -21,7 +21,7 @@ export async function listarSeries() {
   return db.serieDocumental.findMany({
     orderBy: [{ codigo: "asc" }, { version: "asc" }],
     include: {
-      dependencia: { select: { nombre: true } },
+      dependencia: { select: { codigo: true, nombre: true } },
       subseries: { orderBy: { codigo: "asc" } },
       _count: { select: { comunicaciones: true } },
     },

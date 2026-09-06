@@ -213,19 +213,41 @@ async function seedConfiguracionSitio() {
   console.log("Configuración del sitio (fila singleton) lista.");
 }
 
-// SGDEA — organigrama mínimo editable (derivado de la estructura real de la CDMB)
-// + una serie "sin clasificar" para no bloquear la radicación mientras se cargan
-// las TRD reales desde el admin. Todo es upsert idempotente por código.
+// SGDEA — organigrama REAL de la CDMB (códigos y nombres oficiales tal como
+// aparecen en la TRD/CCD vigentes: A-GD-F013 v5 y A-GD-FO31 v2) + una serie
+// "sin clasificar" para no bloquear la radicación mientras se cargan TRD
+// adicionales desde el admin. Todo es upsert idempotente por código.
 async function seedCorrespondencia() {
   const dependencias: { codigo: string; nombre: string; parent?: string; nivel: number; orden: number }[] = [
-    { codigo: "DG", nombre: "Dirección General", nivel: 0, orden: 0 },
-    { codigo: "SG", nombre: "Secretaría General", parent: "DG", nivel: 1, orden: 1 },
-    { codigo: "SEYCA", nombre: "Subdirección de Evaluación y Control Ambiental (SEYCA)", parent: "DG", nivel: 1, orden: 2 },
-    { codigo: "SPGA", nombre: "Subdirección de Planeación y Gestión Ambiental", parent: "DG", nivel: 1, orden: 3 },
-    { codigo: "SADM", nombre: "Subdirección Administrativa y Financiera", parent: "DG", nivel: 1, orden: 4 },
-    { codigo: "GD", nombre: "Grupo de Gestión Documental", parent: "SG", nivel: 2, orden: 5 },
-    { codigo: "VENT", nombre: "Ventanilla Única de Correspondencia", parent: "GD", nivel: 3, orden: 6 },
-    { codigo: "JUR", nombre: "Grupo Jurídico", parent: "SG", nivel: 2, orden: 7 },
+    { codigo: "100", nombre: "Dirección General", nivel: 0, orden: 0 },
+    { codigo: "110", nombre: "Oficina Asesora de Direccionamiento Estratégico Institucional - ADEI", parent: "100", nivel: 1, orden: 1 },
+    { codigo: "120", nombre: "Oficina de Control Interno - OCI", parent: "100", nivel: 1, orden: 2 },
+    { codigo: "130", nombre: "Oficina de Contratación", parent: "100", nivel: 1, orden: 3 },
+    { codigo: "140", nombre: "Oficina de Gestión Social y Ambiental - GESA", parent: "100", nivel: 1, orden: 4 },
+    { codigo: "200", nombre: "Secretaría General - SG", parent: "100", nivel: 1, orden: 5 },
+    { codigo: "210", nombre: "Secretaría General - SG - Grupo Gestión Estratégica de Talento Humano", parent: "200", nivel: 2, orden: 6 },
+    { codigo: "220", nombre: "Secretaría General - SG - Grupo Jurídico Administrativo y Servicio al Ciudadano", parent: "200", nivel: 2, orden: 7 },
+    { codigo: "230", nombre: "Secretaría General - SG - Grupo Defensa Jurídica Integral", parent: "200", nivel: 2, orden: 8 },
+    { codigo: "240", nombre: "Secretaría General - SG - Grupo Gestión Documental, Información y Archivo", parent: "200", nivel: 2, orden: 9 },
+    { codigo: "300", nombre: "Control Disciplinario Interno - CDI", parent: "100", nivel: 1, orden: 10 },
+    { codigo: "400", nombre: "Subdirección Ordenamiento y Planificación Integral del Territorio - SOPIT", parent: "100", nivel: 1, orden: 11 },
+    { codigo: "410", nombre: "Subdirección Ordenamiento y Planificación Integral del Territorio - SOPIT - Grupo Gestión del Conocimiento para la Sostenibilidad", parent: "400", nivel: 2, orden: 12 },
+    { codigo: "420", nombre: "Subdirección Ordenamiento y Planificación Integral del Territorio - SOPIT - Grupo Ordenamiento y Planificación Territorial", parent: "400", nivel: 2, orden: 13 },
+    { codigo: "500", nombre: "Subdirección de Gestión Integral de la Oferta Ambiental - SUGOA", parent: "100", nivel: 1, orden: 14 },
+    { codigo: "510", nombre: "Subdirección de Gestión Integral de la Oferta Ambiental - SUGOA - Grupo Gestión Sostenible de la Biodiversidad", parent: "500", nivel: 2, orden: 15 },
+    { codigo: "520", nombre: "Subdirección de Gestión Integral de la Oferta Ambiental - SUGOA - Grupo Crecimiento Verde", parent: "500", nivel: 2, orden: 16 },
+    { codigo: "600", nombre: "Subdirección de Riesgo y Seguridad Territorial - SURYT", parent: "100", nivel: 1, orden: 17 },
+    { codigo: "610", nombre: "Subdirección de Riesgo y Seguridad Territorial - SURYT - Grupo Gestión del Riesgo", parent: "600", nivel: 2, orden: 18 },
+    { codigo: "620", nombre: "Subdirección de Riesgo y Seguridad Territorial - SURYT - Grupo Seguridad Hídrica y Cambio Climático", parent: "600", nivel: 2, orden: 19 },
+    { codigo: "700", nombre: "Subdirección de Evaluación y Control Ambiental - SEYCA", parent: "100", nivel: 1, orden: 20 },
+    { codigo: "710", nombre: "Subdirección de Evaluación y Control Ambiental - SEYCA - Grupo Evaluación para la Sostenibilidad", parent: "700", nivel: 2, orden: 21 },
+    { codigo: "720", nombre: "Subdirección de Evaluación y Control Ambiental - SEYCA - Grupo Seguimiento para la Sostenibilidad", parent: "700", nivel: 2, orden: 22 },
+    { codigo: "730", nombre: "Subdirección de Evaluación y Control Ambiental - SEYCA - Grupo Élite Ambiental para la Sostenibilidad \"GEA\"", parent: "700", nivel: 2, orden: 23 },
+    { codigo: "800", nombre: "Subdirección Administrativa y Financiera - SAF", parent: "100", nivel: 1, orden: 24 },
+    { codigo: "810", nombre: "Subdirección Administrativa y Financiera - SAF - Grupo Gestión Presupuestal y Eficiencia del Gasto Público", parent: "800", nivel: 2, orden: 25 },
+    { codigo: "820", nombre: "Subdirección Administrativa y Financiera - SAF - Grupo Tesorería y Cartera", parent: "800", nivel: 2, orden: 26 },
+    { codigo: "830", nombre: "Subdirección Administrativa y Financiera - SAF - Grupo Gestión Recursos Físicos para la Sostenibilidad", parent: "800", nivel: 2, orden: 27 },
+    { codigo: "840", nombre: "Subdirección Administrativa y Financiera - SAF - Grupo Gestión y Administración de Predios Institucionales", parent: "800", nivel: 2, orden: 28 },
   ];
   const idPorCodigo = new Map<string, string>();
   for (const d of dependencias) {
@@ -238,12 +260,12 @@ async function seedCorrespondencia() {
     idPorCodigo.set(d.codigo, fila.id);
   }
 
-  // Serie/subserie por defecto para poder radicar sin TRD cargada aún.
-  const serie = await db.serieDocumental.upsert({
-    where: { codigo_version: { codigo: "SIN-CLASIF", version: "1" } },
-    create: { codigo: "SIN-CLASIF", nombre: "Sin clasificar (pendiente TRD)", version: "1" },
-    update: {},
-  });
+  // Serie/subserie por defecto para poder radicar sin TRD cargada aún. Prisma
+  // no admite `null` dentro de una clave compuesta como filtro de upsert, así
+  // que se busca primero y se crea solo si falta.
+  const serie =
+    (await db.serieDocumental.findFirst({ where: { codigo: "SIN-CLASIF", version: "1", dependenciaId: null } })) ??
+    (await db.serieDocumental.create({ data: { codigo: "SIN-CLASIF", nombre: "Sin clasificar (pendiente TRD)", version: "1" } }));
   await db.subserieDocumental.upsert({
     where: { serieId_codigo: { serieId: serie.id, codigo: "GEN" } },
     create: { serieId: serie.id, codigo: "GEN", nombre: "General", retencionGestionAnios: 0, retencionCentralAnios: 0 },

@@ -24,8 +24,10 @@ export async function POST(req: NextRequest) {
   const nombre = String(form.get("nombre") || "").trim();
   const retencionGestionAnios = Math.max(0, Math.floor(Number(form.get("retencionGestionAnios")) || 0));
   const retencionCentralAnios = Math.max(0, Math.floor(Number(form.get("retencionCentralAnios")) || 0));
-  const dispRaw = String(form.get("disposicionFinal") || "");
-  const disposicionFinal = (DISPOSICIONES as string[]).includes(dispRaw) ? (dispRaw as DisposicionFinal) : null;
+  const disposicionesFinal = form
+    .getAll("disposicionesFinal")
+    .map((v) => String(v))
+    .filter((v): v is DisposicionFinal => (DISPOSICIONES as string[]).includes(v));
 
   const serie = serieId ? await db.serieDocumental.findUnique({ where: { id: serieId }, select: { codigo: true } }) : null;
   if (!serie || !codigo || !nombre) {
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await db.subserieDocumental.create({
-      data: { serieId, codigo, nombre, retencionGestionAnios, retencionCentralAnios, disposicionFinal },
+      data: { serieId, codigo, nombre, retencionGestionAnios, retencionCentralAnios, disposicionesFinal },
     });
   } catch {
     volver.searchParams.set("error", `Ya existe la subserie ${codigo} en esa serie.`);

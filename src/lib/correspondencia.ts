@@ -3,7 +3,7 @@ import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante,
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
-import { REQUIERE_ACTA } from "@/lib/disposicion-final";
+import { algunaRequiereActa } from "@/lib/disposicion-final";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -335,14 +335,14 @@ export type EntradaDisposicionFinal = {
 export async function ejecutarDisposicionFinal(entrada: EntradaDisposicionFinal) {
   const c = await db.comunicacion.findUnique({
     where: { id: entrada.comunicacionId },
-    select: { id: true, fechaDisposicionFinal: true, subserie: { select: { disposicionFinal: true } } },
+    select: { id: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } } },
   });
   if (!c) throw new Error("La comunicación no existe.");
   if (c.fechaDisposicionFinal) throw new Error("Ya se ejecutó la disposición final de esta comunicación.");
-  const disposicion = c.subserie?.disposicionFinal;
-  if (!disposicion) throw new Error("La subserie de esta comunicación no tiene una disposición final definida en la TRD.");
+  const disposiciones = c.subserie?.disposicionesFinal ?? [];
+  if (disposiciones.length === 0) throw new Error("La subserie de esta comunicación no tiene una disposición final definida en la TRD.");
 
-  if (!REQUIERE_ACTA[disposicion]) {
+  if (!algunaRequiereActa(disposiciones)) {
     return db.comunicacion.update({ where: { id: c.id }, data: { fechaDisposicionFinal: new Date() } });
   }
 
