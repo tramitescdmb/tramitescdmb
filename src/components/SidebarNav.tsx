@@ -10,6 +10,7 @@ import {
   UserCog,
   ShieldCheck,
   Palette,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
   { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
   { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
+  { href: "/admin/seguridad", label: "Seguridad", icon: Lock },
 ];
 
 /**

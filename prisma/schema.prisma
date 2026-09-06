@@ -15,7 +15,7 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model ConfiguracionSitio {
-  id               String   @id @default("singleton")
+  id               String  @id @default("singleton")
   logoUrl          String? // logo de la CDMB, header + footer
   logoPath         String?
   logoGovcoUrl     String? // franja azul superior
@@ -24,7 +24,13 @@ model ConfiguracionSitio {
   logoColombiaPath String?
   logoPotenciaUrl  String? // "Colombia Potencia de la Vida", franja del footer
   logoPotenciaPath String?
-  updatedAt        DateTime @updatedAt
+
+  // Seguridad de acceso (MoReq 6.12): antes eran constantes fijas en
+  // /api/auth/login — ahora configurables desde /admin/seguridad.
+  loginMaxIntentos    Int @default(5)
+  loginVentanaMinutos Int @default(15)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------------------

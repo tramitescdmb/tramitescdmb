@@ -125,6 +125,15 @@ export default async function ExpedienteDetallePage({
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
           <span>Índice electrónico ({expediente.documentos.length} documento(s))</span>
+          {expediente.documentos.length > 0 && (
+            <a
+              href={`/api/correspondencia/expedientes/${id}/indice`}
+              className="flex items-center gap-1 text-[11px] font-medium normal-case tracking-normal text-cdmb-700 hover:underline"
+            >
+              <Download className="h-3 w-3" aria-hidden />
+              Descargar índice (CSV)
+            </a>
+          )}
         </h3>
         <SectionHelp>
           El orden y la huella (hash) de cada documento se actualizan solos al agregar uno nuevo (Art. 4.3.2.3 Acuerdo

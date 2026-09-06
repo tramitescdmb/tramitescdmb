@@ -3,14 +3,12 @@ import { db } from "@/lib/db";
 import { createSessionCookie } from "@/lib/auth";
 import { verifyPassword } from "@/lib/password";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 import {
   autenticarDirectorioActivo,
   directorioActivoConfigurado,
   guardarTokenDirectorioActivo,
 } from "@/lib/directorio-activo";
-
-const VENTANA_MINUTOS = 15;
-const MAX_INTENTOS_FALLIDOS = 5;
 
 /**
  * Único punto de entrada del inicio de sesión. El formulario de /login manda
@@ -49,15 +47,19 @@ export async function POST(req: NextRequest) {
   // Protección contra fuerza bruta: se apoya en RegistroAuditoria (ya se registraba cada fallo, solo
   // faltaba frenar en base a eso) en vez de un contador en memoria, porque en Vercel cada solicitud
   // puede caer en una instancia distinta — un contador en memoria no serviría de nada ahí.
+  // Límite y ventana configurables desde /admin/seguridad (antes eran constantes fijas).
+  const configSeguridad = await getConfiguracionSitio();
+  const ventanaMinutos = configSeguridad.loginVentanaMinutos;
+  const maxIntentosFallidos = configSeguridad.loginMaxIntentos;
   const intentosFallidosRecientes = await db.registroAuditoria.count({
     where: {
       tipo: "LOGIN_FALLIDO",
       emailIntento: identidad,
-      createdAt: { gte: new Date(Date.now() - VENTANA_MINUTOS * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - ventanaMinutos * 60 * 1000) },
     },
   });
-  if (intentosFallidosRecientes >= MAX_INTENTOS_FALLIDOS) {
-    return fail(`Demasiados intentos fallidos. Espere ${VENTANA_MINUTOS} minutos antes de volver a intentar.`);
+  if (intentosFallidosRecientes >= maxIntentosFallidos) {
+    return fail(`Demasiados intentos fallidos. Espere ${ventanaMinutos} minutos antes de volver a intentar.`);
   }
 
   const redirectTo = next && next.startsWith("/") ? next : "/";

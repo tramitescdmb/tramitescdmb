@@ -11,6 +11,8 @@ const VACIA = {
   logoColombiaPath: null,
   logoPotenciaUrl: null,
   logoPotenciaPath: null,
+  loginMaxIntentos: 5,
+  loginVentanaMinutos: 15,
 } as const;
 
 /**
