@@ -8,8 +8,27 @@ export type FiltrosCorrespondencia = {
   tipo?: string;
   estado?: string;
   dependencia?: string;
+  orden?: string;
   page?: string;
   vista?: string;
+};
+
+const ORDEN_VALIDO = ["fecha_desc", "fecha_asc", "asunto_asc", "tercero_asc"] as const;
+export type OrdenCorrespondencia = (typeof ORDEN_VALIDO)[number];
+export const ETIQUETA_ORDEN: Record<OrdenCorrespondencia, string> = {
+  fecha_desc: "Más reciente primero",
+  fecha_asc: "Más antiguo primero",
+  asunto_asc: "Asunto (A-Z)",
+  tercero_asc: "Remitente/destinatario (A-Z)",
+};
+function esOrdenValido(v: string | undefined): v is OrdenCorrespondencia {
+  return !!v && (ORDEN_VALIDO as readonly string[]).includes(v);
+}
+const ORDER_BY: Record<OrdenCorrespondencia, Prisma.ComunicacionOrderByWithRelationInput[]> = {
+  fecha_desc: [{ fechaRadicacion: "desc" }, { radicado: "desc" }],
+  fecha_asc: [{ fechaRadicacion: "asc" }, { radicado: "asc" }],
+  asunto_asc: [{ asunto: "asc" }],
+  tercero_asc: [{ terceroNombre: { sort: "asc", nulls: "last" } }],
 };
 
 const ESTADOS_VALIDOS: EstadoComunicacion[] = [
@@ -63,11 +82,13 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
   const { porPagina, vista } = parsePorPagina(filtros.vista);
   const where = construirWhereCorrespondencia(filtros, rango);
 
+  const orden = esOrdenValido(filtros.orden) ? filtros.orden : "fecha_desc";
+
   const [total, filas] = await Promise.all([
     db.comunicacion.count({ where }),
     db.comunicacion.findMany({
       where,
-      orderBy: [{ fechaRadicacion: "desc" }, { radicado: "desc" }],
+      orderBy: ORDER_BY[orden],
       skip: (page - 1) * porPagina,
       take: porPagina,
       include: {
@@ -78,7 +99,7 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
     }),
   ]);
 
-  return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista };
+  return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista, orden };
 }
 
 export async function getCorrespondenciaOpcionesFiltro() {

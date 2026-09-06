@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
-import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
+import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { SectionHelp } from "@/components/Field";
@@ -41,13 +41,13 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "desde", "hasta"] as const;
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -129,6 +129,15 @@ export default async function CorrespondenciaBandejaPage({
               <option value="">Todas</option>
               {opciones.dependencias.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Ordenar por</span>
+            <select name="orden" defaultValue={orden} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              {Object.entries(ETIQUETA_ORDEN).map(([valor, etiqueta]) => (
+                <option key={valor} value={valor}>{etiqueta}</option>
               ))}
             </select>
           </label>
