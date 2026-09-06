@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { AccionAuditoriaDoc } from "@prisma/client";
+import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
 export const ACCIONES_BITACORA: AccionAuditoriaDoc[] = [
   "CREA", "LEE", "MODIFICA", "EXPORTA", "ELIMINA", "DISTRIBUYE", "FIRMA",
@@ -21,14 +22,18 @@ export type FiltrosBitacora = { accion?: AccionAuditoriaDoc; entidad?: string; d
  * competir por tiempo de carga con las gráficas del panel de reportes.
  */
 export async function listarBitacoraFiltrada(filtros: FiltrosBitacora, pagina: number, porPagina = 30) {
+  // Un "desde"/"hasta" mal formado (URL editada a mano, enlace viejo) se ignora en vez de
+  // reventar la consulta — Prisma no acepta un Date inválido como valor de filtro.
+  const desde = filtros.desde ? parsearFechaLocal(filtros.desde) : null;
+  const hasta = filtros.hasta ? parsearFechaLocal(filtros.hasta) : null;
   const where = {
     ...(filtros.accion ? { accion: filtros.accion } : {}),
     ...(filtros.entidad ? { entidad: filtros.entidad } : {}),
-    ...(filtros.desde || filtros.hasta
+    ...(desde || hasta
       ? {
           createdAt: {
-            ...(filtros.desde ? { gte: new Date(filtros.desde) } : {}),
-            ...(filtros.hasta ? { lte: new Date(`${filtros.hasta}T23:59:59`) } : {}),
+            ...(desde ? { gte: desde } : {}),
+            ...(hasta ? { lte: new Date(hasta.getTime() + 86_400_000 - 1) } : {}),
           },
         }
       : {}),
