@@ -7,6 +7,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpe
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
+import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { headers } from "next/headers";
 
 const ETIQUETA_ACCION: Record<string, string> = {
@@ -161,15 +162,18 @@ export default async function ExpedienteDetallePage({
                     </span>
                   </span>
                 </span>
-                <a
-                  href={`/api/documentos-archivo/${doc.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden />
-                  Abrir
-                </a>
+                <span className="flex flex-none items-center gap-1.5">
+                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                  <a
+                    href={`/api/documentos-archivo/${doc.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden />
+                    Abrir
+                  </a>
+                </span>
               </li>
             ))}
           </ul>
