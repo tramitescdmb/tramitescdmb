@@ -3,9 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import { SectionHelp } from "@/components/Field";
+import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
+import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { headers } from "next/headers";
@@ -90,6 +91,11 @@ export default async function ExpedienteDetallePage({
             {abierto ? "Abierto" : "Cerrado"}
           </span>
         </div>
+        {expediente.nivelAcceso !== "PUBLICA" && (
+          <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
+            {ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]}
+          </span>
+        )}
         <p className="mt-3 text-sm text-stone-700">{expediente.asunto}</p>
         {expediente.descripcion && <p className="mt-1 text-sm text-stone-500">{expediente.descripcion}</p>}
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
@@ -109,6 +115,16 @@ export default async function ExpedienteDetallePage({
             <dt className="text-[11px] text-stone-400">Fecha de apertura</dt>
             <dd className="text-sm text-stone-800">{fechaHora(expediente.fechaApertura)}</dd>
           </div>
+          <div>
+            <dt className="text-[11px] text-stone-400">Nivel de acceso (Ley 1712/2014)</dt>
+            <dd className="text-sm text-stone-800">{ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]}</dd>
+          </div>
+          {expediente.fundamentoNivelAcceso && (
+            <div className="sm:col-span-2">
+              <dt className="text-[11px] text-stone-400">Fundamento</dt>
+              <dd className="text-sm text-stone-800">{expediente.fundamentoNivelAcceso}</dd>
+            </div>
+          )}
         </dl>
 
         {!abierto && (
@@ -127,13 +143,22 @@ export default async function ExpedienteDetallePage({
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
           <span>Índice electrónico ({expediente.documentos.length} documento(s))</span>
           {expediente.documentos.length > 0 && (
-            <a
-              href={`/api/correspondencia/expedientes/${id}/indice`}
-              className="flex items-center gap-1 text-[11px] font-medium normal-case tracking-normal text-cdmb-700 hover:underline"
-            >
-              <Download className="h-3 w-3" aria-hidden />
-              Descargar índice (CSV)
-            </a>
+            <span className="flex items-center gap-3 normal-case tracking-normal">
+              <a
+                href={`/api/correspondencia/expedientes/${id}/indice`}
+                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+              >
+                <Download className="h-3 w-3" aria-hidden />
+                Descargar índice (CSV)
+              </a>
+              <a
+                href={`/api/correspondencia/expedientes/${id}/indice?formato=xml`}
+                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+              >
+                <Download className="h-3 w-3" aria-hidden />
+                XML
+              </a>
+            </span>
           )}
         </h3>
         <SectionHelp>
@@ -199,6 +224,37 @@ export default async function ExpedienteDetallePage({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {puedeAdministrarArchivo(permisos) && (
+        <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Nivel de acceso a la información (Ley 1712/2014)</h3>
+          <SectionHelp>
+            Toda información es <strong>pública</strong> por defecto. Márquelo como <strong>clasificado</strong> si
+            expone datos privados de alguien, o <strong>reservado</strong> si su divulgación afectaría un interés
+            público — en ambos casos la ley exige dejar por escrito el fundamento.
+          </SectionHelp>
+          <form action={`/api/correspondencia/expedientes/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[200px]">
+              <Field label="Nivel de acceso" required>
+                <select name="nivelAcceso" required defaultValue={expediente.nivelAcceso} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                  {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
+                    <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div className="min-w-[260px] flex-1">
+              <Field label="Fundamento" help="Obligatorio si elige clasificado o reservado.">
+                <input name="fundamento" defaultValue={expediente.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Lock className="h-3.5 w-3.5" aria-hidden />
+              Guardar
+            </button>
+          </form>
         </section>
       )}
 

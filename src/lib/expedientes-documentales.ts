@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
-import type { EstadoExpedienteDocumental } from "@prisma/client";
+import type { EstadoExpedienteDocumental, NivelAccesoInformacion } from "@prisma/client";
 
 /**
  * Expediente electrónico de archivo general (Art. 4.3.2 Acuerdo 001/2024 AGN):
@@ -108,6 +108,21 @@ export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId
     where: { id: expedienteId },
     data: { estado: "CERRADO", fechaCierre: new Date(), cerradoPorId: usuarioId, indiceHash },
   });
+}
+
+/** Igual que cambiarNivelAccesoComunicacion pero para el expediente documental completo (Ley 1712/2014). */
+export async function cambiarNivelAccesoExpediente(expedienteId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { id: true, nivelAcceso: true } });
+  if (!expediente) throw new Error("El expediente no existe.");
+  if (nivelAcceso !== "PUBLICA" && !fundamento.trim()) {
+    throw new Error("Clasificar o reservar información exige indicar el fundamento legal (Ley 1712/2014, arts. 18-19).");
+  }
+
+  await db.expedienteDocumental.update({
+    where: { id: expedienteId },
+    data: { nivelAcceso, fundamentoNivelAcceso: nivelAcceso === "PUBLICA" ? null : fundamento.trim() },
+  });
+  return { anterior: expediente.nivelAcceso, nuevo: nivelAcceso };
 }
 
 export async function archivarComunicacionEnExpedienteDocumental(comunicacionId: string, expedienteId: string) {

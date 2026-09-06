@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -9,6 +9,7 @@ import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
+import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -165,6 +166,11 @@ export default async function CorrespondenciaDetallePage({
               </span>
             )}
             <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">{ETIQUETA_ESTADO[c.estado] ?? c.estado}</span>
+            {c.nivelAcceso !== "PUBLICA" && (
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[c.nivelAcceso]}`}>
+                {ETIQUETA_NIVEL_ACCESO[c.nivelAcceso]}
+              </span>
+            )}
             <Link href={`/correspondencia/${id}/constancia`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
               <Printer className="h-3.5 w-3.5" aria-hidden />
               Constancia
@@ -188,6 +194,8 @@ export default async function CorrespondenciaDetallePage({
           <Campo k="Vence" v={c.fechaVencimiento ? fechaHora(c.fechaVencimiento) : null} />
           <Campo k="Serie (TRD)" v={c.serie ? `${c.serie.codigo} — ${c.serie.nombre}` : null} />
           <Campo k="Subserie" v={c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : null} />
+          <Campo k="Nivel de acceso (Ley 1712/2014)" v={ETIQUETA_NIVEL_ACCESO[c.nivelAcceso]} />
+          {c.fundamentoNivelAcceso && <Campo k="Fundamento" v={c.fundamentoNivelAcceso} />}
           <Campo
             k="Archivada en expediente"
             v={c.expediente ? <Link href={`/expedientes/${c.expediente.id}`} className="text-cdmb-700 hover:underline">{c.expediente.numero}</Link> : null}
@@ -483,6 +491,37 @@ export default async function CorrespondenciaDetallePage({
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <FolderTree className="h-3.5 w-3.5" aria-hidden />
               Reclasificar
+            </button>
+          </form>
+        </Tarjeta>
+      )}
+
+      {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
+        <Tarjeta titulo="Nivel de acceso a la información (Ley 1712/2014)">
+          <SectionHelp>
+            Toda información es <strong>pública</strong> por defecto. Márquela como <strong>clasificada</strong> si
+            expone datos privados de alguien (protege un derecho particular) o <strong>reservada</strong> si su
+            divulgación afectaría un interés público (seguridad, salud, investigaciones en curso, etc.) — en ambos
+            casos la ley exige dejar por escrito el fundamento.
+          </SectionHelp>
+          <form action={`/api/correspondencia/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[200px]">
+              <Field label="Nivel de acceso" required>
+                <select name="nivelAcceso" required defaultValue={c.nivelAcceso} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                  {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
+                    <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div className="min-w-[260px] flex-1">
+              <Field label="Fundamento" help="Obligatorio si elige clasificada o reservada; puede dejarlo vacío para pública.">
+                <input name="fundamento" defaultValue={c.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Lock className="h-3.5 w-3.5" aria-hidden />
+              Guardar
             </button>
           </form>
         </Tarjeta>

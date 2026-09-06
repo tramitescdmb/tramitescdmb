@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
     "Tipo PQRSD",
     "Vencimiento",
     "Documentos",
+    "Nivel de acceso",
     "Enlace en la app",
   ];
 
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
       c.tipoPqrsd ?? "",
       c.fechaVencimiento ? c.fechaVencimiento.toISOString().slice(0, 10) : "",
       c._count.documentos,
+      c.nivelAcceso,
       `/correspondencia/${c.id}`,
     ]
       .map(celda)

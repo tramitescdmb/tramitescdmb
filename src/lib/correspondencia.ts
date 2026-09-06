@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma } from "@prisma/client";
+import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
@@ -303,6 +303,26 @@ export async function reclasificarComunicacion(comunicacionId: string, subserieI
 
   await db.comunicacion.update({ where: { id: comunicacionId }, data: { serieId: subserie.serieId, subserieId: subserie.id } });
   return { anterior, nueva };
+}
+
+/**
+ * Cambia el nivel de acceso a la información de una comunicación (Ley 1712/2014,
+ * arts. 6/18/19). PUBLICA no exige fundamento; CLASIFICADA/RESERVADA sí, por
+ * escrito — la ley exige poder justificar por qué se restringe el acceso.
+ */
+export async function cambiarNivelAccesoComunicacion(comunicacionId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {
+  const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, estado: true, nivelAcceso: true } });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.estado === "ANULADA") throw new Error("No se puede cambiar el nivel de acceso de una comunicación anulada.");
+  if (nivelAcceso !== "PUBLICA" && !fundamento.trim()) {
+    throw new Error("Clasificar o reservar información exige indicar el fundamento legal (Ley 1712/2014, arts. 18-19).");
+  }
+
+  await db.comunicacion.update({
+    where: { id: comunicacionId },
+    data: { nivelAcceso, fundamentoNivelAcceso: nivelAcceso === "PUBLICA" ? null : fundamento.trim() },
+  });
+  return { anterior: c.nivelAcceso, nuevo: nivelAcceso };
 }
 
 /** Archiva una comunicación ya radicada dentro de un expediente (unificación con Trámites 2.0). */

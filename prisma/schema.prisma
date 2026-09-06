@@ -787,6 +787,17 @@ enum MedioComunicacion {
   OTRO
 }
 
+// Niveles de acceso a la información (Ley 1712/2014 de Transparencia, arts. 6/18/19):
+// toda información es PÚBLICA por defecto; CLASIFICADA protege derechos particulares
+// (privacidad, datos personales); RESERVADA protege un interés público (seguridad,
+// salud pública, etc.). Clasificar/reservar exige fundamento legal por escrito — de
+// ahí el campo `fundamentoNivelAcceso`, obligatorio salvo para PUBLICA.
+enum NivelAccesoInformacion {
+  PUBLICA
+  CLASIFICADA
+  RESERVADA
+}
+
 // Acciones registradas en la bitácora inalterable (incluye LEE y EXPORTA, que
 // la auditoría de cuenta RegistroAuditoria no captura).
 enum AccionAuditoriaDoc {
@@ -979,6 +990,10 @@ model Comunicacion {
   fechaDisposicionFinal DateTime?
   actaEliminacionId     String?
 
+  // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
+  nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
+  fundamentoNivelAcceso String?                @db.Text
+
   tercero              Solicitante?          @relation(fields: [terceroId], references: [id])
   dependenciaOrigen    Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino   Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
@@ -1126,6 +1141,10 @@ model ExpedienteDocumental {
   // digital con certificado. Cubre el orden y el hash de cada documento: si algo
   // cambia después de cerrado, deja de coincidir.
   indiceHash    String?
+
+  // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
+  nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
+  fundamentoNivelAcceso String?                @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

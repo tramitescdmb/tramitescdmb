@@ -4,6 +4,7 @@ import { FolderOpen, FolderCheck, Plus } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { listarExpedientesDocumentales } from "@/lib/expedientes-documentales";
+import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { SectionHelp } from "@/components/Field";
 import type { EstadoExpedienteDocumental } from "@prisma/client";
 
@@ -88,14 +89,21 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                   <td className="px-4 py-2 text-xs text-stone-500">{e.serie ? `${e.serie.codigo} — ${e.serie.nombre}` : "Sin clasificar"}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-stone-500">{e._count.documentos}</td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        e.estado === "ABIERTO" ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-600"
-                      }`}
-                    >
-                      {e.estado === "ABIERTO" ? <FolderOpen className="h-3 w-3" aria-hidden /> : <FolderCheck className="h-3 w-3" aria-hidden />}
-                      {e.estado === "ABIERTO" ? "Abierto" : "Cerrado"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          e.estado === "ABIERTO" ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-600"
+                        }`}
+                      >
+                        {e.estado === "ABIERTO" ? <FolderOpen className="h-3 w-3" aria-hidden /> : <FolderCheck className="h-3 w-3" aria-hidden />}
+                        {e.estado === "ABIERTO" ? "Abierto" : "Cerrado"}
+                      </span>
+                      {e.nivelAcceso !== "PUBLICA" && (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[e.nivelAcceso]}`}>
+                          {ETIQUETA_NIVEL_ACCESO[e.nivelAcceso]}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-xs text-stone-400">{fecha(e.fechaApertura)}</td>
                 </tr>
