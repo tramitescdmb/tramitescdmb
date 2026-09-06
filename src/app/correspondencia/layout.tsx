@@ -17,6 +17,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
 
   const permitido = {
     bandeja: true,
+    expedientes: puedeAccederCorrespondencia(permisos),
     radicar: puedeRadicar(permisos),
     admin: puedeAdministrarArchivo(permisos),
   };
@@ -28,15 +29,18 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
             <Mail className="h-4 w-4" aria-hidden />
           </span>
-          <h1 className="text-xl font-semibold text-stone-900">Correspondencia</h1>
+          <h1 className="text-xl font-semibold text-stone-900">SGDEA — Correspondencia y Archivo</h1>
           <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Radicado inalterable
           </span>
         </div>
         <p className="mt-1 text-sm text-stone-500">
-          Ventanilla única de radicación y gestión documental electrónica (SGDEA), conforme al Acuerdo 060/2001 del AGN.
-          Toda acción queda en una bitácora de auditoría inalterable.
+          Sistema de Gestión de Documentos Electrónicos de Archivo, conforme al Acuerdo Único de la Función
+          Archivística (Acuerdo 001/2024 AGN) y al Acuerdo 060/2001 del AGN. La correspondencia es solo una de las
+          formas en que un documento entra al archivo — en <strong>Expedientes</strong> cualquier dependencia puede
+          abrir y gestionar su propio archivo documental sin que pase por la ventanilla. Toda acción queda en una
+          bitácora de auditoría inalterable.
         </p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <a

@@ -88,15 +88,18 @@ model Usuario {
   dependenciaId      String?
   rolCorrespondencia RolCorrespondencia?
 
-  dependencia             Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
-  dependenciasResponsable Dependencia[]           @relation("DependenciaResponsable")
-  comunicacionesRadicadas Comunicacion[]          @relation("ComunicacionRadicadaPor")
-  comunicacionDocumentos  ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
-  distribucionesRecibidas Distribucion[]          @relation("DistribucionUsuario")
-  distribucionesAsignadas Distribucion[]          @relation("DistribucionAsignadoPor")
-  firmas                  Firma[]                 @relation("FirmaUsuario")
-  auditoriasDoc           AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
-  actasEliminacionAprobadas ActaEliminacion[]     @relation("ActaEliminacionAprobadaPor")
+  dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
+  dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")
+  comunicacionesRadicadas         Comunicacion[]          @relation("ComunicacionRadicadaPor")
+  comunicacionDocumentos          ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
+  distribucionesRecibidas         Distribucion[]          @relation("DistribucionUsuario")
+  expedientesDocumentalesCreados  ExpedienteDocumental[]  @relation("ExpedienteDocumentalCreadoPor")
+  expedientesDocumentalesCerrados ExpedienteDocumental[]  @relation("ExpedienteDocumentalCerradoPor")
+  documentosArchivoSubidos        DocumentoArchivo[]      @relation("DocumentoArchivoSubidoPor")
+  distribucionesAsignadas         Distribucion[]          @relation("DistribucionAsignadoPor")
+  firmas                          Firma[]                 @relation("FirmaUsuario")
+  auditoriasDoc                   AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
+  actasEliminacionAprobadas       ActaEliminacion[]       @relation("ActaEliminacionAprobadaPor")
 
   @@index([dependenciaId])
 }
@@ -785,9 +788,10 @@ model Dependencia {
   usuarios    Usuario[]         @relation("UsuarioDependencia")
   series      SerieDocumental[]
 
-  comunicacionesDestino Comunicacion[] @relation("ComunicacionDependenciaDestino")
-  comunicacionesOrigen  Comunicacion[] @relation("ComunicacionDependenciaOrigen")
-  distribuciones        Distribucion[]
+  comunicacionesDestino   Comunicacion[]         @relation("ComunicacionDependenciaDestino")
+  comunicacionesOrigen    Comunicacion[]         @relation("ComunicacionDependenciaOrigen")
+  distribuciones          Distribucion[]
+  expedientesDocumentales ExpedienteDocumental[]
 
   @@index([parentId])
 }
@@ -806,9 +810,10 @@ model SerieDocumental {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  dependencia    Dependencia?         @relation(fields: [dependenciaId], references: [id])
-  subseries      SubserieDocumental[]
-  comunicaciones Comunicacion[]
+  dependencia             Dependencia?           @relation(fields: [dependenciaId], references: [id])
+  subseries               SubserieDocumental[]
+  comunicaciones          Comunicacion[]
+  expedientesDocumentales ExpedienteDocumental[]
 
   // El código de serie NO es único por sí solo: es una categoría universal
   // (ej. "20 ACTAS") que CADA dependencia produce por su cuenta, con sus
@@ -833,9 +838,10 @@ model SubserieDocumental {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  serie          SerieDocumental         @relation(fields: [serieId], references: [id], onDelete: Cascade)
-  comunicaciones Comunicacion[]
-  tiposDocumentales TipoDocumental[]
+  serie                   SerieDocumental        @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  comunicaciones          Comunicacion[]
+  tiposDocumentales       TipoDocumental[]
+  expedientesDocumentales ExpedienteDocumental[]
 
   @@unique([serieId, codigo])
   @@index([serieId])
@@ -910,13 +916,14 @@ model Comunicacion {
   terceroDireccion          String?
   terceroMunicipio          String?
 
-  dependenciaOrigenId  String? // quién envía (ENVIADA/INTERNA) — la dependencia que redacta
-  dependenciaDestinoId String? // a qué dependencia de la CDMB va dirigida (RECIBIDA) o destino (INTERNA)
-  serieId              String? // clasificación TRD
-  subserieId           String?
-  expedienteId         String? // archivada dentro de un expediente (unificación)
-  vitalRelacionado     String? // idVital relacionado, si aplica (columna VITAL_REC del legado)
-  respondeAId          String? // ENVIADA que responde a una comunicación RECIBIDA — enlaza el ciclo completo
+  dependenciaOrigenId    String? // quién envía (ENVIADA/INTERNA) — la dependencia que redacta
+  dependenciaDestinoId   String? // a qué dependencia de la CDMB va dirigida (RECIBIDA) o destino (INTERNA)
+  serieId                String? // clasificación TRD
+  subserieId             String?
+  expedienteId           String? // archivada dentro de un expediente de Trámites 2.0 (unificación)
+  expedienteDocumentalId String? // archivada dentro de un ExpedienteDocumental (archivo general, no un trámite)
+  vitalRelacionado       String? // idVital relacionado, si aplica (columna VITAL_REC del legado)
+  respondeAId            String? // ENVIADA que responde a una comunicación RECIBIDA — enlaza el ciclo completo
 
   fechaVencimiento DateTime? // término de ley (se calcula en Fase 3 con días hábiles)
   radicadoPorId    String?
@@ -932,16 +939,17 @@ model Comunicacion {
   fechaDisposicionFinal DateTime?
   actaEliminacionId     String?
 
-  tercero            Solicitante?        @relation(fields: [terceroId], references: [id])
-  dependenciaOrigen  Dependencia?        @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
-  dependenciaDestino Dependencia?        @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
-  serie              SerieDocumental?    @relation(fields: [serieId], references: [id])
-  subserie           SubserieDocumental? @relation(fields: [subserieId], references: [id])
-  expediente         Expediente?         @relation(fields: [expedienteId], references: [id])
-  radicadoPor        Usuario?            @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
-  respondeA          Comunicacion?       @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
-  respuestas         Comunicacion[]      @relation("ComunicacionRespuesta")
-  actaEliminacion    ActaEliminacion?    @relation(fields: [actaEliminacionId], references: [id])
+  tercero              Solicitante?          @relation(fields: [terceroId], references: [id])
+  dependenciaOrigen    Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
+  dependenciaDestino   Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
+  serie                SerieDocumental?      @relation(fields: [serieId], references: [id])
+  subserie             SubserieDocumental?   @relation(fields: [subserieId], references: [id])
+  expediente           Expediente?           @relation(fields: [expedienteId], references: [id])
+  expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
+  radicadoPor          Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
+  respondeA            Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
+  respuestas           Comunicacion[]        @relation("ComunicacionRespuesta")
+  actaEliminacion      ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])
 
   documentos     ComunicacionDocumento[]
   distribuciones Distribucion[]
@@ -955,6 +963,7 @@ model Comunicacion {
   @@index([fechaRadicacion])
   @@index([dependenciaDestinoId])
   @@index([expedienteId])
+  @@index([expedienteDocumentalId])
   @@index([fechaVencimiento])
   @@index([actaEliminacionId])
 }
@@ -1040,6 +1049,83 @@ model Firma {
 
   @@index([comunicacionId])
   @@index([usuarioId])
+}
+
+enum EstadoExpedienteDocumental {
+  ABIERTO
+  CERRADO
+}
+
+// Expediente electrónico de archivo (Art. 4.3.2 Acuerdo 001/2024 AGN): la unidad
+// documental que agrupa TODOS los documentos de un mismo trámite, actuación o
+// procedimiento de una dependencia — a diferencia de Expediente (arriba), que es
+// específico de un trámite ambiental de Trámites 2.0, y de Comunicacion, que es
+// específica de un radicado de correspondencia. Un funcionario de CUALQUIER
+// dependencia puede abrir uno y subirle documentos directamente sin que tengan
+// que llegar por correspondencia — es el archivo de gestión del día a día de
+// cada área (contratos, actas internas, historias laborales, etc.). También se
+// le pueden archivar comunicaciones ya radicadas (mismo patrón que
+// Comunicacion.expedienteId, pero hacia este modelo).
+model ExpedienteDocumental {
+  id          String                     @id @default(cuid())
+  numero      String                     @unique // ej. CDMB-X-2026-000001 (mismo consecutivo atómico que Comunicacion, serie "X")
+  asunto      String                     @db.Text
+  descripcion String?                    @db.Text
+  estado      EstadoExpedienteDocumental @default(ABIERTO)
+
+  dependenciaId String
+  serieId       String?
+  subserieId    String?
+
+  creadoPorId   String
+  fechaApertura DateTime  @default(now())
+  fechaCierre   DateTime?
+  cerradoPorId  String?
+  // Hash del índice electrónico al cerrar (Art. 4.3.2.2-4 AGN: "firma del índice
+  // electrónico"). Firma con hash, mismo criterio que Firma/AuditoriaDoc — no
+  // digital con certificado. Cubre el orden y el hash de cada documento: si algo
+  // cambia después de cerrado, deja de coincidir.
+  indiceHash    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dependencia Dependencia         @relation(fields: [dependenciaId], references: [id])
+  serie       SerieDocumental?    @relation(fields: [serieId], references: [id])
+  subserie    SubserieDocumental? @relation(fields: [subserieId], references: [id])
+  creadoPor   Usuario             @relation("ExpedienteDocumentalCreadoPor", fields: [creadoPorId], references: [id])
+  cerradoPor  Usuario?            @relation("ExpedienteDocumentalCerradoPor", fields: [cerradoPorId], references: [id])
+
+  documentos     DocumentoArchivo[]
+  comunicaciones Comunicacion[]
+
+  @@index([dependenciaId])
+  @@index([serieId])
+  @@index([estado])
+}
+
+// Documento subido DIRECTAMENTE a un ExpedienteDocumental (no vía correspondencia).
+// Mismo patrón que ComunicacionDocumento/ExpedienteDocumento: hash SHA-256 +
+// storagePath en el bucket "documentos". `ordenIndice` es la posición dentro del
+// índice electrónico del expediente (Art. 4.3.2.3 AGN: debe respetar el orden
+// original y permitir reconstruir la secuencia completa).
+model DocumentoArchivo {
+  id                     String   @id @default(cuid())
+  expedienteDocumentalId String
+  ordenIndice            Int
+  nombre                 String
+  descripcion            String?
+  storagePath            String
+  mimeType               String
+  tamanoBytes            Int
+  hashSha256             String?
+  subidoPorId            String
+  createdAt              DateTime @default(now())
+
+  expediente ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  subidoPor  Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
+
+  @@index([expedienteDocumentalId])
 }
 
 // Bitácora inalterable con cadena de hash. Cada fila encadena su `hash` con el

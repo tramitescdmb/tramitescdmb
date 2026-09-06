@@ -175,3 +175,20 @@ export function puedeDistribuir(permisos: PermisosUsuario): boolean {
 export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
 }
+
+/**
+ * ¿Puede abrir o subir documentos a un expediente documental DE ESTA
+ * dependencia? Cualquier funcionario con acceso al módulo puede hacerlo para
+ * su propia dependencia (así como gestiona sus propios documentos del día a
+ * día) — el administrador de archivo puede hacerlo para cualquiera.
+ */
+export function puedeGestionarExpedienteDeDependencia(permisos: PermisosUsuario, dependenciaId: string): boolean {
+  if (!puedeAccederCorrespondencia(permisos)) return false;
+  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return true;
+  return permisos.dependenciaId === dependenciaId;
+}
+
+/** ¿Puede cerrar un expediente documental (firma del índice electrónico, Art. 4.3.2.4 Acuerdo 001/2024 AGN)? */
+export function puedeCerrarExpediente(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarArchivo(permisos);
+}

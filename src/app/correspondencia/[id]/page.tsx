@@ -75,6 +75,7 @@ export default async function CorrespondenciaDetallePage({
       subserie: { select: { codigo: true, nombre: true } },
       radicadoPor: { select: { nombre: true } },
       expediente: { select: { id: true, numero: true } },
+      expedienteDocumental: { select: { id: true, numero: true } },
       respondeA: { select: { id: true, radicado: true, asunto: true } },
       respuestas: { select: { id: true, radicado: true, asunto: true } },
       firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true } } } },
@@ -387,7 +388,7 @@ export default async function CorrespondenciaDetallePage({
       )}
 
       {puedeDistribuirUsuario && (
-        <Tarjeta titulo="Expediente electrónico">
+        <Tarjeta titulo="Expediente de trámite (Trámites 2.0)">
           {c.expediente ? (
             <p className="text-sm text-stone-600">
               Ya está archivada en el expediente{" "}
@@ -403,6 +404,39 @@ export default async function CorrespondenciaDetallePage({
                 <div className="min-w-[220px] flex-1">
                   <Field label="Número de expediente">
                     <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                  </Field>
+                </div>
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+                  <Archive className="h-3.5 w-3.5" aria-hidden />
+                  Archivar
+                </button>
+              </form>
+            </>
+          )}
+        </Tarjeta>
+      )}
+
+      {puedeDistribuirUsuario && (
+        <Tarjeta titulo="Expediente documental (archivo general)">
+          {c.expedienteDocumental ? (
+            <p className="text-sm text-stone-600">
+              Ya está archivada en el expediente{" "}
+              <Link href={`/correspondencia/expedientes/${c.expedienteDocumental.id}`} className="font-medium text-cdmb-700 hover:underline">
+                {c.expedienteDocumental.numero}
+              </Link>.
+            </p>
+          ) : (
+            <>
+              <SectionHelp>
+                A diferencia del expediente de trámite, este es el archivo general de una dependencia (Art. 4.3.2
+                Acuerdo 001/2024 AGN) — útil cuando esta comunicación es parte de una gestión que no es un trámite
+                ambiental. Escriba el número exacto del expediente, o{" "}
+                <Link href="/correspondencia/expedientes/nuevo" className="underline">abra uno nuevo</Link>.
+              </SectionHelp>
+              <form action={`/api/correspondencia/${id}/archivar-expediente-documental`} method="post" className="flex flex-wrap items-end gap-3">
+                <div className="min-w-[220px] flex-1">
+                  <Field label="Número de expediente">
+                    <input name="numeroExpedienteDocumental" placeholder="Ej. CDMB-X-2026-000001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
                   </Field>
                 </div>
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">

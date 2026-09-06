@@ -33,30 +33,34 @@ export function formatearRadicado(serie: string, anio: number, numero: number): 
 
 export type RadicadoGenerado = { radicado: string; anio: number; numero: number; serie: string };
 
-export async function generarRadicado(
-  tipo: TipoComunicacion,
+/**
+ * Consecutivo atómico genérico por (serie, año) — la misma mecánica de
+ * `generarRadicado` de abajo, factorizada para poder numerar otras cosas con
+ * la misma garantía de unicidad (ej. ExpedienteDocumental, serie "X"), sin
+ * duplicar la lógica de reintento.
+ */
+export async function generarConsecutivo(
+  serie: string,
   anio: number = new Date().getFullYear(),
   cliente: ClientePrisma = db
-): Promise<RadicadoGenerado> {
-  const serie = serieDeTipo(tipo);
-
+): Promise<{ anio: number; numero: number; serie: string }> {
   // Estrategia: intentar el UPDATE atómico; si la fila (serie,año) aún no existe
-  // (primera radicación del año), crearla; si el create choca por unique porque
+  // (primer consecutivo del año), crearla; si el create choca por unique porque
   // otra petición la creó primero, reintentar el UPDATE. Tras existir la fila,
-  // TODO radicado pasa por el UPDATE atómico con RETURNING.
+  // TODO consecutivo pasa por el UPDATE atómico con RETURNING.
   for (let intento = 0; intento < 6; intento++) {
     try {
       const fila = await cliente.consecutivoRadicado.update({
         where: { serie_anio: { serie, anio } },
         data: { ultimoNumero: { increment: 1 } },
       });
-      return { radicado: formatearRadicado(serie, anio, fila.ultimoNumero), anio, numero: fila.ultimoNumero, serie };
+      return { anio, numero: fila.ultimoNumero, serie };
     } catch (err) {
       // P2025 = la fila no existe todavía → crearla
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
         try {
           const creada = await cliente.consecutivoRadicado.create({ data: { serie, anio, ultimoNumero: 1 } });
-          return { radicado: formatearRadicado(serie, anio, creada.ultimoNumero), anio, numero: creada.ultimoNumero, serie };
+          return { anio, numero: creada.ultimoNumero, serie };
         } catch (err2) {
           // P2002 = otra petición creó la fila entre medias → reintentar el UPDATE
           if (err2 instanceof Prisma.PrismaClientKnownRequestError && err2.code === "P2002") continue;
@@ -66,5 +70,15 @@ export async function generarRadicado(
       throw err;
     }
   }
-  throw new Error("No se pudo generar el radicado tras varios intentos de concurrencia.");
+  throw new Error("No se pudo generar el consecutivo tras varios intentos de concurrencia.");
+}
+
+export async function generarRadicado(
+  tipo: TipoComunicacion,
+  anio: number = new Date().getFullYear(),
+  cliente: ClientePrisma = db
+): Promise<RadicadoGenerado> {
+  const serie = serieDeTipo(tipo);
+  const { numero } = await generarConsecutivo(serie, anio, cliente);
+  return { radicado: formatearRadicado(serie, anio, numero), anio, numero, serie };
 }
