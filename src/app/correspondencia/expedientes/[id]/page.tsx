@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -61,6 +61,7 @@ export default async function ExpedienteDetallePage({
 
   const abierto = expediente.estado === "ABIERTO";
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
+  const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && expediente.documentos.length > 0;
 
   return (
@@ -138,6 +139,28 @@ export default async function ExpedienteDetallePage({
           </div>
         )}
       </div>
+
+      {puedeEditar && (
+        <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+            Asunto y descripción
+          </h3>
+          <SectionHelp>Lo que identifica a este expediente en el listado — se puede corregir mientras siga abierto.</SectionHelp>
+          <form action={`/api/correspondencia/expedientes/${id}/editar`} method="post" className="space-y-3">
+            <Field label="Asunto" required>
+              <input name="asunto" required defaultValue={expediente.asunto} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+            </Field>
+            <Field label="Descripción">
+              <input name="descripcion" defaultValue={expediente.descripcion ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+            </Field>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+              Guardar
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">

@@ -95,6 +95,21 @@ export function calcularHashIndice(documentos: { ordenIndice: number; nombre: st
   return crypto.createHash("sha256").update(base).digest("hex");
 }
 
+/** Renombra un expediente (asunto/descripción) — no toca el índice ni su hash, que solo depende de los
+ * documentos (ver calcularHashIndice), así que no invalida nada si el expediente ya está cerrado. Aun
+ * así se restringe a mientras esté ABIERTO: un cerrado se trata como definitivo en todo lo demás. */
+export async function editarExpedienteDocumental(expedienteId: string, datos: { asunto: string; descripcion?: string | null }) {
+  if (!datos.asunto.trim()) throw new Error("El asunto del expediente es obligatorio.");
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { estado: true } });
+  if (!expediente) throw new Error("El expediente no existe.");
+  if (expediente.estado === "CERRADO") throw new Error("Este expediente está cerrado: no se puede editar.");
+
+  return db.expedienteDocumental.update({
+    where: { id: expedienteId },
+    data: { asunto: datos.asunto.trim(), descripcion: datos.descripcion?.trim() || null },
+  });
+}
+
 export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId: string) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: expedienteId },
