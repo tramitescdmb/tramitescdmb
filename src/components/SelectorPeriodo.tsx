@@ -80,7 +80,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
           Ver total
         </button>
       ) : (
-        <span className="text-xs text-stone-400">Sin filtro — mostrando todo el histórico. Mínimo un mes.</span>
+        <span className="text-xs text-stone-400">Histórico completo</span>
       )}
     </div>
   );

@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { FranjaGovCo } from "@/components/FranjaGovCo";
 import { Footer } from "@/components/Footer";
 import "./globals.css";
+
+// Reemplaza la fuente del sistema por una pensada para lectura prolongada en
+// pantalla (funcionarios que usan la app varias horas seguidas) con carácter
+// más institucional que un sans-serif genérico.
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Trámites CDMB",
@@ -15,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={plexSans.variable}>
       <body className="flex min-h-screen flex-col text-stone-900 antialiased" suppressHydrationWarning>
         <FranjaGovCo />
         <div className="flex flex-1">

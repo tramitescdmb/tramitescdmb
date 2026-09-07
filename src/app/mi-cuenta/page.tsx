@@ -54,8 +54,8 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
 
       {usuario.directorioActivo ? (
         <SectionHelp>
-          Su contraseña la administra el directorio activo de la red de la CDMB — esta aplicación no la
-          guarda ni la puede cambiar. Para cambiarla, contacte al área de sistemas de la CDMB.
+          Contraseña administrada por el directorio activo de la CDMB. Para cambiarla, contacte al área de
+          sistemas.
         </SectionHelp>
       ) : (
         <div className="rounded-xl border border-stone-200 bg-white p-4">

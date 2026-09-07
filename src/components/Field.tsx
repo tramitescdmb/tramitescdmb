@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Info } from "lucide-react";
 
 /**
  * Envoltorio estándar para campos de formulario: label + control + texto de ayuda.
@@ -34,12 +35,17 @@ export function Field({
   );
 }
 
+/**
+ * Nota de contexto para una sección — no un aviso ni una alerta. Deliberadamente
+ * discreta (borde de acento, sin relleno de color) para no competir visualmente
+ * con el contenido real de la página. El texto debe ser breve y aportar algo que
+ * no sea obvio por el propio formulario — evitar reexplicar lo que ya dicen los
+ * labels o las opciones visibles.
+ */
 export function SectionHelp({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-4 flex gap-2 rounded-md bg-cdmb-50 px-3 py-2 text-sm text-cdmb-800">
-      <span aria-hidden className="mt-0.5">
-        ℹ️
-      </span>
+    <div className="mb-4 flex gap-2 border-l-2 border-cdmb-300 bg-stone-50/80 py-1.5 pl-3 pr-3 text-[13px] leading-snug text-stone-600">
+      <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-cdmb-500" aria-hidden />
       <p>{children}</p>
     </div>
   );

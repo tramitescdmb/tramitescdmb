@@ -18,7 +18,7 @@ const TABS = [
 export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-wrap gap-1 border-b border-stone-200" aria-label="Secciones de correspondencia">
+    <nav className="flex flex-wrap gap-1 border-b border-stone-200 pb-px" aria-label="Secciones de correspondencia">
       {TABS.filter((t) => permitido[t.permiso]).map((t) => {
         const activo =
           t.href === "/correspondencia"
@@ -37,11 +37,13 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
             key={t.href}
             href={t.href}
             aria-current={activo ? "page" : undefined}
-            className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-              activo ? "border-cdmb-600 text-cdmb-800" : "border-transparent text-stone-500 hover:border-stone-300 hover:text-stone-800"
+            className={`-mb-px flex items-center gap-2 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              activo
+                ? "border-cdmb-600 bg-cdmb-50/70 text-cdmb-800"
+                : "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-800"
             }`}
           >
-            <Icon className="h-4 w-4" aria-hidden />
+            <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
             {t.label}
           </Link>
         );

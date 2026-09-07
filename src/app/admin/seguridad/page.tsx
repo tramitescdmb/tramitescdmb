@@ -26,9 +26,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <SectionHelp>
-        Si alguien falla al escribir la contraseña más veces de las permitidas, esa cuenta queda bloqueada para
-        nuevos intentos durante la ventana de tiempo indicada — no es un bloqueo permanente, solo hay que esperar.
-        Esto aplica al ingreso con cuenta institucional y por directorio activo.
+        Bloqueo temporal tras exceder los intentos fallidos, en cuenta institucional y directorio activo.
       </SectionHelp>
 
       <form action="/api/configuracion-seguridad" method="post" className="space-y-6">
@@ -44,10 +42,8 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
         <div className="rounded-xl border border-stone-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-stone-900">Política de contraseñas</h2>
           <SectionHelp>
-            Se aplica solo al crear un usuario o al restablecerle la contraseña desde su ficha — no revisa
-            retroactivamente las contraseñas que ya existen, porque eso no es posible sobre un hash. Además de estas
-            reglas, el sistema siempre rechaza contraseñas obviamente débiles (ej. &quot;12345678&quot;, &quot;cdmb2025&quot;), sin
-            importar la configuración.
+            Aplica al crear o restablecer una contraseña — no revisa retroactivamente las existentes. Las
+            obviamente débiles (ej. &quot;12345678&quot;) se rechazan siempre, sin importar esta configuración.
           </SectionHelp>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Longitud mínima" help="Entre 6 y 64 caracteres.">
@@ -64,7 +60,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
             </Field>
             <Field
               label="Vigencia mínima en días"
-              help="0 desactiva. Evita que el propio usuario cicle contraseñas para saltarse el histórico. No aplica cuando un administrador restablece la contraseña de otro."
+              help="0 desactiva. Evita ciclar contraseñas para saltarse el histórico; no aplica a un restablecimiento por administrador."
             >
               <input type="number" name="passwordVigenciaMinimaDias" min={0} max={365} defaultValue={config.passwordVigenciaMinimaDias} className={inputCls} />
             </Field>
@@ -88,12 +84,9 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
         <div className="rounded-xl border border-stone-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-stone-900">Formatos de archivo permitidos</h2>
           <SectionHelp>
-            Extensiones que se aceptan al subir un documento, en cualquier módulo (Correspondencia,
-            expedientes, PQRSD, trámites). Sepárelas con comas o espacios, sin el punto — ej.{" "}
-            <span className="font-mono">pdf, jpg, docx</span>. El navegador solo sugiere estos formatos;
-            quien de verdad los exige es el servidor, así que un archivo con otra extensión se rechaza
-            aunque alguien intente saltarse el formulario. Si deja el campo vacío se restablecen los
-            valores de fábrica.
+            Formatos aceptados al subir un documento, en toda la aplicación. Separados por coma o espacio, sin
+            el punto (<span className="font-mono">pdf, jpg, docx</span>) — exigidos por el servidor, no solo
+            sugeridos por el navegador. Vacío restablece los valores de fábrica.
           </SectionHelp>
           <div className="mt-3">
             <Field label="Extensiones permitidas">

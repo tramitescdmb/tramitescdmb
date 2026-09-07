@@ -45,11 +45,9 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <SectionHelp>
-        Toda comunicación clasificada con una subserie (TRD) pasa por tres etapas: se guarda en la oficina que la
-        produjo (archivo de <strong>gestión</strong>), luego se transfiere al archivo <strong>central</strong> por
-        un tiempo adicional, y al final se ejecuta su <strong>disposición final</strong> (conservarla para siempre,
-        eliminarla, seleccionar una muestra, o microfilmarla/digitalizarla) — según lo defina la TRD de su
-        subserie. Solo aparecen aquí las comunicaciones cuya subserie ya tiene años de retención configurados.
+        Ciclo archivístico: <strong>gestión</strong> → <strong>archivo central</strong> →{" "}
+        <strong>disposición final</strong> (conservación, eliminación, selección o microfilmación/digitalización),
+        según la TRD de cada subserie. Solo se listan comunicaciones con retención configurada.
       </SectionHelp>
 
       <section className="space-y-3">
@@ -88,9 +86,8 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
           Pendientes de disposición final ({pendientesDisposicion.length})
         </h2>
         <SectionHelp>
-          Eliminar o seleccionar destruye el original: por eso esas dos exigen indicar quién lo aprueba y quedan con
-          un acta formal (una sola acta si dispone varias a la vez). Conservar o microfilmar/digitalizar no destruyen
-          nada en este sistema — solo marcan la fecha. Puede seleccionar una o varias y ejecutarlas juntas.
+          Eliminación y selección destruyen el original: exigen responsable aprobador y quedan con acta formal (una
+          sola por lote). Conservación y microfilmación/digitalización solo registran la fecha.
         </SectionHelp>
         {itemsDisposicion.length === 0 ? (
           <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay comunicaciones pendientes de disposición final por ahora.</p>
@@ -103,9 +100,8 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                 Aplazar la disposición de una en particular
               </summary>
               <SectionHelp>
-                Para cuando NO se debe ejecutar todavía pese a que ya cumplió su retención — ej. hay un
-                proceso judicial o disciplinario en curso sobre lo que contiene. Deja de aparecer arriba
-                hasta la fecha indicada, con el motivo siempre auditado.
+                Para posponer una disposición ya vencida — ej. un proceso judicial en curso. Exige motivo y
+                queda auditado.
               </SectionHelp>
               {itemsDisposicion.map((it) => (
                 <form
@@ -156,7 +152,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-stone-900">Actas de eliminación ({actas.length})</h2>
-        <SectionHelp>Historial de qué se ha eliminado o seleccionado, cuándo y quién lo aprobó — evidencia permanente aunque el original ya no exista.</SectionHelp>
+        <SectionHelp>Historial de eliminaciones y selecciones ejecutadas, con responsable y fecha.</SectionHelp>
         {actas.length === 0 ? (
           <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">Todavía no se ha generado ningún acta.</p>
         ) : (

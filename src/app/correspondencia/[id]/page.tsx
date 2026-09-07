@@ -220,9 +220,6 @@ export default async function CorrespondenciaDetallePage({
 
       {tieneTercero && (
         <Tarjeta titulo={c.tipo === "ENVIADA" ? "Destinatario" : "Remitente"}>
-          <SectionHelp>
-            {c.tipo === "ENVIADA" ? "A quién se le envió este oficio." : "Quién envió esta comunicación a la CDMB."}
-          </SectionHelp>
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
               {c.terceroTipo === "JURIDICA" ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
@@ -246,9 +243,8 @@ export default async function CorrespondenciaDetallePage({
       {c.firmas.length > 0 && (
         <Tarjeta titulo="Firma electrónica">
           <SectionHelp>
-            Firma electrónica con hash (no es firma digital con certificado): al radicar, se calculó una huella
-            SHA-256 del asunto, el contenido y el radicado. Si alguno cambiara después, la huella dejaría de coincidir
-            y quedaría en evidencia — así se garantiza que el contenido firmado es el original (Ley 527/1999).
+            Firma electrónica con hash SHA-256 (no digital con certificado) sobre asunto, contenido y radicado —
+            cualquier alteración posterior es detectable (Ley 527/1999).
           </SectionHelp>
           <ul className="space-y-2">
             {c.firmas.map((f) => (
@@ -270,10 +266,7 @@ export default async function CorrespondenciaDetallePage({
 
       <Tarjeta titulo={`Documentos adjuntos (${c.documentos.length})`}>
         {c.documentos.length > 0 && (
-          <SectionHelp>
-            El código SHA-256 debajo de cada archivo es su huella de integridad: si el archivo se altera, la huella
-            cambia y ya no coincide con la calculada al subirlo.
-          </SectionHelp>
+          <SectionHelp>El código SHA-256 es la huella de integridad de cada archivo — cambia si se altera.</SectionHelp>
         )}
         {c.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">La comunicación no tiene documentos adjuntos.</p>
@@ -306,11 +299,7 @@ export default async function CorrespondenciaDetallePage({
       </Tarjeta>
 
       <Tarjeta titulo="Distribución / reparto">
-        <SectionHelp>
-          Aquí queda registrado a qué dependencia o funcionario se le asignó esta comunicación para que la atienda.
-          Para corregir o reasignarla, vuelva a distribuirla abajo: el reparto más reciente (primero en la lista) es
-          el vigente, y los anteriores quedan como historial, no se pierden.
-        </SectionHelp>
+        <SectionHelp>El reparto más reciente (primero en la lista) es el vigente; los anteriores quedan como historial.</SectionHelp>
         {c.distribuciones.length === 0 ? (
           <p className="text-sm text-stone-400">Sin distribuir todavía.</p>
         ) : (
@@ -344,7 +333,7 @@ export default async function CorrespondenciaDetallePage({
                 {usuarios.map((u) => (<option key={u.id} value={u.id}>{u.nombre}</option>))}
               </select>
             </Field>
-            <Field label="Término (días)" help="Días que tiene para atenderla, si aplica un plazo interno distinto al de ley.">
+            <Field label="Término (días)" help="Plazo interno, si es distinto al de ley.">
               <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
             </Field>
             <div className="sm:col-span-2 lg:col-span-4">
@@ -365,10 +354,8 @@ export default async function CorrespondenciaDetallePage({
       {puedeDistribuirUsuario && c.fechaVencimiento && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Término de ley">
           <SectionHelp>
-            Fecha límite legal de respuesta (Ley 1755/2015), contada en días hábiles desde la radicación. Si necesita
-            pedirle más información al peticionario para poder resolver, use &quot;Suspender&quot;: el plazo se
-            congela hasta que responda y luego se reanuda por lo que faltaba (Art. 17 CPACA) — no se reinicia desde
-            cero ni sigue corriendo mientras espera.
+            Plazo legal de respuesta (Ley 1755/2015) en días hábiles. Al suspender por falta de información, el
+            conteo se congela y se reanuda por lo que faltaba — no se reinicia (Art. 17 CPACA).
           </SectionHelp>
           <p className="text-sm text-stone-600">
             {vencimiento?.texto === "Vencido" ? "El término de respuesta venció" : "Vence"} el{" "}
@@ -408,10 +395,7 @@ export default async function CorrespondenciaDetallePage({
             </p>
           ) : (
             <>
-              <SectionHelp>
-                Archivar une esta comunicación con un expediente de Trámites Ambientales 2.0 — así quedan juntos en
-                un solo historial, aunque nacieron en módulos distintos. Escriba el número exacto del expediente.
-              </SectionHelp>
+              <SectionHelp>Vincula esta comunicación a un expediente de Trámites Ambientales 2.0 ya existente.</SectionHelp>
               <form action={`/api/correspondencia/${id}/archivar`} method="post" className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[220px] flex-1">
                   <Field label="Número de expediente">
@@ -440,9 +424,8 @@ export default async function CorrespondenciaDetallePage({
           ) : (
             <>
               <SectionHelp>
-                A diferencia del expediente de trámite, este es el archivo general de una dependencia (Art. 4.3.2
-                Acuerdo 001/2024 AGN) — útil cuando esta comunicación es parte de una gestión que no es un trámite
-                ambiental. Escriba el número exacto del expediente, o{" "}
+                Archivo general de una dependencia (Art. 4.3.2 Acuerdo 001/2024 AGN), para gestiones que no son un
+                trámite ambiental. O{" "}
                 <Link href="/correspondencia/expedientes/nuevo" className="underline">abra uno nuevo</Link>.
               </SectionHelp>
               <form action={`/api/correspondencia/${id}/archivar-expediente-documental`} method="post" className="flex flex-wrap items-end gap-3">
@@ -464,9 +447,8 @@ export default async function CorrespondenciaDetallePage({
       {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Reclasificación (TRD)">
           <SectionHelp>
-            Use esto si esta comunicación quedó clasificada en la serie o subserie equivocada. No se pierde lo
-            anterior: el cambio queda en la bitácora con el motivo, la clasificación anterior y la nueva — desde
-            ahora aplican los tiempos de retención de la nueva subserie.
+            Corrige la clasificación TRD. Queda en la bitácora con la clasificación anterior, la nueva y el motivo;
+            aplican los tiempos de retención de la nueva subserie.
           </SectionHelp>
           <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[260px] flex-1">
@@ -499,10 +481,9 @@ export default async function CorrespondenciaDetallePage({
       {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Nivel de acceso a la información (Ley 1712/2014)">
           <SectionHelp>
-            Toda información es <strong>pública</strong> por defecto. Márquela como <strong>clasificada</strong> si
-            expone datos privados de alguien (protege un derecho particular) o <strong>reservada</strong> si su
-            divulgación afectaría un interés público (seguridad, salud, investigaciones en curso, etc.) — en ambos
-            casos la ley exige dejar por escrito el fundamento.
+            Pública por defecto (Ley 1712/2014). <strong>Clasificada</strong>: protege un derecho particular.{" "}
+            <strong>Reservada</strong>: protege un interés público (seguridad, investigaciones en curso). Ambas
+            exigen fundamento escrito.
           </SectionHelp>
           <form action={`/api/correspondencia/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px]">
@@ -530,9 +511,8 @@ export default async function CorrespondenciaDetallePage({
       {puedeAdministrarArchivoUsuario && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Anulación">
           <SectionHelp>
-            Use esto solo si esta comunicación se radicó por error (ej. duplicada, o con datos de otra persona). No
-            se borra: queda marcada como anulada, con el motivo, y se conserva en la bitácora — es una constancia
-            permanente de que fue anulada, no un borrado (Ley 594/2000).
+            Solo para radicados por error (duplicados, datos equivocados). No se borra: queda marcada como anulada,
+            con motivo, en la bitácora (Ley 594/2000).
           </SectionHelp>
           <form action={`/api/correspondencia/${id}/anular`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[260px] flex-1">
@@ -549,10 +529,7 @@ export default async function CorrespondenciaDetallePage({
       )}
 
       <Tarjeta titulo="Bitácora de auditoría (inalterable)">
-        <SectionHelp>
-          Registro de todo lo que ha pasado con esta comunicación: quién la radicó, quién la consultó, la distribuyó,
-          la firmó o la archivó, y cuándo. Nadie puede borrar ni editar un registro sin que quede evidencia.
-        </SectionHelp>
+        <SectionHelp>Quién radicó, consultó, distribuyó, firmó o archivó esta comunicación, y cuándo — inalterable.</SectionHelp>
         <ul className="divide-y divide-stone-100">
           {bitacora.map((b) => (
             <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
