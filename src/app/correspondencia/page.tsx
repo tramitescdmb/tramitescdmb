@@ -81,8 +81,9 @@ export default async function CorrespondenciaBandejaPage({
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <SectionHelp>
-        Recibidas, enviadas y memorandos en una sola bandeja. El semáforo de &quot;Vence&quot; aplica a PQRSD:
-        gris = a tiempo, ámbar = vence en 3 días hábiles o menos, rojo = vencida.
+        Recibidas, enviadas y memorandos en una sola bandeja — la búsqueda también encuentra por el nombre
+        de un archivo adjunto. El semáforo de &quot;Vence&quot; aplica a PQRSD: gris = a tiempo, ámbar = vence
+        en 3 días hábiles o menos, rojo = vencida.
       </SectionHelp>
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
@@ -96,7 +97,7 @@ export default async function CorrespondenciaBandejaPage({
               <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
               <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
                 <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, identificación o asunto" className="w-full text-sm outline-none" />
+                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, identificación, asunto o archivo adjunto" className="w-full text-sm outline-none" />
               </span>
             </label>
             <DescargarCsvBoton href={hrefDescarga()} />
@@ -184,6 +185,7 @@ export default async function CorrespondenciaBandejaPage({
               estado: c.estado,
               vencimiento: estadoVencimiento(c.fechaVencimiento),
               docs: c._count.documentos,
+              documentosCoincidentes: c.documentos.map((d) => d.nombre),
             }))}
             sinResultadosTexto={hayFiltros ? "No hay comunicaciones que coincidan." : "Todavía no se ha radicado correspondencia."}
           />

@@ -68,6 +68,9 @@ export function construirWhereCorrespondencia(
         { asunto: { contains: q, mode: "insensitive" } },
         { terceroNombre: { contains: q, mode: "insensitive" } },
         { terceroIdentificacion: { contains: q } },
+        // También encuentra por el nombre de un documento adjunto — un memorando o un oficio
+        // se suele recordar por el archivo que se subió, no por su radicado o asunto exacto.
+        { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
       ],
     });
   }
@@ -81,6 +84,7 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
   const where = construirWhereCorrespondencia(filtros, rango);
+  const q = filtros.q?.trim();
 
   const orden = esOrdenValido(filtros.orden) ? filtros.orden : "fecha_desc";
 
@@ -95,6 +99,10 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
         dependenciaDestino: { select: { nombre: true } },
         dependenciaOrigen: { select: { nombre: true } },
         _count: { select: { documentos: true } },
+        // Solo trae los documentos que coinciden con la búsqueda, para mostrar "Coincide: archivo.pdf"
+        // en el resultado. Sin término de búsqueda, `id` nunca es "" así que no trae ninguno — mismo
+        // patrón que listarExpedientesDocumentales, para no alternar la forma del include/resultado.
+        documentos: { where: q ? { nombre: { contains: q, mode: "insensitive" } } : { id: "" }, select: { nombre: true }, take: 3 },
       },
     }),
   ]);

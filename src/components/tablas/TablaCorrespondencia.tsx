@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
@@ -25,6 +26,7 @@ export type FilaCorrespondencia = {
   estado: string;
   vencimiento: { texto: string; clase: string } | null;
   docs: number;
+  documentosCoincidentes?: string[];
 };
 
 /** Tabla de correspondencia (recibida/enviada/interna) — columnas redimensionables (ancho recordado por navegador). */
@@ -66,7 +68,18 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                 </td>
                 <td className="truncate px-2.5 py-2 text-stone-500">{f.fecha}</td>
                 <td className="truncate px-2.5 py-2 text-stone-700" title={f.tercero ?? undefined}>{f.tercero ?? "—"}</td>
-                <td className="truncate px-2.5 py-2 text-stone-600" title={f.asunto}>{f.asunto}</td>
+                <td className="px-2.5 py-2 text-stone-600">
+                  <p className="truncate" title={f.asunto}>{f.asunto}</p>
+                  {f.documentosCoincidentes && f.documentosCoincidentes.length > 0 && (
+                    <p
+                      className="mt-0.5 flex items-center gap-1 truncate text-xs text-cdmb-600"
+                      title={f.documentosCoincidentes.join(", ")}
+                    >
+                      <FileText className="h-3 w-3 flex-none" aria-hidden />
+                      Coincide: {f.documentosCoincidentes.join(", ")}
+                    </p>
+                  )}
+                </td>
                 <td className="px-2.5 py-2">
                   <ProgresoCorrespondencia estado={f.estado} />
                 </td>
