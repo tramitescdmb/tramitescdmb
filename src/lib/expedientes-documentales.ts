@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
-import type { EstadoExpedienteDocumental, NivelAccesoInformacion } from "@prisma/client";
+import { parsePorPagina } from "@/lib/vista-lista";
+import type { EstadoExpedienteDocumental, NivelAccesoInformacion, Prisma } from "@prisma/client";
 
 /**
  * Expediente electrónico de archivo general (Art. 4.3.2 Acuerdo 001/2024 AGN):
@@ -132,19 +133,62 @@ export async function archivarComunicacionEnExpedienteDocumental(comunicacionId:
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { expedienteDocumentalId: expedienteId } });
 }
 
-export async function listarExpedientesDocumentales(filtro?: { dependenciaId?: string; estado?: EstadoExpedienteDocumental }) {
-  return db.expedienteDocumental.findMany({
-    where: {
-      dependenciaId: filtro?.dependenciaId,
-      estado: filtro?.estado,
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      dependencia: { select: { nombre: true } },
-      serie: { select: { codigo: true, nombre: true } },
-      subserie: { select: { codigo: true, nombre: true } },
-      creadoPor: { select: { nombre: true } },
-      _count: { select: { documentos: true, comunicaciones: true } },
-    },
-  });
+export type FiltrosExpedienteDocumental = {
+  q?: string;
+  estado?: string;
+  dependenciaId?: string;
+  page?: string;
+  vista?: string;
+};
+
+/** La búsqueda de texto cubre número, asunto y dependencia del expediente, Y TAMBIÉN el nombre de
+ * cada archivo que tenga dentro — así "buscar un expediente" y "buscar un archivo perdido dentro de
+ * algún expediente" son la misma caja de búsqueda, sin tener que abrir uno por uno para revisar. */
+function construirWhereExpedienteDocumental(f: FiltrosExpedienteDocumental): Prisma.ExpedienteDocumentalWhereInput {
+  const and: Prisma.ExpedienteDocumentalWhereInput[] = [];
+  if (f.estado === "ABIERTO" || f.estado === "CERRADO") and.push({ estado: f.estado });
+  if (f.dependenciaId) and.push({ dependenciaId: f.dependenciaId });
+  if (f.q?.trim()) {
+    const q = f.q.trim();
+    and.push({
+      OR: [
+        { numero: { contains: q, mode: "insensitive" } },
+        { asunto: { contains: q, mode: "insensitive" } },
+        { dependencia: { nombre: { contains: q, mode: "insensitive" } } },
+        { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
+      ],
+    });
+  }
+  return and.length ? { AND: and } : {};
+}
+
+export async function listarExpedientesDocumentales(filtro?: FiltrosExpedienteDocumental) {
+  const page = Math.max(1, parseInt(filtro?.page ?? "1", 10) || 1);
+  const { porPagina, vista } = parsePorPagina(filtro?.vista);
+  const where = construirWhereExpedienteDocumental(filtro ?? {});
+  const q = filtro?.q?.trim();
+
+  const [total, filas] = await Promise.all([
+    db.expedienteDocumental.count({ where }),
+    db.expedienteDocumental.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * porPagina,
+      take: porPagina,
+      include: {
+        dependencia: { select: { nombre: true } },
+        serie: { select: { codigo: true, nombre: true } },
+        subserie: { select: { codigo: true, nombre: true } },
+        creadoPor: { select: { nombre: true } },
+        _count: { select: { documentos: true, comunicaciones: true } },
+        // Solo trae los documentos que coinciden con la búsqueda — para poder mostrar
+        // "coincide: archivo.pdf" en el resultado sin cargar todo el índice del expediente.
+        // Sin término de búsqueda, la condición no puede coincidir con nada (evita traer
+        // documentos de más cuando no hace falta) sin cambiar la forma del include/resultado.
+        documentos: { where: q ? { nombre: { contains: q, mode: "insensitive" } } : { id: "" }, select: { nombre: true }, take: 3 },
+      },
+    }),
+  ]);
+
+  return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista };
 }
