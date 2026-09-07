@@ -84,27 +84,34 @@ export function verificarCadenaFilas(
 const LOCK_CADENA = 918273645;
 
 export async function registrarAuditoriaDoc(datos: DatosEslabon): Promise<void> {
-  await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LOCK_CADENA})`;
-    const ultima = await tx.auditoriaDoc.findFirst({ orderBy: { secuencia: "desc" }, select: { hash: true } });
-    const hashAnterior = ultima?.hash ?? null;
-    const createdAt = new Date();
-    const hash = calcularHashAuditoria({ ...datos, createdAtIso: createdAt.toISOString(), hashAnterior });
-    await tx.auditoriaDoc.create({
-      data: {
-        entidad: datos.entidad,
-        entidadId: datos.entidadId,
-        accion: datos.accion,
-        usuarioId: datos.usuarioId ?? null,
-        ip: datos.ip ?? null,
-        userAgent: datos.userAgent ?? null,
-        detalle: datos.detalle ?? null,
-        hashAnterior,
-        hash,
-        createdAt,
-      },
-    });
-  });
+  await db.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LOCK_CADENA})`;
+      const ultima = await tx.auditoriaDoc.findFirst({ orderBy: { secuencia: "desc" }, select: { hash: true } });
+      const hashAnterior = ultima?.hash ?? null;
+      const createdAt = new Date();
+      const hash = calcularHashAuditoria({ ...datos, createdAtIso: createdAt.toISOString(), hashAnterior });
+      await tx.auditoriaDoc.create({
+        data: {
+          entidad: datos.entidad,
+          entidadId: datos.entidadId,
+          accion: datos.accion,
+          usuarioId: datos.usuarioId ?? null,
+          ip: datos.ip ?? null,
+          userAgent: datos.userAgent ?? null,
+          detalle: datos.detalle ?? null,
+          hashAnterior,
+          hash,
+          createdAt,
+        },
+      });
+    },
+    // Al ser un lock serializador GLOBAL (todo escritor de la bitácora espera su turno),
+    // varias escrituras casi simultáneas (p. ej. varios funcionarios consultando a la vez)
+    // pueden hacer que una quede en cola más de los 5s por defecto de Prisma bajo presión
+    // del pool (connection_limit=5) — eso tumbaba la página con P2028 en vez de solo demorarla.
+    { maxWait: 10_000, timeout: 15_000 }
+  );
 }
 
 export async function verificarCadena(): Promise<{ ok: boolean; totalRevisadas: number; secuenciaRota?: number }> {

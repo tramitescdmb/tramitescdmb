@@ -12,6 +12,19 @@ type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
 type RecibidaPendiente = { id: string; radicado: string; asunto: string; terceroNombre: string | null };
+type ValoresIniciales = {
+  respondeAId?: string;
+  asunto?: string;
+  contenido?: string;
+  destinatarioTipo?: "NATURAL" | "JURIDICA";
+  destinatarioTipoIdentificacion?: string;
+  destinatarioIdentificacion?: string;
+  destinatarioNombre?: string;
+  destinatarioEmail?: string;
+  destinatarioTelefono?: string;
+  destinatarioDireccion?: string;
+  destinatarioMunicipio?: string;
+};
 
 const MEDIOS = [
   { value: "FISICO", label: "Físico" },
@@ -26,29 +39,33 @@ export function RadicarEnviadaForm({
   series,
   municipios,
   recibidasPendientes,
+  inicial,
+  documentosRespuesta,
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   municipios: string[];
   recibidasPendientes: RecibidaPendiente[];
+  inicial?: ValoresIniciales;
+  documentosRespuesta?: string[];
 }) {
   const router = useRouter();
-  const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
-  const [tipoId, setTipoId] = useState("CC");
-  const [identificacion, setIdentificacion] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [municipio, setMunicipio] = useState("");
+  const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">(inicial?.destinatarioTipo ?? "NATURAL");
+  const [tipoId, setTipoId] = useState(inicial?.destinatarioTipoIdentificacion ?? "CC");
+  const [identificacion, setIdentificacion] = useState(inicial?.destinatarioIdentificacion ?? "");
+  const [nombre, setNombre] = useState(inicial?.destinatarioNombre ?? "");
+  const [email, setEmail] = useState(inicial?.destinatarioEmail ?? "");
+  const [telefono, setTelefono] = useState(inicial?.destinatarioTelefono ?? "");
+  const [direccion, setDireccion] = useState(inicial?.destinatarioDireccion ?? "");
+  const [municipio, setMunicipio] = useState(inicial?.destinatarioMunicipio ?? "");
   const [medio, setMedio] = useState("FISICO");
-  const [asunto, setAsunto] = useState("");
-  const [contenido, setContenido] = useState("");
+  const [asunto, setAsunto] = useState(inicial?.asunto ?? "");
+  const [contenido, setContenido] = useState(inicial?.contenido ?? "");
   const [folios, setFolios] = useState(1);
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState("");
   const [serieId, setSerieId] = useState("");
   const [subserieId, setSubserieId] = useState("");
-  const [respondeAId, setRespondeAId] = useState("");
+  const [respondeAId, setRespondeAId] = useState(inicial?.respondeAId ?? "");
   const [archivos, setArchivos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
@@ -249,6 +266,12 @@ export function RadicarEnviadaForm({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
+        {documentosRespuesta && documentosRespuesta.length > 0 && (
+          <SectionHelp>
+            Se incluirán automáticamente en el oficio {documentosRespuesta.length === 1 ? "el documento" : "los documentos"} que
+            el funcionario adjuntó a su respuesta: {documentosRespuesta.join(", ")}.
+          </SectionHelp>
+        )}
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

@@ -126,7 +126,13 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   });
 }
 
-async function crearDocumentos(tx: Prisma.TransactionClient, comunicacionId: string, documentos: EntradaDocumento[] | undefined, subidoPorId: string | null) {
+async function crearDocumentos(
+  tx: Prisma.TransactionClient,
+  comunicacionId: string,
+  documentos: EntradaDocumento[] | undefined,
+  subidoPorId: string | null,
+  esRespuesta = false
+) {
   if (!documentos?.length) return;
   await tx.comunicacionDocumento.createMany({
     data: documentos.map((doc) => ({
@@ -138,6 +144,7 @@ async function crearDocumentos(tx: Prisma.TransactionClient, comunicacionId: str
       tamanoBytes: doc.tamanoBytes,
       hashSha256: doc.hashSha256 ?? null,
       subidoPorId,
+      esRespuesta,
     })),
   });
 }
@@ -176,9 +183,25 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     const muni = entrada.destinatario.municipio?.trim() || null;
     const terceroId = await resolverOCrearTercero(tx, entrada.destinatario);
 
+    let documentosRespuestaFuncionario: EntradaDocumento[] = [];
     if (entrada.respondeAId) {
       const original = await tx.comunicacion.findUnique({ where: { id: entrada.respondeAId }, select: { id: true, tipo: true } });
       if (!original || original.tipo !== "RECIBIDA") throw new Error("La comunicación a la que responde no existe o no es una recibida.");
+      // Los PDF/Word que el funcionario adjuntó a su respuesta se trasladan al oficio de
+      // salida (misma ruta de Storage, sin volver a subir el archivo) — así ventanilla no
+      // tiene que descargarlos y volverlos a cargar a mano.
+      const adjuntosRespuesta = await tx.comunicacionDocumento.findMany({
+        where: { comunicacionId: entrada.respondeAId, esRespuesta: true },
+        select: { nombre: true, descripcion: true, storagePath: true, mimeType: true, tamanoBytes: true, hashSha256: true },
+      });
+      documentosRespuestaFuncionario = adjuntosRespuesta.map((doc) => ({
+        path: doc.storagePath,
+        nombre: doc.nombre,
+        descripcion: doc.descripcion,
+        mimeType: doc.mimeType,
+        tamanoBytes: doc.tamanoBytes,
+        hashSha256: doc.hashSha256,
+      }));
     }
 
     const comunicacion = await tx.comunicacion.create({
@@ -210,7 +233,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
       },
     });
 
-    await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
+    await crearDocumentos(tx, comunicacion.id, [...(entrada.documentos ?? []), ...documentosRespuestaFuncionario], entrada.radicadoPorId);
     await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });
 
     if (entrada.respondeAId) {
@@ -303,6 +326,37 @@ export async function reclasificarComunicacion(comunicacionId: string, subserieI
 
   await db.comunicacion.update({ where: { id: comunicacionId }, data: { serieId: subserie.serieId, subserieId: subserie.id } });
   return { anterior, nueva };
+}
+
+/**
+ * Guarda (o revisa) el borrador de respuesta de una RECIBIDA. NO radica nada
+ * — es la constancia de qué respondió el funcionario asignado, para que
+ * ventanilla/gestión documental la retome y la radique como ENVIADA
+ * (`respondeAId`) con consecutivo y firma.
+ */
+export async function registrarRespuestaFuncionario(
+  comunicacionId: string,
+  usuarioId: string,
+  texto: string,
+  documentos?: EntradaDocumento[]
+) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, tipo: true, estado: true },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.tipo !== "RECIBIDA") throw new Error("Solo se responde a comunicaciones recibidas.");
+  if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");
+  if (!texto.trim()) throw new Error("Escriba el contenido de la respuesta.");
+
+  return db.$transaction(async (tx) => {
+    const actualizada = await tx.comunicacion.update({
+      where: { id: comunicacionId },
+      data: { respuestaTexto: texto.trim(), respuestaPorId: usuarioId, respuestaEn: new Date() },
+    });
+    await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
+    return actualizada;
+  });
 }
 
 /**

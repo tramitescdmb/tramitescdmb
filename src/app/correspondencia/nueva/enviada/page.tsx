@@ -7,13 +7,14 @@ import { listarSeriesVigentes } from "@/lib/trd";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { RadicarEnviadaForm } from "@/components/RadicarEnviadaForm";
 
-export default async function NuevaEnviadaPage() {
+export default async function NuevaEnviadaPage({ searchParams }: { searchParams: Promise<{ respondeAId?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
-  const [dependencias, series, recibidasPendientes] = await Promise.all([
+  const { respondeAId } = await searchParams;
+  const [dependencias, series, recibidasPendientes, recibidaARespoder, documentosRespuesta] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     db.comunicacion.findMany({
@@ -22,8 +23,48 @@ export default async function NuevaEnviadaPage() {
       take: 100,
       select: { id: true, radicado: true, asunto: true, terceroNombre: true },
     }),
+    respondeAId
+      ? db.comunicacion.findUnique({
+          where: { id: respondeAId },
+          select: {
+            id: true,
+            radicado: true,
+            asunto: true,
+            respuestaTexto: true,
+            terceroTipo: true,
+            terceroTipoIdentificacion: true,
+            terceroIdentificacion: true,
+            terceroNombre: true,
+            terceroEmail: true,
+            terceroTelefono: true,
+            terceroDireccion: true,
+            terceroMunicipio: true,
+          },
+        })
+      : null,
+    respondeAId
+      ? db.comunicacionDocumento.findMany({
+          where: { comunicacionId: respondeAId, esRespuesta: true },
+          select: { nombre: true },
+        })
+      : [],
   ]);
   const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
+  const inicial = recibidaARespoder
+    ? {
+        respondeAId: recibidaARespoder.id,
+        asunto: `Respuesta a ${recibidaARespoder.radicado} — ${recibidaARespoder.asunto}`,
+        contenido: recibidaARespoder.respuestaTexto ?? "",
+        destinatarioTipo: recibidaARespoder.terceroTipo ?? undefined,
+        destinatarioTipoIdentificacion: recibidaARespoder.terceroTipoIdentificacion ?? undefined,
+        destinatarioIdentificacion: recibidaARespoder.terceroIdentificacion ?? undefined,
+        destinatarioNombre: recibidaARespoder.terceroNombre ?? undefined,
+        destinatarioEmail: recibidaARespoder.terceroEmail ?? undefined,
+        destinatarioTelefono: recibidaARespoder.terceroTelefono ?? undefined,
+        destinatarioDireccion: recibidaARespoder.terceroDireccion ?? undefined,
+        destinatarioMunicipio: recibidaARespoder.terceroMunicipio ?? undefined,
+      }
+    : undefined;
 
   return (
     <div className="space-y-4">
@@ -45,6 +86,8 @@ export default async function NuevaEnviadaPage() {
         }))}
         municipios={municipios}
         recibidasPendientes={recibidasPendientes}
+        inicial={inicial}
+        documentosRespuesta={documentosRespuesta.map((d) => d.nombre)}
       />
     </div>
   );

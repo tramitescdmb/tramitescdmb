@@ -177,6 +177,27 @@ export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
 }
 
 /**
+ * ¿Puede escribir/editar la respuesta de un funcionario a una RECIBIDA que le
+ * fue distribuida — sin que eso implique poder RADICARLA como oficio de
+ * salida (eso sigue exigiendo `puedeRadicar`)? Quien reparte (ventanilla,
+ * jefe de dependencia, admin) siempre puede; además, el propio destinatario
+ * de la distribución VIGENTE (por usuario o por su dependencia) puede
+ * responder lo que le asignaron, aunque su rol de correspondencia sea el
+ * mínimo (FUNCIONARIO_DEPENDENCIA, sin reparto ni radicación).
+ */
+export function puedeResponderComoAsignado(
+  permisos: PermisosUsuario,
+  usuarioId: string,
+  distribucionVigente: { usuarioId: string | null; dependenciaId: string | null } | null
+): boolean {
+  if (!puedeAccederCorrespondencia(permisos)) return false;
+  if (puedeDistribuir(permisos)) return true;
+  if (!distribucionVigente) return false;
+  if (distribucionVigente.usuarioId) return distribucionVigente.usuarioId === usuarioId;
+  return Boolean(distribucionVigente.dependenciaId) && distribucionVigente.dependenciaId === permisos.dependenciaId;
+}
+
+/**
  * ¿Puede abrir o subir documentos a un expediente documental DE ESTA
  * dependencia? Cualquier funcionario con acceso al módulo puede hacerlo para
  * su propia dependencia (así como gestiona sus propios documentos del día a

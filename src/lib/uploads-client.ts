@@ -74,7 +74,8 @@ export async function subirDocumentosConProgreso(
   archivos: File[],
   subir: (folder: string, file: File) => Promise<ArchivoSubido>,
   folder: string,
-  onProgreso: (pct: number, texto: string) => void
+  onProgreso: (pct: number, texto: string) => void,
+  mensajeFinal = "Generando el número de radicado y guardando…"
 ): Promise<DocumentoSubido[]> {
   const documentos: DocumentoSubido[] = [];
   const totalUnidades = archivos.length + 1;
@@ -85,7 +86,7 @@ export async function subirDocumentosConProgreso(
     const hashSha256 = await sha256Hex(file);
     documentos.push({ ...subido, hashSha256 });
   }
-  onProgreso(Math.round((archivos.length / totalUnidades) * 100), "Generando el número de radicado y guardando…");
+  onProgreso(Math.round((archivos.length / totalUnidades) * 100), mensajeFinal);
   return documentos;
 }
 

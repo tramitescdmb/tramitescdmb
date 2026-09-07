@@ -4,7 +4,14 @@ import type { ReactNode } from "react";
 import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
+import {
+  obtenerPermisosUsuario,
+  puedeAccederCorrespondencia,
+  puedeDistribuir,
+  puedeAdministrarArchivo,
+  puedeRadicar,
+  puedeResponderComoAsignado,
+} from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
@@ -13,6 +20,7 @@ import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
+import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
 import { headers } from "next/headers";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
@@ -80,6 +88,7 @@ export default async function CorrespondenciaDetallePage({
       expedienteDocumental: { select: { id: true, numero: true } },
       respondeA: { select: { id: true, radicado: true, asunto: true } },
       respuestas: { select: { id: true, radicado: true, asunto: true } },
+      respuestaPor: { select: { nombre: true } },
       firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true } } } },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
@@ -102,6 +111,11 @@ export default async function CorrespondenciaDetallePage({
 
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
+  const puedeRadicarUsuario = puedeRadicar(permisos);
+  const distribucionVigente = c.distribuciones[0] ?? null;
+  const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionVigente);
+  const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
+  const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
   const [dependencias, usuarios] = puedeDistribuirUsuario
     ? await Promise.all([
         listarDependenciasActivas(),
@@ -264,15 +278,15 @@ export default async function CorrespondenciaDetallePage({
         </Tarjeta>
       )}
 
-      <Tarjeta titulo={`Documentos adjuntos (${c.documentos.length})`}>
-        {c.documentos.length > 0 && (
+      <Tarjeta titulo={`Documentos adjuntos (${documentosOriginales.length})`}>
+        {documentosOriginales.length > 0 && (
           <SectionHelp>El código SHA-256 es la huella de integridad de cada archivo — cambia si se altera.</SectionHelp>
         )}
-        {c.documentos.length === 0 ? (
+        {documentosOriginales.length === 0 ? (
           <p className="text-sm text-stone-400">La comunicación no tiene documentos adjuntos.</p>
         ) : (
           <ul className="space-y-2">
-            {c.documentos.map((doc) => (
+            {documentosOriginales.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
                 <span className="flex min-w-0 items-center gap-2">
                   <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
@@ -350,6 +364,56 @@ export default async function CorrespondenciaDetallePage({
           </form>
         )}
       </Tarjeta>
+
+      {c.tipo === "RECIBIDA" && (
+        <Tarjeta titulo="Respuesta del funcionario">
+          <SectionHelp>
+            Borrador de respuesta de quien la tiene asignada — no radica nada. Ventanilla o gestión
+            documental la retoma para radicarla como oficio de salida (con consecutivo y firma).
+          </SectionHelp>
+          {c.respuestaTexto && (
+            <div className="mb-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
+              <p className="whitespace-pre-wrap text-sm text-stone-700">{c.respuestaTexto}</p>
+              <p className="mt-2 text-xs text-stone-400">
+                {c.respuestaPor?.nombre ?? "—"} · {fechaHora(c.respuestaEn)}
+              </p>
+            </div>
+          )}
+          {documentosRespuesta.length > 0 && (
+            <ul className="mb-3 space-y-2">
+              {documentosRespuesta.map((doc) => (
+                <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+                    <span className="truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
+                  </span>
+                  <span className="flex flex-none items-center gap-1.5">
+                    <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                    <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                      <Download className="h-3.5 w-3.5" aria-hidden />
+                      Abrir
+                    </a>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {puedeResponder && c.estado !== "ANULADA" ? (
+            <RespuestaFuncionarioForm comunicacionId={id} textoInicial={c.respuestaTexto ?? ""} />
+          ) : (
+            !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>
+          )}
+          {puedeRadicarUsuario && c.respuestaTexto && c.respuestas.length === 0 && (
+            <Link
+              href={`/correspondencia/nueva/enviada?respondeAId=${id}`}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50"
+            >
+              <Send className="h-3.5 w-3.5" aria-hidden />
+              Radicar como oficio de salida
+            </Link>
+          )}
+        </Tarjeta>
+      )}
 
       {puedeDistribuirUsuario && c.fechaVencimiento && c.estado !== "ANULADA" && (
         <Tarjeta titulo="Término de ley">

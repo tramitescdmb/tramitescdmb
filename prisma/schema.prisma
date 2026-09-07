@@ -120,6 +120,7 @@ model Usuario {
   dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
   dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")
   comunicacionesRadicadas         Comunicacion[]          @relation("ComunicacionRadicadaPor")
+  comunicacionesRespondidas       Comunicacion[]          @relation("ComunicacionRespuestaPor")
   comunicacionDocumentos          ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
   distribucionesRecibidas         Distribucion[]          @relation("DistribucionUsuario")
   expedientesDocumentalesCreados  ExpedienteDocumental[]  @relation("ExpedienteDocumentalCreadoPor")
@@ -823,6 +824,7 @@ enum AccionAuditoriaDoc {
   DISPONE // ejecuta la disposición final (conserva/elimina/selecciona/microfilma)
   ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
   APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
+  RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -1008,6 +1010,16 @@ model Comunicacion {
   nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
   fundamentoNivelAcceso String?                @db.Text
 
+  // Respuesta del funcionario asignado (RECIBIDA) — un borrador previo a que
+  // ventanilla/gestión documental la radique formalmente como ENVIADA con
+  // consecutivo y firma (respondeAId). Sin esto, solo quien puede radicar
+  // (ventanilla/admin de archivo) tenía forma de dejar constancia de una
+  // respuesta — un funcionario con acceso solo de reparto no tenía dónde
+  // escribirla, aunque la comunicación ya estuviera asignada a su cargo.
+  respuestaTexto String?   @db.Text
+  respuestaPorId String?
+  respuestaEn    DateTime?
+
   tercero              Solicitante?          @relation(fields: [terceroId], references: [id])
   dependenciaOrigen    Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino   Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
@@ -1016,6 +1028,7 @@ model Comunicacion {
   expediente           Expediente?           @relation(fields: [expedienteId], references: [id])
   expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
   radicadoPor          Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
+  respuestaPor         Usuario?              @relation("ComunicacionRespuestaPor", fields: [respuestaPorId], references: [id])
   respondeA            Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
   respuestas           Comunicacion[]        @relation("ComunicacionRespuesta")
   actaEliminacion      ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])
@@ -1070,6 +1083,11 @@ model ComunicacionDocumento {
   hashSha256     String? // integridad del archivo tal como se recibió
   subidoPorId    String?
   createdAt      DateTime @default(now())
+  // true = lo adjuntó el funcionario asignado como parte de su respuesta (PDF/Word ya
+  // redactado), no es un anexo de la comunicación original. Se muestra aparte en el
+  // detalle y, al radicar la respuesta como oficio de salida, se traslada también a esa
+  // nueva Comunicacion (misma ruta de Storage, sin volver a subir el archivo).
+  esRespuesta    Boolean  @default(false)
 
   comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   subidoPor    Usuario?     @relation("ComunicacionDocumentoSubidoPor", fields: [subidoPorId], references: [id])
@@ -1219,7 +1237,12 @@ model AuditoriaDoc {
   hash         String
   createdAt    DateTime           @default(now())
 
-  usuario Usuario? @relation("AuditoriaDocUsuario", fields: [usuarioId], references: [id])
+  // onDelete Restrict a propósito (el default de Prisma en una relación opcional sería
+  // SetNull): un hard-delete de Usuario pondría usuarioId en NULL sin recalcular el hash
+  // ya almacenado de cada fila que lo referencia — verificarCadena() la reportaría como
+  // alterada (falso positivo). Restrict lo convierte en un error inmediato y explícito en
+  // vez de una corrupción silenciosa del hash-chain. Ver [[feedback_limpieza_datos_prueba_auditoria]].
+  usuario Usuario? @relation("AuditoriaDocUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
 
   @@index([entidad, entidadId])
   @@index([usuarioId])
