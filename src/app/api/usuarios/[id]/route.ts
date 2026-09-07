@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, EstadoCuenta } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
@@ -15,6 +15,7 @@ const ROLES_CORRESPONDENCIA_VALIDOS: RolCorrespondencia[] = [
   "JEFE_DEPENDENCIA",
   "ADMIN_ARCHIVO",
 ];
+const ESTADOS_CUENTA_VALIDOS: EstadoCuenta[] = ["HABILITADA", "DESHABILITADA", "BLOQUEADA", "SUSPENDIDA"];
 
 /**
  * Editar cargo(s)/rol/acceso por trámite y por sección de un usuario YA
@@ -53,6 +54,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? body.secciones.filter((s: unknown): s is SeccionSoloLectura => SECCIONES_VALIDAS.includes(s as SeccionSoloLectura))
     : undefined;
   const password = typeof body.password === "string" && body.password ? body.password : undefined;
+  const estadoCuenta: EstadoCuenta | undefined = ESTADOS_CUENTA_VALIDOS.includes(body.estadoCuenta)
+    ? body.estadoCuenta
+    : undefined;
 
   // SGDEA / Correspondencia — el campo del body es `undefined` cuando no se envió (no tocar) y
   // `null`/cadena vacía cuando se envió para quitarlo, así que se distinguen con "in body".
@@ -109,6 +113,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
+        ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
     });
     if (accesoTramites) {
@@ -132,8 +137,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",
     descripcion: `${session.nombre} actualizó a "${usuario.nombre}" (${usuario.email}): rol ${rol}${
-      accesoTramites ? `, ${accesoTramites.length} trámite(s) con acceso` : ""
-    }${secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""}${passwordHash ? ", contraseña restablecida" : ""}.`,
+      estadoCuenta ? `, estado ${estadoCuenta}` : ""
+    }${accesoTramites ? `, ${accesoTramites.length} trámite(s) con acceso` : ""}${
+      secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""
+    }${passwordHash ? ", contraseña restablecida" : ""}.`,
     usuarioId: session.userId,
   });
 

@@ -82,11 +82,21 @@ export async function POST(req: NextRequest) {
   }
 
   if (!usuario || !usuario.activo) {
+    const motivo = !usuario
+      ? "no existe"
+      : usuario.estadoCuenta === "BLOQUEADA"
+        ? "bloqueada por intentos fallidos"
+        : usuario.estadoCuenta === "SUSPENDIDA"
+          ? "suspendida"
+          : "inactiva";
     await registrarAuditoria({
       tipo: "LOGIN_FALLIDO",
-      descripcion: `Intento de inicio de sesión con correo "${identidad}" (${!usuario ? "no existe" : "inactivo"}).`,
+      descripcion: `Intento de inicio de sesión con correo "${identidad}" (${motivo}).`,
+      usuarioId: usuario?.id,
       emailIntento: identidad,
     });
+    // Mismo mensaje genérico sin importar el motivo: no revelar a quien no ha entrado
+    // si la cuenta existe, está bloqueada o solo inactiva.
     return fail("Credenciales inválidas.");
   }
 
@@ -98,6 +108,17 @@ export async function POST(req: NextRequest) {
       usuarioId: usuario.id,
       emailIntento: identidad,
     });
+    // MoReq 6.13: bloqueo persistente (no solo la ventana de tiempo) al llegar al
+    // límite — el intento que se acaba de registrar arriba ya cuenta para este total.
+    if (intentosFallidosRecientes + 1 >= maxIntentosFallidos) {
+      await db.usuario.update({ where: { id: usuario.id }, data: { activo: false, estadoCuenta: "BLOQUEADA" } });
+      await registrarAuditoria({
+        tipo: "USUARIO_BLOQUEADO",
+        descripcion: `Cuenta "${identidad}" bloqueada automáticamente tras ${intentosFallidosRecientes + 1} intentos fallidos. Un administrador debe habilitarla de nuevo.`,
+        usuarioId: usuario.id,
+        emailIntento: identidad,
+      });
+    }
     return fail("Credenciales inválidas.");
   }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2 } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog } from "lucide-react";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -10,6 +10,14 @@ type Grupo = { etiqueta: string; claseBadge: string; claseBarra: string; items: 
 type Nivel = "VER" | "EDITAR";
 type Seccion = "VITAL_BASE" | "VITAL_DASHBOARD" | "SINCA_BASE" | "SINCA_DASHBOARD" | "SINCA_MINERIA";
 type RolCorrespondencia = "OPERADOR_VENTANILLA" | "FUNCIONARIO_DEPENDENCIA" | "JEFE_DEPENDENCIA" | "ADMIN_ARCHIVO";
+type EstadoCuenta = "HABILITADA" | "DESHABILITADA" | "BLOQUEADA" | "SUSPENDIDA";
+
+const ESTADOS_CUENTA: { valor: EstadoCuenta; etiqueta: string; ayuda: string; clase: string }[] = [
+  { valor: "HABILITADA", etiqueta: "Habilitada", ayuda: "Puede iniciar sesión con normalidad.", clase: "border-cdmb-600 bg-cdmb-50 text-cdmb-800" },
+  { valor: "DESHABILITADA", etiqueta: "Deshabilitada", ayuda: "Dada de baja por un administrador — no puede iniciar sesión.", clase: "border-stone-400 bg-stone-100 text-stone-700" },
+  { valor: "BLOQUEADA", etiqueta: "Bloqueada", ayuda: "El propio sistema la bloqueó por exceso de intentos fallidos de inicio de sesión.", clase: "border-red-400 bg-red-50 text-red-700" },
+  { valor: "SUSPENDIDA", etiqueta: "Suspendida", ayuda: "Fuera de servicio temporalmente (ej. licencia), a diferencia de deshabilitada.", clase: "border-amber-400 bg-amber-50 text-amber-800" },
+];
 
 const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayuda: string }[] = [
   { valor: "OPERADOR_VENTANILLA", etiqueta: "Operador de ventanilla", ayuda: "Radica correspondencia y la distribuye a cualquier dependencia." },
@@ -34,6 +42,7 @@ const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-nombre", etiqueta: "Nombre" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
+  { id: "seccion-estado", etiqueta: "Estado de la cuenta" },
   { id: "seccion-cargos", etiqueta: "Cargos" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
   { id: "seccion-correspondencia", etiqueta: "Correspondencia" },
@@ -109,6 +118,7 @@ export function EditarUsuarioAccesoForm({
   dependencias,
   politicaPassword,
   vigenciaPassword,
+  estadoCuentaActual,
 }: {
   usuarioId: string;
   nombreActual: string;
@@ -124,9 +134,11 @@ export function EditarUsuarioAccesoForm({
   dependencias?: Opcion[];
   politicaPassword: { longitudMinima: number; longitudMaxima: number };
   vigenciaPassword?: { vencida: boolean; diasRestantes: number | null };
+  estadoCuentaActual: EstadoCuenta;
 }) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreActual);
+  const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
@@ -222,6 +234,7 @@ export function EditarUsuarioAccesoForm({
         body: JSON.stringify({
           nombre: nombre.trim(),
           rol,
+          estadoCuenta,
           cargoIds: Array.from(cargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
           secciones: Array.from(secciones),
@@ -358,6 +371,31 @@ export function EditarUsuarioAccesoForm({
         {rol === "ADMIN" && (
           <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
             Acceso total automático — los cargos, trámites y secciones de abajo quedan sin efecto.
+          </p>
+        )}
+      </section>
+
+      <section id="seccion-estado" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={UserCog} titulo="Estado de la cuenta" ayuda="Con cualquier estado que no sea Habilitada, no puede iniciar sesión." />
+        <div className="grid max-w-lg grid-cols-2 gap-2 sm:grid-cols-4">
+          {ESTADOS_CUENTA.map((e) => (
+            <button
+              key={e.valor}
+              type="button"
+              onClick={() => setEstadoCuenta(e.valor)}
+              title={e.ayuda}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                estadoCuenta === e.valor ? e.clase : "border-stone-200 text-stone-600 hover:bg-stone-50"
+              }`}
+            >
+              {e.etiqueta}
+            </button>
+          ))}
+        </div>
+        {estadoCuentaActual === "BLOQUEADA" && estadoCuenta === "BLOQUEADA" && (
+          <p className="mt-2.5 rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
+            El sistema la bloqueó automáticamente por exceso de intentos fallidos. Elija «Habilitada» para permitirle
+            volver a iniciar sesión.
           </p>
         )}
       </section>

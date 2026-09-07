@@ -186,10 +186,16 @@ export default async function UsuariosPage({
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    u.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"
+                    {
+                      HABILITADA: "bg-green-50 text-green-700",
+                      DESHABILITADA: "bg-stone-100 text-stone-500",
+                      BLOQUEADA: "bg-red-50 text-red-700",
+                      SUSPENDIDA: "bg-amber-50 text-amber-700",
+                    }[u.estadoCuenta]
                   }`}
+                  title={u.estadoCuenta === "BLOQUEADA" ? "Bloqueada por el sistema tras intentos fallidos" : undefined}
                 >
-                  {u.activo ? "Activo" : "Inactivo"}
+                  {{ HABILITADA: "Habilitada", DESHABILITADA: "Deshabilitada", BLOQUEADA: "Bloqueada", SUSPENDIDA: "Suspendida" }[u.estadoCuenta]}
                 </span>
                 {vigencia && vigencia.diasRestantes !== null && (
                   <span

@@ -14,7 +14,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!usuario) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
 
   const nuevoEstado = !usuario.activo;
-  await db.usuario.update({ where: { id }, data: { activo: nuevoEstado } });
+  await db.usuario.update({
+    where: { id },
+    data: { activo: nuevoEstado, estadoCuenta: nuevoEstado ? "HABILITADA" : "DESHABILITADA" },
+  });
 
   await registrarAuditoria({
     tipo: nuevoEstado ? "USUARIO_ACTIVADO" : "USUARIO_DESACTIVADO",

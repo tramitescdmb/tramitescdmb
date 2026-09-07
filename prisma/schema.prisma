@@ -87,6 +87,15 @@ model Usuario {
   passwordCambiadaEn DateTime?
   rol          RolUsuario @default(FUNCIONARIO)
   activo       Boolean    @default(true)
+  // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
+  // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),
+  // así que se mantiene siempre en sincronía con este campo (HABILITADA→true,
+  // cualquier otro→false) en cada sitio que lo cambia: no hace falta tocar los
+  // demás lugares que ya leen `activo`. BLOQUEADA la fija el propio login tras
+  // exceder los intentos fallidos (persiste hasta que un ADMIN la levante,
+  // MoReq 6.13); SUSPENDIDA es una marca manual de un ADMIN, distinta de
+  // DESHABILITADA para poder diferenciar "de baja" de "temporalmente fuera".
+  estadoCuenta EstadoCuenta @default(HABILITADA)
   createdAt    DateTime   @default(now())
 
   // true = la identidad la valida el directorio activo de la CDMB (API externa,
@@ -220,8 +229,17 @@ enum TipoAuditoria {
   USUARIO_CREADO
   USUARIO_ACTIVADO
   USUARIO_DESACTIVADO
+  USUARIO_BLOQUEADO
   USUARIO_ACTUALIZADO
   CONFIGURACION_ACTUALIZADA
+}
+
+// MoReq 6.36: estados de cuenta distinguibles (antes solo había activo/inactivo).
+enum EstadoCuenta {
+  HABILITADA
+  DESHABILITADA
+  BLOQUEADA
+  SUSPENDIDA
 }
 
 model RegistroAuditoria {

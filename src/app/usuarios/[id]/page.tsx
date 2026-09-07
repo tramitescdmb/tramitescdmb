@@ -96,6 +96,7 @@ export default async function EditarUsuarioPage({
         vigenciaPassword={
           usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)
         }
+        estadoCuentaActual={usuario.estadoCuenta}
       />
     </div>
   );

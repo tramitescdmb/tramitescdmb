@@ -7,6 +7,13 @@ function celda(valor: string | number | null | undefined): string {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
+const ETIQUETAS_ESTADO_CUENTA: Record<string, string> = {
+  HABILITADA: "Habilitada",
+  DESHABILITADA: "Deshabilitada",
+  BLOQUEADA: "Bloqueada",
+  SUSPENDIDA: "Suspendida",
+};
+
 const ETIQUETAS_SECCION: Record<string, string> = {
   VITAL_BASE: "VITAL: Solicitudes y Recientes",
   VITAL_DASHBOARD: "VITAL: Dashboard",
@@ -56,7 +63,7 @@ export async function GET() {
       u.directorioActivo ? "Sí" : "No",
       esAdmin ? "Administrador" : "Funcionario",
       u.cargos.map((c) => c.nombre).join("; "),
-      u.activo ? "Activo" : "Inactivo",
+      ETIQUETAS_ESTADO_CUENTA[u.estadoCuenta] ?? u.estadoCuenta,
       esAdmin ? "Todos" : editar.join("; "),
       esAdmin ? "Todos" : ver.join("; "),
       esAdmin ? "Acceso total" : secciones.join("; "),
