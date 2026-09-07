@@ -53,6 +53,7 @@ export function VentanillaRadicacionForm({
   const [municipio, setMunicipio] = useState("");
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState("");
+  const [contenido, setContenido] = useState("");
   const [folios, setFolios] = useState(1);
   const [anexos, setAnexos] = useState("");
   const [dependenciaId, setDependenciaId] = useState("");
@@ -110,6 +111,7 @@ export function VentanillaRadicacionForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           asunto: asunto.trim(),
+          contenido: contenido.trim() || null,
           folios,
           anexosDescripcion: anexos.trim() || null,
           medio,
@@ -197,6 +199,17 @@ export function VentanillaRadicacionForm({
           <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Asunto" required>
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Descripción de la solicitud" help="Qué pide el remitente, además de lo que digan los documentos adjuntos.">
+              <textarea
+                value={contenido}
+                onChange={(e) => setContenido(e.target.value)}
+                rows={4}
+                className={inputCls}
+                placeholder="Resumen de la solicitud…"
+              />
             </Field>
           </div>
           <Field label="Medio de recepción">

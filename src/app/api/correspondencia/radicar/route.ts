@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   const asunto = String(body.asunto ?? "").trim();
+  const contenido = body.contenido ? String(body.contenido).trim() : null;
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
   const terceroNombre = String((body.terceroNombre ?? "")).trim();
   const terceroTipo = (body.terceroTipo === "JURIDICA" ? "JURIDICA" : "NATURAL") as TipoSolicitante;
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
   try {
     const comunicacion = await radicarRecibida({
       asunto,
+      contenido,
       folios,
       anexosDescripcion: body.anexosDescripcion ? String(body.anexosDescripcion).trim() : null,
       medio,
