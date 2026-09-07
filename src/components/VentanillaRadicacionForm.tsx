@@ -148,22 +148,22 @@ export function VentanillaRadicacionForm({
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Remitente</h2>
         <SectionHelp>
-          Datos de quién envía la comunicación. Si queda identificado (documento) y con municipio, se guarda en el
-          registro maestro de terceros — la próxima vez que radique algo suyo no hay que volver a digitarlos.
+          Si queda identificado (documento) y con municipio, se guarda en el registro maestro de terceros para no
+          volver a digitarlo en el próximo radicado.
         </SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Tipo de persona" help="Natural: una persona. Jurídica: una empresa o entidad.">
+          <Field label="Tipo de persona">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
               <option value="NATURAL">Natural</option>
               <option value="JURIDICA">Jurídica</option>
             </select>
           </Field>
-          <Field label="Tipo de identificación" help="Tipo de documento del remitente.">
+          <Field label="Tipo de identificación">
             <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
               {TIPOS_ID.map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
           </Field>
-          <Field label="Identificación" help="Cédula o NIT. Puede dejarla en blanco si el remitente es anónimo.">
+          <Field label="Identificación" help="En blanco si el remitente es anónimo.">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} placeholder="Cédula o NIT" />
           </Field>
           <div className="sm:col-span-2">
@@ -171,13 +171,13 @@ export function VentanillaRadicacionForm({
               <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
             </Field>
           </div>
-          <Field label="Municipio" help="Municipio de residencia o domicilio del remitente.">
+          <Field label="Municipio">
             <select value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={inputCls}>
               <option value="">— Sin especificar —</option>
               {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
           </Field>
-          <Field label="Correo electrónico" help="Para poder contactar al remitente si hace falta.">
+          <Field label="Correo electrónico">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
           </Field>
           <Field label="Teléfono">
@@ -195,27 +195,27 @@ export function VentanillaRadicacionForm({
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Comunicación</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-4">
-            <Field label="Asunto" required help="Resumen de una línea de lo que trata la comunicación.">
+            <Field label="Asunto" required>
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
             </Field>
           </div>
-          <Field label="Medio de recepción" help="Cómo llegó físicamente esta comunicación a la CDMB.">
+          <Field label="Medio de recepción">
             <select value={medio} onChange={(e) => setMedio(e.target.value)} className={inputCls}>
               {MEDIOS.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
             </select>
           </Field>
-          <Field label="N.º de folios" help="Cantidad de hojas del documento recibido.">
+          <Field label="N.º de folios">
             <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
           </Field>
           <div className="sm:col-span-2">
-            <Field label="Anexos (descripción)" help="Qué trae adjunto además del documento principal.">
+            <Field label="Anexos (descripción)" help="Aparte del documento principal.">
               <input value={anexos} onChange={(e) => setAnexos(e.target.value)} className={inputCls} placeholder="Ej. 1 CD, 2 planos" />
             </Field>
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
             <Field
               label="Tipo PQRSD"
-              help="Selecciónelo SOLO si es una petición, queja, reclamo, sugerencia o denuncia de un ciudadano — el sistema calcula automáticamente la fecha límite de respuesta (Ley 1755 de 2015). No tiene relación con la serie documental de abajo."
+              help="Solo si es petición, queja, reclamo, sugerencia o denuncia — calcula la fecha límite de ley (Ley 1755/2015). Independiente de la serie documental de abajo."
             >
               <select value={tipoPqrsd} onChange={(e) => setTipoPqrsd(e.target.value)} className={inputCls}>
                 {TIPOS_PQRSD.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
@@ -227,18 +227,17 @@ export function VentanillaRadicacionForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y destino (TRD)</h3>
           <SectionHelp>
-            Elija primero la dependencia destino: la serie documental disponible depende de esa área, porque la TRD
-            clasifica lo que cada dependencia produce — por eso cada una tiene su propia lista de series. Si la deja
-            sin asignar, solo puede clasificar como &quot;Sin clasificar&quot; (se corrige después desde el detalle).
+            La serie documental depende de la dependencia elegida (cada una tiene su propia TRD). Sin dependencia,
+            solo queda disponible &quot;Sin clasificar&quot; — se corrige después desde el detalle.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Dependencia destino" help="A qué área de la CDMB le corresponde atenderla. Puede dejarla sin asignar y distribuirla después.">
+            <Field label="Dependencia destino" help="Puede distribuirla después si no se sabe todavía.">
               <select value={dependenciaId} onChange={(e) => cambiarDependencia(e.target.value)} className={inputCls}>
                 <option value="">— Sin asignar —</option>
                 {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
             </Field>
-            <Field label="Serie documental (TRD)" help="Series propias de la dependencia elegida arriba.">
+            <Field label="Serie documental (TRD)">
               <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
                 <option value="">— Sin clasificar —</option>
                 {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}

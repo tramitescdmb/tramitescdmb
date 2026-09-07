@@ -151,9 +151,8 @@ export function RadicarEnviadaForm({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Destinatario</h2>
-        <SectionHelp>A quién va dirigido este oficio de salida.</SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Tipo de persona" help="Natural: una persona. Jurídica: una empresa o entidad.">
+          <Field label="Tipo de persona">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
               <option value="NATURAL">Natural</option>
               <option value="JURIDICA">Jurídica</option>
@@ -178,14 +177,14 @@ export function RadicarEnviadaForm({
               {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
           </Field>
-          <Field label="Correo electrónico" help="Para enviarle también una copia digital si aplica.">
+          <Field label="Correo electrónico">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
           </Field>
           <Field label="Teléfono">
             <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
           </Field>
           <div className="sm:col-span-2">
-            <Field label="Dirección" help="Dirección física de envío, si el medio es físico.">
+            <Field label="Dirección" help="Si el medio de envío es físico.">
               <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
             </Field>
           </div>
@@ -195,8 +194,8 @@ export function RadicarEnviadaForm({
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Oficio</h2>
         <SectionHelp>
-          Al radicar, este oficio queda firmado electrónicamente con un hash SHA-256 (Ley 527/1999): el asunto y el
-          contenido tal como quedan escritos aquí no se pueden modificar después sin que se detecte.
+          Al radicar queda firmado con hash SHA-256 (Ley 527/1999) — el asunto y el contenido dejan de poder
+          modificarse sin que se detecte.
         </SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-4">
@@ -205,11 +204,11 @@ export function RadicarEnviadaForm({
             </Field>
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
-            <Field label="Contenido" required help="Cuerpo del oficio. Junto con el asunto y el radicado, es lo que queda firmado con hash SHA-256.">
+            <Field label="Contenido" required>
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del oficio…" />
             </Field>
           </div>
-          <Field label="Medio de envío" help="Cómo se va a entregar este oficio.">
+          <Field label="Medio de envío">
             <select value={medio} onChange={(e) => setMedio(e.target.value)} className={inputCls}>
               {MEDIOS.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
             </select>
@@ -222,18 +221,17 @@ export function RadicarEnviadaForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y origen (TRD)</h3>
           <SectionHelp>
-            Elija primero la dependencia que emite: la serie documental disponible depende de esa área, porque la TRD
-            clasifica lo que cada dependencia produce. Si la deja sin especificar, solo puede clasificar como
-            &quot;Sin clasificar&quot; (se corrige después desde el detalle).
+            La serie documental depende de la dependencia que emite (cada una tiene su propia TRD). Sin
+            especificar, solo queda disponible &quot;Sin clasificar&quot; — se corrige después desde el detalle.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Dependencia que emite" help="Área de la CDMB que redacta y firma este oficio.">
+            <Field label="Dependencia que emite">
               <select value={dependenciaOrigenId} onChange={(e) => cambiarDependenciaOrigen(e.target.value)} className={inputCls}>
                 <option value="">— Sin especificar —</option>
                 {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
             </Field>
-            <Field label="Serie documental (TRD)" help="Series propias de la dependencia elegida arriba.">
+            <Field label="Serie documental (TRD)">
               <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
                 <option value="">— Sin clasificar —</option>
                 {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}

@@ -22,19 +22,16 @@ export function NuevoExpedienteDocumentalForm({ dependencias, series }: { depend
 
   return (
     <form action="/api/correspondencia/expedientes" method="post" className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
-      <Field label="Asunto" required help="De qué trata este expediente — el nombre con el que se va a identificar.">
+      <Field label="Asunto" required>
         <input name="asunto" required className={inputCls} placeholder='Ej. "Contrato de prestación de servicios No. 045-2026"' />
       </Field>
-      <Field label="Descripción" help="Detalle adicional, opcional.">
+      <Field label="Descripción">
         <textarea name="descripcion" rows={2} className={inputCls} />
       </Field>
 
       <div className="border-t border-stone-100 pt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Dependencia y clasificación (TRD)</h3>
-        <SectionHelp>
-          Elija primero la dependencia dueña del expediente: la serie documental disponible depende de esa área,
-          porque la TRD clasifica lo que cada una produce.
-        </SectionHelp>
+        <SectionHelp>La serie documental depende de la dependencia elegida (cada una tiene su propia TRD).</SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Dependencia" required>
             <select
@@ -48,7 +45,7 @@ export function NuevoExpedienteDocumentalForm({ dependencias, series }: { depend
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
           </Field>
-          <Field label="Serie documental (TRD)" help="Series propias de la dependencia elegida.">
+          <Field label="Serie documental (TRD)">
             <select
               name="serieId"
               value={serieId}

@@ -112,8 +112,7 @@ export function MemorandoForm({
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Memorando</h2>
         <SectionHelp>
-          Comunicación interna entre dos dependencias de la CDMB (no sale hacia afuera de la entidad). Queda firmada
-          electrónicamente con hash al radicarla.
+          Comunicación interna entre dependencias — no sale de la entidad. Queda firmada con hash al radicarla.
         </SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Dependencia de origen" required help="Quién firma este memorando.">
@@ -122,7 +121,7 @@ export function MemorandoForm({
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
           </Field>
-          <Field label="Dependencia de destino" required help="A quién va dirigido.">
+          <Field label="Dependencia de destino" required>
             <select value={dependenciaDestinoId} onChange={(e) => setDependenciaDestinoId(e.target.value)} className={inputCls}>
               <option value="">— Seleccione —</option>
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
@@ -137,7 +136,7 @@ export function MemorandoForm({
             </Field>
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
-            <Field label="Contenido" required help="Cuerpo del memorando. Junto con el asunto y el radicado, es lo que queda firmado con hash SHA-256.">
+            <Field label="Contenido" required>
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del memorando…" />
             </Field>
           </div>
@@ -146,11 +145,11 @@ export function MemorandoForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación (TRD)</h3>
           <SectionHelp>
-            Las series disponibles son las propias de la dependencia de origen elegida arriba — la TRD clasifica lo
-            que cada dependencia produce. Si aún no la elige, solo puede clasificar como &quot;Sin clasificar&quot;.
+            Las series disponibles dependen de la dependencia de origen elegida arriba. Sin elegirla, solo queda
+            &quot;Sin clasificar&quot;.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Serie documental (TRD)" help="Series propias de la dependencia de origen.">
+            <Field label="Serie documental (TRD)">
               <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
                 <option value="">— Sin clasificar —</option>
                 {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
