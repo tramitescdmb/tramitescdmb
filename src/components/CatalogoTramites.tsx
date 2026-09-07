@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Clock, Landmark } from "lucide-react";
 import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
 import type { Categoria } from "@/lib/tramite-categoria";
 import type { TramiteTipo, Flujo, PasoDefinicion } from "@prisma/client";
@@ -195,10 +195,17 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
         </span>
         {tiempo &&
           (tiempo.total > 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">🕒 ~{tiempo.total} días</span>
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
+              <Clock className="h-3 w-3" aria-hidden />
+              ~{tiempo.total} días
+            </span>
           ) : (
-            <span className="text-xs text-stone-300" title="El procedimiento oficial no especifica tiempos por actividad">
-              🕒 sin tiempo especificado
+            <span
+              className="inline-flex items-center gap-1 text-xs text-stone-300"
+              title="El procedimiento oficial no especifica tiempos por actividad"
+            >
+              <Clock className="h-3 w-3" aria-hidden />
+              sin tiempo especificado
             </span>
           ))}
       </div>
@@ -227,7 +234,8 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
               className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
               title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. El enlace a la ficha oficial está disponible dentro del trámite.`}
             >
-              🏛️ SUIT {numero}
+              <Landmark className="h-3 w-3" aria-hidden />
+              SUIT {numero}
             </span>
           ))}
         </div>

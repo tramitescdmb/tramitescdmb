@@ -30,8 +30,7 @@ export default async function ReportesPage() {
   return (
     <div className="space-y-6">
       <SectionHelp>
-        Vista general del módulo: cuánto se radica, cómo se distribuye, y el tamaño actual del archivo. La bitácora
-        de auditoría detallada, con sus propios filtros, está en la pestaña <strong>Bitácora</strong>.
+        La bitácora de auditoría detallada, con sus propios filtros, está en la pestaña <strong>Bitácora</strong>.
       </SectionHelp>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

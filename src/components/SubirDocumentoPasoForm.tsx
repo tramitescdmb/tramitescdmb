@@ -6,7 +6,10 @@ import { Field } from "@/components/Field";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { IconX } from "@/components/icons";
+import { Receipt, FileText } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
+
+const iconSm = "h-4 w-4";
 
 function esDocumentoDePago(nombre: string) {
   return /\bpago\b|\bfactura\b/i.test(nombre);
@@ -113,7 +116,7 @@ export function SubirDocumentoPasoForm({
               const esPago = esDocumentoDePago(nombreDoc);
               const archivo = archivosPorDoc[nombreDoc] ?? null;
               return (
-                <Field key={nombreDoc} label={`${esPago ? "💰" : "📄"} ${nombreDoc}`}>
+                <Field key={nombreDoc} label={nombreDoc} icon={esPago ? <Receipt className={iconSm} /> : <FileText className={iconSm} />}>
                   <input
                     ref={(el) => {
                       docInputRefs.current[nombreDoc] = el;
@@ -178,8 +181,9 @@ export function SubirDocumentoPasoForm({
           <ul className="mt-1.5 space-y-1">
             {archivosExtra.map((archivo, i) => (
               <li key={i} className="flex items-center gap-2 rounded-md bg-stone-100 px-2.5 py-1.5 text-xs text-stone-700">
+                <FileText className="h-3.5 w-3.5 flex-none text-stone-500" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">
-                  📄 {archivo.name} <span className="text-stone-400">({formatBytes(archivo.size)})</span>
+                  {archivo.name} <span className="text-stone-400">({formatBytes(archivo.size)})</span>
                 </span>
                 <button
                   type="button"

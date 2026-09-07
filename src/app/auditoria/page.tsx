@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { SectionHelp } from "@/components/Field";
 
-const ETIQUETAS_TIPO: Record<string, { icono: string; texto: string }> = {
-  LOGIN_EXITOSO: { icono: "🔓", texto: "Inicio de sesión" },
-  LOGIN_FALLIDO: { icono: "⛔", texto: "Intento de acceso fallido" },
-  USUARIO_CREADO: { icono: "➕", texto: "Usuario creado" },
-  USUARIO_ACTIVADO: { icono: "✅", texto: "Usuario activado" },
-  USUARIO_DESACTIVADO: { icono: "🚫", texto: "Usuario desactivado" },
-  CONFIGURACION_ACTUALIZADA: { icono: "🖼️", texto: "Apariencia actualizada" },
+const ETIQUETAS_TIPO: Record<string, { icono: LucideIcon; clase: string; texto: string }> = {
+  LOGIN_EXITOSO: { icono: LogIn, clase: "text-emerald-600", texto: "Inicio de sesión" },
+  LOGIN_FALLIDO: { icono: ShieldAlert, clase: "text-red-600", texto: "Intento de acceso fallido" },
+  USUARIO_CREADO: { icono: UserPlus, clase: "text-cdmb-600", texto: "Usuario creado" },
+  USUARIO_ACTIVADO: { icono: CheckCircle2, clase: "text-emerald-600", texto: "Usuario activado" },
+  USUARIO_DESACTIVADO: { icono: UserX, clase: "text-stone-500", texto: "Usuario desactivado" },
+  CONFIGURACION_ACTUALIZADA: { icono: Palette, clase: "text-cdmb-600", texto: "Apariencia actualizada" },
 };
 
 export default async function AuditoriaPage({
@@ -49,10 +50,8 @@ export default async function AuditoriaPage({
       </div>
 
       <SectionHelp>
-        Esto es aparte de la <strong>bitácora de cada expediente</strong> (que ya ves en el detalle de
-        cada uno) — aquí se ve todo el sistema junto: quién entró, quién creó o desactivó a quién, y
-        quién cambió el logo. Abajo también hay un resumen de la actividad más reciente en expedientes,
-        con enlace directo a cada uno.
+        Aparte de la <strong>bitácora de cada expediente</strong>: aquí se ve todo el sistema junto —
+        accesos, gestión de usuarios, configuración. Abajo, un resumen de actividad reciente en expedientes.
       </SectionHelp>
 
       <div className="flex flex-wrap gap-2">
@@ -79,10 +78,11 @@ export default async function AuditoriaPage({
         ) : (
           <ul className="divide-y divide-stone-100">
             {registros.map((r) => {
-              const info = ETIQUETAS_TIPO[r.tipo] ?? { icono: "•", texto: r.tipo };
+              const info = ETIQUETAS_TIPO[r.tipo] ?? { icono: Circle, clase: "text-stone-400", texto: r.tipo };
+              const Icono = info.icono;
               return (
                 <li key={r.id} className="flex items-start gap-3 px-4 py-2.5 text-sm">
-                  <span aria-hidden>{info.icono}</span>
+                  <Icono className={`mt-0.5 h-4 w-4 flex-none ${info.clase}`} aria-hidden />
                   <div className="flex-1">
                     <p className="text-stone-700">{r.descripcion}</p>
                     <p className="text-xs text-stone-400">

@@ -41,11 +41,7 @@ export default async function BitacoraPage({
     <div className="space-y-4">
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Bitácora de auditoría (inalterable)</h2>
-        <SectionHelp>
-          Todo lo que ha pasado en este módulo, filtrable por tipo de acción, de registro y por fecha. Cada fila va
-          encadenada por hash SHA-256 — alterar o borrar una rompe la cadena y queda en evidencia. Vive en su propia
-          pestaña porque crece de forma indefinida y no debe demorar la carga del panel de Reportes.
-        </SectionHelp>
+        <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
         <form method="get" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>
             <option value="">Cualquier acción</option>

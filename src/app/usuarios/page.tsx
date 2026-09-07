@@ -10,6 +10,7 @@ import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { Paginador } from "@/components/Paginador";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 
 const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
@@ -118,13 +119,7 @@ export default async function UsuariosPage({
             Funcionarios de la CDMB que pueden ingresar a esta aplicación para gestionar trámites.
           </p>
         </div>
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- descarga de archivo (ruta de API), no una página */}
-        <a
-          href="/api/usuarios/exportar"
-          className="flex-none rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95"
-        >
-          ⬇ Descargar CSV
-        </a>
+        <DescargarCsvBoton href="/api/usuarios/exportar" />
       </div>
 
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

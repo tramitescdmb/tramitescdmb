@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AlertTriangle, FileText, Landmark, Lock, ExternalLink, User, Clock } from "lucide-react";
 import { db } from "@/lib/db";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { getTramitePorSlug, tiempoEstimadoDias } from "@/lib/tramites-data";
@@ -105,12 +106,18 @@ export default async function TramiteDetallePage({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="text-sm font-medium text-stone-800">{paso.titulo}</span>
-                  {paso.esDecision && <span className="flex-none text-xs text-amber-600">⚠ decisión</span>}
+                  {paso.esDecision && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                      <AlertTriangle className="h-3 w-3" aria-hidden />
+                      decisión
+                    </span>
+                  )}
                   {paso.tiempo && <span className="flex-none text-xs text-stone-400">{paso.tiempo}</span>}
                 </div>
                 {responsablesCanonicos.length > 0 && (
-                  <p className="mt-1 text-xs text-stone-500">
-                    <span aria-hidden>👤</span> {responsablesCanonicos.join(" · ")}
+                  <p className="mt-1 flex items-center gap-1 text-xs text-stone-500">
+                    <User className="h-3 w-3 flex-none" aria-hidden />
+                    {responsablesCanonicos.join(" · ")}
                   </p>
                 )}
               </div>
@@ -128,13 +135,16 @@ export default async function TramiteDetallePage({
               <dl className="mt-2 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
                 {paso.responsables.length > 0 && (
                   <div>
-                    <dt className="font-medium text-stone-500">👤 Responsable (texto original del PDF)</dt>
+                    <dt className="font-medium text-stone-500">Responsable (texto original del PDF)</dt>
                     <dd className="text-stone-600">{paso.responsables.join(", ")}</dd>
                   </div>
                 )}
                 {paso.documentos.length > 0 && (
                   <div>
-                    <dt className="font-medium text-stone-500">📄 Documentos/registros</dt>
+                    <dt className="flex items-center gap-1 font-medium text-stone-500">
+                      <FileText className="h-3 w-3" aria-hidden />
+                      Documentos/registros
+                    </dt>
                     <dd className="text-stone-600">{paso.documentos.join(", ")}</dd>
                   </div>
                 )}
@@ -166,7 +176,9 @@ export default async function TramiteDetallePage({
               className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
               title="Ver la ficha oficial de este trámite en el SUIT (Sistema Único de Información de Trámites del Gobierno de Colombia)"
             >
-              🏛️ SUIT {numero} ↗
+              <Landmark className="h-3 w-3" aria-hidden />
+              SUIT {numero}
+              <ExternalLink className="h-3 w-3" aria-hidden />
             </a>
           ))}
         </div>
@@ -200,7 +212,10 @@ export default async function TramiteDetallePage({
               </p>
               {cargosResponsables.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2.5">
-                  <span className="text-sm font-medium text-stone-700">👤 Responsable:</span>
+                  <span className="flex items-center gap-1 text-sm font-medium text-stone-700">
+                    <User className="h-3.5 w-3.5" aria-hidden />
+                    Responsable:
+                  </span>
                   {cargosResponsables.map((c) => (
                     <span
                       key={c}
@@ -237,7 +252,8 @@ export default async function TramiteDetallePage({
                     key={c}
                     className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
                   >
-                    👤 {c}
+                    <User className="h-3 w-3" aria-hidden />
+                    {c}
                   </span>
                 ))}
               </div>
@@ -271,10 +287,11 @@ export default async function TramiteDetallePage({
                           href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-stone-400 hover:text-cdmb-700 hover:underline"
+                          className="inline-flex items-center gap-1 text-stone-400 hover:text-cdmb-700 hover:underline"
                           title="Ver la ficha oficial de esta modalidad en el SUIT"
                         >
-                          SUIT {flujo.suitNumero} ↗
+                          SUIT {flujo.suitNumero}
+                          <ExternalLink className="h-3 w-3" aria-hidden />
                         </a>
                       )}
                     </span>
@@ -299,7 +316,9 @@ export default async function TramiteDetallePage({
                           className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
                           title="Ver la ficha oficial de esta modalidad en el SUIT"
                         >
-                          🏛️ SUIT {flujo.suitNumero} ↗
+                          <Landmark className="h-3 w-3" aria-hidden />
+                          SUIT {flujo.suitNumero}
+                          <ExternalLink className="h-3 w-3" aria-hidden />
                         </a>
                       )}
                     </h3>
@@ -318,7 +337,8 @@ export default async function TramiteDetallePage({
               <p className="mb-3 border-b border-cdmb-200 pb-3 text-sm text-cdmb-900">
                 {tiempo.total > 0 ? (
                   <>
-                    🕒 <strong>~{tiempo.total} días hábiles</strong> estimados
+                    <Clock className="mr-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden />
+                    <strong>~{tiempo.total} días hábiles</strong> estimados
                     {!tiempo.completo && (
                       <span className="block text-xs text-cdmb-700">
                         (suma de {tiempo.pasosConTiempo} de {tiempo.pasosTotal} pasos que tienen tiempo definido en
@@ -328,7 +348,8 @@ export default async function TramiteDetallePage({
                   </>
                 ) : (
                   <>
-                    🕒 Tiempo sin especificar
+                    <Clock className="mr-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden />
+                    Tiempo sin especificar
                     <span className="block text-xs text-cdmb-700">
                       El procedimiento oficial no indica un tiempo por actividad para este trámite.
                     </span>
@@ -350,8 +371,9 @@ export default async function TramiteDetallePage({
                   </Link>
                 </>
               ) : (
-                <p className="text-sm text-cdmb-900">
-                  🔒 Solo puede consultar este trámite — no tiene permiso para radicar ni editar sus
+                <p className="flex items-start gap-1.5 text-sm text-cdmb-900">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+                  Solo puede consultar este trámite — no tiene permiso para radicar ni editar sus
                   expedientes.
                 </p>
               )
@@ -366,9 +388,10 @@ export default async function TramiteDetallePage({
                     href="https://vital-publico.minambiente.gov.co/inicio"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
                   >
-                    Ir a VITAL ↗
+                    Ir a VITAL
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                   </a>
                   {suits.map((numero) => (
                     <a
@@ -376,9 +399,10 @@ export default async function TramiteDetallePage({
                       href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${numero}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex w-full items-center justify-center rounded-md border border-cdmb-300 bg-white px-4 py-2 text-sm font-medium text-cdmb-800 hover:bg-cdmb-50"
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-cdmb-300 bg-white px-4 py-2 text-sm font-medium text-cdmb-800 hover:bg-cdmb-50"
                     >
-                      Ver ficha SUIT {numero} ↗
+                      Ver ficha SUIT {numero}
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                     </a>
                   ))}
                 </div>

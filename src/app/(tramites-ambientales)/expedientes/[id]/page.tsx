@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
@@ -125,21 +127,24 @@ export default async function ExpedienteDetallePage({
       </div>
 
       {!puedeEditar && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-          👁️ Solo puede consultar este expediente — su acceso a este trámite es de solo lectura. No puede
+        <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+          <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+          Solo puede consultar este expediente — su acceso a este trámite es de solo lectura. No puede
           adjuntar documentos, comentar, ni avanzar pasos.
         </div>
       )}
       {error === "sin-permiso-paso" && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          🔒 No pudo avanzarse el paso: según el procedimiento, este paso le corresponde a{" "}
+        <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+          No pudo avanzarse el paso: según el procedimiento, este paso le corresponde a{" "}
           <strong>{cargosDelPasoActual.join(", ") || "otro cargo"}</strong>, y su cargo actual no coincide. Solo un
           administrador o un funcionario con ese cargo puede completarlo.
         </div>
       )}
       {error === "sin-permiso-estado" && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          🔒 Solo un administrador puede cambiar el estado del expediente manualmente.
+        <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+          Solo un administrador puede cambiar el estado del expediente manualmente.
         </div>
       )}
 
@@ -201,7 +206,12 @@ export default async function ExpedienteDetallePage({
             />
 
             <BloqueUbicacion
-              titulo="📍 Ubicación del lugar del trámite"
+              titulo={
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden />
+                  Ubicación del lugar del trámite
+                </span>
+              }
               lat={expediente.ubicacionLat}
               lon={expediente.ubicacionLon}
               planaX={expediente.ubicacionPlanaX}
@@ -211,7 +221,12 @@ export default async function ExpedienteDetallePage({
               cartZ={expediente.ubicacionCartesianaZ}
             />
             <BloqueUbicacion
-              titulo="📍 Ubicación del solicitante"
+              titulo={
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden />
+                  Ubicación del solicitante
+                </span>
+              }
               lat={expediente.solicitanteUbicacionLat}
               lon={expediente.solicitanteUbicacionLon}
               planaX={expediente.solicitanteUbicacionPlanaX}
@@ -230,8 +245,9 @@ export default async function ExpedienteDetallePage({
                   Paso actual ({pasoActual.numero} de {pasos.length})
                 </p>
                 {esMiPaso && (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    ✋ Corresponde a su cargo ({session?.cargos.join(", ")})
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    <Hand className="h-3 w-3" aria-hidden />
+                    Corresponde a su cargo ({session?.cargos.join(", ")})
                   </span>
                 )}
               </div>
@@ -241,7 +257,10 @@ export default async function ExpedienteDetallePage({
               <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                 {pasoActual.responsables.length > 0 && (
                   <div>
-                    <dt className="font-medium text-stone-500">👤 Responsable</dt>
+                    <dt className="flex items-center gap-1 font-medium text-stone-500">
+                      <User className="h-3 w-3" aria-hidden />
+                      Responsable
+                    </dt>
                     <dd className="text-stone-700">
                       {Array.from(new Set(pasoActual.responsables.map(cargoCanonico))).join(", ")}
                     </dd>
@@ -249,13 +268,19 @@ export default async function ExpedienteDetallePage({
                 )}
                 {pasoActual.documentos.length > 0 && (
                   <div>
-                    <dt className="font-medium text-stone-500">📄 Documentos/registros de este paso</dt>
+                    <dt className="flex items-center gap-1 font-medium text-stone-500">
+                      <FileText className="h-3 w-3" aria-hidden />
+                      Documentos/registros de este paso
+                    </dt>
                     <dd className="text-stone-700">{pasoActual.documentos.join(", ")}</dd>
                   </div>
                 )}
                 {pasoActual.tiempo && (
                   <div>
-                    <dt className="font-medium text-stone-500">🕒 Tiempo estimado</dt>
+                    <dt className="flex items-center gap-1 font-medium text-stone-500">
+                      <Clock className="h-3 w-3" aria-hidden />
+                      Tiempo estimado
+                    </dt>
                     <dd className="text-stone-700">{pasoActual.tiempo}</dd>
                   </div>
                 )}
@@ -302,12 +327,14 @@ export default async function ExpedienteDetallePage({
               {/* Acciones para avanzar */}
               <div className="mt-4 border-t border-stone-100 pt-4">
                 {!puedeEditar ? (
-                  <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                    👁️ Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
+                  <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                    <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                    Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
                   </p>
                 ) : !puedeAvanzar ? (
-                  <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                    🔒 Este paso solo puede avanzarlo{" "}
+                  <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                    <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                    Este paso solo puede avanzarlo{" "}
                     <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
                     {session && session.cargos.length > 0 ? (
                       <> — su(s) cargo(s) actual(es): &quot;{session.cargos.join(", ")}&quot;.</>
@@ -319,8 +346,9 @@ export default async function ExpedienteDetallePage({
                   </p>
                 ) : pasoActual.esDecision ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-stone-500">
-                      ⚠ Este paso requiere una decisión. Seleccione la opción correspondiente para que el
+                    <p className="flex items-start gap-1.5 text-xs font-medium text-stone-500">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+                      Este paso requiere una decisión. Seleccione la opción correspondiente para que el
                       expediente siga el camino correcto:
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -410,7 +438,7 @@ export default async function ExpedienteDetallePage({
                             : "bg-stone-100 text-stone-400"
                       }`}
                     >
-                      {estadoPaso === "completado" ? "✓" : p.numero}
+                      {estadoPaso === "completado" ? <Check className="h-3 w-3" aria-hidden /> : p.numero}
                     </span>
                     <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
                       {p.titulo}
@@ -431,13 +459,14 @@ export default async function ExpedienteDetallePage({
               suspenderlo mientras se espera información externa).
             </p>
             {session?.rol !== "ADMIN" ? (
-              <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                🔒 Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
+              <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
                 del flujo. Gestione el expediente desde &quot;Paso actual&quot; más arriba.
               </p>
             ) : (
             <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">
-              <Field label="Nuevo estado" required help="">
+              <Field label="Nuevo estado" required>
                 <select
                   name="estado"
                   defaultValue={expediente.estado}
@@ -509,6 +538,7 @@ export default async function ExpedienteDetallePage({
             <ol>
               {expediente.eventos.map((ev, idx) => {
                 const info = infoEvento(ev.tipo);
+                const Icono = info.icono;
                 const esUltimo = idx === expediente.eventos.length - 1;
                 return (
                   <li key={ev.id} className="relative flex gap-3 pb-5">
@@ -516,10 +546,10 @@ export default async function ExpedienteDetallePage({
                       <span className="absolute left-[15px] top-8 bottom-0 w-px bg-stone-200" aria-hidden />
                     )}
                     <span
-                      className={`relative z-10 flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm ${info.clase}`}
+                      className={`relative z-10 flex h-8 w-8 flex-none items-center justify-center rounded-full ${info.clase}`}
                       aria-hidden
                     >
-                      {info.icono}
+                      <Icono className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1 pt-1">
                       <p className="text-sm text-stone-700">{ev.descripcion}</p>
@@ -554,10 +584,15 @@ export default async function ExpedienteDetallePage({
                 return (
                   <div key={numeroPaso ?? "radicacion"} className="rounded-xl border border-stone-200 bg-white">
                     <div className="border-b border-stone-100 bg-stone-50 px-4 py-2 rounded-t-xl">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-cdmb-700">
-                        {numeroPaso == null
-                          ? "📥 Documentos de radicación"
-                          : `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`}
+                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cdmb-700">
+                        {numeroPaso == null ? (
+                          <>
+                            <Inbox className="h-3.5 w-3.5" aria-hidden />
+                            Documentos de radicación
+                          </>
+                        ) : (
+                          `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`
+                        )}
                       </p>
                     </div>
                     <ul className="divide-y divide-stone-100">
@@ -568,9 +603,10 @@ export default async function ExpedienteDetallePage({
                               href={`/api/documentos/${doc.id}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="font-medium text-cdmb-700 hover:underline"
+                              className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline"
                             >
-                              📄 {doc.nombre}
+                              <FileText className="h-3.5 w-3.5 flex-none" aria-hidden />
+                              {doc.nombre}
                             </a>
                             {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
                             <p className="text-xs text-stone-400">
@@ -639,12 +675,14 @@ export default async function ExpedienteDetallePage({
               <div className="flex flex-wrap gap-1.5">
                 {expediente.usuariosAsignados.map((u) => (
                   <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
-                    👤 {u.nombre}
+                    <User className="h-3 w-3" aria-hidden />
+                    {u.nombre}
                   </span>
                 ))}
                 {expediente.cargosAsignados.map((c) => (
                   <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
-                    🏷️ {c.nombre}
+                    <Tag className="h-3 w-3" aria-hidden />
+                    {c.nombre}
                   </span>
                 ))}
               </div>
@@ -803,7 +841,7 @@ function BloqueUbicacion({
   cartY,
   cartZ,
 }: {
-  titulo: string;
+  titulo: ReactNode;
   lat: number | null;
   lon: number | null;
   planaX: number | null;

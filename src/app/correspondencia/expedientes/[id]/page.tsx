@@ -162,9 +162,8 @@ export default async function ExpedienteDetallePage({
           )}
         </h3>
         <SectionHelp>
-          El orden y la huella (hash) de cada documento se actualizan solos al agregar uno nuevo (Art. 4.3.2.3 Acuerdo
-          001/2024 AGN). Al cerrar el expediente, este índice queda firmado con hash: si algo cambiara después, dejaría
-          de coincidir.
+          Orden y huella (hash) se actualizan solos al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al
+          cerrar, el índice queda firmado con hash.
         </SectionHelp>
         {expediente.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">Todavía no se ha agregado ningún documento.</p>
@@ -231,9 +230,8 @@ export default async function ExpedienteDetallePage({
         <section className="rounded-xl border border-stone-200 bg-white p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Nivel de acceso a la información (Ley 1712/2014)</h3>
           <SectionHelp>
-            Toda información es <strong>pública</strong> por defecto. Márquelo como <strong>clasificado</strong> si
-            expone datos privados de alguien, o <strong>reservado</strong> si su divulgación afectaría un interés
-            público — en ambos casos la ley exige dejar por escrito el fundamento.
+            Pública por defecto (Ley 1712/2014). <strong>Clasificado</strong>: protege un derecho particular.{" "}
+            <strong>Reservado</strong>: protege un interés público. Ambos exigen fundamento escrito.
           </SectionHelp>
           <form action={`/api/correspondencia/expedientes/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px]">
@@ -262,9 +260,8 @@ export default async function ExpedienteDetallePage({
         <section className="rounded-xl border border-stone-200 bg-white p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Cierre del expediente</h3>
           <SectionHelp>
-            Ciérrelo cuando termine la actuación o procedimiento que le dio origen (Art. 4.3.2.4 Acuerdo 001/2024 AGN).
-            Se firma el índice electrónico con hash y ya no se le pueden agregar documentos ni comunicaciones — es
-            definitivo, aunque el expediente en sí nunca se borra.
+            Al cerrar (Art. 4.3.2.4 Acuerdo 001/2024 AGN) se firma el índice con hash y deja de admitir documentos —
+            definitivo, aunque el expediente nunca se borra.
           </SectionHelp>
           <form action={`/api/correspondencia/expedientes/${id}/cerrar`} method="post">
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
@@ -277,10 +274,7 @@ export default async function ExpedienteDetallePage({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
-        <SectionHelp>
-          Registro de todo lo que ha pasado con este expediente. Nadie puede borrar ni editar un registro sin que
-          quede evidencia.
-        </SectionHelp>
+        <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>
         <ul className="divide-y divide-stone-100">
           {bitacora.map((b) => (
             <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">

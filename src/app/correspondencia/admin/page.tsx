@@ -66,9 +66,8 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           <Building2 className="h-4 w-4 text-cdmb-600" aria-hidden /> Dependencias (organigrama)
         </h2>
         <SectionHelp>
-          El organigrama determina a quién se le puede distribuir una comunicación y quién puede firmar memorandos en
-          nombre de cada área. Una dependencia inactiva deja de aparecer para asignar cosas nuevas, pero no borra su
-          historial.
+          Determina a quién se puede distribuir o quién firma memorandos por cada área. Una dependencia inactiva no
+          borra su historial, solo deja de estar disponible para asignar.
         </SectionHelp>
 
         <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-4">
@@ -80,7 +79,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
               <input name="nombre" className={inputCls} required />
             </Field>
           </div>
-          <Field label="Depende de" help="La dependencia jerárquicamente superior, si tiene. Déjelo vacío si es de primer nivel.">
+          <Field label="Depende de" help="Superior jerárquico; vacío si es de primer nivel.">
             <select name="parentId" className={inputCls}>
               <option value="">— Ninguna (nivel raíz) —</option>
               {dependenciasActivas.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
@@ -141,11 +140,9 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </a>
         </h2>
         <SectionHelp>
-          La TRD clasifica cada comunicación por el tipo de asunto que trata (una &quot;serie&quot;, ej. Contratos) y
-          define por cuánto tiempo debe conservarse antes de transferirla o eliminarla (Acuerdo 060/2001 AGN). Puede
-          tener varias versiones de una misma serie a la vez — útil para migrar de una TRD antigua a una nueva sin
-          perder la clasificación de lo ya radicado. Un mismo código de serie (ej. &quot;20 ACTAS&quot;) se repite en
-          cada dependencia: no es un error, así es la TRD real de la CDMB.
+          Clasifica cada comunicación por serie y define su tiempo de conservación (Acuerdo 060/2001 AGN). Admite
+          varias versiones vigentes a la vez, para migrar sin perder lo ya radicado. Un código de serie se repite en
+          cada dependencia — no es un error.
         </SectionHelp>
 
         <details className="rounded-xl border border-stone-200 bg-white p-4">

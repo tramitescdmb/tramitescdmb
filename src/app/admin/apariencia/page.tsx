@@ -21,9 +21,8 @@ export default async function AparienciaPage() {
       </div>
 
       <SectionHelp>
-        Mismo esquema que usa Negocios Verdes: una franja azul institucional arriba (con el sello GOV.CO)
-        y otra en el pie de página (con los sellos de Colombia y GOV.CO). Cada franja solo aparece si ya
-        subiste la imagen correspondiente — mientras esté vacía, no se muestra nada.
+        Franja institucional arriba (sello GOV.CO) y en el pie de página (sellos de Colombia y GOV.CO), igual
+        que Negocios Verdes. Cada una aparece solo si tiene una imagen cargada.
       </SectionHelp>
 
       <div className="space-y-4">

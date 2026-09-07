@@ -731,8 +731,9 @@ export function NuevoExpedienteForm({
               />
               {archivo && (
                 <div className="mt-1.5 flex items-center gap-2 rounded-md bg-cdmb-50 px-2.5 py-1.5 text-xs text-cdmb-800">
+                  <IconDocument className="h-3.5 w-3.5 flex-none text-cdmb-500" />
                   <span className="min-w-0 flex-1 truncate">
-                    📄 {archivo.name} <span className="text-cdmb-500">({formatBytes(archivo.size)})</span>
+                    {archivo.name} <span className="text-cdmb-500">({formatBytes(archivo.size)})</span>
                   </span>
                   <button
                     type="button"
@@ -771,8 +772,9 @@ export function NuevoExpedienteForm({
             <ul className="mt-1.5 space-y-1">
               {archivosExtra.map((archivo, i) => (
                 <li key={i} className="flex items-center gap-2 rounded-md bg-stone-100 px-2.5 py-1.5 text-xs text-stone-700">
+                  <IconDocument className="h-3.5 w-3.5 flex-none text-stone-500" />
                   <span className="min-w-0 flex-1 truncate">
-                    📄 {archivo.name} <span className="text-stone-400">({formatBytes(archivo.size)})</span>
+                    {archivo.name} <span className="text-stone-400">({formatBytes(archivo.size)})</span>
                   </span>
                   <button
                     type="button"

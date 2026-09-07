@@ -30,9 +30,8 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   return (
     <div className="space-y-4">
       <SectionHelp>
-        Un expediente documental es la carpeta digital de un asunto, actuación o procedimiento de una dependencia —
-        no tiene que originarse en una comunicación radicada: cualquier funcionario puede abrir uno para archivar
-        directamente los documentos de su gestión diaria (Art. 4.3.2 Acuerdo 001/2024 AGN).
+        Carpeta digital de un asunto o procedimiento — no requiere originarse en una comunicación radicada
+        (Art. 4.3.2 Acuerdo 001/2024 AGN).
       </SectionHelp>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
