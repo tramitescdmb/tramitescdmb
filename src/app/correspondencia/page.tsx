@@ -46,8 +46,25 @@ export default async function CorrespondenciaBandejaPage({
     getCorrespondenciaOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "orden", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "orden", "desde", "hasta"] as const;
+
+  const gruposSeries = (() => {
+    const mapa = new Map<string, { nombre: string; opciones: { id: string; label: string }[] }>();
+    const sinDependencia: { id: string; label: string }[] = [];
+    for (const s of opciones.series) {
+      const opcion = { id: s.id, label: `${s.codigo} — ${s.nombre}` };
+      if (!s.dependencia) {
+        sinDependencia.push(opcion);
+        continue;
+      }
+      if (!mapa.has(s.dependencia.id)) mapa.set(s.dependencia.id, { nombre: s.dependencia.nombre, opciones: [] });
+      mapa.get(s.dependencia.id)!.opciones.push(opcion);
+    }
+    const grupos = Array.from(mapa.values());
+    if (sinDependencia.length > 0) grupos.push({ nombre: "Sin dependencia asignada", opciones: sinDependencia });
+    return grupos;
+  })();
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -55,6 +72,10 @@ export default async function CorrespondenciaBandejaPage({
   if (sp.dependencia) {
     const dep = opciones.dependencias.find((d) => d.id === sp.dependencia);
     if (dep) clausulas.push(`relacionadas con ${dep.nombre}`);
+  }
+  if (sp.serieId) {
+    const serie = opciones.series.find((s) => s.id === sp.serieId);
+    if (serie) clausulas.push(`de la serie "${serie.codigo} — ${serie.nombre}"`);
   }
   if (rango) clausulas.push(`radicadas entre ${etiquetaPeriodo}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
@@ -129,6 +150,20 @@ export default async function CorrespondenciaBandejaPage({
               <option value="">Todas</option>
               {opciones.dependencias.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Serie (TRD)</span>
+            <select name="serieId" defaultValue={sp.serieId ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+              <option value="">Todas</option>
+              {gruposSeries.map((g) => (
+                <optgroup key={g.nombre} label={g.nombre}>
+                  {g.opciones.map((o) => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>

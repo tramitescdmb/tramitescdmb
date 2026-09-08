@@ -8,6 +8,7 @@ export type FiltrosCorrespondencia = {
   tipo?: string;
   estado?: string;
   dependencia?: string;
+  serieId?: string;
   orden?: string;
   page?: string;
   vista?: string;
@@ -76,6 +77,7 @@ export function construirWhereCorrespondencia(
   }
   if (esEstadoValido(f.estado)) and.push({ estado: f.estado });
   if (f.dependencia) and.push({ OR: [{ dependenciaDestinoId: f.dependencia }, { dependenciaOrigenId: f.dependencia }] });
+  if (f.serieId) and.push({ serieId: f.serieId });
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
@@ -111,10 +113,19 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
 }
 
 export async function getCorrespondenciaOpcionesFiltro() {
-  const dependencias = await db.dependencia.findMany({
-    where: { activo: true },
-    orderBy: [{ nivel: "asc" }, { orden: "asc" }, { nombre: "asc" }],
-    select: { id: true, nombre: true },
-  });
-  return { dependencias, estados: ESTADOS_VALIDOS, tipos: TIPOS_VALIDOS };
+  const [dependencias, series] = await Promise.all([
+    db.dependencia.findMany({
+      where: { activo: true },
+      orderBy: [{ nivel: "asc" }, { orden: "asc" }, { nombre: "asc" }],
+      select: { id: true, nombre: true },
+    }),
+    // Vigentes de cualquier dependencia — el filtro de serie es independiente del de dependencia
+    // (se puede filtrar por serie sin haber elegido antes una dependencia).
+    db.serieDocumental.findMany({
+      where: { activo: true, vigenteHasta: null },
+      orderBy: { codigo: "asc" },
+      select: { id: true, codigo: true, nombre: true, dependencia: { select: { id: true, nombre: true } } },
+    }),
+  ]);
+  return { dependencias, series, estados: ESTADOS_VALIDOS, tipos: TIPOS_VALIDOS };
 }
