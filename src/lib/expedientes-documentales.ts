@@ -54,13 +54,23 @@ export async function agregarDocumentoArchivo(datos: {
   hashSha256?: string | null;
   subidoPorId: string;
   fechaDocumento?: Date | null;
+  tipoDocumentalId?: string | null;
 }) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: datos.expedienteDocumentalId },
-    select: { estado: true },
+    select: { estado: true, subserieId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.estado === "CERRADO") throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
+
+  // El tipo documental solo puede ser uno de los definidos en la TRD para la subserie de ESTE expediente —
+  // evita que quede guardado un tipo de otra subserie sin sentido para este expediente.
+  if (datos.tipoDocumentalId) {
+    const tipo = await db.tipoDocumental.findUnique({ where: { id: datos.tipoDocumentalId }, select: { subserieId: true } });
+    if (!tipo || tipo.subserieId !== expediente.subserieId) {
+      throw new Error("El tipo documental elegido no corresponde a la subserie de este expediente.");
+    }
+  }
 
   const ultimo = await db.documentoArchivo.findFirst({
     where: { expedienteDocumentalId: datos.expedienteDocumentalId },
@@ -78,6 +88,7 @@ export async function agregarDocumentoArchivo(datos: {
       hashSha256: datos.hashSha256 || null,
       subidoPorId: datos.subidoPorId,
       fechaDocumento: datos.fechaDocumento ?? null,
+      tipoDocumentalId: datos.tipoDocumentalId || null,
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
@@ -189,6 +200,10 @@ export type FiltrosExpedienteDocumental = {
   q?: string;
   estado?: string;
   dependenciaId?: string;
+  // Deliberadamente sin desplegable en la UI (con 237+ series era peor UX que no tenerlo, feedback
+  // directo del usuario) — solo se llega por un enlace directo desde el explorador de la TRD (MoReq 4.3:
+  // "expedientes de una serie").
+  serieId?: string;
   page?: string;
   vista?: string;
 };
@@ -211,6 +226,7 @@ export function construirWhereExpedienteDocumental(
   const and: Prisma.ExpedienteDocumentalWhereInput[] = [restringirPorNivelAcceso(permisos)];
   if (f.estado === "ABIERTO" || f.estado === "CERRADO") and.push({ estado: f.estado });
   if (f.dependenciaId) and.push({ dependenciaId: f.dependenciaId });
+  if (f.serieId) and.push({ serieId: f.serieId });
   if (f.q?.trim()) {
     const q = f.q.trim();
     and.push({

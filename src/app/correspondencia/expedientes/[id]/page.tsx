@@ -42,10 +42,10 @@ export default async function ExpedienteDetallePage({
     include: {
       dependencia: { select: { nombre: true } },
       serie: { select: { codigo: true, nombre: true } },
-      subserie: { select: { codigo: true, nombre: true } },
+      subserie: { select: { codigo: true, nombre: true, tiposDocumentales: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } } } },
       creadoPor: { select: { nombre: true } },
       cerradoPor: { select: { nombre: true } },
-      documentos: { orderBy: { ordenIndice: "asc" }, include: { subidoPor: { select: { nombre: true } } } },
+      documentos: { orderBy: { ordenIndice: "asc" }, include: { subidoPor: { select: { nombre: true } }, tipoDocumental: { select: { nombre: true } } } },
       comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, radicado: true, asunto: true } },
     },
   });
@@ -338,7 +338,12 @@ export default async function ExpedienteDetallePage({
                   <span className="flex-none font-mono text-xs text-stone-400" title="Orden de incorporación al índice electrónico">{String(doc.ordenIndice).padStart(3, "0")}</span>
                   <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
+                      {doc.tipoDocumental && (
+                        <span className="flex-none rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
+                      )}
+                    </span>
                     <span className="flex items-center gap-1 text-[10px] text-stone-400">
                       {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
                       {doc.hashSha256 && (
@@ -368,7 +373,7 @@ export default async function ExpedienteDetallePage({
 
         {puedeSubir && (
           <div className="mt-4 border-t border-stone-100 pt-4">
-            <SubirDocumentoExpedienteForm expedienteId={id} />
+            <SubirDocumentoExpedienteForm expedienteId={id} tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []} />
           </div>
         )}
       </section>

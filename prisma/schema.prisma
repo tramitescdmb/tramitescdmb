@@ -947,6 +947,7 @@ model TipoDocumental {
   soporteElectronico Boolean @default(false)
 
   subserie SubserieDocumental @relation(fields: [subserieId], references: [id], onDelete: Cascade)
+  documentosArchivo DocumentoArchivo[]
 
   @@index([subserieId])
 }
@@ -1265,9 +1266,13 @@ model DocumentoArchivo {
   // Fecha propia del documento (de trámite) cuando es distinta de cuándo se subió — ej. un documento
   // antiguo que se digitaliza hoy. Si no se indica, se asume que coincide con createdAt (MoReq 1.45).
   fechaDocumento         DateTime?
+  // Tipo documental (MoReq 1.42) — opcional, solo se puede elegir entre los tipos definidos en la TRD para
+  // la subserie del expediente (si el expediente no tiene subserie clasificada, no hay nada que elegir).
+  tipoDocumentalId       String?
 
-  expediente ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
-  subidoPor  Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
+  expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
+  tipoDocumental TipoDocumental?      @relation(fields: [tipoDocumentalId], references: [id])
 
   @@index([expedienteDocumentalId])
 }

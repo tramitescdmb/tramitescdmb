@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (documentos.length === 0) return NextResponse.json({ error: "No se recibió ningún documento." }, { status: 400 });
   const fechaDocumentoRaw = typeof body?.fechaDocumento === "string" ? body.fechaDocumento : "";
   const fechaDocumento = fechaDocumentoRaw ? parsearFechaLocal(fechaDocumentoRaw) : null;
+  const tipoDocumentalId = typeof body?.tipoDocumentalId === "string" && body.tipoDocumentalId ? body.tipoDocumentalId : null;
 
   const nombres: string[] = [];
   try {
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         hashSha256: doc.hashSha256 || null,
         subidoPorId: session.userId,
         fechaDocumento,
+        tipoDocumentalId,
       });
       nombres.push(doc.nombre);
     }

@@ -6,10 +6,17 @@ import { Upload, X, Loader2 } from "lucide-react";
 import { subirArchivoExpediente, sha256Hex } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 
-export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: string }) {
+export function SubirDocumentoExpedienteForm({
+  expedienteId,
+  tiposDocumentales = [],
+}: {
+  expedienteId: string;
+  tiposDocumentales?: { id: string; nombre: string }[];
+}) {
   const router = useRouter();
   const [archivos, setArchivos] = useState<File[]>([]);
   const [fechaDocumento, setFechaDocumento] = useState("");
+  const [tipoDocumentalId, setTipoDocumentalId] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +51,13 @@ export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: s
       const resp = await fetch(`/api/correspondencia/expedientes/${expedienteId}/documentos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentos, fechaDocumento: fechaDocumento || undefined }),
+        body: JSON.stringify({ documentos, fechaDocumento: fechaDocumento || undefined, tipoDocumentalId: tipoDocumentalId || undefined }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudieron agregar los documentos.");
       setArchivos([]);
       setFechaDocumento("");
+      setTipoDocumentalId("");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron agregar los documentos.");
@@ -89,6 +97,22 @@ export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: s
             className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
           />
           <span className="text-xs text-stone-400">Opcional — solo si es distinta de hoy</span>
+        </label>
+      )}
+      {archivos.length > 0 && tiposDocumentales.length > 0 && (
+        <label className="flex w-fit items-center gap-2 text-sm text-stone-600">
+          Tipo documental
+          <select
+            value={tipoDocumentalId}
+            onChange={(e) => setTipoDocumentalId(e.target.value)}
+            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+          >
+            <option value="">— Sin especificar —</option>
+            {tiposDocumentales.map((t) => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
+            ))}
+          </select>
+          <span className="text-xs text-stone-400">Opcional — según la TRD de este expediente, aplica a todos estos archivos</span>
         </label>
       )}
       {archivos.length > 0 && (
