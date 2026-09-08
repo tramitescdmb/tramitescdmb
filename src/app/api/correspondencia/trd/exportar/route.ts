@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
-import { COLUMNAS_TRD_CSV } from "@/lib/trd-import";
+import { COLUMNAS_TRD_CSV, formatearXmlTrd } from "@/lib/trd-import";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import type { DisposicionFinal } from "@prisma/client";
 
@@ -36,12 +36,12 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const filas: string[] = [];
+  const filaObjetos: Record<(typeof COLUMNAS_TRD_CSV)[number], string>[] = [];
   for (const s of series) {
     for (const ss of s.subseries) {
       const marcas: Record<string, string> = { disposicion_ct: "", disposicion_e: "", disposicion_md: "", disposicion_s: "" };
       for (const d of ss.disposicionesFinal) marcas[MARCA[d]] = "X";
-      const fila: Record<(typeof COLUMNAS_TRD_CSV)[number], string> = {
+      filaObjetos.push({
         dependencia_codigo: s.dependencia?.codigo ?? "",
         dependencia_nombre: s.dependencia?.nombre ?? "",
         serie_codigo: s.codigo,
@@ -57,10 +57,11 @@ export async function GET(req: NextRequest) {
         disposicion_s: marcas.disposicion_s,
         procedimiento: ss.procedimiento ?? "",
         tipos_documentales: ss.tiposDocumentales.map((t) => t.nombre).join("|"),
-      };
-      filas.push(COLUMNAS_TRD_CSV.map((c) => celda(fila[c])).join(";"));
+      });
     }
   }
+
+  const formato = req.nextUrl.searchParams.get("formato") === "xml" ? "xml" : "csv";
 
   // No debe impedir la descarga si la bitácora tiene un hipo transitorio de conexión
   // (ya pasó en pruebas: un P2028 aquí no debería convertir un export ya armado en un 500).
@@ -72,15 +73,25 @@ export async function GET(req: NextRequest) {
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `Exportó la TRD vigente completa (${series.length} series, ${filas.length} subseries) a CSV`,
+    detalle: `Exportó la TRD vigente completa (${series.length} series, ${filaObjetos.length} subseries) a ${formato.toUpperCase()}`,
   }).catch((err) => { console.error("No se pudo registrar en la bitácora la exportación de la TRD:", err); });
 
+  const fechaArchivo = new Date().toISOString().slice(0, 10);
+  if (formato === "xml") {
+    return new NextResponse(formatearXmlTrd(filaObjetos), {
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Content-Disposition": `attachment; filename="trd-${fechaArchivo}.xml"`,
+      },
+    });
+  }
+
   const BOM = String.fromCharCode(0xfeff);
-  const csv = BOM + [COLUMNAS_TRD_CSV.map(celda).join(";"), ...filas].join("\r\n");
+  const csv = BOM + [COLUMNAS_TRD_CSV.map(celda).join(";"), ...filaObjetos.map((fila) => COLUMNAS_TRD_CSV.map((c) => celda(fila[c])).join(";"))].join("\r\n");
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="trd-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="trd-${fechaArchivo}.csv"`,
     },
   });
 }

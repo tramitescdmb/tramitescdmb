@@ -137,10 +137,16 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           <span className="flex items-center gap-2">
             <FolderTree className="h-4 w-4 text-cdmb-600" aria-hidden /> Tablas de Retención Documental (TRD/CCD)
           </span>
-          <a href="/api/correspondencia/trd/exportar" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-            <Download className="h-3.5 w-3.5" aria-hidden />
-            Descargar TRD (CSV)
-          </a>
+          <span className="flex items-center gap-3">
+            <a href="/api/correspondencia/trd/exportar" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              Descargar TRD (CSV)
+            </a>
+            <a href="/api/correspondencia/trd/exportar?formato=xml" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              XML
+            </a>
+          </span>
         </h2>
         <SectionHelp>
           Clasifica cada comunicación por serie y define su tiempo de conservación (Acuerdo 060/2001 AGN). Admite
@@ -149,11 +155,12 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </SectionHelp>
 
         <details className="rounded-xl border border-stone-200 bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (CSV)</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (CSV o XML)</summary>
           <div className="mt-3 space-y-3">
             <SectionHelp>
               Cargue toda una TRD de una vez desde un archivo de texto separado por &quot;;&quot; (así es como Excel
-              exporta un CSV). Debe tener, como mínimo, las columnas <code>dependencia_codigo</code>,{" "}
+              exporta un CSV) o desde el XML que exporta este mismo sistema (mismas columnas, una etiqueta por
+              campo). Debe tener, como mínimo, las columnas <code>dependencia_codigo</code>,{" "}
               <code>dependencia_nombre</code>, <code>serie_codigo</code>, <code>serie_nombre</code>,{" "}
               <code>serie_descripcion</code> (justificación de la serie, opcional), <code>subserie_codigo</code>,{" "}
               <code>subserie_nombre</code>, <code>retencion_gestion</code>,{" "}
@@ -162,12 +169,13 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
               <code>procedimiento</code> y <code>tipos_documentales</code> (varios, separados por &quot;|&quot;). Las
               dependencias que no existan todavía se crean automáticamente a partir del código y el nombre del archivo.
               Si una serie ya existe (mismo código, dependencia y versión), reimportarla actualiza su nombre y
-              descripción con lo que traiga el archivo.
+              descripción con lo que traiga el archivo. El formato se detecta por la extensión del archivo
+              (<code>.csv</code> o <code>.xml</code>).
             </SectionHelp>
             <form action="/api/correspondencia/trd/importar" method="post" encType="multipart/form-data" className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div className="sm:col-span-2">
-                <Field label="Archivo CSV" required>
-                  <input type="file" name="archivo" accept=".csv,text/csv" required className="w-full text-sm" />
+                <Field label="Archivo CSV o XML" required>
+                  <input type="file" name="archivo" accept=".csv,text/csv,.xml,text/xml,application/xml" required className="w-full text-sm" />
                 </Field>
               </div>
               <Field label="Versión de esta TRD" required help='Identificador libre, ej. "2022-1" o el año de aprobación.'>

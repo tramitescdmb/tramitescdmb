@@ -63,6 +63,51 @@ export function parsearCsvTrd(contenido: string): { filas: FilaTrdCsv[]; errores
   return { filas: resultado.data, errores };
 }
 
+/**
+ * XML como formato alterno de intercambio de la TRD (MoReq 1.24), MISMAS columnas que el CSV — un
+ * `<Fila>` plano por fila, sin atributos ni anidamiento, para poder leerlo con un parser mínimo propio sin
+ * agregar una dependencia de XML de propósito general solo para este formato que controlamos por completo
+ * en los dos extremos (lo que se exporta es exactamente lo único que el importador acepta).
+ */
+function escaparXml(v: string): string {
+  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function desescaparXml(v: string): string {
+  return v.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
+export function formatearXmlTrd(filas: Record<(typeof COLUMNAS_TRD_CSV)[number], string>[]): string {
+  const cuerpo = filas
+    .map((fila) => {
+      const campos = COLUMNAS_TRD_CSV.map((c) => `    <${c}>${escaparXml(fila[c] ?? "")}</${c}>`).join("\n");
+      return `  <Fila>\n${campos}\n  </Fila>`;
+    })
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<TRD>\n${cuerpo}\n</TRD>\n`;
+}
+
+export function parsearXmlTrd(contenido: string): { filas: FilaTrdCsv[]; errores: string[] } {
+  const errores: string[] = [];
+  const bloques = contenido.match(/<Fila>[\s\S]*?<\/Fila>/g) ?? [];
+  if (bloques.length === 0) {
+    errores.push('No se encontró ninguna etiqueta <Fila> — verifique que el archivo tenga el formato exportado por este mismo sistema.');
+    return { filas: [], errores };
+  }
+  const filas: FilaTrdCsv[] = bloques.map((bloque) => {
+    const fila = {} as FilaTrdCsv;
+    for (const columna of COLUMNAS_TRD_CSV) {
+      const m = new RegExp(`<${columna}>([\\s\\S]*?)<\\/${columna}>`).exec(bloque);
+      fila[columna] = m ? desescaparXml(m[1]!) : "";
+    }
+    return fila;
+  });
+  const faltantes = COLUMNAS_OBLIGATORIAS.filter((c) => !contenido.includes(`<${c}>`));
+  if (faltantes.length > 0) {
+    errores.push(`Faltan columnas obligatorias en el XML: ${faltantes.join(", ")}.`);
+  }
+  return { filas, errores };
+}
+
 export type ResultadoImportacionTrd = {
   dependenciasCreadas: number;
   seriesCreadas: number;

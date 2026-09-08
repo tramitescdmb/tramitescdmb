@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
-import { parsearCsvTrd, importarTrd } from "@/lib/trd-import";
+import { parsearCsvTrd, parsearXmlTrd, importarTrd } from "@/lib/trd-import";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
@@ -28,9 +28,10 @@ export async function POST(req: NextRequest) {
   const version = String(form.get("version") || "").trim();
 
   if (!(archivo instanceof File) || archivo.size === 0) {
-    volver.searchParams.set("error", "Seleccione un archivo CSV para importar.");
+    volver.searchParams.set("error", "Seleccione un archivo CSV o XML para importar.");
     return NextResponse.redirect(volver, { status: 303 });
   }
+  const esXml = archivo.name.toLowerCase().endsWith(".xml");
   if (!version) {
     volver.searchParams.set("error", "Indique un identificador de versión para esta TRD (ej. 2026-1, o el año de aprobación).");
     return NextResponse.redirect(volver, { status: 303 });
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const contenido = await archivo.text();
-  const { filas, errores: erroresParseo } = parsearCsvTrd(contenido);
+  const { filas, errores: erroresParseo } = esXml ? parsearXmlTrd(contenido) : parsearCsvTrd(contenido);
   if (erroresParseo.length > 0 && filas.length === 0) {
     volver.searchParams.set("error", `No se pudo leer el archivo: ${erroresParseo[0]}`);
     return NextResponse.redirect(volver, { status: 303 });
