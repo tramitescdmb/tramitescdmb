@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, CheckSquare, Square, PencilLine } from "lucide-react";
+import { Search, CheckSquare, Square, PencilLine, Download } from "lucide-react";
 
 const ETIQUETA_DISPOSICION: Record<string, string> = {
   CONSERVACION_TOTAL: "Conservación total",
@@ -194,7 +194,17 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                     <span className="ml-2 text-xs text-stone-400">v{s.version}{s.esAnterior ? " · versión anterior" : ""} · actualizada {s.actualizadaEn}</span>
                     {s.descripcion && <p className="mt-0.5 text-xs text-stone-500">{s.descripcion}</p>}
                   </div>
-                  <span className="text-xs text-stone-400">{s.subseries.length} subserie(s) · {s.totalComunicaciones} comunicación(es)</span>
+                  <span className="flex items-center gap-2 text-xs text-stone-400">
+                    {s.subseries.length} subserie(s) · {s.totalComunicaciones} comunicación(es)
+                    <a
+                      href={`/api/correspondencia/trd/series/${s.id}/exportar`}
+                      title="Exportar todo lo clasificado en esta serie (comunicaciones y expedientes)"
+                      className="flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
+                    >
+                      <Download className="h-3 w-3" aria-hidden />
+                      Exportar contenido
+                    </a>
+                  </span>
                 </div>
                 {s.subseries.length > 0 && (
                   <table className="w-full text-sm">
