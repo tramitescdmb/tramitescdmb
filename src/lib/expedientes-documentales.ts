@@ -142,6 +142,40 @@ export async function cambiarNivelAccesoExpediente(expedienteId: string, nivelAc
   return { anterior: expediente.nivelAcceso, nuevo: nivelAcceso };
 }
 
+/** Presta el expediente a un funcionario — solo registra quién lo tiene y desde cuándo, no bloquea nada
+ * (subir/editar/cerrar siguen gobernados solo por dependencia/rol). No deja prestar de nuevo mientras haya
+ * un préstamo vigente (sin fechaDevolucionReal): primero hay que devolverlo. */
+export async function prestarExpediente(datos: {
+  expedienteId: string;
+  prestadoAId: string;
+  prestadoPorId: string;
+  motivo?: string | null;
+  fechaDevolucionEsperada?: Date | null;
+}) {
+  const vigente = await db.prestamoExpediente.findFirst({
+    where: { expedienteDocumentalId: datos.expedienteId, fechaDevolucionReal: null },
+    select: { id: true, prestadoA: { select: { nombre: true } } },
+  });
+  if (vigente) throw new Error(`Ya está prestado a ${vigente.prestadoA.nombre} — regístrelo como devuelto antes de prestarlo de nuevo.`);
+
+  return db.prestamoExpediente.create({
+    data: {
+      expedienteDocumentalId: datos.expedienteId,
+      prestadoAId: datos.prestadoAId,
+      prestadoPorId: datos.prestadoPorId,
+      motivo: datos.motivo?.trim() || null,
+      fechaDevolucionEsperada: datos.fechaDevolucionEsperada ?? null,
+    },
+  });
+}
+
+export async function devolverExpediente(prestamoId: string) {
+  const prestamo = await db.prestamoExpediente.findUnique({ where: { id: prestamoId }, select: { fechaDevolucionReal: true } });
+  if (!prestamo) throw new Error("El préstamo no existe.");
+  if (prestamo.fechaDevolucionReal) throw new Error("Este préstamo ya estaba registrado como devuelto.");
+  return db.prestamoExpediente.update({ where: { id: prestamoId }, data: { fechaDevolucionReal: new Date() } });
+}
+
 export async function archivarComunicacionEnExpedienteDocumental(comunicacionId: string, expedienteId: string) {
   const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { estado: true } });
   if (!expediente) throw new Error("El expediente no existe.");

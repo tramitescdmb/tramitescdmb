@@ -134,6 +134,8 @@ model Usuario {
   distribucionesRecibidas         Distribucion[]          @relation("DistribucionUsuario")
   expedientesDocumentalesCreados  ExpedienteDocumental[]  @relation("ExpedienteDocumentalCreadoPor")
   expedientesDocumentalesCerrados ExpedienteDocumental[]  @relation("ExpedienteDocumentalCerradoPor")
+  prestamosRecibidos              PrestamoExpediente[]    @relation("PrestamoPrestadoA")
+  prestamosEntregados             PrestamoExpediente[]    @relation("PrestamoPrestadoPor")
   documentosArchivoSubidos        DocumentoArchivo[]      @relation("DocumentoArchivoSubidoPor")
   distribucionesAsignadas         Distribucion[]          @relation("DistribucionAsignadoPor")
   firmas                          Firma[]                 @relation("FirmaUsuario")
@@ -843,6 +845,8 @@ enum AccionAuditoriaDoc {
   ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
   APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
   RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
+  PRESTA // presta un expediente documental a un funcionario
+  DEVUELVE // registra la devolución de un expediente prestado
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -1208,10 +1212,32 @@ model ExpedienteDocumental {
 
   documentos     DocumentoArchivo[]
   comunicaciones Comunicacion[]
+  prestamos      PrestamoExpediente[]
 
   @@index([dependenciaId])
   @@index([serieId])
   @@index([estado])
+}
+
+// Préstamo/consulta de un expediente por un funcionario — quién lo tiene actualmente "afuera" (aunque sea
+// 100% electrónico, el archivo sigue necesitando saber quién está trabajando con qué expediente en un
+// momento dado, igual que cualquier SGDEA). No bloquea nada del expediente (subir/editar/cerrar siguen
+// gobernados solo por dependencia/rol) — es únicamente el registro de quién lo tiene y desde cuándo.
+model PrestamoExpediente {
+  id                     String    @id @default(cuid())
+  expedienteDocumentalId String
+  prestadoAId            String
+  prestadoPorId          String
+  motivo                  String?   @db.Text
+  fechaPrestamo           DateTime  @default(now())
+  fechaDevolucionEsperada DateTime?
+  fechaDevolucionReal     DateTime?
+
+  expedienteDocumental ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id])
+  prestadoA            Usuario              @relation("PrestamoPrestadoA", fields: [prestadoAId], references: [id])
+  prestadoPor          Usuario              @relation("PrestamoPrestadoPor", fields: [prestadoPorId], references: [id])
+
+  @@index([expedienteDocumentalId])
 }
 
 // Documento subido DIRECTAMENTE a un ExpedienteDocumental (no vía correspondencia).

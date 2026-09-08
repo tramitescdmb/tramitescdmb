@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
@@ -9,7 +9,8 @@ import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
-import { formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { Paginador } from "@/components/Paginador";
+import { formatearFecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
 
 const ETIQUETA_ACCION: Record<string, string> = {
@@ -17,14 +18,16 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
+  PRESTA: "Préstamo", DEVUELVE: "Devolución",
 };
+const BITACORA_POR_PAGINA = 20;
 
 export default async function ExpedienteDetallePage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; bp?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -65,17 +68,40 @@ export default async function ExpedienteDetallePage({
 
   await registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` });
 
-  const bitacora = await db.auditoriaDoc.findMany({
-    where: { entidad: "ExpedienteDocumental", entidadId: id },
-    orderBy: { secuencia: "desc" },
-    take: 50,
-    include: { usuario: { select: { nombre: true } } },
-  });
+  const bitacoraPage = Math.max(1, parseInt(sp.bp ?? "1", 10) || 1);
+  const [totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar] = await Promise.all([
+    db.auditoriaDoc.count({ where: { entidad: "ExpedienteDocumental", entidadId: id } }),
+    db.auditoriaDoc.findMany({
+      where: { entidad: "ExpedienteDocumental", entidadId: id },
+      orderBy: { secuencia: "desc" },
+      skip: (bitacoraPage - 1) * BITACORA_POR_PAGINA,
+      take: BITACORA_POR_PAGINA,
+      include: { usuario: { select: { nombre: true } } },
+    }),
+    db.prestamoExpediente.findFirst({
+      where: { expedienteDocumentalId: id, fechaDevolucionReal: null },
+      include: { prestadoA: { select: { nombre: true } } },
+    }),
+    db.prestamoExpediente.findMany({
+      where: { expedienteDocumentalId: id, fechaDevolucionReal: { not: null } },
+      orderBy: { fechaPrestamo: "desc" },
+      take: 5,
+      include: { prestadoA: { select: { nombre: true } } },
+    }),
+    db.usuario.findMany({
+      where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true },
+    }),
+  ]);
+  const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
+  const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
   const abierto = expediente.estado === "ABIERTO";
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && expediente.documentos.length > 0;
+  const puedePrestar = puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
 
   return (
     <div className="space-y-4">
@@ -152,6 +178,68 @@ export default async function ExpedienteDetallePage({
           </div>
         )}
       </div>
+
+      {puedePrestar && (
+        <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <Handshake className="h-3.5 w-3.5" aria-hidden />
+            Préstamo
+          </h3>
+          <SectionHelp>Registra quién tiene el expediente en este momento — no bloquea subir, editar ni cerrar.</SectionHelp>
+          {prestamoVigente ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+              <span>
+                Prestado a <strong>{prestamoVigente.prestadoA.nombre}</strong> desde {formatearFecha(prestamoVigente.fechaPrestamo)}
+                {prestamoVigente.fechaDevolucionEsperada && <> · vence {formatearFecha(prestamoVigente.fechaDevolucionEsperada)}</>}
+                {prestamoVigente.motivo && <> · {prestamoVigente.motivo}</>}
+              </span>
+              <form action={`/api/correspondencia/expedientes/${id}/devolver`} method="post">
+                <input type="hidden" name="prestamoId" value={prestamoVigente.id} />
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
+                  <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                  Registrar devolución
+                </button>
+              </form>
+            </div>
+          ) : (
+            <form action={`/api/correspondencia/expedientes/${id}/prestar`} method="post" className="flex flex-wrap items-end gap-3">
+              <div className="min-w-[180px]">
+                <Field label="Prestar a" required>
+                  <select name="prestadoAId" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                    <option value="" disabled>— Elegir —</option>
+                    {usuariosParaPrestar.map((u) => (
+                      <option key={u.id} value={u.id}>{u.nombre}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <div className="min-w-[160px]">
+                <Field label="Devolución esperada" help="Opcional.">
+                  <input type="date" name="fechaDevolucionEsperada" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                </Field>
+              </div>
+              <div className="min-w-[200px] flex-1">
+                <Field label="Motivo" help="Opcional.">
+                  <input name="motivo" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                </Field>
+              </div>
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Handshake className="h-3.5 w-3.5" aria-hidden />
+                Prestar
+              </button>
+            </form>
+          )}
+          {historialPrestamos.length > 0 && (
+            <ul className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-xs text-stone-400">
+              {historialPrestamos.map((p) => (
+                <li key={p.id}>
+                  {p.prestadoA.nombre}: {formatearFecha(p.fechaPrestamo)} → {formatearFecha(p.fechaDevolucionReal)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {puedeEditar && (
         <section className="rounded-xl border border-stone-200 bg-white p-4">
@@ -308,20 +396,29 @@ export default async function ExpedienteDetallePage({
         </section>
       )}
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
-        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
-        <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>
-        <ul className="divide-y divide-stone-100">
-          {bitacora.map((b) => (
-            <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
-              <span className="text-stone-700">
-                <span className="font-medium">{ETIQUETA_ACCION[b.accion] ?? b.accion}</span>
-                {b.detalle ? ` — ${b.detalle}` : ""}
-              </span>
-              <span className="text-xs text-stone-400">{b.usuario?.nombre ?? "—"} · {fechaHora(b.createdAt)}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <div className="p-4">
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
+          <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>
+          <ul className="divide-y divide-stone-100">
+            {bitacora.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
+                <span className="text-stone-700">
+                  <span className="font-medium">{ETIQUETA_ACCION[b.accion] ?? b.accion}</span>
+                  {b.detalle ? ` — ${b.detalle}` : ""}
+                </span>
+                <span className="text-xs text-stone-400">{b.usuario?.nombre ?? "—"} · {fechaHora(b.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <Paginador
+          paginaActual={bitacoraPage}
+          totalPaginas={totalPaginasBitacora}
+          total={totalBitacora}
+          porPagina={BITACORA_POR_PAGINA}
+          hrefPagina={hrefBitacoraPagina}
+        />
       </section>
     </div>
   );
