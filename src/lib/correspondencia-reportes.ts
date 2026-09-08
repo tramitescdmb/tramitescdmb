@@ -27,6 +27,7 @@ export async function obtenerReportesCorrespondencia() {
     seriesVigentesTotal,
     subseriesVigentesTotal,
     intentosFallidosRecientes,
+    tiempoRespuestaPorDependenciaRaw,
   ] = await Promise.all([
     db.comunicacion.count(),
     db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true } }),
@@ -50,13 +51,42 @@ export async function obtenerReportesCorrespondencia() {
     db.serieDocumental.count({ where: { vigenteHasta: null } }),
     db.subserieDocumental.count({ where: { activo: true } }),
     db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }),
+    // Desempeño por dependencia (MoReq 7.9: "ver desempeño en tiempo real") — días corridos entre la
+    // radicación de una RECIBIDA y la radicación formal de su respuesta (ENVIADA vía respondeAId). Solo
+    // cuenta recibidas YA respondidas; las pendientes no tienen un tiempo de respuesta que medir todavía.
+    db.$queryRaw<{ dependenciaId: string | null; promedioDias: number; total: bigint }[]>`
+      SELECT r."dependenciaDestinoId" as "dependenciaId",
+             AVG(EXTRACT(EPOCH FROM (e."fechaRadicacion" - r."fechaRadicacion")) / 86400)::float as "promedioDias",
+             COUNT(*)::bigint as total
+      FROM "Comunicacion" r
+      JOIN "Comunicacion" e ON e."respondeAId" = r.id
+      WHERE r.tipo = 'RECIBIDA'
+      GROUP BY r."dependenciaDestinoId"
+    `,
   ]);
 
   const dependencias = await db.dependencia.findMany({
-    where: { id: { in: porDependenciaRaw.map((p) => p.dependenciaDestinoId).filter((v): v is string => v !== null) } },
+    where: {
+      id: {
+        in: [
+          ...porDependenciaRaw.map((p) => p.dependenciaDestinoId),
+          ...tiempoRespuestaPorDependenciaRaw.map((t) => t.dependenciaId),
+        ].filter((v): v is string => v !== null),
+      },
+    },
     select: { id: true, nombre: true },
   });
   const nombreDependencia = Object.fromEntries(dependencias.map((d) => [d.id, d.nombre]));
+
+  const tiempoRespuestaPorDependencia = tiempoRespuestaPorDependenciaRaw
+    .map((t) => ({ label: t.dependenciaId ? (nombreDependencia[t.dependenciaId] ?? "—") : "Sin asignar", value: Math.round(t.promedioDias * 10) / 10 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  const totalRespondidas = tiempoRespuestaPorDependenciaRaw.reduce((acc, t) => acc + Number(t.total), 0);
+  const promedioRespuestaGeneral =
+    totalRespondidas > 0
+      ? Math.round((tiempoRespuestaPorDependenciaRaw.reduce((acc, t) => acc + t.promedioDias * Number(t.total), 0) / totalRespondidas) * 10) / 10
+      : null;
 
   const porDependencia = porDependenciaRaw
     .map((p) => ({ label: p.dependenciaDestinoId ? (nombreDependencia[p.dependenciaDestinoId] ?? "—") : "Sin asignar", value: p._count._all }))
@@ -95,5 +125,8 @@ export async function obtenerReportesCorrespondencia() {
     seriesVigentesTotal,
     subseriesVigentesTotal,
     intentosFallidosRecientes,
+    tiempoRespuestaPorDependencia,
+    promedioRespuestaGeneral,
+    totalRespondidas,
   };
 }

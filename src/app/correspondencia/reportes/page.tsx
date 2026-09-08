@@ -67,6 +67,26 @@ export default async function ReportesPage() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-stone-200 bg-white p-5">
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-stone-900">Tiempo de respuesta por dependencia</h2>
+          {reportes.promedioRespuestaGeneral !== null && (
+            <span className="text-xs text-stone-500">
+              Promedio general: <strong className="tabular-nums text-stone-800">{reportes.promedioRespuestaGeneral.toLocaleString("es-CO")} días</strong>
+              {" "}({reportes.totalRespondidas.toLocaleString("es-CO")} recibidas respondidas)
+            </span>
+          )}
+        </div>
+        <p className="mb-4 text-xs text-stone-500">
+          Días corridos entre la radicación de una recibida y la radicación formal de su respuesta — dependencias con el promedio más alto primero.
+        </p>
+        <BarChartHorizontal
+          data={reportes.tiempoRespuestaPorDependencia}
+          emptyMessage="Todavía no hay comunicaciones recibidas con una respuesta radicada."
+          formatValue={(n) => `${n.toLocaleString("es-CO")} días`}
+        />
+      </div>
+
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Archivo (TRD)</h2>
         <p className="mb-3 text-xs text-stone-500">Tamaño actual de la Tabla de Retención Documental y del archivo general.</p>
