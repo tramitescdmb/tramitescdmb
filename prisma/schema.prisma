@@ -1270,10 +1270,17 @@ model DocumentoArchivo {
   // Tipo documental (MoReq 1.42) — opcional, solo se puede elegir entre los tipos definidos en la TRD para
   // la subserie del expediente (si el expediente no tiene subserie clasificada, no hay nada que elegir).
   tipoDocumentalId       String?
+  // Versionado (MoReq 3.9: "elegir cómo tratar un documento con varias versiones") — opcional: al subir un
+  // documento se puede indicar que reemplaza a uno ya existente EN EL MISMO expediente, formando una cadena
+  // de versiones (A reemplazado por B reemplazado por C...). Ninguna versión anterior se borra ni se oculta
+  // — el índice electrónico sigue siendo append-only; esto solo agrega la relación entre versiones.
+  reemplazaId            String?
 
   expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
   tipoDocumental TipoDocumental?      @relation(fields: [tipoDocumentalId], references: [id])
+  reemplaza      DocumentoArchivo?    @relation("DocumentoArchivoVersion", fields: [reemplazaId], references: [id], onDelete: SetNull)
+  reemplazadoPor DocumentoArchivo[]   @relation("DocumentoArchivoVersion")
 
   @@index([expedienteDocumentalId])
 }

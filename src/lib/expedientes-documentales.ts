@@ -55,6 +55,7 @@ export async function agregarDocumentoArchivo(datos: {
   subidoPorId: string;
   fechaDocumento?: Date | null;
   tipoDocumentalId?: string | null;
+  reemplazaId?: string | null;
 }) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: datos.expedienteDocumentalId },
@@ -69,6 +70,15 @@ export async function agregarDocumentoArchivo(datos: {
     const tipo = await db.tipoDocumental.findUnique({ where: { id: datos.tipoDocumentalId }, select: { subserieId: true } });
     if (!tipo || tipo.subserieId !== expediente.subserieId) {
       throw new Error("El tipo documental elegido no corresponde a la subserie de este expediente.");
+    }
+  }
+
+  // El documento reemplazado tiene que ser de ESTE mismo expediente — versionar entre expedientes distintos
+  // no tiene sentido archivístico (MoReq 3.9).
+  if (datos.reemplazaId) {
+    const anterior = await db.documentoArchivo.findUnique({ where: { id: datos.reemplazaId }, select: { expedienteDocumentalId: true } });
+    if (!anterior || anterior.expedienteDocumentalId !== datos.expedienteDocumentalId) {
+      throw new Error("El documento que se quiere reemplazar no pertenece a este expediente.");
     }
   }
 
@@ -89,6 +99,7 @@ export async function agregarDocumentoArchivo(datos: {
       subidoPorId: datos.subidoPorId,
       fechaDocumento: datos.fechaDocumento ?? null,
       tipoDocumentalId: datos.tipoDocumentalId || null,
+      reemplazaId: datos.reemplazaId || null,
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });

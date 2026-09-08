@@ -9,14 +9,17 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 export function SubirDocumentoExpedienteForm({
   expedienteId,
   tiposDocumentales = [],
+  documentosExistentes = [],
 }: {
   expedienteId: string;
   tiposDocumentales?: { id: string; nombre: string }[];
+  documentosExistentes?: { id: string; nombre: string }[];
 }) {
   const router = useRouter();
   const [archivos, setArchivos] = useState<File[]>([]);
   const [fechaDocumento, setFechaDocumento] = useState("");
   const [tipoDocumentalId, setTipoDocumentalId] = useState("");
+  const [reemplazaId, setReemplazaId] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +54,19 @@ export function SubirDocumentoExpedienteForm({
       const resp = await fetch(`/api/correspondencia/expedientes/${expedienteId}/documentos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentos, fechaDocumento: fechaDocumento || undefined, tipoDocumentalId: tipoDocumentalId || undefined }),
+        body: JSON.stringify({
+          documentos,
+          fechaDocumento: fechaDocumento || undefined,
+          tipoDocumentalId: tipoDocumentalId || undefined,
+          reemplazaId: reemplazaId || undefined,
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudieron agregar los documentos.");
       setArchivos([]);
       setFechaDocumento("");
       setTipoDocumentalId("");
+      setReemplazaId("");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron agregar los documentos.");
@@ -113,6 +122,22 @@ export function SubirDocumentoExpedienteForm({
             ))}
           </select>
           <span className="text-xs text-stone-400">Opcional — según la TRD de este expediente, aplica a todos estos archivos</span>
+        </label>
+      )}
+      {archivos.length === 1 && documentosExistentes.length > 0 && (
+        <label className="flex w-fit items-center gap-2 text-sm text-stone-600">
+          ¿Es una nueva versión de un documento ya en el índice?
+          <select
+            value={reemplazaId}
+            onChange={(e) => setReemplazaId(e.target.value)}
+            className="max-w-[240px] rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+          >
+            <option value="">— No, es un documento nuevo —</option>
+            {documentosExistentes.map((d) => (
+              <option key={d.id} value={d.id}>{d.nombre}</option>
+            ))}
+          </select>
+          <span className="text-xs text-stone-400">Opcional — la versión anterior queda en el índice, solo se enlazan</span>
         </label>
       )}
       {archivos.length > 0 && (

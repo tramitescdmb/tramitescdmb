@@ -72,6 +72,10 @@ export function construirWhereCorrespondencia(
         // También encuentra por el nombre de un documento adjunto — un memorando o un oficio
         // se suele recordar por el archivo que se subió, no por su radicado o asunto exacto.
         { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
+        // Y por el CONTENIDO real (MoReq 4.11: búsqueda de texto libre integrada, no solo metadatos) — el
+        // cuerpo firmado de una enviada/memorando, y el borrador de respuesta de una recibida.
+        { contenido: { contains: q, mode: "insensitive" } },
+        { respuestaTexto: { contains: q, mode: "insensitive" } },
       ],
     });
   }

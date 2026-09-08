@@ -45,7 +45,15 @@ export default async function ExpedienteDetallePage({
       subserie: { select: { codigo: true, nombre: true, tiposDocumentales: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } } } },
       creadoPor: { select: { nombre: true } },
       cerradoPor: { select: { nombre: true } },
-      documentos: { orderBy: { ordenIndice: "asc" }, include: { subidoPor: { select: { nombre: true } }, tipoDocumental: { select: { nombre: true } } } },
+      documentos: {
+        orderBy: { ordenIndice: "asc" },
+        include: {
+          subidoPor: { select: { nombre: true } },
+          tipoDocumental: { select: { nombre: true } },
+          reemplaza: { select: { nombre: true, ordenIndice: true } },
+          reemplazadoPor: { select: { nombre: true, ordenIndice: true } },
+        },
+      },
       comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, radicado: true, asunto: true } },
     },
   });
@@ -345,11 +353,21 @@ export default async function ExpedienteDetallePage({
                         <span className="flex-none rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
                       )}
                     </span>
-                    <span className="flex items-center gap-1 text-[10px] text-stone-400">
+                    <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">
                       {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
                       {doc.hashSha256 && (
                         <span className="flex items-center gap-1" title={doc.hashSha256}>
                           · <ShieldCheck className="h-3 w-3" aria-hidden /> SHA-256 {doc.hashSha256.slice(0, 12)}…
+                        </span>
+                      )}
+                      {doc.reemplaza && (
+                        <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 font-medium text-cdmb-700" title={doc.reemplaza.nombre}>
+                          Versión de {String(doc.reemplaza.ordenIndice).padStart(3, "0")}
+                        </span>
+                      )}
+                      {doc.reemplazadoPor.length > 0 && (
+                        <span className="rounded-full bg-stone-100 px-1.5 py-0.5 font-medium text-stone-500" title={doc.reemplazadoPor.map((r) => r.nombre).join(", ")}>
+                          Reemplazado por {doc.reemplazadoPor.map((r) => String(r.ordenIndice).padStart(3, "0")).join(", ")}
                         </span>
                       )}
                     </span>
@@ -374,7 +392,11 @@ export default async function ExpedienteDetallePage({
 
         {puedeSubir && (
           <div className="mt-4 border-t border-stone-100 pt-4">
-            <SubirDocumentoExpedienteForm expedienteId={id} tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []} />
+            <SubirDocumentoExpedienteForm
+              expedienteId={id}
+              tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []}
+              documentosExistentes={expediente.documentos.map((d) => ({ id: d.id, nombre: d.nombre }))}
+            />
           </div>
         )}
       </section>
