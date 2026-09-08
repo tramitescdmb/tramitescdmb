@@ -11,6 +11,7 @@ import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { ImprimirBoton } from "@/components/ImprimirBoton";
 
 const fecha = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
@@ -55,15 +56,22 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
   return (
     <div className="space-y-4">
-      <SectionHelp>
-        Carpeta digital de un asunto o procedimiento — no requiere originarse en una comunicación radicada
-        (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un
-        archivo que tenga adentro.
-      </SectionHelp>
+      <div className="hidden print:block">
+        <h1 className="text-lg font-semibold text-stone-900">Expedientes documentales</h1>
+        <p className="text-xs text-stone-500">Impreso el {new Date().toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+      </div>
 
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      <div className="print:hidden">
+        <SectionHelp>
+          Carpeta digital de un asunto o procedimiento — no requiere originarse en una comunicación radicada
+          (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un
+          archivo que tenga adentro.
+        </SectionHelp>
+      </div>
 
-      <details open={hayFiltros} className="group rounded-xl border border-stone-200 bg-white">
+      {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
           <span className="flex items-center gap-1.5">
             <Search className="h-4 w-4 text-stone-400" aria-hidden />
@@ -121,7 +129,8 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <ImprimirBoton />
           <DescargarCsvBoton href={hrefFuid()} label="Descargar FUID (CSV)" />
           <Link
             href="/correspondencia/expedientes/nuevo"
@@ -133,7 +142,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none">
         {expedientes.length === 0 ? (
           <p className="p-8 text-center text-sm text-stone-400">
             {hayFiltros ? "No hay expedientes que coincidan." : "No hay expedientes todavía."}
@@ -196,8 +205,10 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             </table>
           </div>
         )}
-        <SelectorVista vistaActual={vista} />
-        <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
+        <div className="print:hidden">
+          <SelectorVista vistaActual={vista} />
+          <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
+        </div>
       </div>
     </div>
   );

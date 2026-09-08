@@ -28,12 +28,18 @@ export default function RootLayout({
   return (
     <html lang="es" className={plexSans.variable}>
       <body className="flex min-h-screen flex-col text-stone-900 antialiased" suppressHydrationWarning>
-        <FranjaGovCo />
+        <div className="print:hidden">
+          <FranjaGovCo />
+        </div>
         <div className="flex flex-1">
-          <NavBar />
+          <div className="print:hidden">
+            <NavBar />
+          </div>
           <div className="flex min-w-0 flex-1 flex-col">
-            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
-            <Footer />
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">{children}</main>
+            <div className="print:hidden">
+              <Footer />
+            </div>
           </div>
         </div>
       </body>

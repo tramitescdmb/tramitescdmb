@@ -9,6 +9,7 @@ import { estadoVencimiento } from "@/lib/pqrsd";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { ImprimirBoton } from "@/components/ImprimirBoton";
 import { SelectorVista } from "@/components/SelectorVista";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
@@ -98,16 +99,23 @@ export default async function CorrespondenciaBandejaPage({
 
   return (
     <div className="space-y-4">
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="print:hidden rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <SectionHelp>
-        Recibidas, enviadas y memorandos en una sola bandeja — la búsqueda también encuentra por el nombre
-        de un archivo adjunto. El semáforo de &quot;Vence&quot; aplica a PQRSD: gris = a tiempo, ámbar = vence
-        en 3 días hábiles o menos, rojo = vencida.
-      </SectionHelp>
+      <div className="hidden print:block">
+        <h1 className="text-lg font-semibold text-stone-900">Correspondencia — bandeja</h1>
+        <p className="text-xs text-stone-500">Impreso el {new Date().toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+      </div>
 
-      <details open={hayFiltros} className="group rounded-xl border border-stone-200 bg-white">
+      <div className="print:hidden">
+        <SectionHelp>
+          Recibidas, enviadas y memorandos en una sola bandeja — la búsqueda también encuentra por el nombre
+          de un archivo adjunto. El semáforo de &quot;Vence&quot; aplica a PQRSD: gris = a tiempo, ámbar = vence
+          en 3 días hábiles o menos, rojo = vencida.
+        </SectionHelp>
+      </div>
+
+      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
           <span className="flex items-center gap-1.5">
             <Search className="h-4 w-4 text-stone-400" aria-hidden />
@@ -200,25 +208,28 @@ export default async function CorrespondenciaBandejaPage({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
-        {puedeRadicarUsuario && (
-          <div className="flex flex-wrap gap-2">
-            <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
-              <PlusCircle className="h-4 w-4" aria-hidden />
-              Radicar recibida
-            </Link>
-            <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              <Send className="h-4 w-4" aria-hidden />
-              Radicar enviada
-            </Link>
-            <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              <FileEdit className="h-4 w-4" aria-hidden />
-              Nuevo memorando
-            </Link>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <ImprimirBoton />
+          {puedeRadicarUsuario && (
+            <>
+              <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                <PlusCircle className="h-4 w-4" aria-hidden />
+                Radicar recibida
+              </Link>
+              <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Send className="h-4 w-4" aria-hidden />
+                Radicar enviada
+              </Link>
+              <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <FileEdit className="h-4 w-4" aria-hidden />
+                Nuevo memorando
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none">
         <div className="overflow-x-auto">
           <TablaCorrespondencia
             filas={filas.map((c, i) => ({
@@ -237,8 +248,10 @@ export default async function CorrespondenciaBandejaPage({
             sinResultadosTexto={hayFiltros ? "No hay comunicaciones que coincidan." : "Todavía no se ha radicado correspondencia."}
           />
         </div>
-        <SelectorVista vistaActual={vista} />
-        <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
+        <div className="print:hidden">
+          <SelectorVista vistaActual={vista} />
+          <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
+        </div>
       </div>
     </div>
   );
