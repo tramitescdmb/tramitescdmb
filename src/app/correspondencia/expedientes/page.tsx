@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, FolderOpen, FolderCheck, Plus, FileText, ChevronDown } from "lucide-react";
+import { Search, FolderOpen, FolderCheck, Plus, FileText } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -73,70 +73,42 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
-          <span className="flex items-center gap-1.5">
-            <Search className="h-4 w-4 text-stone-400" aria-hidden />
-            Filtros
-            {hayFiltros && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">Activos</span>}
-          </span>
-          <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
-        </summary>
-      <form method="get" className="rounded-xl border-t border-stone-100 p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="sm:col-span-2 lg:col-span-2">
-            <label>
-              <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-              <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-                <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-                <input
-                  type="text"
-                  name="q"
-                  defaultValue={sp.q ?? ""}
-                  placeholder="Número, asunto, dependencia o nombre de un archivo"
-                  className="w-full text-sm outline-none"
-                />
-              </span>
-            </label>
-          </div>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Estado</span>
-            <select name="estado" defaultValue={sp.estado ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              <option value="ABIERTO">Abiertos</option>
-              <option value="CERRADO">Cerrados</option>
-            </select>
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia</span>
-            <select name="dependenciaId" defaultValue={sp.dependenciaId ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todas</option>
-              {dependencias.map((d) => (
-                <option key={d.id} value={d.id}>{d.nombre}</option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex items-end gap-2">
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
-            {hayFiltros && (
-              <Link href="/correspondencia/expedientes" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
-            )}
-          </div>
-        </div>
+      <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-2.5">
+        <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+          <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
+          <input
+            type="text"
+            name="q"
+            defaultValue={sp.q ?? ""}
+            placeholder="Número, asunto, dependencia o archivo"
+            className="w-full text-sm outline-none"
+          />
+        </span>
+        <select name="estado" defaultValue={sp.estado ?? ""} className="flex-none rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+          <option value="">Todos los estados</option>
+          <option value="ABIERTO">Abiertos</option>
+          <option value="CERRADO">Cerrados</option>
+        </select>
+        <select name="dependenciaId" defaultValue={sp.dependenciaId ?? ""} className="flex-none rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+          <option value="">Todas las dependencias</option>
+          {dependencias.map((d) => (
+            <option key={d.id} value={d.id}>{d.nombre}</option>
+          ))}
+        </select>
+        <button type="submit" className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+        {hayFiltros && (
+          <Link href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+        )}
       </form>
-      </details>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
-        <div className="flex flex-wrap gap-2 print:hidden">
+        <div className="flex flex-wrap gap-1.5 print:hidden">
           <BotonImprimir variante="secundario" />
-          <DescargarCsvBoton href={hrefFuid()} label="Descargar FUID (CSV)" />
+          <DescargarCsvBoton href={hrefFuid()} label="FUID (CSV)" />
           <Link
             href="/correspondencia/expedientes/nuevo"
-            className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+            className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden />
             Nuevo expediente

@@ -229,13 +229,13 @@ export default async function CorrespondenciaAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">RESPONDIDA</Chip></td>
-            <td className="px-2.5 py-1.5">Se radicó la respuesta como comunicación ENVIADA. Estado terminal.</td>
+            <td className="px-2.5 py-1.5">Se radicó la respuesta como comunicación ENVIADA.</td>
             <td className="px-2.5 py-1.5">Archivar en un expediente (opcional)</td>
             <td className="px-2.5 py-1.5">—</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">ARCHIVADA</Chip></td>
-            <td className="px-2.5 py-1.5">Quedó archivada dentro de un expediente documental o de trámite. Estado terminal.</td>
+            <td className="px-2.5 py-1.5">Quedó archivada dentro de un expediente documental o de trámite.</td>
             <td className="px-2.5 py-1.5">Consulta; disposición final futura de la subserie</td>
             <td className="px-2.5 py-1.5">ADMIN_ARCHIVO (para disposición)</td>
           </tr>
