@@ -4,7 +4,10 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarBitacoraFiltrada, ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA, type FiltrosBitacora } from "@/lib/correspondencia-bitacora";
 import { SectionHelp } from "@/components/Field";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFechaHora as fecha } from "@/lib/fecha";
+import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
@@ -17,7 +20,10 @@ export default async function BitacoraPage({
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) redirect("/correspondencia");
+  if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoSeccion("Bitácora", session, await headers());
+    redirect("/correspondencia");
+  }
 
   const sp = await searchParams;
   const filtros: FiltrosBitacora = {
@@ -39,7 +45,10 @@ export default async function BitacoraPage({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-stone-200 bg-white p-4">
-        <h2 className="mb-1 text-sm font-semibold text-stone-900">Bitácora de auditoría (inalterable)</h2>
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-stone-900">Bitácora de auditoría (inalterable)</h2>
+          <DescargarCsvBoton href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}`} />
+        </div>
         <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
         <form method="get" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>

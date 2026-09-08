@@ -6,6 +6,8 @@ import { obtenerReportesCorrespondencia } from "@/lib/correspondencia-reportes";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { SectionHelp } from "@/components/Field";
+import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 
 function Stat({ icon: Icon, label, value }: { icon: typeof FileText; label: string; value: number }) {
   return (
@@ -23,7 +25,10 @@ export default async function ReportesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) redirect("/correspondencia");
+  if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoSeccion("Reportes", session, await headers());
+    redirect("/correspondencia");
+  }
 
   const reportes = await obtenerReportesCorrespondencia();
 

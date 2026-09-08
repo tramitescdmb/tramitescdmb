@@ -7,6 +7,8 @@ import { listarSeries } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
 import { TrdSeriesExplorer, type GrupoVista } from "@/components/TrdSeriesExplorer";
 import { formatearFecha } from "@/lib/fecha";
+import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -49,7 +51,10 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) redirect("/correspondencia");
+  if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoSeccion("Administración TRD", session, await headers());
+    redirect("/correspondencia");
+  }
 
   const sp = await searchParams;
   const [dependencias, dependenciasActivas, series] = await Promise.all([

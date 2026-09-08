@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Inbox, Send, FileEdit, FolderOpen, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Inbox, Send, FileEdit, FolderOpen, ArrowRight, CheckCircle2, Settings2, Archive } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeAdministrarArchivo } from "@/lib/permisos";
 
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
@@ -21,6 +21,7 @@ export default async function CorrespondenciaAyudaPage() {
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
+  const esAdministrador = puedeAdministrarArchivo(permisos);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -30,18 +31,25 @@ export default async function CorrespondenciaAyudaPage() {
       </Link>
 
       <div>
-        <h2 className="text-lg font-semibold text-stone-900">Cómo funciona el ciclo de correspondencia</h2>
+        <h2 className="text-lg font-semibold text-stone-900">Manual del SGDEA — Correspondencia y Archivo</h2>
         <p className="mt-1 text-sm text-stone-500">
           El módulo maneja tres tipos de radicado — recibida, enviada y memorando interno — bajo un mismo
           consecutivo por tipo y año (<span className="font-mono text-xs">CDMB-R-2026-000123</span>, etc.).
           Cada uno se comporta distinto una vez radicado.
         </p>
+        <nav aria-label="Contenido de este manual" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <a href="#recibida" className="text-cdmb-700 hover:underline">1. Comunicación recibida</a>
+          <a href="#enviada" className="text-cdmb-700 hover:underline">2. Enviada y memorando</a>
+          <a href="#expediente" className="text-cdmb-700 hover:underline">3. Expediente documental</a>
+          {esAdministrador && <a href="#administracion" className="text-cdmb-700 hover:underline">4. Administración (TRD, dependencias, usuarios)</a>}
+          {esAdministrador && <a href="#disposicion" className="text-cdmb-700 hover:underline">5. Disposición final y conservación</a>}
+        </nav>
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5">
+      <section id="recibida" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
           <Inbox className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Comunicación recibida — el único tipo con varios pasos
+          1. Comunicación recibida — el único tipo con varios pasos
         </h3>
         <p className="mb-4 text-sm text-stone-600">
           Es lo único que entra por fuera (una petición, PQRSD u oficio de un tercero) y por eso es lo único
@@ -79,11 +87,11 @@ export default async function CorrespondenciaAyudaPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5">
+      <section id="enviada" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
           <Send className="h-4 w-4 text-cdmb-600" aria-hidden />
           <FileEdit className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Comunicación enviada y memorando interno — ya quedan definitivos al radicarse
+          2. Comunicación enviada y memorando interno — ya quedan definitivos al radicarse
         </h3>
         <p className="text-sm text-stone-600">
           A diferencia de una recibida, un oficio de salida o un memorando se redactan y se firman{" "}
@@ -100,10 +108,10 @@ export default async function CorrespondenciaAyudaPage() {
         </p>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5">
+      <section id="expediente" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
           <FolderOpen className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Expediente documental — una carpeta aparte, no un cuarto tipo de radicado
+          3. Expediente documental — una carpeta aparte, no un cuarto tipo de radicado
         </h3>
         <p className="text-sm text-stone-600">
           Un expediente agrupa varios documentos y/o comunicaciones de un mismo asunto o procedimiento (Art.
@@ -111,9 +119,52 @@ export default async function CorrespondenciaAyudaPage() {
           Se abre aparte, en la pestaña <Link href="/correspondencia/expedientes" className="text-cdmb-700 underline hover:no-underline">Expedientes</Link>, y cualquier comunicación ya radicada se
           le puede archivar después desde su propio detalle. Se puede prestar (registrar quién lo tiene) y se
           cierra cuando el asunto termina, firmando su índice electrónico — eso sí es un paso definitivo,
-          distinto del ciclo de una comunicación recibida.
+          distinto del ciclo de una comunicación recibida. Al subir un documento se le puede indicar su
+          propia fecha (si es distinta de cuándo se subió) y, si la subserie de la TRD lo define, su tipo
+          documental.
         </p>
       </section>
+
+      {esAdministrador && (
+        <section id="administracion" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
+            <Settings2 className="h-4 w-4 text-cdmb-600" aria-hidden />
+            4. Administración — TRD, dependencias, roles
+          </h3>
+          <p className="text-sm text-stone-600">
+            En la pestaña <Link href="/correspondencia/admin" className="text-cdmb-700 underline hover:no-underline">Administración</Link> se
+            configura lo que el resto del módulo da por hecho:
+          </p>
+          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-stone-600">
+            <li><strong>Dependencias</strong>: el organigrama al que se distribuyen las comunicaciones y se abren memorandos. Desactivar una no borra su historial, solo deja de poder asignarse.</li>
+            <li><strong>TRD/CCD</strong>: cada serie y subserie define la clasificación, la retención (gestión/central) y la disposición final. Se puede cargar de a una desde el formulario, o completa por CSV/XML — reimportar un archivo con el mismo código actualiza la serie existente en vez de duplicarla.</li>
+            <li>
+              El rol de correspondencia de cada funcionario (quién puede radicar, distribuir, o administrar el
+              archivo) se asigna desde <Link href="/usuarios" className="text-cdmb-700 underline hover:no-underline">Usuarios</Link>, en la ficha de cada persona — ahí también se le puede
+              poner una fecha de vencimiento al rol.
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {esAdministrador && (
+        <section id="disposicion" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
+            <Archive className="h-4 w-4 text-cdmb-600" aria-hidden />
+            5. Disposición final y conservación
+          </h3>
+          <p className="text-sm text-stone-600">
+            Cada comunicación clasificada pasa, según los años de retención de su subserie, por tres fases:{" "}
+            <strong>gestión</strong> (en la oficina que la produjo) → <strong>archivo central</strong>{" "}
+            (transferida, con retención adicional) → <strong>disposición final</strong> (lo que diga la TRD:
+            conservación total, eliminación, selección, o microfilmación/digitalización). Todo esto se
+            gestiona en <Link href="/correspondencia/disposicion" className="text-cdmb-700 underline hover:no-underline">Disposición final</Link>,
+            donde se puede ejecutar de a una o por lotes (compartiendo una sola acta cuando la disposición
+            exige eliminar o seleccionar), agrupar los pendientes por serie o subserie, y aplazar una
+            disposición ya vencida cuando haga falta (ej. un proceso judicial en curso).
+          </p>
+        </section>
+      )}
 
       <div className="flex items-center justify-center gap-2 text-xs text-stone-400">
         <ArrowRight className="h-3.5 w-3.5" aria-hidden />

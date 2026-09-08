@@ -11,11 +11,15 @@ export type ItemDisposicionPendiente = {
   radicado: string;
   asunto: string;
   serieSubserie: string;
+  serieLabel: string;
+  subserieLabel: string;
   fechaFinCentral: string;
   etiquetas: string;
   exigeActa: boolean;
   sinDisposicionDefinida: boolean;
 };
+
+type Agrupacion = "ninguna" | "serie" | "subserie";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -33,8 +37,25 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resumen, setResumen] = useState<string | null>(null);
+  const [agrupacion, setAgrupacion] = useState<Agrupacion>("ninguna");
 
   const seleccionables = items.filter((i) => !i.sinDisposicionDefinida);
+  // MoReq 2.8: "agrupables por CCD/versión/fecha" — acá por serie o subserie del CCD. Se agrupa en el
+  // cliente porque los datos ya están todos cargados (no hace falta volver a consultar la base).
+  const grupos: { etiqueta: string; items: ItemDisposicionPendiente[] }[] =
+    agrupacion === "ninguna"
+      ? [{ etiqueta: "", items }]
+      : (() => {
+          const mapa = new Map<string, ItemDisposicionPendiente[]>();
+          for (const it of items) {
+            const clave = agrupacion === "serie" ? it.serieLabel : it.subserieLabel;
+            if (!mapa.has(clave)) mapa.set(clave, []);
+            mapa.get(clave)!.push(it);
+          }
+          return Array.from(mapa.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([etiqueta, items]) => ({ etiqueta, items }));
+        })();
   const algunaExigeActa = items.some((i) => seleccion.has(i.id) && i.exigeActa);
   const todosSeleccionados = seleccionables.length > 0 && seleccionables.every((i) => seleccion.has(i.id));
 
@@ -84,45 +105,64 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
 
   return (
     <div className="space-y-3">
-      {seleccionables.length > 0 && (
-        <button
-          type="button"
-          onClick={alternarTodos}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-cdmb-700 hover:underline"
-        >
-          {todosSeleccionados ? <CheckSquare className="h-3.5 w-3.5" aria-hidden /> : <Square className="h-3.5 w-3.5" aria-hidden />}
-          {todosSeleccionados ? "Quitar selección" : `Seleccionar las ${seleccionables.length} pendientes`}
-        </button>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {seleccionables.length > 0 && (
+          <button
+            type="button"
+            onClick={alternarTodos}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-cdmb-700 hover:underline"
+          >
+            {todosSeleccionados ? <CheckSquare className="h-3.5 w-3.5" aria-hidden /> : <Square className="h-3.5 w-3.5" aria-hidden />}
+            {todosSeleccionados ? "Quitar selección" : `Seleccionar las ${seleccionables.length} pendientes`}
+          </button>
+        )}
+        <label className="flex items-center gap-1.5 text-xs text-stone-500">
+          Agrupar por
+          <select value={agrupacion} onChange={(e) => setAgrupacion(e.target.value as Agrupacion)} className="rounded-md border border-stone-300 px-2 py-1 text-xs">
+            <option value="ninguna">Sin agrupar (por fecha)</option>
+            <option value="serie">Serie</option>
+            <option value="subserie">Subserie</option>
+          </select>
+        </label>
+      </div>
 
-      <div className="space-y-2">
-        {items.map((c) => (
-          <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex min-w-0 items-start gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={seleccion.has(c.id)}
-                  disabled={c.sinDisposicionDefinida}
-                  onChange={() => alternar(c.id)}
-                  className="mt-1 rounded border-stone-300"
-                  aria-label={`Seleccionar ${c.radicado}`}
-                />
-                <div className="min-w-0">
-                  <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">
-                    {c.radicado}
-                  </Link>
-                  <p className="truncate text-xs text-stone-500">{c.asunto}</p>
-                  <p className="text-[11px] text-stone-400">{c.serieSubserie} — cumplió su retención el {c.fechaFinCentral}</p>
-                </div>
-              </div>
-              <span className="flex-none rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
-                {c.sinDisposicionDefinida ? "Sin disposición definida en la TRD" : c.etiquetas}
-              </span>
-            </div>
-            {c.sinDisposicionDefinida && (
-              <p className="mt-2 text-xs text-amber-700">Configure la disposición final de esta subserie en Administración antes de poder ejecutarla.</p>
+      <div className="space-y-3">
+        {grupos.map((g) => (
+          <div key={g.etiqueta || "todas"}>
+            {agrupacion !== "ninguna" && (
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">{g.etiqueta} ({g.items.length})</p>
             )}
+            <div className="space-y-2">
+              {g.items.map((c) => (
+                <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={seleccion.has(c.id)}
+                        disabled={c.sinDisposicionDefinida}
+                        onChange={() => alternar(c.id)}
+                        className="mt-1 rounded border-stone-300"
+                        aria-label={`Seleccionar ${c.radicado}`}
+                      />
+                      <div className="min-w-0">
+                        <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">
+                          {c.radicado}
+                        </Link>
+                        <p className="truncate text-xs text-stone-500">{c.asunto}</p>
+                        <p className="text-[11px] text-stone-400">{c.serieSubserie} — cumplió su retención el {c.fechaFinCentral}</p>
+                      </div>
+                    </div>
+                    <span className="flex-none rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
+                      {c.sinDisposicionDefinida ? "Sin disposición definida en la TRD" : c.etiquetas}
+                    </span>
+                  </div>
+                  {c.sinDisposicionDefinida && (
+                    <p className="mt-2 text-xs text-amber-700">Configure la disposición final de esta subserie en Administración antes de poder ejecutarla.</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

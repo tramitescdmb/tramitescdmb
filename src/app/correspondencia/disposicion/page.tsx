@@ -9,12 +9,17 @@ import { ETIQUETA_DISPOSICION } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
 import { DisposicionLoteForm, type ItemDisposicionPendiente } from "@/components/DisposicionLoteForm";
 import { formatearFecha as fecha } from "@/lib/fecha";
+import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
+import { headers } from "next/headers";
 
 export default async function DisposicionFinalPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) redirect("/correspondencia");
+  if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoSeccion("Disposición final", session, await headers());
+    redirect("/correspondencia");
+  }
 
   const sp = await searchParams;
   const [{ pendientesTransferencia, pendientesDisposicion }, actas, aplazadas] = await Promise.all([
@@ -31,6 +36,8 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       radicado: c.radicado,
       asunto: c.asunto,
       serieSubserie: `${c.serie?.codigo ?? "—"} / ${c.subserie?.codigo ?? "—"}`,
+      serieLabel: c.serie ? `${c.serie.codigo} — ${c.serie.nombre}` : "Sin serie",
+      subserieLabel: c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : "Sin subserie",
       fechaFinCentral: fecha(c.fechaFinCentral),
       etiquetas: disposiciones.map((d) => ETIQUETA_DISPOSICION[d]).join(" + "),
       exigeActa: algunaRequiereActa(disposiciones),

@@ -128,3 +128,26 @@ export function datosPeticion(headers: Headers): { ip: string | null; userAgent:
   const ip = xff ? xff.split(",")[0]!.trim() : headers.get("x-real-ip");
   return { ip: ip || null, userAgent: headers.get("user-agent") };
 }
+
+/**
+ * MoReq 6.9: registrar el intento cuando alguien SIN permiso de administrar el archivo entra a una
+ * sección administrativa del SGDEA (TRD, disposición final, reportes, bitácora) — antes solo se registraba
+ * el intento de entrar al módulo completo (`correspondencia/layout.tsx`), no el de una sección puntual ya
+ * adentro. No bloquea nada por sí solo (cada página ya hace su propio `redirect`); solo deja rastro.
+ */
+export async function registrarAccesoDenegadoSeccion(
+  seccion: string,
+  session: { userId: string; nombre: string },
+  headers: Headers
+): Promise<void> {
+  const { ip, userAgent } = datosPeticion(headers);
+  await registrarAuditoriaDoc({
+    entidad: "Acceso",
+    entidadId: seccion,
+    accion: "ACCESO_DENEGADO",
+    usuarioId: session.userId,
+    ip,
+    userAgent,
+    detalle: `${session.nombre} intentó entrar a "${seccion}" sin permiso de administrar el archivo`,
+  }).catch((err) => console.error(`No se pudo registrar en la bitácora el acceso denegado a "${seccion}":`, err));
+}
