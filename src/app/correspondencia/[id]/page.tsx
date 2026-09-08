@@ -243,7 +243,7 @@ export default async function CorrespondenciaDetallePage({
           </div>
         </div>
         <div className="mt-3 max-w-md">
-          <ProgresoCorrespondencia estado={c.estado} tamaño="grande" />
+          <ProgresoCorrespondencia estado={c.estado} tipo={c.tipo} tamaño="grande" />
         </div>
         {c.estado !== "ANULADA" && (
           <div

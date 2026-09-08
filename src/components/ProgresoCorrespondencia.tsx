@@ -22,22 +22,41 @@ const EXPLICACION_POR_ESTADO: Record<string, string> = {
   ANULADA: "Se anuló: no continúa el trámite.",
 };
 
+const ETIQUETA_TERMINADO: Record<string, string> = {
+  ENVIADA: "Enviado y firmado",
+  INTERNA: "Memorando firmado",
+};
+
+const EXPLICACION_TERMINADO =
+  "Ya quedó firmado y radicado — es un documento definitivo, no requiere ningún paso más. Si se distribuyó a alguien después, es solo seguimiento interno opcional, no cambia este estado.";
+
 /**
  * Barra de avance de una comunicación (recibida/enviada/interna), en el mismo
  * estilo que ProgresoExpediente: una fila de segmentos, uno por etapa, para
  * que un funcionario no técnico vea de un vistazo en qué punto va sin tener
  * que interpretar el nombre técnico del estado.
+ *
+ * Solo una RECIBIDA tiene un ciclo real que avanzar (llega → se distribuye →
+ * se atiende → se responde). Una ENVIADA o un memorando quedan firmados y
+ * definitivos en el mismo momento de radicarse — si alguien los distribuye
+ * después para seguimiento interno, eso NO es un paso pendiente. Mostrarles
+ * la misma barra a medio llenar (ej. "Distribuida, 50%") sugiere falsamente
+ * que falta algo, así que para estos dos tipos siempre se ve completa y en
+ * verde, sin importar el estado interno de distribución.
  */
 export function ProgresoCorrespondencia({
   estado,
+  tipo,
   tamaño = "chico",
 }: {
   estado: string;
+  tipo?: string;
   tamaño?: "chico" | "grande";
 }) {
-  const anulada = estado === "ANULADA";
-  const enPausa = estado === "INFORMACION_ADICIONAL_REQUERIDA";
-  const terminal = estado === "RESPONDIDA" || estado === "ARCHIVADA";
+  const siempreTerminado = tipo === "ENVIADA" || tipo === "INTERNA";
+  const anulada = !siempreTerminado && estado === "ANULADA";
+  const enPausa = !siempreTerminado && estado === "INFORMACION_ADICIONAL_REQUERIDA";
+  const terminal = siempreTerminado || estado === "RESPONDIDA" || estado === "ARCHIVADA";
 
   const pasoActual = Math.min(PASO_POR_ESTADO[estado] ?? 1, TOTAL_PASOS);
   // "completados" = pasos YA SUPERADOS (antes del actual) — controla qué segmentos se ven "llenos" vs.
@@ -51,14 +70,19 @@ export function ProgresoCorrespondencia({
   const paleta = anulada
     ? { lleno: "bg-stone-300", actual: "bg-stone-300", texto: "text-stone-500", etiqueta: "Anulada" }
     : terminal
-      ? { lleno: "bg-emerald-500", actual: "bg-emerald-500", texto: "text-emerald-700", etiqueta: estado === "RESPONDIDA" ? "Respondida" : "Archivada" }
+      ? {
+          lleno: "bg-emerald-500",
+          actual: "bg-emerald-500",
+          texto: "text-emerald-700",
+          etiqueta: siempreTerminado ? ETIQUETA_TERMINADO[tipo!] : estado === "RESPONDIDA" ? "Respondida" : "Archivada",
+        }
       : enPausa
         ? { lleno: "bg-orange-400", actual: "bg-orange-500 ring-2 ring-orange-200", texto: "text-orange-700", etiqueta: "Esperando información adicional" }
         : { lleno: "bg-cdmb-500", actual: "bg-cdmb-600 ring-2 ring-cdmb-200", texto: "text-stone-700", etiqueta: PASOS[pasoActual - 1] };
 
   const alto = tamaño === "grande" ? "h-2.5" : "h-2";
   const textoTamaño = tamaño === "grande" ? "text-xs" : "text-[11px]";
-  const explicacion = EXPLICACION_POR_ESTADO[estado];
+  const explicacion = siempreTerminado ? EXPLICACION_TERMINADO : EXPLICACION_POR_ESTADO[estado];
 
   return (
     <div className="w-full" role="img" aria-label={`${paleta.etiqueta}. Avance: ${pct}% (${pasosAlcanzados} de ${TOTAL_PASOS} etapas).`}>

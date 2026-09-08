@@ -81,7 +81,7 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                   )}
                 </td>
                 <td className="px-2.5 py-2">
-                  <ProgresoCorrespondencia estado={f.estado} />
+                  <ProgresoCorrespondencia estado={f.estado} tipo={f.tipo} />
                 </td>
                 <td className="truncate px-2.5 py-2">
                   {f.vencimiento ? (
