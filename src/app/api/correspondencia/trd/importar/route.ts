@@ -66,9 +66,16 @@ export async function POST(req: NextRequest) {
       userAgent,
       detalle: descripcion,
     });
-    const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} actualizadas${resultado.errores.length ? ` · ${resultado.errores.length} filas con problemas (revise el log del servidor)` : ""}.`;
+    const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} actualizadas${resultado.errores.length ? ` · ${resultado.errores.length} aviso(s), vea abajo` : ""}.`;
     if (resultado.errores.length > 0) {
       console.warn("Errores en importación de TRD:", resultado.errores);
+      // MoReq 1.6 ("validar con alertas"): el admin que importa no tiene acceso al log del servidor —
+      // los avisos (ej. duplicados similares detectados por importarTrd) tienen que llegarle a él, no
+      // quedarse solo en la consola. Se muestran los primeros 8; con más, se recorta y se dice cuántos.
+      const MOSTRAR = 8;
+      const avisos = resultado.errores.slice(0, MOSTRAR).join(" | ");
+      const resto = resultado.errores.length - MOSTRAR;
+      volver.searchParams.set("avisos", resto > 0 ? `${avisos} | …y ${resto} aviso(s) más (vea el log del servidor).` : avisos);
     }
     volver.searchParams.set("ok", resumen);
   } catch (err) {

@@ -47,7 +47,7 @@ function agruparPorDependencia(series: Awaited<ReturnType<typeof listarSeries>>)
   return grupos;
 }
 
-export default async function CorrespondenciaAdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function CorrespondenciaAdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; avisos?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -66,6 +66,16 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
   return (
     <div className="space-y-6">
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.avisos && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="font-medium">Avisos de la importación (no bloquearon nada, pero conviene revisarlos):</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {sp.avisos.split(" | ").map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {/* Dependencias / organigrama */}

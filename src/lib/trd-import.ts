@@ -150,6 +150,12 @@ export async function importarTrd(
   await (async (tx: typeof db) => {
       const dependenciaPorCodigo = new Map<string, string>();
       const seriePorClave = new Map<string, string>(); // `${depId}:${serieCodigo}` -> serieId
+      // Detecta duplicados similares DENTRO del propio archivo (MoReq 1.6): el mismo código de serie o
+      // subserie apareciendo con un nombre distinto en otra fila casi siempre es un error de digitación,
+      // no una intención real — se avisa (no bloquea) para que quien importa lo revise; se procesa con el
+      // último nombre visto, igual que ya hacía antes de esta validación.
+      const nombreSeriePorClave = new Map<string, string>();
+      const nombreSubseriePorClave = new Map<string, string>();
 
       for (let i = 0; i < filas.length; i++) {
         const fila = filas[i]!;
@@ -183,6 +189,15 @@ export async function importarTrd(
         }
 
         const claveSerie = `${dependenciaId}:${serieCodigo}`;
+        if (serieNombre) {
+          const nombreAnterior = nombreSeriePorClave.get(claveSerie);
+          if (nombreAnterior && nombreAnterior !== serieNombre) {
+            resultado.errores.push(
+              `Fila ${numFila}: la serie "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior de este mismo archivo; aquí trae "${serieNombre}" — revise si es un error de digitación (se guardó este último nombre).`
+            );
+          }
+          nombreSeriePorClave.set(claveSerie, serieNombre);
+        }
         let serieId = seriePorClave.get(claveSerie);
         if (!serieId) {
           const existente = await tx.serieDocumental.findFirst({
@@ -223,6 +238,17 @@ export async function importarTrd(
         const retencionGestionAnios = Math.max(0, Math.floor(Number(fila.retencion_gestion) || 0));
         const retencionCentralAnios = Math.max(0, Math.floor(Number(fila.retencion_central) || 0));
         const procedimiento = (fila.procedimiento || "").trim() || null;
+
+        const claveSubserie = `${serieId}:${subserieCodigo}`;
+        if (subserieNombre) {
+          const nombreAnterior = nombreSubseriePorClave.get(claveSubserie);
+          if (nombreAnterior && nombreAnterior !== subserieNombre) {
+            resultado.errores.push(
+              `Fila ${numFila}: la subserie "${subserieCodigo}" de "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior; aquí trae "${subserieNombre}" — revise si es un error de digitación (se guardó este último nombre).`
+            );
+          }
+          nombreSubseriePorClave.set(claveSubserie, subserieNombre);
+        }
 
         const subserieExistente = await tx.subserieDocumental.findFirst({
           where: { serieId, codigo: subserieCodigo },

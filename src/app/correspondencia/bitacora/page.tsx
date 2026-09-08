@@ -47,7 +47,15 @@ export default async function BitacoraPage({
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-stone-900">Bitácora de auditoría (inalterable)</h2>
-          <DescargarCsvBoton href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}`} />
+          <span className="flex items-center gap-3">
+            <DescargarCsvBoton href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}`} />
+            <a
+              href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}&formato=xml`}
+              className="text-xs font-medium text-cdmb-700 hover:underline"
+            >
+              XML
+            </a>
+          </span>
         </div>
         <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
         <form method="get" className="grid grid-cols-2 gap-3 sm:grid-cols-5">

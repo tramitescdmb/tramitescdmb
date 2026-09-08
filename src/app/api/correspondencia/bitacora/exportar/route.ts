@@ -13,9 +13,15 @@ function celda(valor: string | number | null | undefined): string {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
-/** Exporta la bitácora inalterable (con los mismos filtros que la pantalla) a CSV — MoReq 1.23 ("historial
- * exportable"). Con más de LIMITE_MAXIMO filas coincidentes, exporta las más recientes hasta ese tope y lo
- * dice en el propio archivo — la bitácora crece indefinidamente, no tendría sentido exportarla sin límite. */
+function escaparXml(valor: string | number | null | undefined): string {
+  const texto = valor == null ? "" : String(valor);
+  return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+/** Exporta la bitácora inalterable (con los mismos filtros que la pantalla) a CSV o XML — MoReq 1.23
+ * ("historial exportable"). Con más de LIMITE_MAXIMO filas coincidentes, exporta las más recientes hasta
+ * ese tope y lo dice en el propio archivo — la bitácora crece indefinidamente, no tendría sentido
+ * exportarla sin límite. */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -57,6 +63,7 @@ export async function GET(req: NextRequest) {
       .join(";")
   );
 
+  const formato = sp.get("formato") === "xml" ? "xml" : "csv";
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({
     entidad: "AuditoriaDoc",
@@ -65,8 +72,38 @@ export async function GET(req: NextRequest) {
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `Exportó la bitácora a CSV (${filasCsv.length} de ${total} filas coincidentes${filtros.accion ? `, acción=${filtros.accion}` : ""}${filtros.entidad ? `, entidad=${filtros.entidad}` : ""})`,
+    detalle: `Exportó la bitácora a ${formato.toUpperCase()} (${filasCsv.length} de ${total} filas coincidentes${filtros.accion ? `, acción=${filtros.accion}` : ""}${filtros.entidad ? `, entidad=${filtros.entidad}` : ""})`,
   }).catch((err) => console.error("No se pudo registrar en la bitácora la exportación de la propia bitácora:", err));
+
+  const fecha = new Date().toISOString().slice(0, 10);
+
+  if (formato === "xml") {
+    const filasXml = filas
+      .map(
+        (f) => `  <fila secuencia="${f.secuencia}">
+    <fechaHora>${f.createdAt.toISOString()}</fechaHora>
+    <accion>${escaparXml(ETIQUETA_ACCION_BITACORA[f.accion] ?? f.accion)}</accion>
+    <entidad>${escaparXml(f.entidad)}</entidad>
+    <entidadId>${escaparXml(f.entidadId)}</entidadId>
+    <usuario>${escaparXml(f.usuario?.nombre)}</usuario>
+    <ip>${escaparXml(f.ip)}</ip>
+    <detalle>${escaparXml(f.detalle)}</detalle>
+    <hash>${escaparXml(f.hash)}</hash>
+  </fila>`
+      )
+      .join("\n");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bitacora total="${total}" exportadas="${filas.length}"${total > LIMITE_MAXIMO ? ` aviso="Mostrando las ${LIMITE_MAXIMO} más recientes de ${total} filas que coinciden con el filtro."` : ""}>
+${filasXml}
+</bitacora>
+`;
+    return new NextResponse(xml, {
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Content-Disposition": `attachment; filename="bitacora-${fecha}.xml"`,
+      },
+    });
+  }
 
   const BOM = String.fromCharCode(0xfeff);
   const aviso = total > LIMITE_MAXIMO ? [`"Mostrando las ${LIMITE_MAXIMO} más recientes de ${total} filas que coinciden con el filtro."`] : [];
@@ -74,7 +111,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="bitacora-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="bitacora-${fecha}.csv"`,
     },
   });
 }

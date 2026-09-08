@@ -11,6 +11,7 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { SelectorVista } from "@/components/SelectorVista";
+import { SelectorSerieBusqueda } from "@/components/SelectorSerieBusqueda";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaCorrespondencia } from "@/components/tablas/TablaCorrespondencia";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
@@ -45,8 +46,8 @@ export default async function CorrespondenciaBandejaPage({
     getCorrespondenciaOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "orden", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -54,6 +55,10 @@ export default async function CorrespondenciaBandejaPage({
   if (sp.dependencia) {
     const dep = opciones.dependencias.find((d) => d.id === sp.dependencia);
     if (dep) clausulas.push(`relacionadas con ${dep.nombre}`);
+  }
+  if (sp.serieId) {
+    const serie = opciones.series.find((s) => s.id === sp.serieId);
+    if (serie) clausulas.push(`clasificadas en "${serie.codigo} — ${serie.nombre}"`);
   }
   if (rango) clausulas.push(`radicadas entre ${etiquetaPeriodo}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
@@ -139,6 +144,8 @@ export default async function CorrespondenciaBandejaPage({
               ))}
             </select>
           </label>
+
+          <SelectorSerieBusqueda series={opciones.series} valorInicial={sp.serieId} />
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Desde</span>
