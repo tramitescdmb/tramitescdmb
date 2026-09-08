@@ -11,7 +11,6 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { SelectorVista } from "@/components/SelectorVista";
-import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaCorrespondencia } from "@/components/tablas/TablaCorrespondencia";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
@@ -46,25 +45,8 @@ export default async function CorrespondenciaBandejaPage({
     getCorrespondenciaOpcionesFiltro(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "orden", "desde", "hasta"] as const;
-
-  const gruposSeries = (() => {
-    const mapa = new Map<string, { nombre: string; opciones: { id: string; label: string }[] }>();
-    const sinDependencia: { id: string; label: string }[] = [];
-    for (const s of opciones.series) {
-      const opcion = { id: s.id, label: `${s.codigo} — ${s.nombre}` };
-      if (!s.dependencia) {
-        sinDependencia.push(opcion);
-        continue;
-      }
-      if (!mapa.has(s.dependencia.id)) mapa.set(s.dependencia.id, { nombre: s.dependencia.nombre, opciones: [] });
-      mapa.get(s.dependencia.id)!.opciones.push(opcion);
-    }
-    const grupos = Array.from(mapa.values());
-    if (sinDependencia.length > 0) grupos.push({ nombre: "Sin dependencia asignada", opciones: sinDependencia });
-    return grupos;
-  })();
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -72,10 +54,6 @@ export default async function CorrespondenciaBandejaPage({
   if (sp.dependencia) {
     const dep = opciones.dependencias.find((d) => d.id === sp.dependencia);
     if (dep) clausulas.push(`relacionadas con ${dep.nombre}`);
-  }
-  if (sp.serieId) {
-    const serie = opciones.series.find((s) => s.id === sp.serieId);
-    if (serie) clausulas.push(`de la serie "${serie.codigo} — ${serie.nombre}"`);
   }
   if (rango) clausulas.push(`radicadas entre ${etiquetaPeriodo}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
@@ -123,27 +101,18 @@ export default async function CorrespondenciaBandejaPage({
           </span>
           <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
-        <div className="space-y-4 border-t border-stone-100 p-4">
-          <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
-
-          <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
-        {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
-        {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
-            <label className="flex-1">
-              <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-              <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-                <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-                <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, identificación, asunto o archivo adjunto" className="w-full text-sm outline-none" />
-              </span>
-            </label>
-            <DescargarCsvBoton href={hrefDescarga()} />
-          </div>
+        <form method="get" className="flex flex-wrap items-end gap-2 border-t border-stone-100 p-3">
+          <label className="min-w-[220px] flex-1">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
+            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+              <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
+              <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, asunto o archivo adjunto" className="w-full text-sm outline-none" />
+            </span>
+          </label>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Tipo</span>
-            <select name="tipo" defaultValue={sp.tipo ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="tipo" defaultValue={sp.tipo ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
               <option value="">Todos</option>
               {opciones.tipos.map((t) => (
                 <option key={t} value={t}>{ETIQUETA_TIPO[t] ?? t}</option>
@@ -153,7 +122,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Estado</span>
-            <select name="estado" defaultValue={sp.estado ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="estado" defaultValue={sp.estado ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
               <option value="">Todos</option>
               {opciones.estados.map((e) => (
                 <option key={e} value={e}>{ETIQUETA_ESTADO[e] ?? e}</option>
@@ -163,7 +132,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia</span>
-            <select name="dependencia" defaultValue={sp.dependencia ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="dependencia" defaultValue={sp.dependencia ?? ""} className="max-w-[160px] rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
               <option value="">Todas</option>
               {opciones.dependencias.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
@@ -172,37 +141,30 @@ export default async function CorrespondenciaBandejaPage({
           </label>
 
           <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Serie (TRD)</span>
-            <select name="serieId" defaultValue={sp.serieId ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-              <option value="">Todas</option>
-              {gruposSeries.map((g) => (
-                <optgroup key={g.nombre} label={g.nombre}>
-                  {g.opciones.map((o) => (
-                    <option key={o.id} value={o.id}>{o.label}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Desde</span>
+            <input type="date" name="desde" defaultValue={sp.desde ?? ""} className="rounded-md border border-stone-300 px-2 py-2 text-sm" />
           </label>
 
           <label>
-            <span className="mb-1 block text-xs font-medium text-stone-600">Ordenar por</span>
-            <select name="orden" defaultValue={orden} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Hasta</span>
+            <input type="date" name="hasta" defaultValue={sp.hasta ?? ""} className="rounded-md border border-stone-300 px-2 py-2 text-sm" />
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Orden</span>
+            <select name="orden" defaultValue={orden} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
               {Object.entries(ETIQUETA_ORDEN).map(([valor, etiqueta]) => (
                 <option key={valor} value={valor}>{etiqueta}</option>
               ))}
             </select>
           </label>
 
-          <div className="flex items-end gap-2">
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
-            {hayFiltros && (
-              <Link href="/correspondencia" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
-            )}
-          </div>
-        </div>
-          </form>
-        </div>
+          <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+          {hayFiltros && (
+            <Link href="/correspondencia" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+          )}
+          <DescargarCsvBoton href={hrefDescarga()} />
+        </form>
       </details>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
