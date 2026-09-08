@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { Field, SectionHelp } from "@/components/Field";
+import { formatearFechaLarga as fecha } from "@/lib/fecha";
 
 type Resultado = {
   radicado: string;
@@ -23,8 +24,6 @@ const EXPLICACION_ESTADO: Record<string, string> = {
   "Archivada": "Se cerró y quedó guardada.",
   "Anulada": "Se anuló esta solicitud.",
 };
-
-const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
 
 export function PqrsdConsultarForm() {
   const [radicado, setRadicado] = useState("");

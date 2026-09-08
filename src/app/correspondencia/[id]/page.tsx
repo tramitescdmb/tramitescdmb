@@ -21,6 +21,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
+import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
@@ -38,9 +39,6 @@ const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibid
 // Estados que cierran el ciclo de esta comunicación — distribuirla de nuevo después de esto pisaría el
 // cierre (ej. una RECIBIDA ya respondida volvía a "Asignada" si alguien la distribuía otra vez).
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
-
-const fechaHora = (d: Date | null | undefined) =>
-  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
 function Campo({ k, v }: { k: string; v: ReactNode }) {
   if (v == null || v === "") return null;

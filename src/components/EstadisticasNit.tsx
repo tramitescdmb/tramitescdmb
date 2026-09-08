@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, XCircle, PieChart, ClipboardList } from "lucide-react";
+import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 type Estadisticas = {
   totalTerceros: number;
@@ -14,8 +15,6 @@ type Estadisticas = {
 };
 
 const num = (v: number) => v.toLocaleString("es-CO");
-const fechaHora = (iso: string) =>
-  new Date(iso).toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 function Kpi({
   icon: Icon,

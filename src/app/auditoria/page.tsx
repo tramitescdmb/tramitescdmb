@@ -4,6 +4,7 @@ import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, typ
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { SectionHelp } from "@/components/Field";
+import { formatearFechaHora } from "@/lib/fecha";
 
 const ETIQUETAS_TIPO: Record<string, { icono: LucideIcon; clase: string; texto: string }> = {
   LOGIN_EXITOSO: { icono: LogIn, clase: "text-emerald-600", texto: "Inicio de sesión" },
@@ -86,7 +87,7 @@ export default async function AuditoriaPage({
                   <div className="flex-1">
                     <p className="text-stone-700">{r.descripcion}</p>
                     <p className="text-xs text-stone-400">
-                      {info.texto} · {r.createdAt.toLocaleString("es-CO")}
+                      {info.texto} · {formatearFechaHora(r.createdAt)}
                     </p>
                   </div>
                 </li>
@@ -112,7 +113,7 @@ export default async function AuditoriaPage({
                   </Link>{" "}
                   <span className="text-stone-600">{ev.descripcion}</span>
                   <p className="text-xs text-stone-400">
-                    {ev.usuario.nombre} · {ev.createdAt.toLocaleString("es-CO")}
+                    {ev.usuario.nombre} · {formatearFechaHora(ev.createdAt)}
                   </p>
                 </li>
               ))}

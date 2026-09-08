@@ -8,8 +8,7 @@ import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
 import { DisposicionLoteForm, type ItemDisposicionPendiente } from "@/components/DisposicionLoteForm";
-
-const fecha = (d: Date | null | undefined) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+import { formatearFecha as fecha } from "@/lib/fecha";
 
 export default async function DisposicionFinalPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();

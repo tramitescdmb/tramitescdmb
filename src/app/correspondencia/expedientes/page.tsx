@@ -11,9 +11,8 @@ import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
-import { ImprimirBoton } from "@/components/ImprimirBoton";
-
-const fecha = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+import { BotonImprimir } from "@/components/BotonImprimir";
+import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
 
 export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental & { error?: string }> }) {
@@ -58,7 +57,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
     <div className="space-y-4">
       <div className="hidden print:block">
         <h1 className="text-lg font-semibold text-stone-900">Expedientes documentales</h1>
-        <p className="text-xs text-stone-500">Impreso el {new Date().toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="text-xs text-stone-500">Impreso el {formatearFechaHora(new Date())}</p>
       </div>
 
       <div className="print:hidden">
@@ -130,7 +129,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
         <div className="flex flex-wrap gap-2 print:hidden">
-          <ImprimirBoton />
+          <BotonImprimir variante="secundario" />
           <DescargarCsvBoton href={hrefFuid()} label="Descargar FUID (CSV)" />
           <Link
             href="/correspondencia/expedientes/nuevo"

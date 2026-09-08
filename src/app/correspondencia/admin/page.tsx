@@ -6,6 +6,7 @@ import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencia
 import { listarSeries } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
 import { TrdSeriesExplorer, type GrupoVista } from "@/components/TrdSeriesExplorer";
+import { formatearFecha } from "@/lib/fecha";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -20,7 +21,7 @@ function agruparPorDependencia(series: Awaited<ReturnType<typeof listarSeries>>)
       descripcion: s.descripcion,
       version: s.version,
       esAnterior: s.vigenteHasta !== null,
-      actualizadaEn: s.updatedAt.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }),
+      actualizadaEn: formatearFecha(s.updatedAt),
       totalComunicaciones: s._count.comunicaciones,
       subseries: s.subseries.map((ss) => ({
         id: ss.id,

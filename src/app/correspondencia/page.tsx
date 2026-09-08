@@ -9,11 +9,12 @@ import { estadoVencimiento } from "@/lib/pqrsd";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
-import { ImprimirBoton } from "@/components/ImprimirBoton";
+import { BotonImprimir } from "@/components/BotonImprimir";
 import { SelectorVista } from "@/components/SelectorVista";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaCorrespondencia } from "@/components/tablas/TablaCorrespondencia";
+import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada",
@@ -26,8 +27,6 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   ANULADA: "Anulada",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
-
-const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
 export default async function CorrespondenciaBandejaPage({
   searchParams,
@@ -104,7 +103,7 @@ export default async function CorrespondenciaBandejaPage({
 
       <div className="hidden print:block">
         <h1 className="text-lg font-semibold text-stone-900">Correspondencia — bandeja</h1>
-        <p className="text-xs text-stone-500">Impreso el {new Date().toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="text-xs text-stone-500">Impreso el {formatearFechaHora(new Date())}</p>
       </div>
 
       <div className="print:hidden">
@@ -209,7 +208,7 @@ export default async function CorrespondenciaBandejaPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
         <div className="flex flex-wrap gap-2 print:hidden">
-          <ImprimirBoton />
+          <BotonImprimir variante="secundario" />
           {puedeRadicarUsuario && (
             <>
               <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">

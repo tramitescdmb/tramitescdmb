@@ -9,10 +9,8 @@ import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 
-const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
-const fechaHora = (d: Date | null | undefined) =>
-  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 const num = (v: number) => v.toLocaleString("es-CO");
 
 export default async function HistoricoPanelPage({

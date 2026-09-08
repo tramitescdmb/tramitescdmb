@@ -9,6 +9,7 @@ import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
+import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
 
 const ETIQUETA_ACCION: Record<string, string> = {
@@ -17,9 +18,6 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
 };
-
-const fechaHora = (d: Date | null | undefined) =>
-  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
 export default async function ExpedienteDetallePage({
   params,

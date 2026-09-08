@@ -8,6 +8,7 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BotonImprimir } from "@/components/BotonImprimir";
+import { formatearFechaLarga } from "@/lib/fecha";
 
 const TIPOS_PQRSD = [
   { value: "PETICION_GENERAL", label: "Petición", ayuda: "Pide que la CDMB haga algo o le entregue información. Responde en 15 días hábiles." },
@@ -115,7 +116,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         </p>
         {resultado.fechaVencimiento && (
           <p className="mt-1 text-xs text-stone-500">
-            Fecha estimada de respuesta: {new Date(resultado.fechaVencimiento).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}
+            Fecha estimada de respuesta: {formatearFechaLarga(resultado.fechaVencimiento)}
             {" "}— es una fecha límite calculada en días hábiles, no una fecha exacta garantizada.
           </p>
         )}

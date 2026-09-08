@@ -6,8 +6,7 @@ import { getVitalUltimasRadicadas } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
-
-const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" }) : "—");
+import { formatearFechaLarga as fecha } from "@/lib/fecha";
 const cuandoLlego = (d: Date | null) => {
   if (!d) return "sin fecha";
   const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);

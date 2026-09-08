@@ -19,6 +19,7 @@ import { db } from "@/lib/db";
 import { nombreTramiteVital } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
 const txt = (v: unknown): string | null => {
@@ -260,9 +261,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         : []
   );
 
-  const fechaRad = solicitud.fechaRadicacion
-    ? solicitud.fechaRadicacion.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })
-    : null;
+  const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
   // VITAL puede reportar más documentos (wsDocumentos) de los que quedaron guardados: el servicio
   // de descarga de VITAL viene fallando por permisos (ver nota en sincronizarSolicitud/vital.ts) —
@@ -366,7 +365,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">
         <CalendarClock className="h-3.5 w-3.5" aria-hidden />
-        Última sincronización con VITAL: {solicitud.ultimaSincronizacion.toLocaleString("es-CO")}
+        Última sincronización con VITAL: {formatearFechaHora(solicitud.ultimaSincronizacion)}
       </p>
     </div>
   );

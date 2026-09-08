@@ -12,12 +12,7 @@ import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaSincaSolicitudes } from "@/components/tablas/TablaSincaSolicitudes";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
-
-function fecha(d: Date | null) {
-  return d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-}
-const fechaHora = (d: Date | null | undefined) =>
-  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 type Filtros = FiltrosHistorico & FiltrosPeriodo & { ok?: string; error?: string };
 

@@ -7,6 +7,7 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { EditarSolicitanteForm } from "@/components/EditarSolicitanteForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
+import { formatearFecha } from "@/lib/fecha";
 
 export default async function SolicitanteDetallePage({
   params,
@@ -145,7 +146,7 @@ export default async function SolicitanteDetallePage({
                       <EstadoBadge estado={exp.estado} />
                     </td>
                     <td className="px-4 py-2.5 text-stone-500">
-                      {exp.fechaUltimoMovimiento.toLocaleDateString("es-CO")}
+                      {formatearFecha(exp.fechaUltimoMovimiento)}
                     </td>
                   </tr>
                 ))}

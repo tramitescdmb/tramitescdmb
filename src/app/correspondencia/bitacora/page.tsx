@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarBitacoraFiltrada, ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA, type FiltrosBitacora } from "@/lib/correspondencia-bitacora";
 import { SectionHelp } from "@/components/Field";
+import { formatearFechaHora as fecha } from "@/lib/fecha";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
@@ -34,8 +35,6 @@ export default async function BitacoraPage({
   if (filtros.entidad) paramsSinPagina.set("entidad", filtros.entidad);
   if (filtros.desde) paramsSinPagina.set("desde", filtros.desde);
   if (filtros.hasta) paramsSinPagina.set("hasta", filtros.hasta);
-
-  const fecha = (d: Date) => d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="space-y-4">

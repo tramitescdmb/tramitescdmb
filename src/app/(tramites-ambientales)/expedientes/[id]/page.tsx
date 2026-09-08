@@ -16,6 +16,7 @@ import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
+import { formatearFecha } from "@/lib/fecha";
 
 const ESTADOS = [
   "RADICADO",
@@ -610,7 +611,7 @@ export default async function ExpedienteDetallePage({
                             </a>
                             {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
                             <p className="text-xs text-stone-400">
-                              {doc.subidoPor.nombre} · {doc.createdAt.toLocaleDateString("es-CO")}
+                              {doc.subidoPor.nombre} · {formatearFecha(doc.createdAt)}
                             </p>
                           </div>
                           {(() => {
@@ -643,7 +644,7 @@ export default async function ExpedienteDetallePage({
           <div className="rounded-xl border border-stone-200 bg-white p-4 text-xs text-stone-500">
             <p>
               <span className="font-medium text-stone-700">Radicado:</span>{" "}
-              {expediente.fechaRadicacion.toLocaleDateString("es-CO")}
+              {formatearFecha(expediente.fechaRadicacion)}
             </p>
             <p>
               <span className="font-medium text-stone-700">Creado por:</span> {expediente.creadoPor.nombre}

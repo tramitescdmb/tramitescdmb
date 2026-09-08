@@ -11,10 +11,9 @@ import { AreaAnual } from "@/components/charts/AreaAnual";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 const num = (v: number) => v.toLocaleString("es-CO");
-const fechaHora = (d: Date | null) =>
-  d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
 export default async function VitalDashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;

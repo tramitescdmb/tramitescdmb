@@ -14,9 +14,7 @@ import { TablaNits } from "@/components/tablas/TablaNits";
 import { EstadisticasNit } from "@/components/EstadisticasNit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
-
-const fechaHora = (v: string | null | undefined) =>
-  v ? new Date(v).toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 type Filtros = {
   q?: string;

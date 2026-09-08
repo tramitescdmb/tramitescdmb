@@ -9,6 +9,7 @@ import { TablaExpedientes } from "@/components/tablas/TablaExpedientes";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
+import { formatearFecha } from "@/lib/fecha";
 
 const POR_PAGINA = 30;
 
@@ -242,7 +243,7 @@ export default async function ExpedientesPage({
                 pasoActualNumero: exp.pasoActualNumero,
                 totalPasos: exp.flujo.pasos.length,
                 estado: exp.estado,
-                fechaUltimoMovimiento: exp.fechaUltimoMovimiento.toLocaleDateString("es-CO"),
+                fechaUltimoMovimiento: formatearFecha(exp.fechaUltimoMovimiento),
               }))}
             />
           </div>

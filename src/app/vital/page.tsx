@@ -13,9 +13,9 @@ import { SelectorVista } from "@/components/SelectorVista";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
+import { formatearFecha as fecha, fechaArchivoColombia } from "@/lib/fecha";
 
-const AYER = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-const fecha = (d: Date | null) => (d ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+const AYER = fechaArchivoColombia(new Date(Date.now() - 86_400_000));
 
 export default async function VitalSolicitudesPage({
   searchParams,

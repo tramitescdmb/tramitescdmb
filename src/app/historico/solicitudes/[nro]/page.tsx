@@ -13,7 +13,7 @@ function fecha(valor: Date | string | null | undefined) {
   if (Number.isNaN(d.getTime())) return null;
   const a = d.getUTCFullYear();
   if (a < 1980 || a > new Date().getUTCFullYear() + 6) return null;
-  return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" });
 }
 const VACIOS = new Set(["", "null", "no se n", "no se", "n/a"]);
 const txt = (v: unknown): string | null => {

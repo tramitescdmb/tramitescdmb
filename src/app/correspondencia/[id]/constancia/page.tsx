@@ -6,8 +6,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { BotonImprimir } from "@/components/BotonImprimir";
-
-const fechaHora = (d: Date) => d.toLocaleString("es-CO", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+import { formatearFechaHoraLarga as fechaHora } from "@/lib/fecha";
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
