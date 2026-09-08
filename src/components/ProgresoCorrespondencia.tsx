@@ -40,8 +40,13 @@ export function ProgresoCorrespondencia({
   const terminal = estado === "RESPONDIDA" || estado === "ARCHIVADA";
 
   const pasoActual = Math.min(PASO_POR_ESTADO[estado] ?? 1, TOTAL_PASOS);
+  // "completados" = pasos YA SUPERADOS (antes del actual) — controla qué segmentos se ven "llenos" vs.
+  // "el actual, resaltado". El porcentaje es distinto a propósito: el paso actual ya se alcanzó (por
+  // algo el segmento se ve coloreado, no gris), así que SÍ cuenta para el avance — con 1 de 4 pasos
+  // alcanzados (recién radicada) debe leerse 25%, no 0%.
   const completados = terminal || anulada ? TOTAL_PASOS : pasoActual - 1;
-  const pct = Math.round((completados / TOTAL_PASOS) * 100);
+  const pasosAlcanzados = terminal || anulada ? TOTAL_PASOS : pasoActual;
+  const pct = Math.round((pasosAlcanzados / TOTAL_PASOS) * 100);
 
   const paleta = anulada
     ? { lleno: "bg-stone-300", actual: "bg-stone-300", texto: "text-stone-500", etiqueta: "Anulada" }
@@ -56,7 +61,7 @@ export function ProgresoCorrespondencia({
   const explicacion = EXPLICACION_POR_ESTADO[estado];
 
   return (
-    <div className="w-full" role="img" aria-label={`${paleta.etiqueta}. Avance: ${pct}% (${completados} de ${TOTAL_PASOS} etapas).`}>
+    <div className="w-full" role="img" aria-label={`${paleta.etiqueta}. Avance: ${pct}% (${pasosAlcanzados} de ${TOTAL_PASOS} etapas).`}>
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className={`min-w-0 truncate font-medium ${paleta.texto} ${textoTamaño}`}>{paleta.etiqueta}</span>
         <span className={`flex-none font-semibold text-stone-500 ${textoTamaño}`}>{pct}%</span>

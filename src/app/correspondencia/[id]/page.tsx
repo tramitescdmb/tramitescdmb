@@ -35,6 +35,9 @@ const ETIQUETA_ACCION: Record<string, string> = {
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
+// Estados que cierran el ciclo de esta comunicación — distribuirla de nuevo después de esto pisaría el
+// cierre (ej. una RECIBIDA ya respondida volvía a "Asignada" si alguien la distribuía otra vez).
+const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
 
 const fechaHora = (d: Date | null | undefined) =>
   d ? d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -119,7 +122,13 @@ export default async function CorrespondenciaDetallePage({
   const [dependencias, usuarios] = puedeDistribuirUsuario
     ? await Promise.all([
         listarDependenciasActivas(),
-        db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
+        // Solo quien realmente puede entrar al módulo — repartir a alguien sin rol de
+        // correspondencia (y que no sea ADMIN) lo dejaría "asignado" a una comunicación que nunca podrá ver.
+        db.usuario.findMany({
+          where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+          orderBy: { nombre: "asc" },
+          select: { id: true, nombre: true },
+        }),
       ])
     : [[], []];
   const seriesVigentes = puedeAdministrarArchivoUsuario ? await listarSeriesVigentes() : [];
@@ -333,7 +342,7 @@ export default async function CorrespondenciaDetallePage({
           </ul>
         )}
 
-        {puedeDistribuirUsuario && c.estado !== "ANULADA" && (
+        {puedeDistribuirUsuario && !ESTADOS_CERRADOS.includes(c.estado) && (
           <form action={`/api/correspondencia/${id}/distribuir`} method="post" className="mt-4 grid grid-cols-1 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Dependencia" help="El área que debe atenderla.">
               <select name="dependenciaId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
@@ -362,6 +371,11 @@ export default async function CorrespondenciaDetallePage({
               </button>
             </div>
           </form>
+        )}
+        {puedeDistribuirUsuario && ESTADOS_CERRADOS.includes(c.estado) && (
+          <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
+            Ya no se puede distribuir: quedó {ETIQUETA_ESTADO[c.estado]?.toLowerCase() ?? c.estado.toLowerCase()}.
+          </p>
         )}
       </Tarjeta>
 
@@ -398,7 +412,7 @@ export default async function CorrespondenciaDetallePage({
               ))}
             </ul>
           )}
-          {puedeResponder && c.estado !== "ANULADA" ? (
+          {puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0 ? (
             <RespuestaFuncionarioForm comunicacionId={id} textoInicial={c.respuestaTexto ?? ""} />
           ) : (
             !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>

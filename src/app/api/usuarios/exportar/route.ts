@@ -14,6 +14,13 @@ const ETIQUETAS_ESTADO_CUENTA: Record<string, string> = {
   SUSPENDIDA: "Suspendida",
 };
 
+const ETIQUETAS_ROL_CORRESPONDENCIA: Record<string, string> = {
+  OPERADOR_VENTANILLA: "Operador de ventanilla",
+  FUNCIONARIO_DEPENDENCIA: "Funcionario de dependencia",
+  JEFE_DEPENDENCIA: "Jefe de dependencia",
+  ADMIN_ARCHIVO: "Administrador de archivo",
+};
+
 const ETIQUETAS_SECCION: Record<string, string> = {
   VITAL_BASE: "VITAL: Solicitudes y Recientes",
   VITAL_DASHBOARD: "VITAL: Dashboard",
@@ -46,6 +53,7 @@ export async function GET() {
     "Rol",
     "Cargo(s)",
     "Estado",
+    "Rol SGDEA (correspondencia)",
     "Trámites — Editar",
     "Trámites — Ver",
     "VITAL / SINCA 1.0",
@@ -64,6 +72,7 @@ export async function GET() {
       esAdmin ? "Administrador" : "Funcionario",
       u.cargos.map((c) => c.nombre).join("; "),
       ETIQUETAS_ESTADO_CUENTA[u.estadoCuenta] ?? u.estadoCuenta,
+      esAdmin ? "Acceso total" : u.rolCorrespondencia ? (ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia) : "Sin acceso",
       esAdmin ? "Todos" : editar.join("; "),
       esAdmin ? "Todos" : ver.join("; "),
       esAdmin ? "Acceso total" : secciones.join("; "),

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, FolderOpen, FolderCheck, Plus, FileText } from "lucide-react";
+import { Search, FolderOpen, FolderCheck, Plus, FileText, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { listarExpedientesDocumentales, type FiltrosExpedienteDocumental } from "@/lib/expedientes-documentales";
@@ -61,7 +61,16 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         archivo que tenga adentro.
       </SectionHelp>
 
-      <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+      <details open={hayFiltros} className="group rounded-xl border border-stone-200 bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
+          <span className="flex items-center gap-1.5">
+            <Search className="h-4 w-4 text-stone-400" aria-hidden />
+            Filtros
+            {hayFiltros && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">Activos</span>}
+          </span>
+          <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+      <form method="get" className="rounded-xl border-t border-stone-100 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-2">
             <label>
@@ -106,6 +115,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
           </div>
         </div>
       </form>
+      </details>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />

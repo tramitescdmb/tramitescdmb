@@ -14,15 +14,9 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
   const { respondeAId } = await searchParams;
-  const [dependencias, series, recibidasPendientes, recibidaARespoder, documentosRespuesta] = await Promise.all([
+  const [dependencias, series, recibidaARespoder, documentosRespuesta] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
-    db.comunicacion.findMany({
-      where: { tipo: "RECIBIDA", estado: { notIn: ["RESPONDIDA", "ARCHIVADA", "ANULADA"] } },
-      orderBy: { fechaRadicacion: "desc" },
-      take: 100,
-      select: { id: true, radicado: true, asunto: true, terceroNombre: true },
-    }),
     respondeAId
       ? db.comunicacion.findUnique({
           where: { id: respondeAId },
@@ -53,6 +47,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
   const inicial = recibidaARespoder
     ? {
         respondeAId: recibidaARespoder.id,
+        respondeALabel: `${recibidaARespoder.radicado} — ${recibidaARespoder.asunto.slice(0, 60)}${recibidaARespoder.terceroNombre ? ` (${recibidaARespoder.terceroNombre})` : ""}`,
         asunto: `Respuesta a ${recibidaARespoder.radicado} — ${recibidaARespoder.asunto}`,
         contenido: recibidaARespoder.respuestaTexto ?? "",
         destinatarioTipo: recibidaARespoder.terceroTipo ?? undefined,
@@ -85,7 +80,6 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
           subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
         }))}
         municipios={municipios}
-        recibidasPendientes={recibidasPendientes}
         inicial={inicial}
         documentosRespuesta={documentosRespuesta.map((d) => d.nombre)}
       />

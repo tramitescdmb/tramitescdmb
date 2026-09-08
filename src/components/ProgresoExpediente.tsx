@@ -32,8 +32,12 @@ export function ProgresoExpediente({
   const enPausa = ESTADOS_EN_PAUSA.includes(estado);
 
   const pasoActual = Math.min(Math.max(pasoActualNumero, 1), totalPasos);
+  // "completados" = pasos YA SUPERADOS (antes del actual) — controla qué segmentos se ven "llenos" vs.
+  // "el actual, resaltado". El porcentaje es distinto a propósito: el paso actual ya se alcanzó (por
+  // algo el segmento se ve coloreado, no gris), así que SÍ cuenta para el avance.
   const completados = terminal ? totalPasos : pasoActual - 1;
-  const pct = Math.round((completados / totalPasos) * 100);
+  const pasosAlcanzados = terminal ? totalPasos : pasoActual;
+  const pct = Math.round((pasosAlcanzados / totalPasos) * 100);
 
   const paleta = terminal
     ? estado === "APROBADO"
@@ -54,7 +58,7 @@ export function ProgresoExpediente({
     <div
       className="w-full"
       role="img"
-      aria-label={`${paleta.etiqueta}. Avance del procedimiento: ${pct}% (${completados} de ${totalPasos} pasos).`}
+      aria-label={`${paleta.etiqueta}. Avance del procedimiento: ${pct}% (${pasosAlcanzados} de ${totalPasos} pasos).`}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className={`min-w-0 truncate font-medium ${paleta.texto} ${textoTamaño}`}>{paleta.etiqueta}</span>

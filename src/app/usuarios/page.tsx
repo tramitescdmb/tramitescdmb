@@ -22,6 +22,13 @@ function iniciales(nombre: string) {
 
 type AccesoTramite = { tramiteTipoId: string; nivel: "VER" | "EDITAR" };
 
+const ETIQUETAS_ROL_CORRESPONDENCIA: Record<string, string> = {
+  OPERADOR_VENTANILLA: "SGDEA: Ventanilla",
+  FUNCIONARIO_DEPENDENCIA: "SGDEA: Funcionario",
+  JEFE_DEPENDENCIA: "SGDEA: Jefe de dependencia",
+  ADMIN_ARCHIVO: "SGDEA: Admin. de archivo",
+};
+
 const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
   VITAL_BASE: "VITAL: Solicitudes",
   VITAL_DASHBOARD: "VITAL: Dashboard",
@@ -184,6 +191,16 @@ export default async function UsuariosPage({
                 >
                   {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
                 </span>
+                {u.rol !== "ADMIN" && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      u.rolCorrespondencia ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"
+                    }`}
+                    title="Rol dentro del módulo de correspondencia (SGDEA) — sin este rol no puede entrar al módulo ni recibir un reparto"
+                  >
+                    {u.rolCorrespondencia ? ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia : "Sin acceso SGDEA"}
+                  </span>
+                )}
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                     {

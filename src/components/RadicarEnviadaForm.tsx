@@ -7,13 +7,14 @@ import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-c
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
+import { BuscadorRecibidaPendiente } from "@/components/BuscadorRecibidaPendiente";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
-type RecibidaPendiente = { id: string; radicado: string; asunto: string; terceroNombre: string | null };
 type ValoresIniciales = {
   respondeAId?: string;
+  respondeALabel?: string;
   asunto?: string;
   contenido?: string;
   destinatarioTipo?: "NATURAL" | "JURIDICA";
@@ -38,14 +39,12 @@ export function RadicarEnviadaForm({
   dependencias,
   series,
   municipios,
-  recibidasPendientes,
   inicial,
   documentosRespuesta,
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   municipios: string[];
-  recibidasPendientes: RecibidaPendiente[];
   inicial?: ValoresIniciales;
   documentosRespuesta?: string[];
 }) {
@@ -153,18 +152,14 @@ export function RadicarEnviadaForm({
     <div className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      {recibidasPendientes.length > 0 && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
-          <h2 className="mb-1 text-sm font-semibold text-stone-900">¿Responde a una comunicación recibida?</h2>
-          <p className="mb-3 text-xs text-stone-400">Opcional — si la elige, esa recibida pasa a estado &quot;Respondida&quot; al radicar esta enviada.</p>
-          <select value={respondeAId} onChange={(e) => setRespondeAId(e.target.value)} className={inputCls}>
-            <option value="">— No responde a ninguna —</option>
-            {recibidasPendientes.map((r) => (
-              <option key={r.id} value={r.id}>{r.radicado} — {r.asunto.slice(0, 60)}{r.terceroNombre ? ` (${r.terceroNombre})` : ""}</option>
-            ))}
-          </select>
-        </section>
-      )}
+      <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <h2 className="mb-1 text-sm font-semibold text-stone-900">¿Responde a una comunicación recibida?</h2>
+        <p className="mb-3 text-xs text-stone-400">Opcional — busque por radicado, asunto o tercero. Si la elige, esa recibida pasa a estado &quot;Respondida&quot; al radicar esta enviada.</p>
+        <BuscadorRecibidaPendiente
+          valorInicial={inicial?.respondeAId && inicial?.respondeALabel ? { id: inicial.respondeAId, label: inicial.respondeALabel } : null}
+          onChange={setRespondeAId}
+        />
+      </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Destinatario</h2>

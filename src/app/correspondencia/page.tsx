@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, PlusCircle, Send, FileEdit } from "lucide-react";
+import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
@@ -107,9 +107,19 @@ export default async function CorrespondenciaBandejaPage({
         en 3 días hábiles o menos, rojo = vencida.
       </SectionHelp>
 
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <details open={hayFiltros} className="group rounded-xl border border-stone-200 bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
+          <span className="flex items-center gap-1.5">
+            <Search className="h-4 w-4 text-stone-400" aria-hidden />
+            Filtros y período
+            {hayFiltros && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">Activos</span>}
+          </span>
+          <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="space-y-4 border-t border-stone-100 p-4">
+          <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
-      <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+          <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -184,7 +194,9 @@ export default async function CorrespondenciaBandejaPage({
             )}
           </div>
         </div>
-      </form>
+          </form>
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />

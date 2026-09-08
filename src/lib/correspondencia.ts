@@ -342,17 +342,30 @@ export async function registrarRespuestaFuncionario(
 ) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
-    select: { id: true, tipo: true, estado: true },
+    select: { id: true, tipo: true, estado: true, _count: { select: { respuestas: true } } },
   });
   if (!c) throw new Error("La comunicación no existe.");
   if (c.tipo !== "RECIBIDA") throw new Error("Solo se responde a comunicaciones recibidas.");
   if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");
+  // Ya se radicó formalmente como oficio de salida (respondeAId) — el borrador cumplió su propósito;
+  // editarlo ahora no cambiaría nada de lo que ya quedó firmado y despachado.
+  if (c._count.respuestas > 0) throw new Error("Ya se radicó una respuesta formal para esta comunicación.");
   if (!texto.trim()) throw new Error("Escriba el contenido de la respuesta.");
+
+  // El primer borrador es la señal real de que alguien ya está trabajando en esto — sin esto,
+  // "En trámite" solo se alcanzaba suspendiendo y reactivando un término (un desvío raro), así que en
+  // el flujo normal (asignar → responder → radicar salida) nunca se veía ese paso de la barra de avance.
+  const pasaAEnTramite = c.estado === "ASIGNADA" || c.estado === "EN_REPARTO";
 
   return db.$transaction(async (tx) => {
     const actualizada = await tx.comunicacion.update({
       where: { id: comunicacionId },
-      data: { respuestaTexto: texto.trim(), respuestaPorId: usuarioId, respuestaEn: new Date() },
+      data: {
+        respuestaTexto: texto.trim(),
+        respuestaPorId: usuarioId,
+        respuestaEn: new Date(),
+        ...(pasaAEnTramite ? { estado: "EN_TRAMITE" } : {}),
+      },
     });
     await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
     return actualizada;
