@@ -10,6 +10,7 @@ import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
+import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 
 const fecha = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
@@ -44,6 +45,12 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/correspondencia/expedientes?${s}` : "/correspondencia/expedientes";
+  };
+  const hrefFuid = () => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v) params.set(k, String(v));
+    const s = params.toString();
+    return s ? `/api/correspondencia/expedientes/exportar-fuid?${s}` : "/api/correspondencia/expedientes/exportar-fuid";
   };
 
   return (
@@ -102,13 +109,16 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
-        <Link
-          href="/correspondencia/expedientes/nuevo"
-          className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
-        >
-          <Plus className="h-3.5 w-3.5" aria-hidden />
-          Nuevo expediente
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <DescargarCsvBoton href={hrefFuid()} label="Descargar FUID (CSV)" />
+          <Link
+            href="/correspondencia/expedientes/nuevo"
+            className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            Nuevo expediente
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
