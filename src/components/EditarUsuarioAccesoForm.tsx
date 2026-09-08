@@ -115,6 +115,7 @@ export function EditarUsuarioAccesoForm({
   tramitesPorCategoria,
   dependenciaActualId,
   rolCorrespondenciaActual,
+  rolCorrespondenciaVigenteHastaActual,
   dependencias,
   politicaPassword,
   vigenciaPassword,
@@ -131,6 +132,7 @@ export function EditarUsuarioAccesoForm({
   tramitesPorCategoria: Grupo[];
   dependenciaActualId?: string | null;
   rolCorrespondenciaActual?: RolCorrespondencia | null;
+  rolCorrespondenciaVigenteHastaActual?: string | null;
   dependencias?: Opcion[];
   politicaPassword: { longitudMinima: number; longitudMaxima: number };
   vigenciaPassword?: { vencida: boolean; diasRestantes: number | null };
@@ -145,6 +147,7 @@ export function EditarUsuarioAccesoForm({
   const [secciones, setSecciones] = useState<Set<Seccion>>(new Set(seccionesActuales));
   const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
   const [rolCorrespondencia, setRolCorrespondencia] = useState<RolCorrespondencia | "">(rolCorrespondenciaActual ?? "");
+  const [rolCorrespondenciaVigenteHasta, setRolCorrespondenciaVigenteHasta] = useState(rolCorrespondenciaVigenteHastaActual ?? "");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -240,6 +243,7 @@ export function EditarUsuarioAccesoForm({
           secciones: Array.from(secciones),
           dependenciaId: dependenciaId || null,
           rolCorrespondencia: rolCorrespondencia || null,
+          rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
       });
@@ -569,6 +573,18 @@ export function EditarUsuarioAccesoForm({
                 </button>
               ))}
             </div>
+            {rolCorrespondencia !== "" && (
+              <label className="mt-3 flex items-center gap-2 text-xs text-stone-600">
+                Vigente hasta
+                <input
+                  type="date"
+                  value={rolCorrespondenciaVigenteHasta}
+                  onChange={(e) => setRolCorrespondenciaVigenteHasta(e.target.value)}
+                  className="rounded-md border border-stone-300 px-2 py-1 text-sm"
+                />
+                <span className="text-stone-400">Opcional — pasada esa fecha pierde el rol automáticamente, sin que un ADMIN tenga que quitárselo.</span>
+              </label>
+            )}
           </div>
         </div>
       </section>

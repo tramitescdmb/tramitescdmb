@@ -29,6 +29,7 @@ type UsuarioFresco = {
   tramitesAcceso: { tramiteTipoId: string; nivel: NivelAccesoTramite }[];
   seccionesAcceso: { seccion: SeccionSoloLectura }[];
   rolCorrespondencia: RolCorrespondencia | null;
+  rolCorrespondenciaVigenteHasta: Date | null;
   dependenciaId: string | null;
 } | null;
 
@@ -50,6 +51,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
       seccionesAcceso: { select: { seccion: true } },
       rolCorrespondencia: true,
+      rolCorrespondenciaVigenteHasta: true,
       dependenciaId: true,
     },
   });
@@ -61,6 +63,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     tramitesAcceso: usuario.tramitesAcceso,
     seccionesAcceso: usuario.seccionesAcceso,
     rolCorrespondencia: usuario.rolCorrespondencia,
+    rolCorrespondenciaVigenteHasta: usuario.rolCorrespondenciaVigenteHasta,
     dependenciaId: usuario.dependenciaId,
   };
 });
@@ -77,11 +80,14 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
     for (const s of usuario.seccionesAcceso) secciones.add(s.seccion);
   }
+  // MoReq 6.3: un rol con vigencia vencida se trata como si no estuviera asignado, sin que un ADMIN tenga
+  // que volver a entrar a quitarlo — se evalúa en cada solicitud, así que no hace falta un job programado.
+  const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
   return {
     esAdmin,
     tramites,
     secciones,
-    correspondencia: usuario?.activo ? usuario.rolCorrespondencia : null,
+    correspondencia: usuario?.activo && !rolVencido ? usuario.rolCorrespondencia : null,
     dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
   };
 });

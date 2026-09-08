@@ -125,6 +125,11 @@ model Usuario {
   // módulo de correspondencia (null + no ADMIN = sin acceso al módulo).
   dependenciaId      String?
   rolCorrespondencia RolCorrespondencia?
+  // Vigencia del rol (MoReq 6.3: quitar el rol automáticamente al vencer un período) — opcional; si se
+  // pasa la fecha, obtenerPermisosUsuario() lo trata como sin rol asignado sin que un ADMIN tenga que
+  // volver a entrar a quitárselo. El valor del campo se conserva (no se borra solo) para dejar rastro de
+  // qué rol tuvo y hasta cuándo.
+  rolCorrespondenciaVigenteHasta DateTime?
 
   dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
   dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")

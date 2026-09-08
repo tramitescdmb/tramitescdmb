@@ -66,6 +66,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const rolCorrespondencia: RolCorrespondencia | null | undefined = "rolCorrespondencia" in body
     ? (ROLES_CORRESPONDENCIA_VALIDOS.includes(body.rolCorrespondencia) ? body.rolCorrespondencia : null)
     : undefined;
+  const rolCorrespondenciaVigenteHasta: Date | null | undefined = "rolCorrespondenciaVigenteHasta" in body
+    ? (typeof body.rolCorrespondenciaVigenteHasta === "string" && body.rolCorrespondenciaVigenteHasta ? new Date(body.rolCorrespondenciaVigenteHasta) : null)
+    : undefined;
 
   if (dependenciaId) {
     const dep = await db.dependencia.findUnique({ where: { id: dependenciaId }, select: { id: true } });
@@ -113,6 +116,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
+        ...(rolCorrespondenciaVigenteHasta !== undefined ? { rolCorrespondenciaVigenteHasta } : {}),
         ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
     });

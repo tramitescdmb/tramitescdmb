@@ -11,6 +11,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { formatearFecha } from "@/lib/fecha";
 
 const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
@@ -192,14 +193,26 @@ export default async function UsuariosPage({
                   {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
                 </span>
                 {u.rol !== "ADMIN" && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      u.rolCorrespondencia ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"
-                    }`}
-                    title="Rol dentro del módulo de correspondencia (SGDEA) — sin este rol no puede entrar al módulo ni recibir un reparto"
-                  >
-                    {u.rolCorrespondencia ? ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia : "Sin acceso SGDEA"}
-                  </span>
+                  <>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        u.rolCorrespondencia ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"
+                      }`}
+                      title="Rol dentro del módulo de correspondencia (SGDEA) — sin este rol no puede entrar al módulo ni recibir un reparto"
+                    >
+                      {u.rolCorrespondencia ? ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia : "Sin acceso SGDEA"}
+                    </span>
+                    {u.rolCorrespondencia && u.rolCorrespondenciaVigenteHasta && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          u.rolCorrespondenciaVigenteHasta < new Date() ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                        }`}
+                        title="Pasada esta fecha, pierde el rol de correspondencia automáticamente"
+                      >
+                        {u.rolCorrespondenciaVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta)}`}
+                      </span>
+                    )}
+                  </>
                 )}
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${

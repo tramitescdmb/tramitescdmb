@@ -91,6 +91,7 @@ export default async function EditarUsuarioPage({
         tramitesPorCategoria={tramitesPorCategoria}
         dependenciaActualId={usuario.dependenciaId}
         rolCorrespondenciaActual={usuario.rolCorrespondencia}
+        rolCorrespondenciaVigenteHastaActual={usuario.rolCorrespondenciaVigenteHasta ? usuario.rolCorrespondenciaVigenteHasta.toISOString().slice(0, 10) : null}
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={
