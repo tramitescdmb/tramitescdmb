@@ -17,8 +17,10 @@ function agruparPorDependencia(series: Awaited<ReturnType<typeof listarSeries>>)
       id: s.id,
       codigo: s.codigo,
       nombre: s.nombre,
+      descripcion: s.descripcion,
       version: s.version,
       esAnterior: s.vigenteHasta !== null,
+      actualizadaEn: s.updatedAt.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }),
       totalComunicaciones: s._count.comunicaciones,
       subseries: s.subseries.map((ss) => ({
         id: ss.id,
@@ -152,11 +154,14 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
               Cargue toda una TRD de una vez desde un archivo de texto separado por &quot;;&quot; (así es como Excel
               exporta un CSV). Debe tener, como mínimo, las columnas <code>dependencia_codigo</code>,{" "}
               <code>dependencia_nombre</code>, <code>serie_codigo</code>, <code>serie_nombre</code>,{" "}
-              <code>subserie_codigo</code>, <code>subserie_nombre</code>, <code>retencion_gestion</code>,{" "}
+              <code>serie_descripcion</code> (justificación de la serie, opcional), <code>subserie_codigo</code>,{" "}
+              <code>subserie_nombre</code>, <code>retencion_gestion</code>,{" "}
               <code>retencion_central</code>, <code>disposicion_ct</code>, <code>disposicion_e</code>,{" "}
               <code>disposicion_md</code>, <code>disposicion_s</code> (marque con &quot;X&quot; la o las que apliquen),{" "}
               <code>procedimiento</code> y <code>tipos_documentales</code> (varios, separados por &quot;|&quot;). Las
               dependencias que no existan todavía se crean automáticamente a partir del código y el nombre del archivo.
+              Si una serie ya existe (mismo código, dependencia y versión), reimportarla actualiza su nombre y
+              descripción con lo que traiga el archivo.
             </SectionHelp>
             <form action="/api/correspondencia/trd/importar" method="post" encType="multipart/form-data" className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div className="sm:col-span-2">
@@ -202,6 +207,11 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
                 <option value="">— Ninguna —</option>
                 {dependenciasActivas.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
+            </Field>
+          </div>
+          <div className="sm:col-span-4">
+            <Field label="Descripción / justificación" help="Qué tipo de asuntos agrupa esta serie y por qué existe — queda visible en el explorador de la TRD.">
+              <textarea name="descripcion" rows={2} className={inputCls} placeholder="Ej. Documentos relativos a la contratación de bienes, obras y servicios de la entidad." />
             </Field>
           </div>
           <div className="sm:col-span-4">

@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const codigo = String(form.get("codigo") || "").trim().toUpperCase();
   const nombre = String(form.get("nombre") || "").trim();
+  const descripcion = String(form.get("descripcion") || "").trim() || null;
   const version = String(form.get("version") || "1").trim() || "1";
   const dependenciaId = String(form.get("dependenciaId") || "") || null;
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   let nuevaSerie;
   try {
-    nuevaSerie = await db.serieDocumental.create({ data: { codigo, nombre, version, dependenciaId } });
+    nuevaSerie = await db.serieDocumental.create({ data: { codigo, nombre, descripcion, version, dependenciaId } });
   } catch {
     volver.searchParams.set("error", `Ya existe la serie ${codigo} versión ${version}.`);
     return NextResponse.redirect(volver, { status: 303 });

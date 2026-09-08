@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
         dependencia_nombre: s.dependencia?.nombre ?? "",
         serie_codigo: s.codigo,
         serie_nombre: s.nombre,
+        serie_descripcion: s.descripcion ?? "",
         subserie_codigo: ss.codigo,
         subserie_nombre: ss.nombre,
         retencion_gestion: String(ss.retencionGestionAnios),

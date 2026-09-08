@@ -27,8 +27,10 @@ export type SerieVista = {
   id: string;
   codigo: string;
   nombre: string;
+  descripcion: string | null;
   version: string;
   esAnterior: boolean;
+  actualizadaEn: string;
   totalComunicaciones: number;
   subseries: SubserieVista[];
 };
@@ -41,6 +43,7 @@ function coincide(texto: string, termino: string) {
 
 function serieCoincide(s: SerieVista, termino: string) {
   if (coincide(s.codigo, termino) || coincide(s.nombre, termino)) return true;
+  if (s.descripcion && coincide(s.descripcion, termino)) return true;
   return s.subseries.some((ss) => coincide(ss.codigo, termino) || coincide(ss.nombre, termino));
 }
 
@@ -188,7 +191,8 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 bg-stone-50 px-4 py-2.5">
                   <div>
                     <span className="text-sm font-semibold text-stone-800">{s.codigo} — {s.nombre}</span>
-                    <span className="ml-2 text-xs text-stone-400">v{s.version}{s.esAnterior ? " · versión anterior" : ""}</span>
+                    <span className="ml-2 text-xs text-stone-400">v{s.version}{s.esAnterior ? " · versión anterior" : ""} · actualizada {s.actualizadaEn}</span>
+                    {s.descripcion && <p className="mt-0.5 text-xs text-stone-500">{s.descripcion}</p>}
                   </div>
                   <span className="text-xs text-stone-400">{s.subseries.length} subserie(s) · {s.totalComunicaciones} comunicación(es)</span>
                 </div>

@@ -880,6 +880,7 @@ model SerieDocumental {
   id            String    @id @default(cuid())
   codigo        String
   nombre        String
+  descripcion   String?   @db.Text
   dependenciaId String?
   version       String    @default("1")
   vigenteDesde  DateTime  @default(now())

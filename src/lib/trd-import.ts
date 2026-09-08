@@ -19,6 +19,7 @@ export type FilaTrdCsv = {
   dependencia_nombre: string;
   serie_codigo: string;
   serie_nombre: string;
+  serie_descripcion: string;
   subserie_codigo: string;
   subserie_nombre: string;
   retencion_gestion: string;
@@ -36,6 +37,7 @@ export const COLUMNAS_TRD_CSV = [
   "dependencia_nombre",
   "serie_codigo",
   "serie_nombre",
+  "serie_descripcion",
   "subserie_codigo",
   "subserie_nombre",
   "retencion_gestion",
@@ -111,6 +113,7 @@ export async function importarTrd(
         const depNombre = (fila.dependencia_nombre || "").trim();
         const serieCodigo = (fila.serie_codigo || "").trim();
         const serieNombre = (fila.serie_nombre || "").trim();
+        const serieDescripcion = (fila.serie_descripcion || "").trim() || null;
         const subserieCodigo = (fila.subserie_codigo || "").trim();
         const subserieNombre = (fila.subserie_nombre || "").trim();
 
@@ -143,6 +146,10 @@ export async function importarTrd(
           });
           if (existente) {
             serieId = existente.id;
+            await tx.serieDocumental.update({
+              where: { id: existente.id },
+              data: { nombre: serieNombre || serieCodigo, descripcion: serieDescripcion },
+            });
           } else {
             if (opciones.modo === "vigente") {
               // Cierra la version anterior de ESTA serie en ESTA dependencia (nunca la borra).
@@ -155,6 +162,7 @@ export async function importarTrd(
               data: {
                 codigo: serieCodigo,
                 nombre: serieNombre || serieCodigo,
+                descripcion: serieDescripcion,
                 dependenciaId,
                 version,
                 vigenteHasta: opciones.modo === "historica" ? new Date() : null,
