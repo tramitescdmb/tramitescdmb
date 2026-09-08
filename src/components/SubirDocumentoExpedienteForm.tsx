@@ -9,6 +9,7 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: string }) {
   const router = useRouter();
   const [archivos, setArchivos] = useState<File[]>([]);
+  const [fechaDocumento, setFechaDocumento] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,11 +44,12 @@ export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: s
       const resp = await fetch(`/api/correspondencia/expedientes/${expedienteId}/documentos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentos }),
+        body: JSON.stringify({ documentos, fechaDocumento: fechaDocumento || undefined }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudieron agregar los documentos.");
       setArchivos([]);
+      setFechaDocumento("");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron agregar los documentos.");
@@ -76,6 +78,18 @@ export function SubirDocumentoExpedienteForm({ expedienteId }: { expedienteId: s
             </li>
           ))}
         </ul>
+      )}
+      {archivos.length > 0 && (
+        <label className="flex w-fit items-center gap-2 text-sm text-stone-600">
+          Fecha del documento
+          <input
+            type="date"
+            value={fechaDocumento}
+            onChange={(e) => setFechaDocumento(e.target.value)}
+            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+          />
+          <span className="text-xs text-stone-400">Opcional — solo si es distinta de hoy</span>
+        </label>
       )}
       {archivos.length > 0 && (
         <button

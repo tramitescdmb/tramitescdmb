@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2 } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2, Printer } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { calcularHashIndice } from "@/lib/expedientes-documentales";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
@@ -97,6 +98,19 @@ export default async function ExpedienteDetallePage({
   const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
   const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
+  // Orden visual por fecha de trámite (MoReq 1.45) — el número de índice (ordenIndice) sigue siendo el
+  // orden real de incorporación, el que respalda el hash del índice firmado; solo cambia cómo se VE.
+  const documentosOrdenados = expediente.documentos
+    .slice()
+    .sort((a, b) => (a.fechaDocumento ?? a.createdAt).getTime() - (b.fechaDocumento ?? b.createdAt).getTime());
+
+  // Cotejo de integridad consolidada (MoReq 1.26): recalcula el hash del índice a partir de las filas
+  // ACTUALES de la base y lo compara contra el que quedó firmado al cerrar. Si alguien alteró el orden, el
+  // nombre o el hash de un documento después del cierre (directamente en la base, no por la aplicación),
+  // el recálculo ya no coincide y se detecta — sin tener que volver a descargar cada archivo del storage.
+  const hashRecalculado = expediente.estado === "CERRADO" ? calcularHashIndice(expediente.documentos) : null;
+  const indiceIntegro = hashRecalculado !== null && hashRecalculado === expediente.indiceHash;
+
   const abierto = expediente.estado === "ABIERTO";
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
@@ -105,10 +119,19 @@ export default async function ExpedienteDetallePage({
 
   return (
     <div className="space-y-4">
-      <Link href="/correspondencia/expedientes" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        Volver a expedientes
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/correspondencia/expedientes" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Volver a expedientes
+        </Link>
+        <Link
+          href={`/correspondencia/expedientes/${id}/ficha`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+        >
+          <Printer className="h-3.5 w-3.5" aria-hidden />
+          Ficha imprimible
+        </Link>
+      </div>
 
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
@@ -174,6 +197,20 @@ export default async function ExpedienteDetallePage({
               Cerrado por <strong>{expediente.cerradoPor?.nombre}</strong> el {fechaHora(expediente.fechaCierre)}. Índice electrónico
               firmado — SHA-256 <span className="font-mono text-xs">{expediente.indiceHash?.slice(0, 24)}…</span>. No se pueden agregar
               más documentos ni comunicaciones.
+            </span>
+          </div>
+        )}
+        {!abierto && (
+          <div
+            className={`mt-2 flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+              indiceIntegro ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"
+            }`}
+          >
+            {indiceIntegro ? <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden /> : <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-red-600" aria-hidden />}
+            <span>
+              {indiceIntegro
+                ? "Integridad verificada: el índice recalculado ahora mismo coincide exactamente con el que quedó firmado al cerrar."
+                : "Alerta de integridad: el índice recalculado ahora mismo NO coincide con el firmado al cerrar — el orden, nombre o huella de algún documento cambió después del cierre."}
             </span>
           </div>
         )}
@@ -286,22 +323,24 @@ export default async function ExpedienteDetallePage({
           )}
         </h3>
         <SectionHelp>
-          Orden y huella (hash) se actualizan solos al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al
-          cerrar, el índice queda firmado con hash.
+          Huella (hash) se actualiza sola al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al cerrar, el
+          índice queda firmado con hash. La lista se ve ordenada por la fecha del documento (o de subida, si no se
+          indicó una distinta); el número es su orden real de incorporación al índice firmado, por eso puede no
+          coincidir con el orden visual.
         </SectionHelp>
         {expediente.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">Todavía no se ha agregado ningún documento.</p>
         ) : (
           <ul className="space-y-2">
-            {expediente.documentos.map((doc) => (
+            {documentosOrdenados.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="flex-none font-mono text-xs text-stone-400">{String(doc.ordenIndice).padStart(3, "0")}</span>
+                  <span className="flex-none font-mono text-xs text-stone-400" title="Orden de incorporación al índice electrónico">{String(doc.ordenIndice).padStart(3, "0")}</span>
                   <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
                   <span className="min-w-0">
                     <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
                     <span className="flex items-center gap-1 text-[10px] text-stone-400">
-                      {doc.subidoPor.nombre} · {fechaHora(doc.createdAt)}
+                      {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
                       {doc.hashSha256 && (
                         <span className="flex items-center gap-1" title={doc.hashSha256}>
                           · <ShieldCheck className="h-3 w-3" aria-hidden /> SHA-256 {doc.hashSha256.slice(0, 12)}…

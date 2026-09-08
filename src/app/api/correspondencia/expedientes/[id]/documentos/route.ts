@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { agregarDocumentoArchivo } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
 type DocumentoSubido = { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
 
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => null);
   const documentos: DocumentoSubido[] = Array.isArray(body?.documentos) ? body.documentos : [];
   if (documentos.length === 0) return NextResponse.json({ error: "No se recibió ningún documento." }, { status: 400 });
+  const fechaDocumentoRaw = typeof body?.fechaDocumento === "string" ? body.fechaDocumento : "";
+  const fechaDocumento = fechaDocumentoRaw ? parsearFechaLocal(fechaDocumentoRaw) : null;
 
   const nombres: string[] = [];
   try {
@@ -36,6 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         tamanoBytes: doc.tamanoBytes || 0,
         hashSha256: doc.hashSha256 || null,
         subidoPorId: session.userId,
+        fechaDocumento,
       });
       nombres.push(doc.nombre);
     }

@@ -1256,7 +1256,10 @@ model DocumentoArchivo {
   tamanoBytes            Int
   hashSha256             String?
   subidoPorId            String
-  createdAt              DateTime @default(now())
+  createdAt              DateTime  @default(now())
+  // Fecha propia del documento (de trámite) cuando es distinta de cuándo se subió — ej. un documento
+  // antiguo que se digitaliza hoy. Si no se indica, se asume que coincide con createdAt (MoReq 1.45).
+  fechaDocumento         DateTime?
 
   expediente ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor  Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])

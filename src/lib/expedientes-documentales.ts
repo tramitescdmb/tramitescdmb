@@ -53,6 +53,7 @@ export async function agregarDocumentoArchivo(datos: {
   tamanoBytes: number;
   hashSha256?: string | null;
   subidoPorId: string;
+  fechaDocumento?: Date | null;
 }) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: datos.expedienteDocumentalId },
@@ -76,6 +77,7 @@ export async function agregarDocumentoArchivo(datos: {
       tamanoBytes: datos.tamanoBytes,
       hashSha256: datos.hashSha256 || null,
       subidoPorId: datos.subidoPorId,
+      fechaDocumento: datos.fechaDocumento ?? null,
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
