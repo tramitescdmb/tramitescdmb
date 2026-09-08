@@ -486,7 +486,12 @@ export type ResultadoDisposicionFinalLote = {
 export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFinalLote): Promise<ResultadoDisposicionFinalLote> {
   const comunicaciones = await db.comunicacion.findMany({
     where: { id: { in: entrada.comunicacionIds } },
-    select: { id: true, radicado: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } } },
+    select: {
+      id: true, radicado: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } },
+      expedienteId: true, expedienteDocumentalId: true,
+      expediente: { select: { numero: true } },
+      expedienteDocumental: { select: { numero: true } },
+    },
   });
   const porId = new Map(comunicaciones.map((c) => [c.id, c]));
 
@@ -500,8 +505,19 @@ export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFi
     if (c.fechaDisposicionFinal) { omitidas.push({ id, motivo: `${c.radicado}: ya tiene disposición final ejecutada.` }); continue; }
     const disposiciones = c.subserie?.disposicionesFinal ?? [];
     if (disposiciones.length === 0) { omitidas.push({ id, motivo: `${c.radicado}: su subserie no tiene disposición final definida en la TRD.` }); continue; }
-    if (algunaRequiereActa(disposiciones)) idsConActa.push(id);
-    else idsSinActa.push(id);
+    // MoReq 2.13: no destruir (eliminación/selección) una comunicación que sigue archivada dentro de un
+    // expediente — el expediente quedaría con una referencia rota. Conservación/microfilmación sí proceden
+    // (no destruyen nada), por eso este chequeo va solo dentro de la rama que exige acta.
+    if (algunaRequiereActa(disposiciones)) {
+      const numeroExpediente = c.expediente?.numero ?? c.expedienteDocumental?.numero;
+      if (numeroExpediente) {
+        omitidas.push({ id, motivo: `${c.radicado}: está archivada en el expediente ${numeroExpediente} — no se puede eliminar/seleccionar mientras siga ahí.` });
+        continue;
+      }
+      idsConActa.push(id);
+    } else {
+      idsSinActa.push(id);
+    }
   }
 
   if (idsConActa.length > 0 && !entrada.responsable.trim()) {
