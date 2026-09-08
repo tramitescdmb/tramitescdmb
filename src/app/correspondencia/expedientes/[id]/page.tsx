@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2, Printer } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
@@ -19,7 +19,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
-  PRESTA: "Préstamo", DEVUELVE: "Devolución",
+  PRESTA: "Préstamo", DEVUELVE: "Devolución", REABRE: "Reapertura",
 };
 const BITACORA_POR_PAGINA = 20;
 
@@ -115,6 +115,7 @@ export default async function ExpedienteDetallePage({
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && expediente.documentos.length > 0;
+  const puedeReabrirEste = !abierto && puedeCerrarExpediente(permisos);
   const puedePrestar = puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
 
   return (
@@ -435,6 +436,30 @@ export default async function ExpedienteDetallePage({
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Cerrar expediente y firmar índice
+            </button>
+          </form>
+        </section>
+      )}
+
+      {puedeReabrirEste && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            Reabrir expediente
+          </h3>
+          <SectionHelp>
+            Deja de estar cerrado y vuelve a admitir documentos y comunicaciones — el índice firmado (hash) se
+            descarta; al cerrarlo de nuevo se firma uno nuevo. Exige motivo y queda en la bitácora inalterable.
+          </SectionHelp>
+          <form action={`/api/correspondencia/expedientes/${id}/reabrir`} method="post" className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[260px] flex-1">
+              <Field label="Motivo" required>
+                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+            </div>
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100">
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              Reabrir
             </button>
           </form>
         </section>

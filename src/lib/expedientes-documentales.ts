@@ -140,6 +140,24 @@ export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId
   });
 }
 
+/** Reabre un expediente CERRADO (MoReq 1.14: "restringir cambios tras el cierre, con reapertura auditada
+ * por un rol admin") — motivo obligatorio, gateado en la ruta por el mismo permiso que cierra
+ * (`puedeCerrarExpediente`). Limpia fechaCierre/cerradoPorId/indiceHash: al volver a cerrarse se firma un
+ * índice nuevo, sin arrastrar datos de un cierre anterior ya deshecho. El "auditada" del requisito lo
+ * cubre por completo la bitácora inalterable (acción REABRE con el motivo en el detalle) — no hace falta
+ * un campo propio en el modelo, mismo criterio que CLASIFICA/APLAZA. */
+export async function reabrirExpedienteDocumental(expedienteId: string, motivo: string) {
+  if (!motivo.trim()) throw new Error("Reabrir un expediente cerrado exige indicar el motivo.");
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { estado: true } });
+  if (!expediente) throw new Error("El expediente no existe.");
+  if (expediente.estado !== "CERRADO") throw new Error("Este expediente no está cerrado.");
+
+  return db.expedienteDocumental.update({
+    where: { id: expedienteId },
+    data: { estado: "ABIERTO", fechaCierre: null, cerradoPorId: null, indiceHash: null },
+  });
+}
+
 /** Igual que cambiarNivelAccesoComunicacion pero para el expediente documental completo (Ley 1712/2014). */
 export async function cambiarNivelAccesoExpediente(expedienteId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {
   const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { id: true, nivelAcceso: true } });

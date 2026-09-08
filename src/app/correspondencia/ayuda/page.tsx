@@ -100,6 +100,7 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
   RESPONDE: "El funcionario asignado guardó o editó el borrador de respuesta de una comunicación recibida.",
   PRESTA: "Se prestó un expediente documental a un funcionario.",
   DEVUELVE: "Se registró la devolución de un expediente prestado.",
+  REABRE: "Se reabrió un expediente documental cerrado, con motivo obligatorio (Art. 4.3.2.4 Acuerdo 001/2024 AGN).",
 };
 
 /**
@@ -287,7 +288,7 @@ export default async function CorrespondenciaAyudaPage() {
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">CERRADO</Chip></td>
             <td className="px-2.5 py-1.5">Índice electrónico firmado (hash SHA-256 del índice de documentos).</td>
-            <td className="px-2.5 py-1.5">Solo consulta. Integridad verificable comparando el hash almacenado contra el recálculo del índice actual.</td>
+            <td className="px-2.5 py-1.5">Solo consulta. Integridad verificable comparando el hash almacenado contra el recálculo del índice actual. Reabrir (motivo obligatorio, auditado) exige ADMIN_ARCHIVO.</td>
           </tr>
         </Tabla>
         <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Nivel de acceso a la información (Ley 1712/2014, arts. 6, 18 y 19)</p>
