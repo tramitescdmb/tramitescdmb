@@ -27,6 +27,7 @@ export async function obtenerReportesCorrespondencia() {
     seriesVigentesTotal,
     subseriesVigentesTotal,
     intentosFallidosRecientes,
+    cargasFallidasRecientes,
     tiempoRespuestaPorDependenciaRaw,
   ] = await Promise.all([
     db.comunicacion.count(),
@@ -51,6 +52,7 @@ export async function obtenerReportesCorrespondencia() {
     db.serieDocumental.count({ where: { vigenteHasta: null } }),
     db.subserieDocumental.count({ where: { activo: true } }),
     db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }),
+    db.auditoriaDoc.count({ where: { accion: "CARGA_FALLIDA", createdAt: { gte: hace30Dias } } }),
     // Desempeño por dependencia (MoReq 7.9: "ver desempeño en tiempo real") — días corridos entre la
     // radicación de una RECIBIDA y la radicación formal de su respuesta (ENVIADA vía respondeAId). Solo
     // cuenta recibidas YA respondidas; las pendientes no tienen un tiempo de respuesta que medir todavía.
@@ -125,6 +127,7 @@ export async function obtenerReportesCorrespondencia() {
     seriesVigentesTotal,
     subseriesVigentesTotal,
     intentosFallidosRecientes,
+    cargasFallidasRecientes,
     tiempoRespuestaPorDependencia,
     promedioRespuestaGeneral,
     totalRespondidas,

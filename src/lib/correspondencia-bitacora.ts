@@ -5,7 +5,7 @@ import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 export const ACCIONES_BITACORA: AccionAuditoriaDoc[] = [
   "CREA", "LEE", "MODIFICA", "EXPORTA", "ELIMINA", "DISTRIBUYE", "FIRMA",
   "CLASIFICA", "ARCHIVA", "ANULA", "SUSPENDE", "REACTIVA", "TRANSFIERE", "DISPONE", "ACCESO_DENEGADO",
-  "APLAZA", "RESPONDE", "PRESTA", "DEVUELVE", "REABRE",
+  "APLAZA", "RESPONDE", "PRESTA", "DEVUELVE", "REABRE", "CARGA_FALLIDA",
 ];
 
 export const ETIQUETA_ACCION_BITACORA: Record<string, string> = {
@@ -14,7 +14,7 @@ export const ETIQUETA_ACCION_BITACORA: Record<string, string> = {
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final", ACCESO_DENEGADO: "Acceso denegado",
   APLAZA: "Aplazamiento de disposición", RESPONDE: "Respuesta de funcionario", PRESTA: "Préstamo", DEVUELVE: "Devolución",
-  REABRE: "Reapertura",
+  REABRE: "Reapertura", CARGA_FALLIDA: "Cargue rechazado",
 };
 
 export type FiltrosBitacora = { accion?: AccionAuditoriaDoc; entidad?: string; desde?: string; hasta?: string };

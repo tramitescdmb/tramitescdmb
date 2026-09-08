@@ -101,6 +101,7 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
   PRESTA: "Se prestó un expediente documental a un funcionario.",
   DEVUELVE: "Se registró la devolución de un expediente prestado.",
   REABRE: "Se reabrió un expediente documental cerrado, con motivo obligatorio (Art. 4.3.2.4 Acuerdo 001/2024 AGN).",
+  CARGA_FALLIDA: "Se rechazó un intento de agregar un documento a un expediente (validación de tipo, cierre, u otra regla).",
 };
 
 /**

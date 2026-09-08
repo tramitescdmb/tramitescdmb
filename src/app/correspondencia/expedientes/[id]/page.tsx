@@ -19,7 +19,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
-  PRESTA: "Préstamo", DEVUELVE: "Devolución", REABRE: "Reapertura",
+  PRESTA: "Préstamo", DEVUELVE: "Devolución", REABRE: "Reapertura", CARGA_FALLIDA: "Cargue rechazado",
 };
 const BITACORA_POR_PAGINA = 20;
 

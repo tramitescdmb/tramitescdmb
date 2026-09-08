@@ -853,6 +853,7 @@ enum AccionAuditoriaDoc {
   PRESTA // presta un expediente documental a un funcionario
   DEVUELVE // registra la devolución de un expediente prestado
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
+  CARGA_FALLIDA // MoReq 4.6: un intento de agregar un documento a un expediente fue rechazado (validación), para poder reportarlo
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.

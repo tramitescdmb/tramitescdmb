@@ -48,7 +48,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       nombres.push(doc.nombre);
     }
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudieron agregar los documentos." }, { status: 400 });
+    const mensaje = err instanceof Error ? err.message : "No se pudieron agregar los documentos.";
+    // MoReq 4.6 ("informes sobre cargues fallidos"): antes este rechazo solo llegaba al usuario en el
+    // momento, sin dejar ningún rastro reportable — se audita para poder verlo agregado en Reportes.
+    const { ip, userAgent } = datosPeticion(req.headers);
+    await registrarAuditoriaDoc({
+      entidad: "ExpedienteDocumental",
+      entidadId: id,
+      accion: "CARGA_FALLIDA",
+      usuarioId: session.userId,
+      ip,
+      userAgent,
+      detalle: `Cargue rechazado en ${expediente.numero}: ${mensaje}`,
+    }).catch((e) => console.error("No se pudo registrar en la bitácora el cargue fallido:", e));
+    return NextResponse.json({ error: mensaje }, { status: 400 });
   }
 
   const { ip, userAgent } = datosPeticion(req.headers);
