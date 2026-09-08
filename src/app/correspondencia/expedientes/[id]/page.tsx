@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
@@ -50,6 +50,21 @@ export default async function ExpedienteDetallePage({
   if (!expediente) notFound();
 
   const { ip, userAgent } = datosPeticion(await headers());
+
+  if (!puedeVerNivelAccesoExpediente(permisos, expediente)) {
+    await registrarAuditoriaDoc({
+      entidad: "ExpedienteDocumental",
+      entidadId: id,
+      accion: "ACCESO_DENEGADO",
+      usuarioId: session.userId,
+      ip,
+      userAgent,
+      detalle: `${session.nombre} intentó ver ${expediente.numero} (${ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso] ?? expediente.nivelAcceso}) sin estar autorizado`,
+    });
+    const mensaje = `No tiene acceso a ${expediente.numero}: quedó clasificada como "${ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso] ?? expediente.nivelAcceso}".`;
+    redirect(`/correspondencia/expedientes?error=${encodeURIComponent(mensaje)}`);
+  }
+
   await registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` });
 
   const bitacora = await db.auditoriaDoc.findMany({

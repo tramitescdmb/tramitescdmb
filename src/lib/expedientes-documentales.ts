@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
+import type { PermisosUsuario } from "@/lib/permisos";
 import type { EstadoExpedienteDocumental, NivelAccesoInformacion, Prisma } from "@prisma/client";
 
 /**
@@ -156,11 +157,22 @@ export type FiltrosExpedienteDocumental = {
   vista?: string;
 };
 
+/** Un expediente CLASIFICADA/RESERVADA (Ley 1712/2014) ni se lista ni se exporta para quien no puede
+ * gestionarlo — de lo contrario el nivel de acceso sería solo una etiqueta visual y no un control real
+ * (ver puedeVerNivelAccesoExpediente en permisos.ts, que aplica la misma regla al ver el detalle). */
+function restringirPorNivelAcceso(permisos: PermisosUsuario): Prisma.ExpedienteDocumentalWhereInput {
+  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return {};
+  return { OR: [{ nivelAcceso: "PUBLICA" }, { dependenciaId: permisos.dependenciaId ?? "__sin_dependencia__" }] };
+}
+
 /** La búsqueda de texto cubre número, asunto y dependencia del expediente, Y TAMBIÉN el nombre de
  * cada archivo que tenga dentro — así "buscar un expediente" y "buscar un archivo perdido dentro de
  * algún expediente" son la misma caja de búsqueda, sin tener que abrir uno por uno para revisar. */
-function construirWhereExpedienteDocumental(f: FiltrosExpedienteDocumental): Prisma.ExpedienteDocumentalWhereInput {
-  const and: Prisma.ExpedienteDocumentalWhereInput[] = [];
+export function construirWhereExpedienteDocumental(
+  f: FiltrosExpedienteDocumental,
+  permisos: PermisosUsuario
+): Prisma.ExpedienteDocumentalWhereInput {
+  const and: Prisma.ExpedienteDocumentalWhereInput[] = [restringirPorNivelAcceso(permisos)];
   if (f.estado === "ABIERTO" || f.estado === "CERRADO") and.push({ estado: f.estado });
   if (f.dependenciaId) and.push({ dependenciaId: f.dependenciaId });
   if (f.q?.trim()) {
@@ -177,10 +189,10 @@ function construirWhereExpedienteDocumental(f: FiltrosExpedienteDocumental): Pri
   return and.length ? { AND: and } : {};
 }
 
-export async function listarExpedientesDocumentales(filtro?: FiltrosExpedienteDocumental) {
+export async function listarExpedientesDocumentales(filtro: FiltrosExpedienteDocumental | undefined, permisos: PermisosUsuario) {
   const page = Math.max(1, parseInt(filtro?.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtro?.vista);
-  const where = construirWhereExpedienteDocumental(filtro ?? {});
+  const where = construirWhereExpedienteDocumental(filtro ?? {}, permisos);
   const q = filtro?.q?.trim();
 
   const [total, filas] = await Promise.all([

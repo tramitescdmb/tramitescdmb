@@ -15,7 +15,7 @@ import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 const fecha = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
 
-export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental> }) {
+export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental & { error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -23,7 +23,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
   const sp = await searchParams;
   const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias] = await Promise.all([
-    listarExpedientesDocumentales(sp),
+    listarExpedientesDocumentales(sp, permisos),
     listarDependenciasActivas(),
   ]);
 
@@ -60,6 +60,8 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un
         archivo que tenga adentro.
       </SectionHelp>
+
+      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <details open={hayFiltros} className="group rounded-xl border border-stone-200 bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">

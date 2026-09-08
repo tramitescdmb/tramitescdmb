@@ -209,6 +209,17 @@ export function puedeGestionarExpedienteDeDependencia(permisos: PermisosUsuario,
   return permisos.dependenciaId === dependenciaId;
 }
 
+/** ¿Puede VER un expediente con este nivel de acceso (Ley 1712/2014, arts. 18-19)? Pública: cualquiera
+ * con acceso a correspondencia. Clasificada/reservada: solo quien puede gestionar expedientes de esa
+ * dependencia (propia dependencia, o ADMIN_ARCHIVO/admin) — el nivel deja de ser solo una etiqueta. */
+export function puedeVerNivelAccesoExpediente(
+  permisos: PermisosUsuario,
+  expediente: { nivelAcceso: string; dependenciaId: string }
+): boolean {
+  if (expediente.nivelAcceso === "PUBLICA") return puedeAccederCorrespondencia(permisos);
+  return puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
+}
+
 /** ¿Puede cerrar un expediente documental (firma del índice electrónico, Art. 4.3.2.4 Acuerdo 001/2024 AGN)? */
 export function puedeCerrarExpediente(permisos: PermisosUsuario): boolean {
   return puedeAdministrarArchivo(permisos);

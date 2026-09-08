@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { construirWhereExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 const LIMITE_MAXIMO = 5000;
@@ -36,20 +36,9 @@ export async function GET(req: NextRequest) {
   const estado = estadoRaw === "ABIERTO" || estadoRaw === "CERRADO" ? estadoRaw : undefined;
   const dependenciaId = sp.get("dependenciaId") || undefined;
 
-  const and: Prisma.ExpedienteDocumentalWhereInput[] = [];
-  if (estado) and.push({ estado });
-  if (dependenciaId) and.push({ dependenciaId });
-  if (q) {
-    and.push({
-      OR: [
-        { numero: { contains: q, mode: "insensitive" } },
-        { asunto: { contains: q, mode: "insensitive" } },
-        { dependencia: { nombre: { contains: q, mode: "insensitive" } } },
-        { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
-      ],
-    });
-  }
-  const where = and.length ? { AND: and } : {};
+  // Mismo where que el listado (incluida la restricción por nivel de acceso, Ley 1712/2014):
+  // un expediente clasificada/reservada tampoco debe poder exportarse por quien no puede verlo.
+  const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId }, permisos);
 
   const expedientes = await db.expedienteDocumental.findMany({
     where,
