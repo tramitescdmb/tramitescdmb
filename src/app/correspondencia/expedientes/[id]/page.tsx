@@ -112,6 +112,18 @@ export default async function ExpedienteDetallePage({
     .slice()
     .sort((a, b) => (a.fechaDocumento ?? a.createdAt).getTime() - (b.fechaDocumento ?? b.createdAt).getTime());
 
+  // Foliación (MoReq 1.19/1.51): rango acumulado de folios por documento, calculado sobre el orden REAL de
+  // incorporación (ordenIndice, el que respalda el hash) — no sobre el orden visual por fecha.
+  const porOrdenIndice = expediente.documentos.slice().sort((a, b) => a.ordenIndice - b.ordenIndice);
+  const rangoFolios = new Map<string, { desde: number; hasta: number }>();
+  let folioAcumulado = 0;
+  for (const doc of porOrdenIndice) {
+    const desde = folioAcumulado + 1;
+    folioAcumulado += doc.numeroFolios;
+    rangoFolios.set(doc.id, { desde, hasta: folioAcumulado });
+  }
+  const totalFolios = folioAcumulado;
+
   // Cotejo de integridad consolidada (MoReq 1.26): recalcula el hash del índice a partir de las filas
   // ACTUALES de la base y lo compara contra el que quedó firmado al cerrar. Si alguien alteró el orden, el
   // nombre o el hash de un documento después del cierre (directamente en la base, no por la aplicación),
@@ -311,7 +323,7 @@ export default async function ExpedienteDetallePage({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
-          <span>Índice electrónico ({expediente.documentos.length} documento(s))</span>
+          <span>Índice electrónico ({expediente.documentos.length} documento(s){expediente.documentos.length > 0 ? ` · ${totalFolios} folio(s)` : ""})</span>
           {expediente.documentos.length > 0 && (
             <span className="flex items-center gap-3 normal-case tracking-normal">
               <a
@@ -335,7 +347,8 @@ export default async function ExpedienteDetallePage({
           Huella (hash) se actualiza sola al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al cerrar, el
           índice queda firmado con hash. La lista se ve ordenada por la fecha del documento (o de subida, si no se
           indicó una distinta); el número es su orden real de incorporación al índice firmado, por eso puede no
-          coincidir con el orden visual.
+          coincidir con el orden visual. El folio de cada documento es el número de hojas que declaró quien lo
+          subió (por defecto 1); el rango mostrado es acumulado sobre el orden real del índice.
         </SectionHelp>
         {expediente.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">Todavía no se ha agregado ningún documento.</p>
@@ -355,6 +368,15 @@ export default async function ExpedienteDetallePage({
                     </span>
                     <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">
                       {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
+                      {(() => {
+                        const r = rangoFolios.get(doc.id);
+                        if (!r) return null;
+                        return (
+                          <span title="Rango de folios en el índice">
+                            · Folio{r.desde === r.hasta ? ` ${r.desde}` : `s ${r.desde}-${r.hasta}`}
+                          </span>
+                        );
+                      })()}
                       {doc.hashSha256 && (
                         <span className="flex items-center gap-1" title={doc.hashSha256}>
                           · <ShieldCheck className="h-3 w-3" aria-hidden /> SHA-256 {doc.hashSha256.slice(0, 12)}…

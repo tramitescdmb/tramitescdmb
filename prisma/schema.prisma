@@ -1276,6 +1276,13 @@ model DocumentoArchivo {
   // de versiones (A reemplazado por B reemplazado por C...). Ninguna versión anterior se borra ni se oculta
   // — el índice electrónico sigue siendo append-only; esto solo agrega la relación entre versiones.
   reemplazaId            String?
+  // Foliación (MoReq 1.19/1.51) — número de hojas/páginas que declara quien sube el documento (no se
+  // detecta automáticamente: no hay librería de conteo de páginas de PDF en el proyecto, y buena parte del
+  // archivo real no es PDF). Es la misma práctica manual de cualquier archivo físico al foliar; el índice
+  // muestra el rango acumulado (ej. "Folios 6-12") a partir de este valor por documento, en el mismo orden
+  // (ordenIndice) que respalda el hash del índice firmado. Los documentos previos a este campo quedan en 1
+  // por defecto — no se puede reconstruir retroactivamente cuántas páginas tenían en realidad.
+  numeroFolios           Int      @default(1)
 
   expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])

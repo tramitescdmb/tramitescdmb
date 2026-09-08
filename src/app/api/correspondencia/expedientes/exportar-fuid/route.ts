@@ -17,8 +17,9 @@ const fecha = (d: Date) => d.toISOString().slice(0, 10);
 /**
  * Inventario Único Documental (FUID, AGN Acuerdo 042/2002 Anexo 3) de los expedientes documentales —
  * adaptado a un archivo 100% electrónico: "Soporte" siempre Electrónico, sin caja/carpeta/tomo físicos.
- * "Documentos" cuenta archivos, NO páginas (no hay librería de conteo de páginas de PDF en el proyecto) —
- * se deja así de explícito en el propio encabezado para no hacerlo pasar por un folio real.
+ * "Folios" suma el número de folios que declaró quien subió cada documento (MoReq 1.19/1.51) — dato real
+ * declarado, no un conteo automático de páginas de PDF (no hay esa librería en el proyecto); documentos
+ * cargados antes de que existiera este campo cuentan como 1 folio por defecto.
  * "Frecuencia de consulta" es un dato real, no un relleno: cuenta las veces que AuditoriaDoc registró un
  * LEE sobre ese expediente (se consulta en el propio detalle cada vez que alguien lo abre).
  */
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
       serie: { select: { codigo: true, nombre: true } },
       subserie: { select: { codigo: true, nombre: true } },
       _count: { select: { documentos: true } },
+      documentos: { select: { numeroFolios: true } },
     },
   });
 
@@ -70,7 +72,8 @@ export async function GET(req: NextRequest) {
     "Fecha de apertura",
     "Fecha de cierre",
     "Estado",
-    "Documentos (no es folio/página)",
+    "Documentos",
+    "Folios",
     "Soporte",
     "Frecuencia de consulta",
     "Nivel de acceso",
@@ -88,6 +91,7 @@ export async function GET(req: NextRequest) {
       e.fechaCierre ? fecha(e.fechaCierre) : "En trámite",
       e.estado === "ABIERTO" ? "Abierto" : "Cerrado",
       e._count.documentos,
+      e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0),
       "Electrónico",
       consultasPorId.get(e.id) ?? 0,
       e.nivelAcceso,

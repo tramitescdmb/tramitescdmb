@@ -20,6 +20,7 @@ export function SubirDocumentoExpedienteForm({
   const [fechaDocumento, setFechaDocumento] = useState("");
   const [tipoDocumentalId, setTipoDocumentalId] = useState("");
   const [reemplazaId, setReemplazaId] = useState("");
+  const [numeroFolios, setNumeroFolios] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export function SubirDocumentoExpedienteForm({
           fechaDocumento: fechaDocumento || undefined,
           tipoDocumentalId: tipoDocumentalId || undefined,
           reemplazaId: reemplazaId || undefined,
+          numeroFolios: numeroFolios ? Number(numeroFolios) : undefined,
         }),
       });
       const data = await resp.json();
@@ -67,6 +69,7 @@ export function SubirDocumentoExpedienteForm({
       setFechaDocumento("");
       setTipoDocumentalId("");
       setReemplazaId("");
+      setNumeroFolios("");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron agregar los documentos.");
@@ -106,6 +109,21 @@ export function SubirDocumentoExpedienteForm({
             className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
           />
           <span className="text-xs text-stone-400">Opcional — solo si es distinta de hoy</span>
+        </label>
+      )}
+      {archivos.length === 1 && (
+        <label className="flex w-fit items-center gap-2 text-sm text-stone-600">
+          Número de folios (hojas)
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={numeroFolios}
+            onChange={(e) => setNumeroFolios(e.target.value)}
+            placeholder="1"
+            className="w-20 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+          />
+          <span className="text-xs text-stone-400">Opcional — para el índice foliado; si no se indica, cuenta como 1</span>
         </label>
       )}
       {archivos.length > 0 && tiposDocumentales.length > 0 && (

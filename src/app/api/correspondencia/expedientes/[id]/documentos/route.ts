@@ -28,6 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const fechaDocumento = fechaDocumentoRaw ? parsearFechaLocal(fechaDocumentoRaw) : null;
   const tipoDocumentalId = typeof body?.tipoDocumentalId === "string" && body.tipoDocumentalId ? body.tipoDocumentalId : null;
   const reemplazaId = typeof body?.reemplazaId === "string" && body.reemplazaId ? body.reemplazaId : null;
+  const numeroFolios = typeof body?.numeroFolios === "number" && body.numeroFolios > 0 ? body.numeroFolios : null;
 
   const nombres: string[] = [];
   try {
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         fechaDocumento,
         tipoDocumentalId,
         reemplazaId,
+        numeroFolios,
       });
       nombres.push(doc.nombre);
     }

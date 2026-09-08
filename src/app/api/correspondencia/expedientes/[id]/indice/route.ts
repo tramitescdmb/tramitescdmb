@@ -35,9 +35,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
 
-  const encabezados = ["Orden", "Nombre", "Tipo (MIME)", "Tamaño (bytes)", "SHA-256", "Subido por", "Fecha"];
-  const filasCsv = expediente.documentos.map((d) =>
-    [d.ordenIndice, d.nombre, d.mimeType, d.tamanoBytes, d.hashSha256 ?? "", d.subidoPor.nombre, d.createdAt.toISOString()]
+  // Rango de folios acumulado (MoReq 1.19/1.51) sobre el orden real del índice (ordenIndice, ya viene
+  // ordenado así por la consulta), a partir del número de folios que declaró quien subió cada documento.
+  let folioAcumulado = 0;
+  const folios = expediente.documentos.map((d) => {
+    const desde = folioAcumulado + 1;
+    folioAcumulado += d.numeroFolios;
+    return { desde, hasta: folioAcumulado };
+  });
+
+  const encabezados = ["Orden", "Nombre", "Tipo (MIME)", "Tamaño (bytes)", "Folios", "SHA-256", "Subido por", "Fecha"];
+  const filasCsv = expediente.documentos.map((d, i) =>
+    [d.ordenIndice, d.nombre, d.mimeType, d.tamanoBytes, `${folios[i]!.desde}-${folios[i]!.hasta}`, d.hashSha256 ?? "", d.subidoPor.nombre, d.createdAt.toISOString()]
       .map(celda)
       .join(";")
   );
@@ -59,10 +68,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (formato === "xml") {
     const documentosXml = expediente.documentos
       .map(
-        (d) => `    <documento orden="${d.ordenIndice}">
+        (d, i) => `    <documento orden="${d.ordenIndice}">
       <nombre>${escaparXml(d.nombre)}</nombre>
       <tipoMime>${escaparXml(d.mimeType)}</tipoMime>
       <tamanoBytes>${d.tamanoBytes}</tamanoBytes>
+      <folios desde="${folios[i]!.desde}" hasta="${folios[i]!.hasta}"/>
       <sha256>${escaparXml(d.hashSha256)}</sha256>
       <subidoPor>${escaparXml(d.subidoPor.nombre)}</subidoPor>
       <fecha>${d.createdAt.toISOString()}</fecha>
@@ -80,7 +90,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     <nivelAcceso>${escaparXml(expediente.nivelAcceso)}</nivelAcceso>
     ${expediente.indiceHash ? `<indiceHashSha256>${escaparXml(expediente.indiceHash)}</indiceHashSha256>` : "<indiceHashSha256/>"}
   </expediente>
-  <documentos total="${expediente.documentos.length}">
+  <documentos total="${expediente.documentos.length}" totalFolios="${folioAcumulado}">
 ${documentosXml}
   </documentos>
 </indiceElectronico>

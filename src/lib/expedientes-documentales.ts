@@ -56,6 +56,7 @@ export async function agregarDocumentoArchivo(datos: {
   fechaDocumento?: Date | null;
   tipoDocumentalId?: string | null;
   reemplazaId?: string | null;
+  numeroFolios?: number | null;
 }) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: datos.expedienteDocumentalId },
@@ -100,6 +101,7 @@ export async function agregarDocumentoArchivo(datos: {
       fechaDocumento: datos.fechaDocumento ?? null,
       tipoDocumentalId: datos.tipoDocumentalId || null,
       reemplazaId: datos.reemplazaId || null,
+      numeroFolios: datos.numeroFolios && datos.numeroFolios > 0 ? Math.floor(datos.numeroFolios) : 1,
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
