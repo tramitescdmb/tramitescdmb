@@ -35,10 +35,11 @@ export async function GET(req: NextRequest) {
   const estadoRaw = sp.get("estado");
   const estado = estadoRaw === "ABIERTO" || estadoRaw === "CERRADO" ? estadoRaw : undefined;
   const dependenciaId = sp.get("dependenciaId") || undefined;
+  const serieId = sp.get("serieId") || undefined;
 
   // Mismo where que el listado (incluida la restricción por nivel de acceso, Ley 1712/2014):
   // un expediente clasificada/reservada tampoco debe poder exportarse por quien no puede verlo.
-  const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId }, permisos);
+  const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId, serieId }, permisos);
 
   const expedientes = await db.expedienteDocumental.findMany({
     where,

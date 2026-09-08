@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, CheckSquare, Square, PencilLine, Download } from "lucide-react";
+import { Search, CheckSquare, Square, PencilLine, Download, FolderOpen } from "lucide-react";
 
 const ETIQUETA_DISPOSICION: Record<string, string> = {
   CONSERVACION_TOTAL: "Conservación total",
@@ -196,6 +197,14 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                   </div>
                   <span className="flex items-center gap-2 text-xs text-stone-400">
                     {s.subseries.length} subserie(s) · {s.totalComunicaciones} comunicación(es)
+                    <Link
+                      href={`/correspondencia/expedientes?serieId=${s.id}`}
+                      title="Ver los expedientes clasificados en esta serie"
+                      className="flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
+                    >
+                      <FolderOpen className="h-3 w-3" aria-hidden />
+                      Ver expedientes
+                    </Link>
                     <a
                       href={`/api/correspondencia/trd/series/${s.id}/exportar`}
                       title="Exportar todo lo clasificado en esta serie (comunicaciones y expedientes)"

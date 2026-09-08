@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search, FolderOpen, FolderCheck, Plus, FileText, ChevronDown } from "lucide-react";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { listarExpedientesDocumentales, type FiltrosExpedienteDocumental } from "@/lib/expedientes-documentales";
@@ -22,19 +23,21 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
 
   const sp = await searchParams;
-  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias] = await Promise.all([
+  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias, serieFiltro] = await Promise.all([
     listarExpedientesDocumentales(sp, permisos),
     listarDependenciasActivas(),
+    sp.serieId ? db.serieDocumental.findUnique({ where: { id: sp.serieId }, select: { codigo: true, nombre: true } }) : null,
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId);
-  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId"] as const;
+  const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId || sp.serieId);
+  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId"] as const;
   const clausulas: string[] = [];
   if (sp.estado) clausulas.push(`${ETIQUETA_ESTADO[sp.estado] ?? sp.estado}`);
   if (sp.dependenciaId) {
     const dep = dependencias.find((d) => d.id === sp.dependenciaId);
     if (dep) clausulas.push(`de ${dep.nombre}`);
   }
+  if (serieFiltro) clausulas.push(`de la serie "${serieFiltro.codigo} — ${serieFiltro.nombre}"`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulas.join(" ");
 
