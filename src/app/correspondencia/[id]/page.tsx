@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -40,6 +40,49 @@ const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibid
 // cierre (ej. una RECIBIDA ya respondida volvía a "Asignada" si alguien la distribuía otra vez).
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
 
+type ProximoPaso = { texto: string; accionHref?: string; accionTexto?: string; cerrado?: boolean };
+
+/**
+ * Explica en una frase qué significa el estado actual y qué falta (o no falta nada) — MoReq 8.14, y sobre
+ * todo porque un usuario real (autoasignándose una comunicación) no entendió qué hacer ni cómo se "cierra"
+ * el ciclo. Clave del malentendido real: una ENVIADA/INTERNA firmada y radicada YA ES definitiva — si se
+ * distribuye después es solo seguimiento interno opcional, no un paso pendiente ni algo que "cierre" nada.
+ */
+function proximoPaso(c: {
+  tipo: string;
+  estado: string;
+  respuestaTexto: string | null;
+  respuestas: unknown[];
+}, permisos: { puedeDistribuir: boolean; puedeResponder: boolean; puedeRadicar: boolean }): ProximoPaso {
+  if (c.tipo !== "RECIBIDA") {
+    return { texto: "Ya quedó firmada y radicada — es un documento definitivo. Si la distribuyó a alguien, es solo para que le dé seguimiento por su cuenta; eso no bloquea ni cierra nada más aquí.", cerrado: true };
+  }
+  // A partir de acá, tipo === "RECIBIDA".
+  if (c.estado === "ANULADA") return { texto: "Quedó anulada — no requiere ninguna acción más.", cerrado: true };
+  if (c.estado === "ARCHIVADA") return { texto: "Quedó archivada — el ciclo de esta comunicación está cerrado.", cerrado: true };
+  if (c.estado === "RESPONDIDA") return { texto: "Ya se le dio respuesta formal (vea \"Respondida por\" arriba). El ciclo de esta recibida quedó cerrado.", cerrado: true };
+  if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") {
+    return { texto: "Está en pausa: se le pidió información adicional a quien la envió. El plazo se reanuda al reactivar el término, más abajo." };
+  }
+  if (c.estado === "RADICADA" || c.estado === "EN_REPARTO") {
+    return permisos.puedeDistribuir
+      ? { texto: "Todavía no se ha distribuido. Siguiente paso: asígnela a la dependencia o funcionario que debe atenderla.", accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
+      : { texto: "Todavía no se ha distribuido a nadie." };
+  }
+  // ASIGNADA o EN_TRAMITE: alguien ya la tiene, falta la respuesta formal.
+  if (!c.respuestaTexto) {
+    return permisos.puedeResponder
+      ? { texto: "Ya está asignada. Siguiente paso: escriba la respuesta más abajo, en \"Respuesta del funcionario\".", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
+      : { texto: "Ya está asignada — falta que el funcionario a cargo escriba la respuesta." };
+  }
+  if (c.respuestas.length === 0) {
+    return permisos.puedeRadicar
+      ? { texto: "Ya hay un borrador de respuesta. Siguiente paso: radíquela como oficio de salida para que quede firmada y se cierre el ciclo.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
+      : { texto: "Ya hay un borrador de respuesta, falta que alguien con permiso la radique como oficio de salida." };
+  }
+  return { texto: "Ya se radicó la respuesta — el ciclo de esta recibida está cerrándose.", cerrado: true };
+}
+
 function Campo({ k, v }: { k: string; v: ReactNode }) {
   if (v == null || v === "") return null;
   return (
@@ -50,9 +93,9 @@ function Campo({ k, v }: { k: string; v: ReactNode }) {
   );
 }
 
-function Tarjeta({ titulo, children, extra }: { titulo: string; children: ReactNode; extra?: ReactNode }) {
+function Tarjeta({ titulo, children, extra, id }: { titulo: string; children: ReactNode; extra?: ReactNode; id?: string }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">{titulo}</h3>
         {extra}
@@ -149,6 +192,7 @@ export default async function CorrespondenciaDetallePage({
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento);
+  const siguientePaso = proximoPaso(c, { puedeDistribuir: puedeDistribuirUsuario, puedeResponder, puedeRadicar: puedeRadicarUsuario });
 
   return (
     <div className="space-y-4">
@@ -201,6 +245,30 @@ export default async function CorrespondenciaDetallePage({
         <div className="mt-3 max-w-md">
           <ProgresoCorrespondencia estado={c.estado} tamaño="grande" />
         </div>
+        {c.estado !== "ANULADA" && (
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+              siguientePaso.cerrado ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-cdmb-200 bg-cdmb-50 text-cdmb-900"
+            }`}
+          >
+            {siguientePaso.cerrado ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden />
+            ) : (
+              <Compass className="mt-0.5 h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+            )}
+            <span>
+              {siguientePaso.texto}
+              {siguientePaso.accionHref && (
+                <>
+                  {" "}
+                  <a href={siguientePaso.accionHref} className="font-medium underline hover:no-underline">
+                    {siguientePaso.accionTexto}
+                  </a>
+                </>
+              )}
+            </span>
+          </div>
+        )}
         <p className="mt-3 text-sm text-stone-700">{c.asunto}</p>
         {c.contenido && <p className="mt-2 whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-sm text-stone-700">{c.contenido}</p>}
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -319,7 +387,7 @@ export default async function CorrespondenciaDetallePage({
         )}
       </Tarjeta>
 
-      <Tarjeta titulo="Distribución / reparto">
+      <Tarjeta id="distribucion" titulo="Distribución / reparto">
         <SectionHelp>El reparto más reciente (primero en la lista) es el vigente; los anteriores quedan como historial.</SectionHelp>
         {c.distribuciones.length === 0 ? (
           <p className="text-sm text-stone-400">Sin distribuir todavía.</p>
@@ -378,7 +446,7 @@ export default async function CorrespondenciaDetallePage({
       </Tarjeta>
 
       {c.tipo === "RECIBIDA" && (
-        <Tarjeta titulo="Respuesta del funcionario">
+        <Tarjeta id="respuesta" titulo="Respuesta del funcionario">
           <SectionHelp>
             Borrador de respuesta de quien la tiene asignada — no radica nada. Ventanilla o gestión
             documental la retoma para radicarla como oficio de salida (con consecutivo y firma).

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Mail, ShieldCheck, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { Mail, ShieldCheck, ExternalLink, Compass } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -55,6 +56,10 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
           (Acuerdo 001/2024 AGN) y Acuerdo 060/2001 AGN.
         </p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/correspondencia/ayuda" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+            <Compass className="h-3 w-3" aria-hidden />
+            Cómo funciona el ciclo
+          </Link>
           <a
             href="/pqrsd"
             target="_blank"
