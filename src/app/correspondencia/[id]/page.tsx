@@ -377,7 +377,7 @@ export default async function CorrespondenciaDetallePage({
                   </span>
                 </span>
                 <span className="flex flex-none items-center gap-1.5">
-                  <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                  <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
                   <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                     <Download className="h-3.5 w-3.5" aria-hidden />
                     Abrir
@@ -470,7 +470,7 @@ export default async function CorrespondenciaDetallePage({
                     <span className="truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
                   </span>
                   <span className="flex flex-none items-center gap-1.5">
-                    <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                    <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
                     <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                       <Download className="h-3.5 w-3.5" aria-hidden />
                       Abrir

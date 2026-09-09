@@ -9,7 +9,18 @@ import { Eye, X, Download } from "lucide-react";
  * archivo con el Content-Type original (no fuerza descarga), así que basta con
  * pedirlo dentro de un visor en vez de navegar la pestaña completa a esa URL.
  */
-export function VistaPreviaDocumento({ url, nombre, mimeType }: { url: string; nombre: string; mimeType: string }) {
+export function VistaPreviaDocumento({
+  url,
+  nombre,
+  mimeType,
+  miniatura = false,
+}: {
+  url: string;
+  nombre: string;
+  mimeType: string;
+  /** Muestra una miniatura de la imagen antes del botón (MoReq 4.3). */
+  miniatura?: boolean;
+}) {
   const [abierto, setAbierto] = useState(false);
 
   useEffect(() => {
@@ -25,6 +36,17 @@ export function VistaPreviaDocumento({ url, nombre, mimeType }: { url: string; n
 
   return (
     <>
+      {miniatura && esImagen && (
+        <button
+          type="button"
+          onClick={() => setAbierto(true)}
+          title={`Ampliar ${nombre}`}
+          className="flex-none overflow-hidden rounded-md border border-stone-200 hover:border-cdmb-400"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada de Supabase, no /public */}
+          <img src={url} alt={`Miniatura de ${nombre}`} loading="lazy" className="h-12 w-12 object-cover" />
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setAbierto(true)}

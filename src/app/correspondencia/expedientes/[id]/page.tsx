@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import { calcularHashIndice } from "@/lib/expedientes-documentales";
+import { calcularHashIndice, ordenarDocumentosExpediente, ETIQUETA_CRITERIO_ORDEN, CRITERIOS_ORDEN } from "@/lib/expedientes-documentales";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoExpedienteForm } from "@/components/SubirDocumentoExpedienteForm";
@@ -41,7 +41,7 @@ export default async function ExpedienteDetallePage({
     where: { id },
     include: {
       dependencia: { select: { nombre: true } },
-      serie: { select: { codigo: true, nombre: true } },
+      serie: { select: { id: true, codigo: true, nombre: true, criterioOrdenExpediente: true } },
       subserie: { select: { codigo: true, nombre: true, tiposDocumentales: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } } } },
       creadoPor: { select: { nombre: true } },
       cerradoPor: { select: { nombre: true } },
@@ -106,11 +106,11 @@ export default async function ExpedienteDetallePage({
   const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
   const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
-  // Orden visual por fecha de trámite (MoReq 1.45) — el número de índice (ordenIndice) sigue siendo el
-  // orden real de incorporación, el que respalda el hash del índice firmado; solo cambia cómo se VE.
-  const documentosOrdenados = expediente.documentos
-    .slice()
-    .sort((a, b) => (a.fechaDocumento ?? a.createdAt).getTime() - (b.fechaDocumento ?? b.createdAt).getTime());
+  // Orden visual según el criterio configurado en la serie (MoReq 1.45/1.46) — el número de índice
+  // (ordenIndice) sigue siendo el orden real de incorporación, el que respalda el hash del índice
+  // firmado; solo cambia cómo se VE.
+  const criterioOrden = expediente.serie?.criterioOrdenExpediente ?? "FECHA_DOCUMENTO";
+  const documentosOrdenados = ordenarDocumentosExpediente(expediente.documentos, criterioOrden);
 
   // Foliación (MoReq 1.19/1.51): rango acumulado de folios por documento, calculado sobre el orden REAL de
   // incorporación (ordenIndice, el que respalda el hash) — no sobre el orden visual por fecha.
@@ -345,11 +345,23 @@ export default async function ExpedienteDetallePage({
         </h3>
         <SectionHelp>
           Huella (hash) se actualiza sola al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al cerrar, el
-          índice queda firmado con hash. La lista se ve ordenada por la fecha del documento (o de subida, si no se
-          indicó una distinta); el número es su orden real de incorporación al índice firmado, por eso puede no
-          coincidir con el orden visual. El folio de cada documento es el número de hojas que declaró quien lo
-          subió (por defecto 1); el rango mostrado es acumulado sobre el orden real del índice.
+          índice queda firmado con hash. La lista se ve ordenada según el criterio configurado para la serie
+          (<strong>{ETIQUETA_CRITERIO_ORDEN[criterioOrden]}</strong>); el número es su orden real de incorporación al
+          índice firmado, por eso puede no coincidir con el orden visual. El folio de cada documento es el número de
+          hojas que declaró quien lo subió (por defecto 1); el rango mostrado es acumulado sobre el orden real del índice.
         </SectionHelp>
+        {puedeAdministrarArchivo(permisos) && expediente.serie && (
+          <form action={`/api/correspondencia/series/${expediente.serie.id}/criterio-orden`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+            <label className="text-xs">
+              <span className="mb-1 block font-medium text-stone-600">Orden de los documentos de la serie {expediente.serie.codigo}</span>
+              <select name="criterio" defaultValue={criterioOrden} className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+                {CRITERIOS_ORDEN.map((c) => (<option key={c} value={c}>{ETIQUETA_CRITERIO_ORDEN[c]}</option>))}
+              </select>
+            </label>
+            <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
+            <span className="text-[11px] text-stone-400">Aplica a todos los expedientes de esta serie. No cambia el índice firmado.</span>
+          </form>
+        )}
         {expediente.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">Todavía no se ha agregado ningún documento.</p>
         ) : (
@@ -396,7 +408,7 @@ export default async function ExpedienteDetallePage({
                   </span>
                 </span>
                 <span className="flex flex-none items-center gap-1.5">
-                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
                   <a
                     href={`/api/documentos-archivo/${doc.id}`}
                     target="_blank"

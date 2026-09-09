@@ -101,9 +101,11 @@ export default async function CorrespondenciaBandejaPage({
 
       <div className="print:hidden">
         <SectionHelp>
-          Recibidas, enviadas y memorandos en una sola bandeja — la búsqueda también encuentra por el nombre
-          de un archivo adjunto. El semáforo de &quot;Vence&quot; aplica a PQRSD: gris = a tiempo, ámbar = vence
-          en 3 días hábiles o menos, rojo = vencida.
+          Recibidas, enviadas y memorandos en una sola bandeja — la búsqueda cubre radicado, asunto, tercero,
+          nombre de un adjunto y el contenido del oficio. Admite varias palabras (deben aparecer todas),
+          <code>&quot;frase exacta&quot;</code> entre comillas y <code>-palabra</code> para excluir. El semáforo
+          de &quot;Vence&quot; aplica a PQRSD: gris = a tiempo, ámbar = vence en 3 días hábiles o menos, rojo =
+          vencida.
         </SectionHelp>
       </div>
 
@@ -121,7 +123,7 @@ export default async function CorrespondenciaBandejaPage({
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
             <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
               <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-              <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Radicado, tercero, asunto o archivo adjunto" className="w-full text-sm outline-none" />
+              <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder='Ej. concesión aguas  ·  "aprovechamiento forestal"  ·  vertimientos -renovación' className="w-full text-sm outline-none" />
             </span>
           </label>
 

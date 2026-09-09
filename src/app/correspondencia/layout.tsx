@@ -40,6 +40,12 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
 
   return (
     <div className="space-y-4">
+      <a
+        href="#contenido-sgdea"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-cdmb-700 focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        Saltar al contenido
+      </a>
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
@@ -87,7 +93,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
 
       <CorrespondenciaTabs permitido={permitido} />
 
-      {children}
+      <div id="contenido-sgdea">{children}</div>
     </div>
   );
 }

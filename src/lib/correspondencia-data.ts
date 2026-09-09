@@ -65,6 +65,73 @@ export function esTipoValido(v: string | undefined): v is TipoComunicacion {
 
 /** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. Sin
  * filtro de tipo, la bandeja muestra las tres clases de comunicación (recibida/enviada/interna). */
+/** Campos (y relaciones) sobre los que se busca un término de texto libre. */
+function camposBusqueda(texto: string): Prisma.ComunicacionWhereInput[] {
+  return [
+    { radicado: { contains: texto, mode: "insensitive" } },
+    { asunto: { contains: texto, mode: "insensitive" } },
+    { terceroNombre: { contains: texto, mode: "insensitive" } },
+    { terceroIdentificacion: { contains: texto } },
+    // El nombre de un adjunto — un oficio se recuerda por el archivo que se subió.
+    { documentos: { some: { nombre: { contains: texto, mode: "insensitive" } } } },
+    // El CONTENIDO real (MoReq 4.11): cuerpo firmado de una enviada/memorando y borrador de respuesta.
+    { contenido: { contains: texto, mode: "insensitive" } },
+    { respuestaTexto: { contains: texto, mode: "insensitive" } },
+  ];
+}
+
+/**
+ * Excluye (MoReq 4.2, `-término`): ningún campo buscable contiene el texto. En
+ * Postgres `NOT (col LIKE x)` es NULL cuando la columna es NULL (y NULL descarta
+ * la fila), así que en los campos opcionales se admite explícitamente el NULL.
+ */
+function clausulaExcluirBusqueda(texto: string): Prisma.ComunicacionWhereInput {
+  const noContiene = (contains: Prisma.ComunicacionWhereInput): Prisma.ComunicacionWhereInput => ({ NOT: contains });
+  const noContieneOpcional = (
+    campo: "terceroNombre" | "terceroIdentificacion" | "contenido" | "respuestaTexto",
+    modo?: "insensitive"
+  ): Prisma.ComunicacionWhereInput => ({
+    OR: [{ [campo]: null }, { NOT: { [campo]: { contains: texto, ...(modo ? { mode: modo } : {}) } } }],
+  });
+  return {
+    AND: [
+      noContiene({ radicado: { contains: texto, mode: "insensitive" } }),
+      noContiene({ asunto: { contains: texto, mode: "insensitive" } }),
+      noContieneOpcional("terceroNombre", "insensitive"),
+      noContieneOpcional("terceroIdentificacion"),
+      noContieneOpcional("contenido", "insensitive"),
+      noContieneOpcional("respuestaTexto", "insensitive"),
+      { documentos: { none: { nombre: { contains: texto, mode: "insensitive" } } } },
+    ],
+  };
+}
+
+/**
+ * Parte la consulta en términos (MoReq 4.2): respeta "frases entre comillas",
+ * `-` al inicio de un término lo marca como exclusión, y `*` se trata como
+ * separador (el match ya es por subcadena, así que actúa de comodín implícito).
+ */
+export function parseConsultaBusqueda(q: string): { texto: string; excluir: boolean }[] {
+  const terminos: { texto: string; excluir: boolean }[] = [];
+  const re = /(-?)"([^"]+)"|(\S+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(q)) !== null) {
+    if (m[2] !== undefined) {
+      const texto = m[2].trim();
+      if (texto) terminos.push({ texto, excluir: m[1] === "-" });
+    } else {
+      let token = m[3]!;
+      const excluir = token.startsWith("-");
+      if (excluir) token = token.slice(1);
+      for (const parte of token.split("*")) {
+        const texto = parte.trim();
+        if (texto) terminos.push({ texto, excluir });
+      }
+    }
+  }
+  return terminos;
+}
+
 export function construirWhereCorrespondencia(
   f: FiltrosCorrespondencia,
   rango: RangoPeriodo = null
@@ -72,22 +139,12 @@ export function construirWhereCorrespondencia(
   const and: Prisma.ComunicacionWhereInput[] = [];
   if (esTipoValido(f.tipo)) and.push({ tipo: f.tipo });
   if (f.q?.trim()) {
-    const q = f.q.trim();
-    and.push({
-      OR: [
-        { radicado: { contains: q, mode: "insensitive" } },
-        { asunto: { contains: q, mode: "insensitive" } },
-        { terceroNombre: { contains: q, mode: "insensitive" } },
-        { terceroIdentificacion: { contains: q } },
-        // También encuentra por el nombre de un documento adjunto — un memorando o un oficio
-        // se suele recordar por el archivo que se subió, no por su radicado o asunto exacto.
-        { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
-        // Y por el CONTENIDO real (MoReq 4.11: búsqueda de texto libre integrada, no solo metadatos) — el
-        // cuerpo firmado de una enviada/memorando, y el borrador de respuesta de una recibida.
-        { contenido: { contains: q, mode: "insensitive" } },
-        { respuestaTexto: { contains: q, mode: "insensitive" } },
-      ],
-    });
+    // MoReq 4.2: operadores. "frase exacta" entre comillas; -palabra excluye; varios
+    // términos se combinan con Y (todos deben aparecer, en cualquier campo buscable);
+    // el * es comodín — como el match ya es por subcadena, se trata como separador.
+    for (const { texto, excluir } of parseConsultaBusqueda(f.q)) {
+      and.push(excluir ? clausulaExcluirBusqueda(texto) : { OR: camposBusqueda(texto) });
+    }
   }
   if (esEstadoValido(f.estado)) and.push({ estado: f.estado });
   if (f.dependencia) and.push({ OR: [{ dependenciaDestinoId: f.dependencia }, { dependenciaOrigenId: f.dependencia }] });

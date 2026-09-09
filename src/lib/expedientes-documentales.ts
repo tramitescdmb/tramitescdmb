@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EstadoExpedienteDocumental, NivelAccesoInformacion, Prisma } from "@prisma/client";
+import type { CriterioOrdenExpediente, EstadoExpedienteDocumental, NivelAccesoInformacion, Prisma } from "@prisma/client";
 
 /**
  * Expediente electrónico de archivo general (Art. 4.3.2 Acuerdo 001/2024 AGN):
@@ -105,6 +105,38 @@ export async function agregarDocumentoArchivo(datos: {
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
+}
+
+export const ETIQUETA_CRITERIO_ORDEN: Record<CriterioOrdenExpediente, string> = {
+  FECHA_DOCUMENTO: "Fecha del documento (por defecto)",
+  FECHA_INCORPORACION: "Orden de incorporación al índice",
+  NOMBRE: "Nombre del archivo (alfabético)",
+};
+
+export const CRITERIOS_ORDEN: CriterioOrdenExpediente[] = ["FECHA_DOCUMENTO", "FECHA_INCORPORACION", "NOMBRE"];
+
+export function esCriterioOrdenValido(v: string | undefined | null): v is CriterioOrdenExpediente {
+  return !!v && (CRITERIOS_ORDEN as string[]).includes(v);
+}
+
+type DocOrdenable = { ordenIndice: number; nombre: string; fechaDocumento: Date | null; createdAt: Date };
+
+/**
+ * Ordena los documentos de un expediente para MOSTRARLOS según el criterio
+ * configurado en su serie (MoReq 1.46). No afecta `ordenIndice` ni el hash
+ * firmado del índice — solo el orden visual.
+ */
+export function ordenarDocumentosExpediente<T extends DocOrdenable>(documentos: T[], criterio: CriterioOrdenExpediente): T[] {
+  const copia = documentos.slice();
+  switch (criterio) {
+    case "FECHA_INCORPORACION":
+      return copia.sort((a, b) => a.ordenIndice - b.ordenIndice);
+    case "NOMBRE":
+      return copia.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { numeric: true }));
+    case "FECHA_DOCUMENTO":
+    default:
+      return copia.sort((a, b) => (a.fechaDocumento ?? a.createdAt).getTime() - (b.fechaDocumento ?? b.createdAt).getTime());
+  }
 }
 
 /**
