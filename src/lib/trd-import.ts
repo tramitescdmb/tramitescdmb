@@ -52,13 +52,73 @@ export const COLUMNAS_TRD_CSV = [
 
 const COLUMNAS_OBLIGATORIAS = ["dependencia_codigo", "serie_codigo", "subserie_codigo"];
 
+/**
+ * Normaliza un encabezado (minúsculas, sin tildes, espacios/guiones → "_") y lo
+ * mapea a la columna canónica si es una variante conocida. Así el archivo del
+ * usuario no tiene que traer los nombres exactos: "Código Dependencia",
+ * "codigo_dependencia" o "cod dependencia" llegan todos a "dependencia_codigo".
+ */
+const ALIAS_COLUMNAS: Record<string, (typeof COLUMNAS_TRD_CSV)[number]> = {
+  codigo_dependencia: "dependencia_codigo",
+  cod_dependencia: "dependencia_codigo",
+  nombre_dependencia: "dependencia_nombre",
+  dependencia: "dependencia_nombre",
+  codigo_serie: "serie_codigo",
+  cod_serie: "serie_codigo",
+  nombre_serie: "serie_nombre",
+  serie: "serie_nombre",
+  descripcion_serie: "serie_descripcion",
+  codigo_subserie: "subserie_codigo",
+  cod_subserie: "subserie_codigo",
+  nombre_subserie: "subserie_nombre",
+  subserie: "subserie_nombre",
+  retencion_archivo_gestion: "retencion_gestion",
+  ag: "retencion_gestion",
+  retencion_archivo_central: "retencion_central",
+  ac: "retencion_central",
+  ct: "disposicion_ct",
+  conservacion_total: "disposicion_ct",
+  e: "disposicion_e",
+  eliminacion: "disposicion_e",
+  md: "disposicion_md",
+  m_d: "disposicion_md",
+  s: "disposicion_s",
+  seleccion: "disposicion_s",
+  procedimientos: "procedimiento",
+  tipos_documental: "tipos_documentales",
+  tipo_documental: "tipos_documentales",
+};
+
+function normalizarEncabezado(h: string): string {
+  const base = h
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\s.\-/]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return ALIAS_COLUMNAS[base] ?? base;
+}
+
 export function parsearCsvTrd(contenido: string): { filas: FilaTrdCsv[]; errores: string[] } {
-  const resultado = Papa.parse<FilaTrdCsv>(contenido.trim(), { header: true, delimiter: ";", skipEmptyLines: true });
-  const errores = resultado.errors.map((e) => `Fila ${(e.row ?? 0) + 2}: ${e.message}`);
+  const resultado = Papa.parse<FilaTrdCsv>(contenido.trim(), {
+    header: true,
+    // Detecta automáticamente el separador — Excel exporta un CSV con ";" en
+    // configuración regional española y con "," en inglesa.
+    delimitersToGuess: [";", ",", "\t", "|"],
+    skipEmptyLines: true,
+    transformHeader: normalizarEncabezado,
+  });
+  const errores = resultado.errors
+    .filter((e) => e.code !== "UndetectableDelimiter")
+    .map((e) => `Fila ${(e.row ?? 0) + 2}: ${e.message}`);
   const columnas = resultado.meta.fields ?? [];
   const faltantes = COLUMNAS_OBLIGATORIAS.filter((c) => !columnas.includes(c));
   if (faltantes.length > 0) {
-    errores.push(`Faltan columnas obligatorias en el CSV: ${faltantes.join(", ")}.`);
+    errores.push(
+      `Faltan columnas obligatorias en el archivo: ${faltantes.join(", ")}. ` +
+        `Encabezados leídos: ${columnas.join(", ") || "(ninguno)"}.`
+    );
   }
   return { filas: resultado.data, errores };
 }
