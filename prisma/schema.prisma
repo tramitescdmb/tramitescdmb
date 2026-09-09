@@ -48,7 +48,26 @@ model ConfiguracionSitio {
   // "usar los valores por defecto de fábrica", nunca como "no permitir nada".
   extensionesPermitidas String[] @default(["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"])
 
+  // Jornada laboral de la entidad — alimenta el cálculo de términos de ley (días
+  // hábiles) y las métricas de tiempo del SGDEA. `jornadaDiasSemana` usa la
+  // convención de getUTCDay: 0=domingo, 1=lunes … 6=sábado.
+  jornadaDiasSemana Int[]  @default([1, 2, 3, 4, 5])
+  jornadaHoraInicio String @default("08:00")
+  jornadaHoraFin    String @default("17:00")
+
   updatedAt DateTime @updatedAt
+}
+
+// Días adicionales que la entidad NO labora, más allá de los festivos de ley de
+// Colombia (que se calculan solos en src/lib/dias-habiles.ts): días compensados,
+// cierres institucionales, puentes internos. Se descuentan del cálculo de
+// términos de ley y de las métricas de tiempo.
+model DiaNoLaborado {
+  id        String   @id @default(cuid())
+  fecha     DateTime @unique @db.Date
+  motivo    String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------

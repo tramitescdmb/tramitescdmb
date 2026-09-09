@@ -4,9 +4,22 @@
  *
  * Puro y sin dependencias (no hay librería de fechas en el proyecto). Trabaja en
  * UTC sobre fechas-solo-día para no depender de zona horaria (Colombia es UTC-5
- * fijo, sin horario de verano). No requiere tabla en base: los festivos se
- * calculan; una tabla `Festivo` para casos excepcionales puede sumarse después.
+ * fijo, sin horario de verano). Los festivos de ley se calculan; los días
+ * compensados/cierres de la entidad y la jornada semanal se pasan como
+ * `CalendarioLaboral` (se cargan de base en src/lib/calendario-laboral.ts).
  */
+
+/**
+ * Ajustes de la entidad al calendario: días extra que NO se laboran (además de
+ * los festivos de ley) y qué días de la semana SÍ son laborables
+ * (getUTCDay: 0=domingo … 6=sábado; por defecto lunes a viernes).
+ */
+export type CalendarioLaboral = {
+  diasNoLaborables?: Set<string>; // YYYY-MM-DD adicionales
+  diasSemana?: number[]; // días de la semana laborables; vacío/ausente = [1..5]
+};
+
+const DIAS_SEMANA_DEFECTO = [1, 2, 3, 4, 5];
 
 function iso(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
@@ -89,8 +102,13 @@ export function esFestivo(fecha: Date): boolean {
   return festivosColombia(fecha.getUTCFullYear()).has(iso(fecha));
 }
 
-export function esDiaHabil(fecha: Date): boolean {
-  return !esFinDeSemana(fecha) && !esFestivo(fecha);
+/** Un día es hábil si: es un día laborable de la semana de la entidad, no es festivo de ley, y no es un día no laborado configurado. */
+export function esDiaHabil(fecha: Date, cal?: CalendarioLaboral): boolean {
+  const laborables = cal?.diasSemana?.length ? cal.diasSemana : DIAS_SEMANA_DEFECTO;
+  if (!laborables.includes(fecha.getUTCDay())) return false;
+  if (esFestivo(fecha)) return false;
+  if (cal?.diasNoLaborables?.has(iso(fecha))) return false;
+  return true;
 }
 
 /**
@@ -98,25 +116,25 @@ export function esDiaHabil(fecha: Date): boolean {
  * El día de partida no cuenta; se avanza hasta acumular `n` días hábiles. Devuelve
  * una fecha-solo-día en UTC.
  */
-export function sumarDiasHabiles(desde: Date, n: number): Date {
+export function sumarDiasHabiles(desde: Date, n: number, cal?: CalendarioLaboral): Date {
   let cursor = fechaUTC(desde.getUTCFullYear(), desde.getUTCMonth(), desde.getUTCDate());
   let restantes = n;
   while (restantes > 0) {
     cursor = sumarDias(cursor, 1);
-    if (esDiaHabil(cursor)) restantes--;
+    if (esDiaHabil(cursor, cal)) restantes--;
   }
   return cursor;
 }
 
 /** Días hábiles entre dos fechas (excluye la de inicio, incluye la final si es hábil). */
-export function diasHabilesEntre(inicio: Date, fin: Date): number {
+export function diasHabilesEntre(inicio: Date, fin: Date, cal?: CalendarioLaboral): number {
   if (fin <= inicio) return 0;
   let cursor = fechaUTC(inicio.getUTCFullYear(), inicio.getUTCMonth(), inicio.getUTCDate());
   const objetivo = iso(fechaUTC(fin.getUTCFullYear(), fin.getUTCMonth(), fin.getUTCDate()));
   let contador = 0;
   while (iso(cursor) !== objetivo) {
     cursor = sumarDias(cursor, 1);
-    if (esDiaHabil(cursor)) contador++;
+    if (esDiaHabil(cursor, cal)) contador++;
   }
   return contador;
 }

@@ -17,6 +17,16 @@ export function formatearFechaLarga(d: Date | string | null | undefined): string
   return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: ZONA_HORARIA });
 }
 
+/**
+ * Fecha-solo-día (columnas `@db.Date` o valores construidos como `YYYY-MM-DDT00:00:00Z`).
+ * Se formatea en UTC a propósito: no llevan hora, y pasarlas por la zona Colombia
+ * las correría al día anterior.
+ */
+export function formatearFechaSolo(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
 export function formatearFechaHora(d: Date | string | null | undefined): string {
   if (!d) return "—";
   return new Date(d).toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: ZONA_HORARIA });

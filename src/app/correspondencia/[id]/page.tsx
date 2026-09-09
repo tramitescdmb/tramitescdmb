@@ -18,6 +18,7 @@ import { listarSeriesVigentes } from "@/lib/trd";
 import { listarPlantillas } from "@/lib/plantillas";
 import { listarTerminos } from "@/lib/vocabulario";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
@@ -195,7 +196,7 @@ export default async function CorrespondenciaDetallePage({
   })();
 
   const tieneTercero = c.tipo !== "INTERNA";
-  const vencimiento = estadoVencimiento(c.fechaVencimiento);
+  const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, await getCalendarioLaboral());
   const siguientePaso = proximoPaso(c, { puedeDistribuir: puedeDistribuirUsuario, puedeResponder, puedeRadicar: puedeRadicarUsuario });
 
   return (

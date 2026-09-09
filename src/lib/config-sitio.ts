@@ -22,6 +22,9 @@ const VACIA = {
   passwordVigenciaDias: null,
   passwordVigenciaMinimaDias: 0,
   extensionesPermitidas: ["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"],
+  jornadaDiasSemana: [1, 2, 3, 4, 5],
+  jornadaHoraInicio: "08:00",
+  jornadaHoraFin: "17:00",
 } as const;
 
 /**

@@ -1,5 +1,5 @@
 import type { TipoPQRSD } from "@prisma/client";
-import { sumarDiasHabiles, diasHabilesEntre } from "@/lib/dias-habiles";
+import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 
 /**
  * Términos de ley por tipo de PQRSD (Ley 1755/2015, que modificó el Título II
@@ -28,8 +28,8 @@ export const ETIQUETA_TIPO_PQRSD: Record<TipoPQRSD, string> = {
   DENUNCIA: "Denuncia",
 };
 
-export function calcularVencimiento(fechaRadicacion: Date, tipo: TipoPQRSD): Date {
-  return sumarDiasHabiles(fechaRadicacion, TERMINO_DIAS_HABILES[tipo]);
+export function calcularVencimiento(fechaRadicacion: Date, tipo: TipoPQRSD, cal?: CalendarioLaboral): Date {
+  return sumarDiasHabiles(fechaRadicacion, TERMINO_DIAS_HABILES[tipo], cal);
 }
 
 /**
@@ -43,20 +43,25 @@ export function calcularVencimientoTrasReactivar(
   fechaRadicacion: Date,
   fechaSuspension: Date,
   ahora: Date,
-  terminoDiasHabiles: number
+  terminoDiasHabiles: number,
+  cal?: CalendarioLaboral
 ): Date {
-  const transcurridos = diasHabilesEntre(fechaRadicacion, fechaSuspension);
+  const transcurridos = diasHabilesEntre(fechaRadicacion, fechaSuspension, cal);
   const restantes = Math.max(1, terminoDiasHabiles - transcurridos);
-  return sumarDiasHabiles(ahora, restantes);
+  return sumarDiasHabiles(ahora, restantes, cal);
 }
 
 export type EstadoVencimiento = { texto: string; clase: string };
 
 /** Etiqueta + color para bandeja/detalle según días hábiles restantes hasta el vencimiento. */
-export function estadoVencimiento(fechaVencimiento: Date | null, ahora: Date = new Date()): EstadoVencimiento | null {
+export function estadoVencimiento(
+  fechaVencimiento: Date | null,
+  ahora: Date = new Date(),
+  cal?: CalendarioLaboral
+): EstadoVencimiento | null {
   if (!fechaVencimiento) return null;
   if (fechaVencimiento.getTime() < ahora.getTime()) return { texto: "Vencido", clase: "bg-red-50 text-red-700" };
-  const dias = diasHabilesEntre(ahora, fechaVencimiento);
+  const dias = diasHabilesEntre(ahora, fechaVencimiento, cal);
   if (dias <= 3) return { texto: `Vence en ${dias} d.h.`, clase: "bg-amber-50 text-amber-700" };
   return { texto: `${dias} d.h. restantes`, clase: "bg-stone-100 text-stone-600" };
 }

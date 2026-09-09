@@ -3,6 +3,7 @@ import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante,
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { validarPalabrasClave } from "@/lib/vocabulario";
 
@@ -80,6 +81,9 @@ async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: Entr
 }
 
 export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
+  // El calendario laboral (días compensados + jornada semanal de la entidad) se
+  // carga FUERA de la transacción — es solo lectura y no debe alargar el lock.
+  const calendario = entrada.tipoPqrsd ? await getCalendarioLaboral() : undefined;
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("RECIBIDA", new Date().getFullYear(), tx);
     const ident = entrada.tercero.identificacion?.trim() || null;
@@ -87,7 +91,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
     const terceroId = await resolverOCrearTercero(tx, entrada.tercero);
     const fechaRadicacion = new Date();
     const terminoDiasHabiles = entrada.tipoPqrsd ? TERMINO_DIAS_HABILES[entrada.tipoPqrsd] : null;
-    const fechaVencimiento = entrada.tipoPqrsd ? calcularVencimiento(fechaRadicacion, entrada.tipoPqrsd) : null;
+    const fechaVencimiento = entrada.tipoPqrsd ? calcularVencimiento(fechaRadicacion, entrada.tipoPqrsd, calendario) : null;
 
     const comunicacion = await tx.comunicacion.create({
       data: {
@@ -438,7 +442,8 @@ export async function reactivarTermino(comunicacionId: string) {
   if (c.estado !== "INFORMACION_ADICIONAL_REQUERIDA" || !c.fechaSuspensionTermino || !c.terminoDiasHabiles) {
     throw new Error("Esta comunicación no tiene un término suspendido.");
   }
-  const fechaVencimiento = calcularVencimientoTrasReactivar(c.fechaRadicacion, c.fechaSuspensionTermino, new Date(), c.terminoDiasHabiles);
+  const calendario = await getCalendarioLaboral();
+  const fechaVencimiento = calcularVencimientoTrasReactivar(c.fechaRadicacion, c.fechaSuspensionTermino, new Date(), c.terminoDiasHabiles, calendario);
   return db.comunicacion.update({
     where: { id: comunicacionId },
     data: { estado: "EN_TRAMITE", fechaSuspensionTermino: null, fechaVencimiento },

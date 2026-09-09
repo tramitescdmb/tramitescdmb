@@ -74,3 +74,28 @@ describe("diasHabilesEntre", () => {
     expect(diasHabilesEntre(d("2025-02-03"), fin)).toBe(15);
   });
 });
+
+describe("CalendarioLaboral (jornada + días no laborados de la entidad)", () => {
+  it("un día compensado de la entidad no cuenta como hábil", () => {
+    const cal = { diasNoLaborables: new Set(["2025-01-15"]) };
+    expect(esDiaHabil(d("2025-01-15"))).toBe(true); // miércoles normal
+    expect(esDiaHabil(d("2025-01-15"), cal)).toBe(false);
+  });
+
+  it("sumarDiasHabiles salta el día compensado", () => {
+    const cal = { diasNoLaborables: new Set(["2025-01-15"]) };
+    // martes 14 + 1 hábil = jueves 16 (miércoles 15 está compensado)
+    expect(sumarDiasHabiles(d("2025-01-14"), 1, cal).toISOString().slice(0, 10)).toBe("2025-01-16");
+  });
+
+  it("si la entidad labora sábados, el sábado cuenta como hábil", () => {
+    const cal = { diasSemana: [1, 2, 3, 4, 5, 6] };
+    expect(esDiaHabil(d("2025-01-04"))).toBe(false); // sábado, jornada por defecto
+    expect(esDiaHabil(d("2025-01-04"), cal)).toBe(true);
+  });
+
+  it("si la entidad no labora viernes, el viernes no es hábil", () => {
+    const cal = { diasSemana: [1, 2, 3, 4] };
+    expect(esDiaHabil(d("2025-01-03"), cal)).toBe(false); // viernes
+  });
+});

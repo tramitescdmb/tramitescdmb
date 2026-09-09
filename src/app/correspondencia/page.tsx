@@ -6,6 +6,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } fro
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { SectionHelp } from "@/components/Field";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
@@ -41,10 +42,11 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, calendario] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(),
     contarComunicacionesVencidas(),
+    getCalendarioLaboral(),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || rango);
@@ -230,7 +232,7 @@ export default async function CorrespondenciaBandejaPage({
               tercero: c.tipo === "INTERNA" ? [c.dependenciaOrigen?.nombre, c.dependenciaDestino?.nombre].filter(Boolean).join(" → ") : c.terceroNombre,
               asunto: c.asunto,
               estado: c.estado,
-              vencimiento: estadoVencimiento(c.fechaVencimiento),
+              vencimiento: estadoVencimiento(c.fechaVencimiento, undefined, calendario),
               docs: c._count.documentos,
               documentosCoincidentes: c.documentos.map((d) => d.nombre),
             }))}

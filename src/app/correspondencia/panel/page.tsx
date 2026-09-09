@@ -8,6 +8,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { obtenerPanelCorrespondencia, ETIQUETA_ESTADO_PANEL } from "@/lib/correspondencia-panel";
 import { estadoVencimiento } from "@/lib/pqrsd";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { SectionHelp } from "@/components/Field";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { BarrasPorTipo } from "@/components/charts/BarrasPorTipo";
@@ -49,7 +50,10 @@ export default async function PanelCorrespondenciaPage() {
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/");
 
-  const p = await obtenerPanelCorrespondencia(session.userId, permisos);
+  const [p, calendario] = await Promise.all([
+    obtenerPanelCorrespondencia(session.userId, permisos),
+    getCalendarioLaboral(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -81,7 +85,7 @@ export default async function PanelCorrespondenciaPage() {
               </thead>
               <tbody>
                 {p.mis.lista.map((c) => {
-                  const v = estadoVencimiento(c.fechaVencimiento);
+                  const v = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
                   return (
                     <tr key={c.id} className="border-b border-stone-100 last:border-0">
                       <td className="px-3 py-2">

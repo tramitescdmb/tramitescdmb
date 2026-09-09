@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Palette,
   Lock,
+  CalendarOff,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGD
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
   { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
+  { href: "/admin/calendario-laboral", label: "Calendario laboral", icon: CalendarOff },
   { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
   { href: "/admin/seguridad", label: "Seguridad", icon: Lock },
 ];
