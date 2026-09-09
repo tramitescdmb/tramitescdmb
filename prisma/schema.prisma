@@ -54,6 +54,10 @@ model ConfiguracionSitio {
   jornadaDiasSemana Int[]  @default([1, 2, 3, 4, 5])
   jornadaHoraInicio String @default("08:00")
   jornadaHoraFin    String @default("17:00")
+  // Jornada partida (ej. 8–12 y 2–6): si estos dos están puestos, `jornadaHoraInicio`/
+  // `jornadaHoraFin` son el bloque de la mañana y estos el de la tarde. null = jornada continua.
+  jornadaHoraInicioTarde String?
+  jornadaHoraFinTarde    String?
 
   updatedAt DateTime @updatedAt
 }
@@ -1525,6 +1529,9 @@ model InstanciaFlujo {
   comunicacionId String
   estado         EstadoInstanciaFlujo @default(EN_CURSO)
   pasoActualId   String?
+  // Cuándo se entró al paso actual — base para el vencimiento del término sugerido
+  // (slaDiasHabiles) del paso. Se actualiza en cada avance.
+  pasoActualDesde DateTime?
   iniciadoPorId  String?
   iniciadoEn     DateTime             @default(now())
   finalizadoEn   DateTime?

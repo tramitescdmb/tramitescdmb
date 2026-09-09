@@ -2,6 +2,7 @@ import type { AsignacionPaso, TipoComunicacion, TipoPasoFlujo } from "@prisma/cl
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
+import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { puedeAdministrarArchivo, puedeDistribuir } from "@/lib/permisos";
 
@@ -278,35 +279,46 @@ export async function flujosAplicables(tipo: TipoComunicacion) {
 }
 
 export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
-  return db.instanciaFlujo.findMany({
-    where: { comunicacionId },
-    orderBy: { iniciadoEn: "desc" },
-    include: {
-      flujo: {
-        select: {
-          nombre: true,
-          pasos: {
-            orderBy: { orden: "asc" },
-            select: {
-              id: true,
-              orden: true,
-              nombre: true,
-              tipo: true,
-              transiciones: { select: { desdePasoId: true, haciaPasoId: true, etiqueta: true } },
+  const [comunicacion, instancias] = await Promise.all([
+    db.comunicacion.findUnique({
+      where: { id: comunicacionId },
+      select: {
+        dependenciaDestino: { select: { nombre: true } },
+        dependenciaOrigen: { select: { nombre: true } },
+        radicadoPor: { select: { nombre: true } },
+      },
+    }),
+    db.instanciaFlujo.findMany({
+      where: { comunicacionId },
+      orderBy: { iniciadoEn: "desc" },
+      include: {
+        flujo: {
+          select: {
+            nombre: true,
+            pasos: {
+              orderBy: { orden: "asc" },
+              select: {
+                id: true,
+                orden: true,
+                nombre: true,
+                tipo: true,
+                transiciones: { select: { desdePasoId: true, haciaPasoId: true, etiqueta: true } },
+              },
             },
           },
         },
+        iniciadoPor: { select: { nombre: true } },
+        pasoActual: {
+          include: { transiciones: { orderBy: { orden: "asc" } }, dependencia: { select: { nombre: true } } },
+        },
+        ejecuciones: {
+          orderBy: { completadoEn: "asc" },
+          include: { paso: { select: { id: true, nombre: true, tipo: true } }, responsable: { select: { nombre: true } } },
+        },
       },
-      iniciadoPor: { select: { nombre: true } },
-      pasoActual: {
-        include: { transiciones: { orderBy: { orden: "asc" } } },
-      },
-      ejecuciones: {
-        orderBy: { completadoEn: "asc" },
-        include: { paso: { select: { id: true, nombre: true, tipo: true } }, responsable: { select: { nombre: true } } },
-      },
-    },
-  });
+    }),
+  ]);
+  return { comunicacion, instancias };
 }
 
 export async function iniciarInstancia(comunicacionId: string, flujoId: string, usuarioId: string, ip?: string | null) {
@@ -329,6 +341,7 @@ export async function iniciarInstancia(comunicacionId: string, flujoId: string, 
       comunicacionId,
       iniciadoPorId: usuarioId,
       pasoActualId: pasoInicial.id,
+      pasoActualDesde: new Date(),
       estado: pasoInicial.tipo === "FIN" ? "COMPLETADO" : "EN_CURSO",
       finalizadoEn: pasoInicial.tipo === "FIN" ? new Date() : null,
     },
@@ -383,6 +396,7 @@ export async function avanzarInstancia(
       where: { id: instanciaId },
       data: {
         pasoActualId: destino.id,
+        pasoActualDesde: new Date(),
         estado: cierra ? "COMPLETADO" : "EN_CURSO",
         finalizadoEn: cierra ? new Date() : null,
       },
@@ -418,6 +432,66 @@ export async function cancelarInstancia(instanciaId: string, usuarioId: string, 
     ip,
     detalle: `Canceló el flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: ${motivo.trim()}`,
   });
+}
+
+/* ---------------------------------------------------------------- Término del paso */
+
+/** Fecha límite sugerida para el paso actual (según su `slaDiasHabiles` y el calendario). */
+export function limitePaso(desde: Date | null, slaDiasHabiles: number | null, cal: CalendarioLaboral): Date | null {
+  if (!desde || !slaDiasHabiles || slaDiasHabiles <= 0) return null;
+  return sumarDiasHabiles(desde, slaDiasHabiles, cal);
+}
+
+/** Estado del término del paso actual — null si el paso no tiene `slaDiasHabiles`. */
+export function estadoTerminoPaso(
+  desde: Date | null,
+  slaDiasHabiles: number | null,
+  cal: CalendarioLaboral,
+  ahora = new Date(),
+): { limite: Date; vencido: boolean; diasHabiles: number } | null {
+  const limite = limitePaso(desde, slaDiasHabiles, cal);
+  if (!limite) return null;
+  const vencido = limite.getTime() < ahora.getTime();
+  const diasHabiles = diasHabilesEntre(vencido ? limite : ahora, vencido ? ahora : limite, cal);
+  return { limite, vencido, diasHabiles };
+}
+
+/** Texto legible de a quién le corresponde un paso (para el detalle de la instancia). */
+export function describirResponsablePaso(
+  paso: { asignacion: AsignacionPaso; dependencia?: { nombre: string } | null; cargoClave?: string | null },
+  comunicacion: {
+    dependenciaDestino?: { nombre: string } | null;
+    dependenciaOrigen?: { nombre: string } | null;
+    radicadoPor?: { nombre: string } | null;
+  },
+): string {
+  switch (paso.asignacion) {
+    case "DEPENDENCIA_COMUNICACION":
+      return (comunicacion.dependenciaDestino ?? comunicacion.dependenciaOrigen)?.nombre ?? "Dependencia de la comunicación (sin asignar)";
+    case "DEPENDENCIA_FIJA":
+      return paso.dependencia?.nombre ?? "Dependencia fija (sin definir)";
+    case "CARGO":
+      return paso.cargoClave ? `Cargo: ${paso.cargoClave}` : "Un cargo (sin definir)";
+    case "RADICADOR":
+      return comunicacion.radicadoPor?.nombre ?? "Quien radicó";
+    case "RESPONSABLE_PASO_ANTERIOR":
+      return "Responsable del paso anterior";
+    case "MANUAL":
+      return "Se asigna a mano";
+  }
+}
+
+/** Cuántos flujos en curso tienen el término de su paso actual vencido. */
+export async function contarPasosFlujoVencidos(cal: CalendarioLaboral): Promise<number> {
+  const enCurso = await db.instanciaFlujo.findMany({
+    where: { estado: "EN_CURSO", pasoActualDesde: { not: null } },
+    select: { pasoActualDesde: true, pasoActual: { select: { slaDiasHabiles: true } } },
+  });
+  const ahora = new Date();
+  return enCurso.filter((i) => {
+    const e = estadoTerminoPaso(i.pasoActualDesde, i.pasoActual?.slaDiasHabiles ?? null, cal, ahora);
+    return e?.vencido ?? false;
+  }).length;
 }
 
 /* ---------------------------------------------------------------- Permisos */

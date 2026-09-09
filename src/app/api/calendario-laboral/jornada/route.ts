@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
       diasSemana,
       horaInicio: String(form.get("horaInicio") || ""),
       horaFin: String(form.get("horaFin") || ""),
+      horaInicioTarde: String(form.get("horaInicioTarde") || ""),
+      horaFinTarde: String(form.get("horaFinTarde") || ""),
     });
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo guardar la jornada.");

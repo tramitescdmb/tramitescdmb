@@ -2,6 +2,8 @@ import type { EstadoComunicacion, TipoComunicacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
+import { contarPasosFlujoVencidos } from "@/lib/flujos";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 
 const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -48,7 +50,7 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
   const ahora = new Date();
   const en3DiasHabiles = new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  const [misDistribuciones, pendientesProcesoRecibidas, vencidasGlobal, porVencerGlobal] = await Promise.all([
+  const [misDistribuciones, pendientesProcesoRecibidas, vencidasGlobal, porVencerGlobal, flujosPasoVencido] = await Promise.all([
     db.distribucion.findMany({
       where: { usuarioId: userId, comunicacion: { estado: { in: ESTADOS_ACTIVOS } } },
       select: {
@@ -64,6 +66,7 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
     }),
     db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { lt: ahora } } }),
     db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { gte: ahora, lt: en3DiasHabiles } } }),
+    getCalendarioLaboral().then((cal) => contarPasosFlujoVencidos(cal)),
   ]);
 
   const vistas = new Set<string>();
@@ -96,6 +99,8 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
     global: { vencidas: vencidasGlobal, porVencer: porVencerGlobal },
     /** Recibidas radicadas que nadie ha distribuido todavía (proceso detenido de entrada). */
     pendientesProceso: pendientesProcesoRecibidas,
+    /** Flujos de trabajo en curso con el término de su paso actual vencido. */
+    flujosPasoVencido,
   };
 }
 

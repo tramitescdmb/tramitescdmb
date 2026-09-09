@@ -3,7 +3,7 @@ import { CalendarOff, CalendarDays, Plus, Trash2 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { listarDiasNoLaborados, ETIQUETA_DIA_SEMANA, ORDEN_DIAS_SEMANA } from "@/lib/calendario-laboral";
-import { festivosColombia } from "@/lib/dias-habiles";
+import { festivosColombia, horasDeJornada } from "@/lib/dias-habiles";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { formatearFechaSolo } from "@/lib/fecha";
@@ -19,6 +19,13 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
   const sp = await searchParams;
   const [config, dias] = await Promise.all([getConfiguracionSitio(), listarDiasNoLaborados()]);
   const jornada = new Set(config.jornadaDiasSemana);
+  const partida = Boolean(config.jornadaHoraInicioTarde && config.jornadaHoraFinTarde);
+  const horasDia = horasDeJornada({
+    inicio: config.jornadaHoraInicio,
+    fin: config.jornadaHoraFin,
+    inicioTarde: config.jornadaHoraInicioTarde,
+    finTarde: config.jornadaHoraFinTarde,
+  });
 
   const anio = new Date().getFullYear();
   const festivosEsteAnio = [...festivosColombia(anio)].sort();
@@ -44,8 +51,9 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
           <CalendarDays className="h-4 w-4 text-cdmb-600" aria-hidden /> Jornada laboral
         </h3>
         <SectionHelp>
-          Los <strong>días de la semana</strong> marcados cuentan como hábiles para los términos. El horario
-          se usa para las métricas de tiempo (todavía no afina el cálculo por horas — eso es un paso futuro).
+          Los <strong>días de la semana</strong> marcados cuentan como hábiles para los términos. Si la
+          jornada es <strong>partida</strong> (ej. 8–12 y 2–6), llene también el bloque de la tarde; déjelo
+          vacío si es continua. El horario alimenta las métricas de tiempo del SGDEA.
         </SectionHelp>
         <form action="/api/calendario-laboral/jornada" method="post" className="mt-3 space-y-4">
           <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -56,14 +64,29 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
               </label>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:max-w-xs">
-            <Field label="Hora de inicio">
+          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-[auto_1fr_1fr] sm:items-end">
+            <span className="text-xs font-medium text-stone-500 sm:pb-2">Mañana</span>
+            <Field label="Inicio">
               <input type="time" name="horaInicio" defaultValue={config.jornadaHoraInicio} required className={inputCls} />
             </Field>
-            <Field label="Hora de fin">
+            <Field label="Fin">
               <input type="time" name="horaFin" defaultValue={config.jornadaHoraFin} required className={inputCls} />
             </Field>
+            <span className="text-xs font-medium text-stone-500 sm:pb-2">Tarde <span className="font-normal text-stone-400">(opcional)</span></span>
+            <Field label="Inicio">
+              <input type="time" name="horaInicioTarde" defaultValue={config.jornadaHoraInicioTarde ?? ""} className={inputCls} />
+            </Field>
+            <Field label="Fin">
+              <input type="time" name="horaFinTarde" defaultValue={config.jornadaHoraFinTarde ?? ""} className={inputCls} />
+            </Field>
           </div>
+          <p className="text-xs text-stone-500">
+            Jornada actual: <strong className="text-stone-700">{jornada.size} días/semana</strong>
+            {partida
+              ? ` · partida (${config.jornadaHoraInicio}–${config.jornadaHoraFin} y ${config.jornadaHoraInicioTarde}–${config.jornadaHoraFinTarde})`
+              : ` · continua (${config.jornadaHoraInicio}–${config.jornadaHoraFin})`}
+            {horasDia > 0 && ` · ${horasDia.toLocaleString("es-CO")} h/día`}
+          </p>
           <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar jornada</button>
         </form>
       </section>

@@ -6,9 +6,30 @@ import {
   esFinDeSemana,
   sumarDiasHabiles,
   diasHabilesEntre,
+  horasDeJornada,
 } from "./dias-habiles";
 
 const d = (s: string) => new Date(`${s}T00:00:00.000Z`);
+
+describe("horasDeJornada", () => {
+  it("jornada continua: fin menos inicio", () => {
+    expect(horasDeJornada({ inicio: "08:00", fin: "17:00" })).toBe(9);
+    expect(horasDeJornada({ inicio: "07:30", fin: "16:00" })).toBe(8.5);
+  });
+
+  it("jornada partida: suma mañana y tarde (8–12 y 2–6 = 8 h)", () => {
+    expect(horasDeJornada({ inicio: "08:00", fin: "12:00", inicioTarde: "14:00", finTarde: "18:00" })).toBe(8);
+  });
+
+  it("ignora un bloque de tarde incompleto o inválido", () => {
+    expect(horasDeJornada({ inicio: "08:00", fin: "12:00", inicioTarde: "14:00" })).toBe(4);
+    expect(horasDeJornada({ inicio: "08:00", fin: "12:00", inicioTarde: "18:00", finTarde: "14:00" })).toBe(4);
+  });
+
+  it("horas mal formadas devuelven 0 para ese bloque", () => {
+    expect(horasDeJornada({ inicio: "xx", fin: "17:00" })).toBe(0);
+  });
+});
 
 describe("festivosColombia", () => {
   it("incluye los festivos fijos de 2025", () => {

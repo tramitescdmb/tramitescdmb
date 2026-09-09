@@ -1,15 +1,23 @@
-import { Workflow, CheckCircle2, XCircle, ArrowRight, CircleDot } from "lucide-react";
+import { Workflow, CheckCircle2, XCircle, ArrowRight, CircleDot, Clock, AlertTriangle, User } from "lucide-react";
 import type { TipoComunicacion } from "@prisma/client";
-import { flujosAplicables, obtenerInstanciasDeComunicacion, ETIQUETA_TIPO_PASO } from "@/lib/flujos";
+import {
+  flujosAplicables,
+  obtenerInstanciasDeComunicacion,
+  estadoTerminoPaso,
+  describirResponsablePaso,
+  ETIQUETA_TIPO_PASO,
+} from "@/lib/flujos";
 import { flujoAMermaid } from "@/lib/flujos-diagrama";
 import { Flujograma } from "@/components/Flujograma";
-import { formatearFechaHora } from "@/lib/fecha";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
+import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
 
 /**
  * Flujo de trabajo de una comunicación (MoReq cap. 7). Muestra la instancia en
- * curso con su paso actual y las opciones para avanzar, el historial de pasos
- * completados, y — si no hay ninguno en curso — el selector para aplicar un
- * flujo activo. Server component; las acciones van por /api/correspondencia/[id]/flujo.
+ * curso con su paso actual (responsable resuelto + término del paso), las
+ * opciones para avanzar, el historial de pasos completados, y — si no hay
+ * ninguno en curso — el selector para aplicar un flujo activo. Server component;
+ * las acciones van por /api/correspondencia/[id]/flujo.
  */
 export async function FlujoTrabajoComunicacion({
   comunicacionId,
@@ -22,13 +30,21 @@ export async function FlujoTrabajoComunicacion({
   estado: string;
   puedeOperar: boolean;
 }) {
-  const [instancias, aplicables] = await Promise.all([
+  const [{ comunicacion, instancias }, aplicables, calendario] = await Promise.all([
     obtenerInstanciasDeComunicacion(comunicacionId),
     puedeOperar && estado !== "ANULADA" ? flujosAplicables(tipo) : Promise.resolve([]),
+    getCalendarioLaboral(),
   ]);
   const enCurso = instancias.find((i) => i.estado === "EN_CURSO");
   const historial = instancias.filter((i) => i !== enCurso);
   const accion = `/api/correspondencia/${comunicacionId}/flujo`;
+
+  const termino =
+    enCurso?.pasoActual && comunicacion
+      ? estadoTerminoPaso(enCurso.pasoActualDesde, enCurso.pasoActual.slaDiasHabiles, calendario)
+      : null;
+  const responsable =
+    enCurso?.pasoActual && comunicacion ? describirResponsablePaso(enCurso.pasoActual, comunicacion) : null;
 
   return (
     <section id="flujo" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4">
@@ -54,35 +70,55 @@ export async function FlujoTrabajoComunicacion({
             )}
           />
 
-          {/* Línea de tiempo */}
-          <ol className="space-y-1.5">
-            {enCurso.ejecuciones.map((e) => (
-              <li key={e.id} className="flex items-start gap-2 text-xs">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-600" aria-hidden />
-                <span>
-                  <strong className="text-stone-700">{e.paso.nombre}</strong>
-                  {e.resultado ? <> → <span className="text-cdmb-700">{e.resultado}</span></> : null} ·{" "}
-                  {e.responsable?.nombre ?? "—"} · {formatearFechaHora(e.completadoEn)}
-                  {e.comentario ? <span className="block text-stone-400">{e.comentario}</span> : null}
+          {/* Estado del paso actual */}
+          {enCurso.pasoActual && (
+            <div className="rounded-md border border-stone-200 bg-stone-50/70 px-3 py-2 text-xs">
+              <p className="flex flex-wrap items-center gap-1.5">
+                <CircleDot className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
+                <strong className="text-stone-900">{enCurso.pasoActual.nombre}</strong>
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">
+                  {ETIQUETA_TIPO_PASO[enCurso.pasoActual.tipo]}
                 </span>
-              </li>
-            ))}
-            {enCurso.pasoActual && (
-              <li className="flex items-start gap-2 text-xs">
-                <CircleDot className="mt-0.5 h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
-                <span>
-                  <strong className="text-stone-900">{enCurso.pasoActual.nombre}</strong>{" "}
-                  <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">
-                    {ETIQUETA_TIPO_PASO[enCurso.pasoActual.tipo]}
-                  </span>
-                  <span className="block text-stone-400">Paso actual — pendiente</span>
-                </span>
-              </li>
-            )}
-          </ol>
+              </p>
+              {responsable && (
+                <p className="mt-1 flex items-center gap-1.5 text-stone-500">
+                  <User className="h-3 w-3 flex-none" aria-hidden /> Responsable: {responsable}
+                </p>
+              )}
+              {termino && (
+                <p
+                  className={`mt-1 flex items-center gap-1.5 font-medium ${
+                    termino.vencido ? "text-red-600" : termino.diasHabiles <= 1 ? "text-amber-600" : "text-stone-500"
+                  }`}
+                >
+                  {termino.vencido ? <AlertTriangle className="h-3 w-3 flex-none" aria-hidden /> : <Clock className="h-3 w-3 flex-none" aria-hidden />}
+                  {termino.vencido
+                    ? `Término vencido hace ${termino.diasHabiles} día${termino.diasHabiles === 1 ? "" : "s"} hábil${termino.diasHabiles === 1 ? "" : "es"} (era el ${formatearFecha(termino.limite)})`
+                    : `Vence el ${formatearFecha(termino.limite)} (${termino.diasHabiles} día${termino.diasHabiles === 1 ? "" : "s"} hábil${termino.diasHabiles === 1 ? "" : "es"})`}
+                </p>
+              )}
+            </div>
+          )}
 
           {enCurso.pasoActual?.instrucciones && (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">{enCurso.pasoActual.instrucciones}</p>
+          )}
+
+          {/* Línea de tiempo */}
+          {enCurso.ejecuciones.length > 0 && (
+            <ol className="space-y-1.5 border-t border-stone-100 pt-3">
+              {enCurso.ejecuciones.map((e) => (
+                <li key={e.id} className="flex items-start gap-2 text-xs">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-600" aria-hidden />
+                  <span>
+                    <strong className="text-stone-700">{e.paso.nombre}</strong>
+                    {e.resultado ? <> → <span className="text-cdmb-700">{e.resultado}</span></> : null} ·{" "}
+                    {e.responsable?.nombre ?? "—"} · {formatearFechaHora(e.completadoEn)}
+                    {e.comentario ? <span className="block text-stone-400">{e.comentario}</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ol>
           )}
 
           {puedeOperar && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (

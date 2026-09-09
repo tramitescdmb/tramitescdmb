@@ -25,6 +25,8 @@ const VACIA = {
   jornadaDiasSemana: [1, 2, 3, 4, 5],
   jornadaHoraInicio: "08:00",
   jornadaHoraFin: "17:00",
+  jornadaHoraInicioTarde: null,
+  jornadaHoraFinTarde: null,
 } as const;
 
 /**

@@ -21,6 +21,34 @@ export type CalendarioLaboral = {
 
 const DIAS_SEMANA_DEFECTO = [1, 2, 3, 4, 5];
 
+/** Minutos desde medianoche de una hora "HH:MM". Devuelve NaN si no es válida. */
+function minutosDeHora(h: string): number {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(h);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+}
+
+/**
+ * Horas de trabajo de un día según la jornada: bloque de la mañana
+ * (`inicio`→`fin`) más el de la tarde (`inicioTarde`→`finTarde`) si la jornada es
+ * partida. Devuelve 0 si las horas no son válidas.
+ */
+export function horasDeJornada(j: {
+  inicio: string;
+  fin: string;
+  inicioTarde?: string | null;
+  finTarde?: string | null;
+}): number {
+  const a = minutosDeHora(j.inicio);
+  const b = minutosDeHora(j.fin);
+  let total = Number.isNaN(a) || Number.isNaN(b) || b <= a ? 0 : b - a;
+  if (j.inicioTarde && j.finTarde) {
+    const c = minutosDeHora(j.inicioTarde);
+    const d = minutosDeHora(j.finTarde);
+    if (!Number.isNaN(c) && !Number.isNaN(d) && d > c) total += d - c;
+  }
+  return Math.round((total / 60) * 100) / 100;
+}
+
 function iso(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
 }

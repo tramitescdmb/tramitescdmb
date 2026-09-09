@@ -96,6 +96,17 @@ export default async function PanelMiTrabajoPage() {
         </div>
       )}
 
+      {p.flujosPasoVencido > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            {p.flujosPasoVencido === 1
+              ? "1 flujo de trabajo tiene el término de su paso actual vencido."
+              : `${p.flujosPasoVencido} flujos de trabajo tienen el término de su paso actual vencido.`}
+          </span>
+        </div>
+      )}
+
       {(p.global.vencidas > 0 || p.global.porVencer > 0) && (
         <p className="text-xs text-stone-400">
           En toda la Corporación hay{" "}

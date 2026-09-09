@@ -57,13 +57,39 @@ export async function eliminarDiaNoLaborado(id: string) {
 
 const DIAS_SEMANA_VALIDOS = [0, 1, 2, 3, 4, 5, 6];
 
-export async function actualizarJornada(datos: { diasSemana: number[]; horaInicio: string; horaFin: string }) {
+export async function actualizarJornada(datos: {
+  diasSemana: number[];
+  horaInicio: string;
+  horaFin: string;
+  /** Jornada partida: bloque de la tarde. Vacío = jornada continua. */
+  horaInicioTarde?: string;
+  horaFinTarde?: string;
+}) {
   const dias = Array.from(new Set(datos.diasSemana)).filter((d) => DIAS_SEMANA_VALIDOS.includes(d)).sort();
   if (dias.length === 0) throw new Error("La jornada debe tener al menos un día laborable.");
   const hora = /^([01]\d|2[0-3]):[0-5]\d$/;
   if (!hora.test(datos.horaInicio) || !hora.test(datos.horaFin)) throw new Error("Las horas deben tener el formato HH:MM.");
   if (datos.horaInicio >= datos.horaFin) throw new Error("La hora de inicio debe ser anterior a la de fin.");
-  const campos = { jornadaDiasSemana: dias, jornadaHoraInicio: datos.horaInicio, jornadaHoraFin: datos.horaFin };
+
+  const it = datos.horaInicioTarde?.trim() || "";
+  const ft = datos.horaFinTarde?.trim() || "";
+  let inicioTarde: string | null = null;
+  let finTarde: string | null = null;
+  if (it || ft) {
+    if (!hora.test(it) || !hora.test(ft)) throw new Error("Las horas de la jornada de la tarde deben tener el formato HH:MM.");
+    if (it >= ft) throw new Error("En la jornada de la tarde, la hora de inicio debe ser anterior a la de fin.");
+    if (it < datos.horaFin) throw new Error("La jornada de la tarde debe empezar después de que termine la de la mañana.");
+    inicioTarde = it;
+    finTarde = ft;
+  }
+
+  const campos = {
+    jornadaDiasSemana: dias,
+    jornadaHoraInicio: datos.horaInicio,
+    jornadaHoraFin: datos.horaFin,
+    jornadaHoraInicioTarde: inicioTarde,
+    jornadaHoraFinTarde: finTarde,
+  };
   return db.configuracionSitio.upsert({
     where: { id: "singleton" },
     create: { id: "singleton", ...campos },
