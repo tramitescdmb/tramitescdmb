@@ -31,3 +31,6 @@ npm-debug.log*
 # PDF fuente del modelo MOREQ/TRD/CCD usados para la matriz de cumplimiento y el import de TRD
 # (30MB+, ya extraídos/procesados; no hace falta versionarlos)
 /Modelo/
+
+# Scripts temporales de pruebas de sesión (no versionar)
+_tmp-*
