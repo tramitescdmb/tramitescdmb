@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, FolderTree, Plus, Upload, Download } from "lucide-react";
+import { Building2, FolderTree, Plus, Upload, Download, ChevronRight, Tags } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
@@ -269,6 +269,23 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </details>
 
         <TrdSeriesExplorer grupos={agruparPorDependencia(series)} />
+      </section>
+
+      {/* Vocabulario controlado */}
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
+          <Tags className="h-4 w-4 text-cdmb-600" aria-hidden /> Vocabulario controlado
+        </h2>
+        <SectionHelp>
+          Lista normalizada de palabras clave con la que se etiquetan las comunicaciones (MoReq 1.17/5.5).
+        </SectionHelp>
+        <Link
+          href="/correspondencia/admin/vocabulario"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
+        >
+          Administrar vocabulario controlado
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </Link>
       </section>
     </div>
   );

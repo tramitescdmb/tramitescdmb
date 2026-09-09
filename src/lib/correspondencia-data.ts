@@ -77,6 +77,8 @@ function camposBusqueda(texto: string): Prisma.ComunicacionWhereInput[] {
     // El CONTENIDO real (MoReq 4.11): cuerpo firmado de una enviada/memorando y borrador de respuesta.
     { contenido: { contains: texto, mode: "insensitive" } },
     { respuestaTexto: { contains: texto, mode: "insensitive" } },
+    // Palabra clave del vocabulario controlado (MoReq 5.5) — coincidencia exacta del término.
+    { palabrasClave: { has: texto } },
   ];
 }
 
@@ -102,6 +104,7 @@ function clausulaExcluirBusqueda(texto: string): Prisma.ComunicacionWhereInput {
       noContieneOpcional("contenido", "insensitive"),
       noContieneOpcional("respuestaTexto", "insensitive"),
       { documentos: { none: { nombre: { contains: texto, mode: "insensitive" } } } },
+      { NOT: { palabrasClave: { has: texto } } },
     ],
   };
 }

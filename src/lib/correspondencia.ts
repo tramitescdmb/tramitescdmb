@@ -4,6 +4,7 @@ import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
+import { validarPalabrasClave } from "@/lib/vocabulario";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -293,6 +294,19 @@ export async function anularComunicacion(comunicacionId: string, motivo: string)
   if (c.estado === "ANULADA") throw new Error("Esta comunicación ya está anulada.");
   if (!motivo.trim()) throw new Error("Debe indicar el motivo de la anulación.");
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
+}
+
+/**
+ * Fija las palabras clave de una comunicación (MoReq 5.5). Cada palabra debe
+ * pertenecer al vocabulario controlado activo — las que no, se descartan y se
+ * informan.
+ */
+export async function etiquetarComunicacion(comunicacionId: string, propuestas: string[]) {
+  const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true } });
+  if (!c) throw new Error("La comunicación no existe.");
+  const { validas, rechazadas } = await validarPalabrasClave(propuestas);
+  await db.comunicacion.update({ where: { id: comunicacionId }, data: { palabrasClave: validas } });
+  return { validas, rechazadas };
 }
 
 /**

@@ -969,6 +969,18 @@ model PlantillaDocumento {
   updatedAt   DateTime        @updatedAt
 }
 
+// Vocabulario controlado (MoReq 1.17/5.5): lista normalizada de términos que un
+// administrador de archivo mantiene y con la que se etiquetan comunicaciones y
+// expedientes — la palabra clave que se guarda debe pertenecer a esta lista, no
+// es texto libre.
+model TerminoControlado {
+  id        String   @id @default(cuid())
+  termino   String   @unique
+  categoria String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
 enum AmbitoPlantilla {
   ENVIADA
   INTERNA
@@ -1066,6 +1078,10 @@ model Comunicacion {
   // subserie. La eliminación/selección exige un acta (ActaEliminacion); la
   // conservación total/microfilmación no destruyen nada en este sistema, solo
   // marcan fechaDisposicionFinal.
+  // Palabras clave del vocabulario controlado (MoReq 5.5) — cada valor debe existir
+  // como TerminoControlado activo al momento de guardarse (se valida en el dominio).
+  palabrasClave String[] @default([])
+
   transferidaCentralEn  DateTime?
   // MoReq 2.17: una transferencia al archivo central se "conserva" (no se puede
   // ejecutar disposición final sobre ella) hasta que el archivo central confirma
@@ -1255,6 +1271,9 @@ model ExpedienteDocumental {
   // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
   nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
   fundamentoNivelAcceso String?                @db.Text
+
+  // Palabras clave del vocabulario controlado (MoReq 5.5).
+  palabrasClave String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

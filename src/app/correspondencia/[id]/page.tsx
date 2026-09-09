@@ -16,6 +16,7 @@ import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { listarPlantillas } from "@/lib/plantillas";
+import { listarTerminos } from "@/lib/vocabulario";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
@@ -162,6 +163,7 @@ export default async function CorrespondenciaDetallePage({
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
   const plantillasRespuesta = puedeResponder ? await listarPlantillas("RESPUESTA") : [];
+  const terminosVocabulario = puedeDistribuirUsuario && c.estado !== "ANULADA" ? await listarTerminos() : [];
   const [dependencias, usuarios] = puedeDistribuirUsuario
     ? await Promise.all([
         listarDependenciasActivas(),
@@ -273,6 +275,13 @@ export default async function CorrespondenciaDetallePage({
         )}
         <p className="mt-3 text-sm text-stone-700">{c.asunto}</p>
         {c.contenido && <p className="mt-2 whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-sm text-stone-700">{c.contenido}</p>}
+        {c.palabrasClave.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {c.palabrasClave.map((p) => (
+              <span key={p} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">{p}</span>
+            ))}
+          </div>
+        )}
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="Fecha de radicación" v={fechaHora(c.fechaRadicacion)} />
           <Campo k="Medio" v={c.medio} />
@@ -632,6 +641,34 @@ export default async function CorrespondenciaDetallePage({
               Reclasificar
             </button>
           </form>
+        </Tarjeta>
+      )}
+
+      {puedeDistribuirUsuario && c.estado !== "ANULADA" && (
+        <Tarjeta titulo="Palabras clave (vocabulario controlado)">
+          <SectionHelp>
+            Etiquetas descriptivas para encontrar esta comunicación por tema (MoReq 5.5). Solo se pueden usar
+            términos del <strong>vocabulario controlado</strong>, que administra el archivo. Guardar reemplaza la
+            selección completa.
+          </SectionHelp>
+          {terminosVocabulario.length === 0 ? (
+            <p className="text-sm text-stone-400">El vocabulario controlado está vacío — pídale a un administrador de archivo que agregue términos.</p>
+          ) : (
+            <form action={`/api/correspondencia/${id}/palabras-clave`} method="post" className="space-y-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {terminosVocabulario.map((t) => (
+                  <label key={t.id} className="flex items-center gap-1.5 text-sm text-stone-700">
+                    <input type="checkbox" name="palabra" value={t.termino} defaultChecked={c.palabrasClave.includes(t.termino)} className="rounded border-stone-300" />
+                    {t.termino}
+                    {t.categoria && <span className="text-[11px] text-stone-400">({t.categoria})</span>}
+                  </label>
+                ))}
+              </div>
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                Guardar palabras clave
+              </button>
+            </form>
+          )}
         </Tarjeta>
       )}
 
