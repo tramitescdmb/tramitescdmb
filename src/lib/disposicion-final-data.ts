@@ -25,6 +25,7 @@ export async function getPendientesArchivisticos() {
 
   const pendientesTransferencia = [];
   const pendientesDisposicion = [];
+  const transferidasSinConfirmar = [];
 
   for (const c of comunicaciones) {
     if (!c.subserie) continue;
@@ -36,6 +37,13 @@ export async function getPendientesArchivisticos() {
     if (fase === "TRANSFERENCIA_PENDIENTE" && !c.transferidaCentralEn) {
       pendientesTransferencia.push({ ...c, fechaFinGestion });
     }
+    // MoReq 2.17: una transferencia registrada pero sin confirmar la recepción en
+    // archivo central se "conserva" — no avanza a disposición final hasta que un
+    // administrador confirme que el proceso concluyó.
+    if (c.transferidaCentralEn && !c.transferenciaConfirmadaEn) {
+      transferidasSinConfirmar.push({ ...c, fechaFinCentral });
+      continue;
+    }
     // Una disposición aplazada (MoReq 2.11) deja de aparecer como pendiente
     // mientras dure el aplazamiento, aunque ya haya cumplido su retención.
     if (fase === "DISPOSICION_PENDIENTE" && !(c.disposicionAplazadaHasta && c.disposicionAplazadaHasta > ahora)) {
@@ -43,7 +51,35 @@ export async function getPendientesArchivisticos() {
     }
   }
 
-  return { pendientesTransferencia, pendientesDisposicion };
+  return { pendientesTransferencia, pendientesDisposicion, transferidasSinConfirmar };
+}
+
+/**
+ * Estado de las transferencias al archivo central registradas (MoReq 2.16:
+ * "reporte del estado de la transferencia realizada"). Devuelve la lista
+ * completa con su fecha de transferencia y, si aplica, la de confirmación.
+ */
+export async function listarTransferenciasCentral() {
+  const filas = await db.comunicacion.findMany({
+    where: { transferidaCentralEn: { not: null } },
+    select: {
+      id: true,
+      radicado: true,
+      asunto: true,
+      transferidaCentralEn: true,
+      transferenciaConfirmadaEn: true,
+      transferenciaConfirmadaPor: { select: { nombre: true } },
+      serie: { select: { codigo: true } },
+      subserie: { select: { codigo: true } },
+    },
+    orderBy: { transferidaCentralEn: "desc" },
+  });
+  return {
+    filas,
+    total: filas.length,
+    confirmadas: filas.filter((f) => f.transferenciaConfirmadaEn).length,
+    sinConfirmar: filas.filter((f) => !f.transferenciaConfirmadaEn).length,
+  };
 }
 
 /** Disposiciones finales actualmente aplazadas (vigentes) — para que no queden invisibles del todo. */

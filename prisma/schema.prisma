@@ -135,6 +135,7 @@ model Usuario {
   dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")
   comunicacionesRadicadas         Comunicacion[]          @relation("ComunicacionRadicadaPor")
   comunicacionesRespondidas       Comunicacion[]          @relation("ComunicacionRespuestaPor")
+  transferenciasConfirmadas       Comunicacion[]          @relation("ComunicacionTransferenciaConfirmadaPor")
   comunicacionDocumentos          ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
   distribucionesRecibidas         Distribucion[]          @relation("DistribucionUsuario")
   expedientesDocumentalesCreados  ExpedienteDocumental[]  @relation("ExpedienteDocumentalCreadoPor")
@@ -1027,6 +1028,12 @@ model Comunicacion {
   // conservación total/microfilmación no destruyen nada en este sistema, solo
   // marcan fechaDisposicionFinal.
   transferidaCentralEn  DateTime?
+  // MoReq 2.17: una transferencia al archivo central se "conserva" (no se puede
+  // ejecutar disposición final sobre ella) hasta que el archivo central confirma
+  // que recibió el documento y el proceso concluyó. Sin confirmar, sigue
+  // apareciendo en el panel de transferencias pendientes de confirmar.
+  transferenciaConfirmadaEn    DateTime?
+  transferenciaConfirmadaPorId String?
   fechaDisposicionFinal DateTime?
   actaEliminacionId     String?
 
@@ -1060,6 +1067,7 @@ model Comunicacion {
   expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
   radicadoPor          Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
   respuestaPor         Usuario?              @relation("ComunicacionRespuestaPor", fields: [respuestaPorId], references: [id])
+  transferenciaConfirmadaPor Usuario?         @relation("ComunicacionTransferenciaConfirmadaPor", fields: [transferenciaConfirmadaPorId], references: [id])
   respondeA            Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
   respuestas           Comunicacion[]        @relation("ComunicacionRespuesta")
   actaEliminacion      ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])

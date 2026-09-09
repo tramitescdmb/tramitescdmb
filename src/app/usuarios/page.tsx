@@ -92,7 +92,7 @@ export default async function UsuariosPage({
       }
     : {};
 
-  const [total, usuarios, cargos, catalogo, config] = await Promise.all([
+  const [total, usuarios, cargos, catalogo, config, bloqueadas] = await Promise.all([
     db.usuario.count({ where }),
     db.usuario.findMany({
       where,
@@ -108,6 +108,10 @@ export default async function UsuariosPage({
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
     getConfiguracionSitio(),
+    // MoReq 6.13 ("bloquear con alerta"): esto es la alerta — sin proveedor de correo/SMS, la forma
+    // honesta de "avisar automáticamente" es que un administrador la vea apenas entra a gestionar
+    // usuarios, no como una insignia que hay que saber buscar fila por fila.
+    db.usuario.findMany({ where: { estadoCuenta: "BLOQUEADA" }, select: { id: true, nombre: true, email: true }, orderBy: { nombre: "asc" } }),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
@@ -132,6 +136,22 @@ export default async function UsuariosPage({
 
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
+
+      {bloqueadas.length > 0 && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="font-medium">
+            {bloqueadas.length === 1 ? "1 cuenta bloqueada" : `${bloqueadas.length} cuentas bloqueadas`} por exceder los intentos fallidos de inicio de sesión:
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+            {bloqueadas.map((u) => (
+              <li key={u.id}>
+                <Link href={`/usuarios/${u.id}`} className="underline hover:no-underline">{u.nombre}</Link>
+                <span className="text-red-600"> ({u.email})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <form action="/usuarios" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
         <div className="min-w-[220px] flex-1">

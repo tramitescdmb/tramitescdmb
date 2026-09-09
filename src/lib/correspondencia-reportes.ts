@@ -29,6 +29,8 @@ export async function obtenerReportesCorrespondencia() {
     intentosFallidosRecientes,
     cargasFallidasRecientes,
     tiempoRespuestaPorDependenciaRaw,
+    transferenciasTotal,
+    transferenciasConfirmadas,
   ] = await Promise.all([
     db.comunicacion.count(),
     db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true } }),
@@ -65,6 +67,8 @@ export async function obtenerReportesCorrespondencia() {
       WHERE r.tipo = 'RECIBIDA'
       GROUP BY r."dependenciaDestinoId"
     `,
+    db.comunicacion.count({ where: { transferidaCentralEn: { not: null } } }),
+    db.comunicacion.count({ where: { transferenciaConfirmadaEn: { not: null } } }),
   ]);
 
   const dependencias = await db.dependencia.findMany({
@@ -131,5 +135,8 @@ export async function obtenerReportesCorrespondencia() {
     tiempoRespuestaPorDependencia,
     promedioRespuestaGeneral,
     totalRespondidas,
+    transferenciasTotal,
+    transferenciasConfirmadas,
+    transferenciasSinConfirmar: transferenciasTotal - transferenciasConfirmadas,
   };
 }

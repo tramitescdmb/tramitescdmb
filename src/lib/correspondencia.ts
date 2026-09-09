@@ -461,6 +461,25 @@ export async function transferirACentral(comunicacionId: string) {
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { transferidaCentralEn: new Date() } });
 }
 
+/**
+ * Confirmación de que el archivo central recibió el documento y la transferencia
+ * concluyó (MoReq 2.17). Hasta este momento la comunicación se "conserva": no se
+ * puede ejecutar su disposición final aunque ya haya cumplido la retención.
+ */
+export async function confirmarTransferenciaCentral(comunicacionId: string, usuarioId: string) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, transferidaCentralEn: true, transferenciaConfirmadaEn: true },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (!c.transferidaCentralEn) throw new Error("Todavía no se ha registrado la transferencia al archivo central.");
+  if (c.transferenciaConfirmadaEn) throw new Error("La recepción en archivo central ya fue confirmada.");
+  return db.comunicacion.update({
+    where: { id: comunicacionId },
+    data: { transferenciaConfirmadaEn: new Date(), transferenciaConfirmadaPorId: usuarioId },
+  });
+}
+
 export type EntradaDisposicionFinalLote = {
   comunicacionIds: string[];
   responsable: string;
@@ -489,6 +508,7 @@ export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFi
     select: {
       id: true, radicado: true, fechaDisposicionFinal: true, subserie: { select: { disposicionesFinal: true } },
       expedienteId: true, expedienteDocumentalId: true,
+      transferidaCentralEn: true, transferenciaConfirmadaEn: true,
       expediente: { select: { numero: true } },
       expedienteDocumental: { select: { numero: true } },
     },
@@ -505,6 +525,12 @@ export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFi
     if (c.fechaDisposicionFinal) { omitidas.push({ id, motivo: `${c.radicado}: ya tiene disposición final ejecutada.` }); continue; }
     const disposiciones = c.subserie?.disposicionesFinal ?? [];
     if (disposiciones.length === 0) { omitidas.push({ id, motivo: `${c.radicado}: su subserie no tiene disposición final definida en la TRD.` }); continue; }
+    // MoReq 2.17: no ejecutar disposición final sobre algo transferido al archivo central cuyo proceso de
+    // transferencia todavía no se confirmó como concluido — se "conserva" hasta esa confirmación.
+    if (c.transferidaCentralEn && !c.transferenciaConfirmadaEn) {
+      omitidas.push({ id, motivo: `${c.radicado}: transferida al archivo central pero sin confirmar la recepción — se conserva hasta confirmar que el proceso concluyó.` });
+      continue;
+    }
     // MoReq 2.13: no destruir (eliminación/selección) una comunicación que sigue archivada dentro de un
     // expediente — el expediente quedaría con una referencia rota. Conservación/microfilmación sí proceden
     // (no destruyen nada), por eso este chequeo va solo dentro de la rama que exige acta.

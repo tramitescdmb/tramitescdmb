@@ -89,6 +89,16 @@ export default async function ReportesPage() {
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <h2 className="mb-1 text-sm font-semibold text-stone-900">Transferencias a archivo central</h2>
+        <p className="mb-3 text-xs text-stone-500">Estado de las transferencias registradas (el detalle, con fechas, está en la pestaña Disposición final).</p>
+        <dl className="grid grid-cols-3 gap-4">
+          <div><dt className="text-[11px] text-stone-400">Registradas</dt><dd className="text-lg font-semibold tabular-nums text-stone-800">{reportes.transferenciasTotal}</dd></div>
+          <div><dt className="text-[11px] text-stone-400">Recepción confirmada</dt><dd className="text-lg font-semibold tabular-nums text-green-700">{reportes.transferenciasConfirmadas}</dd></div>
+          <div><dt className="text-[11px] text-stone-400">Pendientes de confirmar</dt><dd className="text-lg font-semibold tabular-nums text-amber-700">{reportes.transferenciasSinConfirmar}</dd></div>
+        </dl>
+      </div>
+
+      <div className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Archivo (TRD)</h2>
         <p className="mb-3 text-xs text-stone-500">Tamaño actual de la Tabla de Retención Documental y del archivo general.</p>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
