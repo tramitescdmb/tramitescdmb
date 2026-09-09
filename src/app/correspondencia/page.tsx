@@ -4,6 +4,7 @@ import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
+import { comunicacionesFirmablesPor } from "@/lib/correspondencia";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
@@ -42,11 +43,12 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, calendario] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, calendario, firmables] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(),
     contarComunicacionesVencidas(),
     getCalendarioLaboral(),
+    puedeRadicarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || rango);
@@ -100,6 +102,36 @@ export default async function CorrespondenciaBandejaPage({
         <h1 className="text-lg font-semibold text-stone-900">Correspondencia — bandeja</h1>
         <p className="text-xs text-stone-500">Impreso el {formatearFechaHora(new Date())}</p>
       </div>
+
+      {firmables.length > 0 && (
+        <details className="print:hidden rounded-xl border border-stone-200 bg-white">
+          <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-3 text-sm font-medium text-stone-700">
+            <FileEdit className="h-4 w-4 text-stone-400" aria-hidden />
+            Firma en lote — {firmables.length} oficio(s)/memorando(s) sin su firma
+          </summary>
+          <form action="/api/correspondencia/firmar-lote" method="post" className="border-t border-stone-100 p-3">
+            <p className="mb-2 text-xs text-stone-500">
+              Marque los que quiera firmar y confirme. Cada firma es electrónica con hash sobre su contenido
+              (Ley 527/1999); queda registrada en la bitácora de cada comunicación.
+            </p>
+            <ul className="max-h-64 space-y-1 overflow-y-auto">
+              {firmables.map((c) => (
+                <li key={c.id} className="flex items-start gap-2 text-sm">
+                  <input type="checkbox" name="comunicacionId" value={c.id} className="mt-1 rounded border-stone-300" />
+                  <span>
+                    <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
+                    <span className="ml-1 rounded bg-stone-100 px-1 text-[10px] text-stone-500">{ETIQUETA_TIPO[c.tipo] ?? c.tipo}</span>
+                    <span className="block truncate text-xs text-stone-400">{c.asunto}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button type="submit" className="mt-3 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+              Firmar seleccionadas
+            </button>
+          </form>
+        </details>
+      )}
 
       <div className="print:hidden">
         <SectionHelp>

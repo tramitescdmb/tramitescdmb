@@ -259,12 +259,16 @@ export async function obtenerPanelArchivoVista(permisos: PermisosUsuario) {
 /** Vista 4 — "Sistema" (solo administración de archivo): incidencias de los últimos 30 días. */
 export async function obtenerPanelSistemaVista() {
   const hace30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [accesosFallidos30, carguesFallidos30, erroresEjecucion30] = await Promise.all([
+  const [accesosFallidos30, carguesFallidos30, erroresEjecucion30, incidenciasRecientes] = await Promise.all([
     db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }),
     db.auditoriaDoc.count({ where: { accion: "CARGA_FALLIDA", createdAt: { gte: hace30Dias } } }),
     db.auditoriaDoc.count({ where: { accion: "ERROR_EJECUCION", createdAt: { gte: hace30Dias } } }),
+    // MoReq 6.17: fallas críticas de las últimas 24 h — se destacan al frente para
+    // que el administrador de archivo actúe (no hay canal push, el aviso vive en el panel).
+    db.auditoriaDoc.count({ where: { accion: { in: ["ERROR_EJECUCION", "CARGA_FALLIDA"] }, createdAt: { gte: hace24h } } }),
   ]);
 
-  return { accesosFallidos30, carguesFallidos30, erroresEjecucion30 };
+  return { accesosFallidos30, carguesFallidos30, erroresEjecucion30, incidenciasRecientes };
 }

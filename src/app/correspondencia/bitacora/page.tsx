@@ -6,6 +6,7 @@ import { listarBitacoraFiltrada, ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA, ty
 import { SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { BotonImprimir } from "@/components/BotonImprimir";
 import { formatearFechaHora as fecha } from "@/lib/fecha";
 import { interpretarUserAgent } from "@/lib/user-agent";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
@@ -46,10 +47,20 @@ export default async function BitacoraPage({
 
   return (
     <div className="space-y-4">
+      <div className="hidden print:block">
+        <h1 className="text-lg font-semibold text-stone-900">Bitácora de auditoría del SGDEA (inalterable)</h1>
+        <p className="text-xs text-stone-500">
+          {bitacora.total.toLocaleString("es-CO")} registros · impreso el {fecha(new Date())}
+          {filtros.accion || filtros.entidad || filtros.desde || filtros.hasta ? " · con filtros aplicados" : ""}
+        </p>
+      </div>
+
+      <div className="print:hidden">
       <TituloSeccion
         contador={bitacora.total}
         accion={
           <span className="flex items-center gap-3">
+            <BotonImprimir variante="secundario" />
             <DescargarCsvBoton href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}`} />
             <a
               href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}&formato=xml`}
@@ -63,9 +74,10 @@ export default async function BitacoraPage({
         Bitácora de auditoría (inalterable)
       </TituloSeccion>
       <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
+      </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
-        <form method="get" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="rounded-xl border border-stone-200 bg-white p-4 print:border-0 print:p-0">
+        <form method="get" className="grid grid-cols-2 gap-3 print:hidden sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>
             <option value="">Cualquier acción</option>
             {ACCIONES_BITACORA.map((a) => (<option key={a} value={a}>{ETIQUETA_ACCION_BITACORA[a] ?? a}</option>))}
@@ -119,7 +131,7 @@ export default async function BitacoraPage({
         </div>
 
         {bitacora.totalPaginas > 1 && (
-          <div className="mt-3 flex items-center justify-between text-sm">
+          <div className="mt-3 flex items-center justify-between text-sm print:hidden">
             <span className="text-xs text-stone-400">Página {pagina} de {bitacora.totalPaginas} · {bitacora.total} registros</span>
             <div className="flex gap-2">
               {pagina > 1 && (

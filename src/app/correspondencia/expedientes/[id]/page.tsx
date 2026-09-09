@@ -41,7 +41,7 @@ export default async function ExpedienteDetallePage({
     where: { id },
     include: {
       dependencia: { select: { nombre: true } },
-      serie: { select: { id: true, codigo: true, nombre: true, criterioOrdenExpediente: true } },
+      serie: { select: { id: true, codigo: true, nombre: true, criterioOrdenExpediente: true, retencionDesde: true, maxFoliosPorTomo: true } },
       subserie: { select: { codigo: true, nombre: true, tiposDocumentales: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } } } },
       creadoPor: { select: { nombre: true } },
       cerradoPor: { select: { nombre: true } },
@@ -360,6 +360,22 @@ export default async function ExpedienteDetallePage({
             </label>
             <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
             <span className="text-[11px] text-stone-400">Aplica a todos los expedientes de esta serie. No cambia el índice firmado.</span>
+          </form>
+        )}
+        {puedeAdministrarArchivo(permisos) && expediente.serie && (
+          <form action={`/api/correspondencia/series/${expediente.serie.id}/retencion`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+            <label className="text-xs">
+              <span className="mb-1 block font-medium text-stone-600">Retención de la serie {expediente.serie.codigo} cuenta desde</span>
+              <select name="retencionDesde" defaultValue={expediente.serie.retencionDesde} className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+                <option value="RADICACION">La radicación / creación de cada documento</option>
+                <option value="CIERRE_EXPEDIENTE">El cierre del expediente (MoReq 2.6)</option>
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="mb-1 block font-medium text-stone-600">Máx. folios por tomo (MoReq 1.43)</span>
+              <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+            </label>
+            <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
           </form>
         )}
         {expediente.documentos.length === 0 ? (

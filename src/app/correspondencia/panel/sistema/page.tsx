@@ -23,6 +23,16 @@ export default async function PanelSistemaVistaPage() {
     <section className="space-y-4">
       <TituloSeccion icon={ShieldAlert}>Sistema</TituloSeccion>
 
+      {s.incidenciasRecientes > 0 && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <AlertTriangle className="mr-1.5 inline h-4 w-4" aria-hidden />
+          {s.incidenciasRecientes === 1
+            ? "1 falla del sistema (error de ejecución o cargue rechazado) en las últimas 24 horas."
+            : `${s.incidenciasRecientes} fallas del sistema (errores de ejecución o cargues rechazados) en las últimas 24 horas.`}{" "}
+          Revíselas en la Bitácora.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <TarjetaKpi
           icon={ShieldAlert}

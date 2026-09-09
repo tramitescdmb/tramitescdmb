@@ -8,6 +8,7 @@ import { listarSeries } from "@/lib/trd";
 import { getComunicacionesSinClasificar } from "@/lib/correspondencia-data";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
+import { EnlaceDescarga } from "@/components/EnlaceDescarga";
 import { TrdSeriesExplorer, type GrupoVista } from "@/components/TrdSeriesExplorer";
 import { formatearFecha } from "@/lib/fecha";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
@@ -103,7 +104,17 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {/* Dependencias / organigrama */}
       <section className="space-y-3">
-        <TituloSeccion icon={Building2}>Dependencias (organigrama)</TituloSeccion>
+        <TituloSeccion
+          icon={Building2}
+          accion={
+            <span className="flex items-center gap-3">
+              <EnlaceDescarga href="/api/correspondencia/dependencias/exportar">CSV</EnlaceDescarga>
+              <EnlaceDescarga href="/api/correspondencia/dependencias/exportar?formato=xml">XML</EnlaceDescarga>
+            </span>
+          }
+        >
+          Dependencias (organigrama)
+        </TituloSeccion>
         <SectionHelp>
           Determina a quién se puede distribuir o quién firma memorandos por cada área. Una dependencia inactiva no
           borra su historial, solo deja de estar disponible para asignar.

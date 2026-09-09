@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     take: LIMITE_MAXIMO,
     include: {
       dependencia: { select: { nombre: true } },
-      serie: { select: { codigo: true, nombre: true } },
+      serie: { select: { codigo: true, nombre: true, maxFoliosPorTomo: true } },
       subserie: { select: { codigo: true, nombre: true } },
       _count: { select: { documentos: true } },
       documentos: { select: { numeroFolios: true } },
@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
     "Estado",
     "Documentos",
     "Folios",
+    "Tomos",
     "Soporte",
     "Frecuencia de consulta",
     "Nivel de acceso",
@@ -92,6 +93,11 @@ export async function GET(req: NextRequest) {
       e.estado === "ABIERTO" ? "Abierto" : "Cerrado",
       e._count.documentos,
       e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0),
+      (() => {
+        const folios = e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0);
+        const max = e.serie?.maxFoliosPorTomo ?? 0;
+        return max > 0 && folios > max ? Math.ceil(folios / max) : 1;
+      })(),
       "Electrónico",
       consultasPorId.get(e.id) ?? 0,
       e.nivelAcceso,

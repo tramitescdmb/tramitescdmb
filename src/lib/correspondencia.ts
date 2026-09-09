@@ -188,6 +188,44 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
   });
 }
 
+/**
+ * MoReq 3.17: firma varias comunicaciones (ENVIADA/INTERNA) de una sola acción.
+ * Omite las que no aplican (recibidas, anuladas, ya firmadas por el usuario) sin
+ * abortar el lote. Devuelve el detalle.
+ */
+export async function firmarEnLote(comunicacionIds: string[], usuarioId: string, ip: string | null) {
+  const ids = [...new Set(comunicacionIds.filter(Boolean))].slice(0, 100);
+  if (ids.length === 0) throw new Error("No se seleccionó ninguna comunicación.");
+  const firmadas: string[] = [];
+  const omitidas: { radicado: string; motivo: string }[] = [];
+  for (const id of ids) {
+    try {
+      const c = await agregarCofirma(id, usuarioId, ip);
+      const rad = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
+      firmadas.push(rad?.radicado ?? id);
+      void c;
+    } catch (err) {
+      const rad = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
+      omitidas.push({ radicado: rad?.radicado ?? id, motivo: err instanceof Error ? err.message : "error" });
+    }
+  }
+  return { firmadas, omitidas };
+}
+
+/** Comunicaciones ENVIADA/INTERNA activas que este usuario todavía no firmó (para la firma en lote). */
+export async function comunicacionesFirmablesPor(usuarioId: string) {
+  return db.comunicacion.findMany({
+    where: {
+      tipo: { in: ["ENVIADA", "INTERNA"] },
+      estado: { notIn: ["ANULADA"] },
+      firmas: { none: { usuarioId } },
+    },
+    orderBy: { fechaRadicacion: "desc" },
+    take: 50,
+    select: { id: true, radicado: true, asunto: true, tipo: true, fechaRadicacion: true },
+  });
+}
+
 export type EntradaRadicacionEnviada = {
   asunto: string;
   contenido: string; // cuerpo del oficio — se firma junto con el asunto y el radicado

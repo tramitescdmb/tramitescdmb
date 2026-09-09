@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Tags, Plus } from "lucide-react";
+import { EnlaceDescarga } from "@/components/EnlaceDescarga";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarTerminos } from "@/lib/vocabulario";
@@ -32,8 +33,12 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <Tags className="h-4 w-4 text-cdmb-600" aria-hidden /> Vocabulario controlado
+        <h2 className="flex flex-wrap items-center justify-between gap-2 text-base font-semibold text-stone-900">
+          <span className="flex items-center gap-2"><Tags className="h-4 w-4 text-cdmb-600" aria-hidden /> Vocabulario controlado</span>
+          <span className="flex items-center gap-3 text-xs">
+            <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar">CSV</EnlaceDescarga>
+            <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar?formato=xml">XML</EnlaceDescarga>
+          </span>
         </h2>
         <SectionHelp>
           Lista normalizada de palabras clave (MoReq 1.17). Al etiquetar una comunicación solo se pueden usar

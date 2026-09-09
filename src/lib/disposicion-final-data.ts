@@ -18,7 +18,8 @@ export async function getPendientesArchivisticos() {
     },
     include: {
       subserie: { select: { codigo: true, nombre: true, retencionGestionAnios: true, retencionCentralAnios: true, disposicionesFinal: true } },
-      serie: { select: { codigo: true, nombre: true } },
+      serie: { select: { codigo: true, nombre: true, retencionDesde: true } },
+      expedienteDocumental: { select: { estado: true, fechaCierre: true } },
     },
     orderBy: { fechaRadicacion: "asc" },
   });
@@ -33,8 +34,19 @@ export async function getPendientesArchivisticos() {
 
   for (const c of comunicaciones) {
     if (!c.subserie) continue;
+    // MoReq 2.6: la retención puede contarse desde el cierre del expediente donde
+    // quedó archivada, no desde su propia radicación. Si la serie lo pide y todavía
+    // no hay un expediente cerrado que la contenga, la retención aún no arrancó.
+    let fechaBase = c.fechaRadicacion;
+    if (c.serie?.retencionDesde === "CIERRE_EXPEDIENTE") {
+      if (c.expedienteDocumental?.estado === "CERRADO" && c.expedienteDocumental.fechaCierre) {
+        fechaBase = c.expedienteDocumental.fechaCierre;
+      } else {
+        continue; // aún no empieza a correr la retención
+      }
+    }
     const { fase, fechaFinGestion, fechaFinCentral } = calcularFaseArchivistica(
-      c.fechaRadicacion,
+      fechaBase,
       c.subserie.retencionGestionAnios,
       c.subserie.retencionCentralAnios
     );
