@@ -68,11 +68,14 @@ export default async function PanelCorrespondenciaPage() {
           <ListChecks className="h-4 w-4 text-cdmb-600" aria-hidden /> Mi trabajo pendiente
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Kpi icon={ListChecks} label="Asignadas a mí" value={p.mis.total} tono="cdmb" href="/correspondencia?estado=ASIGNADA" />
-          <Kpi icon={PenLine} label="Por responder" value={p.mis.porResponder} tono="azul" href="/correspondencia?estado=EN_TRAMITE" />
-          <Kpi icon={Clock} label="Por vencer (3 días)" value={p.mis.porVencer} tono="ambar" href="/correspondencia?vencimiento=por_vencer" />
-          <Kpi icon={AlertTriangle} label="Vencidas" value={p.mis.vencidas} tono="rojo" href="/correspondencia?vencimiento=vencidas" />
+          <Kpi icon={ListChecks} label="Asignadas a mí" value={p.mis.total} tono="cdmb" />
+          <Kpi icon={PenLine} label="Por responder" value={p.mis.porResponder} tono="azul" />
+          <Kpi icon={Clock} label="Por vencer (3 días)" value={p.mis.porVencer} tono="ambar" />
+          <Kpi icon={AlertTriangle} label="Vencidas" value={p.mis.vencidas} tono="rojo" />
         </div>
+        <p className="text-xs text-stone-400">
+          Cuenta los radicados asignados a usted que siguen abiertos. El detalle está en la tabla de abajo.
+        </p>
         {p.mis.lista.length > 0 && (
           <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-sm">
@@ -143,23 +146,21 @@ export default async function PanelCorrespondenciaPage() {
       </section>
 
       {/* --- Pendientes de proceso --- */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden /> Pendientes de proceso
-        </h2>
-        <div className="rounded-xl border border-stone-200 bg-white p-5">
-          <p className="mb-4 text-xs text-stone-500">
-            Radicados que entraron y todavía nadie ha distribuido — siguen en ventanilla sin repartir. Son{" "}
-            <strong className="text-stone-800">{p.totalPendientesProceso.toLocaleString("es-CO")}</strong> en total.
-          </p>
-          <BarrasPorTipo data={p.pendientesProceso} emptyMessage="Todo lo que entró ya se distribuyó — nada atascado en ventanilla." />
-          {p.puedeDistribuir && p.totalPendientesProceso > 0 && (
-            <Link href="/correspondencia?estado=EN_REPARTO" className="mt-4 inline-block text-xs font-medium text-cdmb-700 hover:underline">
-              Ir a distribuir →
+      {p.totalPendientesProceso > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            {p.totalPendientesProceso === 1
+              ? "1 comunicación recibida entró y nadie la ha distribuido todavía."
+              : `${p.totalPendientesProceso} comunicaciones recibidas entraron y nadie las ha distribuido todavía.`}
+          </span>
+          {p.puedeDistribuir && (
+            <Link href="/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO" className="ml-2 font-medium underline hover:no-underline">
+              Ir a distribuir
             </Link>
           )}
         </div>
-      </section>
+      )}
 
       {/* --- Evolución --- */}
       <section className="space-y-3">

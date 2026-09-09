@@ -110,14 +110,15 @@ export async function obtenerReportesCorrespondencia() {
   };
   const porEstadoChart = porEstado.map((p) => ({ label: ETIQUETA_ESTADO[p.estado] ?? p.estado, value: p._count._all })).sort((a, b) => b.value - a.value);
 
+  // Los meses se comparan por clave UTC: date_trunc de Postgres devuelve medianoche
+  // UTC y, con el servidor en zona Colombia, new Date(...).getMonth() la corría al
+  // mes anterior (la última columna salía siempre en 0).
+  const claveMesUTC = (x: Date) => `${x.getUTCFullYear()}-${x.getUTCMonth()}`;
   const serieMensual: { label: string; value: number }[] = [];
   for (let i = 0; i < 12; i++) {
-    const d = new Date(desde12Meses.getFullYear(), desde12Meses.getMonth() + i, 1);
-    const fila = mensualRaw.find((m) => {
-      const mesFecha = new Date(m.mes);
-      return mesFecha.getFullYear() === d.getFullYear() && mesFecha.getMonth() === d.getMonth();
-    });
-    serieMensual.push({ label: MESES_CORTOS[d.getMonth()]!, value: fila ? Number(fila.total) : 0 });
+    const d = new Date(Date.UTC(desde12Meses.getUTCFullYear(), desde12Meses.getUTCMonth() + i, 1));
+    const fila = mensualRaw.find((m) => claveMesUTC(new Date(m.mes)) === claveMesUTC(d));
+    serieMensual.push({ label: MESES_CORTOS[d.getUTCMonth()]!, value: fila ? Number(fila.total) : 0 });
   }
 
   return {

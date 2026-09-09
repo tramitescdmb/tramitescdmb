@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Inbox,
   Send,
-  FileEdit,
   FolderOpen,
   Users,
   Settings2,

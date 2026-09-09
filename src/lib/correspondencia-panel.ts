@@ -59,7 +59,7 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     misDistribuciones,
     porEstadoRaw,
     porTipoActivoRaw,
-    pendientesProcesoRaw,
+    pendientesProcesoRecibidas,
     evolucionRaw,
     recibidasMes,
     enviadasMes,
@@ -82,12 +82,11 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     }),
     db.comunicacion.groupBy({ by: ["estado"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
     db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
-    // "Pendientes de proceso": radicados que entraron y nadie ha movido —
-    // siguen en RADICADA/EN_REPARTO y no tienen ninguna distribución.
-    db.comunicacion.groupBy({
-      by: ["tipo"],
-      _count: { _all: true },
-      where: { estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: {} } },
+    // "Pendientes de proceso": SOLO recibidas — entraron por ventanilla y nadie
+    // las ha distribuido. Una enviada/memorando queda definitiva al radicarse
+    // (no necesita reparto), así que ahí "sin distribución" es lo normal.
+    db.comunicacion.count({
+      where: { tipo: "RECIBIDA", estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: {} } },
     }),
     db.$queryRaw<{ mes: Date; tipo: string; total: bigint }[]>`
       SELECT date_trunc('month', "fechaRadicacion") AS mes, tipo, COUNT(*)::bigint AS total
@@ -138,11 +137,8 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     .map((t) => ({ tipo: t, value: contarTipo(t) }))
     .filter((r) => r.value > 0);
 
-  // --- Pendientes de proceso por tipo ---
-  const pendientesProceso = (["RECIBIDA", "ENVIADA", "INTERNA"] as TipoComunicacion[])
-    .map((t) => ({ tipo: t, value: pendientesProcesoRaw.find((r) => r.tipo === t)?._count._all ?? 0 }))
-    .filter((r) => r.value > 0);
-  const totalPendientesProceso = pendientesProceso.reduce((acc, r) => acc + r.value, 0);
+  // --- Pendientes de proceso (recibidas sin distribuir en ventanilla) ---
+  const totalPendientesProceso = pendientesProcesoRecibidas;
 
   // --- Evolución 6 meses por tipo (área apilada) ---
   const meses: { key: string; label: string }[] = [];
@@ -166,7 +162,6 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     porEstado,
     porTipoActivo,
     totalActivos,
-    pendientesProceso,
     totalPendientesProceso,
     evolucion,
     puedeDistribuir: puedeDistribuir(permisos),

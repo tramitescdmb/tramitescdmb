@@ -115,14 +115,15 @@ export async function getDashboardData(tramiteIds: string[] | null, periodo: Ran
     MAX_MESES_SERIE,
     Math.max(1, (hastaSerie.getFullYear() - desdeSerie.getFullYear()) * 12 + (hastaSerie.getMonth() - desdeSerie.getMonth()) + 1)
   );
+  // Meses comparados por clave UTC: date_trunc de Postgres devuelve medianoche UTC
+  // y con el servidor en zona Colombia new Date(...).getMonth() la corría al mes
+  // anterior (la última columna salía siempre en 0).
+  const claveMesUTC = (x: Date) => `${x.getUTCFullYear()}-${x.getUTCMonth()}`;
   const serieMensual: { label: string; value: number }[] = [];
   for (let i = 0; i < totalMeses; i++) {
-    const d = new Date(desdeSerie.getFullYear(), desdeSerie.getMonth() + i, 1);
-    const fila = mensualRaw.find((m) => {
-      const mesFecha = new Date(m.mes);
-      return mesFecha.getFullYear() === d.getFullYear() && mesFecha.getMonth() === d.getMonth();
-    });
-    const etiqueta = totalMeses > 24 ? `${MESES_CORTOS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}` : MESES_CORTOS[d.getMonth()];
+    const d = new Date(Date.UTC(desdeSerie.getUTCFullYear(), desdeSerie.getUTCMonth() + i, 1));
+    const fila = mensualRaw.find((m) => claveMesUTC(new Date(m.mes)) === claveMesUTC(d));
+    const etiqueta = totalMeses > 24 ? `${MESES_CORTOS[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}` : MESES_CORTOS[d.getUTCMonth()];
     serieMensual.push({ label: etiqueta, value: fila ? Number(fila.total) : 0 });
   }
 

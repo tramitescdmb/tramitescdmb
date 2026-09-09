@@ -63,9 +63,11 @@ export async function actualizarJornada(datos: { diasSemana: number[]; horaInici
   const hora = /^([01]\d|2[0-3]):[0-5]\d$/;
   if (!hora.test(datos.horaInicio) || !hora.test(datos.horaFin)) throw new Error("Las horas deben tener el formato HH:MM.");
   if (datos.horaInicio >= datos.horaFin) throw new Error("La hora de inicio debe ser anterior a la de fin.");
-  return db.configuracionSitio.update({
+  const campos = { jornadaDiasSemana: dias, jornadaHoraInicio: datos.horaInicio, jornadaHoraFin: datos.horaFin };
+  return db.configuracionSitio.upsert({
     where: { id: "singleton" },
-    data: { jornadaDiasSemana: dias, jornadaHoraInicio: datos.horaInicio, jornadaHoraFin: datos.horaFin },
+    create: { id: "singleton", ...campos },
+    update: campos,
   });
 }
 

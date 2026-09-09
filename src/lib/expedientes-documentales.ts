@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { CriterioOrdenExpediente, EstadoExpedienteDocumental, NivelAccesoInformacion, Prisma } from "@prisma/client";
+import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
 
 /**
  * Expediente electrónico de archivo general (Art. 4.3.2 Acuerdo 001/2024 AGN):
