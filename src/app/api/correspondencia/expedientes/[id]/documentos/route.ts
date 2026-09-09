@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (err) {
     const mensaje = err instanceof Error ? err.message : "No se pudieron agregar los documentos.";
     // MoReq 4.6 ("informes sobre cargues fallidos"): antes este rechazo solo llegaba al usuario en el
-    // momento, sin dejar ningún rastro reportable — se audita para poder verlo agregado en Reportes.
+    // momento, sin dejar ningún rastro reportable — se audita para poder verlo agregado en el Panel (sección Sistema).
     const { ip, userAgent } = datosPeticion(req.headers);
     await registrarAuditoriaDoc({
       entidad: "ExpedienteDocumental",

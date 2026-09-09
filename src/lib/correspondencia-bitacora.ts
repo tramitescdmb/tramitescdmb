@@ -41,7 +41,7 @@ export function construirWhereBitacora(filtros: FiltrosBitacora) {
 
 /**
  * Bitácora inalterable con filtros (MoReq 6.14) — paginada, más reciente primero.
- * Vive en su propia página (no en Reportes): crece indefinidamente y no debe
+ * Vive en su propia página (no dentro del Panel): crece indefinidamente y no debe
  * competir por tiempo de carga con las gráficas del panel de reportes.
  */
 export async function listarBitacoraFiltrada(filtros: FiltrosBitacora, pagina: number, porPagina = 30) {
