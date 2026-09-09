@@ -6,8 +6,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, AlertTriangle, ArrowRight 
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { obtenerFlujo, puedeAdministrarFlujos, ETIQUETA_TIPO_PASO, ETIQUETA_ASIGNACION, ETIQUETA_APLICA_A } from "@/lib/flujos";
-import { flujoAMermaid } from "@/lib/flujos-diagrama";
-import { Flujograma } from "@/components/Flujograma";
+import { FlujoLienzo } from "@/components/FlujoLienzoLazy";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
@@ -75,10 +74,16 @@ export default async function FlujoEditorPage({
         </div>
       )}
 
-      {/* Flujograma */}
+      {/* Lienzo — editor visual del flujo */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo</h3>
-        <Flujograma definicion={flujoAMermaid(flujo.pasos, flujo.pasos.flatMap((p) => p.transiciones))} />
+        <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo (editor visual)</h3>
+        <FlujoLienzo
+          flujoId={flujo.id}
+          pasos={flujo.pasos.map((p) => ({ id: p.id, orden: p.orden, nombre: p.nombre, tipo: p.tipo, posX: p.posX, posY: p.posY }))}
+          transiciones={flujo.pasos.flatMap((p) =>
+            p.transiciones.map((t) => ({ id: t.id, desdePasoId: t.desdePasoId, haciaPasoId: t.haciaPasoId, etiqueta: t.etiqueta })),
+          )}
+        />
       </div>
 
       {/* Datos del flujo */}

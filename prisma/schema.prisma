@@ -1496,6 +1496,10 @@ model PasoFlujo {
   dependenciaId  String? // si asignacion = DEPENDENCIA_FIJA
   cargoClave     String? // si asignacion = CARGO
   slaDiasHabiles Int? // término sugerido para completar este paso
+  // Posición del nodo en el lienzo del editor visual (React Flow). null = sin colocar
+  // todavía → el lienzo lo ubica automáticamente por `orden`.
+  posX           Float?
+  posY           Float?
 
   flujo             FlujoTrabajo     @relation(fields: [flujoId], references: [id], onDelete: Cascade)
   dependencia       Dependencia?     @relation("PasoFlujoDependencia", fields: [dependenciaId], references: [id])

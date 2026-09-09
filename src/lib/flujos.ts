@@ -218,6 +218,91 @@ export async function eliminarTransicion(id: string) {
   await db.transicionPaso.delete({ where: { id } });
 }
 
+/* ---------------------------------------------------------------- Lienzo (editor visual) */
+
+export type LienzoNodo = { id: string; nombre?: string; tipo?: TipoPasoFlujo; x: number; y: number };
+export type LienzoTransicion = { id?: string; desdePasoId: string; haciaPasoId: string; etiqueta: string };
+
+/**
+ * Reconcilia el flujo con lo que dejó el editor visual: crea los pasos nuevos
+ * (id que empieza por "nuevo-"), guarda posiciones, borra los pasos que ya no
+ * están (reordenando 1..N), y crea/actualiza/borra transiciones. Un solo
+ * endpoint para "Guardar diagrama".
+ */
+export async function guardarLienzoFlujo(
+  flujoId: string,
+  datos: { nodos: LienzoNodo[]; transiciones: LienzoTransicion[] },
+) {
+  const flujo = await db.flujoTrabajo.findUnique({
+    where: { id: flujoId },
+    include: { pasos: { orderBy: { orden: "asc" }, select: { id: true, orden: true } }, transiciones: { select: { id: true } } },
+  });
+  if (!flujo) throw new Error("El flujo no existe.");
+  if (datos.nodos.length === 0) throw new Error("El flujo debe tener al menos un paso.");
+
+  const num = (v: number) => (Number.isFinite(v) ? Math.round(v) : 0);
+  const idReal = new Map<string, string>(); // temp id del lienzo -> id real
+  let ordenSiguiente = (flujo.pasos.at(-1)?.orden ?? 0) + 1;
+
+  for (const n of datos.nodos) {
+    if (n.id.startsWith("nuevo-")) {
+      const creado = await db.pasoFlujo.create({
+        data: {
+          flujoId,
+          orden: ordenSiguiente++,
+          nombre: (n.nombre || "").trim() || "Paso sin nombre",
+          tipo: n.tipo ?? "TAREA",
+          asignacion: "DEPENDENCIA_COMUNICACION",
+          posX: num(n.x),
+          posY: num(n.y),
+        },
+      });
+      idReal.set(n.id, creado.id);
+    } else {
+      idReal.set(n.id, n.id);
+    }
+  }
+
+  const idsExistentesEnLienzo = new Set(datos.nodos.filter((n) => !n.id.startsWith("nuevo-")).map((n) => n.id));
+  const aBorrarPasos = flujo.pasos.filter((p) => !idsExistentesEnLienzo.has(p.id));
+  if (flujo.pasos.length - aBorrarPasos.length + idReal.size - idsExistentesEnLienzo.size < 1) {
+    throw new Error("El flujo debe quedar con al menos un paso.");
+  }
+  for (const p of aBorrarPasos) await db.pasoFlujo.delete({ where: { id: p.id } }); // cascade: transiciones
+
+  // Posiciones (y nombre/tipo si vinieron editados en el lienzo) de los pasos que quedan.
+  for (const n of datos.nodos) {
+    if (n.id.startsWith("nuevo-")) continue;
+    const data: Record<string, unknown> = { posX: num(n.x), posY: num(n.y) };
+    if (n.nombre !== undefined) data.nombre = n.nombre.trim() || "Paso sin nombre";
+    if (n.tipo !== undefined) data.tipo = n.tipo;
+    await db.pasoFlujo.update({ where: { id: n.id }, data });
+  }
+
+  // Reordenar 1..N conservando el orden previo de los que quedan + los nuevos al final.
+  const restantes = await db.pasoFlujo.findMany({ where: { flujoId }, orderBy: { orden: "asc" }, select: { id: true } });
+  await Promise.all(restantes.map((p, i) => db.pasoFlujo.update({ where: { id: p.id }, data: { orden: i + 1 } })));
+
+  // Transiciones: borrar las que ya no están, crear/actualizar el resto.
+  const idsTransEntrantes = new Set(datos.transiciones.filter((t) => t.id && !t.id.startsWith("nueva-")).map((t) => t.id!));
+  for (const t of flujo.transiciones) {
+    if (!idsTransEntrantes.has(t.id)) await db.transicionPaso.delete({ where: { id: t.id } }).catch(() => {});
+  }
+  for (const [i, t] of datos.transiciones.entries()) {
+    const desde = idReal.get(t.desdePasoId);
+    const hacia = idReal.get(t.haciaPasoId);
+    if (!desde || !hacia || desde === hacia) continue;
+    const etiqueta = (t.etiqueta || "").trim() || "Continuar";
+    if (t.id && idsTransEntrantes.has(t.id)) {
+      await db.transicionPaso.update({ where: { id: t.id }, data: { etiqueta, orden: i } }).catch(() => {});
+    } else {
+      await db.transicionPaso.create({ data: { flujoId, desdePasoId: desde, haciaPasoId: hacia, etiqueta, orden: i } });
+    }
+  }
+
+  return obtenerFlujo(flujoId);
+}
+
 /* ---------------------------------------------------------------- Plantillas precargadas */
 
 export async function cargarPlantillasFlujo(usuarioId: string) {
