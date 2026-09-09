@@ -1062,6 +1062,10 @@ model Comunicacion {
   tipoPqrsd              TipoPQRSD?
   terminoDiasHabiles     Int?
   fechaSuspensionTermino DateTime?
+  // MoReq 7.18: motivo por el que se detuvo el trámite. Para una PQRSD es el
+  // Art. 17 CPACA (falta información del peticionario); para cualquier otra
+  // recibida es una pausa administrativa con su justificación.
+  motivoSuspension       String?    @db.Text
 
   // Anulación (Ley 594/2000: nunca se borra un radicado, se anula con motivo y queda trazado).
   motivoAnulacion String? @db.Text

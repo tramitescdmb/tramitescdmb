@@ -65,7 +65,7 @@ function proximoPaso(c: {
   if (c.estado === "ARCHIVADA") return { texto: "Quedó archivada — el ciclo de esta comunicación está cerrado.", cerrado: true };
   if (c.estado === "RESPONDIDA") return { texto: "Ya se le dio respuesta formal (vea \"Respondida por\" arriba). El ciclo de esta recibida quedó cerrado.", cerrado: true };
   if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") {
-    return { texto: "Está en pausa: se le pidió información adicional a quien la envió. El plazo se reanuda al reactivar el término, más abajo." };
+    return { texto: "El trámite está detenido (vea el motivo más abajo). Se reanuda cuando se resuelva lo que lo detuvo; si tenía término de ley, se reanuda por lo que faltaba." };
   }
   if (c.estado === "RADICADA" || c.estado === "EN_REPARTO") {
     return permisos.puedeDistribuir
@@ -362,6 +362,14 @@ export default async function CorrespondenciaDetallePage({
               </li>
             ))}
           </ul>
+          {puedeRadicarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
+            <form action={`/api/correspondencia/${id}/firmar`} method="post" className="mt-3">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
+                <PenTool className="h-3.5 w-3.5" aria-hidden />
+                Agregar mi firma
+              </button>
+            </form>
+          )}
         </Tarjeta>
       )}
 
@@ -518,35 +526,44 @@ export default async function CorrespondenciaDetallePage({
         </Tarjeta>
       )}
 
-      {puedeDistribuirUsuario && c.fechaVencimiento && c.estado !== "ANULADA" && (
-        <Tarjeta titulo="Término de ley">
+      {puedeDistribuirUsuario && c.tipo === "RECIBIDA" && !["ANULADA", "ARCHIVADA", "RESPONDIDA"].includes(c.estado) && (
+        <Tarjeta titulo={c.fechaVencimiento ? "Término de ley y estado del trámite" : "Estado del trámite"}>
           <SectionHelp>
-            Plazo legal de respuesta (Ley 1755/2015) en días hábiles. Al suspender por falta de información, el
-            conteo se congela y se reanuda por lo que faltaba — no se reinicia (Art. 17 CPACA).
+            {c.fechaVencimiento
+              ? "Plazo legal de respuesta (Ley 1755/2015). Al detener el trámite por falta de información, el conteo del término se congela y se reanuda por lo que faltaba — no se reinicia (Art. 17 CPACA)."
+              : "Esta recibida no tiene un término de ley, pero su trámite sí se puede detener (con motivo) mientras se resuelve algo externo — ej. un requerimiento a otra dependencia."}
           </SectionHelp>
-          <p className="text-sm text-stone-600">
-            {vencimiento?.texto === "Vencido" ? "El término de respuesta venció" : "Vence"} el{" "}
-            <span className="font-medium">{fechaHora(c.fechaVencimiento)}</span>
-            {c.terminoDiasHabiles ? ` (${c.terminoDiasHabiles} días hábiles desde la radicación)` : ""}.
-          </p>
+          {c.fechaVencimiento && (
+            <p className="text-sm text-stone-600">
+              {vencimiento?.texto === "Vencido" ? "El término de respuesta venció" : "Vence"} el{" "}
+              <span className="font-medium">{fechaHora(c.fechaVencimiento)}</span>
+              {c.terminoDiasHabiles ? ` (${c.terminoDiasHabiles} días hábiles desde la radicación)` : ""}.
+            </p>
+          )}
           {c.estado === "INFORMACION_ADICIONAL_REQUERIDA" ? (
             <>
-              <p className="mt-1 text-xs text-stone-400">
-                Suspendido desde el {fechaHora(c.fechaSuspensionTermino)}: al reactivarlo, el término se reanuda por los días
-                hábiles que faltaban, no se reinicia (Art. 17 CPACA).
+              <p className="mt-1 text-xs text-stone-500">
+                <strong className="text-stone-700">Trámite detenido</strong> desde el {fechaHora(c.fechaSuspensionTermino)}
+                {c.motivoSuspension ? ` — ${c.motivoSuspension}` : ""}.
+                {c.fechaVencimiento ? " Al reanudarlo, el término se reanuda por los días hábiles que faltaban (Art. 17 CPACA)." : ""}
               </p>
               <form action={`/api/correspondencia/${id}/reactivar`} method="post" className="mt-3">
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
                   <PlayCircle className="h-3.5 w-3.5" aria-hidden />
-                  Reactivar término
+                  Reanudar el trámite
                 </button>
               </form>
             </>
           ) : (
-            <form action={`/api/correspondencia/${id}/suspender`} method="post" className="mt-3">
+            <form action={`/api/correspondencia/${id}/suspender`} method="post" className="mt-3 flex flex-wrap items-end gap-3">
+              <div className="min-w-[260px] flex-1">
+                <Field label="Motivo" required help={c.fechaVencimiento ? "Ej. se solicitó información adicional al peticionario." : "Por qué se detiene el trámite."}>
+                  <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                </Field>
+              </div>
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <PauseCircle className="h-3.5 w-3.5" aria-hidden />
-                Suspender (solicitar información adicional)
+                Detener el trámite
               </button>
             </form>
           )}

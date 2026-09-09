@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion } from "@prisma/client";
+import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
@@ -163,6 +163,28 @@ async function firmarEnTransaccion(
   const hashContenido = hashContenidoFirma({ radicado: datos.radicado, asunto: datos.asunto, contenido: datos.contenido, fechaIso: fechaHora.toISOString() });
   await tx.firma.create({
     data: { usuarioId: datos.usuarioId, comunicacionId: datos.comunicacionId, fechaHora, hashContenido, tipo: "ELECTRONICA_HASH" },
+  });
+}
+
+/**
+ * Firma adicional (co-firma) de un oficio o memorando ya radicado (MoReq 1.37):
+ * varios funcionarios pueden firmar el mismo documento. Firma electrónica con
+ * hash sobre el mismo contenido (asunto + cuerpo + radicado), con su propio
+ * sello de tiempo. No cambia el estado ni el contenido.
+ */
+export async function agregarCofirma(comunicacionId: string, usuarioId: string, ip: string | null) {
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: { id: true, tipo: true, estado: true, radicado: true, asunto: true, contenido: true, firmas: { select: { usuarioId: true } } },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.tipo === "RECIBIDA") throw new Error("Una comunicación recibida no se firma: no tiene un contenido redactado por la Corporación.");
+  if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+  if (c.firmas.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó esta comunicación.");
+  const fechaHora = new Date();
+  const hashContenido = hashContenidoFirma({ radicado: c.radicado, asunto: c.asunto, contenido: c.contenido, fechaIso: fechaHora.toISOString() });
+  return db.firma.create({
+    data: { usuarioId, comunicacionId, fechaHora, hashContenido, tipo: "ELECTRONICA_HASH", ip },
   });
 }
 
@@ -417,36 +439,56 @@ export async function archivarEnExpediente(comunicacionId: string, expedienteId:
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { expedienteId } });
 }
 
-/** Suspende el término de ley (Art. 17 CPACA) mientras se espera información adicional del peticionario. */
-export async function suspenderTermino(comunicacionId: string) {
+const ESTADOS_DETENIBLES: EstadoComunicacion[] = ["RADICADA", "EN_REPARTO", "ASIGNADA", "EN_TRAMITE"];
+
+/**
+ * Detiene el trámite de una RECIBIDA en curso (MoReq 7.18), con motivo. Si tiene
+ * término de ley (PQRSD), además lo suspende (Art. 17 CPACA); si no, es una pausa
+ * administrativa. En los dos casos pasa a INFORMACION_ADICIONAL_REQUERIDA.
+ */
+export async function suspenderTermino(comunicacionId: string, motivo: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
-    select: { id: true, estado: true, fechaVencimiento: true },
+    select: { id: true, estado: true, tipo: true, fechaVencimiento: true },
   });
   if (!c) throw new Error("La comunicación no existe.");
-  if (!c.fechaVencimiento) throw new Error("Esta comunicación no tiene un término de ley que suspender.");
-  if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") throw new Error("El término ya está suspendido.");
+  if (c.tipo !== "RECIBIDA") throw new Error("Solo una comunicación recibida en trámite se puede detener; una enviada o un memorando quedan definitivos al radicarse.");
+  if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") throw new Error("El trámite ya está detenido.");
+  if (!ESTADOS_DETENIBLES.includes(c.estado)) throw new Error("El trámite de esta comunicación ya está cerrado.");
+  if (!motivo.trim()) throw new Error("Indique el motivo por el que se detiene el trámite.");
   return db.comunicacion.update({
     where: { id: comunicacionId },
-    data: { estado: "INFORMACION_ADICIONAL_REQUERIDA", fechaSuspensionTermino: new Date() },
+    data: { estado: "INFORMACION_ADICIONAL_REQUERIDA", fechaSuspensionTermino: new Date(), motivoSuspension: motivo.trim() },
   });
 }
 
-/** Reactiva un término suspendido: se reanuda por los días hábiles que faltaban, no se reinicia (Art. 17 CPACA). */
+/**
+ * Reanuda un trámite detenido. Si había término de ley, se reanuda por los días
+ * hábiles que faltaban, no se reinicia (Art. 17 CPACA); si no, solo vuelve a
+ * EN_TRAMITE.
+ */
 export async function reactivarTermino(comunicacionId: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
     select: { id: true, estado: true, fechaRadicacion: true, fechaSuspensionTermino: true, terminoDiasHabiles: true },
   });
   if (!c) throw new Error("La comunicación no existe.");
-  if (c.estado !== "INFORMACION_ADICIONAL_REQUERIDA" || !c.fechaSuspensionTermino || !c.terminoDiasHabiles) {
-    throw new Error("Esta comunicación no tiene un término suspendido.");
+  if (c.estado !== "INFORMACION_ADICIONAL_REQUERIDA" || !c.fechaSuspensionTermino) {
+    throw new Error("Esta comunicación no tiene un trámite detenido.");
   }
-  const calendario = await getCalendarioLaboral();
-  const fechaVencimiento = calcularVencimientoTrasReactivar(c.fechaRadicacion, c.fechaSuspensionTermino, new Date(), c.terminoDiasHabiles, calendario);
+  let fechaVencimiento: Date | null = null;
+  if (c.terminoDiasHabiles) {
+    const calendario = await getCalendarioLaboral();
+    fechaVencimiento = calcularVencimientoTrasReactivar(c.fechaRadicacion, c.fechaSuspensionTermino, new Date(), c.terminoDiasHabiles, calendario);
+  }
   return db.comunicacion.update({
     where: { id: comunicacionId },
-    data: { estado: "EN_TRAMITE", fechaSuspensionTermino: null, fechaVencimiento },
+    data: {
+      estado: "EN_TRAMITE",
+      fechaSuspensionTermino: null,
+      motivoSuspension: null,
+      ...(fechaVencimiento ? { fechaVencimiento } : {}),
+    },
   });
 }
 

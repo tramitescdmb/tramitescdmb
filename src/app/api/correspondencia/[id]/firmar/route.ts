@@ -1,47 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
-import { reactivarTermino } from "@/lib/correspondencia";
+import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
+import { agregarCofirma } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Reanuda un trámite detenido (MoReq 7.18); si había término de ley, se reanuda por lo que faltaba (Art. 17 CPACA). */
+/** Firma adicional (co-firma) de un oficio o memorando ya radicado (MoReq 1.37). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   const volver = new URL(`/correspondencia/${id}`, req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeDistribuir(permisos)) {
-    await registrarAccesoDenegadoAccion("reanudar el trámite", id, session, req.headers);
-    volver.searchParams.set("error", "No tiene permiso para reanudar trámites.");
+  if (!puedeRadicar(permisos)) {
+    await registrarAccesoDenegadoAccion("firmar la comunicación", id, session, req.headers);
+    volver.searchParams.set("error", "No tiene permiso para firmar comunicaciones.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  const comunicacion = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true, fechaVencimiento: true } });
+  const { ip, userAgent } = datosPeticion(req.headers);
+  const comunicacion = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
   if (!comunicacion) {
     volver.searchParams.set("error", "La comunicación no existe.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
   try {
-    await reactivarTermino(id);
+    await agregarCofirma(id, session.userId, ip);
   } catch (err) {
-    volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo reactivar el término.");
+    volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo registrar la firma.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({
     entidad: "Comunicacion",
     entidadId: id,
-    accion: "REACTIVA",
+    accion: "FIRMA",
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `Reanudó el trámite de ${comunicacion.radicado}${comunicacion.fechaVencimiento ? " (reanuda el término de ley)" : ""}`,
-  });
+    detalle: `Firmó ${comunicacion.radicado} (firma adicional)`,
+  }).catch((err) => console.error("registrarAuditoriaDoc (firmar) falló:", err));
 
-  volver.searchParams.set("ok", comunicacion.fechaVencimiento ? "Trámite reanudado y término de ley reactivado." : "Trámite reanudado.");
+  volver.searchParams.set("ok", "Su firma quedó registrada.");
   return NextResponse.redirect(volver, { status: 303 });
 }
