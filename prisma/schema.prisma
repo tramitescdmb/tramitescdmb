@@ -34,13 +34,13 @@ model ConfiguracionSitio {
   // mínimo de 8 caracteres fijo en código. Solo se aplica al FIJAR una
   // contraseña nueva (creación o restablecimiento por un ADMIN) — nunca
   // revalida contraseñas ya existentes, eso no es posible sobre un hash.
-  passwordLongitudMinima    Int      @default(8)
-  passwordLongitudMaxima    Int      @default(72) // bcrypt ignora bytes después del 72, sin importar el valor aquí
-  passwordRequiereMayuscula Boolean  @default(false)
-  passwordRequiereNumero    Boolean  @default(false)
-  passwordRequiereEspecial  Boolean  @default(false)
-  passwordHistorialCantidad Int      @default(0) // 0 = no revisar contraseñas anteriores
-  passwordVigenciaDias      Int? // null = no vence
+  passwordLongitudMinima     Int     @default(8)
+  passwordLongitudMaxima     Int     @default(72) // bcrypt ignora bytes después del 72, sin importar el valor aquí
+  passwordRequiereMayuscula  Boolean @default(false)
+  passwordRequiereNumero     Boolean @default(false)
+  passwordRequiereEspecial   Boolean @default(false)
+  passwordHistorialCantidad  Int     @default(0) // 0 = no revisar contraseñas anteriores
+  passwordVigenciaDias       Int? // null = no vence
   passwordVigenciaMinimaDias Int     @default(0) // 0 = sin mínimo; evita ciclar contraseñas para saltarse el histórico. Solo aplica al cambio por el propio usuario, no a un restablecimiento por ADMIN.
 
   // Formatos de captura permitidos al subir un documento (MoReq 3.1) — antes una
@@ -96,16 +96,16 @@ model Cargo {
 }
 
 model Usuario {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  nombre       String
-  passwordHash String
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  nombre             String
+  passwordHash       String
   // Cuándo se fijó la contraseña actual (creación o último restablecimiento
   // por un ADMIN) — base para calcular la vigencia (MoReq 6.35). Null en
   // cuentas que ya existían antes de este campo: se trata como "sin vencer".
   passwordCambiadaEn DateTime?
-  rol          RolUsuario @default(FUNCIONARIO)
-  activo       Boolean    @default(true)
+  rol                RolUsuario   @default(FUNCIONARIO)
+  activo             Boolean      @default(true)
   // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
   // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),
   // así que se mantiene siempre en sincronía con este campo (HABILITADA→true,
@@ -114,8 +114,8 @@ model Usuario {
   // exceder los intentos fallidos (persiste hasta que un ADMIN la levante,
   // MoReq 6.13); SUSPENDIDA es una marca manual de un ADMIN, distinta de
   // DESHABILITADA para poder diferenciar "de baja" de "temporalmente fuera".
-  estadoCuenta EstadoCuenta @default(HABILITADA)
-  createdAt    DateTime   @default(now())
+  estadoCuenta       EstadoCuenta @default(HABILITADA)
+  createdAt          DateTime     @default(now())
 
   // true = la identidad la valida el directorio activo de la CDMB (API externa,
   // src/lib/directorio-activo.ts). Estos usuarios NO tienen contraseña propia en
@@ -142,8 +142,8 @@ model Usuario {
   // --- SGDEA / Correspondencia (ver bloque al final del archivo) ---
   // Dependencia (oficina) a la que pertenece el funcionario, y rol dentro del
   // módulo de correspondencia (null + no ADMIN = sin acceso al módulo).
-  dependenciaId      String?
-  rolCorrespondencia RolCorrespondencia?
+  dependenciaId                  String?
+  rolCorrespondencia             RolCorrespondencia?
   // Vigencia del rol (MoReq 6.3: quitar el rol automáticamente al vencer un período) — opcional; si se
   // pasa la fecha, obtenerPermisosUsuario() lo trata como sin rol asignado sin que un ADMIN tenga que
   // volver a entrar a quitárselo. El valor del campo se conserva (no se borra solo) para dejar rastro de
@@ -166,6 +166,9 @@ model Usuario {
   firmas                          Firma[]                 @relation("FirmaUsuario")
   auditoriasDoc                   AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
   actasEliminacionAprobadas       ActaEliminacion[]       @relation("ActaEliminacionAprobadaPor")
+  flujosCreados                   FlujoTrabajo[]          @relation("FlujoCreadoPor")
+  instanciasFlujoIniciadas        InstanciaFlujo[]        @relation("InstanciaFlujoIniciadoPor")
+  pasosFlujoEjecutados            PasoEjecutado[]         @relation("PasoEjecutadoResponsable")
 
   @@index([dependenciaId])
 }
@@ -875,6 +878,7 @@ enum AccionAuditoriaDoc {
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
   CARGA_FALLIDA // MoReq 4.6: un intento de agregar un documento a un expediente fue rechazado (validación), para poder reportarlo
   ERROR_EJECUCION // MoReq 6.11: una operación falló a mitad de camino (excepción no controlada en una acción del módulo), para poder identificarla en la bitácora
+  FLUJO // MoReq cap. 7: inicio, avance o cierre de un flujo de trabajo sobre una comunicación
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -902,6 +906,7 @@ model Dependencia {
   comunicacionesOrigen    Comunicacion[]         @relation("ComunicacionDependenciaOrigen")
   distribuciones          Distribucion[]
   expedientesDocumentales ExpedienteDocumental[]
+  pasosFlujo              PasoFlujo[]            @relation("PasoFlujoDependencia")
 
   @@index([parentId])
 }
@@ -909,21 +914,21 @@ model Dependencia {
 // Serie documental (TRD/CCD). Versionada: se pueden tener la TRD anterior y la
 // nueva a la vez (vigenteDesde/Hasta) para migrar clasificaciones entre versiones.
 model SerieDocumental {
-  id            String    @id @default(cuid())
-  codigo        String
-  nombre        String
-  descripcion   String?   @db.Text
-  dependenciaId String?
-  version       String    @default("1")
-  vigenteDesde  DateTime  @default(now())
-  vigenteHasta  DateTime?
-  activo        Boolean   @default(true)
+  id                      String                  @id @default(cuid())
+  codigo                  String
+  nombre                  String
+  descripcion             String?                 @db.Text
+  dependenciaId           String?
+  version                 String                  @default("1")
+  vigenteDesde            DateTime                @default(now())
+  vigenteHasta            DateTime?
+  activo                  Boolean                 @default(true)
   // MoReq 1.46: criterio de ordenación de los documentos dentro de un expediente
   // de esta serie. El número de índice (ordenIndice) que respalda el hash firmado
   // NO cambia — esto solo controla el orden en que se VE la lista.
   criterioOrdenExpediente CriterioOrdenExpediente @default(FECHA_DOCUMENTO)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 
   dependencia             Dependencia?           @relation(fields: [dependenciaId], references: [id])
   subseries               SubserieDocumental[]
@@ -1019,7 +1024,7 @@ model TipoDocumental {
   soportePapel       Boolean @default(false)
   soporteElectronico Boolean @default(false)
 
-  subserie SubserieDocumental @relation(fields: [subserieId], references: [id], onDelete: Cascade)
+  subserie          SubserieDocumental @relation(fields: [subserieId], references: [id], onDelete: Cascade)
   documentosArchivo DocumentoArchivo[]
 
   @@index([subserieId])
@@ -1105,15 +1110,15 @@ model Comunicacion {
   // como TerminoControlado activo al momento de guardarse (se valida en el dominio).
   palabrasClave String[] @default([])
 
-  transferidaCentralEn  DateTime?
+  transferidaCentralEn         DateTime?
   // MoReq 2.17: una transferencia al archivo central se "conserva" (no se puede
   // ejecutar disposición final sobre ella) hasta que el archivo central confirma
   // que recibió el documento y el proceso concluyó. Sin confirmar, sigue
   // apareciendo en el panel de transferencias pendientes de confirmar.
   transferenciaConfirmadaEn    DateTime?
   transferenciaConfirmadaPorId String?
-  fechaDisposicionFinal DateTime?
-  actaEliminacionId     String?
+  fechaDisposicionFinal        DateTime?
+  actaEliminacionId            String?
 
   // Aplazamiento de la disposición final ya vencida (MoReq 2.11) — con motivo
   // auditado, ej. mientras dura un proceso judicial o disciplinario sobre lo
@@ -1136,23 +1141,24 @@ model Comunicacion {
   respuestaPorId String?
   respuestaEn    DateTime?
 
-  tercero              Solicitante?          @relation(fields: [terceroId], references: [id])
-  dependenciaOrigen    Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
-  dependenciaDestino   Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
-  serie                SerieDocumental?      @relation(fields: [serieId], references: [id])
-  subserie             SubserieDocumental?   @relation(fields: [subserieId], references: [id])
-  expediente           Expediente?           @relation(fields: [expedienteId], references: [id])
-  expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
-  radicadoPor          Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
-  respuestaPor         Usuario?              @relation("ComunicacionRespuestaPor", fields: [respuestaPorId], references: [id])
-  transferenciaConfirmadaPor Usuario?         @relation("ComunicacionTransferenciaConfirmadaPor", fields: [transferenciaConfirmadaPorId], references: [id])
-  respondeA            Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
-  respuestas           Comunicacion[]        @relation("ComunicacionRespuesta")
-  actaEliminacion      ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])
+  tercero                    Solicitante?          @relation(fields: [terceroId], references: [id])
+  dependenciaOrigen          Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
+  dependenciaDestino         Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
+  serie                      SerieDocumental?      @relation(fields: [serieId], references: [id])
+  subserie                   SubserieDocumental?   @relation(fields: [subserieId], references: [id])
+  expediente                 Expediente?           @relation(fields: [expedienteId], references: [id])
+  expedienteDocumental       ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
+  radicadoPor                Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
+  respuestaPor               Usuario?              @relation("ComunicacionRespuestaPor", fields: [respuestaPorId], references: [id])
+  transferenciaConfirmadaPor Usuario?              @relation("ComunicacionTransferenciaConfirmadaPor", fields: [transferenciaConfirmadaPorId], references: [id])
+  respondeA                  Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
+  respuestas                 Comunicacion[]        @relation("ComunicacionRespuesta")
+  actaEliminacion            ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])
 
-  documentos     ComunicacionDocumento[]
-  distribuciones Distribucion[]
-  firmas         Firma[]
+  documentos      ComunicacionDocumento[]
+  distribuciones  Distribucion[]
+  firmas          Firma[]
+  instanciasFlujo InstanciaFlujo[]
 
   @@index([tipo])
   @@index([anio])
@@ -1321,10 +1327,10 @@ model ExpedienteDocumental {
 // momento dado, igual que cualquier SGDEA). No bloquea nada del expediente (subir/editar/cerrar siguen
 // gobernados solo por dependencia/rol) — es únicamente el registro de quién lo tiene y desde cuándo.
 model PrestamoExpediente {
-  id                     String    @id @default(cuid())
-  expedienteDocumentalId String
-  prestadoAId            String
-  prestadoPorId          String
+  id                      String    @id @default(cuid())
+  expedienteDocumentalId  String
+  prestadoAId             String
+  prestadoPorId           String
   motivo                  String?   @db.Text
   fechaPrestamo           DateTime  @default(now())
   fechaDevolucionEsperada DateTime?
@@ -1343,7 +1349,7 @@ model PrestamoExpediente {
 // índice electrónico del expediente (Art. 4.3.2.3 AGN: debe respetar el orden
 // original y permitir reconstruir la secuencia completa).
 model DocumentoArchivo {
-  id                     String   @id @default(cuid())
+  id                     String    @id @default(cuid())
   expedienteDocumentalId String
   ordenIndice            Int
   nombre                 String
@@ -1371,7 +1377,7 @@ model DocumentoArchivo {
   // muestra el rango acumulado (ej. "Folios 6-12") a partir de este valor por documento, en el mismo orden
   // (ordenIndice) que respalda el hash del índice firmado. Los documentos previos a este campo quedan en 1
   // por defecto — no se puede reconstruir retroactivamente cuántas páginas tenían en realidad.
-  numeroFolios           Int      @default(1)
+  numeroFolios           Int       @default(1)
 
   expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
@@ -1424,4 +1430,127 @@ model IntentoEnvioPublico {
   createdAt DateTime @default(now())
 
   @@index([ip, ruta, createdAt])
+}
+
+// ============================================================================
+// Flujos de trabajo electrónicos configurables (MoReq cap. 7). El administrador
+// funcional arma el flujo (pasos + transiciones + a quién se asigna cada paso)
+// desde la interfaz — NO están fijos en código. Un flujo es una plantilla; cada
+// vez que se aplica a una comunicación nace una InstanciaFlujo que va avanzando
+// de paso en paso, con constancia de quién hizo qué y cuándo.
+// ============================================================================
+
+enum TipoPasoFlujo {
+  TAREA // trabajo de un responsable (redactar, revisar el expediente, etc.)
+  REVISION // aprobar o devolver — normalmente tiene dos transiciones de salida
+  DECISION // bifurca el flujo según la opción que elija el responsable
+  FIN // cierra el flujo
+}
+
+enum AsignacionPaso {
+  DEPENDENCIA_COMUNICACION // la dependencia de la comunicación (destino en recibidas/memorandos, origen en enviadas)
+  DEPENDENCIA_FIJA // una dependencia concreta (dependenciaId del paso)
+  CARGO // cualquier funcionario con un cargo (cargoClave del paso)
+  RADICADOR // quien radicó la comunicación
+  RESPONSABLE_PASO_ANTERIOR // quien completó el paso inmediatamente anterior
+  MANUAL // se asigna a mano cuando el flujo llega a este paso
+}
+
+enum EstadoInstanciaFlujo {
+  EN_CURSO
+  COMPLETADO
+  CANCELADO
+}
+
+model FlujoTrabajo {
+  id          String            @id @default(cuid())
+  nombre      String
+  descripcion String?           @db.Text
+  aplicaA     TipoComunicacion? // null = cualquier tipo
+  activo      Boolean           @default(true)
+  esPlantilla Boolean           @default(false) // se creó desde las plantillas precargadas
+  creadoPorId String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  pasos        PasoFlujo[]
+  transiciones TransicionPaso[]
+  instancias   InstanciaFlujo[]
+  creadoPor    Usuario?         @relation("FlujoCreadoPor", fields: [creadoPorId], references: [id])
+
+  @@index([activo])
+}
+
+model PasoFlujo {
+  id             String         @id @default(cuid())
+  flujoId        String
+  orden          Int // 1 = paso inicial; también es el orden visual del diagrama
+  nombre         String
+  instrucciones  String?        @db.Text
+  tipo           TipoPasoFlujo  @default(TAREA)
+  asignacion     AsignacionPaso @default(DEPENDENCIA_COMUNICACION)
+  dependenciaId  String? // si asignacion = DEPENDENCIA_FIJA
+  cargoClave     String? // si asignacion = CARGO
+  slaDiasHabiles Int? // término sugerido para completar este paso
+
+  flujo             FlujoTrabajo     @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+  dependencia       Dependencia?     @relation("PasoFlujoDependencia", fields: [dependenciaId], references: [id])
+  transiciones      TransicionPaso[] @relation("TransicionDesde")
+  transicionesHacia TransicionPaso[] @relation("TransicionHacia")
+  instanciasAqui    InstanciaFlujo[] @relation("InstanciaPasoActual")
+  ejecuciones       PasoEjecutado[]
+
+  @@index([flujoId])
+}
+
+model TransicionPaso {
+  id          String @id @default(cuid())
+  flujoId     String
+  desdePasoId String
+  haciaPasoId String
+  etiqueta    String @default("Continuar") // "Aprobado", "Devolver para ajustes", etc.
+  orden       Int    @default(0)
+
+  flujo FlujoTrabajo @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+  desde PasoFlujo    @relation("TransicionDesde", fields: [desdePasoId], references: [id], onDelete: Cascade)
+  hacia PasoFlujo    @relation("TransicionHacia", fields: [haciaPasoId], references: [id], onDelete: Cascade)
+
+  @@index([flujoId])
+  @@index([desdePasoId])
+}
+
+model InstanciaFlujo {
+  id             String               @id @default(cuid())
+  flujoId        String
+  comunicacionId String
+  estado         EstadoInstanciaFlujo @default(EN_CURSO)
+  pasoActualId   String?
+  iniciadoPorId  String?
+  iniciadoEn     DateTime             @default(now())
+  finalizadoEn   DateTime?
+
+  flujo        FlujoTrabajo    @relation(fields: [flujoId], references: [id])
+  comunicacion Comunicacion    @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  pasoActual   PasoFlujo?      @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
+  iniciadoPor  Usuario?        @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
+  ejecuciones  PasoEjecutado[]
+
+  @@index([comunicacionId])
+  @@index([estado])
+}
+
+model PasoEjecutado {
+  id            String   @id @default(cuid())
+  instanciaId   String
+  pasoId        String
+  resultado     String? // etiqueta de la transición elegida al completar
+  comentario    String?  @db.Text
+  responsableId String?
+  completadoEn  DateTime @default(now())
+
+  instancia   InstanciaFlujo @relation(fields: [instanciaId], references: [id], onDelete: Cascade)
+  paso        PasoFlujo      @relation(fields: [pasoId], references: [id])
+  responsable Usuario?       @relation("PasoEjecutadoResponsable", fields: [responsableId], references: [id])
+
+  @@index([instanciaId])
 }
