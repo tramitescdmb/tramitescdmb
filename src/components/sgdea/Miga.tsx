@@ -18,7 +18,7 @@ const INICIO_GRUPO: Record<string, string> = {
   "Expedientes y archivo": "/correspondencia/expedientes",
   Plantillas: "/correspondencia/plantillas",
   Configuración: "/correspondencia/admin",
-  Bitácora: "/correspondencia/bitacora",
+  Administración: "/correspondencia/bitacora",
   Ayuda: "/correspondencia/ayuda",
 };
 
@@ -40,7 +40,8 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
   { re: /^\/correspondencia\/admin\/flujos\/[^/]+/, trail: ["Configuración", "Flujos de trabajo", "Editar flujo"] },
   { re: /^\/correspondencia\/admin\/flujos/, trail: ["Configuración", "Flujos de trabajo"] },
   { re: /^\/correspondencia\/admin/, trail: ["Configuración", "Dependencias y TRD"] },
-  { re: /^\/correspondencia\/bitacora/, trail: ["Bitácora"] },
+  { re: /^\/correspondencia\/calendario-laboral/, trail: ["Configuración", "Calendario laboral"] },
+  { re: /^\/correspondencia\/bitacora/, trail: ["Administración", "Bitácora inalterable"] },
   { re: /^\/correspondencia\/ayuda/, trail: ["Ayuda"] },
   { re: /^\/correspondencia\/[^/]+\/constancia/, trail: ["Correspondencia", "Constancia de radicación"] },
   { re: /^\/correspondencia\/[^/]+$/, trail: ["Correspondencia", "Detalle del radicado"] },

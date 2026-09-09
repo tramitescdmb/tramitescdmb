@@ -282,14 +282,28 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
     where: { comunicacionId },
     orderBy: { iniciadoEn: "desc" },
     include: {
-      flujo: { select: { nombre: true } },
+      flujo: {
+        select: {
+          nombre: true,
+          pasos: {
+            orderBy: { orden: "asc" },
+            select: {
+              id: true,
+              orden: true,
+              nombre: true,
+              tipo: true,
+              transiciones: { select: { desdePasoId: true, haciaPasoId: true, etiqueta: true } },
+            },
+          },
+        },
+      },
       iniciadoPor: { select: { nombre: true } },
       pasoActual: {
         include: { transiciones: { orderBy: { orden: "asc" } } },
       },
       ejecuciones: {
         orderBy: { completadoEn: "asc" },
-        include: { paso: { select: { nombre: true, tipo: true } }, responsable: { select: { nombre: true } } },
+        include: { paso: { select: { id: true, nombre: true, tipo: true } }, responsable: { select: { nombre: true } } },
       },
     },
   });

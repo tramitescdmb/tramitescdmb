@@ -6,7 +6,7 @@ import { crearDiaNoLaborado, CALENDARIO_LABORAL_TAG } from "@/lib/calendario-lab
 /** Registra un día no laborado (día compensado / cierre institucional). Solo ADMIN. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  const volver = new URL("/admin/calendario-laboral", req.url);
+  const volver = new URL("/correspondencia/calendario-laboral", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   if (session.rol !== "ADMIN") {
     volver.searchParams.set("error", "No tiene permiso.");

@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, AlertTriangle, ArrowRight 
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { obtenerFlujo, puedeAdministrarFlujos, ETIQUETA_TIPO_PASO, ETIQUETA_ASIGNACION, ETIQUETA_APLICA_A } from "@/lib/flujos";
+import { flujoAMermaid } from "@/lib/flujos-diagrama";
+import { Flujograma } from "@/components/Flujograma";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
@@ -72,6 +74,12 @@ export default async function FlujoEditorPage({
           </ul>
         </div>
       )}
+
+      {/* Flujograma */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo</h3>
+        <Flujograma definicion={flujoAMermaid(flujo.pasos, flujo.pasos.flatMap((p) => p.transiciones))} />
+      </div>
 
       {/* Datos del flujo */}
       <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-3">

@@ -7,7 +7,7 @@ import { cambiarEstadoDiaNoLaborado, eliminarDiaNoLaborado, CALENDARIO_LABORAL_T
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  const volver = new URL("/admin/calendario-laboral", req.url);
+  const volver = new URL("/correspondencia/calendario-laboral", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   if (session.rol !== "ADMIN") {
     volver.searchParams.set("error", "No tiene permiso.");

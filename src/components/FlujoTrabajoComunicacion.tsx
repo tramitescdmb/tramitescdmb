@@ -1,6 +1,8 @@
 import { Workflow, CheckCircle2, XCircle, ArrowRight, CircleDot } from "lucide-react";
 import type { TipoComunicacion } from "@prisma/client";
 import { flujosAplicables, obtenerInstanciasDeComunicacion, ETIQUETA_TIPO_PASO } from "@/lib/flujos";
+import { flujoAMermaid } from "@/lib/flujos-diagrama";
+import { Flujograma } from "@/components/Flujograma";
 import { formatearFechaHora } from "@/lib/fecha";
 
 /**
@@ -40,6 +42,17 @@ export async function FlujoTrabajoComunicacion({
             Flujo <strong className="text-stone-700">{enCurso.flujo.nombre}</strong> · iniciado por{" "}
             {enCurso.iniciadoPor?.nombre ?? "—"} el {formatearFechaHora(enCurso.iniciadoEn)}
           </p>
+
+          <Flujograma
+            definicion={flujoAMermaid(
+              enCurso.flujo.pasos,
+              enCurso.flujo.pasos.flatMap((p) => p.transiciones),
+              {
+                pasoActualId: enCurso.pasoActualId,
+                pasosHechosIds: enCurso.ejecuciones.map((e) => e.paso.id),
+              },
+            )}
+          />
 
           {/* Línea de tiempo */}
           <ol className="space-y-1.5">

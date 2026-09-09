@@ -7,21 +7,22 @@ import {
   Inbox,
   Settings2,
   FolderOpen,
-  History,
+  ShieldCheck,
   FileText,
   LayoutDashboard,
   ChevronDown,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 
 type Permitido = { bandeja: boolean; expedientes: boolean; radicar: boolean; distribuir: boolean; admin: boolean };
 type Clave = keyof Permitido;
 
-type Item = { href: string; label: string; permiso?: Clave; prefijo?: boolean };
-type Grupo = { label: string; icon: LucideIcon; permiso: Clave; href?: string; items?: Item[] };
+type Item = { href: string; label: string; permiso?: Clave; prefijo?: boolean; externo?: boolean };
+type Grupo = { label: string; icon: LucideIcon; permiso: Clave; href?: string; items?: Item[]; alinearDerecha?: boolean };
 
 /** Rutas que NO son la bandeja aunque cuelguen de /correspondencia. */
-const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda"];
+const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral"];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
   (p.startsWith("/correspondencia/") && !NO_BANDEJA.some((s) => p.startsWith(`/correspondencia/${s}`)));
@@ -55,14 +56,29 @@ const GRUPOS: Grupo[] = [
     label: "Configuración",
     icon: Settings2,
     permiso: "admin",
+    alinearDerecha: true,
     items: [
       { href: "/correspondencia/admin", label: "Dependencias y TRD" },
       { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
       { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
-      { href: "/admin/calendario-laboral", label: "Calendario laboral", prefijo: true },
+      { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true },
     ],
   },
-  { label: "Bitácora", icon: History, permiso: "admin", href: "/correspondencia/bitacora" },
+  {
+    // MoReq cap. 6 (Control y Seguridad): usuarios, roles, contraseñas y auditoría son
+    // parte del SGDEA. Hoy comparten pantalla con el resto de la app; cuando el SGDEA
+    // se separe como módulo propio, estas rutas se namespacean bajo /correspondencia.
+    label: "Administración",
+    icon: ShieldCheck,
+    permiso: "admin",
+    alinearDerecha: true,
+    items: [
+      { href: "/correspondencia/bitacora", label: "Bitácora inalterable del SGDEA" },
+      { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true },
+      { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true },
+      { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true },
+    ],
+  },
 ];
 
 function rutaDe(href: string) {
@@ -197,7 +213,9 @@ function MenuGrupo({
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className="absolute left-0 top-full z-20 mt-1 min-w-[15rem] rounded-lg border border-stone-200 bg-white p-1 shadow-lg"
+          className={`absolute top-full z-20 mt-1 min-w-[15rem] rounded-lg border border-stone-200 bg-white p-1 shadow-lg ${
+            grupo.alinearDerecha ? "right-0" : "left-0"
+          }`}
         >
           {items.map((it) => {
             const act = itemActivo(it);
@@ -207,11 +225,12 @@ function MenuGrupo({
                 href={it.href}
                 role="menuitem"
                 aria-current={act ? "page" : undefined}
-                className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
                   act ? "bg-cdmb-50 font-medium text-cdmb-800" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
                 }`}
               >
                 {it.label}
+                {it.externo && <ExternalLink className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />}
               </Link>
             );
           })}
