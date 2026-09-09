@@ -295,7 +295,7 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
   });
 }
 
-export async function iniciarInstancia(comunicacionId: string, flujoId: string, usuarioId: string, ip?: string) {
+export async function iniciarInstancia(comunicacionId: string, flujoId: string, usuarioId: string, ip?: string | null) {
   const [comunicacion, flujo] = await Promise.all([
     db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, radicado: true, tipo: true, estado: true } }),
     db.flujoTrabajo.findUnique({ where: { id: flujoId }, include: { pasos: { orderBy: { orden: "asc" }, take: 1 } } }),
@@ -335,7 +335,7 @@ export async function avanzarInstancia(
   transicionId: string,
   usuarioId: string,
   comentario: string | null,
-  ip?: string,
+  ip?: string | null,
 ) {
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },
@@ -384,7 +384,7 @@ export async function avanzarInstancia(
   });
 }
 
-export async function cancelarInstancia(instanciaId: string, usuarioId: string, motivo: string, ip?: string) {
+export async function cancelarInstancia(instanciaId: string, usuarioId: string, motivo: string, ip?: string | null) {
   if (!motivo.trim()) throw new Error("Indique el motivo para cancelar el flujo.");
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },

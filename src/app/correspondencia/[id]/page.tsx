@@ -24,6 +24,8 @@ import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
+import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
+import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
 
@@ -159,6 +161,7 @@ export default async function CorrespondenciaDetallePage({
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
   const puedeRadicarUsuario = puedeRadicar(permisos);
+  const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionVigente = c.distribuciones[0] ?? null;
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionVigente);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
@@ -464,6 +467,13 @@ export default async function CorrespondenciaDetallePage({
           </p>
         )}
       </Tarjeta>
+
+      <FlujoTrabajoComunicacion
+        comunicacionId={c.id}
+        tipo={c.tipo}
+        estado={c.estado}
+        puedeOperar={puedeOperarFlujosUsuario}
+      />
 
       {c.tipo === "RECIBIDA" && (
         <Tarjeta id="respuesta" titulo="Respuesta del funcionario">

@@ -57,6 +57,7 @@ const GRUPOS: Grupo[] = [
     permiso: "admin",
     items: [
       { href: "/correspondencia/admin", label: "Dependencias y TRD" },
+      { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
       { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
       { href: "/admin/calendario-laboral", label: "Calendario laboral", prefijo: true },
     ],
