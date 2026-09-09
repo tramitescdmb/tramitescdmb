@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { aplazarDisposicion } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /** Aplaza la disposición final ya vencida de una comunicación, con motivo (MoReq 2.11). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await aplazarDisposicion(id, hasta, motivo);
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", id, "aplazamiento de disposición", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo aplazar la disposición.");
     return NextResponse.redirect(volver, { status: 303 });
   }

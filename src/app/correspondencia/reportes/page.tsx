@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { FileText, FolderOpen, FolderCheck, ShieldAlert, FileWarning } from "lucide-react";
+import { FileText, FolderOpen, FolderCheck, ShieldAlert, FileWarning, AlertTriangle } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { obtenerReportesCorrespondencia } from "@/lib/correspondencia-reportes";
@@ -38,12 +38,13 @@ export default async function ReportesPage() {
         La bitácora de auditoría detallada, con sus propios filtros, está en la pestaña <strong>Bitácora</strong>.
       </SectionHelp>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat icon={FileText} label="Total radicados" value={reportes.totalComunicaciones} />
         <Stat icon={FolderOpen} label="Expedientes abiertos" value={reportes.expedientesAbiertos} />
         <Stat icon={FolderCheck} label="Expedientes cerrados" value={reportes.expedientesCerrados} />
         <Stat icon={ShieldAlert} label="Accesos fallidos (30 días)" value={reportes.intentosFallidosRecientes} />
         <Stat icon={FileWarning} label="Cargues fallidos (30 días)" value={reportes.cargasFallidasRecientes} />
+        <Stat icon={AlertTriangle} label="Errores de ejecución (30 días)" value={reportes.erroresEjecucionRecientes} />
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-5">

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
-import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
+import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { SectionHelp } from "@/components/Field";
@@ -41,13 +41,14 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(),
+    contarComunicacionesVencidas(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "orden", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "vencimiento", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -83,6 +84,15 @@ export default async function CorrespondenciaBandejaPage({
     <div className="space-y-4">
       {sp.ok && <div className="print:hidden rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      {vencidas > 0 && sp.vencimiento !== "vencidas" && (
+        <div className="print:hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {vencidas === 1
+            ? "1 comunicación tiene el término de respuesta de ley vencido y sigue sin cerrarse."
+            : `${vencidas} comunicaciones tienen el término de respuesta de ley vencido y siguen sin cerrarse.`}{" "}
+          <Link href="/correspondencia?vencimiento=vencidas" className="font-medium underline hover:no-underline">Ver cuáles</Link>
+        </div>
+      )}
 
       <div className="hidden print:block">
         <h1 className="text-lg font-semibold text-stone-900">Correspondencia — bandeja</h1>
@@ -146,6 +156,15 @@ export default async function CorrespondenciaBandejaPage({
           </label>
 
           <SelectorSerieBusqueda series={opciones.series} valorInicial={sp.serieId} />
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Término de ley</span>
+            <select name="vencimiento" defaultValue={sp.vencimiento ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+              <option value="">Cualquiera</option>
+              <option value="vencidas">Vencidas</option>
+              <option value="por_vencer">Por vencer (3 días)</option>
+            </select>
+          </label>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Desde</span>

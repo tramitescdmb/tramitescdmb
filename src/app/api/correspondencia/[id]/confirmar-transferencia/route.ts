@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { confirmarTransferenciaCentral } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /**
  * Confirma que el archivo central recibió el documento transferido y el proceso
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await confirmarTransferenciaCentral(id, session.userId);
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", id, "confirmación de transferencia", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo confirmar la recepción.");
     return NextResponse.redirect(volver, { status: 303 });
   }

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { transferirACentral } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /** Registra la transferencia del archivo de gestión al archivo central (Acuerdo 004/2019 AGN). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await transferirACentral(id);
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", id, "transferencia a archivo central", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo registrar la transferencia.");
     return NextResponse.redirect(volver, { status: 303 });
   }

@@ -151,3 +151,30 @@ export async function registrarAccesoDenegadoSeccion(
     detalle: `${session.nombre} intentó entrar a "${seccion}" sin permiso de administrar el archivo`,
   }).catch((err) => console.error(`No se pudo registrar en la bitácora el acceso denegado a "${seccion}":`, err));
 }
+
+/**
+ * MoReq 6.11: deja constancia en la bitácora inalterable de que una acción
+ * archivística falló a mitad de camino (excepción no controlada), para poder
+ * identificar el error después. No relanza — el llamador ya maneja el error
+ * hacia el usuario; esto solo registra.
+ */
+export async function registrarErrorEjecucion(
+  entidad: string,
+  entidadId: string,
+  operacion: string,
+  usuarioId: string | null,
+  headers: Headers,
+  error: unknown
+): Promise<void> {
+  const { ip, userAgent } = datosPeticion(headers);
+  const mensaje = error instanceof Error ? error.message : String(error);
+  await registrarAuditoriaDoc({
+    entidad,
+    entidadId,
+    accion: "ERROR_EJECUCION",
+    usuarioId,
+    ip,
+    userAgent,
+    detalle: `Falló "${operacion}": ${mensaje}`.slice(0, 500),
+  }).catch((err) => console.error(`No se pudo registrar en la bitácora el error de ejecución de "${operacion}":`, err));
+}

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { anularComunicacion } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /** Anula un radicado erróneo con motivo (Ley 594/2000). No se borra: queda marcado y trazado. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await anularComunicacion(id, motivo);
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", id, "anulación de comunicación", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo anular la comunicación.");
     return NextResponse.redirect(volver, { status: 303 });
   }

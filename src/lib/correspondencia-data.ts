@@ -9,10 +9,20 @@ export type FiltrosCorrespondencia = {
   estado?: string;
   dependencia?: string;
   serieId?: string;
+  vencimiento?: string; // "vencidas" | "por_vencer" (MoReq 7.19)
   orden?: string;
   page?: string;
   vista?: string;
 };
+
+/** Estados en los que una comunicación con término de ley todavía "corre" (no cerrada). */
+const ESTADOS_ABIERTOS_TERMINO: EstadoComunicacion[] = [
+  "RADICADA",
+  "EN_REPARTO",
+  "ASIGNADA",
+  "EN_TRAMITE",
+  "INFORMACION_ADICIONAL_REQUERIDA",
+];
 
 const ORDEN_VALIDO = ["fecha_desc", "fecha_asc", "asunto_asc", "tercero_asc"] as const;
 export type OrdenCorrespondencia = (typeof ORDEN_VALIDO)[number];
@@ -82,8 +92,46 @@ export function construirWhereCorrespondencia(
   if (esEstadoValido(f.estado)) and.push({ estado: f.estado });
   if (f.dependencia) and.push({ OR: [{ dependenciaDestinoId: f.dependencia }, { dependenciaOrigenId: f.dependencia }] });
   if (f.serieId) and.push({ serieId: f.serieId });
+  if (f.vencimiento === "vencidas" || f.vencimiento === "por_vencer") {
+    const ahora = new Date();
+    const limite =
+      f.vencimiento === "vencidas"
+        ? { lt: ahora }
+        : { gte: ahora, lt: new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000) };
+    and.push({ estado: { in: ESTADOS_ABIERTOS_TERMINO }, fechaVencimiento: limite });
+  }
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
+}
+
+/**
+ * Cuenta de comunicaciones con el término de ley vencido y aún sin cerrar
+ * (MoReq 7.19: notificación de incumplimiento — sin correo, es un aviso visible
+ * en la bandeja para quien tramita).
+ */
+export async function contarComunicacionesVencidas(): Promise<number> {
+  return db.comunicacion.count({
+    where: { estado: { in: ESTADOS_ABIERTOS_TERMINO }, fechaVencimiento: { lt: new Date() } },
+  });
+}
+
+/**
+ * Comunicaciones sin clasificación TRD completa (sin serie o sin subserie),
+ * excluidas las anuladas (MoReq 1.34: garantizar que todo documento quede
+ * asociado a una TRD — el aviso hace visible lo que falta reclasificar).
+ */
+export async function getComunicacionesSinClasificar(limite = 100) {
+  const where = { estado: { not: "ANULADA" as EstadoComunicacion }, OR: [{ serieId: null }, { subserieId: null }] };
+  const [total, filas] = await Promise.all([
+    db.comunicacion.count({ where }),
+    db.comunicacion.findMany({
+      where,
+      orderBy: { fechaRadicacion: "desc" },
+      take: limite,
+      select: { id: true, radicado: true, asunto: true, fechaRadicacion: true },
+    }),
+  ]);
+  return { total, filas };
 }
 
 export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia, rango: RangoPeriodo = null) {

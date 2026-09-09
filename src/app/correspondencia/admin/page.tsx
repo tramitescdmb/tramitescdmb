@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeries } from "@/lib/trd";
+import { getComunicacionesSinClasificar } from "@/lib/correspondencia-data";
 import { Field, SectionHelp } from "@/components/Field";
 import { TrdSeriesExplorer, type GrupoVista } from "@/components/TrdSeriesExplorer";
 import { formatearFecha } from "@/lib/fecha";
@@ -58,10 +59,11 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
   }
 
   const sp = await searchParams;
-  const [dependencias, dependenciasActivas, series] = await Promise.all([
+  const [dependencias, dependenciasActivas, series, sinClasificar] = await Promise.all([
     listarDependencias(),
     listarDependenciasActivas(),
     listarSeries(),
+    getComunicacionesSinClasificar(),
   ]);
 
   return (
@@ -78,6 +80,25 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </div>
       )}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      {sinClasificar.total > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="font-medium">
+            {sinClasificar.total === 1
+              ? "1 comunicación sin clasificación TRD completa (falta serie o subserie)."
+              : `${sinClasificar.total} comunicaciones sin clasificación TRD completa (falta serie o subserie).`}{" "}
+            Reclasifíquelas desde el detalle de cada una.
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+            {sinClasificar.filas.slice(0, 15).map((c) => (
+              <li key={c.id}>
+                <Link href={`/correspondencia/${c.id}`} className="underline hover:no-underline">{c.radicado}</Link>
+              </li>
+            ))}
+            {sinClasificar.total > 15 && <li>y {sinClasificar.total - 15} más…</li>}
+          </ul>
+        </div>
+      )}
 
       {/* Dependencias / organigrama */}
       <section className="space-y-3">

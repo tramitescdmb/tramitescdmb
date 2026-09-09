@@ -22,7 +22,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
   }
 
   const sp = await searchParams;
-  const [{ pendientesTransferencia, pendientesDisposicion, transferidasSinConfirmar }, actas, aplazadas, transferencias] = await Promise.all([
+  const [{ pendientesTransferencia, pendientesDisposicion, transferidasSinConfirmar, proximasADisponer }, actas, aplazadas, transferencias] = await Promise.all([
     getPendientesArchivisticos(),
     listarActasEliminacion(),
     getDisposicionesAplazadas(),
@@ -50,6 +50,25 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
     <div className="space-y-6">
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      {proximasADisponer.length > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="font-medium">
+            {proximasADisponer.length === 1
+              ? "1 comunicación entra en disposición final dentro de los próximos 90 días:"
+              : `${proximasADisponer.length} comunicaciones entran en disposición final dentro de los próximos 90 días:`}
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+            {proximasADisponer.slice(0, 12).map((c) => (
+              <li key={c.id}>
+                <Link href={`/correspondencia/${c.id}`} className="underline hover:no-underline">{c.radicado}</Link>
+                <span className="text-amber-600"> ({fecha(c.fechaFinCentral)})</span>
+              </li>
+            ))}
+            {proximasADisponer.length > 12 && <li>y {proximasADisponer.length - 12} más…</li>}
+          </ul>
+        </div>
+      )}
 
       <SectionHelp>
         Ciclo archivístico: <strong>gestión</strong> → <strong>archivo central</strong> →{" "}

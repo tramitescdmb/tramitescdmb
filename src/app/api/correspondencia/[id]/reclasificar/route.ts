@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { reclasificarComunicacion } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /** Reclasifica un radicado a otra serie/subserie de la TRD con motivo (MoReq req. 1.30-1.32). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     resultado = await reclasificarComunicacion(id, subserieId, motivo);
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", id, "reclasificación de comunicación", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo reclasificar la comunicación.");
     return NextResponse.redirect(volver, { status: 303 });
   }

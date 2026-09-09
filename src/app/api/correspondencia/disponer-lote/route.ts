@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { ejecutarDisposicionFinalLote } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
 
 /** Disposición final de varias comunicaciones a la vez (MoReq 2.9). Ver ejecutarDisposicionFinalLote. */
 export async function POST(req: NextRequest) {
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     resultado = await ejecutarDisposicionFinalLote({ comunicacionIds, responsable, motivacion, aprobadaPorId: session.userId });
   } catch (err) {
+    await registrarErrorEjecucion("Comunicacion", comunicacionIds[0] ?? "(lote)", "disposición final por lote", session.userId, req.headers, err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo ejecutar la disposición final." }, { status: 400 });
   }
 

@@ -26,6 +26,10 @@ export async function getPendientesArchivisticos() {
   const pendientesTransferencia = [];
   const pendientesDisposicion = [];
   const transferidasSinConfirmar = [];
+  const proximasADisponer = [];
+  // MoReq 2.10: aviso anticipado — se cuenta cuánto falta para que una comunicación
+  // ya transferida entre en disposición final, con 90 días de antelación.
+  const umbralAviso = new Date(ahora.getTime() + 90 * 24 * 60 * 60 * 1000);
 
   for (const c of comunicaciones) {
     if (!c.subserie) continue;
@@ -36,6 +40,9 @@ export async function getPendientesArchivisticos() {
     );
     if (fase === "TRANSFERENCIA_PENDIENTE" && !c.transferidaCentralEn) {
       pendientesTransferencia.push({ ...c, fechaFinGestion });
+    }
+    if (fase !== "DISPOSICION_PENDIENTE" && fechaFinCentral <= umbralAviso && fechaFinCentral > ahora) {
+      proximasADisponer.push({ ...c, fechaFinCentral });
     }
     // MoReq 2.17: una transferencia registrada pero sin confirmar la recepción en
     // archivo central se "conserva" — no avanza a disposición final hasta que un
@@ -51,7 +58,8 @@ export async function getPendientesArchivisticos() {
     }
   }
 
-  return { pendientesTransferencia, pendientesDisposicion, transferidasSinConfirmar };
+  proximasADisponer.sort((a, b) => a.fechaFinCentral.getTime() - b.fechaFinCentral.getTime());
+  return { pendientesTransferencia, pendientesDisposicion, transferidasSinConfirmar, proximasADisponer };
 }
 
 /**
