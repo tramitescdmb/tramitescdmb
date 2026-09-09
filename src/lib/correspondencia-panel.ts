@@ -46,8 +46,8 @@ const claveMes = (d: Date) => d.toISOString().slice(0, 7);
 
 /**
  * Datos del Panel del SGDEA (/correspondencia/panel). Combina el trabajo
- * personal del funcionario con el panorama de la organización — inspirado en el
- * tablero de ORFEO pero con formas legibles (barras y área apilada, no radar).
+ * personal del funcionario con el panorama de la organización, en formas
+ * legibles (barras y área apilada).
  */
 export async function obtenerPanelCorrespondencia(userId: string, permisos: PermisosUsuario) {
   const ahora = new Date();
@@ -82,7 +82,7 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     }),
     db.comunicacion.groupBy({ by: ["estado"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
     db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
-    // MoReq / ORFEO "pendientes de proceso": radicados que entraron y nadie ha movido —
+    // "Pendientes de proceso": radicados que entraron y nadie ha movido —
     // siguen en RADICADA/EN_REPARTO y no tienen ninguna distribución.
     db.comunicacion.groupBy({
       by: ["tipo"],
