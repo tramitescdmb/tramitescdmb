@@ -25,6 +25,7 @@ import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
 import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
+import { MetadatosComunicacion } from "@/components/MetadatosComunicacion";
 import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
@@ -473,6 +474,13 @@ export default async function CorrespondenciaDetallePage({
         tipo={c.tipo}
         estado={c.estado}
         puedeOperar={puedeOperarFlujosUsuario}
+      />
+
+      <MetadatosComunicacion
+        comunicacionId={c.id}
+        serieId={c.serieId}
+        metadatos={(c.metadatos as Record<string, unknown> | null) ?? null}
+        puedeEditar={puedeDistribuirUsuario}
       />
 
       {c.tipo === "RECIBIDA" && (

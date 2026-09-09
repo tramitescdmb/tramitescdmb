@@ -37,6 +37,7 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
   { re: /^\/correspondencia\/disposicion/, trail: ["Expedientes y archivo", "Disposición final"] },
   { re: /^\/correspondencia\/plantillas/, trail: ["Plantillas"] },
   { re: /^\/correspondencia\/admin\/vocabulario/, trail: ["Configuración", "Vocabulario controlado"] },
+  { re: /^\/correspondencia\/admin\/metadatos/, trail: ["Configuración", "Campos de metadato"] },
   { re: /^\/correspondencia\/admin\/flujos\/[^/]+/, trail: ["Configuración", "Flujos de trabajo", "Editar flujo"] },
   { re: /^\/correspondencia\/admin\/flujos/, trail: ["Configuración", "Flujos de trabajo"] },
   { re: /^\/correspondencia\/admin/, trail: ["Configuración", "Dependencias y TRD"] },

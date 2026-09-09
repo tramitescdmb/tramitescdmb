@@ -60,6 +60,7 @@ const GRUPOS: Grupo[] = [
     items: [
       { href: "/correspondencia/admin", label: "Dependencias y TRD" },
       { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
+      { href: "/correspondencia/admin/metadatos", label: "Campos de metadato", prefijo: true },
       { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
       { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true },
     ],

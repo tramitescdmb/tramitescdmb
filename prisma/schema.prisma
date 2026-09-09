@@ -931,6 +931,13 @@ model SerieDocumental {
   // de esta serie. El número de índice (ordenIndice) que respalda el hash firmado
   // NO cambia — esto solo controla el orden en que se VE la lista.
   criterioOrdenExpediente CriterioOrdenExpediente @default(FECHA_DOCUMENTO)
+  // MoReq 2.6: desde cuándo cuenta la retención de lo clasificado en esta serie —
+  // desde la radicación/creación (por defecto) o desde el cierre del expediente
+  // donde quede archivado.
+  retencionDesde          RetencionDesde         @default(RADICACION)
+  // MoReq 1.43: si está, un expediente de esta serie que supere esta cantidad de
+  // folios se divide en tomos (Tomo 1 de N, 2 de N…) en el FUID y el índice.
+  maxFoliosPorTomo        Int?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
@@ -938,6 +945,7 @@ model SerieDocumental {
   subseries               SubserieDocumental[]
   comunicaciones          Comunicacion[]
   expedientesDocumentales ExpedienteDocumental[]
+  camposMetadato          CampoMetadato[]
 
   // El código de serie NO es único por sí solo: es una categoría universal
   // (ej. "20 ACTAS") que CADA dependencia produce por su cuenta, con sus
@@ -975,6 +983,51 @@ enum CriterioOrdenExpediente {
   FECHA_DOCUMENTO // por la fecha del trámite/documento (Acuerdo 001/2024 AGN, orden natural)
   FECHA_INCORPORACION // por el orden real de incorporación al índice
   NOMBRE // alfabético por nombre de archivo
+}
+
+enum RetencionDesde {
+  RADICACION // la retención cuenta desde la radicación/creación de cada documento (por defecto)
+  CIERRE_EXPEDIENTE // cuenta desde el cierre del expediente donde quede archivado
+}
+
+enum TipoCampoMetadato {
+  TEXTO
+  NUMERO
+  FECHA
+  LISTA // una opción de `opciones`
+  BOOLEANO
+}
+
+enum AmbitoCampoMetadato {
+  COMUNICACION
+  EXPEDIENTE
+  AMBOS
+}
+
+// Campos de metadato adicionales que un administrador de archivo define desde la
+// interfaz (MoReq 5.1/5.2): amplían la ficha de una comunicación o un expediente
+// más allá del esquema fijo. Si `serieId` está puesto, el campo solo aparece para
+// lo clasificado en esa serie y su `valorPorDefecto` se hereda (MoReq 5.3). Los
+// valores se guardan en `Comunicacion.metadatos` / `ExpedienteDocumental.metadatos`
+// (Json: { [clave]: valor }).
+model CampoMetadato {
+  id              String              @id @default(cuid())
+  clave           String              @unique // slug estable, ej. "numero_predio"
+  nombre          String // etiqueta visible
+  ayuda           String?
+  tipo            TipoCampoMetadato   @default(TEXTO)
+  opciones        String[]            @default([]) // solo para tipo LISTA
+  obligatorio     Boolean             @default(false)
+  ambito          AmbitoCampoMetadato @default(AMBOS)
+  serieId         String? // si está: solo aplica a esa serie y hereda su valorPorDefecto
+  valorPorDefecto String?
+  activo          Boolean             @default(true)
+  orden           Int                 @default(0)
+  createdAt       DateTime            @default(now())
+
+  serie SerieDocumental? @relation(fields: [serieId], references: [id])
+
+  @@index([serieId])
 }
 
 // Plantillas de documentos (MoReq 3.30/3.31): cuerpos y asuntos preescritos que
@@ -1113,6 +1166,9 @@ model Comunicacion {
   // Palabras clave del vocabulario controlado (MoReq 5.5) — cada valor debe existir
   // como TerminoControlado activo al momento de guardarse (se valida en el dominio).
   palabrasClave String[] @default([])
+  // MoReq 5.1/5.6: valores de los campos de metadato adicionales definidos por el
+  // administrador ({ [CampoMetadato.clave]: valor }). Validado contra CampoMetadato.
+  metadatos     Json?
 
   transferidaCentralEn         DateTime?
   // MoReq 2.17: una transferencia al archivo central se "conserva" (no se puede
@@ -1307,6 +1363,8 @@ model ExpedienteDocumental {
 
   // Palabras clave del vocabulario controlado (MoReq 5.5).
   palabrasClave String[] @default([])
+  // MoReq 5.1/5.6: campos de metadato adicionales (ver CampoMetadato).
+  metadatos     Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
