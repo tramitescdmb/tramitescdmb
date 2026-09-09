@@ -130,6 +130,58 @@ export async function eliminarFlujo(id: string) {
   await db.flujoTrabajo.delete({ where: { id } });
 }
 
+/** MoReq 7.12: una copia editable del flujo, para versionarlo sin tocar el que está en uso. */
+export async function duplicarFlujo(id: string, usuarioId: string) {
+  const orig = await db.flujoTrabajo.findUnique({
+    where: { id },
+    include: { pasos: { orderBy: { orden: "asc" }, include: { transiciones: true } } },
+  });
+  if (!orig) throw new Error("El flujo no existe.");
+  const copia = await db.flujoTrabajo.create({
+    data: {
+      nombre: `${orig.nombre} (copia)`,
+      descripcion: orig.descripcion,
+      aplicaA: orig.aplicaA,
+      activo: false,
+      esPlantilla: false,
+      dependenciasOperadoras: orig.dependenciasOperadoras,
+      creadoPorId: usuarioId,
+      pasos: {
+        create: orig.pasos.map((p) => ({
+          orden: p.orden,
+          nombre: p.nombre,
+          instrucciones: p.instrucciones,
+          tipo: p.tipo,
+          asignacion: p.asignacion,
+          dependenciaId: p.dependenciaId,
+          cargoClave: p.cargoClave,
+          slaDiasHabiles: p.slaDiasHabiles,
+          posX: p.posX,
+          posY: p.posY,
+        })),
+      },
+    },
+    include: { pasos: { orderBy: { orden: "asc" } } },
+  });
+  const idPorOrden = new Map(copia.pasos.map((p) => [p.orden, p.id]));
+  const ordenOrig = new Map(orig.pasos.map((p) => [p.id, p.orden]));
+  for (const p of orig.pasos) {
+    for (const [i, t] of p.transiciones.entries()) {
+      const desde = idPorOrden.get(ordenOrig.get(t.desdePasoId)!);
+      const hacia = idPorOrden.get(ordenOrig.get(t.haciaPasoId)!);
+      if (desde && hacia) {
+        await db.transicionPaso.create({ data: { flujoId: copia.id, desdePasoId: desde, haciaPasoId: hacia, etiqueta: t.etiqueta, orden: i } });
+      }
+    }
+  }
+  return copia;
+}
+
+/** MoReq 7.8: qué dependencias pueden operar el flujo (vacío = cualquiera con permiso). */
+export async function guardarDependenciasOperadoras(flujoId: string, dependenciaIds: string[]) {
+  return db.flujoTrabajo.update({ where: { id: flujoId }, data: { dependenciasOperadoras: [...new Set(dependenciaIds.filter(Boolean))] } });
+}
+
 /* ---------------------------------------------------------------- Pasos */
 
 export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo?: TipoPasoFlujo }) {
@@ -354,13 +406,32 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
 
 /* ============================================================ Ejecución (instancias) */
 
+/** Contexto del usuario para el control de acceso por flujo (MoReq 7.8). */
+export type ContextoOperador = { esAdminArchivo: boolean; dependenciaId: string | null };
+
+function verificarAccesoFlujo(
+  dependenciasOperadoras: string[],
+  nombreFlujo: string,
+  ctx?: ContextoOperador,
+) {
+  if (dependenciasOperadoras.length === 0) return;
+  if (!ctx) return; // sin contexto no se aplica (compat.)
+  if (ctx.esAdminArchivo) return;
+  if (ctx.dependenciaId && dependenciasOperadoras.includes(ctx.dependenciaId)) return;
+  throw new Error(`El flujo «${nombreFlujo}» solo lo operan las dependencias autorizadas.`);
+}
+
 /** Flujos activos que se le pueden aplicar a una comunicación de este tipo. */
-export async function flujosAplicables(tipo: TipoComunicacion) {
-  return db.flujoTrabajo.findMany({
+export async function flujosAplicables(tipo: TipoComunicacion, ctx?: ContextoOperador) {
+  const flujos = await db.flujoTrabajo.findMany({
     where: { activo: true, OR: [{ aplicaA: null }, { aplicaA: tipo }] },
     orderBy: { nombre: "asc" },
-    select: { id: true, nombre: true, descripcion: true },
+    select: { id: true, nombre: true, descripcion: true, dependenciasOperadoras: true },
   });
+  if (!ctx || ctx.esAdminArchivo) return flujos;
+  return flujos.filter(
+    (f) => f.dependenciasOperadoras.length === 0 || (ctx.dependenciaId ? f.dependenciasOperadoras.includes(ctx.dependenciaId) : false),
+  );
 }
 
 export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
@@ -406,7 +477,13 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
   return { comunicacion, instancias };
 }
 
-export async function iniciarInstancia(comunicacionId: string, flujoId: string, usuarioId: string, ip?: string | null) {
+export async function iniciarInstancia(
+  comunicacionId: string,
+  flujoId: string,
+  usuarioId: string,
+  ip?: string | null,
+  ctx?: ContextoOperador,
+) {
   const [comunicacion, flujo] = await Promise.all([
     db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, radicado: true, tipo: true, estado: true } }),
     db.flujoTrabajo.findUnique({ where: { id: flujoId }, include: { pasos: { orderBy: { orden: "asc" }, take: 1 } } }),
@@ -415,6 +492,7 @@ export async function iniciarInstancia(comunicacionId: string, flujoId: string, 
   if (comunicacion.estado === "ANULADA") throw new Error("No se puede iniciar un flujo sobre una comunicación anulada.");
   if (!flujo || !flujo.activo) throw new Error("El flujo no está activo.");
   if (flujo.aplicaA && flujo.aplicaA !== comunicacion.tipo) throw new Error("El flujo no aplica a este tipo de comunicación.");
+  verificarAccesoFlujo(flujo.dependenciasOperadoras, flujo.nombre, ctx);
   const yaEnCurso = await db.instanciaFlujo.findFirst({ where: { comunicacionId, estado: "EN_CURSO" } });
   if (yaEnCurso) throw new Error("Esta comunicación ya tiene un flujo en curso.");
   const pasoInicial = flujo.pasos[0];
@@ -448,17 +526,19 @@ export async function avanzarInstancia(
   usuarioId: string,
   comentario: string | null,
   ip?: string | null,
+  ctx?: ContextoOperador,
 ) {
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },
     include: {
-      flujo: { select: { nombre: true } },
+      flujo: { select: { nombre: true, dependenciasOperadoras: true } },
       comunicacion: { select: { id: true, radicado: true } },
       pasoActual: { include: { transiciones: true } },
     },
   });
   if (!instancia) throw new Error("La instancia de flujo no existe.");
   if (instancia.estado !== "EN_CURSO") throw new Error("El flujo ya no está en curso.");
+  verificarAccesoFlujo(instancia.flujo.dependenciasOperadoras, instancia.flujo.nombre, ctx);
   const pasoActual = instancia.pasoActual;
   if (!pasoActual) throw new Error("El flujo no tiene un paso actual.");
   const transicion = pasoActual.transiciones.find((t) => t.id === transicionId);

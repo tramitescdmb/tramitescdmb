@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario } from "@/lib/permisos";
-import { iniciarInstancia, avanzarInstancia, cancelarInstancia, puedeOperarFlujos } from "@/lib/flujos";
+import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
+import { iniciarInstancia, avanzarInstancia, cancelarInstancia, puedeOperarFlujos, type ContextoOperador } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion, datosPeticion } from "@/lib/auditoria-doc";
+import { db } from "@/lib/db";
 
 /** Inicia, avanza o cancela un flujo sobre una comunicación. `accion` = "iniciar" | "avanzar" | "cancelar". */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -21,9 +22,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const form = await req.formData();
   const accion = String(form.get("accion") || "");
   const { ip } = datosPeticion(await headers());
+  const usuario = await db.usuario.findUnique({ where: { id: session.userId }, select: { dependenciaId: true } });
+  const ctx: ContextoOperador = { esAdminArchivo: puedeAdministrarArchivo(permisos), dependenciaId: usuario?.dependenciaId ?? null };
   try {
     if (accion === "iniciar") {
-      await iniciarInstancia(id, String(form.get("flujoId") || ""), session.userId, ip);
+      await iniciarInstancia(id, String(form.get("flujoId") || ""), session.userId, ip, ctx);
       volver.searchParams.set("ok", "Flujo iniciado.");
     } else if (accion === "avanzar") {
       await avanzarInstancia(
@@ -32,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         session.userId,
         String(form.get("comentario") || "") || null,
         ip,
+        ctx,
       );
       volver.searchParams.set("ok", "Paso completado.");
     } else if (accion === "cancelar") {

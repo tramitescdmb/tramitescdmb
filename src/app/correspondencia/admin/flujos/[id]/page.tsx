@@ -7,6 +7,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { obtenerFlujo, puedeAdministrarFlujos, ETIQUETA_TIPO_PASO, ETIQUETA_ASIGNACION, ETIQUETA_APLICA_A } from "@/lib/flujos";
 import { FlujoLienzo } from "@/components/FlujoLienzoLazy";
+import { FlujoSimulador } from "@/components/FlujoSimulador";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
@@ -76,7 +77,13 @@ export default async function FlujoEditorPage({
 
       {/* Lienzo — editor visual del flujo */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo (editor visual)</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo (editor visual)</h3>
+          <FlujoSimulador
+            pasos={flujo.pasos.map((p) => ({ id: p.id, orden: p.orden, nombre: p.nombre, tipo: p.tipo }))}
+            transiciones={flujo.pasos.flatMap((p) => p.transiciones.map((t) => ({ desdePasoId: t.desdePasoId, haciaPasoId: t.haciaPasoId, etiqueta: t.etiqueta })))}
+          />
+        </div>
         <FlujoLienzo
           flujoId={flujo.id}
           pasos={flujo.pasos.map((p) => ({ id: p.id, orden: p.orden, nombre: p.nombre, tipo: p.tipo, posX: p.posX, posY: p.posY }))}
@@ -106,12 +113,37 @@ export default async function FlujoEditorPage({
             className={flujo.activo ? "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}>
             {flujo.activo ? "Desactivar" : "Activar flujo"}
           </FormBoton>
+          <FormBoton accion={accion} name="accion" value="duplicar" className="border border-stone-300 bg-white text-stone-700 hover:bg-stone-50">
+            Duplicar
+          </FormBoton>
+          <a href={`/api/correspondencia/flujos/${flujo.id}/bpmn`} className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            Descargar BPMN
+          </a>
           {flujo._count.instancias === 0 && (
             <FormBoton accion={accion} name="accion" value="eliminar" className="border border-red-200 bg-white text-red-700 hover:bg-red-50">
               Eliminar flujo
             </FormBoton>
           )}
         </div>
+      </form>
+
+      {/* Quién puede operar el flujo (MoReq 7.8) */}
+      <form action={accion} method="post" className="rounded-xl border border-stone-200 bg-white p-4">
+        <input type="hidden" name="accion" value="accesos" />
+        <p className="text-sm font-semibold text-stone-900">Quién puede operar este flujo</p>
+        <p className="mt-0.5 text-xs text-stone-500">
+          Sin nada marcado: cualquier funcionario con permiso de distribución. Con dependencias marcadas: solo
+          quienes pertenecen a una de ellas (más el administrador de archivo).
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+          {dependencias.map((d) => (
+            <label key={d.id} className="flex items-center gap-1.5 text-xs text-stone-700">
+              <input type="checkbox" name="dependenciaId" value={d.id} defaultChecked={flujo.dependenciasOperadoras.includes(d.id)} className="rounded border-stone-300" />
+              {d.nombre}
+            </label>
+          ))}
+        </div>
+        <button className="mt-3 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar acceso</button>
       </form>
 
       {/* Pasos */}

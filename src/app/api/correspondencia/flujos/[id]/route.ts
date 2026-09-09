@@ -13,6 +13,8 @@ import {
   moverPaso,
   agregarTransicion,
   eliminarTransicion,
+  duplicarFlujo,
+  guardarDependenciasOperadoras,
   puedeAdministrarFlujos,
 } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
@@ -75,6 +77,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         await eliminarFlujo(id);
         lista.searchParams.set("ok", "Flujo eliminado.");
         return NextResponse.redirect(lista, { status: 303 });
+      }
+      case "duplicar": {
+        const copia = await duplicarFlujo(id, session.userId);
+        return NextResponse.redirect(new URL(`/correspondencia/admin/flujos/${copia.id}?ok=Copia+creada+(queda+inactiva)`, req.url), { status: 303 });
+      }
+      case "accesos": {
+        await guardarDependenciasOperadoras(id, form.getAll("dependenciaId").map(String));
+        detalle.searchParams.set("ok", "Acceso al flujo actualizado.");
+        return NextResponse.redirect(detalle, { status: 303 });
       }
       case "agregar-paso": {
         const tipoRaw = String(form.get("tipo") || "TAREA");

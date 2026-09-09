@@ -1531,6 +1531,9 @@ model FlujoTrabajo {
   aplicaA     TipoComunicacion? // null = cualquier tipo
   activo      Boolean           @default(true)
   esPlantilla Boolean           @default(false) // se creó desde las plantillas precargadas
+  // MoReq 7.8: si tiene dependencias, solo un funcionario de una de ellas (o admin de
+  // archivo) puede iniciar/avanzar este flujo. Vacío = cualquiera con permiso de operar flujos.
+  dependenciasOperadoras String[] @default([])
   creadoPorId String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
