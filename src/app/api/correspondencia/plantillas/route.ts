@@ -6,11 +6,11 @@ import { crearPlantilla, esAmbitoValido } from "@/lib/plantillas";
 /** Crea una plantilla de documento (MoReq 3.30/3.31). Solo administrador de archivo. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  const volver = new URL("/correspondencia/admin/plantillas", req.url);
+  const volver = new URL("/correspondencia/plantillas", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
-    volver.searchParams.set("error", "No tiene permiso para administrar el archivo.");
+    volver.searchParams.set("error", "No tiene permiso para administrar plantillas.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
     await crearPlantilla({
       nombre: String(form.get("nombre") || ""),
       descripcion: String(form.get("descripcion") || ""),
+      categoria: String(form.get("categoria") || ""),
+      asunto: String(form.get("asunto") || ""),
       cuerpo: String(form.get("cuerpo") || ""),
       ambito: esAmbitoValido(ambito) ? ambito : "AMBAS",
     });

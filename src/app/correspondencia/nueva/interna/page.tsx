@@ -40,6 +40,7 @@ export default async function NuevaInternaPage() {
         }))}
         dependenciaOrigenSugerida={usuario?.dependenciaId ?? null}
         plantillas={plantillas}
+        usuarioNombre={session.nombre}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, FolderTree, Plus, Upload, Download, FileText, ChevronRight } from "lucide-react";
+import { Building2, FolderTree, Plus, Upload, Download } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
@@ -269,23 +269,6 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </details>
 
         <TrdSeriesExplorer grupos={agruparPorDependencia(series)} />
-      </section>
-
-      {/* Plantillas de documentos */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <FileText className="h-4 w-4 text-cdmb-600" aria-hidden /> Plantillas de documentos
-        </h2>
-        <SectionHelp>
-          Cuerpos preescritos para oficios, memorandos y respuestas, que un funcionario carga y edita antes de radicar.
-        </SectionHelp>
-        <Link
-          href="/correspondencia/admin/plantillas"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
-        >
-          Administrar plantillas de documentos
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </Link>
       </section>
     </div>
   );

@@ -85,6 +85,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
         inicial={inicial}
         documentosRespuesta={documentosRespuesta.map((d) => d.nombre)}
         plantillas={plantillas}
+        usuarioNombre={session.nombre}
       />
     </div>
   );

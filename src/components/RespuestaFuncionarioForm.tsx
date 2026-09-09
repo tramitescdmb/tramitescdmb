@@ -7,15 +7,18 @@ import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-c
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
+import { contextoBase, type ContextoMarcadores } from "@/lib/plantillas-marcadores";
 
 export function RespuestaFuncionarioForm({
   comunicacionId,
   textoInicial,
   plantillas = [],
+  contexto = {},
 }: {
   comunicacionId: string;
   textoInicial: string;
   plantillas?: PlantillaOpcion[];
+  contexto?: ContextoMarcadores;
 }) {
   const router = useRouter();
   const [texto, setTexto] = useState(textoInicial);
@@ -77,7 +80,7 @@ export function RespuestaFuncionarioForm({
           Escribir respuesta <span className="text-red-500">*</span>
         </label>
         <div className="mb-2">
-          <PlantillaSelector plantillas={plantillas} contenidoActual={texto} onCargar={setTexto} />
+          <PlantillaSelector plantillas={plantillas} contenidoActual={texto} onCargar={setTexto} contexto={{ ...contextoBase(), ...contexto }} />
         </div>
         <textarea
           value={texto}

@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { listarPlantillas } from "@/lib/plantillas";
 import { NuevoExpedienteDocumentalForm } from "@/components/NuevoExpedienteDocumentalForm";
 
 export default async function NuevoExpedientePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -12,7 +13,11 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
   const sp = await searchParams;
 
-  const [todasDependencias, series] = await Promise.all([listarDependenciasActivas(), listarSeriesVigentes()]);
+  const [todasDependencias, series, plantillas] = await Promise.all([
+    listarDependenciasActivas(),
+    listarSeriesVigentes(),
+    listarPlantillas("EXPEDIENTE"),
+  ]);
 
   // Un funcionario sin rol de administrador de archivo solo puede abrir
   // expedientes para SU PROPIA dependencia (ver puedeGestionarExpedienteDeDependencia).
@@ -48,6 +53,8 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
             dependenciaId: s.dependenciaId,
             subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
           }))}
+          plantillas={plantillas}
+          usuarioNombre={session.nombre}
         />
       )}
     </div>

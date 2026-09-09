@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Field, SectionHelp } from "@/components/Field";
+import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
+import { contextoBase } from "@/lib/plantillas-marcadores";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -9,9 +11,21 @@ type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-export function NuevoExpedienteDocumentalForm({ dependencias, series }: { dependencias: Dependencia[]; series: Serie[] }) {
+export function NuevoExpedienteDocumentalForm({
+  dependencias,
+  series,
+  plantillas = [],
+  usuarioNombre = "",
+}: {
+  dependencias: Dependencia[];
+  series: Serie[];
+  plantillas?: PlantillaOpcion[];
+  usuarioNombre?: string;
+}) {
   const [dependenciaId, setDependenciaId] = useState(dependencias.length === 1 ? dependencias[0]!.id : "");
   const [serieId, setSerieId] = useState("");
+  const [asunto, setAsunto] = useState("");
+  const [descripcion, setDescripcion] = useState("");
 
   const seriesDeDependencia = useMemo(() => {
     const sinDependencia = series.filter((s) => !s.dependenciaId);
@@ -22,11 +36,21 @@ export function NuevoExpedienteDocumentalForm({ dependencias, series }: { depend
 
   return (
     <form action="/api/correspondencia/expedientes" method="post" className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+      {plantillas.length > 0 && (
+        <PlantillaSelector
+          plantillas={plantillas}
+          contenidoActual={descripcion}
+          asuntoActual={asunto}
+          onCargar={setDescripcion}
+          onCargarAsunto={setAsunto}
+          contexto={{ ...contextoBase(), ASUNTO: asunto, FUNCIONARIO: usuarioNombre, DEPENDENCIA: dependencias.find((d) => d.id === dependenciaId)?.nombre ?? "" }}
+        />
+      )}
       <Field label="Asunto" required>
-        <input name="asunto" required className={inputCls} placeholder='Ej. "Contrato de prestación de servicios No. 045-2026"' />
+        <input name="asunto" required value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} placeholder='Ej. "Contrato de prestación de servicios No. 045-2026"' />
       </Field>
       <Field label="Descripción">
-        <textarea name="descripcion" rows={2} className={inputCls} />
+        <textarea name="descripcion" rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className={inputCls} />
       </Field>
 
       <div className="border-t border-stone-100 pt-4">

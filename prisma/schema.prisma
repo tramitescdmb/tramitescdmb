@@ -949,16 +949,21 @@ enum CriterioOrdenExpediente {
   NOMBRE // alfabético por nombre de archivo
 }
 
-// Plantillas de documentos (MoReq 3.30/3.31): cuerpos preescritos que un
-// administrador de archivo crea y mantiene, y que un funcionario puede cargar al
-// redactar un oficio de salida, un memorando interno o una respuesta. Solo texto
-// plano — el cuerpo firmado del proyecto es texto, no hay editor enriquecido.
+// Plantillas de documentos (MoReq 3.30/3.31): cuerpos y asuntos preescritos que
+// un administrador de archivo crea y mantiene, y que un funcionario carga al
+// redactar un oficio, un memorando, una respuesta o la descripción de un
+// expediente. Solo texto plano — el cuerpo firmado del proyecto es texto, no hay
+// editor enriquecido. El cuerpo/asunto puede traer marcadores tipo [FECHA] o
+// [DESTINATARIO] que se rellenan solos al cargar la plantilla (ver src/lib/plantillas.ts).
 model PlantillaDocumento {
   id          String          @id @default(cuid())
   nombre      String
   descripcion String?         @db.Text
+  categoria   String? // agrupa la lista cuando hay muchas (opcional)
+  asunto      String? // plantilla del asunto, opcional (se carga junto con el cuerpo)
   cuerpo      String          @db.Text
   ambito      AmbitoPlantilla @default(AMBAS)
+  vecesUsada  Int             @default(0) // se incrementa cada vez que alguien la carga en un formulario
   activo      Boolean         @default(true)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -968,7 +973,8 @@ enum AmbitoPlantilla {
   ENVIADA
   INTERNA
   RESPUESTA
-  AMBAS
+  EXPEDIENTE // descripción de un expediente documental
+  AMBAS // cualquier oficio/memorando/respuesta (no aplica a EXPEDIENTE)
 }
 
 // Tercer nivel de la TRD (Serie > Subserie > Tipo documental): qué documentos

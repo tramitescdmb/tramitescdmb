@@ -8,6 +8,7 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
+import { contextoBase } from "@/lib/plantillas-marcadores";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -18,11 +19,13 @@ export function MemorandoForm({
   series,
   dependenciaOrigenSugerida,
   plantillas = [],
+  usuarioNombre = "",
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   dependenciaOrigenSugerida: string | null;
   plantillas?: PlantillaOpcion[];
+  usuarioNombre?: string;
 }) {
   const router = useRouter();
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState(dependenciaOrigenSugerida ?? "");
@@ -139,7 +142,21 @@ export function MemorandoForm({
             </Field>
           </div>
           <div className="sm:col-span-2 lg:col-span-4 space-y-2">
-            <PlantillaSelector plantillas={plantillas} contenidoActual={contenido} onCargar={setContenido} />
+            <PlantillaSelector
+              plantillas={plantillas}
+              contenidoActual={contenido}
+              asuntoActual={asunto}
+              onCargar={setContenido}
+              onCargarAsunto={setAsunto}
+              contexto={{
+                ...contextoBase(),
+                ASUNTO: asunto,
+                REMITENTE: usuarioNombre,
+                FUNCIONARIO: usuarioNombre,
+                DESTINATARIO: dependencias.find((d) => d.id === dependenciaDestinoId)?.nombre ?? "",
+                DEPENDENCIA: dependencias.find((d) => d.id === dependenciaOrigenId)?.nombre ?? "",
+              }}
+            />
             <Field label="Contenido" required>
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del memorando…" />
             </Field>

@@ -481,7 +481,18 @@ export default async function CorrespondenciaDetallePage({
             </ul>
           )}
           {puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0 ? (
-            <RespuestaFuncionarioForm comunicacionId={id} textoInicial={c.respuestaTexto ?? ""} plantillas={plantillasRespuesta} />
+            <RespuestaFuncionarioForm
+              comunicacionId={id}
+              textoInicial={c.respuestaTexto ?? ""}
+              plantillas={plantillasRespuesta}
+              contexto={{
+                RADICADO: c.radicado,
+                ASUNTO: c.asunto,
+                DESTINATARIO: c.terceroNombre ?? "",
+                REMITENTE: c.terceroNombre ?? "",
+                FUNCIONARIO: session.nombre,
+              }}
+            />
           ) : (
             !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>
           )}
