@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarBitacoraFiltrada, ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA, type FiltrosBitacora } from "@/lib/correspondencia-bitacora";
 import { SectionHelp } from "@/components/Field";
+import { TituloSeccion } from "@/components/sgdea/ui";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFechaHora as fecha } from "@/lib/fecha";
 import { interpretarUserAgent } from "@/lib/user-agent";
@@ -45,20 +46,25 @@ export default async function BitacoraPage({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-stone-900">Bitácora de auditoría (inalterable)</h2>
+      <TituloSeccion
+        contador={bitacora.total}
+        accion={
           <span className="flex items-center gap-3">
             <DescargarCsvBoton href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}`} />
             <a
               href={`/api/correspondencia/bitacora/exportar?${paramsSinPagina.toString()}&formato=xml`}
-              className="text-xs font-medium text-cdmb-700 hover:underline"
+              className="font-medium text-cdmb-700 hover:underline"
             >
               XML
             </a>
           </span>
-        </div>
-        <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
+        }
+      >
+        Bitácora de auditoría (inalterable)
+      </TituloSeccion>
+      <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
+
+      <div className="rounded-xl border border-stone-200 bg-white p-4">
         <form method="get" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>
             <option value="">Cualquier acción</option>

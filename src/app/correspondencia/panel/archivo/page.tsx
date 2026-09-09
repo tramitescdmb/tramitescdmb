@@ -4,7 +4,7 @@ import { FolderOpen, FolderCheck, Files, Handshake } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { obtenerPanelArchivoVista } from "@/lib/correspondencia-panel";
-import { Kpi, Sub, Panel, BloqueTitulo } from "../_piezas";
+import { TarjetaKpi, Sub, Panel, TituloSeccion } from "@/components/sgdea/ui";
 
 export default async function PanelArchivoVistaPage() {
   const session = await getSession();
@@ -16,13 +16,13 @@ export default async function PanelArchivoVistaPage() {
 
   return (
     <section className="space-y-4">
-      <BloqueTitulo icon={FolderOpen}>Expedientes y archivo</BloqueTitulo>
+      <TituloSeccion icon={FolderOpen}>Expedientes y archivo</TituloSeccion>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Kpi icon={FolderOpen} label="Expedientes abiertos" value={ex.abiertos} tono="cdmb" href="/correspondencia/expedientes" />
-        <Kpi icon={FolderCheck} label="Expedientes cerrados" value={ex.cerrados} tono="verde" />
-        <Kpi icon={Files} label="Documentos en expedientes" value={ex.documentos} />
-        <Kpi
+        <TarjetaKpi icon={FolderOpen} label="Expedientes abiertos" value={ex.abiertos} tono="cdmb" href="/correspondencia/expedientes" />
+        <TarjetaKpi icon={FolderCheck} label="Expedientes cerrados" value={ex.cerrados} tono="verde" />
+        <TarjetaKpi icon={Files} label="Documentos en expedientes" value={ex.documentos} />
+        <TarjetaKpi
           icon={Handshake}
           label="Préstamos activos"
           value={ex.conPrestamoActivo}

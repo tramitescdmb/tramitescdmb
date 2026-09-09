@@ -7,6 +7,7 @@ import { getPendientesArchivisticos, listarActasEliminacion, getDisposicionesApl
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
 import { Field, SectionHelp } from "@/components/Field";
+import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { DisposicionLoteForm, type ItemDisposicionPendiente } from "@/components/DisposicionLoteForm";
 import { formatearFecha as fecha } from "@/lib/fecha";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
@@ -77,12 +78,11 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </SectionHelp>
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <ArrowRightCircle className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Pendientes de transferir a archivo central ({pendientesTransferencia.length})
-        </h2>
+        <TituloSeccion icon={ArrowRightCircle} contador={pendientesTransferencia.length}>
+          Pendientes de transferir a archivo central
+        </TituloSeccion>
         {pendientesTransferencia.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay comunicaciones pendientes de transferir por ahora.</p>
+          <EstadoVacio>No hay comunicaciones pendientes de transferir por ahora.</EstadoVacio>
         ) : (
           <div className="space-y-2">
             {pendientesTransferencia.map((c) => (
@@ -107,17 +107,16 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <PackageCheck className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Transferidas — pendientes de confirmar recepción ({transferidasSinConfirmar.length})
-        </h2>
+        <TituloSeccion icon={PackageCheck} contador={transferidasSinConfirmar.length}>
+          Transferidas — pendientes de confirmar recepción
+        </TituloSeccion>
         <SectionHelp>
           Una transferencia registrada se <strong>conserva</strong> hasta que el archivo central confirme que
           recibió el documento y el proceso concluyó (MoReq 2.17). Mientras no se confirme, no avanza a
           disposición final aunque ya haya cumplido su retención.
         </SectionHelp>
         {transferidasSinConfirmar.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay transferencias pendientes de confirmar recepción.</p>
+          <EstadoVacio>No hay transferencias pendientes de confirmar recepción.</EstadoVacio>
         ) : (
           <div className="space-y-2">
             {transferidasSinConfirmar.map((c) => (
@@ -142,16 +141,15 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <FileWarning className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Pendientes de disposición final ({pendientesDisposicion.length})
-        </h2>
+        <TituloSeccion icon={FileWarning} contador={pendientesDisposicion.length}>
+          Pendientes de disposición final
+        </TituloSeccion>
         <SectionHelp>
           Eliminación y selección destruyen el original: exigen responsable aprobador y quedan con acta formal (una
           sola por lote). Conservación y microfilmación/digitalización solo registran la fecha.
         </SectionHelp>
         {itemsDisposicion.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">No hay comunicaciones pendientes de disposición final por ahora.</p>
+          <EstadoVacio>No hay comunicaciones pendientes de disposición final por ahora.</EstadoVacio>
         ) : (
           <>
             <DisposicionLoteForm items={itemsDisposicion} />
@@ -193,10 +191,9 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
 
       {aplazadas.length > 0 && (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-            <Clock className="h-4 w-4 text-cdmb-600" aria-hidden />
-            Disposiciones aplazadas ({aplazadas.length})
-          </h2>
+          <TituloSeccion icon={Clock} contador={aplazadas.length}>
+            Disposiciones aplazadas
+          </TituloSeccion>
           <div className="space-y-2">
             {aplazadas.map((c) => (
               <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
@@ -212,16 +209,15 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       )}
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <ArrowRightCircle className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Transferencias a archivo central ({transferencias.total})
-        </h2>
+        <TituloSeccion icon={ArrowRightCircle} contador={transferencias.total}>
+          Transferencias a archivo central
+        </TituloSeccion>
         <SectionHelp>
           Estado de cada transferencia registrada (MoReq 2.16): {transferencias.confirmadas} con recepción
           confirmada, {transferencias.sinConfirmar} pendientes de confirmar.
         </SectionHelp>
         {transferencias.total === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">Todavía no se ha registrado ninguna transferencia al archivo central.</p>
+          <EstadoVacio>Todavía no se ha registrado ninguna transferencia al archivo central.</EstadoVacio>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-sm">
@@ -261,10 +257,10 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold text-stone-900">Actas de eliminación ({actas.length})</h2>
+        <TituloSeccion contador={actas.length}>Actas de eliminación</TituloSeccion>
         <SectionHelp>Historial de eliminaciones y selecciones ejecutadas, con responsable y fecha.</SectionHelp>
         {actas.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">Todavía no se ha generado ningún acta.</p>
+          <EstadoVacio>Todavía no se ha generado ningún acta.</EstadoVacio>
         ) : (
           <div className="space-y-2">
             {actas.map((a) => (

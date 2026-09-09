@@ -7,6 +7,7 @@ import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencia
 import { listarSeries } from "@/lib/trd";
 import { getComunicacionesSinClasificar } from "@/lib/correspondencia-data";
 import { Field, SectionHelp } from "@/components/Field";
+import { TituloSeccion } from "@/components/sgdea/ui";
 import { TrdSeriesExplorer, type GrupoVista } from "@/components/TrdSeriesExplorer";
 import { formatearFecha } from "@/lib/fecha";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
@@ -102,9 +103,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {/* Dependencias / organigrama */}
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <Building2 className="h-4 w-4 text-cdmb-600" aria-hidden /> Dependencias (organigrama)
-        </h2>
+        <TituloSeccion icon={Building2}>Dependencias (organigrama)</TituloSeccion>
         <SectionHelp>
           Determina a quién se puede distribuir o quién firma memorandos por cada área. Una dependencia inactiva no
           borra su historial, solo deja de estar disponible para asignar.
@@ -170,21 +169,23 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {/* TRD / CCD */}
       <section className="space-y-3">
-        <h2 className="flex items-center justify-between gap-2 text-base font-semibold text-stone-900">
-          <span className="flex items-center gap-2">
-            <FolderTree className="h-4 w-4 text-cdmb-600" aria-hidden /> Tablas de Retención Documental (TRD/CCD)
-          </span>
-          <span className="flex items-center gap-3">
-            <a href="/api/correspondencia/trd/exportar" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-              <Download className="h-3.5 w-3.5" aria-hidden />
-              Descargar TRD (CSV)
-            </a>
-            <a href="/api/correspondencia/trd/exportar?formato=xml" className="flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-              <Download className="h-3.5 w-3.5" aria-hidden />
-              XML
-            </a>
-          </span>
-        </h2>
+        <TituloSeccion
+          icon={FolderTree}
+          accion={
+            <span className="flex items-center gap-3">
+              <a href="/api/correspondencia/trd/exportar" className="flex items-center gap-1 font-medium text-cdmb-700 hover:underline">
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                Descargar TRD (CSV)
+              </a>
+              <a href="/api/correspondencia/trd/exportar?formato=xml" className="flex items-center gap-1 font-medium text-cdmb-700 hover:underline">
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                XML
+              </a>
+            </span>
+          }
+        >
+          Tablas de Retención Documental (TRD/CCD)
+        </TituloSeccion>
         <SectionHelp>
           Clasifica cada comunicación por serie y define su tiempo de conservación (Acuerdo 060/2001 AGN). Admite
           varias versiones vigentes a la vez, para migrar sin perder lo ya radicado. Un código de serie se repite en
@@ -273,9 +274,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {/* Vocabulario controlado */}
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <Tags className="h-4 w-4 text-cdmb-600" aria-hidden /> Vocabulario controlado
-        </h2>
+        <TituloSeccion icon={Tags}>Vocabulario controlado</TituloSeccion>
         <SectionHelp>
           Lista normalizada de palabras clave con la que se etiquetan las comunicaciones (MoReq 1.17/5.5).
         </SectionHelp>

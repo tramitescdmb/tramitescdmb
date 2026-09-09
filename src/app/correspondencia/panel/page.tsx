@@ -7,7 +7,7 @@ import { obtenerPanelMiTrabajo, ETIQUETA_ESTADO_PANEL } from "@/lib/corresponden
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
-import { Kpi, BloqueTitulo } from "./_piezas";
+import { TarjetaKpi, TituloSeccion } from "@/components/sgdea/ui";
 
 export default async function PanelMiTrabajoPage() {
   const session = await getSession();
@@ -22,13 +22,13 @@ export default async function PanelMiTrabajoPage() {
 
   return (
     <section className="space-y-4">
-      <BloqueTitulo icon={ListChecks}>Mi trabajo pendiente</BloqueTitulo>
+      <TituloSeccion icon={ListChecks}>Mi trabajo pendiente</TituloSeccion>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Kpi icon={ListChecks} label="Asignadas a mí" value={p.mis.total} tono="cdmb" />
-        <Kpi icon={PenLine} label="Por responder" value={p.mis.porResponder} tono="azul" />
-        <Kpi icon={Clock} label="Por vencer (3 días)" value={p.mis.porVencer} tono="ambar" />
-        <Kpi icon={AlertTriangle} label="Vencidas" value={p.mis.vencidas} tono="rojo" />
+        <TarjetaKpi icon={ListChecks} label="Asignadas a mí" value={p.mis.total} tono="cdmb" />
+        <TarjetaKpi icon={PenLine} label="Por responder" value={p.mis.porResponder} tono="azul" />
+        <TarjetaKpi icon={Clock} label="Por vencer (3 días)" value={p.mis.porVencer} tono="ambar" />
+        <TarjetaKpi icon={AlertTriangle} label="Vencidas" value={p.mis.vencidas} tono="rojo" />
       </div>
       <p className="text-xs text-stone-400">
         Cuenta los radicados asignados a usted que siguen abiertos. El detalle está en la tabla.

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { Mail, ShieldCheck, ExternalLink, HelpCircle } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
+import { MigaSgdea } from "@/components/sgdea/Miga";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -93,6 +94,8 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
       </div>
 
       <CorrespondenciaTabs permitido={permitido} />
+
+      <MigaSgdea />
 
       <div id="contenido-sgdea">{children}</div>
     </div>

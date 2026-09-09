@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarPlantillasAdmin, listarCategoriasPlantilla, ETIQUETA_AMBITO, AMBITOS, MARCADORES } from "@/lib/plantillas";
 import { Field, SectionHelp } from "@/components/Field";
+import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -30,10 +31,8 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <div>
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <FileText className="h-4 w-4 text-cdmb-600" aria-hidden /> Plantillas de documentos
-        </h2>
+      <div className="space-y-2">
+        <TituloSeccion icon={FileText}>Plantillas de documentos</TituloSeccion>
         <SectionHelp>
           Cuerpos y asuntos preescritos que se cargan al redactar un oficio de salida, un memorando, una
           respuesta o la descripción de un expediente — para no volver a escribir desde cero lo que se repite.
@@ -107,7 +106,7 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
       </datalist>
 
       {plantillas.length === 0 ? (
-        <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">Todavía no hay plantillas.</p>
+        <EstadoVacio>Todavía no hay plantillas.</EstadoVacio>
       ) : (
         [...grupos.entries()].map(([categoria, lista]) => (
           <section key={categoria} className="space-y-2">

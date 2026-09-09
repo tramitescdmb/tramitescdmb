@@ -7,7 +7,7 @@ import { obtenerPanelCorrespondenciaVista } from "@/lib/correspondencia-panel";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { BarrasPorTipo } from "@/components/charts/BarrasPorTipo";
 import { EvolucionPorTipo } from "@/components/charts/EvolucionPorTipo";
-import { Kpi, Sub, Panel, BloqueTitulo } from "../_piezas";
+import { TarjetaKpi, Sub, Panel, TituloSeccion } from "@/components/sgdea/ui";
 
 export default async function PanelCorrespondenciaVistaPage() {
   const session = await getSession();
@@ -19,14 +19,14 @@ export default async function PanelCorrespondenciaVistaPage() {
 
   return (
     <section className="space-y-4">
-      <BloqueTitulo icon={Inbox}>Correspondencia</BloqueTitulo>
+      <TituloSeccion icon={Inbox}>Correspondencia</TituloSeccion>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Kpi icon={Inbox} label="Recibidas (mes)" value={co.mes.recibidas} tono="cdmb" href="/correspondencia?tipo=RECIBIDA" />
-        <Kpi icon={Send} label="Enviadas (mes)" value={co.mes.enviadas} tono="azul" href="/correspondencia?tipo=ENVIADA" />
-        <Kpi icon={ArrowLeftRight} label="Memorandos (mes)" value={co.mes.internas} tono="ambar" href="/correspondencia?tipo=INTERNA" />
-        <Kpi icon={MessageSquareWarning} label="PQRSD (mes)" value={co.mes.pqrsd} tono="cian" />
-        <Kpi icon={Files} label="Total histórico" value={co.totalHistorico} href="/correspondencia" />
+        <TarjetaKpi icon={Inbox} label="Recibidas (mes)" value={co.mes.recibidas} tono="cdmb" href="/correspondencia?tipo=RECIBIDA" />
+        <TarjetaKpi icon={Send} label="Enviadas (mes)" value={co.mes.enviadas} tono="azul" href="/correspondencia?tipo=ENVIADA" />
+        <TarjetaKpi icon={ArrowLeftRight} label="Memorandos (mes)" value={co.mes.internas} tono="ambar" href="/correspondencia?tipo=INTERNA" />
+        <TarjetaKpi icon={MessageSquareWarning} label="PQRSD (mes)" value={co.mes.pqrsd} tono="cian" />
+        <TarjetaKpi icon={Files} label="Total histórico" value={co.totalHistorico} href="/correspondencia" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

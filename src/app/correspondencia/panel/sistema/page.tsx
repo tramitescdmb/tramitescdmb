@@ -6,7 +6,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { obtenerPanelSistemaVista } from "@/lib/correspondencia-panel";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
-import { Kpi, BloqueTitulo } from "../_piezas";
+import { TarjetaKpi, TituloSeccion } from "@/components/sgdea/ui";
 
 export default async function PanelSistemaVistaPage() {
   const session = await getSession();
@@ -21,22 +21,22 @@ export default async function PanelSistemaVistaPage() {
 
   return (
     <section className="space-y-4">
-      <BloqueTitulo icon={ShieldAlert}>Sistema</BloqueTitulo>
+      <TituloSeccion icon={ShieldAlert}>Sistema</TituloSeccion>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Kpi
+        <TarjetaKpi
           icon={ShieldAlert}
           label="Accesos fallidos (30 días)"
           value={s.accesosFallidos30}
           tono={s.accesosFallidos30 > 0 ? "rojo" : "neutro"}
         />
-        <Kpi
+        <TarjetaKpi
           icon={FileWarning}
           label="Cargues fallidos (30 días)"
           value={s.carguesFallidos30}
           tono={s.carguesFallidos30 > 0 ? "ambar" : "neutro"}
         />
-        <Kpi
+        <TarjetaKpi
           icon={AlertTriangle}
           label="Errores de ejecución (30 días)"
           value={s.erroresEjecucion30}

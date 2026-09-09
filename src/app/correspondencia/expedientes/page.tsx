@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, FolderOpen, FolderCheck, Plus, FileText } from "lucide-react";
+import { Search, FolderOpen, FolderCheck, Plus, FileText, Files, Handshake } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -8,6 +8,7 @@ import { listarExpedientesDocumentales, type FiltrosExpedienteDocumental } from 
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { SectionHelp } from "@/components/Field";
+import { TarjetaKpi } from "@/components/sgdea/ui";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
@@ -23,11 +24,17 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
 
   const sp = await searchParams;
-  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias, serieFiltro] = await Promise.all([
-    listarExpedientesDocumentales(sp, permisos),
-    listarDependenciasActivas(),
-    sp.serieId ? db.serieDocumental.findUnique({ where: { id: sp.serieId }, select: { codigo: true, nombre: true } }) : null,
-  ]);
+  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias, serieFiltro, resumen, prestamosActivos, documentosTotal] =
+    await Promise.all([
+      listarExpedientesDocumentales(sp, permisos),
+      listarDependenciasActivas(),
+      sp.serieId ? db.serieDocumental.findUnique({ where: { id: sp.serieId }, select: { codigo: true, nombre: true } }) : null,
+      db.expedienteDocumental.groupBy({ by: ["estado"], _count: { _all: true } }),
+      db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
+      db.documentoArchivo.count(),
+    ]);
+  const abiertos = resumen.find((r) => r.estado === "ABIERTO")?._count._all ?? 0;
+  const cerrados = resumen.find((r) => r.estado === "CERRADO")?._count._all ?? 0;
 
   const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId || sp.serieId);
   const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId"] as const;
@@ -69,6 +76,13 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
           (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un
           archivo que tenga adentro.
         </SectionHelp>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 print:hidden sm:grid-cols-4">
+        <TarjetaKpi icon={FolderOpen} label="Abiertos" value={abiertos} tono="cdmb" />
+        <TarjetaKpi icon={FolderCheck} label="Cerrados" value={cerrados} tono="verde" />
+        <TarjetaKpi icon={Files} label="Documentos" value={documentosTotal} />
+        <TarjetaKpi icon={Handshake} label="Préstamos activos" value={prestamosActivos} tono={prestamosActivos > 0 ? "ambar" : "neutro"} />
       </div>
 
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
@@ -118,7 +132,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none">
         {expedientes.length === 0 ? (
-          <p className="p-8 text-center text-sm text-stone-400">
+          <p className="p-10 text-center text-sm text-stone-400">
             {hayFiltros ? "No hay expedientes que coincidan." : "No hay expedientes todavía."}
           </p>
         ) : (
