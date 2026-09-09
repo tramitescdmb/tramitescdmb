@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Mail, ShieldCheck, ExternalLink, HelpCircle } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeAdministrarArchivo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 /**
@@ -35,6 +35,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
     bandeja: true,
     expedientes: puedeAccederCorrespondencia(permisos),
     radicar: puedeRadicar(permisos),
+    distribuir: puedeDistribuir(permisos),
     admin: puedeAdministrarArchivo(permisos),
   };
 

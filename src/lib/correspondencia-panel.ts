@@ -36,51 +36,19 @@ function inicioDeMesUTC(offset = 0): Date {
 }
 const claveMes = (d: Date) => d.toISOString().slice(0, 7);
 
-/**
- * Datos del tablero del SGDEA (/correspondencia/panel). Un solo lugar, ordenado
- * por: mi trabajo pendiente → correspondencia → expedientes y archivo → sistema
- * (esta última solo para quien administra el archivo). Absorbe lo que antes vivía
- * en una pestaña "Reportes" separada.
- */
-export async function obtenerPanelCorrespondencia(userId: string, permisos: PermisosUsuario) {
-  const esAdmin = puedeAdministrarArchivo(permisos);
+/* ============================================================================
+ * El tablero del SGDEA (/correspondencia/panel) se divide en cuatro vistas, cada
+ * una con su propia ruta y su propia consulta — así una vista pesada (desempeño
+ * de archivo) no retrasa la que un funcionario abre todo el día (su trabajo
+ * pendiente). El orden es: mi trabajo → correspondencia → archivo → sistema.
+ * ========================================================================== */
+
+/** Vista 1 — "Mi trabajo pendiente": lo que este funcionario tiene abierto ahora. */
+export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUsuario) {
   const ahora = new Date();
   const en3DiasHabiles = new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const desde6Meses = inicioDeMesUTC(-5);
-  const inicioMes = inicioDeMesUTC(0);
 
-  const [
-    misDistribuciones,
-    totalComunicaciones,
-    porEstadoRaw,
-    porTipoActivoRaw,
-    pendientesProcesoRecibidas,
-    sinClasificar,
-    evolucionRaw,
-    recibidasMes,
-    enviadasMes,
-    internasMes,
-    pqrsdMes,
-    vencidasGlobal,
-    porVencerGlobal,
-    // --- expedientes y archivo ---
-    expedientesAbiertos,
-    expedientesTotal,
-    documentosArchivoTotal,
-    conPrestamoActivo,
-    seriesVigentesTotal,
-    subseriesVigentesTotal,
-    transferenciasTotal,
-    transferenciasConfirmadas,
-    // --- sistema (solo admin) ---
-    accesosFallidos30,
-    carguesFallidos30,
-    erroresEjecucion30,
-    // --- desempeño (solo admin) ---
-    topDependenciasRaw,
-    tiempoRespuestaRaw,
-  ] = await Promise.all([
+  const [misDistribuciones, pendientesProcesoRecibidas, vencidasGlobal, porVencerGlobal] = await Promise.all([
     db.distribucion.findMany({
       where: { usuarioId: userId, comunicacion: { estado: { in: ESTADOS_ACTIVOS } } },
       select: {
@@ -91,12 +59,68 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
       },
       orderBy: { fechaAsignacion: "desc" },
     }),
-    db.comunicacion.count(),
-    db.comunicacion.groupBy({ by: ["estado"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
-    db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
     db.comunicacion.count({
       where: { tipo: "RECIBIDA", estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: {} } },
     }),
+    db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { lt: ahora } } }),
+    db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { gte: ahora, lt: en3DiasHabiles } } }),
+  ]);
+
+  const vistas = new Set<string>();
+  const misPendientes: {
+    id: string; radicado: string; asunto: string; estado: EstadoComunicacion; tipo: TipoComunicacion;
+    fechaVencimiento: Date | null; sinResponder: boolean;
+  }[] = [];
+  for (const d of misDistribuciones) {
+    const c = d.comunicacion;
+    if (vistas.has(c.id)) continue;
+    vistas.add(c.id);
+    misPendientes.push({
+      id: c.id, radicado: c.radicado, asunto: c.asunto, estado: c.estado, tipo: c.tipo,
+      fechaVencimiento: c.fechaVencimiento, sinResponder: !c.respuestaTexto,
+    });
+  }
+  const misVencidas = misPendientes.filter((c) => c.fechaVencimiento && c.fechaVencimiento < ahora).length;
+  const misPorVencer = misPendientes.filter((c) => c.fechaVencimiento && c.fechaVencimiento >= ahora && c.fechaVencimiento < en3DiasHabiles).length;
+  const misPorResponder = misPendientes.filter((c) => c.sinResponder).length;
+
+  return {
+    puedeDistribuir: puedeDistribuir(permisos),
+    mis: {
+      total: misPendientes.length,
+      porResponder: misPorResponder,
+      porVencer: misPorVencer,
+      vencidas: misVencidas,
+      lista: misPendientes.slice(0, 8),
+    },
+    global: { vencidas: vencidasGlobal, porVencer: porVencerGlobal },
+    /** Recibidas radicadas que nadie ha distribuido todavía (proceso detenido de entrada). */
+    pendientesProceso: pendientesProcesoRecibidas,
+  };
+}
+
+/** Vista 2 — "Correspondencia": el panorama de recibidas, enviadas y memorandos. */
+export async function obtenerPanelCorrespondenciaVista(permisos: PermisosUsuario) {
+  const esAdmin = puedeAdministrarArchivo(permisos);
+  const desde6Meses = inicioDeMesUTC(-5);
+  const inicioMes = inicioDeMesUTC(0);
+
+  const [
+    totalComunicaciones,
+    porEstadoRaw,
+    porTipoActivoRaw,
+    sinClasificar,
+    evolucionRaw,
+    recibidasMes,
+    enviadasMes,
+    internasMes,
+    pqrsdMes,
+    topDependenciasRaw,
+    tiempoRespuestaRaw,
+  ] = await Promise.all([
+    db.comunicacion.count(),
+    db.comunicacion.groupBy({ by: ["estado"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
+    db.comunicacion.groupBy({ by: ["tipo"], _count: { _all: true }, where: { estado: { in: ESTADOS_ACTIVOS } } }),
     db.comunicacion.count({ where: { estado: { not: "ANULADA" }, OR: [{ serieId: null }, { subserieId: null }] } }),
     db.$queryRaw<{ mes: Date; tipo: string; total: bigint }[]>`
       SELECT date_trunc('month', "fechaRadicacion") AS mes, tipo, COUNT(*)::bigint AS total
@@ -108,19 +132,6 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     db.comunicacion.count({ where: { tipo: "ENVIADA", fechaRadicacion: { gte: inicioMes } } }),
     db.comunicacion.count({ where: { tipo: "INTERNA", fechaRadicacion: { gte: inicioMes } } }),
     db.comunicacion.count({ where: { tipo: "RECIBIDA", tipoPqrsd: { not: null }, fechaRadicacion: { gte: inicioMes } } }),
-    db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { lt: ahora } } }),
-    db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { gte: ahora, lt: en3DiasHabiles } } }),
-    db.expedienteDocumental.count({ where: { estado: "ABIERTO" } }),
-    db.expedienteDocumental.count(),
-    db.documentoArchivo.count(),
-    db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
-    db.serieDocumental.count({ where: { vigenteHasta: null } }),
-    db.subserieDocumental.count({ where: { activo: true } }),
-    db.comunicacion.count({ where: { transferidaCentralEn: { not: null } } }),
-    db.comunicacion.count({ where: { transferenciaConfirmadaEn: { not: null } } }),
-    esAdmin ? db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }) : Promise.resolve(0),
-    esAdmin ? db.auditoriaDoc.count({ where: { accion: "CARGA_FALLIDA", createdAt: { gte: hace30Dias } } }) : Promise.resolve(0),
-    esAdmin ? db.auditoriaDoc.count({ where: { accion: "ERROR_EJECUCION", createdAt: { gte: hace30Dias } } }) : Promise.resolve(0),
     esAdmin
       ? db.comunicacion.groupBy({
           by: ["dependenciaDestinoId"],
@@ -143,7 +154,7 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
       : Promise.resolve([] as { dependenciaId: string | null; promedioDias: number; total: bigint }[]),
   ]);
 
-  // --- Nombres de dependencia para las tablas de admin ---
+  // Nombres de dependencia para las tablas de admin.
   const idsDep = [
     ...topDependenciasRaw.map((p) => p.dependenciaDestinoId),
     ...tiempoRespuestaRaw.map((t) => t.dependenciaId),
@@ -153,20 +164,6 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     : [];
   const nombreDep = Object.fromEntries(dependencias.map((d) => [d.id, d.nombre]));
 
-  // --- Mi trabajo pendiente (dedup por comunicación) ---
-  const vistas = new Set<string>();
-  const misPendientes: { id: string; radicado: string; asunto: string; estado: EstadoComunicacion; tipo: TipoComunicacion; fechaVencimiento: Date | null; sinResponder: boolean }[] = [];
-  for (const d of misDistribuciones) {
-    const c = d.comunicacion;
-    if (vistas.has(c.id)) continue;
-    vistas.add(c.id);
-    misPendientes.push({ id: c.id, radicado: c.radicado, asunto: c.asunto, estado: c.estado, tipo: c.tipo, fechaVencimiento: c.fechaVencimiento, sinResponder: !c.respuestaTexto });
-  }
-  const misVencidas = misPendientes.filter((c) => c.fechaVencimiento && c.fechaVencimiento < ahora).length;
-  const misPorVencer = misPendientes.filter((c) => c.fechaVencimiento && c.fechaVencimiento >= ahora && c.fechaVencimiento < en3DiasHabiles).length;
-  const misPorResponder = misPendientes.filter((c) => c.sinResponder).length;
-
-  // --- Correspondencia: activos ---
   const porEstado = ESTADOS_ACTIVOS.map((e) => ({
     label: ETIQUETA_ESTADO_PANEL[e],
     value: porEstadoRaw.find((r) => r.estado === e)?._count._all ?? 0,
@@ -176,7 +173,7 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     .map((t) => ({ tipo: t, value: porTipoActivoRaw.find((r) => r.tipo === t)?._count._all ?? 0 }))
     .filter((r) => r.value > 0);
 
-  // --- Evolución 6 meses por tipo (área apilada) ---
+  // Evolución 6 meses por tipo (área apilada).
   const meses: { key: string; label: string }[] = [];
   for (let i = 0; i < 6; i++) {
     const d = inicioDeMesUTC(-5 + i);
@@ -189,7 +186,6 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
     return { label, RECIBIDA: enMes("RECIBIDA"), ENVIADA: enMes("ENVIADA"), INTERNA: enMes("INTERNA") };
   });
 
-  // --- Desempeño (admin) ---
   const topDependencias = topDependenciasRaw
     .map((p) => ({ label: p.dependenciaDestinoId ? (nombreDep[p.dependenciaDestinoId] ?? "—") : "Sin asignar", value: p._count._all }))
     .sort((a, b) => b.value - a.value);
@@ -205,36 +201,65 @@ export async function obtenerPanelCorrespondencia(userId: string, permisos: Perm
 
   return {
     esAdmin,
-    puedeDistribuir: puedeDistribuir(permisos),
-
-    mis: { total: misPendientes.length, porResponder: misPorResponder, porVencer: misPorVencer, vencidas: misVencidas, lista: misPendientes.slice(0, 8) },
-    global: { vencidas: vencidasGlobal, porVencer: porVencerGlobal },
-
-    correspondencia: {
-      totalHistorico: totalComunicaciones,
-      mes: { recibidas: recibidasMes, enviadas: enviadasMes, internas: internasMes, pqrsd: pqrsdMes },
-      activos: { total: totalActivos, porEstado, porTipo: porTipoActivo },
-      pendientesProceso: pendientesProcesoRecibidas,
-      sinClasificar,
-      evolucion,
-      topDependencias,
-      tiempoRespuesta: { general: promedioRespuestaGeneral, totalRespondidas, porDependencia: tiempoRespuestaPorDependencia },
-    },
-
-    expedientes: {
-      abiertos: expedientesAbiertos,
-      cerrados: expedientesTotal - expedientesAbiertos,
-      total: expedientesTotal,
-      documentos: documentosArchivoTotal,
-      conPrestamoActivo,
-      transferencias: {
-        total: transferenciasTotal,
-        confirmadas: transferenciasConfirmadas,
-        sinConfirmar: transferenciasTotal - transferenciasConfirmadas,
-      },
-      trd: { seriesVigentes: seriesVigentesTotal, subseriesActivas: subseriesVigentesTotal },
-    },
-
-    sistema: esAdmin ? { accesosFallidos30, carguesFallidos30, erroresEjecucion30 } : null,
+    totalHistorico: totalComunicaciones,
+    mes: { recibidas: recibidasMes, enviadas: enviadasMes, internas: internasMes, pqrsd: pqrsdMes },
+    activos: { total: totalActivos, porEstado, porTipo: porTipoActivo },
+    sinClasificar,
+    evolucion,
+    topDependencias,
+    tiempoRespuesta: { general: promedioRespuestaGeneral, totalRespondidas, porDependencia: tiempoRespuestaPorDependencia },
   };
+}
+
+/** Vista 3 — "Expedientes y archivo": el estado del archivo de la Corporación. */
+export async function obtenerPanelArchivoVista(permisos: PermisosUsuario) {
+  const esAdmin = puedeAdministrarArchivo(permisos);
+
+  const [
+    expedientesAbiertos,
+    expedientesTotal,
+    documentosArchivoTotal,
+    conPrestamoActivo,
+    seriesVigentesTotal,
+    subseriesVigentesTotal,
+    transferenciasTotal,
+    transferenciasConfirmadas,
+  ] = await Promise.all([
+    db.expedienteDocumental.count({ where: { estado: "ABIERTO" } }),
+    db.expedienteDocumental.count(),
+    db.documentoArchivo.count(),
+    db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
+    db.serieDocumental.count({ where: { vigenteHasta: null } }),
+    db.subserieDocumental.count({ where: { activo: true } }),
+    db.comunicacion.count({ where: { transferidaCentralEn: { not: null } } }),
+    db.comunicacion.count({ where: { transferenciaConfirmadaEn: { not: null } } }),
+  ]);
+
+  return {
+    esAdmin,
+    abiertos: expedientesAbiertos,
+    cerrados: expedientesTotal - expedientesAbiertos,
+    total: expedientesTotal,
+    documentos: documentosArchivoTotal,
+    conPrestamoActivo,
+    transferencias: {
+      total: transferenciasTotal,
+      confirmadas: transferenciasConfirmadas,
+      sinConfirmar: transferenciasTotal - transferenciasConfirmadas,
+    },
+    trd: { seriesVigentes: seriesVigentesTotal, subseriesActivas: subseriesVigentesTotal },
+  };
+}
+
+/** Vista 4 — "Sistema" (solo administración de archivo): incidencias de los últimos 30 días. */
+export async function obtenerPanelSistemaVista() {
+  const hace30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [accesosFallidos30, carguesFallidos30, erroresEjecucion30] = await Promise.all([
+    db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }),
+    db.auditoriaDoc.count({ where: { accion: "CARGA_FALLIDA", createdAt: { gte: hace30Dias } } }),
+    db.auditoriaDoc.count({ where: { accion: "ERROR_EJECUCION", createdAt: { gte: hace30Dias } } }),
+  ]);
+
+  return { accesosFallidos30, carguesFallidos30, erroresEjecucion30 };
 }
