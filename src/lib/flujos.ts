@@ -84,8 +84,8 @@ export async function crearFlujo(
       creadoPorId: usuarioId,
       pasos: {
         create: [
-          { orden: 1, nombre: "Primer paso", tipo: "TAREA", asignacion: "DEPENDENCIA_COMUNICACION" },
-          { orden: 2, nombre: "Cierre", tipo: "FIN", asignacion: "DEPENDENCIA_COMUNICACION" },
+          { orden: 1, nombre: "Primer paso", tipo: "TAREA", asignacion: "DEPENDENCIA_COMUNICACION", posX: 160, posY: 40 },
+          { orden: 2, nombre: "Cierre", tipo: "FIN", asignacion: "DEPENDENCIA_COMUNICACION", posX: 200, posY: 200 },
         ],
       },
     },
@@ -187,11 +187,12 @@ export async function guardarDependenciasOperadoras(flujoId: string, dependencia
 export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo?: TipoPasoFlujo }) {
   const nombre = datos.nombre.trim() || "Paso sin nombre";
   const ultimo = await db.pasoFlujo.findFirst({ where: { flujoId }, orderBy: { orden: "desc" } });
+  const pos = { posX: (ultimo?.posX ?? 160) + 60, posY: (ultimo?.posY ?? 0) + 120 };
   // El nuevo paso entra ANTES del cierre si el último es FIN.
   if (ultimo?.tipo === "FIN") {
     await db.pasoFlujo.update({ where: { id: ultimo.id }, data: { orden: ultimo.orden + 1 } });
     return db.pasoFlujo.create({
-      data: { flujoId, orden: ultimo.orden, nombre, tipo: datos.tipo ?? "TAREA", asignacion: "DEPENDENCIA_COMUNICACION" },
+      data: { flujoId, orden: ultimo.orden, nombre, tipo: datos.tipo ?? "TAREA", asignacion: "DEPENDENCIA_COMUNICACION", ...pos },
     });
   }
   return db.pasoFlujo.create({
@@ -201,6 +202,7 @@ export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo
       nombre,
       tipo: datos.tipo ?? "TAREA",
       asignacion: "DEPENDENCIA_COMUNICACION",
+      ...pos,
     },
   });
 }
@@ -378,6 +380,9 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
             asignacion: p.asignacion,
             slaDiasHabiles: p.slaDiasHabiles ?? null,
             instrucciones: p.instrucciones ?? null,
+            // diseño inicial en cascada para que el lienzo abra ordenado
+            posX: 140 + (i % 2) * 40,
+            posY: 40 + i * 120,
           })),
         },
       },
