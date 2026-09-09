@@ -24,7 +24,7 @@ const ITEM_TRAMITES: Item = {
 };
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
-const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
+const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
