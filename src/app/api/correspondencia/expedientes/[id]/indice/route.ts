@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { calcularHashIndice } from "@/lib/expedientes-documentales";
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);
@@ -34,6 +35,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+
+  // MoReq 2.14: hash de verificación de integridad calculado sobre el estado ACTUAL del índice
+  // (orden + nombre + huella de cada documento). Siempre presente en la exportación — no solo cuando
+  // el expediente está cerrado — para que el sistema que reciba el archivo pueda cotejarlo.
+  const hashVerificacion = calcularHashIndice(expediente.documentos);
 
   // Rango de folios acumulado (MoReq 1.19/1.51) sobre el orden real del índice (ordenIndice, ya viene
   // ordenado así por la consulta), a partir del número de folios que declaró quien subió cada documento.
@@ -88,7 +94,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     <clasificacion>${escaparXml(clasificacion)}</clasificacion>
     <estado>${escaparXml(expediente.estado)}</estado>
     <nivelAcceso>${escaparXml(expediente.nivelAcceso)}</nivelAcceso>
-    ${expediente.indiceHash ? `<indiceHashSha256>${escaparXml(expediente.indiceHash)}</indiceHashSha256>` : "<indiceHashSha256/>"}
+    ${expediente.indiceHash ? `<indiceHashFirmadoSha256>${escaparXml(expediente.indiceHash)}</indiceHashFirmadoSha256>` : "<indiceHashFirmadoSha256/>"}
+    <hashVerificacionSha256 exportadoEn="${new Date().toISOString()}">${hashVerificacion}</hashVerificacionSha256>
   </expediente>
   <documentos total="${expediente.documentos.length}" totalFolios="${folioAcumulado}">
 ${documentosXml}
@@ -109,7 +116,8 @@ ${documentosXml}
     `"Clasificación (TRD)";${celda(clasificacion)}`,
     `"Estado";${celda(expediente.estado)}`,
     `"Nivel de acceso";${celda(expediente.nivelAcceso)}`,
-    expediente.indiceHash ? `"Índice firmado (SHA-256)";${celda(expediente.indiceHash)}` : "",
+    expediente.indiceHash ? `"Índice firmado al cerrar (SHA-256)";${celda(expediente.indiceHash)}` : "",
+    `"Hash de verificación al exportar (SHA-256)";${celda(hashVerificacion)}`,
     "",
   ].filter(Boolean);
 

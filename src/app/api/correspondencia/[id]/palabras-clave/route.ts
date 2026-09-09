@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { etiquetarComunicacion } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /**
  * Fija las palabras clave (vocabulario controlado, MoReq 5.5) de una comunicación.
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeDistribuir(permisos)) {
+    await registrarAccesoDenegadoAccion("catalogar la comunicación", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para catalogar comunicaciones.");
     return NextResponse.redirect(volver, { status: 303 });
   }

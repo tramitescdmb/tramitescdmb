@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { confirmarTransferenciaCentral } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /**
  * Confirma que el archivo central recibió el documento transferido y el proceso
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoAccion("confirmar la transferencia", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para administrar el archivo.");
     return NextResponse.redirect(volver, { status: 303 });
   }

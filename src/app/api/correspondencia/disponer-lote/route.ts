@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { ejecutarDisposicionFinalLote } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Disposición final de varias comunicaciones a la vez (MoReq 2.9). Ver ejecutarDisposicionFinalLote. */
 export async function POST(req: NextRequest) {
@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoAccion("ejecutar disposición final por lote", "(lote)", session, req.headers);
     return NextResponse.json({ error: "No tiene permiso para administrar el archivo." }, { status: 403 });
   }
 

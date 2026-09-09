@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { esCriterioOrdenValido } from "@/lib/expedientes-documentales";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /**
  * Cambia el criterio de ordenación de los documentos de los expedientes de una
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoAccion("cambiar el criterio de orden", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para administrar el archivo.");
     return NextResponse.redirect(volver, { status: 303 });
   }

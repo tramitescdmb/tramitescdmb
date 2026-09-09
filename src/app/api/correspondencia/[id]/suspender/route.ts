@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { suspenderTermino } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Suspende el término de ley (Art. 17 CPACA) mientras se espera información adicional del peticionario. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeDistribuir(permisos)) {
+    await registrarAccesoDenegadoAccion("suspender el término", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para suspender términos.");
     return NextResponse.redirect(volver, { status: 303 });
   }

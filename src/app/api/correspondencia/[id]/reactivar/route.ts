@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { reactivarTermino } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Reactiva un término suspendido: se reanuda por los días hábiles que faltaban (Art. 17 CPACA). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeDistribuir(permisos)) {
+    await registrarAccesoDenegadoAccion("reactivar el término", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para reactivar términos.");
     return NextResponse.redirect(volver, { status: 303 });
   }

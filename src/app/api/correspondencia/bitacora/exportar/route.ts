@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { construirWhereBitacora, ETIQUETA_ACCION_BITACORA, ACCIONES_BITACORA } from "@/lib/correspondencia-bitacora";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { interpretarUserAgent } from "@/lib/user-agent";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 
 const LIMITE_MAXIMO = 5000;
@@ -46,9 +47,10 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  const encabezados = ["Secuencia", "Fecha/hora", "Acción", "Entidad", "Entidad ID", "Usuario", "IP", "Detalle", "Hash"];
-  const filasCsv = filas.map((f) =>
-    [
+  const encabezados = ["Secuencia", "Fecha/hora", "Acción", "Entidad", "Entidad ID", "Usuario", "IP", "Navegador", "Dispositivo", "Detalle", "Hash"];
+  const filasCsv = filas.map((f) => {
+    const ua = interpretarUserAgent(f.userAgent);
+    return [
       f.secuencia,
       f.createdAt.toISOString(),
       ETIQUETA_ACCION_BITACORA[f.accion] ?? f.accion,
@@ -56,12 +58,14 @@ export async function GET(req: NextRequest) {
       f.entidadId,
       f.usuario?.nombre ?? "",
       f.ip ?? "",
+      ua.navegador,
+      ua.dispositivo,
       f.detalle ?? "",
       f.hash,
     ]
       .map(celda)
-      .join(";")
-  );
+      .join(";");
+  });
 
   const formato = sp.get("formato") === "xml" ? "xml" : "csv";
   const { ip, userAgent } = datosPeticion(req.headers);
@@ -87,6 +91,8 @@ export async function GET(req: NextRequest) {
     <entidadId>${escaparXml(f.entidadId)}</entidadId>
     <usuario>${escaparXml(f.usuario?.nombre)}</usuario>
     <ip>${escaparXml(f.ip)}</ip>
+    <navegador>${escaparXml(interpretarUserAgent(f.userAgent).navegador)}</navegador>
+    <dispositivo>${escaparXml(interpretarUserAgent(f.userAgent).dispositivo)}</dispositivo>
     <detalle>${escaparXml(f.detalle)}</detalle>
     <hash>${escaparXml(f.hash)}</hash>
   </fila>`

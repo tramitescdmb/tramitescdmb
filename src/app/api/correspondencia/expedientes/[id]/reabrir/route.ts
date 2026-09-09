@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeCerrarExpediente } from "@/lib/permisos";
 import { reabrirExpedienteDocumental } from "@/lib/expedientes-documentales";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Reabre un expediente cerrado (MoReq 1.14) — mismo permiso que lo cierra, motivo obligatorio y auditado. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeCerrarExpediente(permisos)) {
+    await registrarAccesoDenegadoAccion("reabrir el expediente", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para reabrir expedientes.");
     return NextResponse.redirect(volver, { status: 303 });
   }

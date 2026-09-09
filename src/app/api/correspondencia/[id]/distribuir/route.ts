@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
 const ETIQUETA_ESTADO_MIN: Record<string, string> = { RESPONDIDA: "respondida", ARCHIVADA: "archivada", ANULADA: "anulada" };
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeDistribuir(permisos)) {
+    await registrarAccesoDenegadoAccion("distribuir la comunicación", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para distribuir.");
     return NextResponse.redirect(volver, { status: 303 });
   }

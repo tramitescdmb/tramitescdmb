@@ -4,7 +4,7 @@ import type { NivelAccesoInformacion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { cambiarNivelAccesoExpediente } from "@/lib/expedientes-documentales";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const NIVELES_VALIDOS: NivelAccesoInformacion[] = ["PUBLICA", "CLASIFICADA", "RESERVADA"];
 
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoAccion("cambiar el nivel de acceso del expediente", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para cambiar el nivel de acceso.");
     return NextResponse.redirect(volver, { status: 303 });
   }

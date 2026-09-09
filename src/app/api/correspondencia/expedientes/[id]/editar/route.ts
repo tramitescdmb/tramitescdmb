@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { editarExpedienteDocumental } from "@/lib/expedientes-documentales";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Renombra (asunto/descripción) un expediente documental ya existente. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
   if (!puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)) {
+    await registrarAccesoDenegadoAccion("editar el expediente", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para editar este expediente.");
     return NextResponse.redirect(volver, { status: 303 });
   }

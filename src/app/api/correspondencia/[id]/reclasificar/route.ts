@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { reclasificarComunicacion } from "@/lib/correspondencia";
-import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Reclasifica un radicado a otra serie/subserie de la TRD con motivo (MoReq req. 1.30-1.32). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAdministrarArchivo(permisos)) {
+    await registrarAccesoDenegadoAccion("reclasificar la comunicación", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para reclasificar una comunicación.");
     return NextResponse.redirect(volver, { status: 303 });
   }

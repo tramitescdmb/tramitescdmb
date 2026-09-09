@@ -6,6 +6,7 @@ import { listarBitacoraFiltrada, ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA, ty
 import { SectionHelp } from "@/components/Field";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFechaHora as fecha } from "@/lib/fecha";
+import { interpretarUserAgent } from "@/lib/user-agent";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 import type { AccionAuditoriaDoc } from "@prisma/client";
@@ -82,22 +83,30 @@ export default async function BitacoraPage({
                 <th className="py-2 pr-3 font-medium">Registro</th>
                 <th className="py-2 pr-3 font-medium">Detalle</th>
                 <th className="py-2 pr-3 font-medium">Usuario</th>
+                <th className="py-2 pr-3 font-medium">Origen</th>
                 <th className="py-2 font-medium">Fecha</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {bitacora.filas.length === 0 ? (
-                <tr><td colSpan={5} className="py-6 text-center text-stone-400">Ningún registro coincide con estos filtros.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-stone-400">Ningún registro coincide con estos filtros.</td></tr>
               ) : (
-                bitacora.filas.map((b) => (
-                  <tr key={b.id}>
-                    <td className="py-2 pr-3 font-medium text-stone-700">{ETIQUETA_ACCION_BITACORA[b.accion] ?? b.accion}</td>
-                    <td className="py-2 pr-3 text-xs text-stone-500">{b.entidad}</td>
-                    <td className="max-w-md truncate py-2 pr-3 text-stone-600" title={b.detalle ?? ""}>{b.detalle}</td>
-                    <td className="py-2 pr-3 text-stone-600">{b.usuario?.nombre ?? "—"}</td>
-                    <td className="py-2 text-xs text-stone-400">{fecha(b.createdAt)}</td>
-                  </tr>
-                ))
+                bitacora.filas.map((b) => {
+                  const ua = interpretarUserAgent(b.userAgent);
+                  return (
+                    <tr key={b.id}>
+                      <td className="py-2 pr-3 font-medium text-stone-700">{ETIQUETA_ACCION_BITACORA[b.accion] ?? b.accion}</td>
+                      <td className="py-2 pr-3 text-xs text-stone-500">{b.entidad}</td>
+                      <td className="max-w-md truncate py-2 pr-3 text-stone-600" title={b.detalle ?? ""}>{b.detalle}</td>
+                      <td className="py-2 pr-3 text-stone-600">{b.usuario?.nombre ?? "—"}</td>
+                      <td className="py-2 pr-3 text-xs text-stone-400" title={b.userAgent ?? ""}>
+                        {b.ip ?? "—"}
+                        <span className="block text-[11px] text-stone-300">{ua.navegador} · {ua.dispositivo}</span>
+                      </td>
+                      <td className="py-2 text-xs text-stone-400">{fecha(b.createdAt)}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

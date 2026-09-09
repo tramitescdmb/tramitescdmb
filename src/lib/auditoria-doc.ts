@@ -153,6 +153,30 @@ export async function registrarAccesoDenegadoSeccion(
 }
 
 /**
+ * MoReq 6.9: registra en la bitácora el intento de EJECUTAR una acción sensible
+ * (transferir, anular, disponer, reclasificar, etiquetar…) sin el permiso
+ * necesario. Antes las rutas de acción solo devolvían 403/redirect sin dejar
+ * rastro; ahora todo intento de saltarse un control queda registrado.
+ */
+export async function registrarAccesoDenegadoAccion(
+  operacion: string,
+  entidadId: string,
+  session: { userId: string; nombre: string },
+  headers: Headers
+): Promise<void> {
+  const { ip, userAgent } = datosPeticion(headers);
+  await registrarAuditoriaDoc({
+    entidad: "Acceso",
+    entidadId,
+    accion: "ACCESO_DENEGADO",
+    usuarioId: session.userId,
+    ip,
+    userAgent,
+    detalle: `${session.nombre} intentó "${operacion}" sin el permiso necesario`,
+  }).catch((err) => console.error(`No se pudo registrar en la bitácora el intento de "${operacion}":`, err));
+}
+
+/**
  * MoReq 6.11: deja constancia en la bitácora inalterable de que una acción
  * archivística falló a mitad de camino (excepción no controlada), para poder
  * identificar el error después. No relanza — el llamador ya maneja el error

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeCerrarExpediente } from "@/lib/permisos";
 import { cerrarExpedienteDocumental } from "@/lib/expedientes-documentales";
-import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 /** Cierra el expediente y firma su índice electrónico (Art. 4.3.2.4 Acuerdo 001/2024 AGN). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeCerrarExpediente(permisos)) {
+    await registrarAccesoDenegadoAccion("cerrar el expediente", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para cerrar expedientes.");
     return NextResponse.redirect(volver, { status: 303 });
   }
