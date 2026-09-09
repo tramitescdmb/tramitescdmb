@@ -6,8 +6,17 @@ import { Loader2, MessageSquareText, Upload, X } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
+import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 
-export function RespuestaFuncionarioForm({ comunicacionId, textoInicial }: { comunicacionId: string; textoInicial: string }) {
+export function RespuestaFuncionarioForm({
+  comunicacionId,
+  textoInicial,
+  plantillas = [],
+}: {
+  comunicacionId: string;
+  textoInicial: string;
+  plantillas?: PlantillaOpcion[];
+}) {
   const router = useRouter();
   const [texto, setTexto] = useState(textoInicial);
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -67,6 +76,9 @@ export function RespuestaFuncionarioForm({ comunicacionId, textoInicial }: { com
         <label className="mb-1 block text-sm font-medium text-stone-700">
           Escribir respuesta <span className="text-red-500">*</span>
         </label>
+        <div className="mb-2">
+          <PlantillaSelector plantillas={plantillas} contenidoActual={texto} onCargar={setTexto} />
+        </div>
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}

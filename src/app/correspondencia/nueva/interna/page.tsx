@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { listarPlantillas } from "@/lib/plantillas";
 import { db } from "@/lib/db";
 import { MemorandoForm } from "@/components/MemorandoForm";
 
@@ -12,10 +13,11 @@ export default async function NuevaInternaPage() {
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
-  const [dependencias, series, usuario] = await Promise.all([
+  const [dependencias, series, usuario, plantillas] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     db.usuario.findUnique({ where: { id: session.userId }, select: { dependenciaId: true } }),
+    listarPlantillas("INTERNA"),
   ]);
 
   return (
@@ -37,6 +39,7 @@ export default async function NuevaInternaPage() {
           subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
         }))}
         dependenciaOrigenSugerida={usuario?.dependenciaId ?? null}
+        plantillas={plantillas}
       />
     </div>
   );

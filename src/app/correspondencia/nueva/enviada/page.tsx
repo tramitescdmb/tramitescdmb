@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { listarPlantillas } from "@/lib/plantillas";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { RadicarEnviadaForm } from "@/components/RadicarEnviadaForm";
 
@@ -14,7 +15,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
   const { respondeAId } = await searchParams;
-  const [dependencias, series, recibidaARespoder, documentosRespuesta] = await Promise.all([
+  const [dependencias, series, recibidaARespoder, documentosRespuesta, plantillas] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     respondeAId
@@ -42,6 +43,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
           select: { nombre: true },
         })
       : [],
+    listarPlantillas("ENVIADA"),
   ]);
   const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
   const inicial = recibidaARespoder
@@ -82,6 +84,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
         municipios={municipios}
         inicial={inicial}
         documentosRespuesta={documentosRespuesta.map((d) => d.nombre)}
+        plantillas={plantillas}
       />
     </div>
   );

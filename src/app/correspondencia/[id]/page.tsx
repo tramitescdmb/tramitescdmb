@@ -15,6 +15,7 @@ import {
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { listarPlantillas } from "@/lib/plantillas";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
@@ -160,6 +161,7 @@ export default async function CorrespondenciaDetallePage({
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionVigente);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
+  const plantillasRespuesta = puedeResponder ? await listarPlantillas("RESPUESTA") : [];
   const [dependencias, usuarios] = puedeDistribuirUsuario
     ? await Promise.all([
         listarDependenciasActivas(),
@@ -479,7 +481,7 @@ export default async function CorrespondenciaDetallePage({
             </ul>
           )}
           {puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0 ? (
-            <RespuestaFuncionarioForm comunicacionId={id} textoInicial={c.respuestaTexto ?? ""} />
+            <RespuestaFuncionarioForm comunicacionId={id} textoInicial={c.respuestaTexto ?? ""} plantillas={plantillasRespuesta} />
           ) : (
             !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>
           )}

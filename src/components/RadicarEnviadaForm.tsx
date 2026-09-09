@@ -8,6 +8,7 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorRecibidaPendiente } from "@/components/BuscadorRecibidaPendiente";
+import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -41,12 +42,14 @@ export function RadicarEnviadaForm({
   municipios,
   inicial,
   documentosRespuesta,
+  plantillas = [],
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   municipios: string[];
   inicial?: ValoresIniciales;
   documentosRespuesta?: string[];
+  plantillas?: PlantillaOpcion[];
 }) {
   const router = useRouter();
   const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">(inicial?.destinatarioTipo ?? "NATURAL");
@@ -215,7 +218,8 @@ export function RadicarEnviadaForm({
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
             </Field>
           </div>
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div className="sm:col-span-2 lg:col-span-4 space-y-2">
+            <PlantillaSelector plantillas={plantillas} contenidoActual={contenido} onCargar={setContenido} />
             <Field label="Contenido" required>
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del oficio…" />
             </Field>

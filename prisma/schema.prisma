@@ -855,6 +855,7 @@ enum AccionAuditoriaDoc {
   DEVUELVE // registra la devolución de un expediente prestado
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
   CARGA_FALLIDA // MoReq 4.6: un intento de agregar un documento a un expediente fue rechazado (validación), para poder reportarlo
+  ERROR_EJECUCION // MoReq 6.11: una operación falló a mitad de camino (excepción no controlada en una acción del módulo), para poder identificarla en la bitácora
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
@@ -898,6 +899,10 @@ model SerieDocumental {
   vigenteDesde  DateTime  @default(now())
   vigenteHasta  DateTime?
   activo        Boolean   @default(true)
+  // MoReq 1.46: criterio de ordenación de los documentos dentro de un expediente
+  // de esta serie. El número de índice (ordenIndice) que respalda el hash firmado
+  // NO cambia — esto solo controla el orden en que se VE la lista.
+  criterioOrdenExpediente CriterioOrdenExpediente @default(FECHA_DOCUMENTO)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -936,6 +941,34 @@ model SubserieDocumental {
 
   @@unique([serieId, codigo])
   @@index([serieId])
+}
+
+enum CriterioOrdenExpediente {
+  FECHA_DOCUMENTO // por la fecha del trámite/documento (Acuerdo 001/2024 AGN, orden natural)
+  FECHA_INCORPORACION // por el orden real de incorporación al índice
+  NOMBRE // alfabético por nombre de archivo
+}
+
+// Plantillas de documentos (MoReq 3.30/3.31): cuerpos preescritos que un
+// administrador de archivo crea y mantiene, y que un funcionario puede cargar al
+// redactar un oficio de salida, un memorando interno o una respuesta. Solo texto
+// plano — el cuerpo firmado del proyecto es texto, no hay editor enriquecido.
+model PlantillaDocumento {
+  id          String          @id @default(cuid())
+  nombre      String
+  descripcion String?         @db.Text
+  cuerpo      String          @db.Text
+  ambito      AmbitoPlantilla @default(AMBAS)
+  activo      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum AmbitoPlantilla {
+  ENVIADA
+  INTERNA
+  RESPUESTA
+  AMBAS
 }
 
 // Tercer nivel de la TRD (Serie > Subserie > Tipo documental): qué documentos

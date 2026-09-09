@@ -7,6 +7,7 @@ import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-c
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
+import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -16,10 +17,12 @@ export function MemorandoForm({
   dependencias,
   series,
   dependenciaOrigenSugerida,
+  plantillas = [],
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   dependenciaOrigenSugerida: string | null;
+  plantillas?: PlantillaOpcion[];
 }) {
   const router = useRouter();
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState(dependenciaOrigenSugerida ?? "");
@@ -135,7 +138,8 @@ export function MemorandoForm({
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
             </Field>
           </div>
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div className="sm:col-span-2 lg:col-span-4 space-y-2">
+            <PlantillaSelector plantillas={plantillas} contenidoActual={contenido} onCargar={setContenido} />
             <Field label="Contenido" required>
               <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del memorando…" />
             </Field>
