@@ -49,7 +49,11 @@ export async function POST(req: NextRequest) {
   }
 
   const texto = limpiarControl(await req.text());
-  const esNdjson = (req.headers.get("content-type") ?? "").includes("ndjson");
+  const ctNdjson = (req.headers.get("content-type") ?? "").includes("ndjson");
+  // NDJSON si lo dice el content-type, o si el texto son varias líneas y la 1ª
+  // es un objeto JSON (el cuerpo array-mode es un único objeto, no varias líneas).
+  const primeraLinea = texto.split("\n", 1)[0]!.trim();
+  const esNdjson = ctNdjson || (texto.includes("\n") && primeraLinea.startsWith("{") && primeraLinea.endsWith("}"));
 
   let cuerpo: CuerpoIngesta;
   let saltadas = 0;
