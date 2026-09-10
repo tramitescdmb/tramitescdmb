@@ -261,14 +261,36 @@ export const PSDOCUMENTS_BASE_INTRANET =
   process.env.FONDO_PSDOCUMENTS_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.70/gestion";
 
 /**
- * Convierte `VER_CAMINO||VER_ARCHIVO` (p. ej. `z:\Documentos\00000262\OGALVIS\00694338.pdf`
- * o `z:/Documentos/...`) en la URL de intranet del archivo. Devuelve null si no
- * tiene la forma esperada.
+ * Conversor TIFF→PDF instalado en patevaca (scripts/fondo-historico/verdoc.cgi).
+ * Si está configurado, el Fondo histórico abre los escaneados como PDF en el
+ * navegador; si no, enlaza al archivo `.001` crudo (que el navegador descarga).
+ * Ej.: `http://192.168.7.70/cgi-bin/verdoc`.
  */
-export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined): string | null {
+export const PSDOCUMENTS_VISOR =
+  process.env.FONDO_PSDOCUMENTS_VISOR?.trim().replace(/\/+$/, "") || null;
+
+/**
+ * Ruta relativa del archivo a partir de `VER_CAMINO||VER_ARCHIVO`
+ * (`z:\Documentos\00000262\OGALVIS\00694338.pdf` → `Documentos/00000262/OGALVIS/00694338.pdf`).
+ * Réplica de lo que hace verImagen.jsp: `\`→`/`, quitar la unidad, colapsar `//`.
+ */
+function rutaRelativaPsdocuments(rutaOriginal: string | null | undefined): string | null {
   if (!rutaOriginal) return null;
-  const m = rutaOriginal.trim().match(/^[a-zA-Z]:[\\/]+(.+)$/);
+  const m = rutaOriginal.trim().replace(/\\/g, "/").match(/^[a-zA-Z]:\/*(.+)$/);
   if (!m) return null;
-  const rel = m[1]!.replace(/\\/g, "/").replace(/^\/+/, "");
+  return m[1]!.replace(/\/{2,}/g, "/").replace(/^\/+/, "");
+}
+
+/** URL para abrir/descargar el escaneado desde la red corporativa. Usa el
+ *  conversor si está configurado; si no, el archivo crudo. */
+export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined): string | null {
+  const rel = rutaRelativaPsdocuments(rutaOriginal);
+  if (!rel) return null;
+  if (PSDOCUMENTS_VISOR) return `${PSDOCUMENTS_VISOR}?f=${encodeURIComponent(rel)}`;
   return `${PSDOCUMENTS_BASE_INTRANET}/${rel}`;
+}
+
+/** true cuando el enlace pasa por el conversor (abre como PDF en el navegador). */
+export function tieneVisorPsdocuments(): boolean {
+  return PSDOCUMENTS_VISOR !== null;
 }

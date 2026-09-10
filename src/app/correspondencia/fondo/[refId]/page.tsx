@@ -3,7 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Archive, FileWarning } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
-import { fondoHistoricoConfigurado, FONDOS, AVISO_IMAGEN, urlIntranetPsdocuments } from "@/lib/fondo-historico";
+import {
+  fondoHistoricoConfigurado,
+  FONDOS,
+  AVISO_IMAGEN,
+  urlIntranetPsdocuments,
+  tieneVisorPsdocuments,
+} from "@/lib/fondo-historico";
 import { getFondoDocumento } from "@/lib/fondo-historico-data";
 import { formatearFecha as fecha } from "@/lib/fecha";
 import { ExternalLink } from "lucide-react";
@@ -104,7 +110,9 @@ export default async function FichaFondoPage({ params }: { params: Promise<{ ref
             </p>
             {(() => {
               const url = urlIntranetPsdocuments(doc.rutaOriginal);
-              return url ? (
+              if (!url) return null;
+              const conVisor = tieneVisorPsdocuments();
+              return (
                 <a
                   href={url}
                   target="_blank"
@@ -112,9 +120,11 @@ export default async function FichaFondoPage({ params }: { params: Promise<{ ref
                   className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
                 >
                   <ExternalLink className="h-4 w-4" aria-hidden />
-                  Abrir el documento (solo desde la red CDMB)
+                  {conVisor
+                    ? "Abrir como PDF (solo desde la red CDMB)"
+                    : "Descargar el escaneado (formato .tif, solo red CDMB)"}
                 </a>
-              ) : null;
+              );
             })()}
             {doc.rutaOriginal && (
               <p className="mt-2 break-all font-mono text-xs text-amber-700">Ruta en el sistema anterior: {doc.rutaOriginal}</p>

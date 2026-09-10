@@ -17,6 +17,7 @@ export const runtime = "nodejs";
 
 const ARCHIVOS: Record<string, string> = {
   psdocuments: "extraer-psdocuments.sh",
+  verdoc: "verdoc.cgi",
 };
 
 export async function GET(req: NextRequest) {

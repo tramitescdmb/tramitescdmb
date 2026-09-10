@@ -145,6 +145,11 @@ describe("urlIntranetPsdocuments", () => {
       "http://192.168.7.70/gestion/Documentos/00000101/BCHAPARRO/x.tif",
     );
   });
+  it("colapsa la barra doble de VER_CAMINO (que termina en \\)", () => {
+    expect(urlIntranetPsdocuments("z:\\Documentos\\00000101\\ADMINISTRADOR\\\\00083608.001")).toBe(
+      "http://192.168.7.70/gestion/Documentos/00000101/ADMINISTRADOR/00083608.001",
+    );
+  });
   it("devuelve null si no hay ruta o no tiene forma de unidad", () => {
     expect(urlIntranetPsdocuments(null)).toBeNull();
     expect(urlIntranetPsdocuments("")).toBeNull();
