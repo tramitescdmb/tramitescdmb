@@ -63,5 +63,5 @@ export function estadoVencimiento(
   if (fechaVencimiento.getTime() < ahora.getTime()) return { texto: "Vencido", clase: "bg-red-50 text-red-700" };
   const dias = diasHabilesEntre(ahora, fechaVencimiento, cal);
   if (dias <= 3) return { texto: `Vence en ${dias} d.h.`, clase: "bg-amber-50 text-amber-700" };
-  return { texto: `${dias} d.h. restantes`, clase: "bg-stone-100 text-stone-600" };
+  return { texto: `${dias} d.h. restantes`, clase: "bg-emerald-50 text-emerald-700" };
 }

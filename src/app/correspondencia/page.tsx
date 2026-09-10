@@ -29,21 +29,11 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
-/** Píldora de ejemplo de un operador de búsqueda + su efecto, para la leyenda de la bandeja. */
-function Operador({ ej, children }: { ej: string; children: React.ReactNode }) {
+/** Punto del semáforo de la columna «Vence» + su significado. */
+function Semaforo({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px] text-stone-600 ring-1 ring-stone-200">{ej}</code>
-      <span>{children}</span>
-    </span>
-  );
-}
-
-/** Punto de color del semáforo de vencimiento + su significado. */
-function Punto({ color, children }: { color: string; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-2 w-2 flex-none rounded-full ${color}`} aria-hidden />
+      <span className={`h-2.5 w-2.5 flex-none rounded-full ${color}`} aria-hidden />
       {children}
     </span>
   );
@@ -152,26 +142,11 @@ export default async function CorrespondenciaBandejaPage({
         </details>
       )}
 
-      <div className="print:hidden rounded-lg border border-stone-200 bg-stone-50/60 px-3.5 py-3 text-xs text-stone-500">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="font-medium text-stone-600">Una bandeja</span>
-          <span>recibidas · enviadas · memorandos</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <span className="font-medium text-stone-600">Buscar en</span>
-          <span>radicado · asunto · tercero · adjunto · contenido del oficio</span>
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <Operador ej="agua tala">las dos palabras</Operador>
-          <Operador ej={'"frase exacta"'}>literal</Operador>
-          <Operador ej="-palabra">excluir</Operador>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-stone-200/70 pt-2">
-          <span className="font-medium text-stone-600">Columna «Vence» (PQRSD)</span>
-          <Punto color="bg-stone-300">a tiempo</Punto>
-          <Punto color="bg-amber-400">≤ 3 días hábiles</Punto>
-          <Punto color="bg-red-500">vencida</Punto>
-        </div>
+      <div className="print:hidden flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-stone-200 bg-stone-50/60 px-3.5 py-2.5 text-xs text-stone-500">
+        <span className="font-medium text-stone-600">Columna «Vence» — término de ley de la PQRSD</span>
+        <Semaforo color="bg-emerald-500">A tiempo</Semaforo>
+        <Semaforo color="bg-amber-400">Vence en 3 días hábiles o menos</Semaforo>
+        <Semaforo color="bg-red-500">Término vencido</Semaforo>
       </div>
 
       <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white">
