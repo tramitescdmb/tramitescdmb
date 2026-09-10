@@ -14,7 +14,7 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
 
   const sp = await searchParams;
   const [usuario, config] = await Promise.all([
-    db.usuario.findUnique({ where: { id: session.userId } }),
+    db.usuario.findUnique({ where: { id: session.userId }, include: { dependencia: { select: { nombre: true } } } }),
     getConfiguracionSitio(),
   ]);
   if (!usuario) redirect("/login");
@@ -56,8 +56,9 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
           <p className="text-sm text-stone-800">
             {usuario.nombre}
             {denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento)
-              ? ` · ${denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento)}`
+              ? `, ${denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento)}`
               : ""}
+            {usuario.dependencia?.nombre ? ` — ${usuario.dependencia.nombre}` : ""}
           </p>
           <p className="mt-0.5 text-[11px] text-stone-400">
             {usuario.denominacionEmpleo

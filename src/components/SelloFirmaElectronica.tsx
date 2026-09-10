@@ -11,6 +11,7 @@ type FirmaSello = {
     denominacionEmpleo?: string | null;
     denominacionComplemento?: string | null;
     sexo?: string | null;
+    dependencia?: { nombre: string } | null;
   };
   fechaHora: Date | string;
   hashContenido: string;
@@ -18,9 +19,10 @@ type FirmaSello = {
 
 /**
  * Sello de firma electrónica (Ley 527/1999 · Decreto 1074/2015) — deliberadamente
- * compacto: una línea de encabezado, una por firmante y una de fundamento legal.
- * En pantalla el fundamento se abrevia (texto completo en `title`); al imprimir se
- * despliega entero, porque ahí sí es un documento con valor probatorio.
+ * compacto: encabezado, identidad del firmante (nombre, denominación del empleo,
+ * oficina), la marca de tiempo con el hash, y el fundamento legal. En pantalla el
+ * fundamento se abrevia (texto completo en `title`); al imprimir se despliega
+ * entero, porque ahí es un documento con valor probatorio.
  */
 export function SelloFirmaElectronica({ firmas, className = "" }: { firmas: FirmaSello[]; className?: string }) {
   if (!firmas.length) return null;
@@ -35,17 +37,20 @@ export function SelloFirmaElectronica({ firmas, className = "" }: { firmas: Firm
       </p>
       {firmas.map((f, i) => {
         const cargo = denominacionParaFirma(f.usuario.denominacionEmpleo, f.usuario.sexo, f.usuario.denominacionComplemento);
+        const oficina = f.usuario.dependencia?.nombre;
         return (
-          <p key={i} className="mt-0.5">
-            <span className="font-medium text-stone-700">{f.usuario.nombre}</span>
-            {cargo ? ` · ${cargo}` : ""}
-            {" · "}
-            {formatearFechaHora(f.fechaHora)}
-            {" · "}
-            <span className="font-mono" title={`SHA-256: ${f.hashContenido}`}>
-              SHA-256 {f.hashContenido.slice(0, 12)}…
-            </span>
-          </p>
+          <div key={i} className="mt-0.5">
+            <p>
+              <span className="font-medium text-stone-700">{f.usuario.nombre}</span>
+              {cargo ? <>, {cargo}</> : null}
+              {oficina ? <> — {oficina}</> : null}
+            </p>
+            <p className="text-stone-400">
+              {formatearFechaHora(f.fechaHora)}
+              {" · "}
+              <span className="font-mono" title={`SHA-256: ${f.hashContenido}`}>SHA-256 {f.hashContenido.slice(0, 12)}…</span>
+            </p>
+          </div>
         );
       })}
       <p className="mt-0.5 text-stone-400" title={LEGAL}>

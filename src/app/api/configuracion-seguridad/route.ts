@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   const form = await req.formData();
+  const sgdeaVisibleFuncionarios = form.get("sgdeaVisibleFuncionarios") === "on";
   const maxIntentos = Math.min(20, Math.max(3, Number(form.get("loginMaxIntentos")) || 5));
   const ventanaMinutos = Math.min(120, Math.max(1, Number(form.get("loginVentanaMinutos")) || 15));
 
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
   const extensionesFinal = extensionesPermitidas.length > 0 ? extensionesPermitidas : EXTENSIONES_POR_DEFECTO;
 
   const datos = {
+    sgdeaVisibleFuncionarios,
     loginMaxIntentos: maxIntentos,
     loginVentanaMinutos: ventanaMinutos,
     passwordLongitudMinima: longitudMinima,
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
-    descripcion: `${session.nombre} actualizó la política de seguridad: acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
+    descripcion: `${session.nombre} actualizó la política de seguridad: SGDEA ${sgdeaVisibleFuncionarios ? "visible" : "oculto (solo ADMIN)"}; acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
       [requiereMayuscula && "mayúscula", requiereNumero && "número", requiereEspecial && "especial"].filter(Boolean).join("+") || "sin reglas de complejidad"
     }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"} (mínima ${vigenciaMinimaDias || "sin mínimo"}); formatos permitidos: ${extensionesFinal.join(", ")}.`,
     usuarioId: session.userId,

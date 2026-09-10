@@ -10,6 +10,7 @@ import {
   puedeDistribuir,
   puedeAdministrarArchivo,
   puedeRadicar,
+  puedeFirmar,
   puedeResponderComoAsignado,
 } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -140,7 +141,7 @@ export default async function CorrespondenciaDetallePage({
       respondeA: { select: { id: true, radicado: true, asunto: true } },
       respuestas: { select: { id: true, radicado: true, asunto: true } },
       respuestaPor: { select: { nombre: true } },
-      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true } } } },
+      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } } },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
         include: { dependencia: { select: { nombre: true } }, usuario: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
@@ -163,6 +164,7 @@ export default async function CorrespondenciaDetallePage({
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
   const puedeRadicarUsuario = puedeRadicar(permisos);
+  const puedeFirmarUsuario = puedeFirmar(permisos);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionVigente = c.distribuciones[0] ?? null;
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionVigente);
@@ -353,7 +355,7 @@ export default async function CorrespondenciaDetallePage({
       {c.firmas.length > 0 && (
         <Tarjeta titulo="Firma electrónica">
           <SelloFirmaElectronica firmas={c.firmas} />
-          {puedeRadicarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
+          {puedeFirmarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
             <form action={`/api/correspondencia/${id}/firmar`} method="post" className="mt-3">
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
                 <PenTool className="h-3.5 w-3.5" aria-hidden />

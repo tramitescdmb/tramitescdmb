@@ -96,6 +96,7 @@ export default async function EditarUsuarioPage({
         sexoActual={usuario.sexo}
         denominacionEmpleoActual={usuario.denominacionEmpleo}
         denominacionComplementoActual={usuario.denominacionComplemento}
+        accesoFirmaActual={usuario.accesoFirma}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={
           usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)

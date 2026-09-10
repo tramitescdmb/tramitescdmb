@@ -30,6 +30,12 @@ model ConfiguracionSitio {
   loginMaxIntentos    Int @default(5)
   loginVentanaMinutos Int @default(15)
 
+  // "Locker" del módulo SGDEA: cuando es false, solo un ADMIN ve y entra al
+  // módulo de Correspondencia y Archivo — para desplegarlo cuando esté listo,
+  // sin que los funcionarios lo vean mientras tanto (obtenerPermisosUsuario lo
+  // trata como "sin rol de correspondencia" para todos menos ADMIN).
+  sgdeaVisibleFuncionarios Boolean @default(true)
+
   // Política de contraseñas (MoReq 6.29/6.32/6.35): antes solo se exigía un
   // mínimo de 8 caracteres fijo en código. Solo se aplica al FIJAR una
   // contraseña nueva (creación o restablecimiento por un ADMIN) — nunca
@@ -118,6 +124,9 @@ model Usuario {
   denominacionEmpleo      String?
   denominacionComplemento String?
   sexo                    String? // "M" | "F"
+  // ¿Puede firmar electrónicamente oficios/memorandos? Por defecto sí (todos
+  // pueden en algún momento); un ADMIN puede retirarlo por persona.
+  accesoFirma             Boolean      @default(true)
   activo                  Boolean      @default(true)
   // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
   // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),

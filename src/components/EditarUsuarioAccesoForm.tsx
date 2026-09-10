@@ -125,6 +125,7 @@ export function EditarUsuarioAccesoForm({
   sexoActual,
   denominacionEmpleoActual,
   denominacionComplementoActual,
+  accesoFirmaActual,
 }: {
   usuarioId: string;
   nombreActual: string;
@@ -132,6 +133,7 @@ export function EditarUsuarioAccesoForm({
   sexoActual: string | null;
   denominacionEmpleoActual: string | null;
   denominacionComplementoActual: string | null;
+  accesoFirmaActual: boolean;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
@@ -151,6 +153,7 @@ export function EditarUsuarioAccesoForm({
   const [sexo, setSexo] = useState(sexoActual ?? "");
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
+  const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
@@ -250,6 +253,7 @@ export function EditarUsuarioAccesoForm({
           sexo: sexo || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
+          accesoFirma,
           rol,
           estadoCuenta,
           cargoIds: Array.from(cargoIds),
@@ -359,14 +363,29 @@ export function EditarUsuarioAccesoForm({
             />
           </label>
         </div>
+        <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
+          <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-300" />
+          <span>
+            Puede firmar electrónicamente oficios y memorandos
+            <span className="mt-0.5 block text-xs text-stone-400">
+              Desmarcado: no le aparece el botón de firmar ni entra en la firma en lote. No afecta las firmas ya registradas.
+            </span>
+          </span>
+        </label>
+
         <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
           En la firma aparecerá:{" "}
           <span className="font-medium text-stone-800">
             {nombre.trim() || "Nombre del funcionario"}
             {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento) ? (
-              <> · {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento)}</>
+              <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento)}</>
             ) : null}
+            {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
+              ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
+              : null}
           </span>
+          {" "}
+          <span className="text-stone-400">(la oficina viene de la dependencia de Correspondencia, más abajo)</span>
         </p>
       </section>
 

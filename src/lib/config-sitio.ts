@@ -13,6 +13,7 @@ const VACIA = {
   logoPotenciaPath: null,
   loginMaxIntentos: 5,
   loginVentanaMinutos: 15,
+  sgdeaVisibleFuncionarios: true,
   passwordLongitudMinima: 8,
   passwordLongitudMaxima: 72,
   passwordRequiereMayuscula: false,

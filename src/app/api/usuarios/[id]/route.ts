@@ -50,6 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const sexo: string | null | undefined = "sexo" in body
     ? (esSexo(body.sexo) ? body.sexo : null)
     : undefined;
+  const accesoFirma: boolean | undefined = "accesoFirma" in body ? Boolean(body.accesoFirma) : undefined;
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
     : undefined;
@@ -127,6 +128,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(denominacionEmpleo !== undefined ? { denominacionEmpleo } : {}),
         ...(denominacionComplemento !== undefined ? { denominacionComplemento } : {}),
         ...(sexo !== undefined ? { sexo } : {}),
+        ...(accesoFirma !== undefined ? { accesoFirma } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),

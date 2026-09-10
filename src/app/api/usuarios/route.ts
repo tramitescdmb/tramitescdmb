@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   const sexo = esSexo(sexoRaw) ? sexoRaw : null;
   const denominacionEmpleo = esClaveDenominacion(denomRaw) ? denomRaw : null;
   const denominacionComplemento = String(form.get("denominacionComplemento") || "").trim().slice(0, 120) || null;
+  const accesoFirma = form.get("accesoFirma") === "on";
 
   const url = new URL("/usuarios", req.url);
 
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
       sexo,
       denominacionEmpleo,
       denominacionComplemento,
+      accesoFirma,
       cargos: { connect: cargoIds.map((id) => ({ id })) },
     },
   });

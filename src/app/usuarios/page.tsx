@@ -443,6 +443,11 @@ export default async function UsuariosPage({
             </Field>
           </div>
 
+          <label className="flex items-center gap-2 text-sm text-stone-700">
+            <input type="checkbox" name="accesoFirma" defaultChecked className="rounded border-stone-300" />
+            Puede firmar electrónicamente oficios y memorandos
+          </label>
+
           <Field
             label="Cargo(s) en la CDMB"
             icon={<Briefcase className={iconSm} />}

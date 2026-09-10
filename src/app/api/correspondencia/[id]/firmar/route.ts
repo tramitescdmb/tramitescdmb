@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeFirmar } from "@/lib/permisos";
 import { agregarCofirma } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const volver = new URL(`/correspondencia/${id}`, req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeRadicar(permisos)) {
+  if (!puedeFirmar(permisos)) {
     await registrarAccesoDenegadoAccion("firmar la comunicación", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para firmar comunicaciones.");
     return NextResponse.redirect(volver, { status: 303 });

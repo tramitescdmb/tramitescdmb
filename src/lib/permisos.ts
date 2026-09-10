@@ -2,6 +2,7 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from "@prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 /**
  * Acceso ya resuelto para un usuario. Tanto los trámites de "Trámites
@@ -20,6 +21,8 @@ export type PermisosUsuario = {
   correspondencia: RolCorrespondencia | null;
   /** Dependencia (oficina) a la que pertenece el funcionario, si tiene. */
   dependenciaId: string | null;
+  /** ¿Puede firmar electrónicamente? ADMIN siempre; un funcionario según `Usuario.accesoFirma`. */
+  puedeFirmar: boolean;
 };
 
 type UsuarioFresco = {
@@ -31,6 +34,7 @@ type UsuarioFresco = {
   rolCorrespondencia: RolCorrespondencia | null;
   rolCorrespondenciaVigenteHasta: Date | null;
   dependenciaId: string | null;
+  accesoFirma: boolean;
 } | null;
 
 /**
@@ -53,6 +57,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       rolCorrespondencia: true,
       rolCorrespondenciaVigenteHasta: true,
       dependenciaId: true,
+      accesoFirma: true,
     },
   });
   if (!usuario) return null;
@@ -65,11 +70,12 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     rolCorrespondencia: usuario.rolCorrespondencia,
     rolCorrespondenciaVigenteHasta: usuario.rolCorrespondenciaVigenteHasta,
     dependenciaId: usuario.dependenciaId,
+    accesoFirma: usuario.accesoFirma,
   };
 });
 
 export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
-  const usuario = await obtenerUsuarioFresco(userId);
+  const [usuario, config] = await Promise.all([obtenerUsuarioFresco(userId), getConfiguracionSitio()]);
   // Una cuenta desactivada se trata como sin ningún acceso, sin importar su
   // rol — defensa en profundidad además de verificarSesion() (que ya
   // debería haber cortado el paso antes de llegar aquí).
@@ -83,12 +89,16 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   // MoReq 6.3: un rol con vigencia vencida se trata como si no estuviera asignado, sin que un ADMIN tenga
   // que volver a entrar a quitarlo — se evalúa en cada solicitud, así que no hace falta un job programado.
   const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
+  // "Locker" del SGDEA: mientras `sgdeaVisibleFuncionarios` esté en false, para todos menos ADMIN
+  // es como no tener rol de correspondencia — no ven el módulo ni pueden llamar a sus APIs.
+  const sgdeaOculto = !config.sgdeaVisibleFuncionarios && !esAdmin;
   return {
     esAdmin,
     tramites,
     secciones,
-    correspondencia: usuario?.activo && !rolVencido ? usuario.rolCorrespondencia : null,
+    correspondencia: usuario?.activo && !rolVencido && !sgdeaOculto ? usuario.rolCorrespondencia : null,
     dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
+    puedeFirmar: esAdmin || Boolean(usuario?.activo && usuario.accesoFirma),
   };
 });
 
@@ -165,6 +175,16 @@ export function puedeAccederCorrespondencia(permisos: PermisosUsuario): boolean 
 /** ¿Puede radicar en la ventanilla (operador de ventanilla o admin de archivo)? */
 export function puedeRadicar(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.correspondencia === "OPERADOR_VENTANILLA" || permisos.correspondencia === "ADMIN_ARCHIVO";
+}
+
+/**
+ * ¿Puede firmar electrónicamente un oficio o memorando? Requiere acceso al
+ * módulo y que el ADMIN no le haya retirado el acceso a firma (Usuario.accesoFirma).
+ * A diferencia de radicar, no depende del rol de correspondencia — cualquier
+ * funcionario del módulo puede co-firmar.
+ */
+export function puedeFirmar(permisos: PermisosUsuario): boolean {
+  return puedeAccederCorrespondencia(permisos) && permisos.puedeFirmar;
 }
 
 /** ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? */

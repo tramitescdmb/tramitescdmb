@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { comunicacionesFirmablesPor } from "@/lib/correspondencia";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
@@ -49,6 +49,7 @@ export default async function CorrespondenciaBandejaPage({
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/");
   const puedeRadicarUsuario = puedeRadicar(permisos);
+  const puedeFirmarUsuario = puedeFirmar(permisos);
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
@@ -57,7 +58,7 @@ export default async function CorrespondenciaBandejaPage({
     getCorrespondenciaOpcionesFiltro(),
     contarComunicacionesVencidas(),
     getCalendarioLaboral(),
-    puedeRadicarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
+    puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || rango);

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeFirmar } from "@/lib/permisos";
 import { firmarEnLote } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Firma varias comunicaciones a la vez (MoReq 3.17). Gateado por puedeRadicar. */
+/** Firma varias comunicaciones a la vez (MoReq 3.17). Gateado por puedeFirmar (Usuario.accesoFirma). */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeRadicar(permisos)) {
+  if (!puedeFirmar(permisos)) {
     await registrarAccesoDenegadoAccion("Firma en lote", "-", session, await headers());
     volver.searchParams.set("error", "No tiene permiso para firmar.");
     return NextResponse.redirect(volver, { status: 303 });

@@ -30,6 +30,24 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
       </SectionHelp>
 
       <form action="/api/configuracion-seguridad" method="post" className="space-y-6">
+        <div className="rounded-xl border border-stone-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-stone-900">Disponibilidad de módulos</h2>
+          <SectionHelp>
+            Mientras un módulo esté oculto, solo un administrador lo ve y puede entrar — sirve para tenerlo en
+            marcha sin que los funcionarios lo usen hasta que esté listo.
+          </SectionHelp>
+          <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
+            <input type="checkbox" name="sgdeaVisibleFuncionarios" defaultChecked={config.sgdeaVisibleFuncionarios} className="mt-0.5 rounded border-stone-300" />
+            <span>
+              <strong>SGDEA — Correspondencia y Archivo</strong> visible para los funcionarios
+              <span className="mt-0.5 block text-xs text-stone-400">
+                Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores,
+                incluidos quienes ya tienen un rol de correspondencia asignado.
+              </span>
+            </span>
+          </label>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2">
           <Field label="Intentos fallidos permitidos" help="Entre 3 y 20.">
             <input type="number" name="loginMaxIntentos" min={3} max={20} defaultValue={config.loginMaxIntentos} required className={inputCls} />
