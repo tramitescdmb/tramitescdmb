@@ -17,9 +17,13 @@
     "sinca:enrich": "tsx scripts/sinca-enrich.ts"
   },
   "dependencies": {
+    "@peculiar/asn1-schema": "^2.9.4",
+    "@peculiar/asn1-tsp": "^2.9.4",
+    "@peculiar/asn1-x509": "^2.9.4",
     "@prisma/client": "^6.3.1",
     "@supabase/supabase-js": "^2.48.1",
     "@xyflow/react": "^12.11.6",
+    "asn1js": "^3.0.10",
     "bcryptjs": "^2.4.3",
     "bwip-js": "^4.11.4",
     "jose": "^5.9.6",

@@ -36,6 +36,11 @@ model ConfiguracionSitio {
   // trata como "sin rol de correspondencia" para todos menos ADMIN).
   sgdeaVisibleFuncionarios Boolean @default(true)
 
+  // URL de una Autoridad de Sello de Tiempo RFC-3161 (opcional). Con valor, cada
+  // firma electrónica pide un token de sello de tiempo verificable; vacío = el
+  // sello es la bitácora encadenada por hash del SGDEA. Ver src/lib/sello-tiempo.ts.
+  selloTiempoTsaUrl String?
+
   // Política de contraseñas (MoReq 6.29/6.32/6.35): antes solo se exigía un
   // mínimo de 8 caracteres fijo en código. Solo se aplica al FIJAR una
   // contraseña nueva (creación o restablecimiento por un ADMIN) — nunca
@@ -1331,6 +1336,16 @@ model Firma {
   comunicacionId String?
   documentoId    String?
   ip             String?
+
+  // Proveedor y formato de la firma (abstracción para enchufar una CA acreditada
+  // después — ver src/lib/firma-proveedor.ts). Estampado cronológico: `selloTiempoEn`
+  // es la fecha atestiguada, `selloTiempoFuente` de dónde viene (bitácora interna o
+  // URL de una TSA RFC-3161), `selloTiempoToken` el token verificable si hubo TSA.
+  proveedor         String    @default("interno")
+  formato           String    @default("hash-sha256")
+  selloTiempoEn     DateTime?
+  selloTiempoFuente String?
+  selloTiempoToken  String?
 
   usuario      Usuario       @relation("FirmaUsuario", fields: [usuarioId], references: [id])
   comunicacion Comunicacion? @relation(fields: [comunicacionId], references: [id])

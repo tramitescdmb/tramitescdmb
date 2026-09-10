@@ -46,6 +46,15 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
               </span>
             </span>
           </label>
+
+          <div className="mt-4 border-t border-stone-100 pt-3">
+            <Field
+              label="Autoridad de sello de tiempo (RFC 3161)"
+              help="URL de una TSA para el estampado cronológico de las firmas electrónicas. Vacío: el sello es la bitácora encadenada por hash del SGDEA. Ej.: https://freetsa.org/tsr"
+            >
+              <input type="url" name="selloTiempoTsaUrl" defaultValue={config.selloTiempoTsaUrl ?? ""} placeholder="https://…/tsr" className={inputCls} />
+            </Field>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2">

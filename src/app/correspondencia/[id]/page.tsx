@@ -141,7 +141,10 @@ export default async function CorrespondenciaDetallePage({
       respondeA: { select: { id: true, radicado: true, asunto: true } },
       respuestas: { select: { id: true, radicado: true, asunto: true } },
       respuestaPor: { select: { nombre: true } },
-      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } } },
+      firmas: {
+        orderBy: { fechaHora: "asc" },
+        include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
+      },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
         include: { dependencia: { select: { nombre: true } }, usuario: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },

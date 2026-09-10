@@ -2,6 +2,9 @@ import { db } from "@/lib/db";
 import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
+import { resolverFirma } from "@/lib/firma-proveedor";
+import { solicitarSelloTiempo } from "@/lib/sello-tiempo";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
@@ -154,6 +157,8 @@ async function crearDocumentos(
   });
 }
 
+const SELLO_INTERNO = "Bitácora encadenada del SGDEA (SHA-256)";
+
 /** Crea la Firma electrónica (hash) del contenido exacto que se radica, en la misma transacción. */
 async function firmarEnTransaccion(
   tx: Prisma.TransactionClient,
@@ -161,9 +166,47 @@ async function firmarEnTransaccion(
 ) {
   const fechaHora = new Date();
   const hashContenido = hashContenidoFirma({ radicado: datos.radicado, asunto: datos.asunto, contenido: datos.contenido, fechaIso: fechaHora.toISOString() });
+  // El sello de tiempo interno se fija aquí; si hay una TSA RFC-3161 configurada,
+  // `sellarFirmasConTsa()` (fuera de la transacción, sin bloquear el lock) lo mejora.
   await tx.firma.create({
-    data: { usuarioId: datos.usuarioId, comunicacionId: datos.comunicacionId, fechaHora, hashContenido, tipo: "ELECTRONICA_HASH" },
+    data: {
+      usuarioId: datos.usuarioId,
+      comunicacionId: datos.comunicacionId,
+      fechaHora,
+      hashContenido,
+      tipo: "ELECTRONICA_HASH",
+      proveedor: "interno",
+      formato: "hash-sha256",
+      selloTiempoEn: fechaHora,
+      selloTiempoFuente: SELLO_INTERNO,
+    },
   });
+}
+
+/**
+ * Mejora el sello de tiempo de las firmas de una comunicación con un token
+ * RFC-3161 de la TSA configurada. Se llama DESPUÉS de la transacción de
+ * radicación (una llamada de red no debe correr con el lock tomado) y es
+ * best-effort: si no hay TSA o no responde, las firmas se quedan con el sello
+ * interno.
+ */
+export async function sellarFirmasConTsa(comunicacionId: string) {
+  const config = await getConfiguracionSitio();
+  const tsaUrl = config.selloTiempoTsaUrl?.trim();
+  if (!tsaUrl) return;
+  const firmas = await db.firma.findMany({
+    where: { comunicacionId, selloTiempoToken: null },
+    select: { id: true, hashContenido: true },
+  });
+  for (const f of firmas) {
+    const sello = await solicitarSelloTiempo(f.hashContenido, tsaUrl);
+    if (sello) {
+      await db.firma.update({
+        where: { id: f.id },
+        data: { selloTiempoEn: sello.tiempo, selloTiempoFuente: tsaUrl, selloTiempoToken: sello.token },
+      });
+    }
+  }
 }
 
 /**
@@ -183,8 +226,21 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
   if (c.firmas.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó esta comunicación.");
   const fechaHora = new Date();
   const hashContenido = hashContenidoFirma({ radicado: c.radicado, asunto: c.asunto, contenido: c.contenido, fechaIso: fechaHora.toISOString() });
+  const datos = await resolverFirma(hashContenido);
   return db.firma.create({
-    data: { usuarioId, comunicacionId, fechaHora, hashContenido, tipo: "ELECTRONICA_HASH", ip },
+    data: {
+      usuarioId,
+      comunicacionId,
+      fechaHora,
+      hashContenido,
+      tipo: "ELECTRONICA_HASH",
+      ip,
+      proveedor: datos.proveedor,
+      formato: datos.formato,
+      selloTiempoEn: datos.selloTiempoEn,
+      selloTiempoFuente: datos.selloTiempoFuente,
+      selloTiempoToken: datos.selloTiempoToken,
+    },
   });
 }
 
@@ -306,6 +362,9 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     }
 
     return comunicacion;
+  }).then(async (comunicacion) => {
+    await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    return comunicacion;
   });
 }
 
@@ -347,6 +406,9 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
     await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
     await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });
 
+    return comunicacion;
+  }).then(async (comunicacion) => {
+    await sellarFirmasConTsa(comunicacion.id).catch(() => {});
     return comunicacion;
   });
 }

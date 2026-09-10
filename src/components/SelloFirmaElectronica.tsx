@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Clock } from "lucide-react";
 import { formatearFechaHora } from "@/lib/fecha";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
@@ -15,6 +15,9 @@ type FirmaSello = {
   };
   fechaHora: Date | string;
   hashContenido: string;
+  selloTiempoEn?: Date | string | null;
+  selloTiempoFuente?: string | null;
+  selloTiempoToken?: string | null;
 };
 
 /**
@@ -50,6 +53,17 @@ export function SelloFirmaElectronica({ firmas, className = "" }: { firmas: Firm
               {" · "}
               <span className="font-mono" title={`SHA-256: ${f.hashContenido}`}>SHA-256 {f.hashContenido.slice(0, 12)}…</span>
             </p>
+            {f.selloTiempoEn && (
+              <p className="flex items-center gap-1 text-stone-400">
+                <Clock className="h-2.5 w-2.5 flex-none" aria-hidden />
+                Sello de tiempo: {formatearFechaHora(f.selloTiempoEn)}
+                {f.selloTiempoToken
+                  ? ` — token RFC-3161 de ${f.selloTiempoFuente}`
+                  : f.selloTiempoFuente
+                    ? ` — ${f.selloTiempoFuente}`
+                    : ""}
+              </p>
+            )}
           </div>
         );
       })}

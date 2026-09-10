@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
 
   const form = await req.formData();
   const sgdeaVisibleFuncionarios = form.get("sgdeaVisibleFuncionarios") === "on";
+  const tsaRaw = String(form.get("selloTiempoTsaUrl") || "").trim();
+  const selloTiempoTsaUrl = /^https?:\/\/.+/i.test(tsaRaw) ? tsaRaw.slice(0, 300) : null;
   const maxIntentos = Math.min(20, Math.max(3, Number(form.get("loginMaxIntentos")) || 5));
   const ventanaMinutos = Math.min(120, Math.max(1, Number(form.get("loginVentanaMinutos")) || 15));
 
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest) {
 
   const datos = {
     sgdeaVisibleFuncionarios,
+    selloTiempoTsaUrl,
     loginMaxIntentos: maxIntentos,
     loginVentanaMinutos: ventanaMinutos,
     passwordLongitudMinima: longitudMinima,

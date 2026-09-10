@@ -14,6 +14,7 @@ const VACIA = {
   loginMaxIntentos: 5,
   loginVentanaMinutos: 15,
   sgdeaVisibleFuncionarios: true,
+  selloTiempoTsaUrl: null,
   passwordLongitudMinima: 8,
   passwordLongitudMaxima: 72,
   passwordRequiereMayuscula: false,
