@@ -21,6 +21,11 @@ import {
  *   2. POST { fondo, sincronizacionId, lote: [...] }  (N veces, ~500 filas c/u)
  *   3. POST { fondo, sincronizacionId, finalizar: true } → borra lo no tocado y cierra la corrida
  *
+ * El paso 2 también acepta NDJSON (`Content-Type: application/x-ndjson`): la
+ * 1ª línea es `{fondo, sincronizacionId}` y cada línea siguiente es una fila.
+ * Así una fila mal formada se salta sola en vez de tumbar el lote entero —
+ * necesario para los datos de captura viejos que salen por sqlplus.
+ *
  * Es idempotente por fila (upsert por `id`). Si la corrida se corta antes del
  * paso 3, no se borra nada: la siguiente corrida completa el espejo.
  */
@@ -43,9 +48,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
+  const texto = limpiarControl(await req.text());
+  const esNdjson = (req.headers.get("content-type") ?? "").includes("ndjson");
+
   let cuerpo: CuerpoIngesta;
+  let saltadas = 0;
   try {
-    cuerpo = JSON.parse(limpiarControl(await req.text())) as CuerpoIngesta;
+    if (esNdjson) {
+      const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "");
+      const meta = JSON.parse(lineas[0]!) as CuerpoIngesta;
+      const lote: NonNullable<CuerpoIngesta["lote"]> = [];
+      for (const l of lineas.slice(1)) {
+        try {
+          lote.push(JSON.parse(l));
+        } catch {
+          saltadas++;
+        }
+      }
+      cuerpo = { ...meta, lote };
+    } else {
+      cuerpo = JSON.parse(texto) as CuerpoIngesta;
+    }
   } catch (e) {
     return NextResponse.json(
       { error: "JSON inválido.", detalle: e instanceof Error ? e.message : String(e) },
@@ -104,6 +127,9 @@ export async function POST(req: NextRequest) {
   // Paso 2 — un lote de filas.
   const lote = Array.isArray(cuerpo.lote) ? cuerpo.lote : [];
   if (lote.length === 0) {
+    // En NDJSON, un lote donde TODAS las filas fallaron el parseo no es un
+    // error del cliente: se reporta y el extractor sigue.
+    if (esNdjson) return NextResponse.json({ recibidas: 0, creados: 0, actualizados: 0, saltadas });
     return NextResponse.json({ error: "Lote vacío." }, { status: 400 });
   }
   if (lote.length > 1000) {
@@ -139,5 +165,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ recibidas: filas.length, creados, actualizados: existentes });
+  return NextResponse.json({ recibidas: filas.length, creados, actualizados: existentes, saltadas });
 }

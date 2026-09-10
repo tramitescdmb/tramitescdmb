@@ -75,6 +75,12 @@ ingest_file() { # $1 = archivo con el cuerpo JSON
 ingest() { # $1 = cuerpo JSON corto
   printf '%s' "$1" > "$TMP/body.json"; ingest_file "$TMP/body.json"
 }
+ingest_ndjson() { # $1 = archivo NDJSON (1ª línea meta, resto filas)
+  curl -sS -X POST "$FONDO_INGEST_URL" \
+    -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
+    -H "Content-Type: application/x-ndjson" \
+    --data-binary "@$1"
+}
 json_val() { # extrae "clave":"valor" de un JSON plano
   sed -n 's/.*"'"$1"'":"\([^"]*\)".*/\1/p'
 }
@@ -141,7 +147,18 @@ EOF
                where nvl(ver_estado,'X') not in ('B','ND')
                group by ver_iddocum) vv on vv.ver_iddocum = d.doc_iddocum;"
 
-  runsql "$SQL" | grep '^{' >> "$TMP/todo.jsonl" || true
+  # SQL*Plus puede partir una fila larga en varias líneas físicas. Se reensambla:
+  # cada registro empieza en {"ref_id":" y todo lo que siga sin ese prefijo es
+  # continuación. Se descarta cualquier registro que no cierre con }}.
+  runsql "$SQL" | awk '
+    function emit(s) { if (s ~ /^\{"ref_id":".*\}\}$/) print s; else bad++ }
+    /^\{"ref_id":"/ { if (buf != "") emit(buf); buf = $0; next }
+    { buf = buf $0 }
+    END {
+      if (buf != "") emit(buf)
+      if (bad) printf "  (%d filas mal formadas, omitidas)\n", bad > "/dev/stderr"
+    }
+  ' >> "$TMP/todo.jsonl" || true
   N=$(grep -c '^{' "$TMP/todo.jsonl" 2>/dev/null || echo 0)
   echo "  PSIDEAW_${SID} — ${SNOM}  (acumulado ${N})"
 done < "$TMP/series.tsv"
@@ -151,19 +168,24 @@ done < "$TMP/series.tsv"
 # --- 4. subir por lotes ---
 # -a 6: sufijos largos (con lotes de 300 y series de cientos de miles de filas,
 # los 676 sufijos de 2 letras por defecto no alcanzan).
+# Se sube como NDJSON: 1ª línea meta, resto filas. Una fila mal formada se
+# salta sola en el servidor sin tumbar el lote.
 split -l "$LOTE" -a 6 "$TMP/todo.jsonl" "$TMP/lote_"
+SALTADAS=0
 for f in "$TMP"/lote_*; do
-  { printf '{"fondo":"%s","sincronizacionId":"%s","lote":[' "$FONDO" "$SYNC"
-    paste -sd, "$f"
-    printf ']}'
-  } > "$TMP/body.json"
-  OUT="$(ingest_file "$TMP/body.json")"
-  echo "$OUT" | grep -q '"recibidas"' || { echo "Fallo un lote: $OUT"; exit 1; }
+  { printf '{"fondo":"%s","sincronizacionId":"%s"}\n' "$FONDO" "$SYNC"; cat "$f"; } > "$TMP/body.ndjson"
+  OUT="$(ingest_ndjson "$TMP/body.ndjson")"
+  if ! echo "$OUT" | grep -q '"recibidas"'; then
+    echo; echo "Fallo un lote: $OUT"; exit 1
+  fi
+  S=$(echo "$OUT" | sed -n 's/.*"saltadas":\([0-9]*\).*/\1/p'); SALTADAS=$((SALTADAS + ${S:-0}))
   TOTAL=$((TOTAL + $(wc -l < "$f")))
   printf '\r  subidas %s' "$TOTAL"
 done
 echo
+[ "$SALTADAS" -gt 0 ] && echo "  ($SALTADAS filas se saltaron por formato)"
 
 # --- 5. cerrar ---
-FIN="$(ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true,\"totalOrigen\":$TOTAL}")"
-echo "Listo — $TOTAL filas enviadas. $FIN"
+CARGADAS=$((TOTAL - SALTADAS))
+FIN="$(ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true,\"totalOrigen\":$CARGADAS}")"
+echo "Listo — $CARGADAS filas cargadas (de $TOTAL enviadas). $FIN"
