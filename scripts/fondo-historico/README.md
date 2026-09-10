@@ -7,13 +7,41 @@ la red CDMB** y empuja los datos a la app por HTTPS.
 
 Nunca copia imágenes escaneadas (1,4 TB). Nunca escribe en Oracle.
 
-## Requisitos
+## Dos versiones del extractor
 
-- Node 18 o superior.
-- `npm install` en este repo (usa el paquete `oracledb`, modo Thin — no necesita
-  Oracle Instant Client).
-- Salida HTTPS hacia `https://tramitescdmb.vercel.app`.
-- Acceso TCP a `192.168.7.40:1521`.
+| Archivo | Cuándo usarlo |
+|---|---|
+| `extraer-psdocuments.mjs` | Hay un equipo con **Node 18+** que llega al Oracle. Pero node-oracledb en modo Thin **no soporta Oracle 10g** (error `NJS-138`) — sirve solo si ese equipo tiene además Oracle Client 11.2/12.1 (Thick). |
+| `extraer-psdocuments.sh` | **Recomendado para psdocuments.** Corre en el propio servidor Oracle (`martin`, 192.168.7.40) usando `sqlplus` + `curl`, que ya están instalados. No requiere Node ni instalar nada. |
+
+## Requisitos comunes
+
+- Salida HTTPS hacia `https://tramitescdmb.vercel.app` desde donde corra el extractor.
+- Acceso de lectura al Oracle (`psidea1/psidea1`, solo `SELECT`).
+- `FONDO_INGEST_TOKEN` definido en Vercel (Production + Preview) y la app redeployada.
+
+## Opción sqlplus (`extraer-psdocuments.sh`) — en `martin`
+
+Llevar el script a `martin` (desde un equipo con el repo):
+
+```
+pscp scripts\fondo-historico\extraer-psdocuments.sh root@192.168.7.40:/root/
+```
+
+Y en `martin` (por PuTTY, como root):
+
+```bash
+export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
+export FONDO_INGEST_TOKEN="…"
+export FONDO_SERIES="262,264"     # piloto; quitar para las 24 series
+bash /root/extraer-psdocuments.sh
+```
+
+El script localiza `sqlplus` solo (`/u01/app/oracle/product/*/db_1/bin`), arma
+por cada serie una consulta que emite un JSON por documento, y sube en lotes de
+300 a `/api/fondo-historico/ingest`.
+
+## Opción Node (`extraer-psdocuments.mjs`)
 
 ## Configuración
 
