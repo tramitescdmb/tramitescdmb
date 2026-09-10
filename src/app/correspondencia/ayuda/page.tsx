@@ -13,6 +13,7 @@ import {
   Tags,
   Workflow,
   CalendarDays,
+  Scale,
 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -705,10 +706,135 @@ export default async function CorrespondenciaAyudaPage() {
     </>
   );
 
+  const grupoReglas = (
+    <>
+      <Seccion n={13} id="reglas" icono={Scale} titulo="Reglas y decisiones de diseño del SGDEA">
+        <p>
+          Todo lo que el sistema hace o <strong>no deja hacer a propósito</strong>, con su razón y su
+          fundamento. Se consigna aquí para que no se pierda con el tiempo: si una de estas restricciones
+          molesta, primero hay que entender por qué está — muchas protegen un requisito legal.
+        </p>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Términos de ley y tiempos</p>
+        <Tabla encabezados={["Regla", "Por qué / norma"]}>
+          <tr>
+            <td className="px-2.5 py-1.5">El término de una PQRSD (15 / 10 / 30 días hábiles según el tipo) es fijo en código, <strong>no configurable</strong>.</td>
+            <td className="px-2.5 py-1.5">Hacerlo editable abriría la puerta a incumplir la Ley 1755/2015. El SLA de cada paso de un flujo sí se parametriza — eso es política interna, no norma.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Un funcionario <strong>no puede devolver</strong> un reparto a la ventanilla si faltan 3 días hábiles o menos para el vencimiento.</td>
+            <td className="px-2.5 py-1.5">Cerca del plazo hay que atender la comunicación, no rebotarla. Antes de eso sí puede devolverla con motivo.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Al reanudar un término suspendido se cuenta por los <strong>días hábiles que faltaban</strong>, no se reinicia.</td>
+            <td className="px-2.5 py-1.5">Art. 17 CPACA. Piso defensivo de 1 día.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Cambiar la jornada o el calendario laboral afecta los cálculos <strong>hacia adelante</strong>; los términos ya calculados no cambian solos.</td>
+            <td className="px-2.5 py-1.5">Un radicado mantiene el plazo con el que se calculó — la trazabilidad exige que no se altere retroactivamente.</td>
+          </tr>
+        </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Firma y sello de tiempo</p>
+        <Tabla encabezados={["Regla", "Por qué / norma"]}>
+          <tr>
+            <td className="px-2.5 py-1.5">La firma es <strong>electrónica con hash</strong> (SHA-256 + identidad + marca de tiempo), no firma digital con certificado de una entidad de certificación acreditada.</td>
+            <td className="px-2.5 py-1.5">Ley 527/1999 y Decreto 1074/2015: la firma electrónica tiene plena validez para la gestión documental interna. La firma digital con CA exige un contrato con la entidad de certificación; el sistema ya tiene el punto de conexión listo (abstracción de proveedor, formatos PAdES/CAdES en el modelo).</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">El sello de tiempo por defecto es la <strong>bitácora encadenada por hash</strong>.</td>
+            <td className="px-2.5 py-1.5">Da orden verificable e inmutable sin depender de terceros. Si el administrador configura una autoridad de sello de tiempo RFC-3161, cada firma pide además un token verificable por un tercero.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Todos los funcionarios del módulo pueden firmar, salvo que el administrador retire el «acceso a firma» a alguien puntualmente.</td>
+            <td className="px-2.5 py-1.5">No afecta las firmas ya registradas.</td>
+          </tr>
+        </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Roles y ciclo de la comunicación</p>
+        <Tabla encabezados={["Regla", "Por qué / norma"]}>
+          <tr>
+            <td className="px-2.5 py-1.5">El <strong>reparto lo hace la ventanilla</strong> (y el rol de archivo / admin como supervisión). Ni el jefe de dependencia ni el funcionario reparten.</td>
+            <td className="px-2.5 py-1.5">El reparto está centralizado para que el control de qué atiende cada quién quede en un solo punto.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">El borrador de respuesta lo escribe <strong>solo el funcionario del reparto vigente</strong>. La ventanilla ve toda la información y los metadatos, pero no el espacio para redactar la respuesta.</td>
+            <td className="px-2.5 py-1.5">La respuesta es responsabilidad de quien conoce el trámite; la ventanilla la radica y la despacha.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">El <strong>despacho efectivo</strong> (envío real al destinatario) es lo que cierra el ciclo, no la radicación del oficio.</td>
+            <td className="px-2.5 py-1.5">Una firma y un radicado no significan que el oficio ya salió. El despacho lo registra la ventanilla de salida.</td>
+          </tr>
+        </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Nada se borra — se marca con constancia</p>
+        <Tabla encabezados={["Regla", "Por qué / norma"]}>
+          <tr>
+            <td className="px-2.5 py-1.5">Un radicado <strong>nunca se borra</strong>. Un radicado por error se <strong>anula</strong> con motivo y queda trazado.</td>
+            <td className="px-2.5 py-1.5">Ley 594/2000. El consecutivo es inalterable (Acuerdo 060/2001 AGN).</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">La disposición final <strong>nunca borra</strong> la fila de la comunicación — la marca. El original físico se destruye con acta, el registro sobrevive.</td>
+            <td className="px-2.5 py-1.5">El registro de qué existió y bajo qué autorización se dispuso es evidencia (Acuerdo 004/2019 AGN).</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">La <strong>bitácora de auditoría nunca se elimina</strong>, ni siquiera al limpiar datos de prueba.</td>
+            <td className="px-2.5 py-1.5">Es una cadena de hash: borrar una fila la rompe y queda en evidencia. Un usuario de prueba se desactiva, no se borra, si ya aparece en la bitácora.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Un archivo <strong>retirado del índice</strong> de un expediente abierto no se borra: queda como constancia, fuera del índice, del hash y del FUID.</td>
+            <td className="px-2.5 py-1.5">Mismo principio. Un expediente ya cerrado no admite ningún cambio — el índice quedó firmado (Art. 4.3.2.4 Acuerdo 001/2024 AGN).</td>
+          </tr>
+        </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Clasificación, expedientes y adjuntos</p>
+        <Tabla encabezados={["Regla", "Por qué / norma"]}>
+          <tr>
+            <td className="px-2.5 py-1.5">Una <strong>serie sin subserie está prohibida</strong>: o las dos, o ninguna.</td>
+            <td className="px-2.5 py-1.5">MoReq 1.34: todo documento debe quedar asociado a una TRD completa. El código de serie no es único globalmente — solo dentro de su dependencia.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Una subserie con <strong>0 años de retención en gestión</strong> se trata como «no configurada» y se excluye de la disposición final.</td>
+            <td className="px-2.5 py-1.5">Un 0 real es prácticamente inexistente en archivística; casi siempre significa que falta configurar la TRD.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">El expediente <strong>no se guarda como un solo PDF</strong>: cada archivo va aparte con su hash, tipo documental, versión y lugar en el índice firmado.</td>
+            <td className="px-2.5 py-1.5">Art. 4.3.2.3 Acuerdo 001/2024 AGN. El «PDF consolidado» es una vista armada al vuelo para imprimir o entregar, no reemplaza los originales.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">La <strong>foliación</strong> (número de hojas por documento) la declara quien sube el archivo — por defecto 1.</td>
+            <td className="px-2.5 py-1.5">No se detecta automáticamente: no hay librería de conteo de páginas y buena parte del archivo real no es PDF.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">Adjuntos del SGDEA: <strong>máximo 10 archivos por radicado, 2 MB cada uno</strong>. No se aceptan comprimidos (.zip, .rar).</td>
+            <td className="px-2.5 py-1.5">Un radicado debe ser liviano y consultable. Trámites Ambientales 2.0 (planos, estudios) tiene su propio límite de 25 MB, aparte.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5">La verificación pública de un radicado (<span className="font-mono text-[11px]">/verificar</span>) muestra existencia, tipo, fecha y estado — <strong>nunca el contenido</strong>.</td>
+            <td className="px-2.5 py-1.5">Ley 1712/2014: el acceso al contenido está sujeto a las reglas de clasificación y reserva.</td>
+          </tr>
+        </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Fuera de alcance — decisiones conscientes</p>
+        <ul className="list-disc space-y-1 pl-5 text-xs text-stone-500">
+          <li><strong>Sin proveedor de correo saliente:</strong> no hay notificaciones por email/SMS — todos los avisos viven en la app (Panel, bandeja).</li>
+          <li><strong>Sin conversor a PDF/A:</strong> los archivos que no son PDF ni imagen no se convierten; en el PDF consolidado quedan como hoja de referencia.</li>
+          <li><strong>Sin expedientes híbridos</strong> (físico + electrónico): el SGDEA es 100&nbsp;% electrónico.</li>
+          <li><strong>Sin integración con hardware de escaneo/OCR/ICR/OMR</strong> ni con la API de una empresa de mensajería — el código de barras y el registro del despacho sí están.</li>
+          <li><strong>Sin país geolocalizado</strong> en la auditoría (requeriría un servicio de GeoIP externo); sí quedan usuario, fecha/hora, IP y navegador/dispositivo.</li>
+          <li><strong>Cuatro roles de correspondencia de fábrica</strong>, no roles arbitrarios nuevos.</li>
+          <li><strong>Copias de seguridad a nivel de infraestructura</strong> (Supabase), no como función propia de la aplicación.</li>
+          <li><strong>Firma digital con CA acreditada, formatos PAdES/CAdES/XAdES y estampado con TSA acreditada:</strong> requieren un contrato de la CDMB con una entidad de certificación — el punto de conexión ya está listo en el modelo.</li>
+        </ul>
+      </Seccion>
+    </>
+  );
+
   const grupos = [
     { id: "ciclo", label: "Radicación y ciclo", contenido: grupoCiclo },
     { id: "expedientes", label: "Expedientes y datos", contenido: grupoExpedientes },
     { id: "flujos", label: "Flujos y roles", contenido: grupoFlujos },
+    { id: "reglas", label: "Reglas y decisiones", contenido: grupoReglas },
     ...(esAdministrador ? [{ id: "admin", label: "Administración", contenido: grupoAdmin }] : []),
   ];
 
