@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
       dependencia: { select: { nombre: true } },
       serie: { select: { codigo: true, nombre: true, maxFoliosPorTomo: true } },
       subserie: { select: { codigo: true, nombre: true } },
-      _count: { select: { documentos: true } },
-      documentos: { select: { numeroFolios: true } },
+      _count: { select: { documentos: { where: { retiradoEn: null } } } },
+      documentos: { where: { retiradoEn: null }, select: { numeroFolios: true } },
     },
   });
 

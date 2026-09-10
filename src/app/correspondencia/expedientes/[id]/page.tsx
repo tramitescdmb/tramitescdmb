@@ -20,6 +20,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
   PRESTA: "Préstamo", DEVUELVE: "Devolución", REABRE: "Reapertura", CARGA_FALLIDA: "Cargue rechazado",
+  RETIRA_DOCUMENTO: "Retiro de archivo del índice",
 };
 const BITACORA_POR_PAGINA = 20;
 
@@ -49,6 +50,7 @@ export default async function ExpedienteDetallePage({
         orderBy: { ordenIndice: "asc" },
         include: {
           subidoPor: { select: { nombre: true } },
+          retiradoPor: { select: { nombre: true } },
           tipoDocumental: { select: { nombre: true } },
           reemplaza: { select: { nombre: true, ordenIndice: true } },
           reemplazadoPor: { select: { nombre: true, ordenIndice: true } },
@@ -106,15 +108,20 @@ export default async function ExpedienteDetallePage({
   const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
   const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
+  // Los archivos retirados del índice (corrección en expediente abierto) se listan aparte y no cuentan
+  // para el índice, el hash, la foliación ni el FUID.
+  const documentosActivos = expediente.documentos.filter((d) => !d.retiradoEn);
+  const documentosRetirados = expediente.documentos.filter((d) => d.retiradoEn);
+
   // Orden visual según el criterio configurado en la serie (MoReq 1.45/1.46) — el número de índice
   // (ordenIndice) sigue siendo el orden real de incorporación, el que respalda el hash del índice
   // firmado; solo cambia cómo se VE.
   const criterioOrden = expediente.serie?.criterioOrdenExpediente ?? "FECHA_DOCUMENTO";
-  const documentosOrdenados = ordenarDocumentosExpediente(expediente.documentos, criterioOrden);
+  const documentosOrdenados = ordenarDocumentosExpediente(documentosActivos, criterioOrden);
 
   // Foliación (MoReq 1.19/1.51): rango acumulado de folios por documento, calculado sobre el orden REAL de
   // incorporación (ordenIndice, el que respalda el hash) — no sobre el orden visual por fecha.
-  const porOrdenIndice = expediente.documentos.slice().sort((a, b) => a.ordenIndice - b.ordenIndice);
+  const porOrdenIndice = documentosActivos.slice().sort((a, b) => a.ordenIndice - b.ordenIndice);
   const rangoFolios = new Map<string, { desde: number; hasta: number }>();
   let folioAcumulado = 0;
   for (const doc of porOrdenIndice) {
@@ -134,7 +141,7 @@ export default async function ExpedienteDetallePage({
   const abierto = expediente.estado === "ABIERTO";
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
-  const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && expediente.documentos.length > 0;
+  const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && documentosActivos.length > 0;
   const puedeReabrirEste = !abierto && puedeCerrarExpediente(permisos);
   const puedePrestar = puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
 
@@ -340,8 +347,8 @@ export default async function ExpedienteDetallePage({
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
-          <span>Índice electrónico ({expediente.documentos.length} documento(s){expediente.documentos.length > 0 ? ` · ${totalFolios} folio(s)` : ""})</span>
-          {expediente.documentos.length > 0 && (
+          <span>Índice electrónico ({documentosActivos.length} archivo{documentosActivos.length === 1 ? "" : "s"}{documentosActivos.length > 0 ? ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}` : ""})</span>
+          {documentosActivos.length > 0 && (
             <span className="flex items-center gap-3 normal-case tracking-normal">
               <a
                 href={`/api/correspondencia/expedientes/${id}/indice`}
@@ -360,7 +367,7 @@ export default async function ExpedienteDetallePage({
               <a
                 href={`/api/correspondencia/expedientes/${id}/consolidado`}
                 className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
-                title="Todo el expediente en un solo PDF: portada, índice y cada pieza foliada (respuestas con rótulo y firma, luego solicitudes y adjuntos)"
+                title="Todo el expediente en un solo PDF: portada, índice y cada archivo foliado (respuestas con rótulo y firma, luego solicitudes y adjuntos)"
               >
                 <Download className="h-3 w-3" aria-hidden />
                 PDF consolidado
@@ -403,12 +410,13 @@ export default async function ExpedienteDetallePage({
             <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
           </form>
         )}
-        {expediente.documentos.length === 0 ? (
-          <p className="text-sm text-stone-400">Todavía no se ha agregado ningún documento.</p>
+        {documentosActivos.length === 0 ? (
+          <p className="text-sm text-stone-400">Todavía no se ha agregado ningún archivo.</p>
         ) : (
           <ul className="space-y-2">
             {documentosOrdenados.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
+              <li key={doc.id} className="rounded-lg border border-stone-200 px-3 py-2">
+               <div className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="flex-none font-mono text-xs text-stone-400" title="Orden de incorporación al índice electrónico">{String(doc.ordenIndice).padStart(3, "0")}</span>
                   <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
@@ -460,9 +468,76 @@ export default async function ExpedienteDetallePage({
                     Abrir
                   </a>
                 </span>
+               </div>
+
+               {puedeEditar && (
+                <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs">
+                  <summary className="cursor-pointer text-stone-400 hover:text-stone-700">Corregir o retirar</summary>
+                  <div className="mt-2 space-y-3">
+                    <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="accion" value="editar" />
+                      <label className="text-[11px]">
+                        <span className="mb-0.5 block font-medium text-stone-500">Nombre</span>
+                        <input name="nombre" defaultValue={doc.nombre} className="w-56 rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                      </label>
+                      <label className="text-[11px]">
+                        <span className="mb-0.5 block font-medium text-stone-500">Folios</span>
+                        <input name="numeroFolios" type="number" min={1} defaultValue={doc.numeroFolios} className="w-16 rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                      </label>
+                      <label className="text-[11px]">
+                        <span className="mb-0.5 block font-medium text-stone-500">Fecha del documento</span>
+                        <input name="fechaDocumento" type="date" defaultValue={doc.fechaDocumento ? doc.fechaDocumento.toISOString().slice(0, 10) : ""} className="rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                      </label>
+                      {(expediente.subserie?.tiposDocumentales.length ?? 0) > 0 && (
+                        <label className="text-[11px]">
+                          <span className="mb-0.5 block font-medium text-stone-500">Tipo documental</span>
+                          <select name="tipoDocumentalId" defaultValue={doc.tipoDocumentalId ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-1 text-xs">
+                            <option value="">— Sin tipo —</option>
+                            {expediente.subserie!.tiposDocumentales.map((t) => (
+                              <option key={t.id} value={t.id}>{t.nombre}</option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+                      <button type="submit" className="rounded-md border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50">Guardar corrección</button>
+                    </form>
+                    <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="accion" value="retirar" />
+                      <label className="flex-1 text-[11px]" style={{ minWidth: 220 }}>
+                        <span className="mb-0.5 block font-medium text-stone-500">Retirar del índice — motivo</span>
+                        <input name="motivo" required placeholder="Ej. se subió el archivo equivocado" className="w-full rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                      </label>
+                      <button type="submit" className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50">
+                        <Undo2 className="h-3 w-3" aria-hidden />
+                        Retirar del índice
+                      </button>
+                    </form>
+                  </div>
+                </details>
+               )}
               </li>
             ))}
           </ul>
+        )}
+
+        {documentosRetirados.length > 0 && (
+          <details className="mt-3 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2 text-xs">
+            <summary className="cursor-pointer font-medium text-stone-500">
+              {documentosRetirados.length} archivo{documentosRetirados.length === 1 ? "" : "s"} retirado{documentosRetirados.length === 1 ? "" : "s"} del índice
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {documentosRetirados.map((doc) => (
+                <li key={doc.id} className="text-stone-500">
+                  <span className="line-through">{doc.nombre}</span>
+                  {" — "}retirado {fechaHora(doc.retiradoEn)}{doc.retiradoPor ? ` por ${doc.retiradoPor.nombre}` : ""}
+                  {doc.motivoRetiro ? `: ${doc.motivoRetiro}` : ""}
+                  {" · "}
+                  <a href={`/api/documentos-archivo/${doc.id}`} target="_blank" rel="noreferrer" className="text-cdmb-700 hover:underline">ver archivo</a>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[11px] text-stone-400">El archivo no se borra: queda como constancia (Ley 594/2000), fuera del índice, del hash y del FUID.</p>
+          </details>
         )}
 
         {puedeSubir && (
@@ -470,7 +545,7 @@ export default async function ExpedienteDetallePage({
             <SubirDocumentoExpedienteForm
               expedienteId={id}
               tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []}
-              documentosExistentes={expediente.documentos.map((d) => ({ id: d.id, nombre: d.nombre }))}
+              documentosExistentes={documentosActivos.map((d) => ({ id: d.id, nombre: d.nombre }))}
             />
           </div>
         )}

@@ -107,6 +107,66 @@ export async function agregarDocumentoArchivo(datos: {
   });
 }
 
+/**
+ * Corrige la metadata de un archivo de un expediente ABIERTO (nombre, tipo
+ * documental, folios, fecha del documento) — no toca el archivo ni su hash. El
+ * expediente cerrado tiene el índice firmado y ya no se edita.
+ */
+export async function editarDocumentoArchivo(
+  documentoId: string,
+  datos: { nombre?: string; tipoDocumentalId?: string | null; numeroFolios?: number | null; fechaDocumento?: Date | null }
+) {
+  const doc = await db.documentoArchivo.findUnique({
+    where: { id: documentoId },
+    select: { id: true, retiradoEn: true, expediente: { select: { estado: true, subserieId: true } } },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.retiradoEn) throw new Error("Este documento está retirado del índice.");
+  if (doc.expediente.estado === "CERRADO") throw new Error("El expediente está cerrado: no se puede editar el documento.");
+
+  if (datos.tipoDocumentalId) {
+    const tipo = await db.tipoDocumental.findUnique({ where: { id: datos.tipoDocumentalId }, select: { subserieId: true } });
+    if (!tipo || tipo.subserieId !== doc.expediente.subserieId) {
+      throw new Error("El tipo documental elegido no corresponde a la subserie de este expediente.");
+    }
+  }
+
+  const nombre = datos.nombre?.trim();
+  return db.documentoArchivo.update({
+    where: { id: documentoId },
+    data: {
+      ...(nombre ? { nombre } : {}),
+      ...(datos.tipoDocumentalId !== undefined ? { tipoDocumentalId: datos.tipoDocumentalId || null } : {}),
+      ...(datos.numeroFolios && datos.numeroFolios > 0 ? { numeroFolios: Math.floor(datos.numeroFolios) } : {}),
+      ...(datos.fechaDocumento !== undefined ? { fechaDocumento: datos.fechaDocumento } : {}),
+    },
+  });
+}
+
+/**
+ * Retira un archivo del índice de un expediente ABIERTO — para un archivo subido
+ * por error (equivocado, duplicado). NO se borra la fila ni el archivo del
+ * storage: se marca con motivo y queda fuera del índice, del hash, del FUID y del
+ * PDF consolidado, pero trazado en la bitácora (mismo principio que ANULADA en
+ * una comunicación — Ley 594/2000). Un expediente cerrado ya no lo permite.
+ */
+export async function retirarDocumentoArchivo(documentoId: string, usuarioId: string, motivo: string) {
+  if (!motivo.trim()) throw new Error("Indique por qué se retira este archivo del índice.");
+  const doc = await db.documentoArchivo.findUnique({
+    where: { id: documentoId },
+    select: { id: true, nombre: true, retiradoEn: true, expediente: { select: { estado: true } } },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.retiradoEn) throw new Error("Este documento ya está retirado del índice.");
+  if (doc.expediente.estado === "CERRADO") throw new Error("El expediente está cerrado: el índice ya está firmado y no admite cambios.");
+
+  await db.documentoArchivo.update({
+    where: { id: documentoId },
+    data: { retiradoEn: new Date(), retiradoPorId: usuarioId, motivoRetiro: motivo.trim() },
+  });
+  return { nombre: doc.nombre };
+}
+
 export const ETIQUETA_CRITERIO_ORDEN: Record<CriterioOrdenExpediente, string> = {
   FECHA_DOCUMENTO: "Fecha del documento (por defecto)",
   FECHA_INCORPORACION: "Orden de incorporación al índice",
@@ -145,8 +205,11 @@ export function ordenarDocumentosExpediente<T extends DocOrdenable>(documentos: 
  * documento — si algo cambiara después de cerrado, el hash recalculado ya no
  * coincidiría con el guardado.
  */
-export function calcularHashIndice(documentos: { ordenIndice: number; nombre: string; hashSha256: string | null }[]): string {
+export function calcularHashIndice(
+  documentos: { ordenIndice: number; nombre: string; hashSha256: string | null; retiradoEn?: Date | null }[]
+): string {
   const base = documentos
+    .filter((d) => !d.retiradoEn) // un archivo retirado del índice (corrección en expediente abierto) no cuenta
     .slice()
     .sort((a, b) => a.ordenIndice - b.ordenIndice)
     .map((d) => `${d.ordenIndice}|${d.nombre}|${d.hashSha256 ?? ""}`)
@@ -172,11 +235,13 @@ export async function editarExpedienteDocumental(expedienteId: string, datos: { 
 export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId: string) {
   const expediente = await db.expedienteDocumental.findUnique({
     where: { id: expedienteId },
-    include: { documentos: { select: { ordenIndice: true, nombre: true, hashSha256: true } } },
+    include: { documentos: { select: { ordenIndice: true, nombre: true, hashSha256: true, retiradoEn: true } } },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.estado === "CERRADO") throw new Error("Este expediente ya está cerrado.");
-  if (expediente.documentos.length === 0) throw new Error("No se puede cerrar un expediente sin documentos.");
+  if (expediente.documentos.filter((d) => !d.retiradoEn).length === 0) {
+    throw new Error("No se puede cerrar un expediente sin documentos en el índice.");
+  }
 
   const indiceHash = calcularHashIndice(expediente.documentos);
   return db.expedienteDocumental.update({
@@ -322,7 +387,7 @@ export async function listarExpedientesDocumentales(filtro: FiltrosExpedienteDoc
         serie: { select: { codigo: true, nombre: true } },
         subserie: { select: { codigo: true, nombre: true } },
         creadoPor: { select: { nombre: true } },
-        _count: { select: { documentos: true, comunicaciones: true } },
+        _count: { select: { documentos: { where: { retiradoEn: null } }, comunicaciones: true } },
         // Solo trae los documentos que coinciden con la búsqueda — para poder mostrar
         // "coincide: archivo.pdf" en el resultado sin cargar todo el índice del expediente.
         // Sin término de búsqueda, la condición no puede coincidir con nada (evita traer

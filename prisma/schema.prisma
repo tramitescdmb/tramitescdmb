@@ -190,6 +190,7 @@ model Usuario {
   prestamosRecibidos              PrestamoExpediente[]    @relation("PrestamoPrestadoA")
   prestamosEntregados             PrestamoExpediente[]    @relation("PrestamoPrestadoPor")
   documentosArchivoSubidos        DocumentoArchivo[]      @relation("DocumentoArchivoSubidoPor")
+  documentosArchivoRetirados      DocumentoArchivo[]      @relation("DocumentoArchivoRetiradoPor")
   distribucionesAsignadas         Distribucion[]          @relation("DistribucionAsignadoPor")
   firmas                          Firma[]                 @relation("FirmaUsuario")
   auditoriasDoc                   AuditoriaDoc[]          @relation("AuditoriaDocUsuario")
@@ -906,6 +907,7 @@ enum AccionAuditoriaDoc {
   RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
   DESPACHA // la ventanilla de salida registra el envío efectivo (correo/físico) del oficio de salida — cierra el ciclo
   DEVUELVE_REPARTO // el funcionario al que se le repartió una recibida la devuelve a la ventanilla con motivo (no le corresponde)
+  RETIRA_DOCUMENTO // se retira del índice de un expediente ABIERTO un archivo subido por error, con motivo (no se borra la fila ni el archivo)
   PRESTA // presta un expediente documental a un funcionario
   DEVUELVE // registra la devolución de un expediente prestado
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
@@ -1504,8 +1506,20 @@ model DocumentoArchivo {
   // por defecto — no se puede reconstruir retroactivamente cuántas páginas tenían en realidad.
   numeroFolios           Int       @default(1)
 
+  // Corrección en un expediente ABIERTO (Art. 4.3.2 Acuerdo 001/2024 AGN: el
+  // expediente se conforma hasta el cierre; ahí se firma el índice). Se puede
+  // corregir la metadata (nombre, tipo, folios, fecha) y RETIRAR del índice un
+  // archivo subido por error — nunca se borra la fila ni el archivo del storage:
+  // se marca con motivo y queda fuera del índice, del hash, del FUID y del PDF
+  // consolidado, pero trazado en la bitácora (mismo principio que ANULADA en una
+  // comunicación). Un expediente CERRADO ya no admite ninguna de las dos.
+  retiradoEn             DateTime?
+  retiradoPorId          String?
+  motivoRetiro           String?   @db.Text
+
   expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
+  retiradoPor    Usuario?             @relation("DocumentoArchivoRetiradoPor", fields: [retiradoPorId], references: [id])
   tipoDocumental TipoDocumental?      @relation(fields: [tipoDocumentalId], references: [id])
   reemplaza      DocumentoArchivo?    @relation("DocumentoArchivoVersion", fields: [reemplazaId], references: [id], onDelete: SetNull)
   reemplazadoPor DocumentoArchivo[]   @relation("DocumentoArchivoVersion")

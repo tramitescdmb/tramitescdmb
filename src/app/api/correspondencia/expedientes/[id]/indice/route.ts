@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       dependencia: { select: { nombre: true } },
       serie: { select: { codigo: true, nombre: true } },
       subserie: { select: { codigo: true, nombre: true } },
-      documentos: { orderBy: { ordenIndice: "asc" }, include: { subidoPor: { select: { nombre: true } } } },
+      documentos: { where: { retiradoEn: null }, orderBy: { ordenIndice: "asc" }, include: { subidoPor: { select: { nombre: true } } } },
     },
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });

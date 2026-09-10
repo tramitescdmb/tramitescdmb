@@ -375,7 +375,7 @@ export default async function CorrespondenciaAyudaPage() {
         <p>
           <strong>Vista de carpetas.</strong> El listado se muestra por defecto como carpetas agrupadas en
           cajones por dependencia — igual que un archivador físico —, cada una con su número, asunto,
-          clasificación, número de piezas y estado (abierta / cerrada con candado). El botón «Tabla» cambia a la
+          clasificación, número de archivos y estado (abierta / cerrada con candado). El botón «Tabla» cambia a la
           vista de filas, que también es la que se usa al imprimir y para el FUID. La búsqueda funciona igual en
           las dos vistas, incluyendo por el nombre de un archivo que esté dentro de algún expediente.
         </p>
@@ -384,7 +384,7 @@ export default async function CorrespondenciaAyudaPage() {
           su propia huella SHA-256, su tipo documental y su lugar en el índice electrónico firmado — así se puede
           versionar, cotejar o reemplazar uno sin tocar los demás (Art. 4.3.2.3 AGN). Para tener el expediente
           «en un solo PDF», el botón <strong>«PDF consolidado»</strong> arma al vuelo un documento con portada,
-          índice y cada pieza foliada: primero las respuestas (oficios de salida) con su rótulo y su sello de
+          índice y cada archivo foliado: primero las respuestas (oficios de salida) con su rótulo y su sello de
           firma, luego las solicitudes con sus adjuntos, y al final los documentos cargados directo. Los archivos
           que no son PDF ni imagen quedan como una hoja de referencia (no se convierten). Es una vista para
           imprimir o entregar, no reemplaza los originales.

@@ -32,7 +32,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       sp.serieId ? db.serieDocumental.findUnique({ where: { id: sp.serieId }, select: { codigo: true, nombre: true } }) : null,
       db.expedienteDocumental.groupBy({ by: ["estado"], _count: { _all: true } }),
       db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
-      db.documentoArchivo.count(),
+      db.documentoArchivo.count({ where: { retiradoEn: null } }),
     ]);
   const abiertos = resumen.find((r) => r.estado === "ABIERTO")?._count._all ?? 0;
   const cerrados = resumen.find((r) => r.estado === "CERRADO")?._count._all ?? 0;

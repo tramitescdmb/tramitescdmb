@@ -253,7 +253,7 @@ export async function obtenerPanelArchivoVista(permisos: PermisosUsuario) {
   ] = await Promise.all([
     db.expedienteDocumental.count({ where: { estado: "ABIERTO" } }),
     db.expedienteDocumental.count(),
-    db.documentoArchivo.count(),
+    db.documentoArchivo.count({ where: { retiradoEn: null } }),
     db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
     db.serieDocumental.count({ where: { vigenteHasta: null } }),
     db.subserieDocumental.count({ where: { activo: true } }),

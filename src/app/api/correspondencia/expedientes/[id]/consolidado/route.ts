@@ -17,8 +17,8 @@ const ETIQUETA_PIEZA: Record<string, string> = {
 };
 const DESCARGABLE = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
-/** Expediente consolidado en un solo PDF (portada + índice + cada pieza foliada). El original de cada
- * documento no se toca — es una vista armada al vuelo, como el «con rótulo» de un adjunto. */
+/** Expediente consolidado en un solo PDF (portada + índice + cada documento foliado). El original de cada
+ * archivo no se toca — es una vista armada al vuelo, como el «con rótulo» de un adjunto. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       serie: { select: { codigo: true, nombre: true, criterioOrdenExpediente: true } },
       subserie: { select: { codigo: true, nombre: true } },
       documentos: {
+        where: { retiradoEn: null },
         include: { tipoDocumental: { select: { nombre: true } } },
       },
       comunicaciones: {
@@ -156,7 +157,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `Descargó ${exp.numero} como PDF consolidado (${piezas.length} pieza(s))`,
+    detalle: `Descargó ${exp.numero} como PDF consolidado (${piezas.length} documento(s))`,
   }).catch((e) => console.error("registrarAuditoriaDoc (consolidado) falló:", e));
 
   return new NextResponse(Buffer.from(salida), {

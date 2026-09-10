@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderOpen, FolderCheck, Lock, FileText, Layers } from "lucide-react";
+import { FolderOpen, FolderCheck, Lock, FileText, Files, Mail } from "lucide-react";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 
 export type CarpetaData = {
@@ -19,12 +19,11 @@ export type CarpetaData = {
 /**
  * Un expediente como una carpeta física: pestaña arriba con el número (el
  * "rótulo del lomo"), el asunto, y en el pie los datos que sirven para
- * ubicarlo en el archivo (dependencia, serie, folios, piezas). Cerrada = con
+ * ubicarlo en el archivo (dependencia, serie, folios, archivos). Cerrada = con
  * candado y en tono neutro. Toda la tarjeta enlaza al detalle.
  */
 export function CarpetaExpediente({ c }: { c: CarpetaData }) {
   const cerrada = c.estado === "CERRADO";
-  const piezas = c.documentos + c.comunicaciones;
 
   return (
     <Link
@@ -69,9 +68,15 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/5 pt-2 text-[11px] text-stone-500">
         <span className="truncate">{c.serie ?? "Sin clasificar"}</span>
         <span className="flex items-center gap-1">
-          <Layers className="h-3 w-3" aria-hidden />
-          {piezas} pieza{piezas === 1 ? "" : "s"}
+          <Files className="h-3 w-3" aria-hidden />
+          {c.documentos} archivo{c.documentos === 1 ? "" : "s"}
         </span>
+        {c.comunicaciones > 0 && (
+          <span className="flex items-center gap-1">
+            <Mail className="h-3 w-3" aria-hidden />
+            {c.comunicaciones} comunicación{c.comunicaciones === 1 ? "" : "es"}
+          </span>
+        )}
         {c.folios != null && <span>{c.folios} folio{c.folios === 1 ? "" : "s"}</span>}
         {c.nivelAcceso !== "PUBLICA" && (
           <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${CLASE_NIVEL_ACCESO[c.nivelAcceso] ?? ""}`}>

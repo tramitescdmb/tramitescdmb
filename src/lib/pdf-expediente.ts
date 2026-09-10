@@ -4,7 +4,7 @@ import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
 /**
  * Expediente consolidado en UN solo PDF (opción de descarga, no de almacenamiento):
- * portada + índice electrónico y luego, en orden, cada pieza del expediente. Las
+ * portada + índice electrónico y luego, en orden, cada documento del expediente. Las
  * comunicaciones enviadas (respuestas) van primero con su rótulo y su sello de
  * firma; después las recibidas (solicitudes) con sus adjuntos; al final los
  * documentos cargados directo. Los archivos que no son PDF ni imagen quedan como
