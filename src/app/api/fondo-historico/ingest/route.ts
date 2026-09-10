@@ -38,11 +38,16 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** Sustituye por espacio los caracteres de control crudos (0x00–0x1F) que
- *  harían fallar JSON.parse dentro de una cadena. */
-function limpiarControl(s: string): string {
+/** Sustituye por espacio los caracteres de control crudos (0x00–0x1F).
+ *  Con `conservarSalto`, deja pasar `\n` (separador de líneas del dump). */
+function limpiarControl(s: string, conservarSalto = false): string {
   let out = "";
-  for (let i = 0; i < s.length; i++) out += s.charCodeAt(i) < 0x20 ? " " : s[i];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c >= 0x20) out += s[i];
+    else if (conservarSalto && c === 0x0a) out += "\n";
+    else out += " ";
+  }
   return out;
 }
 
@@ -75,7 +80,7 @@ async function manejar(req: NextRequest) {
     cuerpo = {
       fondo: req.headers.get("x-fondo") ?? "",
       sincronizacionId: syncHeader,
-      lote: parseDumpFondo(limpiarControl(await req.text()), serieId, serieNombre),
+      lote: parseDumpFondo(limpiarControl(await req.text(), true), serieId, serieNombre),
     };
   } else {
     try {
