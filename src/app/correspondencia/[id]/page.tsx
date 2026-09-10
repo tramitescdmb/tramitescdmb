@@ -393,6 +393,18 @@ export default async function CorrespondenciaDetallePage({
                     <Download className="h-3.5 w-3.5" aria-hidden />
                     Abrir
                   </a>
+                  {doc.mimeType === "application/pdf" && (
+                    <a
+                      href={`/api/correspondencia-documentos/${doc.id}/rotulado`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="PDF con el rótulo de radicación (número, código de barras y QR) y, si aplica, el sello de firma electrónica estampados"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                    >
+                      <Printer className="h-3.5 w-3.5" aria-hidden />
+                      Con rótulo
+                    </a>
+                  )}
                 </span>
               </li>
             ))}
@@ -500,6 +512,18 @@ export default async function CorrespondenciaDetallePage({
                       <Download className="h-3.5 w-3.5" aria-hidden />
                       Abrir
                     </a>
+                    {doc.mimeType === "application/pdf" && (
+                      <a
+                        href={`/api/correspondencia-documentos/${doc.id}/rotulado`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="PDF con el rótulo de radicación (número, código de barras y QR) y, si aplica, el sello de firma electrónica estampados"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                      >
+                        <Printer className="h-3.5 w-3.5" aria-hidden />
+                        Con rótulo
+                      </a>
+                    )}
                   </span>
                 </li>
               ))}

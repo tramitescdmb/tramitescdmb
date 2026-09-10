@@ -52,3 +52,11 @@ export async function deleteDocumento(path: string) {
   const { error } = await supabase.storage.from(BUCKET).remove([path]);
   if (error) throw error;
 }
+
+/** Descarga el contenido de un documento del bucket como Buffer (para procesarlo en el servidor). */
+export async function descargarDocumento(path: string): Promise<Buffer> {
+  const supabase = getAdminClient();
+  const { data, error } = await supabase.storage.from(BUCKET).download(path);
+  if (error || !data) throw error ?? new Error("No se pudo descargar el documento");
+  return Buffer.from(await data.arrayBuffer());
+}
