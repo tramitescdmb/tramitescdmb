@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { FileText, ArrowRight, ArrowLeft, MailCheck } from "lucide-react";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 
 const ENCABEZADOS = ["#", "Tipo", "Radicado", "Fecha", "Tercero / dependencia", "Asunto", "Progreso", "Vence", "Docs."];
-const ANCHOS_DEFECTO = [36, 90, 150, 110, 170, 210, 140, 110, 56];
+const ANCHOS_DEFECTO = [34, 86, 190, 96, 160, 188, 138, 104, 52];
 
 const ETIQUETA_TIPO: Record<string, { texto: string; clase: string }> = {
   RECIBIDA: { texto: "Recibida", clase: "bg-sky-50 text-sky-700" },
@@ -27,11 +27,14 @@ export type FilaCorrespondencia = {
   vencimiento: { texto: string; clase: string } | null;
   docs: number;
   documentosCoincidentes?: string[];
+  /** Vínculo entrada↔salida: `entrante` = el radicado enlazado es la recibida a la que responde;
+   * si no, es el oficio de salida que la responde. `despachada` = ese oficio ya se envió. */
+  relacion?: { id: string; radicado: string; entrante: boolean; despachada: boolean } | null;
 };
 
 /** Tabla de correspondencia (recibida/enviada/interna) — columnas redimensionables (ancho recordado por navegador). */
 export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: FilaCorrespondencia[]; sinResultadosTexto: string }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v4", ANCHOS_DEFECTO);
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v5", ANCHOS_DEFECTO);
 
   return (
     <table className="w-full table-fixed text-sm">
@@ -61,10 +64,32 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                 <td className="truncate px-2.5 py-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tipo.clase}`}>{tipo.texto}</span>
                 </td>
-                <td className="truncate px-2.5 py-2">
-                  <Link href={`/correspondencia/${f.id}`} className="font-medium text-cdmb-700 hover:underline" title={f.radicado}>
+                <td className="px-2.5 py-2">
+                  <Link href={`/correspondencia/${f.id}`} className="block truncate font-medium text-cdmb-700 hover:underline" title={f.radicado}>
                     {f.radicado}
                   </Link>
+                  {f.relacion && (
+                    <Link
+                      href={`/correspondencia/${f.relacion.id}`}
+                      className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-stone-400 hover:text-stone-600"
+                      title={
+                        f.relacion.entrante
+                          ? `Responde a ${f.relacion.radicado}`
+                          : f.relacion.despachada
+                            ? `Respondida por ${f.relacion.radicado} (despachada)`
+                            : `Respondida por ${f.relacion.radicado} (sin despachar)`
+                      }
+                    >
+                      {f.relacion.entrante ? (
+                        <ArrowLeft className="h-3 w-3 flex-none" aria-hidden />
+                      ) : f.relacion.despachada ? (
+                        <MailCheck className="h-3 w-3 flex-none text-emerald-500" aria-hidden />
+                      ) : (
+                        <ArrowRight className="h-3 w-3 flex-none" aria-hidden />
+                      )}
+                      {f.relacion.radicado}
+                    </Link>
+                  )}
                 </td>
                 <td className="truncate px-2.5 py-2 text-stone-500">{f.fecha}</td>
                 <td className="truncate px-2.5 py-2 text-stone-700" title={f.tercero ?? undefined}>{f.tercero ?? "—"}</td>

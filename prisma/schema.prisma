@@ -181,6 +181,7 @@ model Usuario {
   dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")
   comunicacionesRadicadas         Comunicacion[]          @relation("ComunicacionRadicadaPor")
   comunicacionesRespondidas       Comunicacion[]          @relation("ComunicacionRespuestaPor")
+  comunicacionesDespachadas       Comunicacion[]          @relation("ComunicacionDespachadaPor")
   transferenciasConfirmadas       Comunicacion[]          @relation("ComunicacionTransferenciaConfirmadaPor")
   comunicacionDocumentos          ComunicacionDocumento[] @relation("ComunicacionDocumentoSubidoPor")
   distribucionesRecibidas         Distribucion[]          @relation("DistribucionUsuario")
@@ -900,6 +901,7 @@ enum AccionAuditoriaDoc {
   ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
   APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
   RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
+  DESPACHA // la ventanilla de salida registra el envío efectivo (correo/físico) del oficio de salida — cierra el ciclo
   PRESTA // presta un expediente documental a un funcionario
   DEVUELVE // registra la devolución de un expediente prestado
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
@@ -1224,6 +1226,18 @@ model Comunicacion {
   respuestaPorId String?
   respuestaEn    DateTime?
 
+  // Despacho efectivo del oficio de salida (ENVIADA) — la ventanilla de salida /
+  // gestión documental registra que el oficio ya radicado y firmado SE ENVIÓ de
+  // verdad al destinatario (correo, físico, mensajería). Este paso, no la mera
+  // radicación, es el que cierra el ciclo de la recibida a la que responde: un
+  // funcionario redacta el borrador, pero el envío efectivo es responsabilidad de
+  // la ventanilla (una firma + un radicado no significan "ya salió").
+  despachadaEn        DateTime?
+  despachadaPorId     String?
+  despachoMedio       String? // "CORREO_ELECTRONICO" | "FISICO" | "MENSAJERIA" | "PERSONAL"
+  despachoDestino     String? // correo o dirección a donde efectivamente se envió (snapshot)
+  despachoObservacion String?   @db.Text
+
   tercero                    Solicitante?          @relation(fields: [terceroId], references: [id])
   dependenciaOrigen          Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino         Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
@@ -1233,6 +1247,7 @@ model Comunicacion {
   expedienteDocumental       ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id])
   radicadoPor                Usuario?              @relation("ComunicacionRadicadaPor", fields: [radicadoPorId], references: [id])
   respuestaPor               Usuario?              @relation("ComunicacionRespuestaPor", fields: [respuestaPorId], references: [id])
+  despachadaPor              Usuario?              @relation("ComunicacionDespachadaPor", fields: [despachadaPorId], references: [id])
   transferenciaConfirmadaPor Usuario?              @relation("ComunicacionTransferenciaConfirmadaPor", fields: [transferenciaConfirmadaPorId], references: [id])
   respondeA                  Comunicacion?         @relation("ComunicacionRespuesta", fields: [respondeAId], references: [id])
   respuestas                 Comunicacion[]        @relation("ComunicacionRespuesta")
@@ -1312,6 +1327,10 @@ model Distribucion {
   fechaAsignacion DateTime  @default(now())
   fechaAcuse      DateTime? // cuándo el destinatario dio acuse de recibido
   asignadoPorId   String?
+  // Reparto vigente vs. historial: un reparto se puede hacer a VARIOS funcionarios a
+  // la vez (un lote), y un reparto posterior desactiva el anterior salvo que se pida
+  // "sumar". `activa` = sigue siendo un destinatario actual de la comunicación.
+  activa          Boolean   @default(true)
   createdAt       DateTime  @default(now())
 
   comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)

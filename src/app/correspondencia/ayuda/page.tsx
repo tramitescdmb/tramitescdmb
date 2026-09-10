@@ -92,7 +92,8 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
   MODIFICA: "Se modificó un campo de un registro existente.",
   EXPORTA: "Se exportó un conjunto de datos a un archivo descargable (CSV/XML).",
   ELIMINA: "Se eliminó un registro. Uso restringido: la bitácora misma nunca se elimina.",
-  DISTRIBUYE: "Se asignó una comunicación a una dependencia o a un funcionario.",
+  DISTRIBUYE: "Se repartió una comunicación a una dependencia o a uno o varios funcionarios.",
+  DESPACHA: "La ventanilla de salida registró el envío efectivo de un oficio de salida (correo/físico) — cierra el ciclo.",
   FIRMA: "Se firmó electrónicamente un oficio de salida o memorando (hash SHA-256 del contenido). Incluye la firma en lote.",
   CLASIFICA: "Se asignó o cambió la serie/subserie documental (TRD) de un registro.",
   ARCHIVA: "Se archivó una comunicación dentro de un expediente.",
@@ -214,42 +215,49 @@ export default async function CorrespondenciaAyudaPage() {
           requiere reparto y trámite antes de cerrarse. El detalle de cada comunicación calcula y muestra
           cuál de estas transiciones aplica a continuación.
         </p>
-        <Tabla encabezados={["Estado", "Descripción técnica", "Acción disponible", "Rol mínimo requerido"]}>
+        <p className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
+          <strong>Quién hace qué:</strong> la <strong>ventanilla</strong> radica de entrada y, al final, registra el
+          despacho de salida. El <strong>administrador o el rol de archivo</strong> (gestión documental) reparte el
+          trámite — a una o varias personas. El <strong>funcionario asignado</strong> solo redacta el borrador de
+          respuesta. La <strong>ventanilla de salida</strong> lo radica como oficio de salida (consecutivo + firma) y
+          después registra el envío efectivo al peticionario, que es lo que cierra el ciclo.
+        </p>
+        <Tabla encabezados={["Estado", "Descripción técnica", "Acción disponible", "Quién"]}>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="cdmb">RADICADA</Chip></td>
             <td className="px-2.5 py-1.5">Ingresó por ventanilla; consecutivo, fecha y hora quedan inalterables.</td>
-            <td className="px-2.5 py-1.5">Distribuir a dependencia o funcionario</td>
-            <td className="px-2.5 py-1.5">OPERADOR_VENTANILLA</td>
+            <td className="px-2.5 py-1.5">Repartir a dependencia o funcionario(s)</td>
+            <td className="px-2.5 py-1.5">ADMIN_ARCHIVO / admin</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="cdmb">EN_REPARTO</Chip></td>
             <td className="px-2.5 py-1.5">Pendiente de asignarse a una dependencia o funcionario.</td>
-            <td className="px-2.5 py-1.5">Distribuir</td>
-            <td className="px-2.5 py-1.5">OPERADOR_VENTANILLA / JEFE_DEPENDENCIA</td>
+            <td className="px-2.5 py-1.5">Repartir (admite varios destinatarios a la vez)</td>
+            <td className="px-2.5 py-1.5">ADMIN_ARCHIVO / admin</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="cdmb">ASIGNADA</Chip></td>
-            <td className="px-2.5 py-1.5">Distribuida a una dependencia o a un funcionario específico.</td>
-            <td className="px-2.5 py-1.5">Redactar la respuesta</td>
-            <td className="px-2.5 py-1.5">Destinatario de la distribución vigente, o quien reparte</td>
+            <td className="px-2.5 py-1.5">Repartida a una dependencia o a funcionario(s) específicos.</td>
+            <td className="px-2.5 py-1.5">Redactar el borrador de respuesta</td>
+            <td className="px-2.5 py-1.5">Solo el/los funcionario(s) del reparto vigente</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="cdmb">EN_TRAMITE</Chip></td>
             <td className="px-2.5 py-1.5">Hay un borrador de respuesta en curso (aún no es oficio firmado).</td>
-            <td className="px-2.5 py-1.5">Completar y radicar la respuesta como oficio de salida</td>
-            <td className="px-2.5 py-1.5">Redacta: funcionario asignado. Radica: OPERADOR_VENTANILLA/ADMIN_ARCHIVO</td>
+            <td className="px-2.5 py-1.5">Radicar el borrador como oficio de salida</td>
+            <td className="px-2.5 py-1.5">Ventanilla de salida (OPERADOR_VENTANILLA / ADMIN_ARCHIVO)</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="amber">INFORMACION_ADICIONAL_REQUERIDA</Chip></td>
             <td className="px-2.5 py-1.5">Término de ley suspendido (Art. 17 CPACA) hasta que el peticionario responda.</td>
             <td className="px-2.5 py-1.5">Reactivar el término al recibir la información</td>
-            <td className="px-2.5 py-1.5">Funcionario a cargo del trámite</td>
+            <td className="px-2.5 py-1.5">ADMIN_ARCHIVO / admin</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">RESPONDIDA</Chip></td>
-            <td className="px-2.5 py-1.5">Se radicó la respuesta como comunicación ENVIADA.</td>
-            <td className="px-2.5 py-1.5">Archivar en un expediente (opcional)</td>
-            <td className="px-2.5 py-1.5">—</td>
+            <td className="px-2.5 py-1.5">Se radicó el oficio de respuesta (ENVIADA). Falta despacharlo.</td>
+            <td className="px-2.5 py-1.5">Registrar el despacho efectivo (correo/físico) — cierra el ciclo</td>
+            <td className="px-2.5 py-1.5">Ventanilla de salida</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">ARCHIVADA</Chip></td>
@@ -297,17 +305,18 @@ export default async function CorrespondenciaAyudaPage() {
           «puede firmar electrónicamente» (por defecto, sí). Un administrador puede retirar ese acceso por
           persona; no afecta las firmas ya registradas.
         </p>
-        <Tabla encabezados={["Tipo", "Al radicarse", "Barra de estado", "Distribución posterior"]}>
+        <Tabla encabezados={["Tipo", "Al radicarse", "Barra de estado", "Paso siguiente"]}>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">ENVIADA</Chip></td>
             <td className="px-2.5 py-1.5">Firma electrónica + hash SHA-256</td>
-            <td className="px-2.5 py-1.5">100% — &quot;Enviado y firmado&quot;</td>
-            <td className="px-2.5 py-1.5" rowSpan={2}>Opcional; solo seguimiento interno, no reabre el ciclo ni cambia el documento firmado</td>
+            <td className="px-2.5 py-1.5">Radicado y firmado</td>
+            <td className="px-2.5 py-1.5">Registrar el despacho efectivo (ventanilla de salida)</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">INTERNA</Chip></td>
             <td className="px-2.5 py-1.5">Firma electrónica + hash SHA-256</td>
             <td className="px-2.5 py-1.5">100% — &quot;Memorando firmado&quot;</td>
+            <td className="px-2.5 py-1.5">Ninguno; queda definitivo. Distribuir es opcional, solo seguimiento interno</td>
           </tr>
         </Tabla>
         <p>
@@ -315,6 +324,20 @@ export default async function CorrespondenciaAyudaPage() {
           varios oficios de salida o memorandos que aún no llevan su firma y firmarlos en una sola acción. El
           sistema omite los que no apliquen (ya firmados por esa persona, anulados) sin abortar el lote; cada
           documento firmado conserva su propio hash SHA-256 y su registro en la bitácora.
+        </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-stone-400">Despacho — cierre del ciclo</p>
+        <p>
+          Radicar y firmar un oficio de salida <strong>no significa que ya salió</strong>. Cuando el oficio se
+          envía de verdad al destinatario, la <strong>ventanilla de salida / gestión documental</strong> registra
+          el <strong>despacho efectivo</strong> en el detalle del oficio: medio (correo electrónico, físico,
+          mensajería, entrega personal), destino y fecha. Ese paso — no la radicación — es el que cierra el ciclo
+          de la comunicación recibida a la que responde. Ni el funcionario que redactó ni quien firmó despachan.
+        </p>
+        <p>
+          Al despachar, si el oficio tiene clasificación TRD, una casilla (marcada por defecto) archiva la
+          recibida y la respuesta en un <strong>expediente documental de la subserie</strong>, creándolo si no
+          existe. La bandeja muestra el vínculo entre el radicado de entrada y el de salida, con un indicador de
+          si ya se despachó.
         </p>
       </Seccion>
     </>
@@ -444,9 +467,9 @@ export default async function CorrespondenciaAyudaPage() {
             abre en cualquier herramienta de modelado (MoReq 7.13).
           </li>
           <li>
-            <strong>Quién opera el flujo:</strong> sin restricción, cualquier funcionario con permiso de
-            distribución; si se marcan dependencias, solo quienes pertenecen a una de ellas (más el
-            administrador de archivo) — MoReq 7.8.
+            <strong>Quién opera el flujo:</strong> sin restricción, el administrador de archivo y los jefes de
+            dependencia; si se marcan dependencias, solo quienes pertenecen a una de ellas (más el administrador
+            de archivo) — MoReq 7.8.
           </li>
         </ul>
         <p className="text-xs font-medium uppercase tracking-wide text-stone-400">Cómo se usa</p>
@@ -466,11 +489,12 @@ export default async function CorrespondenciaAyudaPage() {
           plataforma, que siempre tiene acceso completo) no se entra al módulo. Un rol puede tener{" "}
           <strong>vigencia</strong> — al vencer, se retira automáticamente sin intervención manual.
         </p>
-        <Tabla encabezados={["Rol", "Radica", "Distribuye", "Administra TRD/dependencias", "Alcance de expedientes"]}>
+        <Tabla encabezados={["Rol", "Radica", "Despacha salida", "Reparte", "Administra TRD/dependencias", "Alcance de expedientes"]}>
           <tr>
             <td className="px-2.5 py-1.5 font-mono text-[11px]">OPERADOR_VENTANILLA</td>
             <td className="px-2.5 py-1.5">Sí</td>
             <td className="px-2.5 py-1.5">Sí</td>
+            <td className="px-2.5 py-1.5">No</td>
             <td className="px-2.5 py-1.5">No</td>
             <td className="px-2.5 py-1.5">Todas las dependencias (ventanilla única)</td>
           </tr>
@@ -479,17 +503,20 @@ export default async function CorrespondenciaAyudaPage() {
             <td className="px-2.5 py-1.5">No</td>
             <td className="px-2.5 py-1.5">No</td>
             <td className="px-2.5 py-1.5">No</td>
-            <td className="px-2.5 py-1.5">Su propia dependencia</td>
+            <td className="px-2.5 py-1.5">No</td>
+            <td className="px-2.5 py-1.5">Su propia dependencia. Solo responde lo que le repartan</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5 font-mono text-[11px]">JEFE_DEPENDENCIA</td>
             <td className="px-2.5 py-1.5">No</td>
-            <td className="px-2.5 py-1.5">Sí, dentro de su dependencia</td>
             <td className="px-2.5 py-1.5">No</td>
-            <td className="px-2.5 py-1.5">Su propia dependencia</td>
+            <td className="px-2.5 py-1.5">No</td>
+            <td className="px-2.5 py-1.5">No</td>
+            <td className="px-2.5 py-1.5">Su propia dependencia. Opera flujos de trabajo de su área</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5 font-mono text-[11px]">ADMIN_ARCHIVO</td>
+            <td className="px-2.5 py-1.5">Sí</td>
             <td className="px-2.5 py-1.5">Sí</td>
             <td className="px-2.5 py-1.5">Sí</td>
             <td className="px-2.5 py-1.5">Sí</td>
@@ -497,12 +524,17 @@ export default async function CorrespondenciaAyudaPage() {
           </tr>
         </Tabla>
         <p>
+          El <strong>reparto</strong> del trámite (a una o varias personas) y las acciones archivísticas sobre un
+          radicado — clasificación TRD, palabras clave, metadatos, nivel de acceso, detener/reanudar el término —
+          son exclusivas del administrador y de <span className="font-mono text-[11px]">ADMIN_ARCHIVO</span>. La
+          ventanilla radica de entrada y despacha de salida; el funcionario asignado solo redacta su borrador.
+        </p>
+        <p>
           <strong>Flujos de trabajo:</strong> crearlos y editarlos es exclusivo de{" "}
-          <span className="font-mono text-[11px]">ADMIN_ARCHIVO</span>; aplicarlos y avanzarlos, de quien puede
-          distribuir, con la restricción por dependencia que tenga cada flujo.{" "}
-          <strong>Campos de metadato y vocabulario controlado:</strong> los administra{" "}
-          <span className="font-mono text-[11px]">ADMIN_ARCHIVO</span>; los valores sobre una comunicación los
-          edita quien puede distribuir.
+          <span className="font-mono text-[11px]">ADMIN_ARCHIVO</span>; aplicarlos y avanzarlos, de{" "}
+          <span className="font-mono text-[11px]">ADMIN_ARCHIVO</span> y{" "}
+          <span className="font-mono text-[11px]">JEFE_DEPENDENCIA</span>, con la restricción por dependencia que
+          tenga cada flujo.
         </p>
         <p>
           <strong>Firma electrónica:</strong> puede firmar cualquier funcionario del módulo con «puede firmar»

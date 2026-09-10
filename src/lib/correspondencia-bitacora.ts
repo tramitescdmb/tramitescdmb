@@ -5,7 +5,7 @@ import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 export const ACCIONES_BITACORA: AccionAuditoriaDoc[] = [
   "CREA", "LEE", "MODIFICA", "EXPORTA", "ELIMINA", "DISTRIBUYE", "FIRMA",
   "CLASIFICA", "ARCHIVA", "ANULA", "SUSPENDE", "REACTIVA", "TRANSFIERE", "DISPONE", "ACCESO_DENEGADO",
-  "APLAZA", "RESPONDE", "PRESTA", "DEVUELVE", "REABRE", "CARGA_FALLIDA", "ERROR_EJECUCION", "FLUJO",
+  "APLAZA", "RESPONDE", "DESPACHA", "PRESTA", "DEVUELVE", "REABRE", "CARGA_FALLIDA", "ERROR_EJECUCION", "FLUJO",
 ];
 
 export const ETIQUETA_ACCION_BITACORA: Record<string, string> = {
@@ -13,7 +13,8 @@ export const ETIQUETA_ACCION_BITACORA: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final", ACCESO_DENEGADO: "Acceso denegado",
-  APLAZA: "Aplazamiento de disposición", RESPONDE: "Respuesta de funcionario", PRESTA: "Préstamo", DEVUELVE: "Devolución",
+  APLAZA: "Aplazamiento de disposición", RESPONDE: "Respuesta de funcionario", DESPACHA: "Despacho de salida",
+  PRESTA: "Préstamo", DEVUELVE: "Devolución",
   REABRE: "Reapertura", CARGA_FALLIDA: "Cargue rechazado", ERROR_EJECUCION: "Error de ejecución",
   FLUJO: "Flujo de trabajo",
 };

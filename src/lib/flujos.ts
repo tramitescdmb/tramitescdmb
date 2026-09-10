@@ -671,7 +671,12 @@ export function puedeAdministrarFlujos(permisos: PermisosUsuario) {
   return puedeAdministrarArchivo(permisos);
 }
 
-/** Quién puede iniciar/avanzar un flujo sobre una comunicación. */
+/** Quién puede iniciar/avanzar un flujo sobre una comunicación: el archivo (que reparte) y los jefes de
+ * dependencia (que gobiernan los procesos de su área). */
 export function puedeOperarFlujos(permisos: PermisosUsuario) {
-  return puedeAdministrarArchivo(permisos) || puedeDistribuir(permisos);
+  return (
+    puedeAdministrarArchivo(permisos) ||
+    puedeDistribuir(permisos) ||
+    permisos.correspondencia === "JEFE_DEPENDENCIA"
+  );
 }

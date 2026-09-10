@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { puedeAccederTramite, puedeEditarTramite, puedeAccederSeccion, puedeVerNivelAccesoExpediente, type PermisosUsuario } from "./permisos";
+import {
+  puedeAccederTramite,
+  puedeEditarTramite,
+  puedeAccederSeccion,
+  puedeVerNivelAccesoExpediente,
+  puedeDistribuir,
+  puedeDespachar,
+  puedeRadicar,
+  puedeResponderComoAsignado,
+  type PermisosUsuario,
+} from "./permisos";
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true };
 const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false };
@@ -89,5 +99,63 @@ describe("puedeVerNivelAccesoExpediente", () => {
   it("ADMIN_ARCHIVO y el admin general ven cualquier nivel, de cualquier dependencia", () => {
     expect(puedeVerNivelAccesoExpediente(adminArchivo, { nivelAcceso: "RESERVADA", dependenciaId: "depA" })).toBe(true);
     expect(puedeVerNivelAccesoExpediente(admin, { nivelAcceso: "RESERVADA", dependenciaId: "depA" })).toBe(true);
+  });
+});
+
+const perm = (correspondencia: PermisosUsuario["correspondencia"], extra: Partial<PermisosUsuario> = {}): PermisosUsuario => ({
+  esAdmin: false,
+  tramites: new Map(),
+  secciones: new Set(),
+  correspondencia,
+  dependenciaId: null,
+  puedeFirmar: false,
+  ...extra,
+});
+
+describe("puedeDistribuir — solo administrador y rol de archivo", () => {
+  it("el ADMIN y ADMIN_ARCHIVO pueden repartir", () => {
+    expect(puedeDistribuir(admin)).toBe(true);
+    expect(puedeDistribuir(perm("ADMIN_ARCHIVO"))).toBe(true);
+  });
+
+  it("el operador de ventanilla y el jefe de dependencia NO reparten", () => {
+    expect(puedeDistribuir(perm("OPERADOR_VENTANILLA"))).toBe(false);
+    expect(puedeDistribuir(perm("JEFE_DEPENDENCIA"))).toBe(false);
+    expect(puedeDistribuir(perm("FUNCIONARIO_DEPENDENCIA"))).toBe(false);
+  });
+});
+
+describe("puedeDespachar — ventanilla de salida (= quien radica)", () => {
+  it("lo hace el operador de ventanilla, el rol de archivo y el admin", () => {
+    expect(puedeDespachar(perm("OPERADOR_VENTANILLA"))).toBe(true);
+    expect(puedeDespachar(perm("ADMIN_ARCHIVO"))).toBe(true);
+    expect(puedeDespachar(admin)).toBe(true);
+    expect(puedeDespachar(perm("OPERADOR_VENTANILLA"))).toBe(puedeRadicar(perm("OPERADOR_VENTANILLA")));
+  });
+
+  it("no lo hace un funcionario de dependencia", () => {
+    expect(puedeDespachar(perm("FUNCIONARIO_DEPENDENCIA"))).toBe(false);
+  });
+});
+
+describe("puedeResponderComoAsignado — solo el/los funcionario(s) del reparto vigente", () => {
+  it("el funcionario asignado por su id puede responder", () => {
+    expect(puedeResponderComoAsignado(perm("FUNCIONARIO_DEPENDENCIA"), "u1", [{ usuarioId: "u1", dependenciaId: null }])).toBe(true);
+  });
+
+  it("un funcionario de la dependencia asignada (reparto sin usuario puntual) puede responder", () => {
+    expect(puedeResponderComoAsignado(perm("FUNCIONARIO_DEPENDENCIA", { dependenciaId: "depA" }), "u9", [{ usuarioId: null, dependenciaId: "depA" }])).toBe(true);
+  });
+
+  it("quien reparte (ADMIN_ARCHIVO) ya NO puede escribir el borrador si no está asignado", () => {
+    expect(puedeResponderComoAsignado(perm("ADMIN_ARCHIVO"), "u2", [{ usuarioId: "u1", dependenciaId: null }])).toBe(false);
+  });
+
+  it("el ADMIN mantiene el acceso como superusuario", () => {
+    expect(puedeResponderComoAsignado(admin, "u2", [{ usuarioId: "u1", dependenciaId: null }])).toBe(true);
+  });
+
+  it("sin repartos vigentes, nadie salvo el admin responde", () => {
+    expect(puedeResponderComoAsignado(perm("FUNCIONARIO_DEPENDENCIA"), "u1", [])).toBe(false);
   });
 });

@@ -62,8 +62,8 @@ export async function estamparRotulo(
   const qr = await pdf.embedPng(qrPngBytes);
 
   // --- Rótulo, esquina superior derecha ---
-  const boxW = 232;
-  const boxH = 98;
+  const boxW = 250;
+  const boxH = 118;
   const x = Math.max(12, width - boxW - 20);
   const y = Math.max(12, height - boxH - 20);
 
@@ -72,37 +72,41 @@ export async function estamparRotulo(
     x: x + 8, y: y + boxH - 13, size: 5.5, font: fontBold, color: GRIS_CLARO,
   });
   page.drawText(datos.radicado, { x: x + 8, y: y + boxH - 30, size: 12, font: fontBold, color: VERDE });
-  page.drawText(datos.fechaRadicacion, { x: x + 8, y: y + boxH - 42, size: 7, font, color: GRIS });
+  page.drawText(datos.fechaRadicacion, { x: x + 8, y: y + boxH - 41, size: 7, font, color: GRIS });
 
+  // QR arriba a la derecha — sin solaparse con el código de barras de abajo.
   const qrSize = 44;
-  page.drawImage(qr, { x: x + boxW - qrSize - 8, y: y + 30, width: qrSize, height: qrSize });
+  page.drawImage(qr, { x: x + boxW - qrSize - 8, y: y + boxH - qrSize - 10, width: qrSize, height: qrSize });
 
+  // Código de barras: franja completa bajo el texto.
   const barW = boxW - 16;
-  page.drawImage(bar, { x: x + 8, y: y + 22, width: barW, height: 24 });
+  page.drawImage(bar, { x: x + 8, y: y + 20, width: barW, height: 26 });
 
   const pie = [
     `Folios: ${datos.folios}`,
     datos.serieCodigo ? `TRD: ${datos.serieCodigo}` : null,
     datos.dependencia,
   ].filter(Boolean).join("  ·  ");
-  page.drawText(pie.slice(0, 62), { x: x + 8, y: y + 9, size: 5.5, font, color: GRIS_CLARO });
+  page.drawText(pie.slice(0, 66), { x: x + 8, y: y + 8, size: 5.5, font, color: GRIS_CLARO });
 
-  // --- Sello de firma electrónica, al pie ---
+  // --- Sello de firma electrónica, al pie (por líneas: nombre / cargo / oficina / fecha·hash) ---
   if (firmas.length > 0) {
-    let fy = 24 + firmas.length * 11 + 24;
-    page.drawLine({ start: { x: 24, y: fy + 8 }, end: { x: width - 24, y: fy + 8 }, thickness: 0.5, color: VERDE });
-    page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: fy - 2, size: 6, font: fontBold, color: VERDE });
-    fy -= 13;
+    const lh = 7.4;
+    const altoBloque = 4 * lh + 3;
+    let cy = 18 + 12 + firmas.length * altoBloque + 8;
+    page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
+    cy -= 9;
+    page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
+    cy -= 11;
     for (const f of firmas) {
       const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-      const linea = `${f.nombre}${cargo ? `, ${cargo}` : ""}${f.dependencia ? ` — ${f.dependencia}` : ""}  ·  ${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`;
-      page.drawText(linea.slice(0, 155), { x: 24, y: fy, size: 6, font, color: GRIS });
-      fy -= 11;
+      page.drawText(f.nombre.slice(0, 90), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
+      if (cargo) { page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
+      if (f.dependencia) { page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
+      page.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+      cy -= lh + 3;
     }
-    page.drawText(
-      "Ley 527 de 1999 · Decreto 1074 de 2015 — misma validez y efectos jurídicos que la firma manuscrita.",
-      { x: 24, y: fy, size: 5.5, font, color: GRIS_CLARO },
-    );
+    page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
   }
 
   return pdf.save();

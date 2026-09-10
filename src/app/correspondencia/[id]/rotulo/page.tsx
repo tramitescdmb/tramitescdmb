@@ -73,7 +73,7 @@ export default async function RotuloPage({ params }: { params: Promise<{ id: str
           </span>
         </div>
 
-        <div className="mt-1.5 flex items-start justify-between gap-2">
+        <div className="mt-1.5 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[8px] font-semibold uppercase tracking-widest text-stone-500">
               Radicado de correspondencia — {ETIQUETA_TIPO[c.tipo] ?? c.tipo}
@@ -81,10 +81,13 @@ export default async function RotuloPage({ params }: { params: Promise<{ id: str
             <p className="font-mono text-lg font-bold leading-tight tracking-tight text-cdmb-900">{c.radicado}</p>
             <p className="text-[9px] text-stone-600">{fechaHora(c.fechaRadicacion)}</p>
           </div>
-          <div className="w-[18mm] flex-none" dangerouslySetInnerHTML={{ __html: qr }} />
+          <div
+            className="h-[17mm] w-[17mm] flex-none [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: qr }}
+          />
         </div>
 
-        <div className="mt-1 w-full [&_svg]:h-[13mm] [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: barras }} />
+        <div className="mt-2 h-[13mm] w-full [&_svg]:block [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: barras }} />
 
         <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 border-t border-stone-200 pt-1 text-[8.5px] text-stone-600">
           <span>Dependencia: <strong className="text-stone-800">{dependencia ?? "—"}</strong></span>

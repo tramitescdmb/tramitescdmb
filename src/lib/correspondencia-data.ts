@@ -213,6 +213,10 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
         dependenciaDestino: { select: { nombre: true } },
         dependenciaOrigen: { select: { nombre: true } },
         _count: { select: { documentos: true } },
+        // Relación entrada ↔ salida: una RECIBIDA muestra su oficio de respuesta (y si ya se despachó);
+        // una ENVIADA muestra a qué recibida responde.
+        respondeA: { select: { id: true, radicado: true } },
+        respuestas: { select: { id: true, radicado: true, despachadaEn: true }, orderBy: { fechaRadicacion: "desc" }, take: 1 },
         // Solo trae los documentos que coinciden con la búsqueda, para mostrar "Coincide: archivo.pdf"
         // en el resultado. Sin término de búsqueda, `id` nunca es "" así que no trae ninguno — mismo
         // patrón que listarExpedientesDocumentales, para no alternar la forma del include/resultado.

@@ -274,6 +274,12 @@ export default async function CorrespondenciaBandejaPage({
               vencimiento: estadoVencimiento(c.fechaVencimiento, undefined, calendario),
               docs: c._count.documentos,
               documentosCoincidentes: c.documentos.map((d) => d.nombre),
+              relacion:
+                c.tipo === "ENVIADA" && c.respondeA
+                  ? { id: c.respondeA.id, radicado: c.respondeA.radicado, entrante: true, despachada: Boolean(c.despachadaEn) }
+                  : c.tipo === "RECIBIDA" && c.respuestas[0]
+                    ? { id: c.respuestas[0].id, radicado: c.respuestas[0].radicado, entrante: false, despachada: Boolean(c.respuestas[0].despachadaEn) }
+                    : null,
             }))}
             sinResultadosTexto={hayFiltros ? "No hay comunicaciones que coincidan." : "Todavía no se ha radicado correspondencia."}
           />

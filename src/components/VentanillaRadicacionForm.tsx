@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
+type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
 
 const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI", "ANONIMO", "OTRO"];
 const TIPOS_PQRSD = [
@@ -65,17 +66,8 @@ export function VentanillaRadicacionForm({
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const seriesDeDependencia = useMemo(() => {
-    const sinDependencia = series.filter((s) => !s.dependenciaId);
-    if (!dependenciaId) return sinDependencia;
-    return [...series.filter((s) => s.dependenciaId === dependenciaId), ...sinDependencia];
-  }, [series, dependenciaId]);
-  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
-
   function cambiarDependencia(nuevoId: string) {
     setDependenciaId(nuevoId);
-    setSerieId("");
-    setSubserieId("");
   }
 
   function agregarArchivos(lista: FileList | null) {
@@ -240,28 +232,28 @@ export function VentanillaRadicacionForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y destino (TRD)</h3>
           <SectionHelp>
-            La serie documental depende de la dependencia elegida (cada una tiene su propia TRD). Sin dependencia,
-            solo queda disponible &quot;Sin clasificar&quot; — se corrige después desde el detalle.
+            La dependencia destino es a quién va dirigida (se puede repartir después). La clasificación TRD es
+            opcional al radicar y se corrige luego desde el detalle — pero si la clasifica, elija la subserie
+            completa (serie + subserie), no solo la serie.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Dependencia destino" help="Puede distribuirla después si no se sabe todavía.">
+            <Field label="Dependencia destino" help="Puede repartirla después si no se sabe todavía.">
               <select value={dependenciaId} onChange={(e) => cambiarDependencia(e.target.value)} className={inputCls}>
                 <option value="">— Sin asignar —</option>
                 {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
             </Field>
-            <Field label="Serie documental (TRD)">
-              <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
-                <option value="">— Sin clasificar —</option>
-                {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-              </select>
-            </Field>
-            <Field label="Subserie">
-              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
-                <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
-                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-              </select>
-            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Clasificación TRD (serie / subserie)" help="Busque por código o nombre de la serie, la subserie o la dependencia.">
+                <BuscadorSubserieTRD
+                  series={series}
+                  serieId={serieId}
+                  subserieId={subserieId}
+                  dependenciaPreferidaId={dependenciaId || null}
+                  onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
+                />
+              </Field>
+            </div>
           </div>
         </div>
       </section>

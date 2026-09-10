@@ -1,18 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
+type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
 
 export function MemorandoForm({
   dependencias,
@@ -40,17 +41,8 @@ export function MemorandoForm({
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const seriesDeDependencia = useMemo(() => {
-    const sinDependencia = series.filter((s) => !s.dependenciaId);
-    if (!dependenciaOrigenId) return sinDependencia;
-    return [...series.filter((s) => s.dependenciaId === dependenciaOrigenId), ...sinDependencia];
-  }, [series, dependenciaOrigenId]);
-  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
-
   function cambiarDependenciaOrigen(nuevoId: string) {
     setDependenciaOrigenId(nuevoId);
-    setSerieId("");
-    setSubserieId("");
   }
 
   function agregarArchivos(lista: FileList | null) {
@@ -166,23 +158,16 @@ export function MemorandoForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación (TRD)</h3>
           <SectionHelp>
-            Las series disponibles dependen de la dependencia de origen elegida arriba. Sin elegirla, solo queda
-            &quot;Sin clasificar&quot;.
+            Opcional. Si clasifica el memorando, elija la subserie completa (serie + subserie) — busque por
+            código o nombre de la serie, la subserie o la dependencia.
           </SectionHelp>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Serie documental (TRD)">
-              <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
-                <option value="">— Sin clasificar —</option>
-                {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-              </select>
-            </Field>
-            <Field label="Subserie">
-              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
-                <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
-                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-              </select>
-            </Field>
-          </div>
+          <BuscadorSubserieTRD
+            series={series}
+            serieId={serieId}
+            subserieId={subserieId}
+            dependenciaPreferidaId={dependenciaOrigenId || null}
+            onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
+          />
         </div>
       </section>
 

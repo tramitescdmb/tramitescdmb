@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
@@ -8,12 +8,13 @@ import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorRecibidaPendiente } from "@/components/BuscadorRecibidaPendiente";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
+type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
 type ValoresIniciales = {
   respondeAId?: string;
   respondeALabel?: string;
@@ -76,17 +77,8 @@ export function RadicarEnviadaForm({
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const seriesDeDependencia = useMemo(() => {
-    const sinDependencia = series.filter((s) => !s.dependenciaId);
-    if (!dependenciaOrigenId) return sinDependencia;
-    return [...series.filter((s) => s.dependenciaId === dependenciaOrigenId), ...sinDependencia];
-  }, [series, dependenciaOrigenId]);
-  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
-
   function cambiarDependenciaOrigen(nuevoId: string) {
     setDependenciaOrigenId(nuevoId);
-    setSerieId("");
-    setSubserieId("");
   }
 
   function agregarArchivos(lista: FileList | null) {
@@ -254,8 +246,8 @@ export function RadicarEnviadaForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y origen (TRD)</h3>
           <SectionHelp>
-            La serie documental depende de la dependencia que emite (cada una tiene su propia TRD). Sin
-            especificar, solo queda disponible &quot;Sin clasificar&quot; — se corrige después desde el detalle.
+            Si clasifica el oficio, elija la subserie completa (serie + subserie). Busque por código o nombre de
+            la serie, la subserie o la dependencia. Se puede corregir después desde el detalle.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Dependencia que emite">
@@ -264,18 +256,17 @@ export function RadicarEnviadaForm({
                 {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
               </select>
             </Field>
-            <Field label="Serie documental (TRD)">
-              <select value={serieId} onChange={(e) => { setSerieId(e.target.value); setSubserieId(""); }} className={inputCls}>
-                <option value="">— Sin clasificar —</option>
-                {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-              </select>
-            </Field>
-            <Field label="Subserie">
-              <select value={subserieId} onChange={(e) => setSubserieId(e.target.value)} className={inputCls} disabled={!subseries.length}>
-                <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
-                {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-              </select>
-            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Clasificación TRD (serie / subserie)">
+                <BuscadorSubserieTRD
+                  series={series}
+                  serieId={serieId}
+                  subserieId={subserieId}
+                  dependenciaPreferidaId={dependenciaOrigenId || null}
+                  onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
+                />
+              </Field>
+            </div>
           </div>
         </div>
       </section>

@@ -9,6 +9,7 @@ import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReact
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { validarPalabrasClave } from "@/lib/vocabulario";
+import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
 
 /**
  * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
@@ -83,7 +84,20 @@ async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: Entr
   return solicitante.id;
 }
 
+/**
+ * Una serie sin subserie deja la clasificación TRD a medias (MoReq 1.34: todo
+ * documento debe quedar asociado a una TRD completa) — o las dos, o ninguna. La
+ * cascada de la UI ya lo respeta; esto lo garantiza también para llamadas directas.
+ */
+function validarClasificacionTrd(serieId?: string | null, subserieId?: string | null) {
+  if (serieId && !subserieId) {
+    throw new Error("Elija también la subserie: una serie sin subserie deja la clasificación TRD incompleta.");
+  }
+  if (subserieId && !serieId) throw new Error("Falta la serie de la subserie elegida.");
+}
+
 export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
+  validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   // El calendario laboral (días compensados + jornada semanal de la entidad) se
   // carga FUERA de la transacción — es solo lectura y no debe alargar el lock.
   const calendario = entrada.tipoPqrsd ? await getCalendarioLaboral() : undefined;
@@ -298,6 +312,7 @@ export type EntradaRadicacionEnviada = {
 };
 
 export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
+  validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("ENVIADA", new Date().getFullYear(), tx);
     const ident = entrada.destinatario.identificacion?.trim() || null;
@@ -382,6 +397,7 @@ export type EntradaRadicacionInterna = {
 
 /** Memorando interno entre dependencias — se firma en la misma transacción (Ley 527/1999). */
 export async function radicarInterna(entrada: EntradaRadicacionInterna) {
+  validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("INTERNA", new Date().getFullYear(), tx);
 
@@ -639,6 +655,129 @@ export async function confirmarTransferenciaCentral(comunicacionId: string, usua
     where: { id: comunicacionId },
     data: { transferenciaConfirmadaEn: new Date(), transferenciaConfirmadaPorId: usuarioId },
   });
+}
+
+export const MEDIOS_DESPACHO = ["CORREO_ELECTRONICO", "FISICO", "MENSAJERIA", "PERSONAL"] as const;
+export type MedioDespacho = (typeof MEDIOS_DESPACHO)[number];
+
+export const ETIQUETA_MEDIO_DESPACHO: Record<MedioDespacho, string> = {
+  CORREO_ELECTRONICO: "Correo electrónico",
+  FISICO: "Físico (correo postal / entrega)",
+  MENSAJERIA: "Mensajería / correo certificado",
+  PERSONAL: "Entrega personal",
+};
+
+export type EntradaDespacho = {
+  comunicacionId: string;
+  usuarioId: string;
+  medio: string;
+  destino?: string | null;
+  observacion?: string | null;
+  archivarEnExpediente: boolean;
+};
+
+export type ResultadoDespacho = {
+  radicado: string;
+  expedienteId: string | null;
+  expedienteNumero: string | null;
+  avisoExpediente: string | null;
+};
+
+/**
+ * Despacho efectivo de un oficio de salida (MoReq 7.19 — cierre real del ciclo):
+ * la ventanilla de salida / gestión documental registra que el oficio YA RADICADO
+ * Y FIRMADO se envió de verdad al destinatario (correo, físico, mensajería). Es
+ * este paso, no la radicación, el que cierra el ciclo de la recibida a la que
+ * responde. Opcionalmente archiva la recibida y la respuesta en un expediente
+ * documental de la subserie (lo crea si no existe) — Art. 4.3.2 Acuerdo 001/2024
+ * AGN: el expediente es la unidad documental de la actuación completa.
+ */
+export async function despacharComunicacion(entrada: EntradaDespacho): Promise<ResultadoDespacho> {
+  const c = await db.comunicacion.findUnique({
+    where: { id: entrada.comunicacionId },
+    select: {
+      id: true, tipo: true, estado: true, radicado: true, despachadaEn: true, asunto: true,
+      serieId: true, subserieId: true, dependenciaOrigenId: true, expedienteDocumentalId: true,
+      respondeAId: true,
+      respondeA: { select: { id: true, asunto: true, dependenciaDestinoId: true, expedienteDocumentalId: true } },
+      _count: { select: { firmas: true } },
+    },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.tipo !== "ENVIADA") throw new Error("Solo se despacha un oficio de salida (comunicación enviada).");
+  if (c.estado === "ANULADA") throw new Error("No se puede despachar una comunicación anulada.");
+  if (c.despachadaEn) throw new Error("Este oficio ya fue despachado.");
+  if (c._count.firmas === 0) throw new Error("El oficio debe estar firmado antes de despacharlo.");
+  if (!(MEDIOS_DESPACHO as readonly string[]).includes(entrada.medio)) throw new Error("El medio de despacho no es válido.");
+
+  const idsAArchivar = [c.id, ...(c.respondeAId ? [c.respondeAId] : [])];
+  const expedienteExistente = c.expedienteDocumentalId ?? c.respondeA?.expedienteDocumentalId ?? null;
+  const dependenciaExpediente = c.dependenciaOrigenId ?? c.respondeA?.dependenciaDestinoId ?? null;
+
+  let avisoExpediente: string | null = null;
+  // El número del expediente se genera FUERA de la transacción (consecutivo atómico propio).
+  let numeroNuevoExpediente: string | null = null;
+  if (entrada.archivarEnExpediente && !expedienteExistente) {
+    if (!dependenciaExpediente) {
+      avisoExpediente = "No se creó expediente: el oficio no tiene dependencia de origen. Archívelo a mano desde el detalle.";
+    } else {
+      numeroNuevoExpediente = await generarNumeroExpediente();
+    }
+  }
+
+  let expedienteId: string | null = null;
+  let expedienteNumero: string | null = null;
+
+  await db.$transaction(async (tx) => {
+    await tx.comunicacion.update({
+      where: { id: c.id },
+      data: {
+        despachadaEn: new Date(),
+        despachadaPorId: entrada.usuarioId,
+        despachoMedio: entrada.medio,
+        despachoDestino: entrada.destino?.trim() || null,
+        despachoObservacion: entrada.observacion?.trim() || null,
+      },
+    });
+
+    if (!entrada.archivarEnExpediente) return;
+
+    if (expedienteExistente) {
+      const exp = await tx.expedienteDocumental.findUnique({
+        where: { id: expedienteExistente },
+        select: { id: true, numero: true, estado: true },
+      });
+      if (exp && exp.estado === "ABIERTO") {
+        await tx.comunicacion.updateMany({
+          where: { id: { in: idsAArchivar }, expedienteDocumentalId: null },
+          data: { expedienteDocumentalId: exp.id },
+        });
+        expedienteId = exp.id;
+        expedienteNumero = exp.numero;
+      } else {
+        avisoExpediente = "El expediente donde ya estaba archivada está cerrado — no se archivó la respuesta ahí.";
+      }
+    } else if (numeroNuevoExpediente && dependenciaExpediente) {
+      const nuevo = await tx.expedienteDocumental.create({
+        data: {
+          numero: numeroNuevoExpediente,
+          asunto: (c.respondeA?.asunto ?? c.asunto).slice(0, 500),
+          dependenciaId: dependenciaExpediente,
+          serieId: c.serieId,
+          subserieId: c.subserieId,
+          creadoPorId: entrada.usuarioId,
+        },
+      });
+      await tx.comunicacion.updateMany({
+        where: { id: { in: idsAArchivar } },
+        data: { expedienteDocumentalId: nuevo.id },
+      });
+      expedienteId = nuevo.id;
+      expedienteNumero = nuevo.numero;
+    }
+  });
+
+  return { radicado: c.radicado, expedienteId, expedienteNumero, avisoExpediente };
 }
 
 export type EntradaDisposicionFinalLote = {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -28,6 +28,10 @@ import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm"
 import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
 import { MetadatosComunicacion } from "@/components/MetadatosComunicacion";
 import { SelloFirmaElectronica } from "@/components/SelloFirmaElectronica";
+import { DistribuirForm } from "@/components/DistribuirForm";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { ETIQUETA_MEDIO_DESPACHO } from "@/lib/correspondencia";
+import { puedeDespachar } from "@/lib/permisos";
 import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
@@ -42,6 +46,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ELIMINA: "Eliminación", DISTRIBUYE: "Distribución", FIRMA: "Firma", CLASIFICA: "Clasificación",
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
+  RESPONDE: "Respuesta del funcionario", DESPACHA: "Despacho efectivo", FLUJO: "Flujo de trabajo",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
 // Estados que cierran el ciclo de esta comunicación — distribuirla de nuevo después de esto pisaría el
@@ -60,35 +65,54 @@ function proximoPaso(c: {
   tipo: string;
   estado: string;
   respuestaTexto: string | null;
-  respuestas: unknown[];
-}, permisos: { puedeDistribuir: boolean; puedeResponder: boolean; puedeRadicar: boolean }): ProximoPaso {
-  if (c.tipo !== "RECIBIDA") {
-    return { texto: "Ya quedó firmada y radicada — es un documento definitivo. Si la distribuyó a alguien, es solo para que le dé seguimiento por su cuenta; eso no bloquea ni cierra nada más aquí.", cerrado: true };
+  respuestas: { despachadaEn: Date | string | null }[];
+  respondeAId: string | null;
+  despachadaEn: Date | string | null;
+}, permisos: { puedeDistribuir: boolean; puedeResponder: boolean; puedeRadicar: boolean; puedeDespachar: boolean }): ProximoPaso {
+  if (c.tipo === "INTERNA") {
+    return { texto: "El memorando ya quedó firmado y radicado — es un documento definitivo. Si lo distribuyó, es solo para seguimiento interno.", cerrado: true };
+  }
+  if (c.tipo === "ENVIADA") {
+    if (c.estado === "ANULADA") return { texto: "El oficio quedó anulado — no requiere ninguna acción más.", cerrado: true };
+    if (c.despachadaEn) return { texto: "Radicado, firmado y despachado al destinatario — el ciclo está cerrado.", cerrado: true };
+    if (permisos.puedeDespachar) {
+      return {
+        texto: c.respondeAId
+          ? "El oficio ya está firmado y radicado. Paso final de la ventanilla de salida: registrar el despacho efectivo (envío al peticionario) — eso cierra el ciclo de la recibida."
+          : "El oficio ya está firmado y radicado. Cuando se envíe al destinatario, registre el despacho efectivo para dejar constancia.",
+        accionHref: "#despacho",
+        accionTexto: "Ir a registrar el despacho",
+      };
+    }
+    return { texto: "El oficio ya está firmado y radicado. Falta que la ventanilla de salida registre el despacho efectivo al destinatario." };
   }
   // A partir de acá, tipo === "RECIBIDA".
   if (c.estado === "ANULADA") return { texto: "Quedó anulada — no requiere ninguna acción más.", cerrado: true };
   if (c.estado === "ARCHIVADA") return { texto: "Quedó archivada — el ciclo de esta comunicación está cerrado.", cerrado: true };
-  if (c.estado === "RESPONDIDA") return { texto: "Ya se le dio respuesta formal (vea \"Respondida por\" arriba). El ciclo de esta recibida quedó cerrado.", cerrado: true };
+  if (c.estado === "RESPONDIDA") {
+    const despachada = c.respuestas.some((r) => r.despachadaEn);
+    if (despachada) return { texto: "Se respondió y el oficio de salida ya se despachó al peticionario — el ciclo de esta recibida está cerrado.", cerrado: true };
+    return permisos.puedeDespachar
+      ? { texto: "Ya se radicó el oficio de respuesta. Falta registrar su despacho efectivo (abra la enviada de «Respondida por» y registre el envío) para cerrar el ciclo." }
+      : { texto: "Ya se radicó el oficio de respuesta. Falta que la ventanilla de salida registre el despacho al peticionario.", cerrado: true };
+  }
   if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") {
     return { texto: "El trámite está detenido (vea el motivo más abajo). Se reanuda cuando se resuelva lo que lo detuvo; si tenía término de ley, se reanuda por lo que faltaba." };
   }
   if (c.estado === "RADICADA" || c.estado === "EN_REPARTO") {
     return permisos.puedeDistribuir
-      ? { texto: "Todavía no se ha distribuido. Siguiente paso: asígnela a la dependencia o funcionario que debe atenderla.", accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
-      : { texto: "Todavía no se ha distribuido a nadie." };
+      ? { texto: "Todavía no se ha repartido. Siguiente paso: asígnela a la dependencia o funcionario(s) que deben atenderla.", accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
+      : { texto: "Todavía no se ha repartido. El administrador o el rol de archivo la asignan a quien debe atenderla." };
   }
-  // ASIGNADA o EN_TRAMITE: alguien ya la tiene, falta la respuesta formal.
+  // ASIGNADA o EN_TRAMITE: ya está repartida, falta el borrador de respuesta.
   if (!c.respuestaTexto) {
     return permisos.puedeResponder
-      ? { texto: "Ya está asignada. Siguiente paso: escriba la respuesta más abajo, en \"Respuesta del funcionario\".", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
-      : { texto: "Ya está asignada — falta que el funcionario a cargo escriba la respuesta." };
+      ? { texto: "Ya está asignada a usted. Siguiente paso: escriba su respuesta más abajo, en «Respuesta del funcionario». Es un borrador; la ventanilla de salida la radica y la despacha.", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
+      : { texto: "Ya está repartida — falta que el funcionario a cargo escriba el borrador de respuesta." };
   }
-  if (c.respuestas.length === 0) {
-    return permisos.puedeRadicar
-      ? { texto: "Ya hay un borrador de respuesta. Siguiente paso: radíquela como oficio de salida para que quede firmada y se cierre el ciclo.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
-      : { texto: "Ya hay un borrador de respuesta, falta que alguien con permiso la radique como oficio de salida." };
-  }
-  return { texto: "Ya se radicó la respuesta — el ciclo de esta recibida está cerrándose.", cerrado: true };
+  return permisos.puedeRadicar
+    ? { texto: "Ya hay un borrador de respuesta del funcionario. Siguiente paso de la ventanilla de salida: radicarlo como oficio de salida (queda firmado) y luego registrar el despacho.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
+    : { texto: "Ya hay un borrador de respuesta. Falta que la ventanilla de salida lo radique como oficio de salida y lo despache." };
 }
 
 function Campo({ k, v }: { k: string; v: ReactNode }) {
@@ -139,8 +163,9 @@ export default async function CorrespondenciaDetallePage({
       expediente: { select: { id: true, numero: true } },
       expedienteDocumental: { select: { id: true, numero: true } },
       respondeA: { select: { id: true, radicado: true, asunto: true } },
-      respuestas: { select: { id: true, radicado: true, asunto: true } },
+      respuestas: { select: { id: true, radicado: true, asunto: true, despachadaEn: true } },
       respuestaPor: { select: { nombre: true } },
+      despachadaPor: { select: { nombre: true } },
       firmas: {
         orderBy: { fechaHora: "asc" },
         include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
@@ -167,12 +192,22 @@ export default async function CorrespondenciaDetallePage({
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
   const puedeRadicarUsuario = puedeRadicar(permisos);
+  const puedeDespacharUsuario = puedeDespachar(permisos);
   const puedeFirmarUsuario = puedeFirmar(permisos);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
-  const distribucionVigente = c.distribuciones[0] ?? null;
-  const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionVigente);
+  const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
+  const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
+  // La tarjeta de respuesta NO se muestra apenas se radica (antes de repartir): le
+  // corresponde al funcionario asignado. La ve además la ventanilla/archivo cuando ya
+  // hay algo que radicar o la comunicación ya está en trámite.
+  const mostrarRespuesta =
+    c.tipo === "RECIBIDA" &&
+    (puedeResponder ||
+      Boolean(c.respuestaTexto) ||
+      documentosRespuesta.length > 0 ||
+      (puedeRadicarUsuario && ["ASIGNADA", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "RESPONDIDA"].includes(c.estado)));
   const plantillasRespuesta = puedeResponder ? await listarPlantillas("RESPUESTA") : [];
   const terminosVocabulario = puedeDistribuirUsuario && c.estado !== "ANULADA" ? await listarTerminos() : [];
   const [dependencias, usuarios] = puedeDistribuirUsuario
@@ -188,26 +223,23 @@ export default async function CorrespondenciaDetallePage({
       ])
     : [[], []];
   const seriesVigentes = puedeAdministrarArchivoUsuario ? await listarSeriesVigentes() : [];
-  const gruposReclasificacion = (() => {
-    const mapa = new Map<string, { nombre: string; opciones: { id: string; label: string }[] }>();
-    const sinDependencia: { id: string; label: string }[] = [];
-    for (const s of seriesVigentes) {
-      const opciones = s.subseries.map((ss) => ({ id: ss.id, label: `${ss.codigo} — ${ss.nombre}` }));
-      if (!s.dependencia) {
-        sinDependencia.push(...opciones);
-        continue;
-      }
-      if (!mapa.has(s.dependencia.id)) mapa.set(s.dependencia.id, { nombre: s.dependencia.nombre, opciones: [] });
-      mapa.get(s.dependencia.id)!.opciones.push(...opciones);
-    }
-    const grupos = Array.from(mapa.values());
-    if (sinDependencia.length > 0) grupos.push({ nombre: "Sin dependencia asignada", opciones: sinDependencia });
-    return grupos;
-  })();
+  const seriesBuscables = seriesVigentes.map((s) => ({
+    id: s.id,
+    codigo: s.codigo,
+    nombre: s.nombre,
+    dependenciaId: s.dependencia?.id ?? null,
+    dependenciaNombre: s.dependencia?.nombre ?? null,
+    subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
+  }));
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, await getCalendarioLaboral());
-  const siguientePaso = proximoPaso(c, { puedeDistribuir: puedeDistribuirUsuario, puedeResponder, puedeRadicar: puedeRadicarUsuario });
+  const siguientePaso = proximoPaso(c, {
+    puedeDistribuir: puedeDistribuirUsuario,
+    puedeResponder,
+    puedeRadicar: puedeRadicarUsuario,
+    puedeDespachar: puedeDespacharUsuario,
+  });
 
   return (
     <div className="space-y-4">
@@ -415,63 +447,42 @@ export default async function CorrespondenciaDetallePage({
         )}
       </Tarjeta>
 
-      <Tarjeta id="distribucion" titulo="Distribución / reparto">
-        <SectionHelp>El reparto más reciente (primero en la lista) es el vigente; los anteriores quedan como historial.</SectionHelp>
-        {c.distribuciones.length === 0 ? (
-          <p className="text-sm text-stone-400">Sin distribuir todavía.</p>
-        ) : (
-          <ul className="space-y-2">
-            {c.distribuciones.map((d, i) => (
-              <li key={d.id} className="rounded-lg border border-stone-200 px-3 py-2 text-sm">
-                <p className="flex items-center gap-2 font-medium text-stone-800">
-                  {[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}
-                  {i === 0 && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
-                </p>
-                <p className="text-xs text-stone-500">
-                  {fechaHora(d.fechaAsignacion)}{d.asignadoPor ? ` · por ${d.asignadoPor.nombre}` : ""}{d.termino ? ` · término ${d.termino} días` : ""}
-                </p>
-                {d.instrucciones && <p className="mt-1 text-xs text-stone-600">{d.instrucciones}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
+      {(c.tipo === "RECIBIDA" || c.distribuciones.length > 0) && (
+        <Tarjeta id="distribucion" titulo="Distribución / reparto">
+          <SectionHelp>
+            El reparto lo hace el administrador o el rol de archivo (gestión documental) — decide quién atiende
+            el trámite. Puede asignarse a varias personas a la vez. Los repartos anteriores quedan como historial.
+          </SectionHelp>
+          {c.distribuciones.length === 0 ? (
+            <p className="text-sm text-stone-400">Sin repartir todavía.</p>
+          ) : (
+            <ul className="space-y-2">
+              {c.distribuciones.map((d) => (
+                <li key={d.id} className="rounded-lg border border-stone-200 px-3 py-2 text-sm">
+                  <p className="flex items-center gap-2 font-medium text-stone-800">
+                    <Users className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
+                    {[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}
+                    {d.activa && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    {fechaHora(d.fechaAsignacion)}{d.asignadoPor ? ` · por ${d.asignadoPor.nombre}` : ""}{d.termino ? ` · término ${d.termino} días` : ""}
+                  </p>
+                  {d.instrucciones && <p className="mt-1 text-xs text-stone-600">{d.instrucciones}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        {puedeDistribuirUsuario && !ESTADOS_CERRADOS.includes(c.estado) && (
-          <form action={`/api/correspondencia/${id}/distribuir`} method="post" className="mt-4 grid grid-cols-1 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Dependencia" help="El área que debe atenderla.">
-              <select name="dependenciaId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-                <option value="">— Ninguna —</option>
-                {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
-              </select>
-            </Field>
-            <Field label="Funcionario" help="La persona puntual a cargo, si ya se sabe quién.">
-              <select name="usuarioId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-                <option value="">— Ninguno —</option>
-                {usuarios.map((u) => (<option key={u.id} value={u.id}>{u.nombre}</option>))}
-              </select>
-            </Field>
-            <Field label="Término (días)" help="Plazo interno, si es distinto al de ley.">
-              <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </Field>
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Field label="Instrucciones" help="Indicaciones puntuales para quien la va a gestionar.">
-                <input name="instrucciones" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-              </Field>
-            </div>
-            <div>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
-                <Send className="h-3.5 w-3.5" aria-hidden />
-                Distribuir
-              </button>
-            </div>
-          </form>
-        )}
-        {puedeDistribuirUsuario && ESTADOS_CERRADOS.includes(c.estado) && (
-          <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
-            Ya no se puede distribuir: quedó {ETIQUETA_ESTADO[c.estado]?.toLowerCase() ?? c.estado.toLowerCase()}.
-          </p>
-        )}
-      </Tarjeta>
+          {puedeDistribuirUsuario && c.tipo === "RECIBIDA" && !ESTADOS_CERRADOS.includes(c.estado) && (
+            <DistribuirForm comunicacionId={id} dependencias={dependencias} usuarios={usuarios} />
+          )}
+          {puedeDistribuirUsuario && c.tipo === "RECIBIDA" && ESTADOS_CERRADOS.includes(c.estado) && (
+            <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
+              Ya no se puede repartir: quedó {ETIQUETA_ESTADO[c.estado]?.toLowerCase() ?? c.estado.toLowerCase()}.
+            </p>
+          )}
+        </Tarjeta>
+      )}
 
       <FlujoTrabajoComunicacion
         comunicacionId={c.id}
@@ -487,11 +498,12 @@ export default async function CorrespondenciaDetallePage({
         puedeEditar={puedeDistribuirUsuario}
       />
 
-      {c.tipo === "RECIBIDA" && (
+      {mostrarRespuesta && (
         <Tarjeta id="respuesta" titulo="Respuesta del funcionario">
           <SectionHelp>
-            Borrador de respuesta de quien la tiene asignada — no radica nada. Ventanilla o gestión
-            documental la retoma para radicarla como oficio de salida (con consecutivo y firma).
+            {puedeResponder
+              ? "Escriba aquí su respuesta a esta comunicación. Es un borrador — no radica ni despacha nada. La ventanilla de salida la radica como oficio de salida (consecutivo y firma) y registra su envío."
+              : "Borrador de respuesta del funcionario asignado — no radica nada. La ventanilla de salida lo radica como oficio de salida (consecutivo y firma) y luego registra el despacho."}
           </SectionHelp>
           {c.respuestaTexto && (
             <div className="mb-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
@@ -556,6 +568,84 @@ export default async function CorrespondenciaDetallePage({
               <Send className="h-3.5 w-3.5" aria-hidden />
               Radicar como oficio de salida
             </Link>
+          )}
+          {puedeResponder && !puedeRadicarUsuario && c.respuestaTexto && c.respuestas.length === 0 && (
+            <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+              Su respuesta quedó registrada. La ventanilla de salida la radicará como oficio de salida y
+              registrará su envío al peticionario — usted no tiene que hacer nada más aquí.
+            </p>
+          )}
+        </Tarjeta>
+      )}
+
+      {c.tipo === "ENVIADA" && c.firmas.length > 0 && c.estado !== "ANULADA" && (
+        <Tarjeta id="despacho" titulo="Despacho — envío efectivo">
+          <SectionHelp>
+            El oficio ya está radicado y firmado, pero eso no significa que haya salido. La ventanilla de salida /
+            gestión documental registra aquí el envío real al destinatario (correo, físico, mensajería). Este paso
+            es el que cierra el ciclo de la comunicación recibida a la que responde.
+          </SectionHelp>
+          {c.despachadaEn ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-stone-700">
+              <p className="flex items-center gap-1.5 font-medium text-emerald-800">
+                <MailCheck className="h-4 w-4 flex-none" aria-hidden />
+                Despachado el {fechaHora(c.despachadaEn)}
+                {c.despachadaPor ? ` por ${c.despachadaPor.nombre}` : ""}
+              </p>
+              <p className="mt-1 text-xs text-stone-500">
+                Medio: {ETIQUETA_MEDIO_DESPACHO[c.despachoMedio as keyof typeof ETIQUETA_MEDIO_DESPACHO] ?? c.despachoMedio ?? "—"}
+                {c.despachoDestino ? ` · a ${c.despachoDestino}` : ""}
+              </p>
+              {c.despachoObservacion && <p className="mt-1 text-xs text-stone-600">{c.despachoObservacion}</p>}
+              {c.expedienteDocumental && (
+                <p className="mt-1 text-xs text-stone-500">
+                  Archivada en el expediente{" "}
+                  <Link href={`/correspondencia/expedientes/${c.expedienteDocumental.id}`} className="font-medium text-cdmb-700 hover:underline">
+                    {c.expedienteDocumental.numero}
+                  </Link>.
+                </p>
+              )}
+            </div>
+          ) : puedeDespacharUsuario ? (
+            <form action={`/api/correspondencia/${id}/despachar`} method="post" className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Medio de envío" required>
+                  <select name="medio" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                    <option value="" disabled>— Seleccione —</option>
+                    {Object.entries(ETIQUETA_MEDIO_DESPACHO).map(([v, etq]) => (
+                      <option key={v} value={v}>{etq}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Destino" help="Correo o dirección a la que se envió.">
+                  <input
+                    name="destino"
+                    defaultValue={c.terceroEmail ?? c.terceroDireccion ?? ""}
+                    className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
+                  />
+                </Field>
+              </div>
+              <Field label="Observación" help="Opcional — guía de envío, número de radicado de la empresa de mensajería, etc.">
+                <input name="observacion" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              </Field>
+              {c.subserieId && (
+                <label className="flex items-start gap-2 text-sm text-stone-700">
+                  <input type="checkbox" name="archivarEnExpediente" defaultChecked className="mt-0.5 rounded border-stone-300" />
+                  <span>
+                    Archivar la comunicación recibida y esta respuesta en un expediente documental de la subserie
+                    {c.subserie ? ` «${c.subserie.codigo} — ${c.subserie.nombre}»` : ""} (se crea si no existe).
+                  </span>
+                </label>
+              )}
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                <MailCheck className="h-3.5 w-3.5" aria-hidden />
+                Registrar despacho
+              </button>
+            </form>
+          ) : (
+            <p className="text-sm text-stone-400">
+              Falta que la ventanilla de salida registre el despacho efectivo al destinatario.
+            </p>
           )}
         </Tarjeta>
       )}
@@ -668,26 +758,13 @@ export default async function CorrespondenciaDetallePage({
             Corrige la clasificación TRD. Queda en la bitácora con la clasificación anterior, la nueva y el motivo;
             aplican los tiempos de retención de la nueva subserie.
           </SectionHelp>
-          <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[260px] flex-1">
-              <Field label="Nueva subserie" required>
-                <select name="subserieId" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
-                  <option value="" disabled>— Seleccione —</option>
-                  {gruposReclasificacion.map((g) => (
-                    <optgroup key={g.nombre} label={g.nombre}>
-                      {g.opciones.map((o) => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </Field>
-            </div>
-            <div className="min-w-[260px] flex-1">
-              <Field label="Motivo" required help="Por qué se reclasifica este radicado.">
-                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-              </Field>
-            </div>
+          <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="space-y-3">
+            <Field label="Nueva subserie" required help="Busque por código o nombre de la serie, la subserie o la dependencia.">
+              <BuscadorSubserieTRD series={seriesBuscables} nameSubserie="subserieId" requerido />
+            </Field>
+            <Field label="Motivo" required help="Por qué se reclasifica este radicado.">
+              <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+            </Field>
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <FolderTree className="h-3.5 w-3.5" aria-hidden />
               Reclasificar

@@ -36,6 +36,7 @@ export default async function NuevaInternaPage() {
           codigo: s.codigo,
           nombre: s.nombre,
           dependenciaId: s.dependenciaId,
+          dependenciaNombre: s.dependencia?.nombre ?? null,
           subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
         }))}
         dependenciaOrigenSugerida={usuario?.dependenciaId ?? null}

@@ -178,6 +178,17 @@ export function puedeRadicar(permisos: PermisosUsuario): boolean {
 }
 
 /**
+ * ¿Puede registrar el DESPACHO efectivo de un oficio de salida (que ya se envió
+ * de verdad al destinatario por correo/físico)? Es la ventanilla de salida /
+ * gestión documental — el mismo grupo que radica en ventanilla. Ni el funcionario
+ * asignado ni quien redactó el borrador despachan: el envío efectivo del oficio
+ * al peticionario es responsabilidad de la ventanilla.
+ */
+export function puedeDespachar(permisos: PermisosUsuario): boolean {
+  return puedeRadicar(permisos);
+}
+
+/**
  * ¿Puede firmar electrónicamente un oficio o memorando? Requiere acceso al
  * módulo y que el ADMIN no le haya retirado el acceso a firma (Usuario.accesoFirma).
  * A diferencia de radicar, no depende del rol de correspondencia — cualquier
@@ -187,14 +198,16 @@ export function puedeFirmar(permisos: PermisosUsuario): boolean {
   return puedeAccederCorrespondencia(permisos) && permisos.puedeFirmar;
 }
 
-/** ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? */
+/**
+ * ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? Solo el
+ * administrador y el rol de archivo (ADMIN_ARCHIVO / gestión documental): el reparto
+ * decide quién atiende cada trámite y es una función de control del archivo, no de
+ * la ventanilla, que solo radica de entrada y despacha de salida. También gobierna
+ * las acciones archivísticas sobre un radicado ya repartido (clasificación,
+ * palabras clave, metadatos, nivel de acceso, detener/reanudar el término).
+ */
 export function puedeDistribuir(permisos: PermisosUsuario): boolean {
-  return (
-    permisos.esAdmin ||
-    permisos.correspondencia === "OPERADOR_VENTANILLA" ||
-    permisos.correspondencia === "JEFE_DEPENDENCIA" ||
-    permisos.correspondencia === "ADMIN_ARCHIVO"
-  );
+  return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
 }
 
 /** ¿Puede administrar el archivo (TRD/CCD, dependencias)? */
@@ -203,24 +216,25 @@ export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
 }
 
 /**
- * ¿Puede escribir/editar la respuesta de un funcionario a una RECIBIDA que le
- * fue distribuida — sin que eso implique poder RADICARLA como oficio de
- * salida (eso sigue exigiendo `puedeRadicar`)? Quien reparte (ventanilla,
- * jefe de dependencia, admin) siempre puede; además, el propio destinatario
- * de la distribución VIGENTE (por usuario o por su dependencia) puede
- * responder lo que le asignaron, aunque su rol de correspondencia sea el
- * mínimo (FUNCIONARIO_DEPENDENCIA, sin reparto ni radicación).
+ * ¿Puede escribir/editar el borrador de respuesta de una RECIBIDA que le fue
+ * repartida? Solo el/los funcionario(s) de la distribución VIGENTE (por usuario o
+ * por su dependencia) — es SU tarea, no la de la ventanilla ni la del archivo. El
+ * borrador no radica nada; radicarlo como oficio de salida sigue exigiendo
+ * `puedeRadicar`, y despacharlo `puedeDespachar`. El ADMIN mantiene el acceso como
+ * superusuario. Recibe la lista de repartos vigentes (puede haber varios).
  */
 export function puedeResponderComoAsignado(
   permisos: PermisosUsuario,
   usuarioId: string,
-  distribucionVigente: { usuarioId: string | null; dependenciaId: string | null } | null
+  distribucionesVigentes: { usuarioId: string | null; dependenciaId: string | null }[]
 ): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
-  if (puedeDistribuir(permisos)) return true;
-  if (!distribucionVigente) return false;
-  if (distribucionVigente.usuarioId) return distribucionVigente.usuarioId === usuarioId;
-  return Boolean(distribucionVigente.dependenciaId) && distribucionVigente.dependenciaId === permisos.dependenciaId;
+  if (permisos.esAdmin) return true;
+  return distribucionesVigentes.some((d) =>
+    d.usuarioId
+      ? d.usuarioId === usuarioId
+      : Boolean(d.dependenciaId) && d.dependenciaId === permisos.dependenciaId
+  );
 }
 
 /**

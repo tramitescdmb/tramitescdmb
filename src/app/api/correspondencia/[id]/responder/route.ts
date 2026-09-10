@@ -25,16 +25,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     select: {
       radicado: true,
       distribuciones: {
-        orderBy: { fechaAsignacion: "desc" },
-        take: 1,
+        where: { activa: true },
         select: { usuarioId: true, dependenciaId: true },
       },
     },
   });
   if (!comunicacion) return NextResponse.json({ error: "La comunicación no existe." }, { status: 404 });
 
-  const distribucionVigente = comunicacion.distribuciones[0] ?? null;
-  if (!puedeResponderComoAsignado(permisos, session.userId, distribucionVigente)) {
+  if (!puedeResponderComoAsignado(permisos, session.userId, comunicacion.distribuciones)) {
     return NextResponse.json({ error: "Esta comunicación no está distribuida a usted ni a su dependencia." }, { status: 403 });
   }
 
