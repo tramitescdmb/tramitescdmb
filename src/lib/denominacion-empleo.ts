@@ -10,6 +10,7 @@
 export const DENOMINACIONES_EMPLEO = {
   DIRECTOR_GENERAL: { m: "Director General", f: "Directora General" },
   SUBDIRECTOR: { m: "Subdirector", f: "Subdirectora" },
+  SECRETARIO_GENERAL: { m: "Secretario General", f: "Secretaria General" },
   SECRETARIO: { m: "Secretario", f: "Secretaria" },
   JEFE_OFICINA: { m: "Jefe de Oficina", f: "Jefa de Oficina" },
   ASESOR_DIRECCION: { m: "Asesor de Dirección", f: "Asesora de Dirección" },
