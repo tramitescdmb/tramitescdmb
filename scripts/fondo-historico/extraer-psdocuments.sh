@@ -153,19 +153,38 @@ end;
 SQL
 }
 
+PRIMERA=1
 while IFS="$(printf '\t')" read -r SID SNOM; do
   [ -n "$SID" ] || continue
   LAST=0
   N=0
   while : ; do
-    runsql "$(plsql "$SID" "$LAST" "$CHUNK")" | grep -E '^[#@=]' | sed 's/[[:space:]]*$//' > "$TMP/chunk"
+    runsql "$(plsql "$SID" "$LAST" "$CHUNK")" > "$TMP/raw" 2>&1 || true
+    grep -E '^[#@=]' "$TMP/raw" | sed 's/[[:space:]]*$//' > "$TMP/chunk"
     IDS=$(grep -c '^#' "$TMP/chunk" || true)
-    [ "$IDS" -gt 0 ] || break
+    if [ "$IDS" -eq 0 ]; then
+      # ¿la consulta devolvió 0 filas (fin de la serie) o hubo un error?
+      if grep -qiE 'ORA-|PLS-|SP2-|error' "$TMP/raw"; then
+        echo; echo "== ERROR de SQL*Plus en PSIDEAW_${SID} (last=$LAST) =="
+        cat "$TMP/raw" | head -30
+        cp "$TMP/raw" /root/fondo-sqlplus-error.txt 2>/dev/null || cp "$TMP/raw" ./fondo-sqlplus-error.txt
+        exit 1
+      fi
+      break
+    fi
     RESP="$(ingest_dump "$TMP/chunk" "$SYNC" "$SID" "$SNOM")"
-    echo "$RESP" | grep -q '"recibidas"' || { echo; echo "Fallo un bloque: $RESP"; exit 1; }
+    if ! echo "$RESP" | grep -q '"recibidas"'; then
+      echo; echo "== Fallo la ingesta =="; echo "respuesta: $RESP"
+      cp "$TMP/chunk" /root/fondo-chunk-fallido.txt 2>/dev/null || cp "$TMP/chunk" ./fondo-chunk-fallido.txt
+      exit 1
+    fi
     S=$(echo "$RESP" | json_val saltadas); SALTADAS=$((SALTADAS + ${S:-0}))
     N=$((N + IDS)); TOTAL=$((TOTAL + IDS))
     LAST=$(grep '^#' "$TMP/chunk" | sed 's/^#//' | sort -n | tail -1)
+    if [ "$PRIMERA" = 1 ]; then
+      PRIMERA=0
+      echo "  (primer bloque OK: $RESP)"
+    fi
     printf '\r  PSIDEAW_%s — %s: %s' "$SID" "$SNOM" "$N"
     [ "$IDS" -lt "$CHUNK" ] && break
   done
