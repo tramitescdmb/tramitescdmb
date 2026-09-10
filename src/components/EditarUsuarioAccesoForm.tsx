@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { cargoParaSexo } from "@/lib/cargos";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -505,20 +506,21 @@ export function EditarUsuarioAccesoForm({
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
           {cargos.map((c) => {
             const activo = cargoIds.has(c.id);
+            const etiqueta = cargoParaSexo(c.nombre, sexo || null);
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => alternarCargo(c.id)}
                 aria-pressed={activo}
-                title={activo ? `Quitar el cargo "${c.nombre}"` : `Asignar el cargo "${c.nombre}"`}
+                title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                   activo
                     ? "border-cdmb-600 bg-cdmb-600 text-white"
                     : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                 }`}
               >
-                {c.nombre}
+                {etiqueta}
               </button>
             );
           })}

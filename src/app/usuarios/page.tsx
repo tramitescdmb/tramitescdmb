@@ -13,6 +13,7 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFecha } from "@/lib/fecha";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS } from "@/lib/denominacion-empleo";
+import { cargoParaSexo } from "@/lib/cargos";
 
 const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
@@ -288,7 +289,7 @@ export default async function UsuariosPage({
                   <div className="flex flex-wrap gap-1">
                     {u.cargos.map((c) => (
                       <span key={c.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
-                        {c.nombre}
+                        {cargoParaSexo(c.nombre, u.sexo)}
                       </span>
                     ))}
                   </div>

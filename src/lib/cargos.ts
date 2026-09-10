@@ -96,6 +96,22 @@ export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
   { nombre: "Otro / sin cargo específico", palabrasClave: [] },
 ];
 
+/**
+ * Los cargos del catálogo se guardan en forma neutra con la notación "(a)"/"(o)"
+ * ("Director(a) General", "Secretaria(o) de Despacho"). Esto la resuelve para
+ * MOSTRAR según el sexo del funcionario — solo presentación, el valor guardado no
+ * cambia (el bloqueo de pasos sigue comparando contra el nombre canónico).
+ */
+export function cargoParaSexo(nombre: string, sexo: string | null | undefined): string {
+  const f = sexo === "F";
+  return nombre
+    .replace(/a\(o\)/g, f ? "a" : "o") // base femenina: "Secretaria(o)" → Secretaria / Secretario
+    .replace(/\(a\)/g, f ? "a" : "") // base masculina: "Director(a)" → Directora / Director
+    .replace(/\(o\)/g, f ? "" : "o")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export function normalizar(texto: string) {
   return texto
     .toLowerCase()

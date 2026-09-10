@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { puedeGestionarPaso, cargosEnTexto } from "./cargos";
+import { puedeGestionarPaso, cargosEnTexto, cargoParaSexo } from "./cargos";
+
+describe("cargoParaSexo", () => {
+  it('resuelve "(a)" según el sexo (base masculina)', () => {
+    expect(cargoParaSexo("Director(a) General", "F")).toBe("Directora General");
+    expect(cargoParaSexo("Director(a) General", "M")).toBe("Director General");
+    expect(cargoParaSexo("Subdirector(a) de Evaluación y Control Ambiental (SEYCA)", "F")).toBe(
+      "Subdirectora de Evaluación y Control Ambiental (SEYCA)",
+    );
+    expect(cargoParaSexo("Coordinador(a) de Seguimiento para la Sostenibilidad", null)).toBe(
+      "Coordinador de Seguimiento para la Sostenibilidad",
+    );
+  });
+
+  it('resuelve "a(o)" según el sexo (base femenina)', () => {
+    expect(cargoParaSexo("Secretaria(o) de Despacho / Apoyo administrativo", "F")).toBe(
+      "Secretaria de Despacho / Apoyo administrativo",
+    );
+    expect(cargoParaSexo("Secretaria(o) de Despacho / Apoyo administrativo", "M")).toBe(
+      "Secretario de Despacho / Apoyo administrativo",
+    );
+  });
+
+  it("los cargos sin notación quedan igual", () => {
+    expect(cargoParaSexo("Profesional o Técnico de Evaluación", "F")).toBe("Profesional o Técnico de Evaluación");
+    expect(cargoParaSexo("Contratista de apoyo técnico o jurídico", "M")).toBe("Contratista de apoyo técnico o jurídico");
+  });
+});
 
 // "Coordinador de Evaluación para la Sostenibilidad" tal como aparece literal en el catálogo
 // (CARGOS_CDMB) — usarlo tal cual, no una paráfrasis, es justo lo que hace que la comparación
