@@ -90,6 +90,15 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             <ExternalLink className="h-3 w-3" aria-hidden />
             Matriz de cumplimiento MoReq/AGN
           </a>
+          <a
+            href="https://claude.ai/code/artifact/bdfae6f0-2c31-4a2d-972a-85c4f457f5e9"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            Guión de demostración
+          </a>
         </div>
       </div>
 
