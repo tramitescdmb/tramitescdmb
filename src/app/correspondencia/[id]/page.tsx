@@ -26,6 +26,7 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
 import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
 import { MetadatosComunicacion } from "@/components/MetadatosComunicacion";
+import { SelloFirmaElectronica } from "@/components/SelloFirmaElectronica";
 import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
@@ -139,7 +140,7 @@ export default async function CorrespondenciaDetallePage({
       respondeA: { select: { id: true, radicado: true, asunto: true } },
       respuestas: { select: { id: true, radicado: true, asunto: true } },
       respuestaPor: { select: { nombre: true } },
-      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true } } } },
+      firmas: { orderBy: { fechaHora: "asc" }, include: { usuario: { select: { nombre: true, cargos: { select: { nombre: true }, orderBy: { orden: "asc" } } } } } },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
         include: { dependencia: { select: { nombre: true } }, usuario: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
@@ -351,25 +352,7 @@ export default async function CorrespondenciaDetallePage({
 
       {c.firmas.length > 0 && (
         <Tarjeta titulo="Firma electrónica">
-          <SectionHelp>
-            Firma electrónica con hash SHA-256 (no digital con certificado) sobre asunto, contenido y radicado —
-            cualquier alteración posterior es detectable (Ley 527/1999).
-          </SectionHelp>
-          <ul className="space-y-2">
-            {c.firmas.map((f) => (
-              <li key={f.id} className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
-                <PenTool className="mt-0.5 h-4 w-4 flex-none text-emerald-700" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-sm text-stone-800">
-                    Firmado por <span className="font-medium">{f.usuario.nombre}</span> el {fechaHora(f.fechaHora)}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-stone-500" title={f.hashContenido}>
-                    Firma electrónica con hash (Ley 527/1999) · SHA-256 {f.hashContenido.slice(0, 16)}…
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <SelloFirmaElectronica firmas={c.firmas} />
           {puedeRadicarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
             <form action={`/api/correspondencia/${id}/firmar`} method="post" className="mt-3">
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
