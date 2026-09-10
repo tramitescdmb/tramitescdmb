@@ -82,17 +82,38 @@ export default async function PanelMiTrabajoPage() {
           <span className="inline-flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" aria-hidden />
             {p.pendientesProceso === 1
-              ? "1 comunicación recibida entró y nadie la ha distribuido todavía."
-              : `${p.pendientesProceso} comunicaciones recibidas entraron y nadie las ha distribuido todavía.`}
+              ? "1 comunicación recibida está a la espera de que la ventanilla la reparta"
+              : `${p.pendientesProceso} comunicaciones recibidas están a la espera de que la ventanilla las reparta`}
+            {p.devueltasEsperandoReparto > 0 && (
+              <> ({p.devueltasEsperandoReparto} {p.devueltasEsperandoReparto === 1 ? "fue devuelta" : "fueron devueltas"} por el funcionario)</>
+            )}
+            .
           </span>
           {p.puedeDistribuir && (
             <Link
               href="/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO"
               className="ml-2 font-medium underline hover:no-underline"
             >
-              Ir a distribuir
+              Ir a repartir
             </Link>
           )}
+        </div>
+      )}
+
+      {p.oficiosSinDespachar > 0 && p.puedeDespachar && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            {p.oficiosSinDespachar === 1
+              ? "1 oficio de salida está radicado y firmado pero sin despachar al destinatario."
+              : `${p.oficiosSinDespachar} oficios de salida están radicados y firmados pero sin despachar al destinatario.`}
+          </span>
+          <Link
+            href="/correspondencia?tipo=ENVIADA&despacho=sin_despachar"
+            className="ml-2 font-medium underline hover:no-underline"
+          >
+            Ver cuáles
+          </Link>
         </div>
       )}
 

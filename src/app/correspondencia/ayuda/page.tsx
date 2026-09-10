@@ -356,7 +356,8 @@ export default async function CorrespondenciaAyudaPage() {
           Al despachar, si el oficio tiene clasificación TRD, una casilla (marcada por defecto) archiva la
           recibida y la respuesta en un <strong>expediente documental de la subserie</strong>, creándolo si no
           existe. La bandeja muestra el vínculo entre el radicado de entrada y el de salida, con un indicador de
-          si ya se despachó.
+          si ya se despachó, un <strong>filtro «Despacho»</strong> (sin despachar / despachadas) y un aviso —
+          también en el Panel — con los oficios de salida radicados y firmados que faltan por despachar.
         </p>
       </Seccion>
     </>

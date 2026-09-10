@@ -10,6 +10,7 @@ export type FiltrosCorrespondencia = {
   dependencia?: string;
   serieId?: string;
   vencimiento?: string; // "vencidas" | "por_vencer" (MoReq 7.19)
+  despacho?: string; // "sin_despachar" | "despachadas" (oficios de salida)
   orden?: string;
   page?: string;
   vista?: string;
@@ -160,6 +161,8 @@ export function construirWhereCorrespondencia(
         : { gte: ahora, lt: new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000) };
     and.push({ estado: { in: ESTADOS_ABIERTOS_TERMINO }, fechaVencimiento: limite });
   }
+  if (f.despacho === "sin_despachar") and.push({ tipo: "ENVIADA", estado: { not: "ANULADA" }, despachadaEn: null, firmas: { some: {} } });
+  if (f.despacho === "despachadas") and.push({ despachadaEn: { not: null } });
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
@@ -172,6 +175,13 @@ export function construirWhereCorrespondencia(
 export async function contarComunicacionesVencidas(): Promise<number> {
   return db.comunicacion.count({
     where: { estado: { in: ESTADOS_ABIERTOS_TERMINO }, fechaVencimiento: { lt: new Date() } },
+  });
+}
+
+/** Oficios de salida radicados y firmados que la ventanilla de salida no ha despachado. */
+export async function contarOficiosSinDespachar(): Promise<number> {
+  return db.comunicacion.count({
+    where: { tipo: "ENVIADA", estado: { not: "ANULADA" }, despachadaEn: null, firmas: { some: {} } },
   });
 }
 

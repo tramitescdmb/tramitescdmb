@@ -1,7 +1,7 @@
 import type { EstadoComunicacion, TipoComunicacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
-import { puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
+import { puedeDistribuir, puedeAdministrarArchivo, puedeDespachar } from "@/lib/permisos";
 import { contarPasosFlujoVencidos } from "@/lib/flujos";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 
@@ -50,9 +50,17 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
   const ahora = new Date();
   const en3DiasHabiles = new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  const [misDistribuciones, pendientesProcesoRecibidas, vencidasGlobal, porVencerGlobal, flujosPasoVencido] = await Promise.all([
+  const [
+    misDistribuciones,
+    pendientesProcesoRecibidas,
+    devueltasEsperandoReparto,
+    oficiosSinDespachar,
+    vencidasGlobal,
+    porVencerGlobal,
+    flujosPasoVencido,
+  ] = await Promise.all([
     db.distribucion.findMany({
-      where: { usuarioId: userId, comunicacion: { estado: { in: ESTADOS_ACTIVOS } } },
+      where: { usuarioId: userId, activa: true, comunicacion: { estado: { in: ESTADOS_ACTIVOS } } },
       select: {
         fechaAsignacion: true,
         comunicacion: {
@@ -61,8 +69,16 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
       },
       orderBy: { fechaAsignacion: "desc" },
     }),
+    // Recibidas que la ventanilla debe repartir: nunca repartidas, o devueltas (sin reparto activo).
     db.comunicacion.count({
-      where: { tipo: "RECIBIDA", estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: {} } },
+      where: { tipo: "RECIBIDA", estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: { activa: true } } },
+    }),
+    db.comunicacion.count({
+      where: { tipo: "RECIBIDA", estado: "EN_REPARTO", distribuciones: { some: { devueltaEn: { not: null } } } },
+    }),
+    // Oficios de salida radicados y firmados que la ventanilla de salida no ha despachado.
+    db.comunicacion.count({
+      where: { tipo: "ENVIADA", estado: { notIn: ["ANULADA"] }, despachadaEn: null, firmas: { some: {} } },
     }),
     db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { lt: ahora } } }),
     db.comunicacion.count({ where: { estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { gte: ahora, lt: en3DiasHabiles } } }),
@@ -89,6 +105,7 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
 
   return {
     puedeDistribuir: puedeDistribuir(permisos),
+    puedeDespachar: puedeDespachar(permisos),
     mis: {
       total: misPendientes.length,
       porResponder: misPorResponder,
@@ -97,8 +114,12 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
       lista: misPendientes.slice(0, 8),
     },
     global: { vencidas: vencidasGlobal, porVencer: porVencerGlobal },
-    /** Recibidas radicadas que nadie ha distribuido todavía (proceso detenido de entrada). */
+    /** Recibidas que la ventanilla debe repartir (nunca repartidas o devueltas). */
     pendientesProceso: pendientesProcesoRecibidas,
+    /** De las anteriores, cuántas fueron devueltas por el funcionario y esperan un nuevo reparto. */
+    devueltasEsperandoReparto,
+    /** Oficios de salida radicados y firmados que faltan por despachar (ventanilla de salida). */
+    oficiosSinDespachar,
     /** Flujos de trabajo en curso con el término de su paso actual vencido. */
     flujosPasoVencido,
   };

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar } from "@/lib/permisos";
-import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar, puedeDespachar } from "@/lib/permisos";
+import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, contarOficiosSinDespachar, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { comunicacionesFirmablesPor } from "@/lib/correspondencia";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
@@ -50,19 +50,21 @@ export default async function CorrespondenciaBandejaPage({
   if (!puedeAccederCorrespondencia(permisos)) redirect("/");
   const puedeRadicarUsuario = puedeRadicar(permisos);
   const puedeFirmarUsuario = puedeFirmar(permisos);
+  const puedeDespacharUsuario = puedeDespachar(permisos);
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, calendario, firmables] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(),
     contarComunicacionesVencidas(),
+    puedeDespacharUsuario ? contarOficiosSinDespachar() : Promise.resolve(0),
     getCalendarioLaboral(),
     puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || rango);
-  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "vencimiento", "orden", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || sp.despacho || rango);
+  const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "vencimiento", "despacho", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
@@ -75,6 +77,8 @@ export default async function CorrespondenciaBandejaPage({
     const serie = opciones.series.find((s) => s.id === sp.serieId);
     if (serie) clausulas.push(`clasificadas en "${serie.codigo} — ${serie.nombre}"`);
   }
+  if (sp.despacho === "sin_despachar") clausulas.push("sin despachar");
+  if (sp.despacho === "despachadas") clausulas.push("ya despachadas");
   if (rango) clausulas.push(`radicadas entre ${etiquetaPeriodo}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulas.join(" ");
@@ -105,6 +109,15 @@ export default async function CorrespondenciaBandejaPage({
             ? "1 comunicación tiene el término de respuesta de ley vencido y sigue sin cerrarse."
             : `${vencidas} comunicaciones tienen el término de respuesta de ley vencido y siguen sin cerrarse.`}{" "}
           <Link href="/correspondencia?vencimiento=vencidas" className="font-medium underline hover:no-underline">Ver cuáles</Link>
+        </div>
+      )}
+
+      {sinDespachar > 0 && sp.despacho !== "sin_despachar" && (
+        <div className="print:hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {sinDespachar === 1
+            ? "1 oficio de salida está radicado y firmado pero sin despachar al destinatario."
+            : `${sinDespachar} oficios de salida están radicados y firmados pero sin despachar al destinatario.`}{" "}
+          <Link href="/correspondencia?tipo=ENVIADA&despacho=sin_despachar" className="font-medium underline hover:no-underline">Ver cuáles</Link>
         </div>
       )}
 
@@ -206,6 +219,15 @@ export default async function CorrespondenciaBandejaPage({
               <option value="">Cualquiera</option>
               <option value="vencidas">Vencidas</option>
               <option value="por_vencer">Por vencer (3 días)</option>
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Despacho</span>
+            <select name="despacho" defaultValue={sp.despacho ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+              <option value="">Cualquiera</option>
+              <option value="sin_despachar">Sin despachar</option>
+              <option value="despachadas">Despachadas</option>
             </select>
           </label>
 

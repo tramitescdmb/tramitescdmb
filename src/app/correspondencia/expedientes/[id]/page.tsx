@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, FolderCheck, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
@@ -157,10 +157,22 @@ export default async function ExpedienteDetallePage({
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
+      <div
+        className={`relative mt-3 rounded-xl rounded-tl-none border p-4 ${
+          abierto ? "border-amber-200/80 bg-amber-50/40" : "border-stone-200 bg-stone-50"
+        }`}
+      >
+        <span
+          className={`absolute -top-3 left-0 flex h-3 items-center rounded-t-md border border-b-0 px-3 ${
+            abierto ? "border-amber-200/80 bg-amber-100" : "border-stone-200 bg-stone-100"
+          }`}
+          aria-hidden
+        >
+          <span className="h-1 w-10 rounded-full bg-black/10" />
+        </span>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="font-mono text-lg font-semibold text-stone-900">{expediente.numero}</h2>
+            <h2 className={`font-mono text-lg font-semibold ${abierto ? "text-cdmb-800" : "text-stone-600"}`}>{expediente.numero}</h2>
             <p className="mt-0.5 flex items-center gap-1.5 text-xs text-stone-400">
               <Building2 className="h-3.5 w-3.5" aria-hidden />
               {expediente.dependencia.nombre}
@@ -168,13 +180,18 @@ export default async function ExpedienteDetallePage({
           </div>
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              abierto ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-600"
+              abierto ? "bg-emerald-100 text-emerald-800" : "bg-stone-200/70 text-stone-600"
             }`}
           >
-            {abierto ? <FolderOpen className="h-3 w-3" aria-hidden /> : <FolderCheck className="h-3 w-3" aria-hidden />}
-            {abierto ? "Abierto" : "Cerrado"}
+            {abierto ? <FolderOpen className="h-3 w-3" aria-hidden /> : <Lock className="h-3 w-3" aria-hidden />}
+            {abierto ? "Abierta" : "Cerrada"}
           </span>
         </div>
+        <p className="mt-2 text-xs text-stone-500">
+          {expediente.documentos.length} documento{expediente.documentos.length === 1 ? "" : "s"}
+          {expediente.comunicaciones.length > 0 && ` · ${expediente.comunicaciones.length} comunicación${expediente.comunicaciones.length === 1 ? "" : "es"}`}
+          {expediente.documentos.length > 0 && ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}`}
+        </p>
         {expediente.nivelAcceso !== "PUBLICA" && (
           <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
             {ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]}
