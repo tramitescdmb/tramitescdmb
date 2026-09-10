@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { refreshSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/sinca/sincronizar", "/api/admin/vital/sincronizar"];
-// Ventanilla pública de PQRSD (Fase 3, sin autenticación) y su API: única zona
-// pública por PREFIJO del proyecto — todo lo demás sigue siendo allow-list exacta.
-const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar"];
+// Ventanilla pública de PQRSD (Fase 3, sin autenticación) y su API; e ingesta del
+// Fondo histórico (`/api/fondo-historico/*`), que se autentica con Bearer token
+// propio porque la llama un job de la red CDMB, no un navegador con sesión.
+const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/api/fondo-historico"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
