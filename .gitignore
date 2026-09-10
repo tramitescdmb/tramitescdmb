@@ -34,3 +34,6 @@ npm-debug.log*
 
 # Scripts temporales de pruebas de sesión (no versionar)
 _tmp-*
+
+# Vercel CLI (vercel link)
+.vercel

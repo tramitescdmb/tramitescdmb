@@ -42,6 +42,25 @@ describe("filaAModelo", () => {
     expect(m.razonSocial).toBeNull();
     expect(m.numero).toBeNull();
   });
+  it("deriva los campos normalizados desde las columnas crudas de la serie", () => {
+    const m = filaAModelo("psdocuments", {
+      ref_id: "7",
+      serie_id: 101,
+      campos: {
+        NUMENTRADA: "0045",
+        FECHAENTRADA: "2012-08-09",
+        ASUNTO: "Traslado por competencia",
+        RAZONSOCIAL: "ACUEDUCTO VEREDAL",
+        DEPENDENCIA: "Subdirección Jurídica",
+      },
+    });
+    expect(m.numero).toBe("0045");
+    expect(m.numeroEntrada).toBe("0045");
+    expect(m.anio).toBe(2012);
+    expect(m.asunto).toBe("Traslado por competencia");
+    expect(m.razonSocial).toBe("ACUEDUCTO VEREDAL");
+    expect(m.oficina).toBe("Subdirección Jurídica");
+  });
 });
 
 describe("esFondoValido", () => {

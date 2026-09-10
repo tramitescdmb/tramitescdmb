@@ -54,39 +54,11 @@ if (!cfg.ingestUrl || !cfg.ingestToken) {
 const FONDO = "psdocuments";
 const connectString = `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${cfg.host})(PORT=${cfg.port}))(CONNECT_DATA=(SID=${cfg.sid})))`;
 
-// Mapeo de columnas de C.PSIDEAW_<serie> a los campos normalizados. Todo lo que
-// no aparezca aquí va tal cual a `campos` para la ficha.
-const MAPA = {
-  fecha: ["FECHA", "FECHAENTRADA", "FECHA_DOCUMENTO", "FECHADOC", "FECHASALIDA"],
-  numero: ["NUMERO", "NUMENTRADA", "NRO", "NUMERODOC", "CONSECUTIVO"],
-  numero_entrada: ["NUMENTRADA"],
-  numero_salida: ["NUMSALIDA"],
-  fecha_entrada: ["FECHAENTRADA"],
-  fecha_salida: ["FECHASALIDA"],
-  asunto: ["ASUNTO", "OBJETO", "OBSERVACIONES"],
-  razon_social: ["RAZONSOCIAL", "RAZON_SOCIAL"],
-  destinatario: ["DESTINATARIO"],
-  oficina: ["DEPENDENCIA", "SUBDIRECCION", "OFICINA"],
-  firma: ["FIRMA"],
-  estado: ["DOC_ESTADO"],
-  ciclo: ["DOC_CICLO"],
-};
-const COLS_FIJAS = new Set([
-  "DOC_IDDOCUM",
-  "DOC_IDTIPDO",
-  "DOC_IDFORMA",
-  "DOC_ESTADOC",
-  "DOC_FECHAFINCICLO",
-  ...Object.values(MAPA).flat(),
-]);
+// El extractor manda las columnas crudas en `campos`; el servidor
+// (src/lib/fondo-historico.ts) deriva fecha/número/asunto/etc. Solo se
+// excluyen columnas internas del gestor que no aportan a la ficha.
+const COLS_OMITIR = new Set(["DOC_IDFORMA", "DOC_ESTADOC", "N_ARCH", "RUTA"]);
 
-function tomar(row, nombres) {
-  for (const n of nombres) {
-    const v = row[n];
-    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
-  }
-  return null;
-}
 function iso(v) {
   if (v == null) return null;
   if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString();
@@ -191,26 +163,14 @@ async function main() {
       if (refId == null) continue;
       const campos = {};
       for (const [k, v] of Object.entries(row)) {
-        if (!COLS_FIJAS.has(k)) campos[k] = v instanceof Date ? iso(v) : v;
+        if (k === "DOC_IDDOCUM" || COLS_OMITIR.has(k)) continue;
+        campos[k] = v instanceof Date ? iso(v) : v;
       }
       const img = versiones.get(Number(refId));
       lote.push({
         ref_id: String(refId),
         serie_id: serie.id,
         serie_nombre: serie.nombre,
-        oficina: tomar(row, MAPA.oficina),
-        numero: tomar(row, MAPA.numero),
-        numero_entrada: tomar(row, MAPA.numero_entrada),
-        numero_salida: tomar(row, MAPA.numero_salida),
-        fecha: iso(tomar(row, MAPA.fecha)),
-        fecha_entrada: iso(tomar(row, MAPA.fecha_entrada)),
-        fecha_salida: iso(tomar(row, MAPA.fecha_salida)),
-        asunto: tomar(row, MAPA.asunto),
-        razon_social: tomar(row, MAPA.razon_social),
-        destinatario: tomar(row, MAPA.destinatario),
-        firma: tomar(row, MAPA.firma),
-        estado: tomar(row, MAPA.estado),
-        ciclo: tomar(row, MAPA.ciclo),
         tiene_imagen: !!img,
         num_archivos: img ? img.n : 0,
         ruta_original: img ? img.ruta : null,

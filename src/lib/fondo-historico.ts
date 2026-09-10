@@ -99,39 +99,75 @@ export function parseFechaFondo(v: string | null | undefined): Date | null {
   return d;
 }
 
-function limpiar(v: string | null | undefined): string | null {
+function limpiar(v: unknown): string | null {
   if (v == null) return null;
   const s = String(v).trim();
   return s === "" ? null : s;
 }
 
-/** Convierte una fila del extractor en el shape de la tabla FondoDocumento. */
+/**
+ * Nombres de columna de C.PSIDEAW_<serie> / C.COR_* que alimentan cada campo
+ * normalizado. Se resuelve contra `campos` (que el extractor envía tal cual),
+ * así los dos extractores —Node y sqlplus— solo mandan las columnas crudas y
+ * el mapeo vive en un único lugar. El primero que exista y no esté vacío gana.
+ */
+const MAPA_COLUMNAS: Record<string, string[]> = {
+  numero: ["NUMERO", "NUMENTRADA", "NUMERADI_REC", "NUMERO_ATC", "NRO", "NUMERODOC", "CONSECUTIVO"],
+  numeroEntrada: ["NUMENTRADA", "NUMERADI_REC", "RADENT_ATC"],
+  numeroSalida: ["NUMSALIDA"],
+  fecha: ["FECHA", "FECHAENTRADA", "FECHRECEP_REC", "FECING_ATC", "FECHA_DOCUMENTO", "FECHADOC", "FECHASALIDA"],
+  fechaEntrada: ["FECHAENTRADA", "FECHRECEP_REC"],
+  fechaSalida: ["FECHASALIDA"],
+  asunto: ["ASUNTO", "ASUNTO_REC", "ASUNTO_ATC", "OBJETO", "OBSERVACIONES"],
+  razonSocial: ["RAZONSOCIAL", "RAZON_SOCIAL", "EMPRESAR_REC", "NOMBREREM_REC", "NOMSOL_ATC"],
+  destinatario: ["DESTINATARIO"],
+  oficina: ["DEPENDENCIA", "SUBDIRECCION", "SUBDIRECCION_REC", "OFICINA", "NOMOFI_ATC"],
+  firma: ["FIRMA"],
+  estado: ["DOC_ESTADO", "ESTADO_REC", "ESTADO_ATC"],
+  ciclo: ["DOC_CICLO"],
+};
+
+function elegir(campos: Record<string, unknown>, nombres: string[]): string | null {
+  for (const n of nombres) {
+    const v = limpiar(campos[n]);
+    if (v) return v;
+  }
+  return null;
+}
+
+/** Convierte una fila del extractor en el shape de la tabla FondoDocumento.
+ *  Los campos normalizados se toman del propio `fila.*` si vienen, o se
+ *  derivan de `campos` con MAPA_COLUMNAS. */
 export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
-  const fecha = parseFechaFondo(fila.fecha);
+  const campos = (fila.campos ?? {}) as Record<string, unknown>;
+  const de = (k: keyof typeof MAPA_COLUMNAS, explicito: string | null | undefined) =>
+    limpiar(explicito) ?? elegir(campos, MAPA_COLUMNAS[k]!);
+
+  const fecha = parseFechaFondo(de("fecha", fila.fecha));
   return {
     id: `${fondo}:${fila.ref_id}`,
     fondo,
     refId: String(fila.ref_id),
     serieId: fila.serie_id ?? null,
     serieNombre: limpiar(fila.serie_nombre),
-    oficina: limpiar(fila.oficina),
-    numero: limpiar(fila.numero),
-    numeroEntrada: limpiar(fila.numero_entrada),
-    numeroSalida: limpiar(fila.numero_salida),
+    oficina: de("oficina", fila.oficina),
+    numero: de("numero", fila.numero),
+    numeroEntrada: de("numeroEntrada", fila.numero_entrada),
+    numeroSalida: de("numeroSalida", fila.numero_salida),
     fecha,
     anio: fecha ? fecha.getFullYear() : null,
-    fechaEntrada: parseFechaFondo(fila.fecha_entrada),
-    fechaSalida: parseFechaFondo(fila.fecha_salida),
-    asunto: limpiar(fila.asunto),
-    razonSocial: limpiar(fila.razon_social),
-    destinatario: limpiar(fila.destinatario),
-    firma: limpiar(fila.firma),
-    estado: limpiar(fila.estado),
-    ciclo: limpiar(fila.ciclo),
+    fechaEntrada: parseFechaFondo(de("fechaEntrada", fila.fecha_entrada)),
+    fechaSalida: parseFechaFondo(de("fechaSalida", fila.fecha_salida)),
+    asunto: de("asunto", fila.asunto),
+    razonSocial: de("razonSocial", fila.razon_social),
+    destinatario: de("destinatario", fila.destinatario),
+    firma: de("firma", fila.firma),
+    estado: de("estado", fila.estado),
+    ciclo: de("ciclo", fila.ciclo),
     tieneImagen: !!fila.tiene_imagen,
     numArchivos: fila.num_archivos ?? 0,
     rutaOriginal: limpiar(fila.ruta_original),
-    campos: (fila.campos ?? {}) as Record<string, unknown>,
+    campos,
   };
 }
 
