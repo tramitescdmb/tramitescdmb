@@ -193,6 +193,19 @@ export default async function CorrespondenciaAyudaPage() {
             <td className="px-2.5 py-1.5">Ninguno — queda definitiva</td>
           </tr>
         </Tabla>
+
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Rótulo y verificación (Acuerdo 060/2001 AGN)</p>
+        <p>
+          Cada radicado tiene un <strong>rótulo imprimible</strong> (detalle → «Rótulo con código de barras»):
+          el número, la fecha, un <strong>código de barras Code 128</strong> generado automáticamente del
+          radicado, y un <strong>QR</strong>. Se adhiere al documento físico. Para un documento electrónico
+          (PDF), el botón «Con rótulo» descarga una copia con ese rótulo y — si la comunicación está firmada —
+          el sello de firma estampados en la primera página; el archivo original nunca se modifica.
+        </p>
+        <p>
+          El QR abre una <strong>página pública de verificación</strong> (<span className="font-mono text-xs">/verificar/&lt;radicado&gt;</span>):
+          confirma que el número existe y muestra su tipo, fecha y estado, <strong>sin revelar el contenido</strong>.
+        </p>
       </Seccion>
 
       <Seccion n={3} id="recibida" icono={Inbox} titulo="Ciclo de la comunicación recibida">
@@ -262,8 +275,27 @@ export default async function CorrespondenciaAyudaPage() {
           A diferencia de una recibida, un oficio de salida (ENVIADA) o un memorando (INTERNA) se redactan y
           se firman <strong>en el mismo acto</strong> de radicarse — no existe un estado de borrador
           posterior. La firma electrónica captura identidad del funcionario, marca de tiempo, intención y el
-          hash SHA-256 del contenido (Ley 527/1999, Decreto 2364/2012); a partir de ahí el documento es
+          hash SHA-256 del contenido (Ley 527/1999, Decreto 1074/2015); a partir de ahí el documento es
           definitivo y no editable.
+        </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-stone-400">El sello de firma</p>
+        <p>
+          Al pie del documento aparece un sello con el <strong>nombre</strong> del firmante, su{" "}
+          <strong>denominación del empleo</strong> (con la forma femenina o masculina según el sexo
+          registrado) y su <strong>oficina</strong>, la fecha‑hora, los primeros dígitos del hash SHA‑256 y la
+          cita legal (Ley 527/1999 · Decreto 1074/2015). La denominación se administra en la ficha de cada
+          usuario y es distinta del cargo de trámites.
+        </p>
+        <p>
+          <strong>Estampado cronológico.</strong> Cada firma lleva un sello de tiempo. Por defecto es la propia
+          bitácora encadenada por hash del SGDEA (orden verificable e inmutable). Si el administrador configura
+          la URL de una <strong>autoridad de sello de tiempo RFC‑3161</strong> en Administración → Seguridad,
+          cada firma además pide un token verificable por un tercero.
+        </p>
+        <p>
+          <strong>Quién puede firmar.</strong> Cualquier funcionario del módulo cuya ficha tenga marcado
+          «puede firmar electrónicamente» (por defecto, sí). Un administrador puede retirar ese acceso por
+          persona; no afecta las firmas ya registradas.
         </p>
         <Tabla encabezados={["Tipo", "Al radicarse", "Barra de estado", "Distribución posterior"]}>
           <tr>
@@ -473,6 +505,12 @@ export default async function CorrespondenciaAyudaPage() {
           edita quien puede distribuir.
         </p>
         <p>
+          <strong>Firma electrónica:</strong> puede firmar cualquier funcionario del módulo con «puede firmar»
+          marcado en su ficha (por defecto, sí) — el administrador de la plataforma lo retira por persona.
+          Además, un administrador puede <strong>ocultar todo el módulo SGDEA</strong> a los funcionarios
+          (Administración → Seguridad) mientras se despliega.
+        </p>
+        <p>
           El rol se asigna desde <Link href="/usuarios" className="text-cdmb-700 underline hover:no-underline">Usuarios</Link>,
           en la ficha de cada persona.
         </p>
@@ -518,6 +556,12 @@ export default async function CorrespondenciaAyudaPage() {
             <strong>Vigencia del rol</strong>: al asignar un rol de correspondencia se puede fijar una
             fecha de vencimiento; al vencer, el acceso se retira sin necesidad de una acción manual
             posterior.
+          </li>
+          <li>
+            <strong>Disponibilidad del módulo</strong> y <strong>sello de tiempo</strong> (Administración →
+            Seguridad): ocultar el SGDEA a los funcionarios mientras se despliega, y — opcional — la URL de
+            una autoridad de sello de tiempo RFC‑3161 para el estampado cronológico de las firmas. Sin ella,
+            el sello es la bitácora encadenada por hash.
           </li>
           <li>
             <strong>Intercambio XML</strong> (MoReq 3.27): además de la TRD, se exportan con esquema propio
@@ -628,7 +672,7 @@ export default async function CorrespondenciaAyudaPage() {
         <p className="mt-3 text-xs leading-relaxed text-stone-500">
           Describe, por tipo de radicado y por función del módulo, el estado técnico, la acción disponible y
           el rol mínimo requerido. Base normativa: Ley 594/2000, Ley 1437/2011 (CPACA), Ley 1712/2014, Ley
-          527/1999 y Decreto 2364/2012, Acuerdo 060/2001 AGN y Acuerdo Único de la Función Archivística
+          527/1999 y Decreto 1074/2015, Acuerdo 060/2001 AGN y Acuerdo Único de la Función Archivística
           (Acuerdo 001/2024 AGN). No sustituye ese marco normativo, lo referencia. Se muestra por pestañas;
           al imprimir se expande completo.
         </p>
