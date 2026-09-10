@@ -10,19 +10,27 @@ import {
   ShieldCheck,
   FileText,
   LayoutDashboard,
+  Archive,
   ChevronDown,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 
-type Permitido = { bandeja: boolean; expedientes: boolean; radicar: boolean; distribuir: boolean; admin: boolean };
+type Permitido = {
+  bandeja: boolean;
+  expedientes: boolean;
+  radicar: boolean;
+  distribuir: boolean;
+  admin: boolean;
+  fondoHistorico: boolean;
+};
 type Clave = keyof Permitido;
 
 type Item = { href: string; label: string; permiso?: Clave; prefijo?: boolean; externo?: boolean };
 type Grupo = { label: string; icon: LucideIcon; permiso: Clave; href?: string; items?: Item[]; alinearDerecha?: boolean };
 
 /** Rutas que NO son la bandeja aunque cuelguen de /correspondencia. */
-const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral"];
+const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo"];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
   (p.startsWith("/correspondencia/") && !NO_BANDEJA.some((s) => p.startsWith(`/correspondencia/${s}`)));
@@ -52,6 +60,7 @@ const GRUPOS: Grupo[] = [
     ],
   },
   { label: "Plantillas", icon: FileText, permiso: "bandeja", href: "/correspondencia/plantillas" },
+  { label: "Fondo histórico", icon: Archive, permiso: "fondoHistorico", href: "/correspondencia/fondo" },
   {
     label: "Configuración",
     icon: Settings2,

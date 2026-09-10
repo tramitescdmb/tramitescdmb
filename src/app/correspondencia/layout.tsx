@@ -7,6 +7,7 @@ import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { MigaSgdea } from "@/components/sgdea/Miga";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
+import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 /**
@@ -38,6 +39,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
     radicar: puedeRadicar(permisos),
     distribuir: puedeDistribuir(permisos),
     admin: puedeAdministrarArchivo(permisos),
+    fondoHistorico: fondoHistoricoConfigurado(),
   };
 
   return (

@@ -394,6 +394,77 @@ model SincaNitSnapshot {
 }
 
 // ---------------------------------------------------------------------------
+// Fondo Documental histórico — ESPEJO DE SOLO CONSULTA de sistemas de gestión
+// documental anteriores de la CDMB (psdocuments, "SIC correspondencia"...).
+// El original vive en un Oracle 10g en la intranet (192.168.7.40, esquema `C`).
+// NADA en la app crea, edita ni borra estos datos: un job que corre DENTRO de
+// la red CDMB (scripts/fondo-historico/) lee el Oracle y hace upsert vía
+// POST /api/fondo-historico/ingest (token). Solo se guardan METADATOS —
+// las imágenes escaneadas (1,4 TB) NO se copian; se consultan en la red
+// corporativa. Ver memory/project_psdocuments_legacy.md.
+// ---------------------------------------------------------------------------
+
+/// Un documento del fondo histórico (una fila de C.PSIDEAW_<serie> de psdocuments,
+/// o un radicado de C.COR_* del SIC). `fondo` + `refId` identifican el origen.
+model FondoDocumento {
+  id             String  @id // "<fondo>:<refId>", ej. "psdocuments:482913"
+  fondo          String // "psdocuments" | "sic-recibida" | "sic-enviada" | "sic-pqr"
+  refId          String // DOC_IDDOCUM (psdocuments) o NUMERADI_REC-ANO_REC (SIC)
+  serieId        Int? // TIP_IDTIPDO (psdocuments)
+  serieNombre    String? // "CORRESPONDENCIA", "CONTABILIDAD-TESORERIA", ...
+  oficina        String? // dependencia / subdirección productora
+
+  numero         String? // número visible (radicado, comprobante, etc.)
+  numeroEntrada  String?
+  numeroSalida   String?
+  fecha          DateTime? // fecha principal del documento (para ordenar/filtrar)
+  anio           Int? // derivado de `fecha`
+  fechaEntrada   DateTime?
+  fechaSalida    DateTime?
+
+  asunto         String? @db.Text
+  razonSocial    String? // remitente / tercero / razón social
+  destinatario   String?
+  firma          String?
+  estado         String? // DOC_ESTADO / ESTADO_REC
+  ciclo          String? // DOC_CICLO ("GESTION", ...)
+
+  tieneImagen    Boolean @default(false) // hay fila en PSIDEA_VERSION
+  numArchivos    Int     @default(0)
+  rutaOriginal   String? // VER_CAMINO||VER_ARCHIVO de la última versión — SOLO referencia, no es un enlace servible
+
+  /// Todas las columnas propias de la serie / tabla origen, tal cual (para la ficha).
+  campos         Json
+
+  /// id de la corrida de sincronización que tocó esta fila por última vez.
+  sincronizacionId String?
+  sincronizadoEn   DateTime @default(now())
+
+  @@unique([fondo, refId])
+  @@index([fondo])
+  @@index([fondo, serieId])
+  @@index([fondo, anio])
+  @@index([fondo, fecha])
+  @@index([sincronizacionId])
+}
+
+model FondoSincronizacion {
+  id           String    @id @default(cuid())
+  fondo        String
+  iniciadoEn   DateTime  @default(now())
+  terminadoEn  DateTime?
+  ok           Boolean   @default(false)
+  totalOrigen  Int?
+  creados      Int?
+  actualizados Int?
+  eliminados   Int?
+  mensajeError String?   @db.Text
+  disparadoPor String? // "script:<host>", "manual:<usuario>"
+
+  @@index([fondo, iniciadoEn])
+}
+
+// ---------------------------------------------------------------------------
 // Catálogo de trámites (datos de referencia, sembrados desde data/tramites/*.json)
 // ---------------------------------------------------------------------------
 
