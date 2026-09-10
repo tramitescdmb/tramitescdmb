@@ -11,8 +11,8 @@ import {
 
 /**
  * Ingesta del Fondo Documental histórico. La llama el extractor que corre
- * DENTRO de la red CDMB (scripts/fondo-historico/extraer-psdocuments.mjs),
- * porque el Oracle origen no es alcanzable desde Vercel.
+ * DENTRO de la red CDMB (scripts/fondo-historico/), porque el Oracle origen
+ * no es alcanzable desde Vercel.
  *
  * Autorización: `Authorization: Bearer <FONDO_INGEST_TOKEN>`.
  *
@@ -26,6 +26,17 @@ import {
  */
 export const maxDuration = 60;
 
+/** Sustituye por espacio los caracteres de control crudos (0x00–0x1F) que
+ *  colan los datos de captura viejos y harían fallar JSON.parse dentro de una
+ *  cadena. El cuerpo del extractor no usa saltos de línea como separador. */
+function limpiarControl(s: string): string {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    out += s.charCodeAt(i) < 0x20 ? " " : s[i];
+  }
+  return out;
+}
+
 export async function POST(req: NextRequest) {
   const token = process.env.FONDO_INGEST_TOKEN?.trim();
   if (!fondoHistoricoConfigurado() || req.headers.get("authorization") !== `Bearer ${token}`) {
@@ -34,9 +45,12 @@ export async function POST(req: NextRequest) {
 
   let cuerpo: CuerpoIngesta;
   try {
-    cuerpo = (await req.json()) as CuerpoIngesta;
-  } catch {
-    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+    cuerpo = JSON.parse(limpiarControl(await req.text())) as CuerpoIngesta;
+  } catch (e) {
+    return NextResponse.json(
+      { error: "JSON inválido.", detalle: e instanceof Error ? e.message : String(e) },
+      { status: 400 },
+    );
   }
 
   const { fondo } = cuerpo;

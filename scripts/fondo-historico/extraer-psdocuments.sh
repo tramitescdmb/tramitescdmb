@@ -109,7 +109,7 @@ while IFS="$(printf '\t')" read -r SID SNOM; do
     [ "$CN" = "DOC_IDDOCUM" ] && continue
     case "$CT" in
       *DATE*) VAL="case when d.${CN} is null then 'null' else '\"'||to_char(d.${CN},'YYYY-MM-DD')||'\"' end" ;;
-      *) VAL="case when d.${CN} is null then 'null' else '\"'||replace(replace(replace(replace(replace(ltrim(to_char(d.${CN})),'\\','\\\\'),'\"','\\\"'),chr(13),' '),chr(10),' '),chr(9),' ')||'\"' end" ;;
+      *) VAL="case when d.${CN} is null then 'null' else '\"'||replace(replace(regexp_replace(ltrim(to_char(d.${CN})),'[[:cntrl:]]+',' '),'\\','\\\\'),'\"','\\\"')||'\"' end" ;;
     esac
     FRAG="'\"${CN}\":'||${VAL}"
     if [ -z "$CAMPOS" ]; then CAMPOS="$FRAG"; else CAMPOS="${CAMPOS}||','||${FRAG}"; fi
@@ -121,7 +121,7 @@ EOF
     ||'\"serie_id\":${SID},\"serie_nombre\":\"${SNOM_ESC}\",'
     ||'\"num_archivos\":'||ltrim(to_char(nvl(vv.n,0)))||','
     ||'\"tiene_imagen\":'||case when nvl(vv.n,0)>0 then 'true' else 'false' end||','
-    ||'\"ruta_original\":'||case when vv.ruta is null then 'null' else '\"'||replace(replace(vv.ruta,'\\','\\\\'),'\"','\\\"')||'\"' end||','
+    ||'\"ruta_original\":'||case when vv.ruta is null then 'null' else '\"'||replace(replace(regexp_replace(vv.ruta,'[[:cntrl:]]+',' '),'\\','\\\\'),'\"','\\\"')||'\"' end||','
     ||'\"campos\":{'||${CAMPOS}||'}}'
     from ${SCHEMA}.psideaw_${SID} d
     left join (select ver_iddocum, count(*) n, max(ver_camino||ver_archivo) ruta
