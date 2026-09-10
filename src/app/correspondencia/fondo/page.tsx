@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Search, Archive, ImageOff, Image as ImageIcon, Info } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
-import { fondoHistoricoConfigurado, FONDOS, AVISO_IMAGEN } from "@/lib/fondo-historico";
+import { fondoHistoricoConfigurado, FONDOS, AVISO_IMAGEN, urlIntranetPsdocuments } from "@/lib/fondo-historico";
 import { getFondoListado, getFondoPanel, type FiltrosFondo } from "@/lib/fondo-historico-data";
 import { Paginador } from "@/components/Paginador";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
@@ -175,10 +175,22 @@ export default async function FondoHistoricoPage({
                   </td>
                   <td className="px-4 py-2.5 align-top text-center">
                     {d.tieneImagen ? (
-                      <span title={`${d.numArchivos} archivo(s) — consulta en la red corporativa`} className="inline-flex items-center gap-1 text-emerald-600">
-                        <ImageIcon className="h-4 w-4" aria-hidden />
-                        {d.numArchivos > 1 ? d.numArchivos : ""}
-                      </span>
+                      (() => {
+                        const url = urlIntranetPsdocuments(d.rutaOriginal);
+                        const inner = (
+                          <span className="inline-flex items-center gap-1 text-emerald-600">
+                            <ImageIcon className="h-4 w-4" aria-hidden />
+                            {d.numArchivos > 1 ? d.numArchivos : ""}
+                          </span>
+                        );
+                        return url ? (
+                          <a href={url} target="_blank" rel="noreferrer" title="Abrir el escaneado (solo desde la red CDMB)" className="hover:opacity-70">
+                            {inner}
+                          </a>
+                        ) : (
+                          <span title={`${d.numArchivos} archivo(s) — consulta en la red corporativa`}>{inner}</span>
+                        );
+                      })()
                     ) : (
                       <ImageOff className="mx-auto h-4 w-4 text-stone-300" aria-hidden />
                     )}

@@ -65,6 +65,7 @@ export async function getFondoListado(fondo: string, f: FiltrosFondo) {
         oficina: true,
         tieneImagen: true,
         numArchivos: true,
+        rutaOriginal: true,
       },
     }),
   ]);

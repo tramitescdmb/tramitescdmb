@@ -172,4 +172,26 @@ export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
 }
 
 export const AVISO_IMAGEN =
-  "El documento escaneado no se copia a este sistema. Su consulta está disponible únicamente desde la red corporativa de la CDMB, a través de Gestión Documental.";
+  "El documento escaneado no se copia a este sistema (son ~1,4 TB). El enlace de abajo abre el archivo original en el servidor de Gestión Documental y solo funciona desde la red corporativa de la CDMB.";
+
+/**
+ * Base HTTP de los escaneados de psdocuments en la intranet. La app original
+ * (psdocuments/WEB-INF/web.xml) mapea la unidad `z:` a `rutaWeb` =
+ * http://192.168.7.70:80/gestion (Apache en patevaca). Solo resuelve dentro
+ * de la red CDMB. Sobreescribible por si cambia el servidor.
+ */
+export const PSDOCUMENTS_BASE_INTRANET =
+  process.env.FONDO_PSDOCUMENTS_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.70/gestion";
+
+/**
+ * Convierte `VER_CAMINO||VER_ARCHIVO` (p. ej. `z:\Documentos\00000262\OGALVIS\00694338.pdf`
+ * o `z:/Documentos/...`) en la URL de intranet del archivo. Devuelve null si no
+ * tiene la forma esperada.
+ */
+export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined): string | null {
+  if (!rutaOriginal) return null;
+  const m = rutaOriginal.trim().match(/^[a-zA-Z]:[\\/]+(.+)$/);
+  if (!m) return null;
+  const rel = m[1]!.replace(/\\/g, "/").replace(/^\/+/, "");
+  return `${PSDOCUMENTS_BASE_INTRANET}/${rel}`;
+}

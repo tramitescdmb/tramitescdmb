@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseFechaFondo, filaAModelo, esFondoValido } from "@/lib/fondo-historico";
+import { parseFechaFondo, filaAModelo, esFondoValido, urlIntranetPsdocuments } from "@/lib/fondo-historico";
 
 describe("parseFechaFondo", () => {
   it("acepta ISO y YYYY-MM-DD", () => {
@@ -67,5 +67,21 @@ describe("esFondoValido", () => {
   it("solo reconoce fondos declarados", () => {
     expect(esFondoValido("psdocuments")).toBe(true);
     expect(esFondoValido("cualquier-cosa")).toBe(false);
+  });
+});
+
+describe("urlIntranetPsdocuments", () => {
+  it("mapea la unidad z: a la URL de intranet (barras \\ y /)", () => {
+    expect(urlIntranetPsdocuments("z:\\Documentos\\00000262\\OGALVIS\\00694338.pdf")).toBe(
+      "http://192.168.7.70/gestion/Documentos/00000262/OGALVIS/00694338.pdf",
+    );
+    expect(urlIntranetPsdocuments("z:/Documentos/00000101/BCHAPARRO/x.tif")).toBe(
+      "http://192.168.7.70/gestion/Documentos/00000101/BCHAPARRO/x.tif",
+    );
+  });
+  it("devuelve null si no hay ruta o no tiene forma de unidad", () => {
+    expect(urlIntranetPsdocuments(null)).toBeNull();
+    expect(urlIntranetPsdocuments("")).toBeNull();
+    expect(urlIntranetPsdocuments("/gestion/algo.pdf")).toBeNull();
   });
 });
