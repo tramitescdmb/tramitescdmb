@@ -51,9 +51,9 @@ model ConfiguracionSitio {
   // Jornada laboral de la entidad — alimenta el cálculo de términos de ley (días
   // hábiles) y las métricas de tiempo del SGDEA. `jornadaDiasSemana` usa la
   // convención de getUTCDay: 0=domingo, 1=lunes … 6=sábado.
-  jornadaDiasSemana Int[]  @default([1, 2, 3, 4, 5])
-  jornadaHoraInicio String @default("08:00")
-  jornadaHoraFin    String @default("17:00")
+  jornadaDiasSemana      Int[]   @default([1, 2, 3, 4, 5])
+  jornadaHoraInicio      String  @default("08:00")
+  jornadaHoraFin         String  @default("17:00")
   // Jornada partida (ej. 8–12 y 2–6): si estos dos están puestos, `jornadaHoraInicio`/
   // `jornadaHoraFin` son el bloque de la mañana y estos el de la tarde. null = jornada continua.
   jornadaHoraInicioTarde String?
@@ -100,16 +100,25 @@ model Cargo {
 }
 
 model Usuario {
-  id                 String       @id @default(cuid())
-  email              String       @unique
-  nombre             String
-  passwordHash       String
+  id                      String       @id @default(cuid())
+  email                   String       @unique
+  nombre                  String
+  passwordHash            String
   // Cuándo se fijó la contraseña actual (creación o último restablecimiento
   // por un ADMIN) — base para calcular la vigencia (MoReq 6.35). Null en
   // cuentas que ya existían antes de este campo: se trata como "sin vencer".
-  passwordCambiadaEn DateTime?
-  rol                RolUsuario   @default(FUNCIONARIO)
-  activo             Boolean      @default(true)
+  passwordCambiadaEn      DateTime?
+  rol                     RolUsuario   @default(FUNCIONARIO)
+  // Denominación del empleo (nomenclatura de empleos públicos, Decreto 1083/2015):
+  // el cargo NOMINAL del funcionario. `denominacionEmpleo` guarda la CLAVE del
+  // catálogo (src/lib/denominacion-empleo.ts), `denominacionComplemento` el sufijo
+  // libre ("en Tecnologías de Información"), y `sexo` (M/F) decide si el sello de
+  // firma usa la forma masculina o femenina. Distinto del modelo Cargo, que es una
+  // clave funcional para el bloqueo de pasos de trámite (ver src/lib/cargos.ts).
+  denominacionEmpleo      String?
+  denominacionComplemento String?
+  sexo                    String? // "M" | "F"
+  activo                  Boolean      @default(true)
   // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
   // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),
   // así que se mantiene siempre en sincronía con este campo (HABILITADA→true,
@@ -118,8 +127,8 @@ model Usuario {
   // exceder los intentos fallidos (persiste hasta que un ADMIN la levante,
   // MoReq 6.13); SUSPENDIDA es una marca manual de un ADMIN, distinta de
   // DESHABILITADA para poder diferenciar "de baja" de "temporalmente fuera".
-  estadoCuenta       EstadoCuenta @default(HABILITADA)
-  createdAt          DateTime     @default(now())
+  estadoCuenta            EstadoCuenta @default(HABILITADA)
+  createdAt               DateTime     @default(now())
 
   // true = la identidad la valida el directorio activo de la CDMB (API externa,
   // src/lib/directorio-activo.ts). Estos usuarios NO tienen contraseña propia en
@@ -934,7 +943,7 @@ model SerieDocumental {
   // MoReq 2.6: desde cuándo cuenta la retención de lo clasificado en esta serie —
   // desde la radicación/creación (por defecto) o desde el cierre del expediente
   // donde quede archivado.
-  retencionDesde          RetencionDesde         @default(RADICACION)
+  retencionDesde          RetencionDesde          @default(RADICACION)
   // MoReq 1.43: si está, un expediente de esta serie que supere esta cantidad de
   // folios se divide en tomos (Tomo 1 de N, 2 de N…) en el FUID y el índice.
   maxFoliosPorTomo        Int?
@@ -1525,18 +1534,18 @@ enum EstadoInstanciaFlujo {
 }
 
 model FlujoTrabajo {
-  id          String            @id @default(cuid())
-  nombre      String
-  descripcion String?           @db.Text
-  aplicaA     TipoComunicacion? // null = cualquier tipo
-  activo      Boolean           @default(true)
-  esPlantilla Boolean           @default(false) // se creó desde las plantillas precargadas
+  id                     String            @id @default(cuid())
+  nombre                 String
+  descripcion            String?           @db.Text
+  aplicaA                TipoComunicacion? // null = cualquier tipo
+  activo                 Boolean           @default(true)
+  esPlantilla            Boolean           @default(false) // se creó desde las plantillas precargadas
   // MoReq 7.8: si tiene dependencias, solo un funcionario de una de ellas (o admin de
   // archivo) puede iniciar/avanzar este flujo. Vacío = cualquiera con permiso de operar flujos.
-  dependenciasOperadoras String[] @default([])
-  creadoPorId String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  dependenciasOperadoras String[]          @default([])
+  creadoPorId            String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 
   pasos        PasoFlujo[]
   transiciones TransicionPaso[]
@@ -1589,17 +1598,17 @@ model TransicionPaso {
 }
 
 model InstanciaFlujo {
-  id             String               @id @default(cuid())
-  flujoId        String
-  comunicacionId String
-  estado         EstadoInstanciaFlujo @default(EN_CURSO)
-  pasoActualId   String?
+  id              String               @id @default(cuid())
+  flujoId         String
+  comunicacionId  String
+  estado          EstadoInstanciaFlujo @default(EN_CURSO)
+  pasoActualId    String?
   // Cuándo se entró al paso actual — base para el vencimiento del término sugerido
   // (slaDiasHabiles) del paso. Se actualiza en cada avance.
   pasoActualDesde DateTime?
-  iniciadoPorId  String?
-  iniciadoEn     DateTime             @default(now())
-  finalizadoEn   DateTime?
+  iniciadoPorId   String?
+  iniciadoEn      DateTime             @default(now())
+  finalizadoEn    DateTime?
 
   flujo        FlujoTrabajo    @relation(fields: [flujoId], references: [id])
   comunicacion Comunicacion    @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)

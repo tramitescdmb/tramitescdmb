@@ -1,11 +1,17 @@
 import { ShieldCheck } from "lucide-react";
 import { formatearFechaHora } from "@/lib/fecha";
+import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
 const LEGAL =
   "La firma electrónica identifica al firmante y garantiza la integridad del documento, con la misma validez y efectos jurídicos que la firma manuscrita, conforme a la Ley 527 de 1999 y el Decreto 1074 de 2015.";
 
 type FirmaSello = {
-  usuario: { nombre: string; cargos?: { nombre: string }[] };
+  usuario: {
+    nombre: string;
+    denominacionEmpleo?: string | null;
+    denominacionComplemento?: string | null;
+    sexo?: string | null;
+  };
   fechaHora: Date | string;
   hashContenido: string;
 };
@@ -27,18 +33,21 @@ export function SelloFirmaElectronica({ firmas, className = "" }: { firmas: Firm
         <ShieldCheck className="h-3 w-3 flex-none" aria-hidden />
         Documento firmado electrónicamente
       </p>
-      {firmas.map((f, i) => (
-        <p key={i} className="mt-0.5">
-          <span className="font-medium text-stone-700">{f.usuario.nombre}</span>
-          {f.usuario.cargos?.[0]?.nombre ? ` · ${f.usuario.cargos[0].nombre}` : ""}
-          {" · "}
-          {formatearFechaHora(f.fechaHora)}
-          {" · "}
-          <span className="font-mono" title={`SHA-256: ${f.hashContenido}`}>
-            SHA-256 {f.hashContenido.slice(0, 12)}…
-          </span>
-        </p>
-      ))}
+      {firmas.map((f, i) => {
+        const cargo = denominacionParaFirma(f.usuario.denominacionEmpleo, f.usuario.sexo, f.usuario.denominacionComplemento);
+        return (
+          <p key={i} className="mt-0.5">
+            <span className="font-medium text-stone-700">{f.usuario.nombre}</span>
+            {cargo ? ` · ${cargo}` : ""}
+            {" · "}
+            {formatearFechaHora(f.fechaHora)}
+            {" · "}
+            <span className="font-mono" title={`SHA-256: ${f.hashContenido}`}>
+              SHA-256 {f.hashContenido.slice(0, 12)}…
+            </span>
+          </p>
+        );
+      })}
       <p className="mt-0.5 text-stone-400" title={LEGAL}>
         <span className="print:hidden">Ley 527 de 1999 · Decreto 1074 de 2015</span>
         <span className="hidden print:inline">{LEGAL}</span>

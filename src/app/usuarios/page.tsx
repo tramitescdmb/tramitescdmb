@@ -12,6 +12,7 @@ import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFecha } from "@/lib/fecha";
+import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS } from "@/lib/denominacion-empleo";
 
 const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
@@ -424,10 +425,28 @@ export default async function UsuariosPage({
             </Field>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="Sexo" help="Solo se usa para la forma de la denominación en la firma.">
+              <select name="sexo" defaultValue="" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500">
+                <option value="">— Sin especificar —</option>
+                {SEXOS.map((s) => (<option key={s.valor} value={s.valor}>{s.etiqueta}</option>))}
+              </select>
+            </Field>
+            <Field label="Denominación del empleo" help="Cargo nominal (Decreto 1083/2015) — aparece en el sello de firma electrónica.">
+              <select name="denominacionEmpleo" defaultValue="" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500">
+                <option value="">— Sin denominación —</option>
+                {CLAVES_DENOMINACION_EMPLEO.map((c) => (<option key={c} value={c}>{DENOMINACIONES_EMPLEO[c].m}</option>))}
+              </select>
+            </Field>
+            <Field label="Complemento" help="Opcional, ej. «en Tecnologías de Información».">
+              <input name="denominacionComplemento" maxLength={120} placeholder="en Tecnologías de Información" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500" />
+            </Field>
+          </div>
+
           <Field
             label="Cargo(s) en la CDMB"
             icon={<Briefcase className={iconSm} />}
-            help="Su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.). Se usan para resaltarle qué pasos de un trámite le corresponden. Puede marcar uno, varios, o ninguno."
+            help="Su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.). Se usan para resaltarle qué pasos de un trámite le corresponden. Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
           >
             <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
               {cargos.map((c) => (

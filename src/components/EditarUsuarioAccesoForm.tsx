@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
+import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, denominacionParaFirma } from "@/lib/denominacion-empleo";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -40,6 +41,7 @@ const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
 
 const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-nombre", etiqueta: "Nombre" },
+  { id: "seccion-firma", etiqueta: "Datos para la firma" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
   { id: "seccion-estado", etiqueta: "Estado de la cuenta" },
@@ -120,10 +122,16 @@ export function EditarUsuarioAccesoForm({
   politicaPassword,
   vigenciaPassword,
   estadoCuentaActual,
+  sexoActual,
+  denominacionEmpleoActual,
+  denominacionComplementoActual,
 }: {
   usuarioId: string;
   nombreActual: string;
   directorioActivo: boolean;
+  sexoActual: string | null;
+  denominacionEmpleoActual: string | null;
+  denominacionComplementoActual: string | null;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
@@ -140,6 +148,9 @@ export function EditarUsuarioAccesoForm({
 }) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreActual);
+  const [sexo, setSexo] = useState(sexoActual ?? "");
+  const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
+  const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
@@ -236,6 +247,9 @@ export function EditarUsuarioAccesoForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: nombre.trim(),
+          sexo: sexo || null,
+          denominacionEmpleo: denominacionEmpleo || null,
+          denominacionComplemento: denominacionComplemento.trim() || null,
           rol,
           estadoCuenta,
           cargoIds: Array.from(cargoIds),
@@ -292,6 +306,68 @@ export function EditarUsuarioAccesoForm({
             Cuenta de Directorio Activo: el nombre se asignó de forma provisional al crearse. Verifíquelo o corríjalo.
           </p>
         )}
+      </section>
+
+      <section id="seccion-firma" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion
+          icono={PenLine}
+          titulo="Datos para la firma electrónica"
+          ayuda="Cómo aparece esta persona al pie de un oficio o memorando firmado. No es el cargo de trámites."
+        />
+        <p className="mb-3 text-xs text-stone-400">
+          La <strong>denominación del empleo</strong> es el cargo nominal (Decreto 1083 de 2015). El{" "}
+          <strong>sexo</strong> solo se usa para mostrar la forma correcta (ej. «Coordinadora»). El{" "}
+          <strong>complemento</strong> es opcional (ej. «en Tecnologías de Información»).
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-medium text-stone-600">
+            Sexo
+            <select
+              value={sexo}
+              onChange={(e) => setSexo(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            >
+              <option value="">— Sin especificar —</option>
+              {SEXOS.map((s) => (
+                <option key={s.valor} value={s.valor}>{s.etiqueta}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium text-stone-600">
+            Denominación del empleo
+            <select
+              value={denominacionEmpleo}
+              onChange={(e) => setDenominacionEmpleo(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            >
+              <option value="">— Sin denominación —</option>
+              {CLAVES_DENOMINACION_EMPLEO.map((clave) => (
+                <option key={clave} value={clave}>
+                  {sexo === "F" ? DENOMINACIONES_EMPLEO[clave].f : DENOMINACIONES_EMPLEO[clave].m}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium text-stone-600 sm:col-span-2">
+            Complemento <span className="font-normal text-stone-400">(opcional)</span>
+            <input
+              value={denominacionComplemento}
+              onChange={(e) => setDenominacionComplemento(e.target.value)}
+              maxLength={120}
+              placeholder="en Tecnologías de Información"
+              className="mt-1 block w-full max-w-md rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+          </label>
+        </div>
+        <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
+          En la firma aparecerá:{" "}
+          <span className="font-medium text-stone-800">
+            {nombre.trim() || "Nombre del funcionario"}
+            {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento) ? (
+              <> · {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento)}</>
+            ) : null}
+          </span>
+        </p>
       </section>
 
       {!directorioActivo && (

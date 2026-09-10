@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/password";
 import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPassword } from "@/lib/password-policy";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
 const SECCIONES_VALIDAS: SeccionSoloLectura[] = ["VITAL_BASE", "VITAL_DASHBOARD", "SINCA_BASE", "SINCA_DASHBOARD", "SINCA_MINERIA"];
@@ -38,6 +39,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const rol = body.rol === "ADMIN" || body.rol === "FUNCIONARIO" ? body.rol : usuario.rol;
   const nombre = typeof body.nombre === "string" && body.nombre.trim() ? body.nombre.trim() : undefined;
+  const denominacionEmpleo: string | null | undefined = "denominacionEmpleo" in body
+    ? (esClaveDenominacion(body.denominacionEmpleo) ? body.denominacionEmpleo : null)
+    : undefined;
+  const denominacionComplemento: string | null | undefined = "denominacionComplemento" in body
+    ? (typeof body.denominacionComplemento === "string" && body.denominacionComplemento.trim()
+        ? body.denominacionComplemento.trim().slice(0, 120)
+        : null)
+    : undefined;
+  const sexo: string | null | undefined = "sexo" in body
+    ? (esSexo(body.sexo) ? body.sexo : null)
+    : undefined;
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
     : undefined;
@@ -112,6 +124,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         rol,
         ...(nombre ? { nombre } : {}),
+        ...(denominacionEmpleo !== undefined ? { denominacionEmpleo } : {}),
+        ...(denominacionComplemento !== undefined ? { denominacionComplemento } : {}),
+        ...(sexo !== undefined ? { sexo } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),

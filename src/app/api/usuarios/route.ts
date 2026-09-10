@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/password";
 import { validarPoliticaPassword } from "@/lib/password-policy";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
   const password = String(form.get("password") || "");
   const rol = String(form.get("rol") || "FUNCIONARIO") as "ADMIN" | "FUNCIONARIO";
   const cargoIds = form.getAll("cargoIds").map(String);
+  const sexoRaw = String(form.get("sexo") || "");
+  const denomRaw = String(form.get("denominacionEmpleo") || "");
+  const sexo = esSexo(sexoRaw) ? sexoRaw : null;
+  const denominacionEmpleo = esClaveDenominacion(denomRaw) ? denomRaw : null;
+  const denominacionComplemento = String(form.get("denominacionComplemento") || "").trim().slice(0, 120) || null;
 
   const url = new URL("/usuarios", req.url);
 
@@ -46,6 +52,9 @@ export async function POST(req: NextRequest) {
       rol,
       passwordHash: await hashPassword(password),
       passwordCambiadaEn: new Date(),
+      sexo,
+      denominacionEmpleo,
+      denominacionComplemento,
       cargos: { connect: cargoIds.map((id) => ({ id })) },
     },
   });

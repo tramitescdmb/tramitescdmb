@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword, puedeCambiarPorVigenciaMinima } from "@/lib/password-policy";
 import { Field, SectionHelp } from "@/components/Field";
+import { denominacionParaFirma, SEXOS } from "@/lib/denominacion-empleo";
 
 const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -49,6 +50,20 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Ingreso</p>
           <p className="text-sm text-stone-800">{usuario.directorioActivo ? "Directorio activo CDMB" : "Cuenta institucional"}</p>
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">En la firma electrónica</p>
+          <p className="text-sm text-stone-800">
+            {usuario.nombre}
+            {denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento)
+              ? ` · ${denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento)}`
+              : ""}
+          </p>
+          <p className="mt-0.5 text-[11px] text-stone-400">
+            {usuario.denominacionEmpleo
+              ? `Sexo: ${SEXOS.find((s) => s.valor === usuario.sexo)?.etiqueta ?? "sin especificar"}. La denominación la administra el área de personal.`
+              : "Sin denominación del empleo registrada — solicítela al área de personal para que aparezca al pie de sus oficios firmados."}
+          </p>
         </div>
       </div>
 
