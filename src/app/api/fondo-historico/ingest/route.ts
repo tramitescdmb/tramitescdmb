@@ -33,11 +33,14 @@ export const maxDuration = 60;
 
 /** Sustituye por espacio los caracteres de control crudos (0x00–0x1F) que
  *  colan los datos de captura viejos y harían fallar JSON.parse dentro de una
- *  cadena. El cuerpo del extractor no usa saltos de línea como separador. */
-function limpiarControl(s: string): string {
+ *  cadena. Con `conservarSalto`, deja pasar `\n` (separador de líneas NDJSON). */
+function limpiarControl(s: string, conservarSalto = false): string {
   let out = "";
   for (let i = 0; i < s.length; i++) {
-    out += s.charCodeAt(i) < 0x20 ? " " : s[i];
+    const c = s.charCodeAt(i);
+    if (c >= 0x20) out += s[i];
+    else if (conservarSalto && c === 0x0a) out += "\n";
+    else out += " ";
   }
   return out;
 }
@@ -48,18 +51,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const texto = limpiarControl(await req.text());
+  const raw = await req.text();
   const ctNdjson = (req.headers.get("content-type") ?? "").includes("ndjson");
-  // NDJSON si lo dice el content-type, o si el texto son varias líneas y la 1ª
-  // es un objeto JSON (el cuerpo array-mode es un único objeto, no varias líneas).
-  const primeraLinea = texto.split("\n", 1)[0]!.trim();
-  const esNdjson = ctNdjson || (texto.includes("\n") && primeraLinea.startsWith("{") && primeraLinea.endsWith("}"));
+  // NDJSON si lo dice el content-type, o si el cuerpo son varias líneas y la 1ª
+  // es un objeto JSON (el cuerpo array-mode es un único objeto sin saltos).
+  const primeraLinea = limpiarControl(raw.split("\n", 1)[0] ?? "").trim();
+  const esNdjson =
+    ctNdjson || (raw.includes("\n") && primeraLinea.startsWith("{") && primeraLinea.endsWith("}"));
 
   let cuerpo: CuerpoIngesta;
   let saltadas = 0;
   try {
     if (esNdjson) {
-      const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "");
+      const lineas = limpiarControl(raw, true)
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
       const meta = JSON.parse(lineas[0]!) as CuerpoIngesta;
       const lote: NonNullable<CuerpoIngesta["lote"]> = [];
       for (const l of lineas.slice(1)) {
@@ -71,7 +78,7 @@ export async function POST(req: NextRequest) {
       }
       cuerpo = { ...meta, lote };
     } else {
-      cuerpo = JSON.parse(texto) as CuerpoIngesta;
+      cuerpo = JSON.parse(limpiarControl(raw)) as CuerpoIngesta;
     }
   } catch (e) {
     return NextResponse.json(
