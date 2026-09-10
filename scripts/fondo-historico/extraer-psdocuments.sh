@@ -25,7 +25,7 @@ ORA_HOST="${FONDO_ORACLE_HOST:-192.168.7.40}"
 ORA_PORT="${FONDO_ORACLE_PORT:-1521}"
 ORA_SID="${FONDO_ORACLE_SID:-P}"
 SCHEMA="${FONDO_ORACLE_SCHEMA:-C}"
-LOTE="${FONDO_LOTE:-300}"
+LOTE="${FONDO_LOTE:-500}"
 SERIES_FILTRO="${FONDO_SERIES:-}"
 FONDO="psdocuments"
 
@@ -137,7 +137,9 @@ done < "$TMP/series.tsv"
 [ -s "$TMP/todo.jsonl" ] || { echo "Sin filas."; ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true}" >/dev/null; exit 0; }
 
 # --- 4. subir por lotes ---
-split -l "$LOTE" "$TMP/todo.jsonl" "$TMP/lote_"
+# -a 6: sufijos largos (con lotes de 300 y series de cientos de miles de filas,
+# los 676 sufijos de 2 letras por defecto no alcanzan).
+split -l "$LOTE" -a 6 "$TMP/todo.jsonl" "$TMP/lote_"
 for f in "$TMP"/lote_*; do
   { printf '{"fondo":"%s","sincronizacionId":"%s","lote":[' "$FONDO" "$SYNC"
     paste -sd, "$f"
