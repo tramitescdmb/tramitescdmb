@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
   esFondoValido,
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       const m = filaAModelo(fondo, f);
       return {
         ...m,
-        campos: m.campos as Prisma.InputJsonValue,
+        campos: (m.campos ?? Prisma.DbNull) as Prisma.InputJsonValue,
         sincronizacionId: sync.id,
         sincronizadoEn: new Date(),
       };

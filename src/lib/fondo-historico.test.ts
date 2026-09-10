@@ -34,8 +34,23 @@ describe("filaAModelo", () => {
     expect(m.refId).toBe("482913");
     expect(m.anio).toBe(2011);
     expect(m.asunto).toBe("Solicitud de copia");
-    expect(m.campos).toEqual({ NUMENTRADA: "0012" });
+    expect(m.numeroEntrada).toBe("0012"); // NUMENTRADA se normaliza…
+    expect(m.campos).toBeNull(); // …y no se repite en campos
     expect(m.tieneImagen).toBe(false);
+  });
+  it("guarda en campos solo las columnas que no quedaron normalizadas, recortadas", () => {
+    const m = filaAModelo("psdocuments", {
+      ref_id: "9",
+      campos: { TIPO: "OFICIO", NUMENTRADA: "1", NOTAS: "x".repeat(300) },
+    });
+    expect(m.campos).not.toBeNull();
+    expect(m.campos!.NUMENTRADA).toBeUndefined();
+    expect(m.campos!.TIPO).toBe("OFICIO");
+    expect((m.campos!.NOTAS as string).length).toBeLessThanOrEqual(121);
+  });
+  it("recorta el asunto largo", () => {
+    const m = filaAModelo("psdocuments", { ref_id: "1", asunto: "a".repeat(500) });
+    expect(m.asunto!.length).toBeLessThanOrEqual(301);
   });
   it("normaliza cadenas vacías a null", () => {
     const m = filaAModelo("psdocuments", { ref_id: "1", razon_social: "   ", numero: "" });

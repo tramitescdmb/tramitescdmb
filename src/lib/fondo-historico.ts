@@ -135,13 +135,33 @@ function elegir(campos: Record<string, unknown>, nombres: string[]): string | nu
   return null;
 }
 
+/** Columnas que ya alimentan un campo normalizado — no vale la pena repetirlas
+ *  en `campos` (Supabase Free tiene 500 MB). */
+const COLUMNAS_MAPEADAS = new Set(Object.values(MAPA_COLUMNAS).flat());
+const MAX_VALOR_CAMPO = 120;
+const MAX_ASUNTO = 300;
+
+/** Deja en `campos` solo lo que NO quedó en un campo normalizado, con cada
+ *  valor recortado. Devuelve null si no sobra nada. */
+function camposResiduales(campos: Record<string, unknown>): Record<string, string> | null {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(campos)) {
+    if (COLUMNAS_MAPEADAS.has(k) || k === "DOC_IDDOCUM") continue;
+    const s = limpiar(v);
+    if (!s) continue;
+    out[k] = s.length > MAX_VALOR_CAMPO ? s.slice(0, MAX_VALOR_CAMPO) + "…" : s;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 /** Convierte una fila del extractor en el shape de la tabla FondoDocumento.
  *  Los campos normalizados se toman del propio `fila.*` si vienen, o se
- *  derivan de `campos` con MAPA_COLUMNAS. */
+ *  derivan de `campos` con MAPA_COLUMNAS. `campos` se guarda recortado. */
 export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
   const campos = (fila.campos ?? {}) as Record<string, unknown>;
   const de = (k: keyof typeof MAPA_COLUMNAS, explicito: string | null | undefined) =>
     limpiar(explicito) ?? elegir(campos, MAPA_COLUMNAS[k]!);
+  const recortar = (s: string | null, max: number) => (s && s.length > max ? s.slice(0, max) + "…" : s);
 
   const fecha = parseFechaFondo(de("fecha", fila.fecha));
   return {
@@ -158,16 +178,16 @@ export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
     anio: fecha ? fecha.getFullYear() : null,
     fechaEntrada: parseFechaFondo(de("fechaEntrada", fila.fecha_entrada)),
     fechaSalida: parseFechaFondo(de("fechaSalida", fila.fecha_salida)),
-    asunto: de("asunto", fila.asunto),
-    razonSocial: de("razonSocial", fila.razon_social),
-    destinatario: de("destinatario", fila.destinatario),
+    asunto: recortar(de("asunto", fila.asunto), MAX_ASUNTO),
+    razonSocial: recortar(de("razonSocial", fila.razon_social), 200),
+    destinatario: recortar(de("destinatario", fila.destinatario), 200),
     firma: de("firma", fila.firma),
     estado: de("estado", fila.estado),
     ciclo: de("ciclo", fila.ciclo),
     tieneImagen: !!fila.tiene_imagen,
     numArchivos: fila.num_archivos ?? 0,
     rutaOriginal: limpiar(fila.ruta_original),
-    campos,
+    campos: camposResiduales(campos),
   };
 }
 

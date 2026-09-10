@@ -11,9 +11,17 @@ export interface FiltrosFondo {
   q?: string;
   serie?: string;
   anio?: string;
+  desde?: string; // "YYYY-MM-DD"
+  hasta?: string; // "YYYY-MM-DD"
   imagen?: string; // "si" | "no"
   page?: string;
   vista?: string;
+}
+
+function fechaValida(s: string | undefined): Date | null {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function whereDe(fondo: string, f: FiltrosFondo): Prisma.FondoDocumentoWhereInput {
@@ -32,8 +40,23 @@ function whereDe(fondo: string, f: FiltrosFondo): Prisma.FondoDocumentoWhereInpu
   }
   const serie = Number(f.serie);
   if (Number.isFinite(serie) && f.serie) w.serieId = serie;
-  const anio = Number(f.anio);
-  if (Number.isFinite(anio) && f.anio) w.anio = anio;
+
+  // Rango de fechas (sobre `fecha`). `anio` se mantiene por compatibilidad de enlaces.
+  const desde = fechaValida(f.desde);
+  const hasta = fechaValida(f.hasta);
+  if (desde || hasta) {
+    w.fecha = {};
+    if (desde) w.fecha.gte = desde;
+    if (hasta) {
+      const fin = new Date(hasta);
+      fin.setDate(fin.getDate() + 1); // inclusivo hasta el final del día
+      w.fecha.lt = fin;
+    }
+  } else {
+    const anio = Number(f.anio);
+    if (Number.isFinite(anio) && f.anio) w.anio = anio;
+  }
+
   if (f.imagen === "si") w.tieneImagen = true;
   if (f.imagen === "no") w.tieneImagen = false;
   return w;

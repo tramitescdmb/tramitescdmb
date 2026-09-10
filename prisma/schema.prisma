@@ -433,17 +433,17 @@ model FondoDocumento {
   numArchivos    Int     @default(0)
   rutaOriginal   String? // VER_CAMINO||VER_ARCHIVO de la última versión — SOLO referencia, no es un enlace servible
 
-  /// Todas las columnas propias de la serie / tabla origen, tal cual (para la ficha).
-  campos         Json
+  /// SOLO las columnas de la tabla origen que NO quedaron ya en un campo
+  /// normalizado (para no duplicar texto — Supabase Free tiene 500 MB).
+  /// null cuando no sobra nada. Cada valor se recorta a ~120 caracteres.
+  campos         Json?
 
   /// id de la corrida de sincronización que tocó esta fila por última vez.
   sincronizacionId String?
   sincronizadoEn   DateTime @default(now())
 
   @@unique([fondo, refId])
-  @@index([fondo])
   @@index([fondo, serieId])
-  @@index([fondo, anio])
   @@index([fondo, fecha])
   @@index([sincronizacionId])
 }

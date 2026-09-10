@@ -46,7 +46,9 @@ export default async function FondoHistoricoPage({
     return qs ? `/correspondencia/fondo?${qs}` : "/correspondencia/fondo";
   };
 
-  const hayFiltros = Boolean(filtros.q || filtros.serie || filtros.anio || filtros.imagen);
+  const hayFiltros = Boolean(
+    filtros.q || filtros.serie || filtros.anio || filtros.desde || filtros.hasta || filtros.imagen,
+  );
 
   return (
     <div className="space-y-5">
@@ -114,15 +116,22 @@ export default async function FondoHistoricoPage({
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-stone-600">Año</span>
-          <select name="anio" defaultValue={filtros.anio ?? ""} className="rounded-md border border-stone-300 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500">
-            <option value="">Todos</option>
-            {panel.anios.map((a) => (
-              <option key={a.anio} value={a.anio}>
-                {a.anio} ({a.total.toLocaleString("es-CO")})
-              </option>
-            ))}
-          </select>
+          <span className="mb-1 block font-medium text-stone-600">Desde</span>
+          <input
+            type="date"
+            name="desde"
+            defaultValue={filtros.desde ?? ""}
+            className="rounded-md border border-stone-300 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-stone-600">Hasta</span>
+          <input
+            type="date"
+            name="hasta"
+            defaultValue={filtros.hasta ?? ""}
+            className="rounded-md border border-stone-300 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
+          />
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-stone-600">Imagen</span>
