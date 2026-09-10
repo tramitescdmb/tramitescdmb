@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, FolderOpen, FolderCheck, Plus, FileText, Files, Handshake } from "lucide-react";
+import { Search, FolderOpen, FolderCheck, Plus, FileText, Files, Handshake, LayoutGrid, Table2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -14,10 +14,11 @@ import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { BotonImprimir } from "@/components/BotonImprimir";
+import { CarpetaExpediente, CajonDependencia } from "@/components/sgdea/CarpetaExpediente";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
 
-export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental & { error?: string }> }) {
+export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental & { error?: string; modo?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -37,7 +38,25 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   const cerrados = resumen.find((r) => r.estado === "CERRADO")?._count._all ?? 0;
 
   const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId || sp.serieId);
-  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId"] as const;
+  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId", "modo"] as const;
+  const modo = sp.modo === "tabla" ? "tabla" : "carpetas";
+
+  // Agrupa las carpetas por dependencia (como los cajones de un archivador físico),
+  // conservando el orden de llegada.
+  const porDependencia = new Map<string, typeof expedientes>();
+  for (const e of expedientes) {
+    const k = e.dependencia.nombre;
+    if (!porDependencia.has(k)) porDependencia.set(k, []);
+    porDependencia.get(k)!.push(e);
+  }
+  const hrefModo = (m: "carpetas" | "tabla") => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if ((CAMPOS_FILTRO as readonly string[]).includes(k) && v && k !== "modo") params.set(k, String(v));
+    if (sp.vista) params.set("vista", sp.vista);
+    if (m === "tabla") params.set("modo", "tabla");
+    const s = params.toString();
+    return s ? `/correspondencia/expedientes?${s}` : "/correspondencia/expedientes";
+  };
   const clausulas: string[] = [];
   if (sp.estado) clausulas.push(`${ETIQUETA_ESTADO[sp.estado] ?? sp.estado}`);
   if (sp.dependenciaId) {
@@ -117,7 +136,25 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
-        <div className="flex flex-wrap gap-1.5 print:hidden">
+        <div className="flex flex-wrap items-center gap-1.5 print:hidden">
+          <div className="mr-1 inline-flex overflow-hidden rounded-md border border-stone-300">
+            <Link
+              href={hrefModo("carpetas")}
+              aria-current={modo === "carpetas" ? "true" : undefined}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium ${modo === "carpetas" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+              Carpetas
+            </Link>
+            <Link
+              href={hrefModo("tabla")}
+              aria-current={modo === "tabla" ? "true" : undefined}
+              className={`flex items-center gap-1 border-l border-stone-300 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
+            >
+              <Table2 className="h-3.5 w-3.5" aria-hidden />
+              Tabla
+            </Link>
+          </div>
           <BotonImprimir variante="secundario" />
           <DescargarCsvBoton href={hrefFuid()} label="FUID (CSV)" />
           <Link
@@ -130,7 +167,38 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none">
+      {modo === "carpetas" && expedientes.length > 0 && (
+        <div className="space-y-3 print:hidden">
+          {[...porDependencia.entries()].map(([nombre, lista], i) => (
+            <CajonDependencia key={nombre} nombre={nombre} total={lista.length} abierto={porDependencia.size <= 3 || i === 0}>
+              {lista.map((e) => (
+                <CarpetaExpediente
+                  key={e.id}
+                  c={{
+                    id: e.id,
+                    numero: e.numero,
+                    asunto: e.asunto,
+                    dependencia: e.dependencia.nombre,
+                    serie: e.serie ? `${e.serie.codigo} — ${e.serie.nombre}` : null,
+                    estado: e.estado,
+                    nivelAcceso: e.nivelAcceso,
+                    documentos: e._count.documentos,
+                    comunicaciones: e._count.comunicaciones,
+                    folios: null,
+                    coincidencias: e.documentos.map((d) => d.nombre),
+                  }}
+                />
+              ))}
+            </CajonDependencia>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={`overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none ${
+          modo === "carpetas" && expedientes.length > 0 ? "hidden print:block" : ""
+        }`}
+      >
         {expedientes.length === 0 ? (
           <p className="p-10 text-center text-sm text-stone-400">
             {hayFiltros ? "No hay expedientes que coincidan." : "No hay expedientes todavía."}
@@ -193,11 +261,14 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             </table>
           </div>
         )}
-        <div className="print:hidden">
+      </div>
+
+      {expedientes.length > 0 && (
+        <div className="rounded-xl border border-stone-200 bg-white print:hidden">
           <SelectorVista vistaActual={vista} />
           <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

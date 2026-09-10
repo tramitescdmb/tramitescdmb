@@ -340,6 +340,14 @@ export default async function ExpedienteDetallePage({
                 <Download className="h-3 w-3" aria-hidden />
                 XML
               </a>
+              <a
+                href={`/api/correspondencia/expedientes/${id}/consolidado`}
+                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+                title="Todo el expediente en un solo PDF: portada, índice y cada pieza foliada (respuestas con rótulo y firma, luego solicitudes y adjuntos)"
+              >
+                <Download className="h-3 w-3" aria-hidden />
+                PDF consolidado
+              </a>
             </span>
           )}
         </h3>
