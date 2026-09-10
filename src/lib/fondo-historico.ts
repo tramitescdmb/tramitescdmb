@@ -191,6 +191,63 @@ export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
   };
 }
 
+/**
+ * Parsea el "dump" de sqlplus (Oracle 10g no puede generar JSON sin romperlo)
+ * a filas. Marcas por línea:
+ *   #<ref_id>    nuevo documento
+ *   @<COLUMNA>   empieza un campo
+ *   =<trozo>     (0..n) contenido del campo, en trozos de ≤200 chars
+ * Columnas especiales: `__NARCH__` → num_archivos, `__RUTA__` → ruta_original.
+ */
+export function parseDumpFondo(
+  texto: string,
+  serieId: number | null,
+  serieNombre: string,
+): FilaFondoEntrada[] {
+  const filas: FilaFondoEntrada[] = [];
+  let cur: FilaFondoEntrada | null = null;
+  let campos: Record<string, unknown> = {};
+  let campo: string | null = null;
+  let valor: string[] = [];
+
+  const cerrarCampo = () => {
+    if (cur && campo != null) {
+      const v = valor.join("");
+      if (campo === "__NARCH__") cur.num_archivos = Number(v) || 0;
+      else if (campo === "__RUTA__") cur.ruta_original = v.trim() || null;
+      else if (v.trim() !== "") campos[campo] = v;
+    }
+    campo = null;
+    valor = [];
+  };
+  const cerrarFila = () => {
+    if (cur) {
+      cerrarCampo();
+      cur.campos = campos;
+      cur.tiene_imagen = (cur.num_archivos ?? 0) > 0;
+      filas.push(cur);
+    }
+    cur = null;
+    campos = {};
+    campo = null;
+    valor = [];
+  };
+
+  for (const linea of texto.split(/\r?\n/)) {
+    if (linea.startsWith("#")) {
+      cerrarFila();
+      cur = { ref_id: linea.slice(1).trim(), serie_id: serieId, serie_nombre: serieNombre };
+    } else if (linea.startsWith("@")) {
+      cerrarCampo();
+      campo = linea.slice(1).trim();
+    } else if (linea.startsWith("=")) {
+      valor.push(linea.slice(1));
+    }
+  }
+  cerrarFila();
+  return filas.filter((f) => f.ref_id !== "");
+}
+
 export const AVISO_IMAGEN =
   "El documento escaneado no se copia a este sistema (son ~1,4 TB). El enlace de abajo abre el archivo original en el servidor de Gestión Documental y solo funciona desde la red corporativa de la CDMB.";
 

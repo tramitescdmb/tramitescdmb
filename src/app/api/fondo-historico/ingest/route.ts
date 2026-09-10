@@ -6,6 +6,7 @@ import {
   esFondoValido,
   fondoHistoricoConfigurado,
   filaAModelo,
+  parseDumpFondo,
   type CuerpoIngesta,
 } from "@/lib/fondo-historico";
 
@@ -17,31 +18,31 @@ import {
  * Autorización: `Authorization: Bearer <FONDO_INGEST_TOKEN>`.
  *
  * Protocolo (una corrida):
- *   1. POST { fondo, disparadoPor, totalOrigen }         → crea la corrida, devuelve { sincronizacionId }
- *   2. POST { fondo, sincronizacionId, lote: [...] }  (N veces, ~500 filas c/u)
- *   3. POST { fondo, sincronizacionId, finalizar: true } → borra lo no tocado y cierra la corrida
+ *   1. POST { fondo, disparadoPor }                       → crea la corrida, devuelve { sincronizacionId }
+ *   2. POST datos (una o varias veces)                    → upsert de un bloque de documentos
+ *   3. POST { fondo, sincronizacionId, finalizar: true }  → borra lo no tocado y cierra la corrida
  *
- * El paso 2 también acepta NDJSON (`Content-Type: application/x-ndjson`): la
- * 1ª línea es `{fondo, sincronizacionId}` y cada línea siguiente es una fila.
- * Así una fila mal formada se salta sola en vez de tumbar el lote entero —
- * necesario para los datos de captura viejos que salen por sqlplus.
+ * Paso 2 — dos formatos:
+ *  a) JSON: `{ fondo, sincronizacionId, lote: FilaFondoEntrada[] }`
+ *  b) "dump" de sqlplus (Oracle 10g no puede generar JSON sin romperlo): cuerpo
+ *     de texto con marcas por línea, y las cabeceras `X-Fondo`, `X-Sync`,
+ *     `X-Serie`, `X-Serie-Nombre` (base64). Marcas:
+ *        #<ref_id>      nuevo documento
+ *        @<COLUMNA>     empieza un campo
+ *        =<trozo>       (0..n) contenido del campo
+ *     Columnas especiales: `__NARCH__` → nº de archivos, `__RUTA__` → ruta.
  *
- * Es idempotente por fila (upsert por `id`). Si la corrida se corta antes del
- * paso 3, no se borra nada: la siguiente corrida completa el espejo.
+ * Es idempotente por documento (upsert por `id`). Si la corrida se corta antes
+ * del paso 3, no se borra nada: la siguiente corrida completa el espejo.
  */
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** Sustituye por espacio los caracteres de control crudos (0x00–0x1F) que
- *  colan los datos de captura viejos y harían fallar JSON.parse dentro de una
- *  cadena. Con `conservarSalto`, deja pasar `\n` (separador de líneas NDJSON). */
-function limpiarControl(s: string, conservarSalto = false): string {
+ *  harían fallar JSON.parse dentro de una cadena. */
+function limpiarControl(s: string): string {
   let out = "";
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c >= 0x20) out += s[i];
-    else if (conservarSalto && c === 0x0a) out += "\n";
-    else out += " ";
-  }
+  for (let i = 0; i < s.length; i++) out += s.charCodeAt(i) < 0x20 ? " " : s[i];
   return out;
 }
 
@@ -51,40 +52,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const raw = await req.text();
-  const ctNdjson = (req.headers.get("content-type") ?? "").includes("ndjson");
-  // NDJSON si lo dice el content-type, o si el cuerpo son varias líneas y la 1ª
-  // es un objeto JSON (el cuerpo array-mode es un único objeto sin saltos).
-  const primeraLinea = limpiarControl(raw.split("\n", 1)[0] ?? "").trim();
-  const esNdjson =
-    ctNdjson || (raw.includes("\n") && primeraLinea.startsWith("{") && primeraLinea.endsWith("}"));
-
+  const syncHeader = req.headers.get("x-sync");
   let cuerpo: CuerpoIngesta;
-  let saltadas = 0;
-  try {
-    if (esNdjson) {
-      const lineas = limpiarControl(raw, true)
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-      const meta = JSON.parse(lineas[0]!) as CuerpoIngesta;
-      const lote: NonNullable<CuerpoIngesta["lote"]> = [];
-      for (const l of lineas.slice(1)) {
-        try {
-          lote.push(JSON.parse(l));
-        } catch {
-          saltadas++;
-        }
-      }
-      cuerpo = { ...meta, lote };
-    } else {
-      cuerpo = JSON.parse(limpiarControl(raw)) as CuerpoIngesta;
+
+  if (syncHeader) {
+    // Modo "dump" de sqlplus.
+    const serieId = Number(req.headers.get("x-serie")) || null;
+    let serieNombre = "";
+    try {
+      serieNombre = Buffer.from(req.headers.get("x-serie-nombre") ?? "", "base64").toString("utf8");
+    } catch {
+      /* nombre opcional */
     }
-  } catch (e) {
-    return NextResponse.json(
-      { error: "JSON inválido.", detalle: e instanceof Error ? e.message : String(e) },
-      { status: 400 },
-    );
+    cuerpo = {
+      fondo: req.headers.get("x-fondo") ?? "",
+      sincronizacionId: syncHeader,
+      lote: parseDumpFondo(limpiarControl(await req.text()), serieId, serieNombre),
+    };
+  } else {
+    try {
+      cuerpo = JSON.parse(limpiarControl(await req.text())) as CuerpoIngesta;
+    } catch (e) {
+      return NextResponse.json(
+        { error: "JSON inválido.", detalle: e instanceof Error ? e.message : String(e) },
+        { status: 400 },
+      );
+    }
   }
 
   const { fondo } = cuerpo;
@@ -135,16 +128,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Paso 2 — un lote de filas.
+  // Paso 2 — un bloque de documentos.
   const lote = Array.isArray(cuerpo.lote) ? cuerpo.lote : [];
   if (lote.length === 0) {
-    // En NDJSON, un lote donde TODAS las filas fallaron el parseo no es un
-    // error del cliente: se reporta y el extractor sigue.
-    if (esNdjson) return NextResponse.json({ recibidas: 0, creados: 0, actualizados: 0, saltadas });
-    return NextResponse.json({ error: "Lote vacío." }, { status: 400 });
+    return NextResponse.json({ recibidas: 0, creados: 0, actualizados: 0, saltadas: 0 });
   }
-  if (lote.length > 1000) {
-    return NextResponse.json({ error: "Lote demasiado grande (máx. 1000)." }, { status: 413 });
+  if (lote.length > 2000) {
+    return NextResponse.json({ error: "Bloque demasiado grande (máx. 2000)." }, { status: 413 });
   }
 
   const filas = lote
@@ -159,7 +149,6 @@ export async function POST(req: NextRequest) {
       };
     });
   const ids = filas.map((f) => f.id);
-
   const existentes = await db.fondoDocumento.count({ where: { id: { in: ids } } });
 
   await db.$transaction([
@@ -170,11 +159,13 @@ export async function POST(req: NextRequest) {
   const creados = filas.length - existentes;
   await db.fondoSincronizacion.update({
     where: { id: sync.id },
-    data: {
-      creados: { increment: creados },
-      actualizados: { increment: existentes },
-    },
+    data: { creados: { increment: creados }, actualizados: { increment: existentes } },
   });
 
-  return NextResponse.json({ recibidas: filas.length, creados, actualizados: existentes, saltadas });
+  return NextResponse.json({
+    recibidas: filas.length,
+    creados,
+    actualizados: existentes,
+    saltadas: lote.length - filas.length,
+  });
 }

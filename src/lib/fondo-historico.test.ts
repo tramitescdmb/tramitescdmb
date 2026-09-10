@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { parseFechaFondo, filaAModelo, esFondoValido, urlIntranetPsdocuments } from "@/lib/fondo-historico";
+import {
+  parseFechaFondo,
+  filaAModelo,
+  esFondoValido,
+  urlIntranetPsdocuments,
+  parseDumpFondo,
+} from "@/lib/fondo-historico";
 
 describe("parseFechaFondo", () => {
   it("acepta ISO y YYYY-MM-DD", () => {
@@ -82,6 +88,51 @@ describe("esFondoValido", () => {
   it("solo reconoce fondos declarados", () => {
     expect(esFondoValido("psdocuments")).toBe(true);
     expect(esFondoValido("cualquier-cosa")).toBe(false);
+  });
+});
+
+describe("parseDumpFondo", () => {
+  const dump = [
+    "#740654",
+    "@NUMENTRADA",
+    "=0045",
+    "@ASUNTO",
+    "=Solicitud con \"comillas\", coma y ",
+    "=texto que sigue en otro trozo",
+    "@OBSERVACIONES",
+    "@__NARCH__",
+    "=2",
+    "@__RUTA__",
+    "=z:/Documentos/00000101/OGALVIS/00694338.pdf",
+    "#740655",
+    "@NUMENTRADA",
+    "=0046",
+    "@__NARCH__",
+    "=0",
+  ].join("\n");
+
+  it("reconstruye documentos, une trozos y separa columnas especiales", () => {
+    const filas = parseDumpFondo(dump, 101, "CORRESPONDENCIA");
+    expect(filas).toHaveLength(2);
+    expect(filas[0]!.ref_id).toBe("740654");
+    expect(filas[0]!.serie_id).toBe(101);
+    expect(filas[0]!.campos!.NUMENTRADA).toBe("0045");
+    expect(filas[0]!.campos!.ASUNTO).toBe('Solicitud con "comillas", coma y texto que sigue en otro trozo');
+    expect(filas[0]!.campos!.OBSERVACIONES).toBeUndefined(); // campo sin valor
+    expect(filas[0]!.num_archivos).toBe(2);
+    expect(filas[0]!.tiene_imagen).toBe(true);
+    expect(filas[0]!.ruta_original).toBe("z:/Documentos/00000101/OGALVIS/00694338.pdf");
+    expect(filas[1]!.ref_id).toBe("740655");
+    expect(filas[1]!.tiene_imagen).toBe(false);
+  });
+
+  it("filaAModelo deriva bien desde una fila del dump", () => {
+    const filas = parseDumpFondo(dump, 101, "CORRESPONDENCIA");
+    const m = filaAModelo("psdocuments", filas[0]!);
+    expect(m.numeroEntrada).toBe("0045");
+    expect(m.asunto?.startsWith('Solicitud con "comillas"')).toBe(true);
+    expect(m.tieneImagen).toBe(true);
+    expect(m.rutaOriginal).toContain("00694338.pdf");
   });
 });
 

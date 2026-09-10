@@ -1,19 +1,22 @@
 #!/bin/bash
-# Extractor del Fondo Documental histórico — psdocuments — VÍA sqlplus.
+# Extractor del Fondo Documental histórico — psdocuments — vía sqlplus.
 #
-# Alternativa a extraer-psdocuments.mjs para cuando no hay un Node moderno ni
-# cliente Oracle nuevo: corre en el propio servidor Oracle (host `martin`,
-# Oracle 10g) usando `sqlplus` + `curl`, que ya están instalados.
+# Corre en el propio servidor Oracle (host `martin`, Oracle 10g). SOLO LECTURA.
+# SOLO METADATOS (nunca toca las imágenes de 1,4 TB).
 #
-# SOLO LECTURA sobre Oracle. SOLO METADATOS (no toca las imágenes).
+# Método: SQL*Plus NO genera JSON (cualquier comilla/salto lo rompía). Un bloque
+# PL/SQL con DBMS_SQL recorre cada serie y emite los valores CRUDOS, uno por
+# línea, en trozos de <=200 caracteres (tope de DBMS_OUTPUT en 10g), con marcas:
+#   #<doc_iddocum>      → nuevo documento
+#   @<NOMBRE_COLUMNA>   → empieza un campo
+#   =<trozo del valor>  → (0..n líneas) contenido del campo
+# El servidor (/api/fondo-historico/ingest, modo "dump") arma el JSON.
 #
-# Uso (como usuario `oracle`, que tiene el entorno de Oracle cargado):
+# Uso (como usuario `oracle`, o como root — el script fija ORACLE_HOME):
 #   export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
 #   export FONDO_INGEST_TOKEN="…"
-#   export FONDO_SERIES="262,264"        # opcional, para un piloto
+#   export FONDO_SERIES="101"            # opcional; sin esto, todas las series
 #   bash extraer-psdocuments.sh
-#
-# Si se corre como root:  su - oracle -c 'FONDO_INGEST_URL=… FONDO_INGEST_TOKEN=… bash /ruta/extraer-psdocuments.sh'
 
 set -eu
 
@@ -25,7 +28,7 @@ ORA_HOST="${FONDO_ORACLE_HOST:-192.168.7.40}"
 ORA_PORT="${FONDO_ORACLE_PORT:-1521}"
 ORA_SID="${FONDO_ORACLE_SID:-P}"
 SCHEMA="${FONDO_ORACLE_SCHEMA:-C}"
-LOTE="${FONDO_LOTE:-500}"
+CHUNK="${FONDO_CHUNK:-200}"          # documentos por bloque PL/SQL (tope buffer 1 MB)
 SERIES_FILTRO="${FONDO_SERIES:-}"
 FONDO="psdocuments"
 
@@ -41,49 +44,39 @@ if [ -z "$SQLPLUS" ]; then
   done
 fi
 [ -n "$SQLPLUS" ] || { echo "No encuentro sqlplus. Corre el script como el usuario 'oracle'."; exit 1; }
+[ -n "${ORACLE_HOME:-}" ] || ORACLE_HOME="$(cd "$(dirname "$SQLPLUS")/.." && pwd)"
+export ORACLE_HOME
+export LD_LIBRARY_PATH="$ORACLE_HOME/lib:${LD_LIBRARY_PATH:-}"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# SQL*Plus solo acepta UNA opción por `set` — una por línea, obligatorio.
-SET_OPTS='set pagesize 0
+HDR='set pagesize 0
 set feedback off
 set heading off
 set verify off
 set echo off
-set newpage 0
-set linesize 32767
-set long 20000000
-set longchunksize 20000000
-set trimspool on
-set trimout on
-set tab off
-set wrap on
+set termout on
+set linesize 400
+set serveroutput on size 1000000 format truncated
+alter session set nls_date_format = '"'"'YYYY-MM-DD'"'"';
 whenever sqlerror exit sql.sqlcode'
 
-# Ejecuta el SQL de $1 y deja la salida en stdout (sin adornos).
-runsql() { printf '%s\n%s\n' "$SET_OPTS" "$1" | "$SQLPLUS" -s -L "$CONN"; }
+runsql() { printf '%s\n%s\n' "$HDR" "$1" | "$SQLPLUS" -s -L "$CONN"; }
 
-# --- curl al endpoint de ingesta. El cuerpo se pasa por archivo (los lotes
-#     pueden pesar cientos de KB y no caben como argumento). ---
-ingest_file() { # $1 = archivo con el cuerpo JSON
-  curl -sS -X POST "$FONDO_INGEST_URL" \
-    -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
-    -H "Content-Type: application/json" \
-    --data-binary "@$1"
-}
+b64() { printf '%s' "$1" | (base64 -w0 2>/dev/null || base64 | tr -d '\n'); }
+
 ingest() { # $1 = cuerpo JSON corto
-  printf '%s' "$1" > "$TMP/body.json"; ingest_file "$TMP/body.json"
+  printf '%s' "$1" > "$TMP/b.json"
+  curl -sS -X POST "$FONDO_INGEST_URL" -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
+    -H "Content-Type: application/json" --data-binary "@$TMP/b.json"
 }
-ingest_ndjson() { # $1 = archivo NDJSON (1ª línea meta, resto filas)
-  curl -sS -X POST "$FONDO_INGEST_URL" \
-    -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
-    -H "Content-Type: application/x-ndjson" \
-    --data-binary "@$1"
+ingest_dump() { # $1 archivo de marcas, $2 sync, $3 serieId, $4 serieNombre
+  curl -sS -X POST "$FONDO_INGEST_URL" -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
+    -H "Content-Type: text/plain" -H "X-Fondo: $FONDO" -H "X-Sync: $2" \
+    -H "X-Serie: $3" -H "X-Serie-Nombre: $(b64 "$4")" --data-binary "@$1"
 }
-json_val() { # extrae "clave":"valor" de un JSON plano
-  sed -n 's/.*"'"$1"'":"\([^"]*\)".*/\1/p'
-}
+json_val() { sed -n 's/.*"'"$1"'":\s*"\{0,1\}\([^",}]*\).*/\1/p'; }
 
 echo "sqlplus: $SQLPLUS"
 echo "Oracle:  ${ORA_USER}@${ORA_HOST}:${ORA_PORT}/${ORA_SID}  esquema ${SCHEMA}"
@@ -91,12 +84,11 @@ echo "Oracle:  ${ORA_USER}@${ORA_HOST}:${ORA_PORT}/${ORA_SID}  esquema ${SCHEMA}
 # --- 1. catálogo de series ---
 runsql "select tip_idtipdo||chr(9)||tip_nombre from ${SCHEMA}.psidea_tipodoc
         where upper(tip_nombre) <> 'PRUEBA' order by tip_idtipdo;" \
-  | grep -E '^[0-9]' > "$TMP/series.tsv"
+  | grep -E '^[0-9]' | sed 's/[[:space:]]*$//' > "$TMP/series.tsv"
 
 if [ -n "$SERIES_FILTRO" ]; then
-  echo "$SERIES_FILTRO" | tr ',' '\n' | sed 's/ //g' | sort -u > "$TMP/filtro.txt"
-  awk -F'\t' 'NR==FNR{keep[$1]=1;next} ($1 in keep)' "$TMP/filtro.txt" "$TMP/series.tsv" > "$TMP/series2.tsv"
-  mv "$TMP/series2.tsv" "$TMP/series.tsv"
+  echo "$SERIES_FILTRO" | tr ', ' '\n' | grep -E '^[0-9]+$' | sort -u > "$TMP/filtro.txt"
+  awk -F'\t' 'NR==FNR{k[$1]=1;next} ($1 in k)' "$TMP/filtro.txt" "$TMP/series.tsv" > "$TMP/s2" && mv "$TMP/s2" "$TMP/series.tsv"
 fi
 NSER=$(wc -l < "$TMP/series.tsv" | tr -d ' ')
 echo "Series a extraer: $NSER"
@@ -104,88 +96,83 @@ echo "Series a extraer: $NSER"
 
 # --- 2. abrir la corrida ---
 HOSTN="$(hostname 2>/dev/null || echo cdmb)"
-RESP="$(ingest "{\"fondo\":\"$FONDO\",\"disparadoPor\":\"script.sh:$HOSTN\"}")"
-SYNC="$(echo "$RESP" | json_val sincronizacionId)"
-[ -n "$SYNC" ] || { echo "No pude abrir la corrida: $RESP"; exit 1; }
+SYNC="$(ingest "{\"fondo\":\"$FONDO\",\"disparadoPor\":\"script.sh:$HOSTN\"}" | json_val sincronizacionId)"
+[ -n "$SYNC" ] || { echo "No pude abrir la corrida."; exit 1; }
 echo "Corrida $SYNC"
 
 TOTAL=0
+SALTADAS=0
 
-# --- 3. por serie: generar la consulta que emite un JSON por documento ---
+plsql() { # $1 serieId  $2 last-id  $3 limite
+  cat <<SQL
+declare
+  cur integer; nc integer; cd dbms_sql.desc_tab; v varchar2(4000); ign integer;
+  procedure pv(s in varchar2) is
+    n integer; p integer := 1;
+  begin
+    if s is null then return; end if;
+    n := length(s);
+    if n = 0 then dbms_output.put_line('='); return; end if;
+    while p <= n loop
+      dbms_output.put_line('=' || regexp_replace(substr(s, p, 200), '[[:cntrl:]]', ' '));
+      p := p + 200;
+    end loop;
+  end;
+begin
+  cur := dbms_sql.open_cursor;
+  dbms_sql.parse(cur,
+    'select d.*, '||
+    '(select count(*) from ${SCHEMA}.psidea_version x where x.ver_iddocum = d.doc_iddocum '||
+    ' and nvl(x.ver_estado,''X'') not in (''B'',''ND'')) as "__NARCH__", '||
+    '(select max(x.ver_camino||x.ver_archivo) from ${SCHEMA}.psidea_version x '||
+    ' where x.ver_iddocum = d.doc_iddocum) as "__RUTA__" '||
+    'from (select * from ${SCHEMA}.psideaw_${1} where doc_iddocum > ${2} order by doc_iddocum) d '||
+    'where rownum <= ${3}',
+    dbms_sql.native);
+  dbms_sql.describe_columns(cur, nc, cd);
+  for i in 1..nc loop dbms_sql.define_column(cur, i, v, 4000); end loop;
+  ign := dbms_sql.execute(cur);
+  loop
+    exit when dbms_sql.fetch_rows(cur) = 0;
+    for i in 1..nc loop
+      if cd(i).col_name = 'DOC_IDDOCUM' then
+        dbms_sql.column_value(cur, i, v); dbms_output.put_line('#' || v);
+      end if;
+    end loop;
+    for i in 1..nc loop
+      if cd(i).col_name <> 'DOC_IDDOCUM' then
+        dbms_sql.column_value(cur, i, v);
+        dbms_output.put_line('@' || cd(i).col_name);
+        pv(v);
+      end if;
+    end loop;
+  end loop;
+  dbms_sql.close_cursor(cur);
+end;
+/
+SQL
+}
+
 while IFS="$(printf '\t')" read -r SID SNOM; do
   [ -n "$SID" ] || continue
-  SNOM_ESC="$(printf '%s' "$SNOM" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-
-  # columnas de la tabla de la serie (nombre \t tipo)
-  COLS="$(runsql "select column_name||chr(9)||data_type from all_tab_columns
-                  where owner='${SCHEMA}' and table_name='PSIDEAW_${SID}' order by column_id;")"
-  [ -n "$COLS" ] || { echo "  (serie $SID sin tabla PSIDEAW_${SID}, la omito)"; continue; }
-
-  CAMPOS=""
-  while IFS="$(printf '\t')" read -r CN CT; do
-    [ -n "$CN" ] || continue
-    [ "$CN" = "DOC_IDDOCUM" ] && continue
-    case "$CT" in
-      *DATE*) VAL="case when d.${CN} is null then 'null' else '\"'||to_char(d.${CN},'YYYY-MM-DD')||'\"' end" ;;
-      *) VAL="case when d.${CN} is null then 'null' else '\"'||replace(replace(regexp_replace(ltrim(to_char(d.${CN})),'[[:cntrl:]]+',' '),'\\','\\\\'),'\"','\\\"')||'\"' end" ;;
-    esac
-    FRAG="'\"${CN}\":'||${VAL}"
-    if [ -z "$CAMPOS" ]; then CAMPOS="$FRAG"; else CAMPOS="${CAMPOS}||','||${FRAG}"; fi
-  done <<EOF
-$COLS
-EOF
-
-  SQL="select to_clob('{\"ref_id\":\"')||ltrim(to_char(d.doc_iddocum))||'\",'
-    ||'\"serie_id\":${SID},\"serie_nombre\":\"${SNOM_ESC}\",'
-    ||'\"num_archivos\":'||ltrim(to_char(nvl(vv.n,0)))||','
-    ||'\"tiene_imagen\":'||case when nvl(vv.n,0)>0 then 'true' else 'false' end||','
-    ||'\"ruta_original\":'||case when vv.ruta is null then 'null' else '\"'||replace(replace(regexp_replace(vv.ruta,'[[:cntrl:]]+',' '),'\\','\\\\'),'\"','\\\"')||'\"' end||','
-    ||'\"campos\":{'||${CAMPOS}||'}}'
-    from ${SCHEMA}.psideaw_${SID} d
-    left join (select ver_iddocum, count(*) n, max(ver_camino||ver_archivo) ruta
-               from ${SCHEMA}.psidea_version
-               where nvl(ver_estado,'X') not in ('B','ND')
-               group by ver_iddocum) vv on vv.ver_iddocum = d.doc_iddocum;"
-
-  # SQL*Plus puede partir una fila larga en varias líneas físicas. Se reensambla:
-  # cada registro empieza en {"ref_id":" y todo lo que siga sin ese prefijo es
-  # continuación. Se descarta cualquier registro que no cierre con }}.
-  runsql "$SQL" | awk '
-    function emit(s) { if (s ~ /^\{"ref_id":".*\}\}$/) print s; else bad++ }
-    /^\{"ref_id":"/ { if (buf != "") emit(buf); buf = $0; next }
-    { buf = buf $0 }
-    END {
-      if (buf != "") emit(buf)
-      if (bad) printf "  (%d filas mal formadas, omitidas)\n", bad > "/dev/stderr"
-    }
-  ' >> "$TMP/todo.jsonl" || true
-  N=$(grep -c '^{' "$TMP/todo.jsonl" 2>/dev/null || echo 0)
-  echo "  PSIDEAW_${SID} — ${SNOM}  (acumulado ${N})"
+  LAST=0
+  N=0
+  while : ; do
+    runsql "$(plsql "$SID" "$LAST" "$CHUNK")" | grep -E '^[#@=]' | sed 's/[[:space:]]*$//' > "$TMP/chunk"
+    IDS=$(grep -c '^#' "$TMP/chunk" || true)
+    [ "$IDS" -gt 0 ] || break
+    RESP="$(ingest_dump "$TMP/chunk" "$SYNC" "$SID" "$SNOM")"
+    echo "$RESP" | grep -q '"recibidas"' || { echo; echo "Fallo un bloque: $RESP"; exit 1; }
+    S=$(echo "$RESP" | json_val saltadas); SALTADAS=$((SALTADAS + ${S:-0}))
+    N=$((N + IDS)); TOTAL=$((TOTAL + IDS))
+    LAST=$(grep '^#' "$TMP/chunk" | sed 's/^#//' | sort -n | tail -1)
+    printf '\r  PSIDEAW_%s — %s: %s' "$SID" "$SNOM" "$N"
+    [ "$IDS" -lt "$CHUNK" ] && break
+  done
+  echo
 done < "$TMP/series.tsv"
 
-[ -s "$TMP/todo.jsonl" ] || { echo "Sin filas."; ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true}" >/dev/null; exit 0; }
-
-# --- 4. subir por lotes ---
-# -a 6: sufijos largos (con lotes de 300 y series de cientos de miles de filas,
-# los 676 sufijos de 2 letras por defecto no alcanzan).
-# Se sube como NDJSON: 1ª línea meta, resto filas. Una fila mal formada se
-# salta sola en el servidor sin tumbar el lote.
-split -l "$LOTE" -a 6 "$TMP/todo.jsonl" "$TMP/lote_"
-SALTADAS=0
-for f in "$TMP"/lote_*; do
-  { printf '{"fondo":"%s","sincronizacionId":"%s"}\n' "$FONDO" "$SYNC"; cat "$f"; } > "$TMP/body.ndjson"
-  OUT="$(ingest_ndjson "$TMP/body.ndjson")"
-  if ! echo "$OUT" | grep -q '"recibidas"'; then
-    echo; echo "Fallo un lote: $OUT"; exit 1
-  fi
-  S=$(echo "$OUT" | sed -n 's/.*"saltadas":\([0-9]*\).*/\1/p'); SALTADAS=$((SALTADAS + ${S:-0}))
-  TOTAL=$((TOTAL + $(wc -l < "$f")))
-  printf '\r  subidas %s' "$TOTAL"
-done
-echo
+# --- 3. cerrar ---
+FIN="$(ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true,\"totalOrigen\":$TOTAL}")"
 [ "$SALTADAS" -gt 0 ] && echo "  ($SALTADAS filas se saltaron por formato)"
-
-# --- 5. cerrar ---
-CARGADAS=$((TOTAL - SALTADAS))
-FIN="$(ingest "{\"fondo\":\"$FONDO\",\"sincronizacionId\":\"$SYNC\",\"finalizar\":true,\"totalOrigen\":$CARGADAS}")"
-echo "Listo — $CARGADAS filas cargadas (de $TOTAL enviadas). $FIN"
+echo "Listo — $TOTAL documentos enviados. $FIN"
