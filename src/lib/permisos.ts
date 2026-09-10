@@ -199,15 +199,40 @@ export function puedeFirmar(permisos: PermisosUsuario): boolean {
 }
 
 /**
- * ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? Solo el
- * administrador y el rol de archivo (ADMIN_ARCHIVO / gestión documental): el reparto
- * decide quién atiende cada trámite y es una función de control del archivo, no de
- * la ventanilla, que solo radica de entrada y despacha de salida. También gobierna
- * las acciones archivísticas sobre un radicado ya repartido (clasificación,
- * palabras clave, metadatos, nivel de acceso, detener/reanudar el término).
+ * ¿Puede repartir/distribuir una comunicación a dependencias/funcionarios? La
+ * ventanilla (OPERADOR_VENTANILLA) y, como supervisión, el rol de archivo y el
+ * admin. El jefe de dependencia NO reparte: el reparto está centralizado en la
+ * ventanilla. También gobierna la vista de metadatos/palabras clave/nivel de
+ * acceso y el detener/reanudar el término desde el detalle — la ventanilla ve
+ * toda la información del radicado; lo único que NO ve es el espacio para
+ * redactar la respuesta (eso es del funcionario al que se le repartió).
  */
 export function puedeDistribuir(permisos: PermisosUsuario): boolean {
-  return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
+  return (
+    permisos.esAdmin ||
+    permisos.correspondencia === "OPERADOR_VENTANILLA" ||
+    permisos.correspondencia === "ADMIN_ARCHIVO"
+  );
+}
+
+/**
+ * ¿Puede DEVOLVER a la ventanilla una recibida que le repartieron (indicando por
+ * qué no le corresponde)? Solo el/los funcionario(s) del reparto vigente, y solo
+ * si NO es quien reparte (la ventanilla no se devuelve a sí misma; re-reparte).
+ * La regla de los "3 días hábiles antes del vencimiento" se valida en el dominio,
+ * no aquí.
+ */
+export function puedeDevolverReparto(
+  permisos: PermisosUsuario,
+  usuarioId: string,
+  distribucionesVigentes: { usuarioId: string | null; dependenciaId: string | null }[]
+): boolean {
+  if (puedeDistribuir(permisos)) return false;
+  return distribucionesVigentes.some((d) =>
+    d.usuarioId
+      ? d.usuarioId === usuarioId
+      : Boolean(d.dependenciaId) && d.dependenciaId === permisos.dependenciaId
+  );
 }
 
 /** ¿Puede administrar el archivo (TRD/CCD, dependencias)? */

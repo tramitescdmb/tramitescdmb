@@ -5,7 +5,7 @@ import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";
 import { solicitarSelloTiempo } from "@/lib/sello-tiempo";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
-import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar } from "@/lib/pqrsd";
+import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar, devolucionDeReparoPermitida } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { validarPalabrasClave } from "@/lib/vocabulario";
@@ -27,6 +27,7 @@ export type EntradaTercero = {
   telefono?: string | null;
   direccion?: string | null;
   municipio?: string | null;
+  departamento?: string | null; // solo cuando el municipio está fuera de la jurisdicción y se escribe a mano
 };
 
 export type EntradaDocumento = {
@@ -74,11 +75,13 @@ async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: Entr
       telefono: tercero.telefono ?? null,
       direccion: tercero.direccion ?? null,
       municipio: muni,
+      departamento: tercero.departamento?.trim() || null,
     },
     update: {
       email: tercero.email ?? undefined,
       telefono: tercero.telefono ?? undefined,
       direccion: tercero.direccion ?? undefined,
+      departamento: tercero.departamento?.trim() || undefined,
     },
   });
   return solicitante.id;
@@ -132,6 +135,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
         terceroTelefono: entrada.tercero.telefono ?? null,
         terceroDireccion: entrada.tercero.direccion ?? null,
         terceroMunicipio: muni,
+        terceroDepartamento: entrada.tercero.departamento?.trim() || null,
         dependenciaDestinoId: entrada.dependenciaDestinoId ?? null,
         serieId: entrada.serieId ?? null,
         subserieId: entrada.subserieId ?? null,
@@ -361,6 +365,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
         terceroTelefono: entrada.destinatario.telefono ?? null,
         terceroDireccion: entrada.destinatario.direccion ?? null,
         terceroMunicipio: muni,
+        terceroDepartamento: entrada.destinatario.departamento?.trim() || null,
         dependenciaOrigenId: entrada.dependenciaOrigenId ?? null,
         serieId: entrada.serieId ?? null,
         subserieId: entrada.subserieId ?? null,
@@ -526,6 +531,45 @@ export async function registrarRespuestaFuncionario(
     await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
     return actualizada;
   });
+}
+
+/**
+ * El funcionario al que se le repartió una recibida la DEVUELVE a la ventanilla,
+ * indicando por qué no le corresponde. No se permite si faltan 3 días hábiles o
+ * menos para el vencimiento del término de ley (cerca del plazo hay que
+ * atenderla, no rebotarla). Al devolver, las distribuciones vigentes quedan
+ * inactivas con el motivo, se limpia el borrador de respuesta y la comunicación
+ * vuelve a EN_REPARTO para que la ventanilla la reparta de nuevo.
+ */
+export async function devolverReparto(comunicacionId: string, usuarioId: string, motivo: string) {
+  void usuarioId; // el permiso (ser destinatario del reparto vigente) ya se validó en la ruta
+  if (!motivo.trim()) throw new Error("Indique por qué esta comunicación no le corresponde.");
+  const c = await db.comunicacion.findUnique({
+    where: { id: comunicacionId },
+    select: {
+      id: true, tipo: true, estado: true, radicado: true, fechaVencimiento: true,
+      distribuciones: { where: { activa: true }, select: { id: true } },
+    },
+  });
+  if (!c) throw new Error("La comunicación no existe.");
+  if (c.tipo !== "RECIBIDA") throw new Error("Solo se devuelve el reparto de una comunicación recibida.");
+  if (["RESPONDIDA", "ARCHIVADA", "ANULADA"].includes(c.estado)) throw new Error("El ciclo de esta comunicación ya está cerrado.");
+  if (c.distribuciones.length === 0) throw new Error("Esta comunicación no tiene un reparto vigente que devolver.");
+  const calendario = c.fechaVencimiento ? await getCalendarioLaboral() : undefined;
+  if (!devolucionDeReparoPermitida(c.fechaVencimiento, calendario)) {
+    throw new Error("No se puede devolver: faltan 3 días hábiles o menos para el vencimiento del término de ley. Atiéndala o coordínelo con la ventanilla.");
+  }
+  await db.$transaction([
+    db.distribucion.updateMany({
+      where: { comunicacionId, activa: true },
+      data: { activa: false, devueltaEn: new Date(), motivoDevolucion: motivo.trim() },
+    }),
+    db.comunicacion.update({
+      where: { id: comunicacionId },
+      data: { estado: "EN_REPARTO", respuestaTexto: null, respuestaPorId: null, respuestaEn: null },
+    }),
+  ]);
+  return { radicado: c.radicado };
 }
 
 /**

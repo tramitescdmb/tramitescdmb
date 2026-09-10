@@ -8,6 +8,7 @@ import {
   puedeDespachar,
   puedeRadicar,
   puedeResponderComoAsignado,
+  puedeDevolverReparto,
   type PermisosUsuario,
 } from "./permisos";
 
@@ -112,16 +113,29 @@ const perm = (correspondencia: PermisosUsuario["correspondencia"], extra: Partia
   ...extra,
 });
 
-describe("puedeDistribuir — solo administrador y rol de archivo", () => {
-  it("el ADMIN y ADMIN_ARCHIVO pueden repartir", () => {
-    expect(puedeDistribuir(admin)).toBe(true);
+describe("puedeDistribuir — la ventanilla (y archivo/admin como supervisión)", () => {
+  it("la ventanilla, ADMIN_ARCHIVO y el admin reparten", () => {
+    expect(puedeDistribuir(perm("OPERADOR_VENTANILLA"))).toBe(true);
     expect(puedeDistribuir(perm("ADMIN_ARCHIVO"))).toBe(true);
+    expect(puedeDistribuir(admin)).toBe(true);
   });
 
-  it("el operador de ventanilla y el jefe de dependencia NO reparten", () => {
-    expect(puedeDistribuir(perm("OPERADOR_VENTANILLA"))).toBe(false);
+  it("el jefe y el funcionario de dependencia NO reparten (reparto centralizado en ventanilla)", () => {
     expect(puedeDistribuir(perm("JEFE_DEPENDENCIA"))).toBe(false);
     expect(puedeDistribuir(perm("FUNCIONARIO_DEPENDENCIA"))).toBe(false);
+  });
+});
+
+describe("puedeDevolverReparto — solo el funcionario al que se le repartió, nunca quien reparte", () => {
+  it("el funcionario del reparto vigente puede devolver", () => {
+    expect(puedeDevolverReparto(perm("FUNCIONARIO_DEPENDENCIA"), "u1", [{ usuarioId: "u1", dependenciaId: null }])).toBe(true);
+    expect(puedeDevolverReparto(perm("JEFE_DEPENDENCIA", { dependenciaId: "depA" }), "u2", [{ usuarioId: null, dependenciaId: "depA" }])).toBe(true);
+  });
+
+  it("la ventanilla no devuelve (re-reparte), ni un ajeno al reparto", () => {
+    expect(puedeDevolverReparto(perm("OPERADOR_VENTANILLA"), "u1", [{ usuarioId: "u1", dependenciaId: null }])).toBe(false);
+    expect(puedeDevolverReparto(admin, "u1", [{ usuarioId: "u1", dependenciaId: null }])).toBe(false);
+    expect(puedeDevolverReparto(perm("FUNCIONARIO_DEPENDENCIA"), "u9", [{ usuarioId: "u1", dependenciaId: null }])).toBe(false);
   });
 });
 

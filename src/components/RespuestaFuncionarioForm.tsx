@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, MessageSquareText, Upload, X } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
-import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase, type ContextoMarcadores } from "@/lib/plantillas-marcadores";
@@ -29,15 +30,9 @@ export function RespuestaFuncionarioForm({
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevos: File[] = [];
-    for (const f of Array.from(lista)) {
-      if (!extensionPermitida(f.name)) {
-        setError(mensajeTipoNoPermitido(f.name));
-        continue;
-      }
-      nuevos.push(f);
-    }
-    setArchivos((prev) => [...prev, ...nuevos]);
+    const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
+    if (err) setError(err);
+    if (validos.length) setArchivos((prev) => [...prev, ...validos]);
   }
 
   async function guardar() {
@@ -92,6 +87,7 @@ export function RespuestaFuncionarioForm({
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-stone-700">Adjuntar documento (PDF, Word u otro)</label>
+        <p className="mb-1 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

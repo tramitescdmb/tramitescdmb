@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sumarDiasHabiles, diasHabilesEntre } from "./dias-habiles";
-import { calcularVencimiento, calcularVencimientoTrasReactivar, estadoVencimiento, TERMINO_DIAS_HABILES } from "./pqrsd";
+import { calcularVencimiento, calcularVencimientoTrasReactivar, estadoVencimiento, devolucionDeReparoPermitida, TERMINO_DIAS_HABILES } from "./pqrsd";
 
 const d = (s: string) => new Date(`${s}T00:00:00.000Z`);
 
@@ -89,5 +89,26 @@ describe("estadoVencimiento", () => {
   it("diasHabilesEntre(ahora, vencimiento) es exactamente lo que se le sumó (consistencia con dias-habiles)", () => {
     const vencimiento = sumarDiasHabiles(ahora, 7);
     expect(diasHabilesEntre(ahora, vencimiento)).toBe(7);
+  });
+});
+
+describe("devolucionDeReparoPermitida", () => {
+  const ahora = d("2025-01-02");
+
+  it("permitida si no hay término de ley", () => {
+    expect(devolucionDeReparoPermitida(null, undefined, ahora)).toBe(true);
+  });
+
+  it("bloqueada si ya venció", () => {
+    expect(devolucionDeReparoPermitida(new Date(ahora.getTime() - 86_400_000), undefined, ahora)).toBe(false);
+  });
+
+  it("bloqueada con 3 días hábiles o menos para el vencimiento", () => {
+    expect(devolucionDeReparoPermitida(sumarDiasHabiles(ahora, 3), undefined, ahora)).toBe(false);
+    expect(devolucionDeReparoPermitida(sumarDiasHabiles(ahora, 2), undefined, ahora)).toBe(false);
+  });
+
+  it("permitida con más de 3 días hábiles restantes", () => {
+    expect(devolucionDeReparoPermitida(sumarDiasHabiles(ahora, 4), undefined, ahora)).toBe(true);
   });
 });

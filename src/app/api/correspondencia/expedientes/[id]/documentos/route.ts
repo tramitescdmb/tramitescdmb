@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { agregarDocumentoArchivo } from "@/lib/expedientes-documentales";
+import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => null);
   const documentos: DocumentoSubido[] = Array.isArray(body?.documentos) ? body.documentos : [];
   if (documentos.length === 0) return NextResponse.json({ error: "No se recibió ningún documento." }, { status: 400 });
+  const errLote = validarLoteDocumentosSGDEA(documentos);
+  if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
   const fechaDocumentoRaw = typeof body?.fechaDocumento === "string" ? body.fechaDocumento : "";
   const fechaDocumento = fechaDocumentoRaw ? parsearFechaLocal(fechaDocumentoRaw) : null;
   const tipoDocumentalId = typeof body?.tipoDocumentalId === "string" && body.tipoDocumentalId ? body.tipoDocumentalId : null;

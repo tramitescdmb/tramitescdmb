@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Upload, X, CheckCircle2 } from "lucide-react";
 import { subirArchivoPublico, subirDocumentosConProgreso } from "@/lib/uploads-client";
-import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { Field, SectionHelp } from "@/components/Field";
+import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { formatearFechaLarga } from "@/lib/fecha";
@@ -33,6 +35,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [municipio, setMunicipio] = useState("");
+  const [departamento, setDepartamento] = useState("");
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -46,15 +49,9 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevos: File[] = [];
-    for (const f of Array.from(lista)) {
-      if (!extensionPermitida(f.name)) {
-        setError(mensajeTipoNoPermitido(f.name));
-        continue;
-      }
-      nuevos.push(f);
-    }
-    setArchivos((prev) => [...prev, ...nuevos]);
+    const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
+    if (err) setError(err);
+    if (validos.length) setArchivos((prev) => [...prev, ...validos]);
   }
 
   async function enviar() {
@@ -89,7 +86,8 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
           terceroNombre: anonima ? "" : nombre.trim(),
           terceroEmail: anonima ? null : email.trim() || null,
           terceroTelefono: anonima ? null : telefono.trim() || null,
-          terceroMunicipio: anonima ? "" : municipio,
+          terceroMunicipio: anonima ? "" : municipio.trim(),
+          terceroDepartamento: anonima ? null : departamento.trim() || null,
           documentos,
           tsCarga,
           sitioWeb,
@@ -225,10 +223,14 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
             </Field>
           </div>
           <Field label="Municipio" required>
-            <select value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={inputCls}>
-              <option value="">— Seleccione —</option>
-              {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
-            </select>
+            <MunicipioSelectorTercero
+              municipios={municipios}
+              municipio={municipio}
+              departamento={departamento}
+              onMunicipio={setMunicipio}
+              onDepartamento={setDepartamento}
+              inputCls={inputCls}
+            />
           </Field>
           <Field label="Correo electrónico" help="Por aquí le avisamos la respuesta, si lo indica.">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
@@ -260,7 +262,10 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos de soporte (opcional)</h2>
-        <p className="mb-2 text-xs text-stone-500">Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí.</p>
+        <p className="mb-2 text-xs text-stone-500">
+          Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí. Hasta {MAX_ARCHIVOS_LOTE} archivos,
+          cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.
+        </p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

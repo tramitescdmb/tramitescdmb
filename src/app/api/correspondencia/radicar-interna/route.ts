@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { radicarInterna, type EntradaDocumento } from "@/lib/correspondencia";
+import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 export async function POST(req: NextRequest) {
@@ -49,6 +50,9 @@ export async function POST(req: NextRequest) {
         })
         .filter((d) => d.path)
     : [];
+
+  const errLote = validarLoteDocumentosSGDEA(documentos);
+  if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
 
   try {
     const comunicacion = await radicarInterna({

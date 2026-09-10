@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeResponderComoAsignado } from "@/lib/permisos";
 import { registrarRespuestaFuncionario, type EntradaDocumento } from "@/lib/correspondencia";
+import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 /**
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })
         .filter((d) => d.path)
     : [];
+
+  const errLote = validarLoteDocumentosSGDEA(documentos);
+  if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
 
   try {
     await registrarRespuestaFuncionario(id, session.userId, texto, documentos);

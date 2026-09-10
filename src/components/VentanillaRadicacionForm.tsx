@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
-import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -52,6 +54,8 @@ export function VentanillaRadicacionForm({
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [municipio, setMunicipio] = useState("");
+  const [departamento, setDepartamento] = useState("");
+  const [terceroCargado, setTerceroCargado] = useState(false);
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
@@ -70,17 +74,33 @@ export function VentanillaRadicacionForm({
     setDependenciaId(nuevoId);
   }
 
+  /** Autocarga los datos de un peticionario recurrente por su identificación (maestro de terceros). */
+  async function buscarTercero() {
+    const id = identificacion.trim();
+    if (id.length < 4 || nombre.trim() || terceroCargado) return;
+    try {
+      const r = await fetch(`/api/correspondencia/tercero?identificacion=${encodeURIComponent(id)}`);
+      if (!r.ok) return;
+      const { tercero } = await r.json();
+      if (!tercero) return;
+      setTipo(tercero.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
+      setNombre(tercero.nombre ?? "");
+      if (tercero.email) setEmail(tercero.email);
+      if (tercero.telefono) setTelefono(tercero.telefono);
+      if (tercero.direccion) setDireccion(tercero.direccion);
+      if (tercero.municipio) setMunicipio(tercero.municipio);
+      if (tercero.departamento) setDepartamento(tercero.departamento);
+      setTerceroCargado(true);
+    } catch {
+      /* silencioso — es una comodidad, no bloquea el radicado */
+    }
+  }
+
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevos: File[] = [];
-    for (const f of Array.from(lista)) {
-      if (!extensionPermitida(f.name)) {
-        setError(mensajeTipoNoPermitido(f.name));
-        continue;
-      }
-      nuevos.push(f);
-    }
-    setArchivos((prev) => [...prev, ...nuevos]);
+    const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
+    if (err) setError(err);
+    if (validos.length) setArchivos((prev) => [...prev, ...validos]);
   }
 
   async function radicar() {
@@ -114,7 +134,8 @@ export function VentanillaRadicacionForm({
           terceroEmail: email.trim() || null,
           terceroTelefono: telefono.trim() || null,
           terceroDireccion: direccion.trim() || null,
-          terceroMunicipio: municipio || null,
+          terceroMunicipio: municipio.trim() || null,
+          terceroDepartamento: departamento.trim() || null,
           dependenciaDestinoId: dependenciaId || null,
           tipoPqrsd: tipoPqrsd || null,
           serieId: serieId || null,
@@ -157,19 +178,33 @@ export function VentanillaRadicacionForm({
               {TIPOS_ID.map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
           </Field>
-          <Field label="Identificación" help="En blanco si el remitente es anónimo.">
-            <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} placeholder="Cédula o NIT" />
+          <Field label="Identificación" help="En blanco si el remitente es anónimo. Al salir del campo se cargan los datos si ya radicó antes.">
+            <input
+              value={identificacion}
+              onChange={(e) => { setIdentificacion(e.target.value); setTerceroCargado(false); }}
+              onBlur={buscarTercero}
+              className={inputCls}
+              placeholder="Cédula o NIT"
+            />
           </Field>
           <div className="sm:col-span-2">
-            <Field label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} required help="Tal como debe quedar en la constancia y en la bitácora.">
+            <Field
+              label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"}
+              required
+              help={terceroCargado ? "Datos cargados de un radicado anterior — puede corregirlos." : "Tal como debe quedar en la constancia y en la bitácora."}
+            >
               <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
             </Field>
           </div>
           <Field label="Municipio">
-            <select value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={inputCls}>
-              <option value="">— Sin especificar —</option>
-              {municipios.map((m) => (<option key={m} value={m}>{m}</option>))}
-            </select>
+            <MunicipioSelectorTercero
+              municipios={municipios}
+              municipio={municipio}
+              departamento={departamento}
+              onMunicipio={setMunicipio}
+              onDepartamento={setDepartamento}
+              inputCls={inputCls}
+            />
           </Field>
           <Field label="Correo electrónico">
             <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
@@ -259,7 +294,8 @@ export function VentanillaRadicacionForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
+        <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
+        <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
 import type { MedioComunicacion, TipoPQRSD, TipoSolicitante } from "@prisma/client";
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
       }).filter((d) => d.path)
     : [];
 
+  const errLote = validarLoteDocumentosSGDEA(documentos);
+  if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
+
   try {
     const comunicacion = await radicarRecibida({
       asunto,
@@ -67,6 +71,7 @@ export async function POST(req: NextRequest) {
         telefono: body.terceroTelefono ? String(body.terceroTelefono).trim() : null,
         direccion: body.terceroDireccion ? String(body.terceroDireccion).trim() : null,
         municipio: body.terceroMunicipio ? String(body.terceroMunicipio).trim() : null,
+        departamento: body.terceroDepartamento ? String(body.terceroDepartamento).trim() : null,
       },
       dependenciaDestinoId: body.dependenciaDestinoId ? String(body.dependenciaDestinoId) : null,
       serieId: body.serieId ? String(body.serieId) : null,

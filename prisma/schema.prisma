@@ -539,6 +539,9 @@ model Solicitante {
   telefono          String?
   direccion         String?
   municipio         String // obligatorio — incluye "Fuera de la jurisdicción" como opción válida explícita, ver src/lib/municipios.ts
+  // Departamento — solo se diligencia cuando el municipio está fuera de la
+  // jurisdicción de la CDMB y se escribe a mano (para caracterizar el origen).
+  departamento      String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -902,6 +905,7 @@ enum AccionAuditoriaDoc {
   APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
   RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
   DESPACHA // la ventanilla de salida registra el envío efectivo (correo/físico) del oficio de salida — cierra el ciclo
+  DEVUELVE_REPARTO // el funcionario al que se le repartió una recibida la devuelve a la ventanilla con motivo (no le corresponde)
   PRESTA // presta un expediente documental a un funcionario
   DEVUELVE // registra la devolución de un expediente prestado
   REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
@@ -1168,6 +1172,7 @@ model Comunicacion {
   terceroTelefono           String?
   terceroDireccion          String?
   terceroMunicipio          String?
+  terceroDepartamento       String? // solo si el municipio está fuera de la jurisdicción y se escribió a mano
 
   dependenciaOrigenId    String? // quién envía (ENVIADA/INTERNA) — la dependencia que redacta
   dependenciaDestinoId   String? // a qué dependencia de la CDMB va dirigida (RECIBIDA) o destino (INTERNA)
@@ -1331,6 +1336,12 @@ model Distribucion {
   // la vez (un lote), y un reparto posterior desactiva el anterior salvo que se pida
   // "sumar". `activa` = sigue siendo un destinatario actual de la comunicación.
   activa          Boolean   @default(true)
+  // Devolución del reparto a la ventanilla: el funcionario al que se le repartió
+  // puede devolverlo indicando por qué no le corresponde — salvo que falten 3 días
+  // hábiles o menos para el vencimiento del término de ley. Al devolver, la
+  // distribución deja de estar activa y la comunicación vuelve a EN_REPARTO.
+  devueltaEn      DateTime?
+  motivoDevolucion String?  @db.Text
   createdAt       DateTime  @default(now())
 
   comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)

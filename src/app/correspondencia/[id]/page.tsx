@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, PenTool, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users, Undo2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -12,13 +12,14 @@ import {
   puedeRadicar,
   puedeFirmar,
   puedeResponderComoAsignado,
+  puedeDevolverReparto,
 } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { listarPlantillas } from "@/lib/plantillas";
 import { listarTerminos } from "@/lib/vocabulario";
-import { ETIQUETA_TIPO_PQRSD, estadoVencimiento } from "@/lib/pqrsd";
+import { ETIQUETA_TIPO_PQRSD, estadoVencimiento, devolucionDeReparoPermitida } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { Field, SectionHelp } from "@/components/Field";
@@ -47,6 +48,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   ARCHIVA: "Archivo", ANULA: "Anulación", SUSPENDE: "Suspensión de término", REACTIVA: "Reactivación de término",
   TRANSFIERE: "Transferencia a archivo central", DISPONE: "Disposición final",
   RESPONDE: "Respuesta del funcionario", DESPACHA: "Despacho efectivo", FLUJO: "Flujo de trabajo",
+  DEVUELVE_REPARTO: "Devolución del reparto",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
 // Estados que cierran el ciclo de esta comunicación — distribuirla de nuevo después de esto pisaría el
@@ -68,6 +70,7 @@ function proximoPaso(c: {
   respuestas: { despachadaEn: Date | string | null }[];
   respondeAId: string | null;
   despachadaEn: Date | string | null;
+  devuelta: boolean;
 }, permisos: { puedeDistribuir: boolean; puedeResponder: boolean; puedeRadicar: boolean; puedeDespachar: boolean }): ProximoPaso {
   if (c.tipo === "INTERNA") {
     return { texto: "El memorando ya quedó firmado y radicado — es un documento definitivo. Si lo distribuyó, es solo para seguimiento interno.", cerrado: true };
@@ -100,9 +103,10 @@ function proximoPaso(c: {
     return { texto: "El trámite está detenido (vea el motivo más abajo). Se reanuda cuando se resuelva lo que lo detuvo; si tenía término de ley, se reanuda por lo que faltaba." };
   }
   if (c.estado === "RADICADA" || c.estado === "EN_REPARTO") {
+    const devueltaTxt = c.devuelta ? "Fue devuelta a la ventanilla (vea el motivo en «Distribución / reparto»). " : "";
     return permisos.puedeDistribuir
-      ? { texto: "Todavía no se ha repartido. Siguiente paso: asígnela a la dependencia o funcionario(s) que deben atenderla.", accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
-      : { texto: "Todavía no se ha repartido. El administrador o el rol de archivo la asignan a quien debe atenderla." };
+      ? { texto: `${devueltaTxt}${c.devuelta ? "Repártala de nuevo" : "Todavía no se ha repartido. Siguiente paso: asígnela"} a la dependencia o funcionario(s) que deben atenderla.`, accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
+      : { texto: `${devueltaTxt}La ventanilla ${c.devuelta ? "debe repartirla de nuevo" : "aún no la ha repartido"}.` };
   }
   // ASIGNADA o EN_TRAMITE: ya está repartida, falta el borrador de respuesta.
   if (!c.respuestaTexto) {
@@ -197,6 +201,13 @@ export default async function CorrespondenciaDetallePage({
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
+  const calendario = await getCalendarioLaboral();
+  const puedeDevolverUsuario =
+    c.tipo === "RECIBIDA" &&
+    !["RESPONDIDA", "ARCHIVADA", "ANULADA"].includes(c.estado) &&
+    puedeDevolverReparto(permisos, session.userId, distribucionesVigentes);
+  const devolucionATiempo = devolucionDeReparoPermitida(c.fechaVencimiento, calendario);
+  const devolucionesPrevias = c.distribuciones.filter((d) => d.devueltaEn);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
   // La tarjeta de respuesta NO se muestra apenas se radica (antes de repartir): le
@@ -233,13 +244,16 @@ export default async function CorrespondenciaDetallePage({
   }));
 
   const tieneTercero = c.tipo !== "INTERNA";
-  const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, await getCalendarioLaboral());
-  const siguientePaso = proximoPaso(c, {
-    puedeDistribuir: puedeDistribuirUsuario,
-    puedeResponder,
-    puedeRadicar: puedeRadicarUsuario,
-    puedeDespachar: puedeDespacharUsuario,
-  });
+  const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
+  const siguientePaso = proximoPaso(
+    { ...c, devuelta: devolucionesPrevias.length > 0 && distribucionesVigentes.length === 0 },
+    {
+      puedeDistribuir: puedeDistribuirUsuario,
+      puedeResponder,
+      puedeRadicar: puedeRadicarUsuario,
+      puedeDespachar: puedeDespacharUsuario,
+    },
+  );
 
   return (
     <div className="space-y-4">
@@ -450,8 +464,10 @@ export default async function CorrespondenciaDetallePage({
       {(c.tipo === "RECIBIDA" || c.distribuciones.length > 0) && (
         <Tarjeta id="distribucion" titulo="Distribución / reparto">
           <SectionHelp>
-            El reparto lo hace el administrador o el rol de archivo (gestión documental) — decide quién atiende
-            el trámite. Puede asignarse a varias personas a la vez. Los repartos anteriores quedan como historial.
+            El reparto lo hace la ventanilla — decide quién atiende el trámite y puede asignarlo a varias
+            personas a la vez. Quien lo recibe puede devolverlo a la ventanilla con un motivo si no le
+            corresponde (salvo que falten 3 días hábiles o menos para el vencimiento). Los repartos anteriores
+            quedan como historial.
           </SectionHelp>
           {c.distribuciones.length === 0 ? (
             <p className="text-sm text-stone-400">Sin repartir todavía.</p>
@@ -463,11 +479,18 @@ export default async function CorrespondenciaDetallePage({
                     <Users className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
                     {[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}
                     {d.activa && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
+                    {d.devueltaEn && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Devuelta</span>}
                   </p>
                   <p className="text-xs text-stone-500">
                     {fechaHora(d.fechaAsignacion)}{d.asignadoPor ? ` · por ${d.asignadoPor.nombre}` : ""}{d.termino ? ` · término ${d.termino} días` : ""}
                   </p>
                   {d.instrucciones && <p className="mt-1 text-xs text-stone-600">{d.instrucciones}</p>}
+                  {d.devueltaEn && (
+                    <p className="mt-1 flex items-start gap-1 text-xs text-amber-700">
+                      <Undo2 className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
+                      Devuelta a la ventanilla el {fechaHora(d.devueltaEn)}{d.motivoDevolucion ? ` — ${d.motivoDevolucion}` : ""}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -480,6 +503,29 @@ export default async function CorrespondenciaDetallePage({
             <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
               Ya no se puede repartir: quedó {ETIQUETA_ESTADO[c.estado]?.toLowerCase() ?? c.estado.toLowerCase()}.
             </p>
+          )}
+
+          {puedeDevolverUsuario && (
+            <div className="mt-4 border-t border-stone-100 pt-4">
+              {devolucionATiempo ? (
+                <form action={`/api/correspondencia/${id}/devolver-reparto`} method="post" className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-[260px] flex-1">
+                    <Field label="Devolver a la ventanilla — motivo" required help="Por qué esta comunicación no le corresponde.">
+                      <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                    </Field>
+                  </div>
+                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-50">
+                    <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                    Devolver a la ventanilla
+                  </button>
+                </form>
+              ) : (
+                <p className="text-xs text-amber-700">
+                  Ya no se puede devolver a la ventanilla: faltan 3 días hábiles o menos para el vencimiento del
+                  término de ley. Atiéndala o coordínelo directamente con la ventanilla.
+                </p>
+              )}
+            </div>
           )}
         </Tarjeta>
       )}

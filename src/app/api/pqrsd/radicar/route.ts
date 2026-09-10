@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomInt } from "node:crypto";
 import type { TipoPQRSD, TipoSolicitante } from "@prisma/client";
 import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { validarLoteDocumentosSGDEA, MAX_ARCHIVOS_LOTE } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { verificarLimiteEnvio, llenadoDemasiadoRapido } from "@/lib/anti-abuso";
 import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
@@ -91,8 +92,11 @@ export async function POST(req: NextRequest) {
           };
         })
         .filter((d) => d.path)
-        .slice(0, 6)
+        .slice(0, MAX_ARCHIVOS_LOTE)
     : [];
+
+  const errLote = validarLoteDocumentosSGDEA(documentos);
+  if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
 
   try {
     const comunicacion = await radicarRecibida({
@@ -119,6 +123,7 @@ export async function POST(req: NextRequest) {
             email: email || null,
             telefono: telefono || null,
             municipio,
+            departamento: body.terceroDepartamento ? String(body.terceroDepartamento).trim() : null,
           },
       tipoPqrsd,
       documentos,

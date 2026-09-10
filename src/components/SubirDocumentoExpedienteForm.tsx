@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X, Loader2 } from "lucide-react";
 import { subirArchivoExpediente, sha256Hex } from "@/lib/uploads-client";
-import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 
 export function SubirDocumentoExpedienteForm({
   expedienteId,
@@ -27,15 +28,9 @@ export function SubirDocumentoExpedienteForm({
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevos: File[] = [];
-    for (const f of Array.from(lista)) {
-      if (!extensionPermitida(f.name)) {
-        setError(mensajeTipoNoPermitido(f.name));
-        continue;
-      }
-      nuevos.push(f);
-    }
-    setArchivos((prev) => [...prev, ...nuevos]);
+    const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
+    if (err) setError(err);
+    if (validos.length) setArchivos((prev) => [...prev, ...validos]);
   }
 
   async function subir() {
@@ -82,6 +77,7 @@ export function SubirDocumentoExpedienteForm({
   return (
     <div className="space-y-3">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <p className="text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
       <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
         <Upload className="h-4 w-4" aria-hidden />
         Agregar archivos

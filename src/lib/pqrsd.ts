@@ -53,6 +53,23 @@ export function calcularVencimientoTrasReactivar(
 
 export type EstadoVencimiento = { texto: string; clase: string };
 
+/**
+ * ¿Se puede devolver a la ventanilla el reparto de esta recibida? Sí mientras no
+ * tenga término de ley, o mientras falten MÁS de `minDiasHabiles` (3 por defecto)
+ * días hábiles para el vencimiento — cerca del plazo, quien la tenga debe
+ * atenderla, no rebotarla.
+ */
+export function devolucionDeReparoPermitida(
+  fechaVencimiento: Date | null,
+  cal?: CalendarioLaboral,
+  ahora: Date = new Date(),
+  minDiasHabiles = 3
+): boolean {
+  if (!fechaVencimiento) return true;
+  if (fechaVencimiento.getTime() <= ahora.getTime()) return false;
+  return diasHabilesEntre(ahora, fechaVencimiento, cal) > minDiasHabiles;
+}
+
 /** Etiqueta + color para bandeja/detalle según días hábiles restantes hasta el vencimiento. */
 export function estadoVencimiento(
   fechaVencimiento: Date | null,

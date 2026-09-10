@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
-import { ACCEPT_DOCUMENTOS, extensionPermitida, mensajeTipoNoPermitido } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
@@ -47,15 +48,9 @@ export function MemorandoForm({
 
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevos: File[] = [];
-    for (const f of Array.from(lista)) {
-      if (!extensionPermitida(f.name)) {
-        setError(mensajeTipoNoPermitido(f.name));
-        continue;
-      }
-      nuevos.push(f);
-    }
-    setArchivos((prev) => [...prev, ...nuevos]);
+    const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
+    if (err) setError(err);
+    if (validos.length) setArchivos((prev) => [...prev, ...validos]);
   }
 
   async function radicarYFirmar() {
@@ -172,7 +167,8 @@ export function MemorandoForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
+        <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
+        <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos
