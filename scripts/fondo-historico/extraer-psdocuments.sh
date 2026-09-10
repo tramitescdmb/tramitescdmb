@@ -64,7 +64,8 @@ whenever sqlerror exit sql.sqlcode'
 
 runsql() { printf '%s\n%s\n' "$HDR" "$1" | "$SQLPLUS" -s -L "$CONN"; }
 
-CURL_COMUN="-sS --http1.1 -4 --connect-timeout 20 --max-time 120"
+# curl 7.19 (OL6) no conoce --http1.1 (y ya usa HTTP/1.1 por defecto).
+CURL_COMUN="-sS --connect-timeout 20 --max-time 180"
 
 ingest() { # $1 = cuerpo JSON corto
   printf '%s' "$1" > "$TMP/b.json"
