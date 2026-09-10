@@ -47,6 +47,19 @@ function limpiarControl(s: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  try {
+    return await manejar(req);
+  } catch (e) {
+    // Nunca dejar que la función responda vacío: el extractor de la red CDMB
+    // corre con un curl viejo que no distingue un 500 sin cuerpo de un fallo de red.
+    return NextResponse.json(
+      { error: "Error interno.", detalle: e instanceof Error ? `${e.message}` : String(e) },
+      { status: 500 },
+    );
+  }
+}
+
+async function manejar(req: NextRequest) {
   const token = process.env.FONDO_INGEST_TOKEN?.trim();
   if (!fondoHistoricoConfigurado() || req.headers.get("authorization") !== `Bearer ${token}`) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
@@ -56,14 +69,9 @@ export async function POST(req: NextRequest) {
   let cuerpo: CuerpoIngesta;
 
   if (syncHeader) {
-    // Modo "dump" de sqlplus.
+    // Modo "dump" de sqlplus. El nombre de serie viaja en claro (es ASCII).
     const serieId = Number(req.headers.get("x-serie")) || null;
-    let serieNombre = "";
-    try {
-      serieNombre = Buffer.from(req.headers.get("x-serie-nombre") ?? "", "base64").toString("utf8");
-    } catch {
-      /* nombre opcional */
-    }
+    const serieNombre = (req.headers.get("x-serie-nombre") ?? "").trim();
     cuerpo = {
       fondo: req.headers.get("x-fondo") ?? "",
       sincronizacionId: syncHeader,

@@ -64,17 +64,18 @@ whenever sqlerror exit sql.sqlcode'
 
 runsql() { printf '%s\n%s\n' "$HDR" "$1" | "$SQLPLUS" -s -L "$CONN"; }
 
-b64() { printf '%s' "$1" | (base64 -w0 2>/dev/null || base64 | tr -d '\n'); }
+CURL_COMUN="-sS --http1.1 -4 --connect-timeout 20 --max-time 120"
 
 ingest() { # $1 = cuerpo JSON corto
   printf '%s' "$1" > "$TMP/b.json"
-  curl -sS -X POST "$FONDO_INGEST_URL" -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
+  curl $CURL_COMUN -X POST "$FONDO_INGEST_URL" -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
     -H "Content-Type: application/json" --data-binary "@$TMP/b.json"
 }
 ingest_dump() { # $1 archivo de marcas, $2 sync, $3 serieId, $4 serieNombre
-  curl -sS -X POST "$FONDO_INGEST_URL" -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
-    -H "Content-Type: text/plain" -H "X-Fondo: $FONDO" -H "X-Sync: $2" \
-    -H "X-Serie: $3" -H "X-Serie-Nombre: $(b64 "$4")" --data-binary "@$1"
+  curl $CURL_COMUN -w '\n@@HTTP %{http_code}@@\n' -X POST "$FONDO_INGEST_URL" \
+    -H "Authorization: Bearer $FONDO_INGEST_TOKEN" -H "Content-Type: text/plain" \
+    -H "Expect:" -H "X-Fondo: $FONDO" -H "X-Sync: $2" -H "X-Serie: $3" \
+    -H "X-Serie-Nombre: $4" --data-binary "@$1"
 }
 json_val() { sed -n 's/.*"'"$1"'":\s*"\{0,1\}\([^",}]*\).*/\1/p'; }
 
@@ -173,9 +174,13 @@ while IFS="$(printf '\t')" read -r SID SNOM; do
       break
     fi
     RESP="$(ingest_dump "$TMP/chunk" "$SYNC" "$SID" "$SNOM")"
+    HTTP="$(printf '%s' "$RESP" | sed -n 's/.*@@HTTP \([0-9]*\)@@.*/\1/p')"
+    RESP="$(printf '%s' "$RESP" | sed 's/@@HTTP [0-9]*@@//')"
     if ! echo "$RESP" | grep -q '"recibidas"'; then
-      echo; echo "== Fallo la ingesta =="; echo "respuesta: $RESP"
+      echo; echo "== Fallo la ingesta (HTTP ${HTTP:-?}) =="
+      echo "respuesta: ${RESP:-<vacía>}"
       cp "$TMP/chunk" /root/fondo-chunk-fallido.txt 2>/dev/null || cp "$TMP/chunk" ./fondo-chunk-fallido.txt
+      echo "primeras líneas del bloque enviado:"; head -12 "$TMP/chunk"
       exit 1
     fi
     S=$(echo "$RESP" | json_val saltadas); SALTADAS=$((SALTADAS + ${S:-0}))
