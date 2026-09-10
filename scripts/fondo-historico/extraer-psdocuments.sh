@@ -45,8 +45,20 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-SET_OPTS='set pagesize 0 feedback off heading off verify off echo off newpage none
-set linesize 32767 long 2000000 longchunksize 2000000 trimspool on trimout on tab off
+# SQL*Plus solo acepta UNA opción por `set` — una por línea, obligatorio.
+SET_OPTS='set pagesize 0
+set feedback off
+set heading off
+set verify off
+set echo off
+set newpage 0
+set linesize 32767
+set long 20000000
+set longchunksize 20000000
+set trimspool on
+set trimout on
+set tab off
+set wrap on
 whenever sqlerror exit sql.sqlcode'
 
 # Ejecuta el SQL de $1 y deja la salida en stdout (sin adornos).
