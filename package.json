@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.48.1",
     "@xyflow/react": "^12.11.6",
     "bcryptjs": "^2.4.3",
+    "bwip-js": "^4.11.4",
     "jose": "^5.9.6",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.33.0",

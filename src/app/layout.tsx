@@ -31,7 +31,8 @@ export default async function RootLayout({
   // usa es un ciudadano, no un funcionario. El pathname llega por header desde
   // el middleware.
   const pathname = (await headers()).get("x-pathname") ?? "";
-  const publico = pathname === "/pqrsd" || pathname.startsWith("/pqrsd/");
+  const publico =
+    pathname === "/pqrsd" || pathname.startsWith("/pqrsd/") || pathname.startsWith("/verificar/");
 
   return (
     <html lang="es" className={plexSans.variable}>

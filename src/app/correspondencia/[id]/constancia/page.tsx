@@ -7,6 +7,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permi
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { formatearFechaHoraLarga as fechaHora } from "@/lib/fecha";
+import { codigoBarrasRadicado } from "@/lib/rotulo";
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
@@ -67,6 +68,11 @@ export default async function ConstanciaPage({ params }: { params: Promise<{ id:
           <p className="text-xs uppercase tracking-wide text-stone-500">Número de radicado</p>
           <p className="text-2xl font-bold tracking-tight text-cdmb-800">{c.radicado}</p>
           <p className="text-xs text-stone-500">Radicado el {fechaHora(c.fechaRadicacion)}</p>
+          <div
+            className="mx-auto mt-3 w-64 max-w-full [&_svg]:h-14 [&_svg]:w-full"
+            aria-label={`Código de barras del radicado ${c.radicado}`}
+            dangerouslySetInnerHTML={{ __html: codigoBarrasRadicado(c.radicado) }}
+          />
         </div>
 
         <div className="divide-y divide-stone-100">
