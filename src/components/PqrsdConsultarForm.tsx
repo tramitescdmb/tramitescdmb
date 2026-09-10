@@ -36,7 +36,7 @@ export function PqrsdConsultarForm() {
     setError(null);
     setResultado(null);
     if (!radicado.trim() || !identificacion.trim()) {
-      return setError("Indique el radicado y la identificación.");
+      return setError("Indique el radicado y la identificación o el código de seguimiento.");
     }
     setBuscando(true);
     try {
@@ -68,7 +68,7 @@ export function PqrsdConsultarForm() {
           <Field label="Radicado" help="El número que le entregamos al radicar, ej. CDMB-R-2026-000123.">
             <input value={radicado} onChange={(e) => setRadicado(e.target.value)} className={inputCls} placeholder="CDMB-R-2026-000123" />
           </Field>
-          <Field label="Identificación" help="El mismo documento o NIT con el que radicó la solicitud.">
+          <Field label="Identificación o código de seguimiento" help="El documento o NIT con el que radicó; si la solicitud fue anónima, el código de seguimiento (ej. ABCD-2345).">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
           </Field>
         </div>

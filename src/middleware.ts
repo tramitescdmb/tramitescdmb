@@ -9,13 +9,19 @@ const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // La ruta actual, disponible para los layouts de servidor vía headers() —
+  // el layout raíz la usa para servir la ventanilla pública sin la navegación interna.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+  const next = () => NextResponse.next({ request: { headers: requestHeaders } });
+
   if (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   ) {
-    return NextResponse.next();
+    return next();
   }
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -30,7 +36,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Renueva la ventana de inactividad (MoReq 6.21/6.34) en cada petición autenticada.
-  const res = NextResponse.next();
+  const res = next();
   res.cookies.set(SESSION_COOKIE_NAME, resultado.nuevoToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

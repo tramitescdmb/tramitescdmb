@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomInt } from "node:crypto";
 import type { TipoPQRSD, TipoSolicitante } from "@prisma/client";
 import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -6,6 +7,16 @@ import { verificarLimiteEnvio, llenadoDemasiadoRapido } from "@/lib/anti-abuso";
 import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
 
 const TIPOS_PQRSD = Object.keys(TERMINO_DIAS_HABILES) as TipoPQRSD[];
+
+// Código de seguimiento para radicación anónima: reemplaza a la identificación
+// como secreto para consultar el estado (no hay datos del ciudadano). Alfabeto
+// sin caracteres ambiguos (0/O, 1/I/L).
+const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function generarCodigoSeguimiento() {
+  let c = "";
+  for (let i = 0; i < 8; i++) c += ALFABETO_CODIGO[randomInt(ALFABETO_CODIGO.length)];
+  return `${c.slice(0, 4)}-${c.slice(4)}`;
+}
 
 /**
  * Ventanilla pública de PQRSD (Fase 3, sin autenticación) — genera un radicado
@@ -36,6 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Por favor intente de nuevo." }, { status: 400 });
   }
 
+  const anonima = body.anonima === true;
   const tipoPqrsd = TIPOS_PQRSD.includes(body.tipoPqrsd as TipoPQRSD) ? (body.tipoPqrsd as TipoPQRSD) : null;
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
@@ -51,11 +63,19 @@ export async function POST(req: NextRequest) {
   }
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
   if (!contenido) return NextResponse.json({ error: "Describa su solicitud." }, { status: 400 });
-  if (!nombre) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
-  if (!identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
-  if (!municipio) return NextResponse.json({ error: "El municipio es obligatorio." }, { status: 400 });
-  if (!email && !telefono) {
-    return NextResponse.json({ error: "Indique al menos un medio de contacto (correo o teléfono) para poder responderle." }, { status: 400 });
+
+  // Radicación anónima (art. 38 Ley 190/1995; arts. 67-70 Ley 1474/2011): no se
+  // exige identificación ni contacto. El código de seguimiento pasa a ocupar el
+  // lugar de la identificación como secreto para la consulta pública de estado.
+  const codigoSeguimiento = anonima ? generarCodigoSeguimiento() : null;
+
+  if (!anonima) {
+    if (!nombre) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
+    if (!identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
+    if (!municipio) return NextResponse.json({ error: "El municipio es obligatorio." }, { status: 400 });
+    if (!email && !telefono) {
+      return NextResponse.json({ error: "Indique al menos un medio de contacto (correo o teléfono) para poder responderle." }, { status: 400 });
+    }
   }
 
   const documentos: EntradaDocumento[] = Array.isArray(body.documentos)
@@ -81,15 +101,25 @@ export async function POST(req: NextRequest) {
       folios: 1,
       medio: "WEB",
       origen: "WEB_PQRSD",
-      tercero: {
-        tipo: terceroTipo,
-        tipoIdentificacion: body.terceroTipoIdentificacion ? String(body.terceroTipoIdentificacion).trim() : null,
-        identificacion,
-        nombre,
-        email: email || null,
-        telefono: telefono || null,
-        municipio,
-      },
+      tercero: anonima
+        ? {
+            tipo: "NATURAL" as TipoSolicitante,
+            tipoIdentificacion: null,
+            identificacion: codigoSeguimiento, // secreto de consulta; no crea registro de Tercero (sin municipio)
+            nombre: "Anónimo",
+            email: null,
+            telefono: null,
+            municipio: null,
+          }
+        : {
+            tipo: terceroTipo,
+            tipoIdentificacion: body.terceroTipoIdentificacion ? String(body.terceroTipoIdentificacion).trim() : null,
+            identificacion,
+            nombre,
+            email: email || null,
+            telefono: telefono || null,
+            municipio,
+          },
       tipoPqrsd,
       documentos,
       radicadoPorId: null,
@@ -102,10 +132,14 @@ export async function POST(req: NextRequest) {
       usuarioId: null,
       ip,
       userAgent,
-      detalle: `Radicó ${comunicacion.radicado} (PQRSD pública, ${tipoPqrsd}) — ${asunto.slice(0, 200)}`,
+      detalle: `Radicó ${comunicacion.radicado} (PQRSD pública${anonima ? " anónima" : ""}, ${tipoPqrsd}) — ${asunto.slice(0, 200)}`,
     });
 
-    return NextResponse.json({ radicado: comunicacion.radicado, fechaVencimiento: comunicacion.fechaVencimiento });
+    return NextResponse.json({
+      radicado: comunicacion.radicado,
+      fechaVencimiento: comunicacion.fechaVencimiento,
+      ...(codigoSeguimiento ? { codigoSeguimiento } : {}),
+    });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo radicar la solicitud." }, { status: 500 });
   }

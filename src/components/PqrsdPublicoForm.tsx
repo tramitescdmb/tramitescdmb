@@ -23,6 +23,7 @@ const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI"];
 
 export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [tsCarga] = useState(() => Date.now());
+  const [anonima, setAnonima] = useState(false);
   const [tipoPqrsd, setTipoPqrsd] = useState("");
   const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const [tipoId, setTipoId] = useState("CC");
@@ -39,7 +40,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<{ radicado: string; fechaVencimiento: string | null } | null>(null);
+  const [resultado, setResultado] = useState<{ radicado: string; fechaVencimiento: string | null; codigoSeguimiento?: string | null } | null>(null);
 
   const ayudaTipo = TIPOS_PQRSD.find((t) => t.value === tipoPqrsd)?.ayuda;
 
@@ -61,10 +62,12 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
     if (!tipoPqrsd) return setError("Seleccione el tipo de solicitud.");
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
     if (!contenido.trim()) return setError("Describa su solicitud.");
-    if (!nombre.trim()) return setError("El nombre o razón social es obligatorio.");
-    if (!identificacion.trim()) return setError("La identificación es obligatoria.");
-    if (!municipio) return setError("Seleccione su municipio.");
-    if (!email.trim() && !telefono.trim()) return setError("Indique al menos un medio de contacto (correo o teléfono).");
+    if (!anonima) {
+      if (!nombre.trim()) return setError("El nombre o razón social es obligatorio.");
+      if (!identificacion.trim()) return setError("La identificación es obligatoria.");
+      if (!municipio) return setError("Seleccione su municipio.");
+      if (!email.trim() && !telefono.trim()) return setError("Indique al menos un medio de contacto (correo o teléfono).");
+    }
 
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
@@ -79,13 +82,14 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
           tipoPqrsd,
           asunto: asunto.trim(),
           contenido: contenido.trim(),
+          anonima,
           terceroTipo: tipo,
-          terceroTipoIdentificacion: tipoId,
-          terceroIdentificacion: identificacion.trim(),
-          terceroNombre: nombre.trim(),
-          terceroEmail: email.trim() || null,
-          terceroTelefono: telefono.trim() || null,
-          terceroMunicipio: municipio,
+          terceroTipoIdentificacion: anonima ? null : tipoId,
+          terceroIdentificacion: anonima ? "" : identificacion.trim(),
+          terceroNombre: anonima ? "" : nombre.trim(),
+          terceroEmail: anonima ? null : email.trim() || null,
+          terceroTelefono: anonima ? null : telefono.trim() || null,
+          terceroMunicipio: anonima ? "" : municipio,
           documentos,
           tsCarga,
           sitioWeb,
@@ -94,7 +98,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudo radicar la solicitud.");
       setProgreso({ pct: 100, texto: "Listo." });
-      setResultado({ radicado: data.radicado, fechaVencimiento: data.fechaVencimiento ?? null });
+      setResultado({ radicado: data.radicado, fechaVencimiento: data.fechaVencimiento ?? null, codigoSeguimiento: data.codigoSeguimiento ?? null });
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo radicar la solicitud.");
       setProgreso(null);
@@ -112,8 +116,20 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         <h2 className="mt-3 text-lg font-semibold text-stone-900">Solicitud radicada</h2>
         <p className="mt-1 text-sm text-stone-600">
           Su número de radicado es <span className="font-mono text-base font-semibold text-cdmb-700">{resultado.radicado}</span>.
-          Guárdelo: lo necesitará junto con su identificación para consultar el estado.
+          {resultado.codigoSeguimiento
+            ? " Guárdelo junto con el código de seguimiento."
+            : " Guárdelo: lo necesitará junto con su identificación para consultar el estado."}
         </p>
+        {resultado.codigoSeguimiento && (
+          <p className="mt-2 text-sm text-stone-600">
+            Código de seguimiento:{" "}
+            <span className="font-mono text-base font-semibold text-cdmb-700">{resultado.codigoSeguimiento}</span>
+            <span className="mt-0.5 block text-xs text-red-600">
+              Es lo único con lo que puede consultar el estado de una solicitud anónima. La CDMB no lo
+              conserva y no puede recuperarlo.
+            </span>
+          </p>
+        )}
         {resultado.fechaVencimiento && (
           <p className="mt-1 text-xs text-stone-500">
             Fecha estimada de respuesta: {formatearFechaLarga(resultado.fechaVencimiento)}
@@ -134,6 +150,24 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
     <div className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-4">
+        <input
+          type="checkbox"
+          checked={anonima}
+          onChange={(e) => setAnonima(e.target.checked)}
+          className="mt-0.5 h-4 w-4 flex-none rounded border-stone-300"
+        />
+        <span className="text-sm">
+          <span className="font-medium text-stone-900">Radicar de forma anónima</span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            No se piden sus datos. Recomendado para denuncias. La CDMB tramita la solicitud si aporta pruebas
+            o datos concretos (art. 38 Ley 190 de 1995; arts. 67–70 Ley 1474 de 2011). Recibirá un{" "}
+            <strong>código de seguimiento</strong> — sin él no podrá consultar el estado ni habrá notificación
+            individual del resultado.
+          </span>
+        </span>
+      </label>
+
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Tipo de solicitud</h2>
         <SectionHelp>
@@ -150,10 +184,12 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Sus datos</h2>
-        <SectionHelp>
-          Necesitamos su identificación, municipio y un medio de contacto para poder responderle y para que después
-          pueda consultar el estado de su solicitud con su radicado.
-        </SectionHelp>
+        {!anonima && (
+          <SectionHelp>
+            Necesitamos su identificación, municipio y un medio de contacto para poder responderle y para que después
+            pueda consultar el estado de su solicitud con su radicado.
+          </SectionHelp>
+        )}
         {/* Honeypot: invisible para una persona, pero presente en el DOM para un bot que llena todos los campos. */}
         <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
           <label>
@@ -161,6 +197,13 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
             <input tabIndex={-1} autoComplete="off" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
           </label>
         </div>
+        {anonima ? (
+          <p className="text-sm text-stone-500">
+            Radicación anónima: no se registran sus datos. Al enviar recibirá un radicado y un{" "}
+            <strong>código de seguimiento</strong> para consultar el estado. La respuesta se produce igual, pero
+            sin notificación individual.
+          </p>
+        ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Tipo de persona" help="Natural: usted como persona. Jurídica: una empresa o entidad.">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
@@ -198,8 +241,9 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
               <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
             </Field>
           </div>
+          <p className="mt-2 text-xs text-stone-400 sm:col-span-2 lg:col-span-3">Indique correo o teléfono: es el medio por el que la CDMB le responderá.</p>
         </div>
-        <p className="mt-2 text-xs text-stone-400">Indique correo o teléfono: es el medio por el que la CDMB le responderá.</p>
+        )}
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4">

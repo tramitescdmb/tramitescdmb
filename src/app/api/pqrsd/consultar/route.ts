@@ -18,8 +18,9 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 /**
  * Consulta pública de estado (sin sesión): exige radicado E identificación —
  * el radicado solo no basta, para no permitir enumerar solicitudes ajenas.
- * Ante cualquier desajuste responde el mismo genérico "no encontrado", sin
- * distinguir cuál de los dos datos falló.
+ * En las radicaciones anónimas, el "código de seguimiento" ocupa el lugar de la
+ * identificación. Ante cualquier desajuste responde el mismo genérico "no
+ * encontrado", sin distinguir cuál de los dos datos falló.
  */
 export async function POST(req: NextRequest) {
   const { ip, userAgent } = datosPeticion(req.headers);
@@ -30,11 +31,15 @@ export async function POST(req: NextRequest) {
   const radicado = String(body?.radicado ?? "").trim().toUpperCase();
   const identificacion = String(body?.identificacion ?? "").trim();
   if (!radicado || !identificacion) {
-    return NextResponse.json({ error: "Indique el radicado y la identificación con la que se radicó." }, { status: 400 });
+    return NextResponse.json({ error: "Indique el radicado y la identificación o el código de seguimiento con el que se radicó." }, { status: 400 });
   }
 
   const c = await db.comunicacion.findFirst({
-    where: { radicado, terceroIdentificacion: identificacion },
+    // Segunda variante en mayúsculas: cubre el código de seguimiento de una PQRSD anónima escrito en minúsculas.
+    where: {
+      radicado,
+      OR: [{ terceroIdentificacion: identificacion }, { terceroIdentificacion: identificacion.toUpperCase() }],
+    },
     select: {
       id: true,
       radicado: true,
