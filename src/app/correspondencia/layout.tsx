@@ -97,7 +97,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
           >
             <ExternalLink className="h-3 w-3" aria-hidden />
-            Guión de demostración
+            Manual de demostración
           </a>
         </div>
       </div>
