@@ -23,6 +23,7 @@ import { ACCIONES_BITACORA, ETIQUETA_ACCION_BITACORA } from "@/lib/correspondenc
 import { ETIQUETA_TIPO_PASO, ETIQUETA_ASIGNACION } from "@/lib/flujos";
 import { ETIQUETA_TIPO_CAMPO } from "@/lib/metadatos";
 import { BotonImprimir } from "@/components/BotonImprimir";
+import { AyudaTabs } from "@/components/sgdea/AyudaTabs";
 
 const TONO: Record<string, string> = {
   cdmb: "border-cdmb-200 bg-cdmb-50 text-cdmb-700",
@@ -112,10 +113,11 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
 };
 
 /**
- * Documento de referencia técnica del módulo (MoReq 8.13: ayuda contextual). Reemplaza la guía narrativa
- * anterior ("Paso 1/2/3") por fichas técnicas por función — estado, acción disponible y rol requerido —
- * trazables 1:1 contra los enums de dominio (prisma/schema.prisma) y las funciones de permisos
- * (src/lib/permisos.ts), para que el contenido no pueda quedar desactualizado en silencio frente al código.
+ * Documento de referencia técnica del módulo (MoReq 8.13: ayuda contextual). Fichas técnicas por función —
+ * estado, acción disponible y rol requerido — trazables 1:1 contra los enums de dominio
+ * (prisma/schema.prisma) y las funciones de permisos (src/lib/permisos.ts), para que el contenido no
+ * pueda quedar desactualizado en silencio frente al código. Agrupado en pestañas (AyudaTabs) para lectura;
+ * al imprimir se expande completo.
  */
 export default async function CorrespondenciaAyudaPage() {
   const session = await getSession();
@@ -124,53 +126,8 @@ export default async function CorrespondenciaAyudaPage() {
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
   const esAdministrador = puedeAdministrarArchivo(permisos);
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div className="flex items-center justify-between print:hidden">
-        <Link href="/correspondencia" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          Volver a la bandeja
-        </Link>
-        <BotonImprimir variante="secundario">Imprimir</BotonImprimir>
-      </div>
-
-      <div className="rounded-xl border border-stone-300 bg-white p-6 print:border-0 print:p-0">
-        <div className="flex items-center gap-3 border-b border-stone-200 pb-4">
-          {config.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={config.logoUrl} alt="CDMB" className="h-12 w-auto" />
-          ) : (
-            <span className="text-lg font-bold text-cdmb-700">CDMB</span>
-          )}
-          <div>
-            <p className="text-sm font-semibold text-stone-900">Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga</p>
-            <p className="text-xs text-stone-500">Sistema de Gestión de Documentos Electrónicos de Archivo (SGDEA) — Documento de referencia técnica</p>
-          </div>
-        </div>
-
-        <p className="mt-3 text-xs leading-relaxed text-stone-500">
-          Describe, por tipo de radicado y por función del módulo, el estado técnico, la acción disponible y
-          el rol mínimo requerido. Base normativa: Ley 594/2000, Ley 1437/2011 (CPACA), Ley 1712/2014, Ley
-          527/1999 y Decreto 2364/2012, Acuerdo 060/2001 AGN y Acuerdo Único de la Función Archivística
-          (Acuerdo 001/2024 AGN). No sustituye ese marco normativo, lo referencia.
-        </p>
-
-        <nav aria-label="Índice del documento" className="mt-4 grid grid-cols-1 gap-x-6 gap-y-1 border-t border-stone-100 pt-3 text-xs sm:grid-cols-2 print:hidden">
-          <a href="#organizacion" className="text-cdmb-700 hover:underline">1. Cómo se organiza el módulo</a>
-          <a href="#radicacion" className="text-cdmb-700 hover:underline">2. Radicación unificada</a>
-          <a href="#recibida" className="text-cdmb-700 hover:underline">3. Ciclo de la comunicación recibida</a>
-          <a href="#enviada" className="text-cdmb-700 hover:underline">4. Comunicación enviada, memorando y firma</a>
-          <a href="#expediente" className="text-cdmb-700 hover:underline">5. Expediente documental</a>
-          <a href="#metadatos" className="text-cdmb-700 hover:underline">6. Metadatos de una comunicación</a>
-          <a href="#flujos" className="text-cdmb-700 hover:underline">7. Flujos de trabajo configurables</a>
-          <a href="#roles" className="text-cdmb-700 hover:underline">8. Roles y permisos del módulo</a>
-          {esAdministrador && <a href="#administracion" className="text-cdmb-700 hover:underline">9. Administración — TRD/CCD, dependencias y configuración</a>}
-          {esAdministrador && <a href="#calendario" className="text-cdmb-700 hover:underline">10. Calendario laboral y términos de ley</a>}
-          {esAdministrador && <a href="#disposicion" className="text-cdmb-700 hover:underline">11. Disposición final y conservación</a>}
-          {esAdministrador && <a href="#bitacora" className="text-cdmb-700 hover:underline">12. Trazabilidad — bitácora de auditoría</a>}
-        </nav>
-      </div>
-
+  const grupoCiclo = (
+    <>
       <Seccion n={1} id="organizacion" icono={LayoutDashboard} titulo="Cómo se organiza el módulo">
         <p>
           El SGDEA se recorre desde tres elementos siempre visibles en la parte superior. Todo lo relacionado
@@ -219,7 +176,7 @@ export default async function CorrespondenciaAyudaPage() {
             <td className="px-2.5 py-1.5 font-mono">R</td>
             <td className="px-2.5 py-1.5">Un tercero (petición, PQRSD, oficio externo)</td>
             <td className="px-2.5 py-1.5">No aplica al radicar</td>
-            <td className="px-2.5 py-1.5">Multietapa — ver sección 3</td>
+            <td className="px-2.5 py-1.5">Multietapa — ver «Ciclo de la comunicación recibida»</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><Chip tono="emerald">ENVIADA</Chip></td>
@@ -295,8 +252,8 @@ export default async function CorrespondenciaAyudaPage() {
           </tr>
         </Tabla>
         <p className="text-xs text-stone-500">
-          Sobre una comunicación en trámite se puede aplicar además un <strong>flujo de trabajo</strong>{" "}
-          (sección 7): una ruta de pasos con responsable y término propios, en paralelo al estado del radicado.
+          Sobre una comunicación en trámite se puede aplicar además un <strong>flujo de trabajo</strong>: una
+          ruta de pasos con responsable y término propios, en paralelo al estado del radicado.
         </p>
       </Seccion>
 
@@ -328,7 +285,11 @@ export default async function CorrespondenciaAyudaPage() {
           documento firmado conserva su propio hash SHA-256 y su registro en la bitácora.
         </p>
       </Seccion>
+    </>
+  );
 
+  const grupoExpedientes = (
+    <>
       <Seccion n={5} id="expediente" icono={FolderOpen} titulo="Expediente documental">
         <p>
           Unidad documental que agrupa varios documentos y/o comunicaciones de un mismo asunto o
@@ -415,7 +376,11 @@ export default async function CorrespondenciaAyudaPage() {
           valores ya capturados.
         </p>
       </Seccion>
+    </>
+  );
 
+  const grupoFlujos = (
+    <>
       <Seccion n={7} id="flujos" icono={Workflow} titulo="Flujos de trabajo configurables">
         <p>
           Un flujo define los <strong>pasos</strong> por los que pasa una comunicación, quién responde por
@@ -512,124 +477,164 @@ export default async function CorrespondenciaAyudaPage() {
           en la ficha de cada persona.
         </p>
       </Seccion>
+    </>
+  );
 
-      {esAdministrador && (
-        <Seccion n={9} id="administracion" icono={Settings2} titulo="Administración — TRD/CCD, dependencias y configuración" admin>
-          <ul className="list-disc space-y-1.5 pl-5">
-            <li>
-              <strong>Dependencias</strong>: organigrama jerárquico (código, nombre, dependencia padre).
-              Desactivar una no borra su historial de comunicaciones ni expedientes, solo deja de estar
-              disponible para nuevas asignaciones. Se administra en{" "}
-              <Link href="/correspondencia/admin" className="text-cdmb-700 underline hover:no-underline">Administración</Link>.
-            </li>
-            <li>
-              <strong>TRD/CCD</strong>: cada serie y subserie define clasificación, retención (gestión y
-              central) y disposición final. Admite <strong>versión</strong> con vigencia (desde/hasta), para
-              tener TRD anterior y nueva a la vez. Se carga de a una desde el formulario, o completa por
-              CSV/XML — reimportar un archivo con el mismo código actualiza la serie existente en vez de
-              duplicarla.
-            </li>
-            <li>
-              <strong>Flujos de trabajo</strong>: ver sección 7. Se administran en{" "}
-              <Link href="/correspondencia/admin/flujos" className="text-cdmb-700 underline hover:no-underline">Configuración → Flujos de trabajo</Link>.
-            </li>
-            <li>
-              <strong>Campos de metadato</strong>: crear, editar (nombre, ayuda, opciones, obligatoriedad,
-              ámbito, serie, valor por defecto), activar/desactivar y eliminar los campos adicionales de la
-              sección 6. Desactivar o borrar no toca los valores ya capturados.
-            </li>
-            <li>
-              <strong>Vocabulario controlado</strong>: la lista cerrada de palabras clave de la entidad. Se
-              exporta a CSV y XML.
-            </li>
-            <li>
-              <strong>Calendario laboral</strong>: jornada de la Corporación y días no laborados — ver
-              sección 10.
-            </li>
-            <li>
-              <strong>Vigencia del rol</strong>: al asignar un rol de correspondencia se puede fijar una
-              fecha de vencimiento; al vencer, el acceso se retira sin necesidad de una acción manual
-              posterior.
-            </li>
-            <li>
-              <strong>Intercambio XML</strong> (MoReq 3.27): además de la TRD, se exportan con esquema propio
-              el organigrama de dependencias, el vocabulario controlado, el índice electrónico de cada
-              expediente y la bitácora de auditoría.
-            </li>
-          </ul>
-        </Seccion>
-      )}
+  const grupoAdmin = (
+    <>
+      <Seccion n={9} id="administracion" icono={Settings2} titulo="Administración — TRD/CCD, dependencias y configuración" admin>
+        <ul className="list-disc space-y-1.5 pl-5">
+          <li>
+            <strong>Dependencias</strong>: organigrama jerárquico (código, nombre, dependencia padre).
+            Desactivar una no borra su historial de comunicaciones ni expedientes, solo deja de estar
+            disponible para nuevas asignaciones. Se administra en{" "}
+            <Link href="/correspondencia/admin" className="text-cdmb-700 underline hover:no-underline">Administración</Link>.
+          </li>
+          <li>
+            <strong>TRD/CCD</strong>: cada serie y subserie define clasificación, retención (gestión y
+            central) y disposición final. Admite <strong>versión</strong> con vigencia (desde/hasta), para
+            tener TRD anterior y nueva a la vez. Se carga de a una desde el formulario, o completa por
+            CSV/XML — reimportar un archivo con el mismo código actualiza la serie existente en vez de
+            duplicarla.
+          </li>
+          <li>
+            <strong>Flujos de trabajo</strong>: ver la pestaña «Flujos y roles». Se administran en{" "}
+            <Link href="/correspondencia/admin/flujos" className="text-cdmb-700 underline hover:no-underline">Configuración → Flujos de trabajo</Link>.
+          </li>
+          <li>
+            <strong>Campos de metadato</strong>: crear, editar (nombre, ayuda, opciones, obligatoriedad,
+            ámbito, serie, valor por defecto), activar/desactivar y eliminar los campos adicionales. Desactivar
+            o borrar no toca los valores ya capturados.
+          </li>
+          <li>
+            <strong>Vocabulario controlado</strong>: la lista cerrada de palabras clave de la entidad. Se
+            exporta a CSV y XML.
+          </li>
+          <li>
+            <strong>Calendario laboral</strong>: jornada de la Corporación y días no laborados — ver la
+            sección siguiente.
+          </li>
+          <li>
+            <strong>Vigencia del rol</strong>: al asignar un rol de correspondencia se puede fijar una
+            fecha de vencimiento; al vencer, el acceso se retira sin necesidad de una acción manual
+            posterior.
+          </li>
+          <li>
+            <strong>Intercambio XML</strong> (MoReq 3.27): además de la TRD, se exportan con esquema propio
+            el organigrama de dependencias, el vocabulario controlado, el índice electrónico de cada
+            expediente y la bitácora de auditoría.
+          </li>
+        </ul>
+      </Seccion>
 
-      {esAdministrador && (
-        <Seccion n={10} id="calendario" icono={CalendarDays} titulo="Calendario laboral y términos de ley" admin>
-          <p>
-            En <span className="font-mono text-xs">Configuración → Calendario laboral</span> se define la{" "}
-            <strong>jornada</strong> de la Corporación: qué días de la semana cuentan como hábiles y el
-            horario — <strong>continuo</strong> (un solo bloque) o <strong>partido</strong> (mañana y tarde,
-            p. ej. 8–12 y 2–6). De ahí sale el número de horas hábiles por día.
-          </p>
-          <p>
-            Los <strong>festivos de ley de Colombia</strong> (Ley 51/1983) se descuentan solos. Aparte se
-            registran los <strong>días no laborados</strong> propios de la entidad — compensados, puentes
-            internos, cierres — con motivo. Todo esto alimenta el cálculo de los términos de ley de las PQRSD
-            y de los términos de los pasos de un flujo. Un cambio de jornada o de calendario afecta los
-            cálculos <strong>hacia adelante</strong>; los términos ya calculados no cambian solos.
-          </p>
-        </Seccion>
-      )}
+      <Seccion n={10} id="calendario" icono={CalendarDays} titulo="Calendario laboral y términos de ley" admin>
+        <p>
+          En <span className="font-mono text-xs">Configuración → Calendario laboral</span> se define la{" "}
+          <strong>jornada</strong> de la Corporación: qué días de la semana cuentan como hábiles y el
+          horario — <strong>continuo</strong> (un solo bloque) o <strong>partido</strong> (mañana y tarde,
+          p. ej. 8–12 y 2–6). De ahí sale el número de horas hábiles por día.
+        </p>
+        <p>
+          Los <strong>festivos de ley de Colombia</strong> (Ley 51/1983) se descuentan solos. Aparte se
+          registran los <strong>días no laborados</strong> propios de la entidad — compensados, puentes
+          internos, cierres — con motivo. Todo esto alimenta el cálculo de los términos de ley de las PQRSD
+          y de los términos de los pasos de un flujo. Un cambio de jornada o de calendario afecta los
+          cálculos <strong>hacia adelante</strong>; los términos ya calculados no cambian solos.
+        </p>
+      </Seccion>
 
-      {esAdministrador && (
-        <Seccion n={11} id="disposicion" icono={Archive} titulo="Disposición final y conservación" admin>
-          <p>
-            Cada comunicación clasificada recorre, según los años de retención de su subserie, tres fases:{" "}
-            <strong>gestión</strong> (en la dependencia que la produjo) → <strong>archivo central</strong>{" "}
-            (transferida, con retención adicional) → <strong>disposición final</strong>, ejecutada en{" "}
-            <Link href="/correspondencia/disposicion" className="text-cdmb-700 underline hover:no-underline">Disposición final</Link>.
-          </p>
-          <Tabla encabezados={["Disposición final", "Significado"]}>
-            {(["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"] as const).map((d) => (
-              <tr key={d}>
-                <td className="px-2.5 py-1.5 font-mono text-[11px]">{ETIQUETA_DISPOSICION[d]}</td>
-                <td className="px-2.5 py-1.5">
-                  {d === "CONSERVACION_TOTAL" && "Se conserva permanentemente, por su valor histórico o cultural."}
-                  {d === "ELIMINACION" && "Se destruye, con acta. No se ejecuta si la comunicación sigue archivada en un expediente aún abierto."}
-                  {d === "SELECCION" && "Se conserva una muestra representativa; el resto se elimina."}
-                  {d === "MICROFILMACION_DIGITALIZACION" && "Se reproduce en otro soporte antes de decidir su destino final."}
-                </td>
-              </tr>
-            ))}
-          </Tabla>
-          <p>
-            Los pendientes se pueden agrupar por serie o subserie, ejecutar de a uno o por lotes
-            (compartiendo una sola acta cuando la disposición exige eliminar o seleccionar), y{" "}
-            <strong>aplazar</strong> una disposición ya vencida cuando haga falta — distinto de{" "}
-            <strong>suspender</strong> un término de ley: el aplazamiento afecta la disposición final de un
-            expediente, la suspensión afecta el plazo de respuesta de una PQRSD.
-          </p>
-        </Seccion>
-      )}
+      <Seccion n={11} id="disposicion" icono={Archive} titulo="Disposición final y conservación" admin>
+        <p>
+          Cada comunicación clasificada recorre, según los años de retención de su subserie, tres fases:{" "}
+          <strong>gestión</strong> (en la dependencia que la produjo) → <strong>archivo central</strong>{" "}
+          (transferida, con retención adicional) → <strong>disposición final</strong>, ejecutada en{" "}
+          <Link href="/correspondencia/disposicion" className="text-cdmb-700 underline hover:no-underline">Disposición final</Link>.
+        </p>
+        <Tabla encabezados={["Disposición final", "Significado"]}>
+          {(["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"] as const).map((d) => (
+            <tr key={d}>
+              <td className="px-2.5 py-1.5 font-mono text-[11px]">{ETIQUETA_DISPOSICION[d]}</td>
+              <td className="px-2.5 py-1.5">
+                {d === "CONSERVACION_TOTAL" && "Se conserva permanentemente, por su valor histórico o cultural."}
+                {d === "ELIMINACION" && "Se destruye, con acta. No se ejecuta si la comunicación sigue archivada en un expediente aún abierto."}
+                {d === "SELECCION" && "Se conserva una muestra representativa; el resto se elimina."}
+                {d === "MICROFILMACION_DIGITALIZACION" && "Se reproduce en otro soporte antes de decidir su destino final."}
+              </td>
+            </tr>
+          ))}
+        </Tabla>
+        <p>
+          Los pendientes se pueden agrupar por serie o subserie, ejecutar de a uno o por lotes
+          (compartiendo una sola acta cuando la disposición exige eliminar o seleccionar), y{" "}
+          <strong>aplazar</strong> una disposición ya vencida cuando haga falta — distinto de{" "}
+          <strong>suspender</strong> un término de ley: el aplazamiento afecta la disposición final de un
+          expediente, la suspensión afecta el plazo de respuesta de una PQRSD.
+        </p>
+      </Seccion>
 
-      {esAdministrador && (
-        <Seccion n={12} id="bitacora" icono={ScrollText} titulo="Trazabilidad — bitácora de auditoría" admin>
-          <p>
-            Cada fila de la{" "}
-            <Link href="/correspondencia/bitacora" className="text-cdmb-700 underline hover:no-underline">bitácora</Link>{" "}
-            queda encadenada por hash SHA-256 sobre la fila anterior — alterar o borrar una rompe la cadena y
-            queda detectable. Registra también lecturas y exportaciones, no solo cambios. Es exportable a CSV y
-            a XML con los mismos filtros de la pantalla, y tiene vista de impresión.
-          </p>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 border-t border-stone-100 pt-3 sm:grid-cols-2">
-            {ACCIONES_BITACORA.map((a) => (
-              <div key={a} className="flex items-baseline gap-2">
-                <dt className="flex-none">
-                  <Chip tono="cdmb">{ETIQUETA_ACCION_BITACORA[a]}</Chip>
-                </dt>
-                <dd className="text-xs text-stone-500">{DESCRIPCION_ACCION_BITACORA[a]}</dd>
-              </div>
-            ))}
-          </dl>
-        </Seccion>
-      )}
+      <Seccion n={12} id="bitacora" icono={ScrollText} titulo="Trazabilidad — bitácora de auditoría" admin>
+        <p>
+          Cada fila de la{" "}
+          <Link href="/correspondencia/bitacora" className="text-cdmb-700 underline hover:no-underline">bitácora</Link>{" "}
+          queda encadenada por hash SHA-256 sobre la fila anterior — alterar o borrar una rompe la cadena y
+          queda detectable. Registra también lecturas y exportaciones, no solo cambios. Es exportable a CSV y
+          a XML con los mismos filtros de la pantalla, y tiene vista de impresión.
+        </p>
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 border-t border-stone-100 pt-3 sm:grid-cols-2">
+          {ACCIONES_BITACORA.map((a) => (
+            <div key={a} className="flex items-baseline gap-2">
+              <dt className="flex-none">
+                <Chip tono="cdmb">{ETIQUETA_ACCION_BITACORA[a]}</Chip>
+              </dt>
+              <dd className="text-xs text-stone-500">{DESCRIPCION_ACCION_BITACORA[a]}</dd>
+            </div>
+          ))}
+        </dl>
+      </Seccion>
+    </>
+  );
+
+  const grupos = [
+    { id: "ciclo", label: "Radicación y ciclo", contenido: grupoCiclo },
+    { id: "expedientes", label: "Expedientes y datos", contenido: grupoExpedientes },
+    { id: "flujos", label: "Flujos y roles", contenido: grupoFlujos },
+    ...(esAdministrador ? [{ id: "admin", label: "Administración", contenido: grupoAdmin }] : []),
+  ];
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-4">
+      <div className="flex items-center justify-between print:hidden">
+        <Link href="/correspondencia" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Volver a la bandeja
+        </Link>
+        <BotonImprimir variante="secundario">Imprimir</BotonImprimir>
+      </div>
+
+      <div className="rounded-xl border border-stone-300 bg-white p-6 print:border-0 print:p-0">
+        <div className="flex items-center gap-3 border-b border-stone-200 pb-4">
+          {config.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={config.logoUrl} alt="CDMB" className="h-12 w-auto" />
+          ) : (
+            <span className="text-lg font-bold text-cdmb-700">CDMB</span>
+          )}
+          <div>
+            <p className="text-sm font-semibold text-stone-900">Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga</p>
+            <p className="text-xs text-stone-500">Sistema de Gestión de Documentos Electrónicos de Archivo (SGDEA) — Documento de referencia técnica</p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-stone-500">
+          Describe, por tipo de radicado y por función del módulo, el estado técnico, la acción disponible y
+          el rol mínimo requerido. Base normativa: Ley 594/2000, Ley 1437/2011 (CPACA), Ley 1712/2014, Ley
+          527/1999 y Decreto 2364/2012, Acuerdo 060/2001 AGN y Acuerdo Único de la Función Archivística
+          (Acuerdo 001/2024 AGN). No sustituye ese marco normativo, lo referencia. Se muestra por pestañas;
+          al imprimir se expande completo.
+        </p>
+      </div>
+
+      <AyudaTabs grupos={grupos} />
     </div>
   );
 }

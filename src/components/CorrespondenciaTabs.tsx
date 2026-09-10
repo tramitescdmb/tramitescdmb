@@ -74,7 +74,7 @@ const GRUPOS: Grupo[] = [
     permiso: "admin",
     alinearDerecha: true,
     items: [
-      { href: "/correspondencia/bitacora", label: "Bitácora inalterable del SGDEA" },
+      { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA" },
       { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true },
       { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true },
       { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true },
