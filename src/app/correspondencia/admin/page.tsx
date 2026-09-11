@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, FolderTree, Plus, Upload, Download, ChevronRight, Tags } from "lucide-react";
+import { Building2, FolderTree, Plus, Upload, Download, ChevronRight, Tags, AlertTriangle } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { listarDependencias, listarDependenciasActivas } from "@/lib/dependencias";
@@ -297,6 +297,41 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           <ChevronRight className="h-4 w-4" aria-hidden />
         </Link>
       </section>
+
+      {/* Reinicio de datos de prueba — herramienta TEMPORAL, solo mientras no se lance a producción. */}
+      {permisos.esAdmin && (
+        <section className="space-y-3">
+          <TituloSeccion icon={AlertTriangle}>Mantenimiento (temporal, antes de lanzar)</TituloSeccion>
+          <div className="rounded-xl border border-red-200 bg-red-50/60 p-4">
+            <p className="text-sm text-red-900">
+              Borra <strong>todas</strong> las comunicaciones actuales (todavía son de prueba), sus archivos
+              adjuntos, firmas y repartos, y reinicia a 000000 el consecutivo de radicación de las series R/E/I —
+              el próximo radicado real vuelve a empezar en 000001. No toca la bitácora de auditoría, ni el archivo
+              general (ExpedienteDocumental / serie X), ni los usuarios de prueba (esos ya se desactivan aparte).
+            </p>
+            <p className="mt-2 text-sm font-medium text-red-900">
+              Una vez que el SGDEA esté en producción, un radicado es inalterable por ley: esta herramienta debe
+              retirarse del código antes de esa fecha.
+            </p>
+            <form action="/api/correspondencia/admin/reset-pruebas" method="post" className="mt-3 flex flex-wrap items-end gap-3">
+              <Field label='Escriba "BORRAR" para confirmar' required>
+                <input
+                  name="confirmacion"
+                  className={`${inputCls} border-red-300 focus:border-red-500 focus:ring-red-500`}
+                  placeholder="BORRAR"
+                  required
+                />
+              </Field>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Reiniciar datos de prueba
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
