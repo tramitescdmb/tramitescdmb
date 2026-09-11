@@ -298,8 +298,10 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </Link>
       </section>
 
-      {/* Reinicio de datos de prueba — herramienta TEMPORAL, solo mientras no se lance a producción. */}
-      {permisos.esAdmin && (
+      {/* Reinicio de datos de prueba — herramienta TEMPORAL, solo mientras no se lance a producción.
+          Mismo permiso que abre esta página completa (ADMIN global o ADMIN_ARCHIVO del SGDEA) — no el
+          ADMIN global a secas, porque quien administra el archivo en la práctica es ADMIN_ARCHIVO. */}
+      {puedeAdministrarArchivo(permisos) && (
         <section className="space-y-3">
           <TituloSeccion icon={AlertTriangle}>Mantenimiento (temporal, antes de lanzar)</TituloSeccion>
           <div className="rounded-xl border border-red-200 bg-red-50/60 p-4">

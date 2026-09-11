@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { reiniciarDatosPruebaSgdea } from "@/lib/mantenimiento-pruebas";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
@@ -14,9 +14,10 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  // Se exige ADMIN real (no solo ADMIN_ARCHIVO) por lo destructivo de la acción.
-  if (!permisos.esAdmin) {
-    volver.searchParams.set("error", "Solo un administrador puede reiniciar los datos de prueba.");
+  // Mismo permiso que abre /correspondencia/admin (ADMIN global o ADMIN_ARCHIVO del SGDEA) — no ADMIN a
+  // secas: en la práctica quien administra el archivo/correspondencia es ADMIN_ARCHIVO.
+  if (!puedeAdministrarArchivo(permisos)) {
+    volver.searchParams.set("error", "Solo quien administra el archivo puede reiniciar los datos de prueba.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
