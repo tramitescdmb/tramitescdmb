@@ -38,6 +38,19 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
   const esPsdocuments = FONDO === "psdocuments";
   const info = FONDOS[FONDO];
 
+  // Agrupa los fondos por `grupo` (psdocuments queda solo; sic-pqr/sic-salida
+  // comparten el grupo "SIC correspondencia" con un segundo nivel de pestañas).
+  const grupos: { grupo: string; label: string; miembros: (typeof FONDOS)[FondoId][] }[] = [];
+  for (const f of Object.values(FONDOS)) {
+    let g = grupos.find((x) => x.grupo === f.grupo);
+    if (!g) {
+      g = { grupo: f.grupo, label: f.grupoLabel, miembros: [] };
+      grupos.push(g);
+    }
+    g.miembros.push(f);
+  }
+  const grupoActivo = grupos.find((g) => g.miembros.some((m) => m.id === FONDO))!;
+
   const [{ filas, total, page, totalPaginas, porPagina }, panel] = await Promise.all([
     getFondoListado(FONDO, filtros),
     getFondoPanel(FONDO),
@@ -60,24 +73,46 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-5">
-      {/* Selector de fondo */}
+      {/* Selector de fondo — nivel 1: grupo (psdocuments / SIC correspondencia) */}
       <div className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1">
-        {Object.values(FONDOS).map((f) => (
-          <Link
-            key={f.id}
-            href={`/correspondencia/fondo?fondo=${f.id}`}
-            aria-current={f.id === FONDO ? "page" : undefined}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              f.id === FONDO
-                ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200"
-                : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
-            }`}
-          >
-            <Archive className={`h-4 w-4 ${f.id === FONDO ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
-            {f.nombre}
-          </Link>
-        ))}
+        {grupos.map((g) => {
+          const activo = g.grupo === grupoActivo.grupo;
+          const primero = g.miembros[0]!;
+          return (
+            <Link
+              key={g.grupo}
+              href={`/correspondencia/fondo?fondo=${primero.id}`}
+              aria-current={activo ? "page" : undefined}
+              className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                activo
+                  ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200"
+                  : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
+              }`}
+            >
+              <Archive className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
+              {g.label}
+            </Link>
+          );
+        })}
       </div>
+
+      {/* Nivel 2: sub-fuente, solo si el grupo tiene más de una (Entrada / Salida) */}
+      {grupoActivo.miembros.length > 1 && (
+        <div className="flex flex-wrap gap-1 text-sm">
+          {grupoActivo.miembros.map((m) => (
+            <Link
+              key={m.id}
+              href={`/correspondencia/fondo?fondo=${m.id}`}
+              aria-current={m.id === FONDO ? "page" : undefined}
+              className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
+                m.id === FONDO ? "bg-cdmb-50 text-cdmb-800" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+              }`}
+            >
+              {m.nombre}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <header className="space-y-1">
         <div className="flex items-center gap-2">

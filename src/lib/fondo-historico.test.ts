@@ -5,6 +5,7 @@ import {
   esFondoValido,
   urlIntranetPsdocuments,
   urlIntranetSicEntrada,
+  urlIntranetSicSalida,
   parseDumpFondo,
 } from "@/lib/fondo-historico";
 
@@ -110,6 +111,18 @@ describe("urlIntranetSicEntrada", () => {
     expect(urlIntranetSicEntrada(null, "2023")).toBeNull();
     expect(urlIntranetSicEntrada("11937", null)).toBeNull();
     expect(urlIntranetSicEntrada("11937", "veinte")).toBeNull();
+  });
+});
+
+describe("urlIntranetSicSalida", () => {
+  it("arma la url de salida con carpeta de mes, sin prefijo Rad ni sufijo de año", () => {
+    expect(urlIntranetSicSalida("1041", new Date(2025, 1, 15))).toBe(
+      "http://192.168.7.53/ui/ADMINISTRADOR/out/ESCANEO_CORRESPONDENCIA_ENVIADA/2025/02/1041.pdf",
+    );
+  });
+  it("devuelve null sin número o sin fecha", () => {
+    expect(urlIntranetSicSalida(null, new Date())).toBeNull();
+    expect(urlIntranetSicSalida("1041", null)).toBeNull();
   });
 });
 

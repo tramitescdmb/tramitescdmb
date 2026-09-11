@@ -19,6 +19,8 @@
 export const FONDOS = {
   psdocuments: {
     id: "psdocuments",
+    grupo: "psdocuments",
+    grupoLabel: "psdocuments",
     nombre: "psdocuments",
     titulo: "Fondo psdocuments",
     descripcion:
@@ -26,10 +28,21 @@ export const FONDOS = {
   },
   "sic-pqr": {
     id: "sic-pqr",
-    nombre: "SIC — PQR",
-    titulo: "Fondo SIC — PQR",
+    grupo: "sic",
+    grupoLabel: "SIC correspondencia",
+    nombre: "Entrada",
+    titulo: "SIC correspondencia — Entrada (PQR)",
     descripcion:
-      "Peticiones, quejas y reclamos del sistema de correspondencia SIC (COR_ATCREG), aún en uso — últimos 5 años, sincronizado a diario.",
+      "Peticiones, quejas y reclamos de entrada del sistema de correspondencia SIC (COR_ATCREG), aún en uso — últimos 5 años, sincronizado a diario.",
+  },
+  "sic-salida": {
+    id: "sic-salida",
+    grupo: "sic",
+    grupoLabel: "SIC correspondencia",
+    nombre: "Salida",
+    titulo: "SIC correspondencia — Salida",
+    descripcion:
+      "Comunicaciones de salida del sistema de correspondencia SIC (COR_ENVIADA), aún en uso — últimos 5 años, sincronizado a diario.",
   },
 } as const;
 
@@ -120,13 +133,13 @@ function limpiar(v: unknown): string | null {
  * el mapeo vive en un único lugar. El primero que exista y no esté vacío gana.
  */
 const MAPA_COLUMNAS: Record<string, string[]> = {
-  numero: ["NUMERO", "NUMENTRADA", "NUMERADI_REC", "NUMERO_ATC", "NRO", "NUMERODOC", "CONSECUTIVO"],
+  numero: ["NUMERO", "NUMENTRADA", "NUMERADI_REC", "NUMERO_ATC", "NUMRADIC_CEN", "NRO", "NUMERODOC", "CONSECUTIVO"],
   numeroEntrada: ["NUMENTRADA", "NUMERADI_REC", "RADENT_ATC"],
-  numeroSalida: ["NUMSALIDA"],
-  fecha: ["FECHA", "FECHAENTRADA", "FECHRECEP_REC", "FECING_ATC", "FECHA_DOCUMENTO", "FECHADOC", "FECHASALIDA"],
+  numeroSalida: ["NUMSALIDA", "NUMRADIC_CEN"],
+  fecha: ["FECHA", "FECHAENTRADA", "FECHRECEP_REC", "FECING_ATC", "FECHAENV_CEN", "FECHA_DOCUMENTO", "FECHADOC", "FECHASALIDA"],
   fechaEntrada: ["FECHAENTRADA", "FECHRECEP_REC"],
-  fechaSalida: ["FECHASALIDA"],
-  asunto: ["ASUNTO", "ASUNTO_REC", "ASUNTO_ATC", "OBJETO", "OBSERVACIONES"],
+  fechaSalida: ["FECHASALIDA", "FECHAENV_CEN"],
+  asunto: ["ASUNTO", "ASUNTO_REC", "ASUNTO_ATC", "ASUNTO_CEN", "OBJETO", "OBSERVACIONES"],
   razonSocial: ["RAZONSOCIAL", "RAZON_SOCIAL", "EMPRESAR_REC", "NOMBREREM_REC", "NOMSOL_ATC"],
   destinatario: ["DESTINATARIO"],
   oficina: ["DEPENDENCIA", "SUBDIRECCION", "SUBDIRECCION_REC", "OFICINA", "NOMOFI_ATC"],
@@ -311,10 +324,8 @@ export function tieneVisorPsdocuments(): boolean {
  * del número y año del radicado. Confirmado a mano con ejemplos reales:
  *   entrada: http://192.168.7.53/ui/ADMINISTRADOR/in/<año>/Rad<número>-<año>.pdf
  *   salida:  http://<host>/ui/ADMINISTRADOR/out/ESCANEO_CORRESPONDENCIA_ENVIADA/<año>/<mes de 2 dígitos>/<número>.pdf
- * Solo se implementa "entrada" (lo que cubre el fondo `sic-pqr`, vía
- * RADENT_ATC/ANHORAD_ATC — el radicado de entrada de cada PQR). No hay forma
- * de confirmar por Oracle si el escaneo existe para un radicado puntual: el
- * enlace se ofrece igual, puede dar 404 si esa entrada no se escaneó.
+ * En ningún caso hay forma de confirmar por Oracle si el escaneo existe para
+ * un radicado puntual: el enlace se ofrece igual, puede dar 404.
  */
 export const SIC_BASE_INTRANET =
   process.env.FONDO_SIC_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.53";
@@ -327,4 +338,17 @@ export function urlIntranetSicEntrada(
   const a = anio ? String(anio).trim() : "";
   if (!n || !a || !/^\d+$/.test(a)) return null;
   return `${SIC_BASE_INTRANET}/ui/ADMINISTRADOR/in/${a}/Rad${n}-${a}.pdf`;
+}
+
+/** Escaneo de una comunicación de SALIDA (COR_ENVIADA): mismo repositorio,
+ *  ruta con carpeta de mes y sin prefijo "Rad" ni sufijo de año en el nombre. */
+export function urlIntranetSicSalida(
+  numeroRadicado: string | null | undefined,
+  fecha: Date | null | undefined,
+): string | null {
+  const n = numeroRadicado ? String(numeroRadicado).trim() : "";
+  if (!n || !fecha) return null;
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  return `${SIC_BASE_INTRANET}/ui/ADMINISTRADOR/out/ESCANEO_CORRESPONDENCIA_ENVIADA/${anio}/${mes}/${n}.pdf`;
 }

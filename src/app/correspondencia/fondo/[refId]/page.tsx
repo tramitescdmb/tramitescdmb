@@ -11,6 +11,7 @@ import {
   urlIntranetPsdocuments,
   tieneVisorPsdocuments,
   urlIntranetSicEntrada,
+  urlIntranetSicSalida,
   type FondoId,
 } from "@/lib/fondo-historico";
 import { getFondoDocumento } from "@/lib/fondo-historico-data";
@@ -65,7 +66,7 @@ export default async function FichaFondoPage({
         href={`/correspondencia/fondo?fondo=${FONDO}`}
         className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Volver al {info.nombre}
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Volver al fondo histórico
       </Link>
 
       <header className="rounded-xl border border-stone-200 bg-white p-5">
@@ -80,7 +81,7 @@ export default async function FichaFondoPage({
         </div>
         {doc.asunto && <p className="mt-2 text-sm text-stone-700">{doc.asunto}</p>}
         <p className="mt-2 text-xs text-stone-400">
-          {info.nombre} · id {doc.refId}
+          {info.titulo} · id {doc.refId}
           {esPsdocuments && doc.serieId != null ? ` · serie ${doc.serieId}` : ""}
         </p>
       </header>
@@ -151,7 +152,7 @@ export default async function FichaFondoPage({
         </section>
       )}
 
-      {!esPsdocuments &&
+      {FONDO === "sic-pqr" &&
         (() => {
           const anio = campos.ANHORAD_ATC ? String(campos.ANHORAD_ATC) : null;
           const url = urlIntranetSicEntrada(doc.numeroEntrada, anio);
@@ -165,6 +166,34 @@ export default async function FichaFondoPage({
                 El SIC no confirma por base de datos si este radicado tiene escaneo — el enlace se arma por
                 el número y año del radicado {doc.numeroEntrada}-{anio} y puede no existir para todos los
                 casos. Solo funciona desde la red corporativa de la CDMB.
+              </p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden />
+                Intentar abrir el escaneado (red CDMB)
+              </a>
+            </section>
+          );
+        })()}
+
+      {FONDO === "sic-salida" &&
+        (() => {
+          const numero = doc.numero ?? doc.numeroSalida;
+          const url = urlIntranetSicSalida(numero, doc.fecha);
+          if (!url) return null;
+          return (
+            <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+                <FileWarning className="h-4 w-4" aria-hidden /> Documento escaneado (comunicación de salida)
+              </h2>
+              <p className="mt-2 text-sm text-amber-900">
+                El SIC no confirma por base de datos si esta comunicación tiene escaneo — el enlace se arma
+                por el número {numero} y el mes/año de envío, y puede no existir para todos los casos. Solo
+                funciona desde la red corporativa de la CDMB.
               </p>
               <a
                 href={url}
