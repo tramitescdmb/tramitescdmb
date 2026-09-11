@@ -22,7 +22,14 @@ export const FONDOS = {
     nombre: "psdocuments",
     titulo: "Fondo psdocuments",
     descripcion:
-      "Documentos escaneados del sistema de gestión documental anterior de la CDMB (2006–2023).",
+      "Documentos escaneados del sistema de gestión documental anterior de la CDMB (2006–2010, ventana de 5 años).",
+  },
+  "sic-pqr": {
+    id: "sic-pqr",
+    nombre: "SIC — PQR",
+    titulo: "Fondo SIC — PQR",
+    descripcion:
+      "Peticiones, quejas y reclamos del sistema de correspondencia SIC (COR_ATCREG), aún en uso — últimos 5 años, sincronizado a diario.",
   },
 } as const;
 

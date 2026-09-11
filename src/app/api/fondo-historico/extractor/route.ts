@@ -17,6 +17,7 @@ export const runtime = "nodejs";
 
 const ARCHIVOS: Record<string, string> = {
   psdocuments: "extraer-psdocuments.sh",
+  "sic-pqr": "extraer-sic.sh",
   verdoc: "verdoc.cgi",
 };
 
