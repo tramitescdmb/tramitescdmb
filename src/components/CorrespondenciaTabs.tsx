@@ -121,14 +121,19 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
     return items.length > 0 ? { grupo: g, items } : null;
   }).filter((x): x is { grupo: Grupo; items: Item[] } => x !== null);
 
+  // El primer grupo marcado alinearDerecha empuja a sí mismo y a los que le
+  // siguen hacia el borde derecho de la barra (Configuración / Administración).
+  const primerDerechaIdx = gruposVisibles.findIndex(({ grupo }) => grupo.alinearDerecha);
+
   return (
     <nav
-      className="flex flex-wrap items-center gap-1 border-b border-stone-200 pb-px"
+      className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1"
       aria-label="Secciones del SGDEA"
     >
-      {gruposVisibles.map(({ grupo, items }) =>
-        grupo.href ? (
-          <EnlaceSimple key={grupo.label} grupo={grupo} activo={grupoActivo(grupo)} />
+      {gruposVisibles.map(({ grupo, items }, i) => {
+        const empujar = i === primerDerechaIdx;
+        return grupo.href ? (
+          <EnlaceSimple key={grupo.label} grupo={grupo} activo={grupoActivo(grupo)} empujar={empujar} />
         ) : (
           <MenuGrupo
             key={grupo.label}
@@ -136,25 +141,30 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
             items={items}
             activo={grupoActivo(grupo)}
             itemActivo={itemActivo}
+            empujar={empujar}
           />
-        ),
-      )}
+        );
+      })}
     </nav>
   );
 }
 
 function claseTab(activo: boolean) {
-  return `-mb-px flex items-center gap-2 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+  return `flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
     activo
-      ? "border-cdmb-600 bg-cdmb-50/70 text-cdmb-800"
-      : "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+      ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200"
+      : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
   }`;
 }
 
-function EnlaceSimple({ grupo, activo }: { grupo: Grupo; activo: boolean }) {
+function EnlaceSimple({ grupo, activo, empujar }: { grupo: Grupo; activo: boolean; empujar?: boolean }) {
   const Icon = grupo.icon;
   return (
-    <Link href={grupo.href!} aria-current={activo ? "page" : undefined} className={claseTab(activo)}>
+    <Link
+      href={grupo.href!}
+      aria-current={activo ? "page" : undefined}
+      className={`${claseTab(activo)} ${empujar ? "ml-auto" : ""}`}
+    >
       <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
       {grupo.label}
     </Link>
@@ -166,11 +176,13 @@ function MenuGrupo({
   items,
   activo,
   itemActivo,
+  empujar,
 }: {
   grupo: Grupo;
   items: Item[];
   activo: boolean;
   itemActivo: (it: Item) => boolean;
+  empujar?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const contenedor = useRef<HTMLDivElement>(null);
@@ -203,7 +215,7 @@ function MenuGrupo({
   }, [abierto]);
 
   return (
-    <div ref={contenedor} className="relative">
+    <div ref={contenedor} className={`relative ${empujar ? "ml-auto" : ""}`}>
       <button
         ref={boton}
         type="button"
@@ -215,7 +227,7 @@ function MenuGrupo({
       >
         <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
         {grupo.label}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
+        <ChevronDown className={`h-3.5 w-3.5 text-stone-400 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
       </button>
 
       {abierto && (
@@ -223,7 +235,7 @@ function MenuGrupo({
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className={`absolute top-full z-20 mt-1 min-w-[15rem] rounded-lg border border-stone-200 bg-white p-1 shadow-lg ${
+          className={`absolute top-full z-20 mt-2 min-w-[15rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
             grupo.alinearDerecha ? "right-0" : "left-0"
           }`}
         >
