@@ -35,6 +35,7 @@ function whereDe(fondo: string, f: FiltrosFondo): Prisma.FondoDocumentoWhereInpu
       { numero: { contains: q, mode: "insensitive" } },
       { numeroEntrada: { contains: q, mode: "insensitive" } },
       { numeroSalida: { contains: q, mode: "insensitive" } },
+      { identificacion: { contains: q } }, // NIT / cédula — sin insensitive, son solo dígitos
       { refId: q },
     ];
   }

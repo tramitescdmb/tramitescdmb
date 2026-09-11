@@ -64,6 +64,11 @@ describe("filaAModelo", () => {
     expect(m.razonSocial).toBeNull();
     expect(m.numero).toBeNull();
   });
+  it("deriva la identificacion (NIT/cédula) desde NITSOL_ATC", () => {
+    const m = filaAModelo("sic-pqr", { ref_id: "1", campos: { NITSOL_ATC: "1098765432" } });
+    expect(m.identificacion).toBe("1098765432");
+    expect(m.campos).toBeNull(); // ya normalizada, no queda nada residual en campos
+  });
   it("deriva los campos normalizados desde las columnas crudas de la serie", () => {
     const m = filaAModelo("psdocuments", {
       ref_id: "7",

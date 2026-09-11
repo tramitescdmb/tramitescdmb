@@ -68,6 +68,7 @@ export interface FilaFondoEntrada {
   firma?: string | null;
   estado?: string | null;
   ciclo?: string | null;
+  identificacion?: string | null;
   tiene_imagen?: boolean | null;
   num_archivos?: number | null;
   ruta_original?: string | null;
@@ -132,6 +133,7 @@ const MAPA_COLUMNAS: Record<string, string[]> = {
   firma: ["FIRMA"],
   estado: ["DOC_ESTADO", "ESTADO_REC", "ESTADO_ATC"],
   ciclo: ["DOC_CICLO"],
+  identificacion: ["NITSOL_ATC", "NIT_REC", "NIT", "NITSOLICITANTE", "CEDULA", "IDENTIFICACION"],
 };
 
 function elegir(campos: Record<string, unknown>, nombres: string[]): string | null {
@@ -191,6 +193,7 @@ export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
     firma: de("firma", fila.firma),
     estado: de("estado", fila.estado),
     ciclo: de("ciclo", fila.ciclo),
+    identificacion: de("identificacion", fila.identificacion),
     tieneImagen: !!fila.tiene_imagen,
     numArchivos: fila.num_archivos ?? 0,
     rutaOriginal: limpiar(fila.ruta_original),

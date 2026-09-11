@@ -428,6 +428,7 @@ model FondoDocumento {
   firma          String?
   estado         String? // DOC_ESTADO / ESTADO_REC
   ciclo          String? // DOC_CICLO ("GESTION", ...)
+  identificacion String? // NIT / cédula del solicitante o tercero (NITSOL_ATC, NIT_REC, ...)
 
   tieneImagen    Boolean @default(false) // hay fila en PSIDEA_VERSION
   numArchivos    Int     @default(0)
@@ -445,6 +446,7 @@ model FondoDocumento {
   @@unique([fondo, refId])
   @@index([fondo, serieId])
   @@index([fondo, fecha])
+  @@index([fondo, identificacion])
   @@index([sincronizacionId])
 }
 

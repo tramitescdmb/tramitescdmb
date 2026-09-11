@@ -131,7 +131,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
               type="search"
               name="q"
               defaultValue={filtros.q ?? ""}
-              placeholder="Asunto, tercero, número o id de documento"
+              placeholder="Asunto, tercero, NIT o cédula, número o id de documento"
               className="w-full rounded-md border border-stone-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-cdmb-500 focus:ring-1 focus:ring-cdmb-500"
             />
           </span>
