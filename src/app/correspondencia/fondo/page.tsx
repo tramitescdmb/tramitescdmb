@@ -96,24 +96,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         })}
       </div>
 
-      {/* Nivel 2: sub-fuente, solo si el grupo tiene más de una (Entrada / Salida) */}
-      {grupoActivo.miembros.length > 1 && (
-        <div className="flex flex-wrap gap-1 text-sm">
-          {grupoActivo.miembros.map((m) => (
-            <Link
-              key={m.id}
-              href={`/correspondencia/fondo?fondo=${m.id}`}
-              aria-current={m.id === FONDO ? "page" : undefined}
-              className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-                m.id === FONDO ? "bg-cdmb-50 text-cdmb-800" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
-              }`}
-            >
-              {m.nombre}
-            </Link>
-          ))}
-        </div>
-      )}
-
       <header className="space-y-1">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-amber-100 text-amber-700">
@@ -157,7 +139,24 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
       {/* Filtros */}
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
-        <input type="hidden" name="fondo" value={FONDO} />
+        {grupoActivo.miembros.length > 1 ? (
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-stone-600">Fuente</span>
+            <select
+              name="fondo"
+              defaultValue={FONDO}
+              className="rounded-md border border-stone-300 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500"
+            >
+              {grupoActivo.miembros.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <input type="hidden" name="fondo" value={FONDO} />
+        )}
         <label className="flex-1 min-w-[16rem] text-sm">
           <span className="mb-1 block font-medium text-stone-600">Buscar</span>
           <span className="relative block">
