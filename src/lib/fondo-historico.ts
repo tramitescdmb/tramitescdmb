@@ -301,3 +301,27 @@ export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined):
 export function tieneVisorPsdocuments(): boolean {
   return PSDOCUMENTS_VISOR !== null;
 }
+
+/**
+ * Repositorio de escaneos del SIC correspondencia — un FreeNAS aparte de
+ * psdocuments, sin columna en Oracle: la ruta se arma por CONVENCIÓN a partir
+ * del número y año del radicado. Confirmado a mano con ejemplos reales:
+ *   entrada: http://192.168.7.53/ui/ADMINISTRADOR/in/<año>/Rad<número>-<año>.pdf
+ *   salida:  http://<host>/ui/ADMINISTRADOR/out/ESCANEO_CORRESPONDENCIA_ENVIADA/<año>/<mes de 2 dígitos>/<número>.pdf
+ * Solo se implementa "entrada" (lo que cubre el fondo `sic-pqr`, vía
+ * RADENT_ATC/ANHORAD_ATC — el radicado de entrada de cada PQR). No hay forma
+ * de confirmar por Oracle si el escaneo existe para un radicado puntual: el
+ * enlace se ofrece igual, puede dar 404 si esa entrada no se escaneó.
+ */
+export const SIC_BASE_INTRANET =
+  process.env.FONDO_SIC_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.53";
+
+export function urlIntranetSicEntrada(
+  numeroRadicado: string | null | undefined,
+  anio: string | number | null | undefined,
+): string | null {
+  const n = numeroRadicado ? String(numeroRadicado).trim() : "";
+  const a = anio ? String(anio).trim() : "";
+  if (!n || !a || !/^\d+$/.test(a)) return null;
+  return `${SIC_BASE_INTRANET}/ui/ADMINISTRADOR/in/${a}/Rad${n}-${a}.pdf`;
+}

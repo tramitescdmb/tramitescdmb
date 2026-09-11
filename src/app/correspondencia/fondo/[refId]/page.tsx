@@ -10,6 +10,7 @@ import {
   AVISO_IMAGEN,
   urlIntranetPsdocuments,
   tieneVisorPsdocuments,
+  urlIntranetSicEntrada,
   type FondoId,
 } from "@/lib/fondo-historico";
 import { getFondoDocumento } from "@/lib/fondo-historico-data";
@@ -149,6 +150,34 @@ export default async function FichaFondoPage({
           )}
         </section>
       )}
+
+      {!esPsdocuments &&
+        (() => {
+          const anio = campos.ANHORAD_ATC ? String(campos.ANHORAD_ATC) : null;
+          const url = urlIntranetSicEntrada(doc.numeroEntrada, anio);
+          if (!url) return null;
+          return (
+            <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+                <FileWarning className="h-4 w-4" aria-hidden /> Documento escaneado (radicado de entrada)
+              </h2>
+              <p className="mt-2 text-sm text-amber-900">
+                El SIC no confirma por base de datos si este radicado tiene escaneo — el enlace se arma por
+                el número y año del radicado {doc.numeroEntrada}-{anio} y puede no existir para todos los
+                casos. Solo funciona desde la red corporativa de la CDMB.
+              </p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden />
+                Intentar abrir el escaneado (red CDMB)
+              </a>
+            </section>
+          );
+        })()}
     </div>
   );
 }

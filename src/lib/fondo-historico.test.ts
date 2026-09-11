@@ -4,6 +4,7 @@ import {
   filaAModelo,
   esFondoValido,
   urlIntranetPsdocuments,
+  urlIntranetSicEntrada,
   parseDumpFondo,
 } from "@/lib/fondo-historico";
 
@@ -88,6 +89,22 @@ describe("esFondoValido", () => {
   it("solo reconoce fondos declarados", () => {
     expect(esFondoValido("psdocuments")).toBe(true);
     expect(esFondoValido("cualquier-cosa")).toBe(false);
+  });
+});
+
+describe("urlIntranetSicEntrada", () => {
+  it("arma la url del escaneado de entrada por número y año (verificada a mano)", () => {
+    expect(urlIntranetSicEntrada("11937", "2023")).toBe(
+      "http://192.168.7.53/ui/ADMINISTRADOR/in/2023/Rad11937-2023.pdf",
+    );
+    expect(urlIntranetSicEntrada("13410", 2022)).toBe(
+      "http://192.168.7.53/ui/ADMINISTRADOR/in/2022/Rad13410-2022.pdf",
+    );
+  });
+  it("devuelve null sin número, sin año, o año no numérico", () => {
+    expect(urlIntranetSicEntrada(null, "2023")).toBeNull();
+    expect(urlIntranetSicEntrada("11937", null)).toBeNull();
+    expect(urlIntranetSicEntrada("11937", "veinte")).toBeNull();
   });
 });
 
