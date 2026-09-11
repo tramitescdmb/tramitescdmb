@@ -134,11 +134,9 @@ begin
       end if;
     end loop;
     for i in 1..nc loop
-      if cd(i).col_name <> 'NUMERO_ATC' then
-        dbms_sql.column_value(cur, i, v);
-        dbms_output.put_line('@' || cd(i).col_name);
-        pv(v);
-      end if;
+      dbms_sql.column_value(cur, i, v);
+      dbms_output.put_line('@' || cd(i).col_name);
+      pv(v);
     end loop;
   end loop;
   dbms_sql.close_cursor(cur);
