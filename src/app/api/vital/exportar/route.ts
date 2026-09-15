@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
     "Última sincronización",
     "Enlace en la app",
     "Enlace público en VITAL",
-    "Enlace a documentos (VITAL/SILPA)",
   ];
 
   const filasCsv = filas.map((s) =>
@@ -75,7 +74,6 @@ export async function GET(req: NextRequest) {
       s.ultimaSincronizacion.toISOString().slice(0, 10),
       `/vital/${s.id}`,
       urlVitalPublico(s.idVital),
-      s.enlaceDocumentosSilpa,
     ]
       .map(celda)
       .join(";")

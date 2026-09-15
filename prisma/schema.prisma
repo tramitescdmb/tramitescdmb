@@ -829,13 +829,6 @@ model SolicitudVital {
   // documentos" como si el trámite realmente no tuviera ninguno.
   documentosReportados Int?
 
-  // Enlace directo a la ficha "ReportetramiteCPDetalle.aspx" del portal de la autoridad ambiental
-  // (vital.minambiente.gov.co/SILPA_UT_PRE/...), que SÍ muestra los adjuntos y no exige sesión — pero
-  // exige 2 ids internos de SILPA (TarSolId/Solicitante) que VITAL no expone por wsSolicitante ni por
-  // el buscador público, así que no se pueden derivar automáticamente de `idVital`. Se guarda a mano,
-  // una vez, cuando alguien lo encuentra navegando VITAL manualmente (ver [[reference_vital_sinca1]]).
-  enlaceDocumentosSilpa String?
-
   documentos           SolicitudVitalDocumento[]
   ultimaSincronizacion DateTime                  @default(now()) @updatedAt
   createdAt            DateTime                  @default(now())

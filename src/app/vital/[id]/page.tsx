@@ -13,7 +13,6 @@ import {
   FileText,
   Download,
   CalendarClock,
-  AlertTriangle,
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
@@ -239,22 +238,13 @@ function CamposFormulario({ datos }: { datos: unknown }) {
   );
 }
 
-export default async function VitalDetallePage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
-}) {
+export default async function VitalDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const sp = await searchParams;
 
   const session = await getSession();
-  let esAdmin = false;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
-    esAdmin = permisos.esAdmin;
   }
 
   const solicitud = await db.solicitudVital.findUnique({
@@ -273,20 +263,12 @@ export default async function VitalDetallePage({
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
-  // VITAL puede reportar más documentos (wsDocumentos) de los que quedaron guardados: el servicio
-  // de descarga de VITAL viene fallando por permisos (ver nota en sincronizarSolicitud/vital.ts) —
-  // mejor avisarlo que mostrar "sin documentos" como si el trámite no tuviera ninguno adjunto.
-  const documentosFaltantes = Math.max(0, (solicitud.documentosReportados ?? 0) - solicitud.documentos.length);
-
   return (
     <div className="space-y-4">
       <Link href="/vital" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Volver a las solicitudes
       </Link>
-
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {/* Cabecera */}
       <div className="rounded-xl border border-stone-200 bg-white p-4">
@@ -348,58 +330,7 @@ export default async function VitalDetallePage({
 
       {/* Documentos */}
       <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${solicitud.documentos.length})`}>
-        {documentosFaltantes > 0 && (
-          <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-            <p>
-              VITAL reporta {documentosFaltantes} documento{documentosFaltantes === 1 ? "" : "s"} adjunto{documentosFaltantes === 1 ? "" : "s"} más
-              que no {documentosFaltantes === 1 ? "se pudo" : "se pudieron"} descargar — es un problema de permisos del servicio de VITAL, no de
-              esta plataforma. Informe al área de sistemas.
-            </p>
-          </div>
-        )}
-
-        {solicitud.enlaceDocumentosSilpa && (
-          <a
-            href={solicitud.enlaceDocumentosSilpa}
-            target="_blank"
-            rel="noreferrer"
-            className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-cdmb-50 px-3 py-1.5 text-sm font-medium text-cdmb-800 hover:bg-cdmb-100"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-            Ver estado y adjuntos en VITAL (portal de la autoridad ambiental)
-          </a>
-        )}
-
-        {esAdmin && (
-          <details className="mb-3 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
-            <summary className="cursor-pointer font-medium text-stone-700">
-              {solicitud.enlaceDocumentosSilpa ? "Editar" : "Pegar"} el enlace de VITAL con los adjuntos (ADMIN)
-            </summary>
-            <p className="mt-2">
-              En VITAL, abra este trámite y copie la URL de la ficha &ldquo;¿En qué va mi trámite?&rdquo; que
-              incluye <code>TarSolId</code> y <code>Solicitante</code> — no se puede armar sola porque esos dos
-              ids no vienen en la sincronización por X-Road. No exige iniciar sesión.
-            </p>
-            <form action={`/api/vital/${solicitud.id}/enlace-documentos`} method="post" className="mt-2 flex flex-wrap items-center gap-2">
-              <input
-                name="enlace"
-                type="url"
-                defaultValue={solicitud.enlaceDocumentosSilpa ?? ""}
-                placeholder="https://vital.minambiente.gov.co/SILPA_UT_PRE/ReporteTramite/ReportetramiteCPDetalle.aspx?..."
-                className="w-full min-w-0 flex-1 rounded-md border border-stone-300 px-2.5 py-1.5 text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-              />
-              <button
-                type="submit"
-                className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
-              >
-                Guardar
-              </button>
-            </form>
-          </details>
-        )}
-
-        {solicitud.documentos.length === 0 && documentosFaltantes === 0 ? (
+        {solicitud.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
         ) : solicitud.documentos.length > 0 ? (
           <ul className="space-y-2">

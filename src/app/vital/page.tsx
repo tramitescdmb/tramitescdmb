@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, RefreshCw, Link2 } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
@@ -20,9 +20,7 @@ const AYER = fechaArchivoColombia(new Date(Date.now() - 86_400_000));
 export default async function VitalSolicitudesPage({
   searchParams,
 }: {
-  searchParams: Promise<
-    FiltrosVital & FiltrosPeriodo & { sincronizado?: string; errores?: string; error?: string; ok?: string }
-  >;
+  searchParams: Promise<FiltrosVital & FiltrosPeriodo & { sincronizado?: string; errores?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession();
@@ -88,7 +86,6 @@ export default async function VitalSolicitudesPage({
           {sp.errores && <p className="mt-1 text-xs text-green-700">Con errores puntuales: {sp.errores}</p>}
         </div>
       )}
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 whitespace-pre-line">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
@@ -183,32 +180,6 @@ export default async function VitalSolicitudesPage({
         </details>
       )}
 
-      {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white p-4">
-          <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
-            <Link2 className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
-            Pegar enlaces de VITAL con los adjuntos (varios a la vez)
-          </summary>
-          <p className="mt-2 text-xs text-stone-500">
-            Al abrir cada solicitud en VITAL (SILAM) para procesarla, copie ahí la URL completa de
-            &quot;ReportetramiteCPDetalle.aspx&quot; (con <code>TarSolId</code> y <code>Solicitante</code>) y
-            péguela abajo, una por línea — sirve para varias solicitudes de una sola vez, de cualquier
-            trámite. Cada línea se identifica sola por su <code>NumSilpa</code>, no hace falta indicar a
-            cuál solicitud corresponde.
-          </p>
-          <form action="/api/vital/enlaces-documentos/lote" method="post" className="mt-3 space-y-2">
-            <textarea
-              name="enlaces"
-              rows={5}
-              placeholder={"https://vital.minambiente.gov.co/SILPA_UT_PRE/ReporteTramite/ReportetramiteCPDetalle.aspx?NumSilpa=...&TarSolId=...&Solicitante=...\nhttps://vital.minambiente.gov.co/SILPA_UT_PRE/ReporteTramite/ReportetramiteCPDetalle.aspx?NumSilpa=...&TarSolId=...&Solicitante=..."}
-              className="w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            />
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
-              Guardar enlaces
-            </button>
-          </form>
-        </details>
-      )}
     </div>
   );
 }
