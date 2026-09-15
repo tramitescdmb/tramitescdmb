@@ -29,35 +29,35 @@ export function Paginador({
   const hasta = Math.min(paginaActual * porPagina, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 px-4 py-3 text-sm">
-      <p className="text-stone-500">
-        Mostrando <span className="font-medium text-stone-700">{desde}–{hasta}</span> de{" "}
-        <span className="font-medium text-stone-700">{total}</span>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-graphite-100 px-4 py-3 text-sm">
+      <p className="text-graphite-500">
+        Mostrando <span className="font-medium text-graphite-700">{desde}–{hasta}</span> de{" "}
+        <span className="font-medium text-graphite-700">{total}</span>
       </p>
       {totalPaginas > 1 && (
         <div className="flex items-center gap-2">
           {paginaActual > 1 ? (
             <Link
               href={hrefPagina(paginaActual - 1)}
-              className="rounded-md border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
+              className="rounded-lg border border-graphite-200 px-3 py-1.5 text-graphite-700 transition-colors hover:bg-graphite-50"
             >
               ← Anterior
             </Link>
           ) : (
-            <span className="rounded-md border border-stone-200 px-3 py-1.5 text-stone-300">← Anterior</span>
+            <span className="rounded-lg border border-graphite-100 px-3 py-1.5 text-graphite-300">← Anterior</span>
           )}
-          <span className="px-2 text-xs text-stone-400">
+          <span className="px-2 text-xs text-graphite-400">
             Página {paginaActual} de {totalPaginas}
           </span>
           {paginaActual < totalPaginas ? (
             <Link
               href={hrefPagina(paginaActual + 1)}
-              className="rounded-md border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
+              className="rounded-lg border border-graphite-200 px-3 py-1.5 text-graphite-700 transition-colors hover:bg-graphite-50"
             >
               Siguiente →
             </Link>
           ) : (
-            <span className="rounded-md border border-stone-200 px-3 py-1.5 text-stone-300">Siguiente →</span>
+            <span className="rounded-lg border border-graphite-100 px-3 py-1.5 text-graphite-300">Siguiente →</span>
           )}
         </div>
       )}

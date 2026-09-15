@@ -26,7 +26,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
 
   return (
     <table className="w-full table-fixed text-sm">
-      <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+      <thead className="border-b border-graphite-100 bg-graphite-50/60 text-left text-xs uppercase tracking-wide text-graphite-500">
         <tr>
           {ENCABEZADOS.map((titulo, i) => (
             <th key={titulo} className="relative px-2.5 py-2 font-medium" style={{ width: anchos[i] }}>
@@ -36,32 +36,32 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
           ))}
         </tr>
       </thead>
-      <tbody className="divide-y divide-stone-100">
+      <tbody className="divide-y divide-graphite-100">
         {filas.length === 0 ? (
           <tr>
-            <td colSpan={ENCABEZADOS.length} className="px-2.5 py-10 text-center text-stone-400">
+            <td colSpan={ENCABEZADOS.length} className="px-2.5 py-10 text-center text-graphite-400">
               {sinResultadosTexto}
             </td>
           </tr>
         ) : (
           filas.map((f) => (
-            <tr key={f.nroSolicitud} className="hover:bg-stone-50">
-              <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
+            <tr key={f.nroSolicitud} className="transition-colors hover:bg-graphite-50/60">
+              <td className="truncate px-2.5 py-2 text-graphite-400">{f.numero}</td>
               <td className="truncate px-2.5 py-2">
                 <Link href={`/historico/solicitudes/${f.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
                   {f.nroSolicitud}
                 </Link>
-                {f.expediente && <span className="block truncate text-xs text-stone-400">Exp. {f.expediente}</span>}
+                {f.expediente && <span className="block truncate text-xs text-graphite-400">Exp. {f.expediente}</span>}
               </td>
-              <td className="truncate px-2.5 py-2 text-stone-700">{f.numeroResolucion ?? "—"}</td>
-              <td className="truncate px-2.5 py-2 text-stone-600">{f.fecha}</td>
-              <td className="truncate px-2.5 py-2 text-stone-600" title={f.tipoNombre ?? undefined}>
+              <td className="truncate px-2.5 py-2 text-graphite-700">{f.numeroResolucion ?? "—"}</td>
+              <td className="truncate px-2.5 py-2 text-graphite-600">{f.fecha}</td>
+              <td className="truncate px-2.5 py-2 text-graphite-600" title={f.tipoNombre ?? undefined}>
                 {f.tipoNombre ?? "—"}
-                {f.tipoCodigo && <span className="ml-1 text-xs text-stone-400">({f.tipoCodigo})</span>}
+                {f.tipoCodigo && <span className="ml-1 text-xs text-graphite-400">({f.tipoCodigo})</span>}
               </td>
-              <td className="truncate px-2.5 py-2 text-stone-600">{f.municipio ?? "—"}</td>
+              <td className="truncate px-2.5 py-2 text-graphite-600">{f.municipio ?? "—"}</td>
               <td className="truncate px-2.5 py-2">
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{f.estado ?? "—"}</span>
+                <span className="rounded-full bg-techblue-50 px-2 py-0.5 text-xs font-medium text-techblue-700">{f.estado ?? "—"}</span>
               </td>
               <td className="truncate px-2.5 py-2">
                 {f.nit ? (
@@ -69,7 +69,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
                     {f.nit}
                   </Link>
                 ) : (
-                  <span className="text-stone-400">—</span>
+                  <span className="text-graphite-400">—</span>
                 )}
               </td>
             </tr>

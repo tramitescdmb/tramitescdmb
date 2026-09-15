@@ -7,6 +7,12 @@
 }
 
 body {
-  /* Fondo cálido (no gris frío) — pensado para uso prolongado sin cansar la vista */
-  background-color: #faf8f5;
+  /* Gris muy claro, frío (no blanco puro, no cálido) — canvas neutro sobre el que
+     las tarjetas blancas "flotan" con sombra suave (línea de diseño tecnológica). */
+  background-color: #f4f6f8;
+}
+
+::selection {
+  background-color: #d5f2dd; /* cdmb-100 */
+  color: #134129; /* cdmb-900 */
 }

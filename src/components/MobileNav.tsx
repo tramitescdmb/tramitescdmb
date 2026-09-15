@@ -47,7 +47,7 @@ export function MobileNav({
         onClick={() => setAbierto(true)}
         aria-label="Abrir menú"
         aria-expanded={abierto}
-        className="flex-none rounded-md p-2 text-stone-600 hover:bg-stone-100 lg:hidden"
+        className="flex-none rounded-lg p-2 text-graphite-600 hover:bg-graphite-100 lg:hidden"
       >
         <Menu className="h-5 w-5" aria-hidden />
       </button>
@@ -58,16 +58,16 @@ export function MobileNav({
             type="button"
             aria-label="Cerrar menú"
             onClick={() => setAbierto(false)}
-            className="absolute inset-0 bg-stone-900/40"
+            className="absolute inset-0 bg-graphite-900/40 backdrop-blur-[2px]"
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-stone-100 px-4 py-4">
-              <span className="font-semibold text-cdmb-800">Menú</span>
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-soft-lg">
+            <div className="flex items-center justify-between border-b border-graphite-100 px-4 py-4">
+              <span className="font-semibold text-graphite-900">Menú</span>
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
                 aria-label="Cerrar menú"
-                className="rounded-md p-1.5 text-stone-500 hover:bg-stone-100"
+                className="rounded-lg p-1.5 text-graphite-500 hover:bg-graphite-100"
               >
                 <X className="h-5 w-5" aria-hidden />
               </button>
@@ -80,18 +80,18 @@ export function MobileNav({
               mostrarCorrespondencia={mostrarCorrespondencia}
             />
 
-            <div className="border-t border-stone-100 p-3">
-              <Link href="/mi-cuenta" className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-stone-50">
+            <div className="border-t border-graphite-100 p-3">
+              <Link href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-graphite-50">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
                   {iniciales}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-stone-800">{nombre}</p>
-                  <p className="truncate text-xs text-stone-400">{subtitulo}</p>
+                  <p className="truncate text-sm font-medium text-graphite-800">{nombre}</p>
+                  <p className="truncate text-xs text-graphite-400">{subtitulo}</p>
                 </div>
               </Link>
-              <form action="/api/auth/logout" method="post" className="mt-1 px-2">
-                <button className="flex w-full items-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 active:scale-95">
+              <form action="/api/auth/logout" method="post" className="mt-1.5 px-2">
+                <button className="flex w-full items-center gap-1.5 rounded-lg border border-graphite-200 px-3 py-1.5 text-xs font-medium text-graphite-600 hover:bg-graphite-50 active:scale-95">
                   <LogOut className="h-3.5 w-3.5" aria-hidden />
                   Salir
                 </button>

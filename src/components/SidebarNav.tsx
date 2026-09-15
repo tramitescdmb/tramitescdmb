@@ -70,7 +70,7 @@ export function SidebarNav({
   ];
 
   return (
-    <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Navegación">
+    <nav className="flex flex-1 flex-col gap-7 overflow-y-auto px-3 py-5" aria-label="Navegación">
       <Grupo items={principal} activo={activo} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} />}
     </nav>
@@ -80,8 +80,10 @@ export function SidebarNav({
 function Grupo({ titulo, items, activo }: { titulo?: string; items: Item[]; activo: (item: Item) => boolean }) {
   return (
     <div>
-      {titulo && <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-400">{titulo}</p>}
-      <ul className="space-y-0.5">
+      {titulo && (
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-graphite-400">{titulo}</p>
+      )}
+      <ul className="space-y-1">
         {items.map((item) => (
           <li key={item.href}>
             <EnlaceNav item={item} activo={activo(item)} />
@@ -98,11 +100,19 @@ function EnlaceNav({ item, activo }: { item: Item; activo: boolean }) {
     <Link
       href={item.href}
       aria-current={activo ? "page" : undefined}
-      className={`flex items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-        activo ? "bg-cdmb-50 text-cdmb-800" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+      className={`flex items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+        activo
+          ? "bg-cdmb-50 text-cdmb-800"
+          : "text-graphite-600 hover:bg-graphite-50 hover:text-graphite-900"
       }`}
     >
-      <Icon className={`h-[18px] w-[18px] flex-none ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
+      <span
+        className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg transition-colors ${
+          activo ? "bg-white text-cdmb-600 shadow-sm" : "text-graphite-400"
+        }`}
+      >
+        <Icon className="h-[17px] w-[17px]" aria-hidden />
+      </span>
       {item.label}
     </Link>
   );
