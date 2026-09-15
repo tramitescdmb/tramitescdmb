@@ -29,7 +29,7 @@ export function PanelCicloNav({ esAdmin }: { esAdmin: boolean }) {
   return (
     <nav
       aria-label="Vistas del tablero"
-      className="rounded-xl border border-stone-200 bg-white px-3 py-4 sm:px-6"
+      className="rounded-xl border border-stone-200 bg-white shadow-soft px-3 py-4 sm:px-6"
     >
       <div className="overflow-x-auto overflow-y-hidden">
       <ol className="flex min-w-[34rem] items-start justify-between gap-1 py-1">

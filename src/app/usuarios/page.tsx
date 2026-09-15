@@ -155,7 +155,7 @@ export default async function UsuariosPage({
         </div>
       )}
 
-      <form action="/usuarios" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+      <form action="/usuarios" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="min-w-[220px] flex-1">
           <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
           <input

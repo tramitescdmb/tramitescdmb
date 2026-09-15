@@ -53,7 +53,7 @@ export default async function SolicitanteDetallePage({
         </p>
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos de contacto</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           {solicitante.tipo === "JURIDICA" ? (
@@ -118,7 +118,7 @@ export default async function SolicitanteDetallePage({
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
           Expedientes de este solicitante ({solicitante.expedientes.length})
         </h2>
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           {solicitante.expedientes.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-stone-400">Todavía no tiene expedientes.</p>
           ) : (

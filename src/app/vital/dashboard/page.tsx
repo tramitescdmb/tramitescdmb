@@ -32,7 +32,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
     return (
       <div className="space-y-4">
         <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
-        <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
+        <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
           {rango
             ? "No hay solicitudes de VITAL en el período seleccionado."
             : "Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la pestaña Solicitudes."}
@@ -56,14 +56,14 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
         />
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
         <p className="mb-2 text-xs text-stone-500">{rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.</p>
         <AreaTrendChart data={d.serieMensual} emptyMessage="Sin datos mensuales." />
       </section>
 
       {d.serieAnual.length >= 2 && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Por año</h2>
           <p className="mb-2 text-xs text-stone-500">Radicaciones por año (según la fecha que reporta VITAL).</p>
           <AreaAnual data={d.serieAnual} emptyMessage="Sin datos por año." />
@@ -71,12 +71,12 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Por tipo de trámite</h2>
           <p className="mb-3 text-xs text-stone-500">Cuántas solicitudes hay de cada trámite VITAL.</p>
           <BarChartHorizontal data={d.porTramite} emptyMessage="Sin datos." />
         </section>
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Por actividad</h2>
           <p className="mb-3 text-xs text-stone-500">Las 10 actividades más frecuentes en el flujo de VITAL.</p>
           <BarChartHorizontal data={d.porActividad} emptyMessage="Sin datos." />
@@ -84,7 +84,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
       </div>
 
       {d.recurrentes.length > 0 && (
-        <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           <div className="border-b border-stone-100 px-4 py-3">
             <h2 className="text-sm font-semibold text-stone-900">Solicitantes recurrentes</h2>
             <p className="text-xs text-stone-500">Quiénes más radican en VITAL (por identificación).</p>
@@ -124,7 +124,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
 function Kpi({ icon: Icon, label, value }: { icon: typeof Inbox; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
         <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
         {label}

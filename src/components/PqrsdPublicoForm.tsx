@@ -148,7 +148,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
     <div className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-4">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <input
           type="checkbox"
           checked={anonima}
@@ -166,7 +166,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         </span>
       </label>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Tipo de solicitud</h2>
         <SectionHelp>
           Elija la que mejor describa lo que quiere: una petición pide algo, una queja se refiere a la conducta de un
@@ -180,7 +180,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         {ayudaTipo && <p className="mt-1.5 text-xs text-stone-500">{ayudaTipo}</p>}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Sus datos</h2>
         {!anonima && (
           <SectionHelp>
@@ -248,7 +248,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         )}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Su solicitud</h2>
         <div className="space-y-3">
           <Field label="Asunto" required help="Resumen de una línea de lo que necesita.">
@@ -260,7 +260,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos de soporte (opcional)</h2>
         <p className="mb-2 text-xs text-stone-500">
           Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí. Hasta {MAX_ARCHIVOS_LOTE} archivos,

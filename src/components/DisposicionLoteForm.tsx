@@ -134,7 +134,7 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
             )}
             <div className="space-y-2">
               {g.items.map((c) => (
-                <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
+                <div key={c.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-2.5">
                       <input

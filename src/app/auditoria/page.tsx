@@ -73,7 +73,7 @@ export default async function AuditoriaPage({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         {registros.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay registros con este filtro.</p>
         ) : (
@@ -101,7 +101,7 @@ export default async function AuditoriaPage({
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
           Actividad reciente en expedientes
         </h2>
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           {eventosExpedientes.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-stone-400">Sin actividad todavía.</p>
           ) : (

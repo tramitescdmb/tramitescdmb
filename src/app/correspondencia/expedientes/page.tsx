@@ -106,7 +106,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
 
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-2.5">
+      <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white shadow-soft p-2.5">
         <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
           <input
@@ -195,7 +195,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       )}
 
       <div
-        className={`overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none ${
+        className={`overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none ${
           modo === "carpetas" && expedientes.length > 0 ? "hidden print:block" : ""
         }`}
       >
@@ -264,7 +264,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       </div>
 
       {expedientes.length > 0 && (
-        <div className="rounded-xl border border-stone-200 bg-white print:hidden">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft print:hidden">
           <SelectorVista vistaActual={vista} />
           <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
         </div>

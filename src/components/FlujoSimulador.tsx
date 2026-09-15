@@ -57,7 +57,7 @@ export function FlujoSimulador({ pasos, transiciones }: { pasos: Paso[]; transic
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-sm font-semibold text-stone-900">Simulación</p>
         <button type="button" onClick={reiniciar} className="inline-flex items-center gap-1 text-xs text-cdmb-700 hover:underline">

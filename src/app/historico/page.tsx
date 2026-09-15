@@ -30,7 +30,7 @@ export default async function HistoricoPanelPage({
 
   if (!sincaConfigurado()) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
         La conexión con SINCA 1.0 no está configurada en este servidor (variables <code>SINCA_API_URL</code>, <code>SINCA_API_USUARIO</code>, <code>SINCA_API_PASSWORD</code>).
       </div>
     );
@@ -57,7 +57,7 @@ export default async function HistoricoPanelPage({
       {selector}
 
       {sinDatos ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center">
           <p className="text-sm text-stone-600">
             {rango
               ? "No hay resoluciones en el período seleccionado."
@@ -86,7 +86,7 @@ export default async function HistoricoPanelPage({
             <Kpi icon={Hash} label="Con N.º de resolución" value={num(d.conResolucion)} />
           </div>
 
-          <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="text-sm font-semibold text-stone-900">Solicitudes por año</h2>
             <p className="mb-2 text-xs text-stone-500">
               {rango ? `${etiqueta}, por` : "Por"} fecha de la resolución de fondo. Pase el mouse para ver cualquier año.
@@ -107,7 +107,7 @@ export default async function HistoricoPanelPage({
             <Panel titulo="Por estado" sub="Casi todas aprobadas; el resto negadas, desistidas o sin permiso requerido.">
               <BarChartHorizontal data={d.porEstado} emptyMessage="Sin datos." />
             </Panel>
-            <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+            <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
               <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
                 <h2 className="text-sm font-semibold text-stone-900">Últimas resoluciones</h2>
                 <Link href="/historico/solicitudes" className="text-xs font-medium text-cdmb-700 hover:underline">
@@ -154,7 +154,7 @@ export default async function HistoricoPanelPage({
 
 function Kpi({ icon: Icon, label, value, hint }: { icon: typeof Scale; label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
         <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
         {label}
@@ -167,7 +167,7 @@ function Kpi({ icon: Icon, label, value, hint }: { icon: typeof Scale; label: st
 
 function Panel({ titulo, sub, children }: { titulo: string; sub: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <h2 className="text-sm font-semibold text-stone-900">{titulo}</h2>
       <p className="mb-3 text-xs text-stone-500">{sub}</p>
       {children}

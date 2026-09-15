@@ -160,7 +160,7 @@ export function VentanillaRadicacionForm({
     <div className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Remitente</h2>
         <SectionHelp>
           Si queda identificado (documento) y con municipio, se guarda en el registro maestro de terceros para no
@@ -220,7 +220,7 @@ export function VentanillaRadicacionForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Comunicación</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-4">
@@ -293,7 +293,7 @@ export function VentanillaRadicacionForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
         <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">

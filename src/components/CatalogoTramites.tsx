@@ -185,7 +185,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   return (
     <Link
       href={href}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:shadow-sm"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft p-4 pt-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:shadow-sm"
     >
       <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
 

@@ -28,7 +28,7 @@ export default async function HistoricoSolicitudesPage({
   }
   const esAdmin = session?.rol === "ADMIN";
   if (!sincaConfigurado()) {
-    return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
+    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
   const filtros = await searchParams;

@@ -4,7 +4,7 @@
  * color (accesibilidad: daltonismo, impresión en blanco y negro).
  */
 const ESTILOS: Record<string, { chip: string; punto: string }> = {
-  RADICADO: { chip: "bg-blue-50 text-blue-700 ring-blue-600/20", punto: "bg-blue-500" },
+  RADICADO: { chip: "bg-techblue-50 text-techblue-700 ring-techblue-600/20", punto: "bg-techblue-500" },
   EN_TRAMITE: { chip: "bg-amber-50 text-amber-800 ring-amber-600/20", punto: "bg-amber-500" },
   INFORMACION_ADICIONAL_REQUERIDA: { chip: "bg-orange-50 text-orange-800 ring-orange-600/20", punto: "bg-orange-500" },
   SUSPENDIDO: { chip: "bg-stone-100 text-stone-600 ring-stone-500/20", punto: "bg-stone-400" },

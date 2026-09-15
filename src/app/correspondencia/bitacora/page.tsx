@@ -76,7 +76,7 @@ export default async function BitacoraPage({
       <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4 print:border-0 print:p-0">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 print:border-0 print:p-0">
         <form method="get" className="grid grid-cols-2 gap-3 print:hidden sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>
             <option value="">Cualquier acción</option>

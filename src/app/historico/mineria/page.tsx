@@ -28,7 +28,7 @@ const mesLegible = (ym: string) => {
 
 function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale; titulo: string; sub?: string; children: ReactNode; span?: boolean }) {
   return (
-    <section className={`rounded-xl border border-stone-200 bg-white p-4 ${span ? "lg:col-span-2" : ""}`}>
+    <section className={`rounded-xl border border-stone-200 bg-white shadow-soft p-4 ${span ? "lg:col-span-2" : ""}`}>
       <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
         <Icon className="h-4 w-4 text-cdmb-600" aria-hidden />
         {titulo}
@@ -49,12 +49,12 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     if (!puedeAccederSeccion(permisos, "SINCA_MINERIA")) redirect("/");
   }
   if (!sincaConfigurado()) {
-    return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
+    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
   const [a, m] = await Promise.all([getAnalitica(rango), getMineria(rango)]);
   if (a.totalGeneral === 0) {
-    return <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
+    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
   }
 
   const g = a.pronostico;
@@ -325,7 +325,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
 
 function Kpi({ icon: Icon, label, valor, sub }: { icon: typeof Scale; label: string; valor: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
         <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
         {label}

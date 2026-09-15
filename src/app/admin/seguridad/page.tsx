@@ -30,7 +30,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
       </SectionHelp>
 
       <form action="/api/configuracion-seguridad" method="post" className="space-y-6">
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Disponibilidad de módulos</h2>
           <SectionHelp>
             Mientras un módulo esté oculto, solo un administrador lo ve y puede entrar — sirve para tenerlo en
@@ -57,7 +57,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-2">
           <Field label="Intentos fallidos permitidos" help="Entre 3 y 20.">
             <input type="number" name="loginMaxIntentos" min={3} max={20} defaultValue={config.loginMaxIntentos} required className={inputCls} />
           </Field>
@@ -66,7 +66,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
           </Field>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Política de contraseñas</h2>
           <SectionHelp>
             Aplica al crear o restablecer una contraseña — no revisa retroactivamente las existentes. Las
@@ -108,7 +108,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Formatos de archivo permitidos</h2>
           <SectionHelp>
             Formatos aceptados al subir un documento, en toda la aplicación. Separados por coma o espacio, sin

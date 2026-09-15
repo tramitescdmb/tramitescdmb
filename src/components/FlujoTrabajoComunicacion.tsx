@@ -47,7 +47,7 @@ export async function FlujoTrabajoComunicacion({
     enCurso?.pasoActual && comunicacion ? describirResponsablePaso(enCurso.pasoActual, comunicacion) : null;
 
   return (
-    <section id="flujo" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4">
+    <section id="flujo" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
         <Workflow className="h-4 w-4 text-cdmb-600" aria-hidden /> Flujo de trabajo
       </h2>

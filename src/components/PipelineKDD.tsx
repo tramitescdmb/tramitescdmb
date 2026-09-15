@@ -20,7 +20,7 @@ export function PipelineKDD() {
         const Icon = e.icon;
         return (
           <li key={e.n} className="flex flex-col md:flex-1 md:flex-row md:items-center">
-            <div className="flex flex-1 flex-col rounded-xl border border-stone-200 bg-white p-3">
+            <div className="flex flex-1 flex-col rounded-xl border border-stone-200 bg-white shadow-soft p-3">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-cdmb-600 text-xs font-bold text-white">
                   {e.n}

@@ -35,7 +35,7 @@ export function NuevoExpedienteDocumentalForm({
   const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
 
   return (
-    <form action="/api/correspondencia/expedientes" method="post" className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+    <form action="/api/correspondencia/expedientes" method="post" className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       {plantillas.length > 0 && (
         <PlantillaSelector
           plantillas={plantillas}

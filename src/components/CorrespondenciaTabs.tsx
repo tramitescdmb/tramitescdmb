@@ -235,7 +235,7 @@ function MenuGrupo({
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className={`absolute top-full z-20 mt-2 min-w-[15rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
+          className={`absolute top-full z-20 mt-2 min-w-[15rem] rounded-xl border border-stone-200 bg-white shadow-soft p-1.5 shadow-xl ring-1 ring-black/5 ${
             grupo.alinearDerecha ? "right-0" : "left-0"
           }`}
         >

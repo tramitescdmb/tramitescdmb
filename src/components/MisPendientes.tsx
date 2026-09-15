@@ -17,7 +17,7 @@ export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }
 
   if (!resumen.hayAlgo) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white p-4">
+      <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
           <CheckCircle2 className="h-[18px] w-[18px]" aria-hidden />
         </span>
@@ -32,7 +32,7 @@ export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
       <div className="border-b border-stone-100 px-5 py-3">
         <h2 className="text-sm font-semibold text-stone-900">Sus pendientes</h2>
         <p className="text-xs text-stone-500">

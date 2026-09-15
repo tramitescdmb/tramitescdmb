@@ -97,7 +97,7 @@ export default async function SolicitantesPage({
         </div>
       </div>
 
-      <form action="/solicitantes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+      <form action="/solicitantes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="min-w-[220px] flex-1">
           <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
           <input
@@ -138,7 +138,7 @@ export default async function SolicitantesPage({
 
       <ResumenResultados total={total} detalle={detalleFiltro} />
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         {solicitantes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">
             {hayFiltros ? "Ningún solicitante coincide con ese filtro." : "Todavía no hay solicitantes registrados."}

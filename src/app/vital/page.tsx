@@ -91,7 +91,7 @@ export default async function VitalSolicitudesPage({
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       {/* Filtros estilo SINCA 1.0 */}
-      <form method="get" className="rounded-xl border border-stone-200 bg-white p-4">
+      <form method="get" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -127,7 +127,7 @@ export default async function VitalSolicitudesPage({
 
       <ResumenResultados total={total} detalle={detalleFiltro} />
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
           <TablaVital
             filas={filas.map((s, i) => ({
@@ -149,7 +149,7 @@ export default async function VitalSolicitudesPage({
       </div>
 
       {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white p-4" open={total === 0}>
+        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4" open={total === 0}>
           <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
             <RefreshCw className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
             Sincronizar desde VITAL

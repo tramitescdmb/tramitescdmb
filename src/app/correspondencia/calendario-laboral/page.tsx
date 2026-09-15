@@ -46,7 +46,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {/* Jornada */}
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarDays className="h-4 w-4 text-cdmb-600" aria-hidden /> Jornada laboral
         </h3>
@@ -92,7 +92,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
       </section>
 
       {/* Días no laborados */}
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarOff className="h-4 w-4 text-cdmb-600" aria-hidden /> Días no laborados de la Corporación
         </h3>
@@ -154,7 +154,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
       </section>
 
       {/* Festivos de ley (referencia) */}
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="text-sm font-semibold text-stone-900">Festivos de ley {anio} (referencia)</h3>
         <SectionHelp>Se calculan solos (Ley 51/1983 — Ley Emiliani) y no se editan aquí.</SectionHelp>
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">

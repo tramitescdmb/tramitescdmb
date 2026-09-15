@@ -35,7 +35,7 @@ export default async function PanelMiTrabajoPage() {
       </p>
 
       {p.mis.lista.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-400">
@@ -72,7 +72,7 @@ export default async function PanelMiTrabajoPage() {
           </table>
         </div>
       ) : (
-        <p className="rounded-xl border border-stone-200 bg-white px-4 py-8 text-center text-sm text-stone-400">
+        <p className="rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-8 text-center text-sm text-stone-400">
           No tiene radicados asignados pendientes.
         </p>
       )}

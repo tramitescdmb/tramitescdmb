@@ -34,7 +34,7 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Nombre</p>
           <p className="text-sm text-stone-800">{usuario.nombre}</p>
@@ -74,7 +74,7 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
           sistemas.
         </SectionHelp>
       ) : (
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h2 className="text-sm font-semibold text-stone-900">Cambiar mi contraseña</h2>
           {vigencia?.diasRestantes !== null && vigencia && (
             <p className={`mt-1 text-xs ${vigencia.vencida ? "text-red-600" : "text-stone-500"}`}>

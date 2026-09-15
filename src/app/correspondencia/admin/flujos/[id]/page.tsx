@@ -94,7 +94,7 @@ export default async function FlujoEditorPage({
       </div>
 
       {/* Datos del flujo */}
-      <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-3">
+      <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
         <input type="hidden" name="accion" value="editar" />
         <div className="sm:col-span-2">
           <Field label="Nombre" required><input name="nombre" defaultValue={flujo.nombre} className={inputCls} required /></Field>
@@ -128,7 +128,7 @@ export default async function FlujoEditorPage({
       </form>
 
       {/* Quién puede operar el flujo (MoReq 7.8) */}
-      <form action={accion} method="post" className="rounded-xl border border-stone-200 bg-white p-4">
+      <form action={accion} method="post" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <input type="hidden" name="accion" value="accesos" />
         <p className="text-sm font-semibold text-stone-900">Quién puede operar este flujo</p>
         <p className="mt-0.5 text-xs text-stone-500">
@@ -150,7 +150,7 @@ export default async function FlujoEditorPage({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-stone-900">Pasos ({flujo.pasos.length})</h3>
         {flujo.pasos.map((paso, idx) => (
-          <div key={paso.id} className="rounded-xl border border-stone-200 bg-white p-4">
+          <div key={paso.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="flex items-center gap-2 font-medium text-stone-800">

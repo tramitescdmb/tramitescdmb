@@ -39,7 +39,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
         </SectionHelp>
       </div>
 
-      <details className="rounded-xl border border-stone-200 bg-white p-4">
+      <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <summary className="cursor-pointer text-sm font-semibold text-stone-900">Crear un campo</summary>
         <form action="/api/correspondencia/metadatos" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="sm:col-span-2">
@@ -89,7 +89,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
       ) : (
         <div className="space-y-2">
           {campos.map((c) => (
-            <details key={c.id} className={`rounded-xl border border-stone-200 bg-white p-4 ${c.activo ? "" : "opacity-60"}`}>
+            <details key={c.id} className={`rounded-xl border border-stone-200 bg-white shadow-soft p-4 ${c.activo ? "" : "opacity-60"}`}>
               <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm font-medium text-stone-800">
                 {c.nombre}
                 <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_TIPO_CAMPO[c.tipo]}</span>

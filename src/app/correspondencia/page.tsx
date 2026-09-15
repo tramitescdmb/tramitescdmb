@@ -127,7 +127,7 @@ export default async function CorrespondenciaBandejaPage({
       </div>
 
       {firmables.length > 0 && (
-        <details className="print:hidden rounded-xl border border-stone-200 bg-white">
+        <details className="print:hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-3 text-sm font-medium text-stone-700">
             <FileEdit className="h-4 w-4 text-stone-400" aria-hidden />
             Firma en lote — {firmables.length} oficio(s)/memorando(s) sin su firma
@@ -163,7 +163,7 @@ export default async function CorrespondenciaBandejaPage({
         <Semaforo color="bg-red-500">Término vencido</Semaforo>
       </div>
 
-      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white">
+      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white shadow-soft">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
           <span className="flex items-center gap-1.5">
             <Search className="h-4 w-4 text-stone-400" aria-hidden />
@@ -281,7 +281,7 @@ export default async function CorrespondenciaBandejaPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white print:overflow-visible print:rounded-none print:border-none">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none">
         <div className="overflow-x-auto">
           <TablaCorrespondencia
             filas={filas.map((c, i) => ({

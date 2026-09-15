@@ -60,7 +60,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         />
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-5">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
         <p className="mb-4 text-xs text-stone-500">
           {rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.
@@ -69,7 +69,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-stone-200 bg-white p-5">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
           <h2 className="text-sm font-semibold text-stone-900">Municipios con más solicitudes</h2>
           <p className="mb-4 text-xs text-stone-500">
             Municipio donde se adelanta el trámite (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
@@ -77,14 +77,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
           <h2 className="text-sm font-semibold text-stone-900">Trámites más solicitados</h2>
           <p className="mb-4 text-xs text-stone-500">Cuáles de sus {d.totalTramites} trámites concentran más expedientes.</p>
           <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
         <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
           <h2 className="text-sm font-semibold text-stone-900">Actividad reciente</h2>
           <Link href="/expedientes" className="text-sm text-cdmb-700 hover:underline">
@@ -150,7 +150,7 @@ function StatCard({
     <Link
       href={href}
       title={help}
-      className="group flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
+      className="group flex flex-col gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
     >
       <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${estilos.icono}`}>
         <Icon className="h-[18px] w-[18px]" aria-hidden />

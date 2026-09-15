@@ -9,6 +9,25 @@ export default {
         sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans],
       },
       colors: {
+        // El resto de la app (todo lo que no se ha tocado módulo por módulo todavía) usa
+        // "stone" (gris CÁLIDO de Tailwind) en cientos de sitios. Se sobrescribe acá con los
+        // mismos valores fríos de "graphite" — así TODA la plataforma adopta el tono de la
+        // línea tecnológica de una sola vez, sin tener que reemplazar cada `stone-*` por
+        // `graphite-*` archivo por archivo. Es intencional: los dos nombres quedan como
+        // sinónimos exactos del mismo gris frío.
+        stone: {
+          50: "#f6f7f9",
+          100: "#eceef2",
+          200: "#dde1e7",
+          300: "#c3c9d3",
+          400: "#9aa3b2",
+          500: "#727d8f",
+          600: "#545e6f",
+          700: "#3f4757",
+          800: "#2b3140",
+          900: "#1c212c",
+          950: "#12151d",
+        },
         cdmb: {
           50: "#eefaf1",
           100: "#d5f2dd",

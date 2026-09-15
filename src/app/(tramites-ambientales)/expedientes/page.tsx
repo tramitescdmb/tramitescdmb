@@ -142,7 +142,7 @@ export default async function ExpedientesPage({
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
-      <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+      <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
         {soloMios && <input type="hidden" name="asignados" value="mi" />}
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
@@ -226,7 +226,7 @@ export default async function ExpedientesPage({
 
       <ResumenResultados total={total} detalle={detalleFiltro} />
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         {expedientes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay expedientes con este filtro.</p>
         ) : (

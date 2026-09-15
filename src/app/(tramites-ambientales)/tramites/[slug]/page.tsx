@@ -202,7 +202,7 @@ export default async function TramiteDetallePage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* Objeto / alcance / autoridad en una sola tarjeta compacta, con líneas de resumen */}
-          <section className="relative overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pl-5 text-sm">
+          <section className="relative overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft p-4 pl-5 text-sm">
             <span className={`absolute inset-y-0 left-0 w-1.5 ${categoria.clases.barra}`} aria-hidden />
             <div className="space-y-3">
               <p className="text-base text-stone-800">{resumenMostrado}</p>
@@ -239,7 +239,7 @@ export default async function TramiteDetallePage({
           </section>
 
           {cargos.length > 0 && (
-            <section className="rounded-xl border border-stone-200 bg-white p-4">
+            <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
               <h2 className="text-sm font-semibold text-stone-900">Quiénes intervienen</h2>
               <p className="mt-0.5 text-xs text-stone-500">
                 Cargos de la CDMB que participan en algún paso de este trámite, según el procedimiento oficial.
@@ -261,7 +261,7 @@ export default async function TramiteDetallePage({
           )}
 
           {tramite.documentosRequeridos.length > 0 && (
-            <section className="rounded-xl border border-stone-200 bg-white p-4">
+            <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
               <DocumentosParaRadicar documentos={tramite.documentosRequeridos} claseIcono={categoria.clases.icono} />
             </section>
           )}
@@ -410,7 +410,7 @@ export default async function TramiteDetallePage({
             )}
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white">
+          <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
             <div className="border-b border-stone-100 px-4 py-3">
               <h3 className="text-sm font-semibold text-stone-900">Expedientes recientes</h3>
             </div>

@@ -69,7 +69,7 @@ export default async function FichaFondoPage({
         <ArrowLeft className="h-4 w-4" aria-hidden /> Volver al fondo histórico
       </Link>
 
-      <header className="rounded-xl border border-stone-200 bg-white p-5">
+      <header className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-amber-100 text-amber-700">
             <Archive className="h-4 w-4" aria-hidden />
@@ -86,7 +86,7 @@ export default async function FichaFondoPage({
         </p>
       </header>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <h2 className="mb-3 text-sm font-semibold text-stone-700">Datos del documento</h2>
         <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
           {generales
@@ -101,7 +101,7 @@ export default async function FichaFondoPage({
       </section>
 
       {camposVisibles.length > 0 && (
-        <section className="rounded-xl border border-stone-200 bg-white p-5">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
           <h2 className="mb-3 text-sm font-semibold text-stone-700">Metadatos adicionales</h2>
           <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
             {camposVisibles.map(([k, v]) => (

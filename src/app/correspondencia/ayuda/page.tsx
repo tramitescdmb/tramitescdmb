@@ -58,7 +58,7 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-5 print:break-inside-avoid print:border-stone-300">
+    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5 print:break-inside-avoid print:border-stone-300">
       <div className="mb-3 flex flex-wrap items-center gap-2.5 border-b border-stone-100 pb-3">
         <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-cdmb-600 text-[11px] font-bold text-white">{n}</span>
         <Icono className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />

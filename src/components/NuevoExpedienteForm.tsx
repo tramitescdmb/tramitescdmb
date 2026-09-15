@@ -295,7 +295,7 @@ export function NuevoExpedienteForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
+      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <h2 className="text-sm font-semibold text-stone-900">1. Datos del solicitante</h2>
 
         {flujos.length > 1 && (
@@ -530,7 +530,7 @@ export function NuevoExpedienteForm({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
+      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <h2 className="text-sm font-semibold text-stone-900">2. Lugar del trámite</h2>
 
         <Field
@@ -686,7 +686,7 @@ export function NuevoExpedienteForm({
         )}
       </section>
 
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
+      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <div>
           <h2 className="text-sm font-semibold text-stone-900">3. Documentos</h2>
           <p className="text-xs text-stone-500">

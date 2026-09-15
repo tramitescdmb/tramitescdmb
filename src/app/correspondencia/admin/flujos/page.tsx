@@ -51,7 +51,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
         </span>
       </div>
 
-      <details className="rounded-xl border border-stone-200 bg-white p-4">
+      <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <summary className="cursor-pointer text-sm font-semibold text-stone-900">Crear un flujo desde cero</summary>
         <form action="/api/correspondencia/flujos" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <input type="hidden" name="accion" value="crear" />
@@ -88,7 +88,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
             <Link
               key={f.id}
               href={`/correspondencia/admin/flujos/${f.id}`}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-4 hover:border-stone-300"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 hover:border-stone-300"
             >
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-stone-800">

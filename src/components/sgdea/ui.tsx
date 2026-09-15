@@ -46,13 +46,13 @@ export function Sub({ children }: { children: ReactNode }) {
 /* ------------------------------------------------------------------ Contenedores */
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-stone-200 bg-white p-5 ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-stone-100 bg-white p-5 shadow-soft ${className}`}>{children}</div>;
 }
 
 /** Estado vacío uniforme (misma caja que un panel, texto centrado y tenue). */
 export function EstadoVacio({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white px-4 py-10 text-center text-sm text-stone-400">
+    <div className="rounded-2xl border border-stone-100 bg-white px-4 py-10 text-center text-sm text-stone-400 shadow-soft">
       {Icon && <Icon className="mx-auto mb-2 h-6 w-6 text-stone-300" aria-hidden />}
       {children}
     </div>
@@ -64,7 +64,7 @@ export function EstadoVacio({ children, icon: Icon }: { children: ReactNode; ico
 const TONOS_KPI: Record<string, string> = {
   neutro: "text-stone-400",
   cdmb: "text-cdmb-600",
-  azul: "text-blue-600",
+  azul: "text-techblue-600",
   ambar: "text-amber-600",
   cian: "text-cyan-600",
   rojo: "text-red-600",
@@ -87,7 +87,7 @@ export function TarjetaKpi({
   href?: string;
 }) {
   const inner = (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 transition hover:border-stone-300">
+    <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg">
       <div className="flex items-center gap-2 text-stone-400">
         <Icon className={`h-4 w-4 ${TONOS_KPI[tono]}`} aria-hidden />
         <span className="text-xs uppercase tracking-wide">{label}</span>

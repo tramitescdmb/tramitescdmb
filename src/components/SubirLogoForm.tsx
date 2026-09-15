@@ -77,7 +77,7 @@ export function SubirLogoForm({
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <p className="text-sm font-medium text-stone-800">{etiqueta}</p>
       <p className="mb-3 text-xs text-stone-500">{ayuda}</p>
 

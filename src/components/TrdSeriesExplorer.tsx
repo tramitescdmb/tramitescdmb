@@ -175,13 +175,13 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
       </p>
 
       {grupoFiltrados.length === 0 && (
-        <p className="rounded-xl border border-stone-200 bg-white p-6 text-center text-sm text-stone-400">
+        <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-6 text-center text-sm text-stone-400">
           {termino ? "Ninguna serie o subserie coincide con ese filtro." : "Aún no hay series documentales. Agregue la primera arriba."}
         </p>
       )}
 
       {grupoFiltrados.map((g) => (
-        <details key={g.codigo || "sin-dependencia"} open={g.abiertoPorFiltro} className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <details key={g.codigo || "sin-dependencia"} open={g.abiertoPorFiltro} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           <summary className="flex cursor-pointer items-center justify-between gap-2 bg-stone-50 px-4 py-2.5 text-sm font-semibold text-stone-800">
             <span>{g.codigo ? `${g.codigo} — ${g.nombre}` : g.nombre}</span>
             <span className="text-xs font-normal text-stone-400">{g.series.length} serie(s)</span>

@@ -41,11 +41,11 @@ export default async function VitalRecientesPage() {
       </div>
 
       {recientes.length === 0 ? (
-        <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-400">
+        <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-400">
           Todavía no se ha traído ninguna solicitud de VITAL.
         </p>
       ) : (
-        <ul className="overflow-hidden rounded-xl border border-stone-200 bg-white divide-y divide-stone-100">
+        <ul className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft divide-y divide-stone-100">
           {recientes.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-stone-50">
               <Link href={`/vital/${s.id}`} className="min-w-0 flex-1">

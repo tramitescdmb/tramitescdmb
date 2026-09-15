@@ -171,7 +171,7 @@ export function RadicarEnviadaForm({
     <div className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">¿Responde a una comunicación recibida?</h2>
         <p className="mb-3 text-xs text-stone-400">Opcional — busque por radicado, asunto o tercero. Si la elige, esa recibida pasa a estado &quot;Respondida&quot; al radicar esta enviada.</p>
         <BuscadorRecibidaPendiente
@@ -180,7 +180,7 @@ export function RadicarEnviadaForm({
         />
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Destinatario</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Tipo de persona">
@@ -235,7 +235,7 @@ export function RadicarEnviadaForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-3 text-sm font-semibold text-stone-900">Oficio</h2>
         <SectionHelp>
           Al radicar queda firmado con hash SHA-256 (Ley 527/1999) — el asunto y el contenido dejan de poder
@@ -305,7 +305,7 @@ export function RadicarEnviadaForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
         <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
         {documentosRespuesta && documentosRespuesta.length > 0 && (

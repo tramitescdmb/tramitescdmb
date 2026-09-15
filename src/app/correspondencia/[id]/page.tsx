@@ -131,7 +131,7 @@ function Campo({ k, v }: { k: string; v: ReactNode }) {
 
 function Tarjeta({ titulo, children, extra, id }: { titulo: string; children: ReactNode; extra?: ReactNode; id?: string }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4">
+    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">{titulo}</h3>
         {extra}
@@ -275,7 +275,7 @@ export default async function CorrespondenciaDetallePage({
         </div>
       )}
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>

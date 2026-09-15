@@ -262,7 +262,7 @@ export default async function ExpedienteDetallePage({
       </div>
 
       {puedePrestar && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
             <Handshake className="h-3.5 w-3.5" aria-hidden />
             Préstamo
@@ -324,7 +324,7 @@ export default async function ExpedienteDetallePage({
       )}
 
       {puedeEditar && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
             <Pencil className="h-3.5 w-3.5" aria-hidden />
             Asunto y descripción
@@ -345,7 +345,7 @@ export default async function ExpedienteDetallePage({
         </section>
       )}
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
           <span>Índice electrónico ({documentosActivos.length} archivo{documentosActivos.length === 1 ? "" : "s"}{documentosActivos.length > 0 ? ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}` : ""})</span>
           {documentosActivos.length > 0 && (
@@ -552,7 +552,7 @@ export default async function ExpedienteDetallePage({
       </section>
 
       {expediente.comunicaciones.length > 0 && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-stone-500">Comunicaciones archivadas aquí</h3>
           <ul className="space-y-1.5">
             {expediente.comunicaciones.map((c) => (
@@ -568,7 +568,7 @@ export default async function ExpedienteDetallePage({
       )}
 
       {puedeAdministrarArchivo(permisos) && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Nivel de acceso a la información (Ley 1712/2014)</h3>
           <SectionHelp>
             Pública por defecto (Ley 1712/2014). <strong>Clasificado</strong>: protege un derecho particular.{" "}
@@ -598,7 +598,7 @@ export default async function ExpedienteDetallePage({
       )}
 
       {puedeCerrarEste && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Cierre del expediente</h3>
           <SectionHelp>
             Al cerrar (Art. 4.3.2.4 Acuerdo 001/2024 AGN) se firma el índice con hash y deja de admitir documentos —
@@ -637,7 +637,7 @@ export default async function ExpedienteDetallePage({
         </section>
       )}
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         <div className="p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
           <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>

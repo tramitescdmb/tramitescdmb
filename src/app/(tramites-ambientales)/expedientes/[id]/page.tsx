@@ -152,7 +152,7 @@ export default async function ExpedienteDetallePage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {/* Datos del solicitante */}
-          <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
               <div className="min-w-0">
@@ -452,7 +452,7 @@ export default async function ExpedienteDetallePage({
 
           {/* Cambio de estado manual — salida de emergencia que salta el flujo de pasos, por eso
               queda reservada al administrador (ver /api/expedientes/[id]/estado/route.ts). */}
-          <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
             <p className="mb-3 text-xs text-stone-500">
               Utilice esta opción para cerrar el expediente cuando el flujo no cuenta con un botón de
@@ -498,7 +498,7 @@ export default async function ExpedienteDetallePage({
 
           {/* Correspondencia asociada (SGDEA) — unificación con Trámites 2.0 */}
           {expediente.comunicaciones.length > 0 && (
-            <section className="rounded-xl border border-stone-200 bg-white p-4">
+            <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
               <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
               <p className="mb-3 text-xs text-stone-500">Comunicaciones del módulo de Correspondencia archivadas en este expediente.</p>
               <ul className="space-y-1.5">
@@ -518,7 +518,7 @@ export default async function ExpedienteDetallePage({
           )}
 
           {/* Historia del expediente — línea de tiempo */}
-          <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
             <p className="mb-3 text-xs text-stone-500">
               La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
@@ -576,14 +576,14 @@ export default async function ExpedienteDetallePage({
             </div>
 
             {expediente.documentos.length === 0 ? (
-              <div className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-stone-400">
+              <div className="rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-6 text-center text-sm text-stone-400">
                 Sin documentos todavía.
               </div>
             ) : (
               gruposDocumentos.map(([numeroPaso, docs]) => {
                 const tituloPaso = numeroPaso == null ? null : pasos.find((p) => p.numero === numeroPaso)?.titulo;
                 return (
-                  <div key={numeroPaso ?? "radicacion"} className="rounded-xl border border-stone-200 bg-white">
+                  <div key={numeroPaso ?? "radicacion"} className="rounded-xl border border-stone-200 bg-white shadow-soft">
                     <div className="border-b border-stone-100 bg-stone-50 px-4 py-2 rounded-t-xl">
                       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cdmb-700">
                         {numeroPaso == null ? (
@@ -641,7 +641,7 @@ export default async function ExpedienteDetallePage({
             )}
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-4 text-xs text-stone-500">
+          <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 text-xs text-stone-500">
             <p>
               <span className="font-medium text-stone-700">Radicado:</span>{" "}
               {formatearFecha(expediente.fechaRadicacion)}
@@ -664,7 +664,7 @@ export default async function ExpedienteDetallePage({
           )}
 
           {/* Asignación del expediente */}
-          <div className="rounded-xl border border-stone-200 bg-white p-4">
+          <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h3 className="text-sm font-semibold text-stone-900">Asignado a</h3>
             <p className="mb-2 text-xs text-stone-500">
               Quién(es) deben trabajar este expediente — usuarios puntuales y/o cargos completos.

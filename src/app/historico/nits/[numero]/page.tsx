@@ -21,7 +21,7 @@ function Campo({ k, v }: { k: string; v: string | null }) {
 
 function Tarjeta({ icon: Icon, titulo, children }: { icon: typeof MapPin; titulo: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
         <Icon className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
         {titulo}
@@ -61,7 +61,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
       </Link>
 
       {/* Cabecera */}
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-start gap-2.5">
             <span className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">

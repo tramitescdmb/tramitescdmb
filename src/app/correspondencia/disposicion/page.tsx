@@ -86,7 +86,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {pendientesTransferencia.map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3">
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-3">
                 <div className="min-w-0">
                   <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                   <p className="truncate text-xs text-stone-500">{c.asunto}</p>
@@ -120,7 +120,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {transferidasSinConfirmar.map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3">
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-3">
                 <div className="min-w-0">
                   <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                   <p className="truncate text-xs text-stone-500">{c.asunto}</p>
@@ -196,7 +196,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
           </TituloSeccion>
           <div className="space-y-2">
             {aplazadas.map((c) => (
-              <div key={c.id} className="rounded-xl border border-stone-200 bg-white p-3">
+              <div key={c.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
                 <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                 <p className="truncate text-xs text-stone-500">{c.asunto}</p>
                 <p className="mt-1 text-[11px] text-stone-400">
@@ -219,7 +219,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         {transferencias.total === 0 ? (
           <EstadoVacio>Todavía no se ha registrado ninguna transferencia al archivo central.</EstadoVacio>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-400">
@@ -264,7 +264,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {actas.map((a) => (
-              <div key={a.id} className="rounded-xl border border-stone-200 bg-white p-3 text-sm">
+              <div key={a.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-3 text-sm">
                 <p className="font-medium text-stone-800">Acta N.º {a.numero} — {fecha(a.fecha)}</p>
                 <p className="text-xs text-stone-500">Aprobada por {a.responsable}{a.aprobadaPor ? ` (registrada por ${a.aprobadaPor.nombre})` : ""}</p>
                 {a.motivacion && <p className="mt-1 text-xs text-stone-600">{a.motivacion}</p>}

@@ -182,7 +182,7 @@ function Editor({
   const edgeSel = sel?.tipo === "edge" ? edges.find((e) => e.id === sel.id) : null;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-2">
         <span className="text-xs font-medium text-stone-500">Agregar:</span>
         {(["TAREA", "REVISION", "DECISION", "FIN"] as Tipo[]).map((t) => (

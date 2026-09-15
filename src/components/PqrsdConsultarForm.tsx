@@ -59,7 +59,7 @@ export function PqrsdConsultarForm() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {error && <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
         <SectionHelp>
           Pedimos los dos datos (no solo el radicado) para que nadie más pueda consultar el estado de su solicitud.
@@ -84,7 +84,7 @@ export function PqrsdConsultarForm() {
       </div>
 
       {resultado && (
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <p className="font-mono text-sm font-semibold text-cdmb-700">{resultado.radicado}</p>
           <p className="mt-1 text-sm text-stone-700">{resultado.asunto}</p>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">

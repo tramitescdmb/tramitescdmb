@@ -44,7 +44,7 @@ function Campo({ k, v, href }: { k: string; v: string | null; href?: string }) {
 
 function Tarjeta({ icon: Icon, titulo, children, extra }: { icon: typeof MapPin; titulo: string; children: ReactNode; extra?: ReactNode }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
           <Icon className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
@@ -102,7 +102,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
       </Link>
 
       {/* Cabecera compacta */}
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-stone-900">Resolución {base.numeroResolucion ?? "—"}</h2>
           <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">{base.estado ?? "—"}</span>
@@ -259,7 +259,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
       )}
 
       {esAdmin && d && (
-        <details className="rounded-xl border border-stone-200 bg-white p-3 text-sm">
+        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-3 text-sm">
           <summary className="cursor-pointer text-xs font-medium text-stone-500">Datos técnicos (solo administradores)</summary>
           <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-stone-900 p-3 text-xs text-stone-100">{JSON.stringify(d, null, 2)}</pre>
         </details>

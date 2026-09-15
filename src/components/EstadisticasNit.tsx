@@ -29,7 +29,7 @@ function Kpi({
   hint?: string;
   href?: string;
 }) {
-  const clases = `rounded-xl border border-stone-200 bg-white p-3 ${href ? "block transition-colors hover:border-cdmb-300 hover:bg-cdmb-50/40" : ""}`;
+  const clases = `rounded-xl border border-stone-200 bg-white shadow-soft p-3 ${href ? "block transition-colors hover:border-cdmb-300 hover:bg-cdmb-50/40" : ""}`;
   const contenido = (
     <>
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
@@ -80,7 +80,7 @@ export function EstadisticasNit() {
   }, []);
 
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
       <h3 className="text-sm font-semibold text-stone-900">Estadísticas del registro completo</h3>
       <p className="mb-3 text-xs text-stone-500">Terceros distintos en todo SINCA 1.0, con o sin ninguna solicitud vinculada.</p>
 

@@ -84,7 +84,7 @@ export function NuevoSolicitanteForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-stone-200 bg-white p-5">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
       <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="Defina si corresponde a persona natural o a empresa/entidad. Esta selección determina si se solicita cédula o NIT.">
         <select
           value={tipo}

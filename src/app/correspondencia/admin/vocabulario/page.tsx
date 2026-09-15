@@ -46,7 +46,7 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
           por palabra clave es consistente. La <strong>categoría</strong> es opcional, solo agrupa la lista.
         </SectionHelp>
 
-        <form action="/api/correspondencia/vocabulario" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-3">
+        <form action="/api/correspondencia/vocabulario" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
           <div className="sm:col-span-2">
             <Field label="Término" required>
               <input name="termino" className={inputCls} placeholder="Ej. Vertimientos" required />
@@ -63,9 +63,9 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
         </form>
 
         {terminos.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-400">El vocabulario está vacío.</p>
+          <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 text-sm text-stone-400">El vocabulario está vacío.</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
             <table className="w-full text-sm">
               <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
                 <tr>

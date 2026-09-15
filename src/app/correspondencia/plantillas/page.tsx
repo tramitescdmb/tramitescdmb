@@ -41,7 +41,7 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
         </SectionHelp>
       </div>
 
-      <details className="rounded-xl border border-stone-200 bg-white p-4">
+      <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <summary className="cursor-pointer text-sm font-semibold text-stone-900">Marcadores que se rellenan solos</summary>
         <div className="mt-3">
           <SectionHelp>
@@ -61,7 +61,7 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
       </details>
 
       {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white p-4">
+        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <summary className="cursor-pointer text-sm font-semibold text-stone-900">Crear una plantilla</summary>
           <form action="/api/correspondencia/plantillas" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="sm:col-span-2">
@@ -112,7 +112,7 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
           <section key={categoria} className="space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">{categoria}</h3>
             {lista.map((p) => (
-              <details key={p.id} className={`rounded-xl border border-stone-200 bg-white p-4 ${p.activo ? "" : "opacity-60"}`}>
+              <details key={p.id} className={`rounded-xl border border-stone-200 bg-white shadow-soft p-4 ${p.activo ? "" : "opacity-60"}`}>
                 <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm font-medium text-stone-800">
                   <Eye className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
                   {p.nombre}

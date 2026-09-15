@@ -20,7 +20,7 @@ export function AyudaTabs({
       <div
         role="tablist"
         aria-label="Secciones del documento"
-        className="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-white p-1 print:hidden"
+        className="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-white shadow-soft p-1 print:hidden"
       >
         {grupos.map((g) => {
           const sel = g.id === activo;

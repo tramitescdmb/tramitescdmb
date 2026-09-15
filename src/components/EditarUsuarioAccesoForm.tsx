@@ -284,7 +284,7 @@ export function EditarUsuarioAccesoForm({
   return (
     <div className="space-y-6 pb-4">
       <nav
-        className="sticky top-0 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-xl border border-stone-200 bg-white/90 px-3 py-2 backdrop-blur"
+        className="sticky top-0 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft/90 px-3 py-2 backdrop-blur"
         aria-label="Ir a una sección de esta página"
       >
         {NAV_SECCIONES.filter((s) => s.id !== "seccion-contrasena" || !directorioActivo).map((s) => (

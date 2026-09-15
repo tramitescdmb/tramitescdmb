@@ -120,7 +120,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           borra su historial, solo deja de estar disponible para asignar.
         </SectionHelp>
 
-        <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-4">
+        <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-4">
           <Field label="Código" required help="Sigla corta y única, ej. SEYCA.">
             <input name="codigo" className={inputCls} placeholder="Ej. SEYCA" required />
           </Field>
@@ -142,7 +142,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </div>
         </form>
 
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
@@ -203,7 +203,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           cada dependencia — no es un error.
         </SectionHelp>
 
-        <details className="rounded-xl border border-stone-200 bg-white p-4">
+        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (CSV o XML)</summary>
           <div className="mt-3 space-y-3">
             <SectionHelp>
@@ -245,7 +245,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </div>
         </details>
 
-        <details className="rounded-xl border border-stone-200 bg-white p-4">
+        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <summary className="cursor-pointer text-sm font-semibold text-stone-900">Agregar una serie manualmente</summary>
         <form action="/api/correspondencia/series" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <Field label="Código de serie" required>
@@ -291,7 +291,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </SectionHelp>
         <Link
           href="/correspondencia/admin/vocabulario"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
         >
           Administrar vocabulario controlado
           <ChevronRight className="h-4 w-4" aria-hidden />
