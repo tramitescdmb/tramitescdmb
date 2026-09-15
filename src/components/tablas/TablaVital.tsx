@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
+import { urlVitalPublico } from "@/lib/vital-links";
 
 const ENCABEZADOS = ["#", "ID VITAL", "Trámite", "Solicitante", "Identificación", "Radicación", "Actividad", "Docs."];
 const ANCHOS_DEFECTO = [36, 170, 170, 130, 120, 120, 120, 56];
@@ -50,9 +52,21 @@ export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; 
             <tr key={f.id} className="hover:bg-stone-50">
               <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
               <td className="truncate px-2.5 py-2">
-                <Link href={`/vital/${f.id}`} className="text-xs font-medium text-cdmb-700 hover:underline" title={f.idVital}>
-                  {f.idVital}
-                </Link>
+                <span className="inline-flex items-center gap-1">
+                  <Link href={`/vital/${f.id}`} className="text-xs font-medium text-cdmb-700 hover:underline" title={f.idVital}>
+                    {f.idVital}
+                  </Link>
+                  <a
+                    href={urlVitalPublico(f.idVital)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-stone-300 hover:text-stone-600"
+                    title="Abrir en el buscador público de VITAL (minambiente.gov.co)"
+                  >
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </a>
+                </span>
               </td>
               <td className="truncate px-2.5 py-2 text-stone-600" title={f.tramite}>
                 {f.tramite}

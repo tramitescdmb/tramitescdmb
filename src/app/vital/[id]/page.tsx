@@ -14,9 +14,10 @@ import {
   Download,
   CalendarClock,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { nombreTramiteVital } from "@/lib/vital";
+import { nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
@@ -279,9 +280,21 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
       <div className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h2>
-          <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">
-            {nombreTramiteVital(solicitud.idTramiteVital)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">
+              {nombreTramiteVital(solicitud.idTramiteVital)}
+            </span>
+            <a
+              href={urlVitalPublico(solicitud.idVital)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+              title="Abrir esta solicitud en el buscador público de VITAL (minambiente.gov.co)"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              Ver en VITAL
+            </a>
+          </div>
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="ID VITAL" v={solicitud.idVital} />
@@ -329,7 +342,10 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
             <p>
               VITAL reporta {documentosFaltantes} documento{documentosFaltantes === 1 ? "" : "s"} adjunto{documentosFaltantes === 1 ? "" : "s"} más
               que no {documentosFaltantes === 1 ? "se pudo" : "se pudieron"} descargar — es un problema de permisos del servicio de VITAL, no de
-              esta plataforma. Informe al área de sistemas.
+              esta plataforma. Informe al área de sistemas. Para verlos mientras tanto, hay que entrar
+              directamente a VITAL con una cuenta de la autoridad ambiental (no es algo que esta
+              plataforma pueda automatizar): el buscador público de arriba (&ldquo;Ver en VITAL&rdquo;) no expone
+              adjuntos a un visitante sin sesión.
             </p>
           </div>
         )}

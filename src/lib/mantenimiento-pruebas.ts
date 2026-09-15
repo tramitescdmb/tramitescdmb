@@ -48,7 +48,10 @@ export async function reiniciarDatosPruebaSgdea(): Promise<ResultadoReinicioPrue
       select: { storagePath: true },
     });
     const resultados = await Promise.allSettled(docs.map((d) => deleteDocumento(d.storagePath)));
-    for (const r of resultados) (r.status === "fulfilled" ? archivosStorage++ : archivosStorageConError++);
+    for (const r of resultados) {
+      if (r.status === "fulfilled") archivosStorage++;
+      else archivosStorageConError++;
+    }
   }
 
   // 2. Firma no tiene cascada hacia Comunicacion -> borrar a mano antes.

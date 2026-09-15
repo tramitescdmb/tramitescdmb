@@ -187,6 +187,10 @@ export function nombreTramiteVital(id: number): string {
   return NOMBRE_TRAMITE_VITAL[id] ? `(${id}) ${NOMBRE_TRAMITE_VITAL[id]}` : `Trámite ${id}`;
 }
 
+// `urlVitalPublico` vive en `vital-links.ts` (sin dependencias de servidor) para poder importarse
+// también desde componentes cliente, ej. `TablaVital.tsx`. Se re-exporta acá por comodidad.
+export { urlVitalPublico } from "@/lib/vital-links";
+
 /** Trámites VITAL semilla de la sincronización (env `VITAL_TRAMITES`, coma-separado). */
 export function tramitesVital(): number[] {
   const raw = process.env.VITAL_TRAMITES?.trim();

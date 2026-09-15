@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox } from "lucide-react";
+import { Inbox, ExternalLink } from "lucide-react";
 import { vitalConfigurado, nombreTramiteVital } from "@/lib/vital";
+import { urlVitalPublico } from "@/lib/vital-links";
 import { getVitalUltimasRadicadas } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -46,23 +47,30 @@ export default async function VitalRecientesPage() {
       ) : (
         <ul className="overflow-hidden rounded-xl border border-stone-200 bg-white divide-y divide-stone-100">
           {recientes.map((s) => (
-            <li key={s.id}>
-              <Link href={`/vital/${s.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-stone-50">
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                    <span className="font-medium text-cdmb-700">{s.idVital}</span>
-                    <span className="text-stone-500">{nombreTramiteVital(s.idTramiteVital)}</span>
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-stone-500">
-                    {s.solicitanteNombre ?? s.solicitanteIdentificacion ?? "Solicitante sin identificar"}
-                    {s.nombreActividad ? ` · ${s.nombreActividad}` : ""}
-                    {s._count.documentos ? ` · ${s._count.documentos} doc.` : ""}
-                  </p>
-                </div>
-                <div className="flex-none text-right">
-                  <p className="text-sm font-medium text-stone-800">{fecha(s.fechaRadicacion)}</p>
-                  <p className="text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</p>
-                </div>
+            <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-stone-50">
+              <Link href={`/vital/${s.id}`} className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                  <span className="font-medium text-cdmb-700">{s.idVital}</span>
+                  <span className="text-stone-500">{nombreTramiteVital(s.idTramiteVital)}</span>
+                </p>
+                <p className="mt-0.5 truncate text-xs text-stone-500">
+                  {s.solicitanteNombre ?? s.solicitanteIdentificacion ?? "Solicitante sin identificar"}
+                  {s.nombreActividad ? ` · ${s.nombreActividad}` : ""}
+                  {s._count.documentos ? ` · ${s._count.documentos} doc.` : ""}
+                </p>
+              </Link>
+              <a
+                href={urlVitalPublico(s.idVital)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-none text-stone-300 hover:text-stone-600"
+                title="Abrir en el buscador público de VITAL (minambiente.gov.co)"
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              </a>
+              <Link href={`/vital/${s.id}`} className="flex-none text-right">
+                <p className="text-sm font-medium text-stone-800">{fecha(s.fechaRadicacion)}</p>
+                <p className="text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</p>
               </Link>
             </li>
           ))}

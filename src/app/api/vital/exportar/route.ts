@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { construirWhereVital, type FiltrosVital } from "@/lib/vital-data";
 import { nombreTramiteVital } from "@/lib/vital";
+import { urlVitalPublico } from "@/lib/vital-links";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 
 const LIMITE_MAXIMO = 5000; // tope de protección si alguien pide "todos" con una base enorme
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
     "Primera sincronización",
     "Última sincronización",
     "Enlace en la app",
+    "Enlace público en VITAL",
   ];
 
   const filasCsv = filas.map((s) =>
@@ -71,6 +73,7 @@ export async function GET(req: NextRequest) {
       s.createdAt.toISOString().slice(0, 10),
       s.ultimaSincronizacion.toISOString().slice(0, 10),
       `/vital/${s.id}`,
+      urlVitalPublico(s.idVital),
     ]
       .map(celda)
       .join(";")
