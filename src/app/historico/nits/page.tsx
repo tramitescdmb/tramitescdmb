@@ -112,7 +112,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <div className="flex items-end gap-2">
           <label className="flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
               <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
               <input
                 type="text"
@@ -129,7 +129,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Municipio</span>
-            <select name="municipio" defaultValue={filtros.municipio ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="municipio" defaultValue={filtros.municipio ?? ""} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               <option value="">Todos</option>
               <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
               {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
@@ -140,7 +140,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Tipo de identificación</span>
-            <select name="tipo" defaultValue={filtros.tipo ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="tipo" defaultValue={filtros.tipo ?? ""} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               <option value="">Todos</option>
               <option value="N">NIT (empresa)</option>
               <option value="C">Cédula (persona)</option>
@@ -149,7 +149,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Régimen tributario</span>
-            <select name="regimen" defaultValue={filtros.regimen ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="regimen" defaultValue={filtros.regimen ?? ""} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               <option value="">Todos</option>
               {REGIMENES_NIT.map((r) => (
                 <option key={r} value={r}>{r}</option>
@@ -159,7 +159,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Vinculadas</span>
-            <select name="vinculadas" defaultValue={filtros.vinculadas ?? ""} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="vinculadas" defaultValue={filtros.vinculadas ?? ""} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               <option value="">Todos</option>
               <option value="1">Con al menos una vinculación</option>
               <option value="0">Sin ninguna vinculación</option>
@@ -170,7 +170,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Ordenar por</span>
-            <select name="orden" defaultValue={f.orden} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="orden" defaultValue={f.orden} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               {OPCIONES_ORDEN_NIT.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
@@ -178,7 +178,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
           </label>
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Dirección</span>
-            <select name="dir" defaultValue={f.direccion} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+            <select name="dir" defaultValue={f.direccion} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
               <option value="ASC">Ascendente</option>
               <option value="DESC">Descendente</option>
             </select>
@@ -189,7 +189,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
               Filtrar
             </button>
             {hayFiltros && (
-              <Link href="/historico/nits" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">
+              <Link href="/historico/nits" className="rounded-md border border-stone-200 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">
                 Limpiar
               </Link>
             )}

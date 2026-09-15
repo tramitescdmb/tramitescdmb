@@ -304,7 +304,7 @@ export function EditarUsuarioAccesoForm({
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Nombre y apellidos"
-          className="w-full max-w-sm rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full max-w-sm rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
         />
         {directorioActivo && (
           <p className="mt-2 text-xs text-stone-400">
@@ -330,7 +330,7 @@ export function EditarUsuarioAccesoForm({
             <select
               value={sexo}
               onChange={(e) => setSexo(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
               <option value="">— Sin especificar —</option>
               {SEXOS.map((s) => (
@@ -343,7 +343,7 @@ export function EditarUsuarioAccesoForm({
             <select
               value={denominacionEmpleo}
               onChange={(e) => setDenominacionEmpleo(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
               <option value="">— Sin denominación —</option>
               {CLAVES_DENOMINACION_EMPLEO.map((clave) => (
@@ -360,12 +360,12 @@ export function EditarUsuarioAccesoForm({
               onChange={(e) => setDenominacionComplemento(e.target.value)}
               maxLength={120}
               placeholder="en Tecnologías de Información"
-              className="mt-1 block w-full max-w-md rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             />
           </label>
         </div>
         <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
-          <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-300" />
+          <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-200" />
           <span>
             Puede firmar electrónicamente oficios y memorandos
             <span className="mt-0.5 block text-xs text-stone-400">
@@ -414,7 +414,7 @@ export function EditarUsuarioAccesoForm({
                 placeholder={`Nueva contraseña (mín. ${politicaPassword.longitudMinima} caracteres)`}
                 autoComplete="new-password"
                 maxLength={politicaPassword.longitudMaxima}
-                className="w-full rounded-lg border border-stone-300 px-3 py-2 pr-9 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-lg border border-stone-200 px-3 py-2 pr-9 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
               />
               <button
                 type="button"
@@ -631,7 +631,7 @@ export function EditarUsuarioAccesoForm({
             <select
               value={dependenciaId}
               onChange={(e) => setDependenciaId(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             >
               <option value="">— Sin dependencia —</option>
               {(dependencias ?? []).map((d) => (
@@ -677,7 +677,7 @@ export function EditarUsuarioAccesoForm({
                   type="date"
                   value={rolCorrespondenciaVigenteHasta}
                   onChange={(e) => setRolCorrespondenciaVigenteHasta(e.target.value)}
-                  className="rounded-md border border-stone-300 px-2 py-1 text-sm"
+                  className="rounded-md border border-stone-200 px-2 py-1 text-sm"
                 />
                 <span className="text-stone-400">Opcional — pasada esa fecha pierde el rol automáticamente, sin que un ADMIN tenga que quitárselo.</span>
               </label>

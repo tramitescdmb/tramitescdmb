@@ -153,7 +153,7 @@ export default async function ExpedientesPage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="Número, solicitante o identificación…"
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           />
         </div>
         <div className="min-w-[200px]">
@@ -161,7 +161,7 @@ export default async function ExpedientesPage({
           <select
             name="tramite"
             defaultValue={tramite ?? ""}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="">Todos los trámites</option>
             {tramites.map((t) => (
@@ -176,7 +176,7 @@ export default async function ExpedientesPage({
           <select
             name="municipio"
             defaultValue={municipio ?? ""}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="">Todos</option>
             {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (

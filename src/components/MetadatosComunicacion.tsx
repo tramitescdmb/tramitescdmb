@@ -38,12 +38,12 @@ export async function MetadatosComunicacion({
                 {c.tipo !== "TEXTO" && <span className="ml-1 font-normal text-stone-400">({ETIQUETA_TIPO_CAMPO[c.tipo]})</span>}
               </span>
               {c.tipo === "LISTA" ? (
-                <select name={`m_${c.clave}`} defaultValue={iniciales[c.clave]} required={c.obligatorio} className="w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+                <select name={`m_${c.clave}`} defaultValue={iniciales[c.clave]} required={c.obligatorio} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
                   <option value="">—</option>
                   {c.opciones.map((o) => (<option key={o} value={o}>{o}</option>))}
                 </select>
               ) : c.tipo === "BOOLEANO" ? (
-                <select name={`m_${c.clave}`} defaultValue={iniciales[c.clave]} className="w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+                <select name={`m_${c.clave}`} defaultValue={iniciales[c.clave]} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
                   <option value="">—</option>
                   <option value="true">Sí</option>
                   <option value="false">No</option>
@@ -55,7 +55,7 @@ export async function MetadatosComunicacion({
                   step={c.tipo === "NUMERO" ? "any" : undefined}
                   defaultValue={iniciales[c.clave]}
                   required={c.obligatorio}
-                  className="w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
                 />
               )}
               {c.ayuda && <span className="mt-0.5 block font-normal text-stone-400">{c.ayuda}</span>}

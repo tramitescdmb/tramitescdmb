@@ -60,8 +60,8 @@ export default async function RotuloPage({ params }: { params: Promise<{ id: str
       </p>
 
       {/* Etiqueta — lo único que se imprime */}
-      <div className="mx-auto w-[105mm] rounded-lg border border-stone-300 bg-white p-[5mm] text-stone-900 print:w-full print:rounded-none print:border-0 print:p-0">
-        <div className="flex items-center gap-2 border-b border-stone-300 pb-1.5">
+      <div className="mx-auto w-[105mm] rounded-lg border border-stone-200 bg-white p-[5mm] text-stone-900 print:w-full print:rounded-none print:border-0 print:p-0">
+        <div className="flex items-center gap-2 border-b border-stone-200 pb-1.5">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={config.logoUrl} alt="CDMB" className="h-6 w-auto" />

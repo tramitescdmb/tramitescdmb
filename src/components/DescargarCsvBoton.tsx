@@ -5,7 +5,7 @@ export function DescargarCsvBoton({ href, label = "Descargar CSV" }: { href: str
   return (
     <a
       href={href}
-      className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95"
+      className="inline-flex flex-none items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition-all hover:bg-stone-50 hover:shadow-sm active:scale-95"
     >
       <Download className="h-3.5 w-3.5" aria-hidden />
       {label}

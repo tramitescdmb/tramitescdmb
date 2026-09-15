@@ -204,7 +204,7 @@ export function SubirDocumentoPasoForm({
         <button
           type="submit"
           disabled={submitting}
-          className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {submitting && <Spinner />}
           {submitting ? "Subiendo…" : "Subir"}

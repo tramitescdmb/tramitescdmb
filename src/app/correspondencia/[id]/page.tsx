@@ -266,7 +266,7 @@ export default async function CorrespondenciaDetallePage({
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {c.estado === "ANULADA" && (
-        <div className="flex items-start gap-2 rounded-md border border-stone-300 bg-stone-100 px-3 py-2 text-sm text-stone-700">
+        <div className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-100 px-3 py-2 text-sm text-stone-700">
           <Ban className="mt-0.5 h-4 w-4 flex-none text-stone-500" aria-hidden />
           <span>
             <strong>Esta comunicación está anulada.</strong> {c.motivoAnulacion ? `Motivo: ${c.motivoAnulacion}` : ""} No se borró:
@@ -297,11 +297,11 @@ export default async function CorrespondenciaDetallePage({
                 {ETIQUETA_NIVEL_ACCESO[c.nivelAcceso]}
               </span>
             )}
-            <Link href={`/correspondencia/${id}/constancia`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
+            <Link href={`/correspondencia/${id}/constancia`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
               <Printer className="h-3.5 w-3.5" aria-hidden />
               Constancia
             </Link>
-            <Link href={`/correspondencia/${id}/rotulo`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
+            <Link href={`/correspondencia/${id}/rotulo`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
               <Printer className="h-3.5 w-3.5" aria-hidden />
               Rótulo con código de barras
             </Link>
@@ -448,7 +448,7 @@ export default async function CorrespondenciaDetallePage({
                       target="_blank"
                       rel="noreferrer"
                       title="PDF con el rótulo de radicación (número, código de barras y QR) y, si aplica, el sello de firma electrónica estampados"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
                     >
                       <Printer className="h-3.5 w-3.5" aria-hidden />
                       Con rótulo
@@ -511,7 +511,7 @@ export default async function CorrespondenciaDetallePage({
                 <form action={`/api/correspondencia/${id}/devolver-reparto`} method="post" className="flex flex-wrap items-end gap-3">
                   <div className="min-w-[260px] flex-1">
                     <Field label="Devolver a la ventanilla — motivo" required help="Por qué esta comunicación no le corresponde.">
-                      <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                      <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     </Field>
                   </div>
                   <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-50">
@@ -579,7 +579,7 @@ export default async function CorrespondenciaDetallePage({
                         target="_blank"
                         rel="noreferrer"
                         title="PDF con el rótulo de radicación (número, código de barras y QR) y, si aplica, el sello de firma electrónica estampados"
-                        className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
                       >
                         <Printer className="h-3.5 w-3.5" aria-hidden />
                         Con rótulo
@@ -656,7 +656,7 @@ export default async function CorrespondenciaDetallePage({
             <form action={`/api/correspondencia/${id}/despachar`} method="post" className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Medio de envío" required>
-                  <select name="medio" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                  <select name="medio" required defaultValue="" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
                     <option value="" disabled>— Seleccione —</option>
                     {Object.entries(ETIQUETA_MEDIO_DESPACHO).map(([v, etq]) => (
                       <option key={v} value={v}>{etq}</option>
@@ -667,16 +667,16 @@ export default async function CorrespondenciaDetallePage({
                   <input
                     name="destino"
                     defaultValue={c.terceroEmail ?? c.terceroDireccion ?? ""}
-                    className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm"
                   />
                 </Field>
               </div>
               <Field label="Observación" help="Opcional — guía de envío, número de radicado de la empresa de mensajería, etc.">
-                <input name="observacion" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                <input name="observacion" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </Field>
               {c.subserieId && (
                 <label className="flex items-start gap-2 text-sm text-stone-700">
-                  <input type="checkbox" name="archivarEnExpediente" defaultChecked className="mt-0.5 rounded border-stone-300" />
+                  <input type="checkbox" name="archivarEnExpediente" defaultChecked className="mt-0.5 rounded border-stone-200" />
                   <span>
                     Archivar la comunicación recibida y esta respuesta en un expediente documental de la subserie
                     {c.subserie ? ` «${c.subserie.codigo} — ${c.subserie.nombre}»` : ""} (se crea si no existe).
@@ -728,10 +728,10 @@ export default async function CorrespondenciaDetallePage({
             <form action={`/api/correspondencia/${id}/suspender`} method="post" className="mt-3 flex flex-wrap items-end gap-3">
               <div className="min-w-[260px] flex-1">
                 <Field label="Motivo" required help={c.fechaVencimiento ? "Ej. se solicitó información adicional al peticionario." : "Por qué se detiene el trámite."}>
-                  <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                  <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                 </Field>
               </div>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <PauseCircle className="h-3.5 w-3.5" aria-hidden />
                 Detener el trámite
               </button>
@@ -753,7 +753,7 @@ export default async function CorrespondenciaDetallePage({
               <form action={`/api/correspondencia/${id}/archivar`} method="post" className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[220px] flex-1">
                   <Field label="Número de expediente">
-                    <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                    <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                   </Field>
                 </div>
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
@@ -785,7 +785,7 @@ export default async function CorrespondenciaDetallePage({
               <form action={`/api/correspondencia/${id}/archivar-expediente-documental`} method="post" className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[220px] flex-1">
                   <Field label="Número de expediente">
-                    <input name="numeroExpedienteDocumental" placeholder="Ej. CDMB-X-2026-000001" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                    <input name="numeroExpedienteDocumental" placeholder="Ej. CDMB-X-2026-000001" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                   </Field>
                 </div>
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
@@ -809,9 +809,9 @@ export default async function CorrespondenciaDetallePage({
               <BuscadorSubserieTRD series={seriesBuscables} nameSubserie="subserieId" requerido />
             </Field>
             <Field label="Motivo" required help="Por qué se reclasifica este radicado.">
-              <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
             </Field>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <FolderTree className="h-3.5 w-3.5" aria-hidden />
               Reclasificar
             </button>
@@ -833,13 +833,13 @@ export default async function CorrespondenciaDetallePage({
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 {terminosVocabulario.map((t) => (
                   <label key={t.id} className="flex items-center gap-1.5 text-sm text-stone-700">
-                    <input type="checkbox" name="palabra" value={t.termino} defaultChecked={c.palabrasClave.includes(t.termino)} className="rounded border-stone-300" />
+                    <input type="checkbox" name="palabra" value={t.termino} defaultChecked={c.palabrasClave.includes(t.termino)} className="rounded border-stone-200" />
                     {t.termino}
                     {t.categoria && <span className="text-[11px] text-stone-400">({t.categoria})</span>}
                   </label>
                 ))}
               </div>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 Guardar palabras clave
               </button>
             </form>
@@ -857,7 +857,7 @@ export default async function CorrespondenciaDetallePage({
           <form action={`/api/correspondencia/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px]">
               <Field label="Nivel de acceso" required>
-                <select name="nivelAcceso" required defaultValue={c.nivelAcceso} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                <select name="nivelAcceso" required defaultValue={c.nivelAcceso} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
                   {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
                     <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
                   ))}
@@ -866,10 +866,10 @@ export default async function CorrespondenciaDetallePage({
             </div>
             <div className="min-w-[260px] flex-1">
               <Field label="Fundamento" help="Obligatorio si elige clasificada o reservada; puede dejarlo vacío para pública.">
-                <input name="fundamento" defaultValue={c.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                <input name="fundamento" defaultValue={c.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </Field>
             </div>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Guardar
             </button>
@@ -886,7 +886,7 @@ export default async function CorrespondenciaDetallePage({
           <form action={`/api/correspondencia/${id}/anular`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[260px] flex-1">
               <Field label="Motivo" required help="Por qué se anula este radicado.">
-                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </Field>
             </div>
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">

@@ -107,7 +107,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white shadow-soft p-2.5">
-        <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+        <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
           <input
             type="text"
@@ -117,12 +117,12 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             className="w-full text-sm outline-none"
           />
         </span>
-        <select name="estado" defaultValue={sp.estado ?? ""} className="flex-none rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+        <select name="estado" defaultValue={sp.estado ?? ""} className="flex-none rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
           <option value="">Todos los estados</option>
           <option value="ABIERTO">Abiertos</option>
           <option value="CERRADO">Cerrados</option>
         </select>
-        <select name="dependenciaId" defaultValue={sp.dependenciaId ?? ""} className="flex-none rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+        <select name="dependenciaId" defaultValue={sp.dependenciaId ?? ""} className="flex-none rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
           <option value="">Todas las dependencias</option>
           {dependencias.map((d) => (
             <option key={d.id} value={d.id}>{d.nombre}</option>
@@ -130,14 +130,14 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         </select>
         <button type="submit" className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
         {hayFiltros && (
-          <Link href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+          <Link href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
         )}
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ResumenResultados total={total} detalle={detalleFiltro} />
         <div className="flex flex-wrap items-center gap-1.5 print:hidden">
-          <div className="mr-1 inline-flex overflow-hidden rounded-md border border-stone-300">
+          <div className="mr-1 inline-flex overflow-hidden rounded-md border border-stone-200">
             <Link
               href={hrefModo("carpetas")}
               aria-current={modo === "carpetas" ? "true" : undefined}
@@ -149,7 +149,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             <Link
               href={hrefModo("tabla")}
               aria-current={modo === "tabla" ? "true" : undefined}
-              className={`flex items-center gap-1 border-l border-stone-300 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
+              className={`flex items-center gap-1 border-l border-stone-200 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
             >
               <Table2 className="h-3.5 w-3.5" aria-hidden />
               Tabla

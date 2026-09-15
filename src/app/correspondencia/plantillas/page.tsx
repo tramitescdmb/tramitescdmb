@@ -6,7 +6,7 @@ import { listarPlantillasAdmin, listarCategoriasPlantilla, ETIQUETA_AMBITO, AMBI
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 export default async function PlantillasPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();

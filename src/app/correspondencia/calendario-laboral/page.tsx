@@ -8,7 +8,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { formatearFechaSolo } from "@/lib/fecha";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 export default async function CalendarioLaboralPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -59,7 +59,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {ORDEN_DIAS_SEMANA.map((d) => (
               <label key={d} className="flex items-center gap-1.5 text-sm text-stone-700">
-                <input type="checkbox" name="dia" value={d} defaultChecked={jornada.has(d)} className="rounded border-stone-300" />
+                <input type="checkbox" name="dia" value={d} defaultChecked={jornada.has(d)} className="rounded border-stone-200" />
                 {ETIQUETA_DIA_SEMANA[d]}
               </label>
             ))}

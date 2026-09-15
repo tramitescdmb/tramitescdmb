@@ -54,7 +54,7 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
         <BotonImprimir>Imprimir ficha</BotonImprimir>
       </div>
 
-      <div className="rounded-xl border border-stone-300 bg-white p-8 print:border-0 print:p-0">
+      <div className="rounded-xl border border-stone-200 bg-white p-8 print:border-0 print:p-0">
         <div className="flex items-center gap-3 border-b border-stone-200 pb-4">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

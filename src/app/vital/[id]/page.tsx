@@ -282,7 +282,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
               href={urlVitalPublico(solicitud.idVital)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
               title="Abrir esta solicitud en el buscador público de VITAL (minambiente.gov.co)"
             >
               <ExternalLink className="h-3.5 w-3.5" aria-hidden />

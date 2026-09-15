@@ -82,7 +82,7 @@ export function SubirLogoForm({
       <p className="mb-3 text-xs text-stone-500">{ayuda}</p>
 
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-32 flex-none items-center justify-center rounded-md border border-dashed border-stone-300 bg-stone-50">
+        <div className="flex h-16 w-32 flex-none items-center justify-center rounded-md border border-dashed border-stone-200 bg-stone-50">
           {urlActual ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={urlActual} alt={etiqueta} className="max-h-14 max-w-28 object-contain" />
@@ -91,7 +91,7 @@ export function SubirLogoForm({
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <label className="cursor-pointer rounded-md border border-stone-300 px-3 py-1.5 text-center text-sm font-medium text-stone-700 hover:bg-stone-50">
+          <label className="cursor-pointer rounded-md border border-stone-200 px-3 py-1.5 text-center text-sm font-medium text-stone-700 hover:bg-stone-50">
             {subiendo ? "Subiendo…" : urlActual ? "Cambiar imagen" : "Subir imagen"}
             <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={handleChange} disabled={subiendo} className="hidden" />
           </label>

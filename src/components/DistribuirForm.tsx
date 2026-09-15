@@ -47,7 +47,7 @@ export function DistribuirForm({
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Dependencia" help="El área que debe atenderla.">
-          <select name="dependenciaId" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+          <select name="dependenciaId" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
             <option value="">— Ninguna —</option>
             {dependencias.map((d) => (
               <option key={d.id} value={d.id}>{d.nombre}</option>
@@ -55,10 +55,10 @@ export function DistribuirForm({
           </select>
         </Field>
         <Field label="Término (días)" help="Plazo interno, si es distinto al de ley.">
-          <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+          <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
         </Field>
         <Field label="Instrucciones" help="Indicaciones para quien la gestiona.">
-          <input name="instrucciones" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+          <input name="instrucciones" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
         </Field>
       </div>
 
@@ -66,7 +66,7 @@ export function DistribuirForm({
         <p className="mb-1 text-xs font-medium text-stone-600">
           Funcionario(s) a cargo{seleccion.size > 0 ? ` — ${seleccion.size} seleccionado(s)` : ""}
         </p>
-        <span className="mb-2 flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+        <span className="mb-2 flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
           <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
           <input
             type="text"
@@ -88,7 +88,7 @@ export function DistribuirForm({
                   value={u.id}
                   checked={seleccion.has(u.id)}
                   onChange={() => alternar(u.id)}
-                  className="rounded border-stone-300"
+                  className="rounded border-stone-200"
                 />
                 {u.nombre}
               </label>
@@ -98,7 +98,7 @@ export function DistribuirForm({
       </div>
 
       <label className="flex items-center gap-2 text-sm text-stone-600">
-        <input type="checkbox" name="sumar" className="rounded border-stone-300" />
+        <input type="checkbox" name="sumar" className="rounded border-stone-200" />
         Sumar a los destinatarios actuales (por defecto reemplaza el reparto anterior)
       </label>
 

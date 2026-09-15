@@ -9,7 +9,7 @@ import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 const TIPOS = ["TEXTO", "NUMERO", "FECHA", "LISTA", "BOOLEANO"] as const;
 const AMBITOS = ["AMBOS", "COMUNICACION", "EXPEDIENTE"] as const;
 
@@ -74,7 +74,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
             </Field>
           </div>
           <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-3">
-            <input type="checkbox" name="obligatorio" className="rounded border-stone-300" /> Obligatorio
+            <input type="checkbox" name="obligatorio" className="rounded border-stone-200" /> Obligatorio
           </label>
           <div className="sm:col-span-3">
             <button className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
@@ -124,7 +124,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
                   </div>
                 )}
                 <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-3">
-                  <input type="checkbox" name="obligatorio" defaultChecked={c.obligatorio} className="rounded border-stone-300" /> Obligatorio
+                  <input type="checkbox" name="obligatorio" defaultChecked={c.obligatorio} className="rounded border-stone-200" /> Obligatorio
                 </label>
                 <div className="sm:col-span-3 flex flex-wrap items-center gap-4">
                   <button className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar</button>

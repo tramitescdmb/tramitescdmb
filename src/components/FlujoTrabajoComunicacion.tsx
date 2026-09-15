@@ -127,14 +127,14 @@ export async function FlujoTrabajoComunicacion({
               <input type="hidden" name="instanciaId" value={enCurso.id} />
               <label className="block text-xs font-medium text-stone-600">
                 Completar «{enCurso.pasoActual.nombre}» — ¿qué sigue?
-                <select name="transicionId" required defaultValue="" className="mt-1 block w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm">
+                <select name="transicionId" required defaultValue="" className="mt-1 block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
                   <option value="" disabled>Elegir…</option>
                   {enCurso.pasoActual.transiciones.map((t) => (
                     <option key={t.id} value={t.id}>{t.etiqueta}</option>
                   ))}
                 </select>
               </label>
-              <input name="comentario" placeholder="Comentario (opcional)" className="block w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+              <input name="comentario" placeholder="Comentario (opcional)" className="block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
               <div className="flex flex-wrap items-center gap-2">
                 <button className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden /> Completar paso
@@ -149,7 +149,7 @@ export async function FlujoTrabajoComunicacion({
               <input type="hidden" name="instanciaId" value={enCurso.id} />
               <label className="text-xs">
                 <span className="mb-0.5 block text-stone-500">Cancelar el flujo</span>
-                <input name="motivo" placeholder="Motivo" required className="rounded-md border border-stone-300 px-2 py-1 text-sm" />
+                <input name="motivo" placeholder="Motivo" required className="rounded-md border border-stone-200 px-2 py-1 text-sm" />
               </label>
               <button className="rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50">
                 Cancelar flujo
@@ -164,7 +164,7 @@ export async function FlujoTrabajoComunicacion({
               <input type="hidden" name="accion" value="iniciar" />
               <label className="text-sm">
                 <span className="mb-0.5 block text-xs text-stone-500">Aplicar un flujo de trabajo</span>
-                <select name="flujoId" required defaultValue="" className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+                <select name="flujoId" required defaultValue="" className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
                   <option value="" disabled>Elegir flujo…</option>
                   {aplicables.map((f) => (
                     <option key={f.id} value={f.id}>{f.nombre}</option>

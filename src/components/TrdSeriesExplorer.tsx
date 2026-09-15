@@ -12,7 +12,7 @@ const ETIQUETA_DISPOSICION: Record<string, string> = {
   MICROFILMACION_DIGITALIZACION: "Microfilmación / Digitalización",
 };
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 const DISPOSICIONES = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
 
 type SubserieVista = {
@@ -200,7 +200,7 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                     <Link
                       href={`/correspondencia/expedientes?serieId=${s.id}`}
                       title="Ver los expedientes clasificados en esta serie"
-                      className="flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
+                      className="flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
                     >
                       <FolderOpen className="h-3 w-3" aria-hidden />
                       Ver expedientes
@@ -208,7 +208,7 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                     <a
                       href={`/api/correspondencia/trd/series/${s.id}/exportar`}
                       title="Exportar todo lo clasificado en esta serie (comunicaciones y expedientes)"
-                      className="flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
+                      className="flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 font-medium text-cdmb-700 hover:bg-stone-50"
                     >
                       <Download className="h-3 w-3" aria-hidden />
                       Exportar contenido
@@ -225,7 +225,7 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                               type="checkbox"
                               checked={seleccion.has(ss.id)}
                               onChange={() => alternarSeleccion(ss.id)}
-                              className="rounded border-stone-300"
+                              className="rounded border-stone-200"
                               aria-label={`Seleccionar subserie ${ss.codigo}`}
                             />
                           </td>
@@ -251,7 +251,7 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
                     <div className="flex flex-wrap gap-3">
                       {DISPOSICIONES.map((d) => (
                         <label key={d} className="flex items-center gap-1.5 text-xs text-stone-700">
-                          <input type="checkbox" name="disposicionesFinal" value={d} className="rounded border-stone-300" />
+                          <input type="checkbox" name="disposicionesFinal" value={d} className="rounded border-stone-200" />
                           {ETIQUETA_DISPOSICION[d]}
                         </label>
                       ))}
@@ -292,14 +292,14 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
             </label>
           </div>
           <label className="mt-3 flex items-center gap-2 text-xs font-medium text-stone-700">
-            <input type="checkbox" checked={cambiarDisposicion} onChange={(e) => setCambiarDisposicion(e.target.checked)} className="rounded border-stone-300" />
+            <input type="checkbox" checked={cambiarDisposicion} onChange={(e) => setCambiarDisposicion(e.target.checked)} className="rounded border-stone-200" />
             También reemplazar la disposición final de todas las seleccionadas
           </label>
           {cambiarDisposicion && (
             <div className="mt-2 flex flex-wrap gap-3 rounded-md bg-stone-50 p-2.5">
               {DISPOSICIONES.map((d) => (
                 <label key={d} className="flex items-center gap-1.5 text-xs text-stone-700">
-                  <input type="checkbox" checked={disposicionesNuevas.has(d)} onChange={() => alternarDisposicionNueva(d)} className="rounded border-stone-300" />
+                  <input type="checkbox" checked={disposicionesNuevas.has(d)} onChange={() => alternarDisposicionNueva(d)} className="rounded border-stone-200" />
                   {ETIQUETA_DISPOSICION[d]}
                 </label>
               ))}

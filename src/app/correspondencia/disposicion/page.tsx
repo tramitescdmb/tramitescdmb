@@ -153,7 +153,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <>
             <DisposicionLoteForm items={itemsDisposicion} />
-            <details className="group rounded-xl border border-dashed border-stone-300 bg-stone-50/60 p-4">
+            <details className="group rounded-xl border border-dashed border-stone-200 bg-stone-50/60 p-4">
               <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-stone-700 [&::-webkit-details-marker]:hidden">
                 <Clock className="h-4 w-4 text-stone-500" aria-hidden />
                 Aplazar la disposición de una en particular
@@ -174,12 +174,12 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                     <p className="truncate text-xs text-stone-500">{it.asunto}</p>
                   </div>
                   <Field label="Hasta">
-                    <input type="date" name="hasta" min={manana} required className="rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+                    <input type="date" name="hasta" min={manana} required className="rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
                   </Field>
                   <Field label="Motivo">
-                    <input type="text" name="motivo" required placeholder="Motivo del aplazamiento" className="w-56 rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+                    <input type="text" name="motivo" required placeholder="Motivo del aplazamiento" className="w-56 rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
                   </Field>
-                  <button type="submit" className="sm:col-span-3 justify-self-start rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
+                  <button type="submit" className="sm:col-span-3 justify-self-start rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
                     Aplazar
                   </button>
                 </form>

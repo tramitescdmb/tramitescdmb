@@ -30,7 +30,7 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
       href={`/correspondencia/expedientes/${c.id}`}
       className={`group relative mt-3 block rounded-lg rounded-tl-none border pb-3 pl-3.5 pr-3.5 pt-3 transition ${
         cerrada
-          ? "border-stone-200 bg-stone-50 hover:border-stone-300"
+          ? "border-stone-200 bg-stone-50 hover:border-stone-200"
           : "border-amber-200/80 bg-amber-50/50 hover:border-amber-300"
       }`}
     >

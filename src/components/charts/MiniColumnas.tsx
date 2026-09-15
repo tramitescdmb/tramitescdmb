@@ -26,7 +26,7 @@ export function MiniColumnas({
     <div className="relative flex items-stretch gap-1.5">
       {refPct != null && (
         <div
-          className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-stone-300"
+          className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-stone-200"
           style={{ bottom: `calc(16px + ${(refPct / 100) * ALTO_BARRAS}px)` }}
         />
       )}

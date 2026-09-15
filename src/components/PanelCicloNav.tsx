@@ -55,7 +55,7 @@ export function PanelCicloNav({ esAdmin }: { esAdmin: boolean }) {
                     className={`flex h-12 w-12 flex-none items-center justify-center rounded-full transition ${
                       activo
                         ? "bg-cdmb-600 text-white shadow-sm ring-4 ring-cdmb-100"
-                        : "border-2 border-stone-300 bg-white text-stone-400 group-hover:border-cdmb-400 group-hover:text-cdmb-600 group-focus-visible:border-cdmb-400"
+                        : "border-2 border-stone-200 bg-white text-stone-400 group-hover:border-cdmb-400 group-hover:text-cdmb-600 group-focus-visible:border-cdmb-400"
                     }`}
                   >
                     <Icon className="h-5 w-5" aria-hidden />

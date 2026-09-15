@@ -298,7 +298,7 @@ function TextoCoord({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-36 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+        className="w-36 rounded-md border border-stone-200 px-2 py-1.5 text-sm"
       />
     </div>
   );
@@ -306,7 +306,7 @@ function TextoCoord({
 
 function BotonUsar({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50">
+    <button type="button" onClick={onClick} className="rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50">
       Usar
     </button>
   );

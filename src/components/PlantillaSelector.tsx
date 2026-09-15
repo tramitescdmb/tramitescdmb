@@ -72,7 +72,7 @@ export function PlantillaSelector({
         <select
           value={sel}
           onChange={(e) => { setSel(e.target.value); setPendientes([]); }}
-          className="min-w-[220px] flex-1 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+          className="min-w-[220px] flex-1 rounded-md border border-stone-200 px-2 py-1.5 text-sm"
         >
           <option value="">— Ninguna —</option>
           {[...porCategoria.entries()].map(([cat, lista]) =>

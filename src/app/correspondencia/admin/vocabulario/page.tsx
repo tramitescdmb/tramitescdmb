@@ -9,7 +9,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 export default async function VocabularioAdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -81,9 +81,9 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
                     <td className="px-4 py-2">
                       <form action={`/api/correspondencia/vocabulario/${t.id}`} method="post" className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="accion" value="editar" />
-                        <input name="termino" defaultValue={t.termino} className="rounded-md border border-stone-300 px-2 py-1 text-sm" />
-                        <input name="categoria" defaultValue={t.categoria ?? ""} placeholder="categoría" className="w-32 rounded-md border border-stone-300 px-2 py-1 text-sm" />
-                        <button className="rounded-md border border-stone-300 px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50">Guardar</button>
+                        <input name="termino" defaultValue={t.termino} className="rounded-md border border-stone-200 px-2 py-1 text-sm" />
+                        <input name="categoria" defaultValue={t.categoria ?? ""} placeholder="categoría" className="w-32 rounded-md border border-stone-200 px-2 py-1 text-sm" />
+                        <button className="rounded-md border border-stone-200 px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50">Guardar</button>
                       </form>
                     </td>
                     <td className="px-4 py-2 text-stone-500">{t.categoria ?? "—"}</td>

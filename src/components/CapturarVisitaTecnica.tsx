@@ -84,7 +84,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
           type="button"
           onClick={capturarUbicacion}
           disabled={capturando}
-          className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {capturando ? <Spinner /> : <IconMapPin className="h-3.5 w-3.5" />}
           {capturando ? "Obteniendo ubicación…" : "Capturar ubicación actual"}
@@ -100,7 +100,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
             <input
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
             />
           </Field>
           <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +117,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
               type="button"
               onClick={() => setPunto(null)}
               disabled={guardando}
-              className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-stone-200 px-3 py-1.5 text-sm font-medium text-stone-700 transition-transform hover:bg-stone-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Descartar y capturar de nuevo
             </button>

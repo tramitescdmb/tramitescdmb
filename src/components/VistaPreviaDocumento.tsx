@@ -51,7 +51,7 @@ export function VistaPreviaDocumento({
         type="button"
         onClick={() => setAbierto(true)}
         title="Ver el documento sin descargarlo"
-        className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+        className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
       >
         <Eye className="h-3.5 w-3.5" aria-hidden />
         Vista previa
@@ -76,7 +76,7 @@ export function VistaPreviaDocumento({
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden />
                   Descargar

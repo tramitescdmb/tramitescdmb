@@ -154,7 +154,7 @@ export default async function ExpedienteDetallePage({
         </Link>
         <Link
           href={`/correspondencia/expedientes/${id}/ficha`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
         >
           <Printer className="h-3.5 w-3.5" aria-hidden />
           Ficha imprimible
@@ -287,7 +287,7 @@ export default async function ExpedienteDetallePage({
             <form action={`/api/correspondencia/expedientes/${id}/prestar`} method="post" className="flex flex-wrap items-end gap-3">
               <div className="min-w-[180px]">
                 <Field label="Prestar a" required>
-                  <select name="prestadoAId" required defaultValue="" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                  <select name="prestadoAId" required defaultValue="" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
                     <option value="" disabled>— Elegir —</option>
                     {usuariosParaPrestar.map((u) => (
                       <option key={u.id} value={u.id}>{u.nombre}</option>
@@ -297,15 +297,15 @@ export default async function ExpedienteDetallePage({
               </div>
               <div className="min-w-[160px]">
                 <Field label="Devolución esperada" help="Opcional.">
-                  <input type="date" name="fechaDevolucionEsperada" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                  <input type="date" name="fechaDevolucionEsperada" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                 </Field>
               </div>
               <div className="min-w-[200px] flex-1">
                 <Field label="Motivo" help="Opcional.">
-                  <input name="motivo" className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                  <input name="motivo" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                 </Field>
               </div>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <Handshake className="h-3.5 w-3.5" aria-hidden />
                 Prestar
               </button>
@@ -332,12 +332,12 @@ export default async function ExpedienteDetallePage({
           <SectionHelp>Lo que identifica a este expediente en el listado — se puede corregir mientras siga abierto.</SectionHelp>
           <form action={`/api/correspondencia/expedientes/${id}/editar`} method="post" className="space-y-3">
             <Field label="Asunto" required>
-              <input name="asunto" required defaultValue={expediente.asunto} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              <input name="asunto" required defaultValue={expediente.asunto} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
             </Field>
             <Field label="Descripción">
-              <input name="descripcion" defaultValue={expediente.descripcion ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              <input name="descripcion" defaultValue={expediente.descripcion ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
             </Field>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Pencil className="h-3.5 w-3.5" aria-hidden />
               Guardar
             </button>
@@ -386,7 +386,7 @@ export default async function ExpedienteDetallePage({
           <form action={`/api/correspondencia/series/${expediente.serie.id}/criterio-orden`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
             <label className="text-xs">
               <span className="mb-1 block font-medium text-stone-600">Orden de los documentos de la serie {expediente.serie.codigo}</span>
-              <select name="criterio" defaultValue={criterioOrden} className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+              <select name="criterio" defaultValue={criterioOrden} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
                 {CRITERIOS_ORDEN.map((c) => (<option key={c} value={c}>{ETIQUETA_CRITERIO_ORDEN[c]}</option>))}
               </select>
             </label>
@@ -398,14 +398,14 @@ export default async function ExpedienteDetallePage({
           <form action={`/api/correspondencia/series/${expediente.serie.id}/retencion`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
             <label className="text-xs">
               <span className="mb-1 block font-medium text-stone-600">Retención de la serie {expediente.serie.codigo} cuenta desde</span>
-              <select name="retencionDesde" defaultValue={expediente.serie.retencionDesde} className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm">
+              <select name="retencionDesde" defaultValue={expediente.serie.retencionDesde} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
                 <option value="RADICACION">La radicación / creación de cada documento</option>
                 <option value="CIERRE_EXPEDIENTE">El cierre del expediente (MoReq 2.6)</option>
               </select>
             </label>
             <label className="text-xs">
               <span className="mb-1 block font-medium text-stone-600">Máx. folios por tomo (MoReq 1.43)</span>
-              <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-300 px-2 py-1.5 text-sm" />
+              <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
             </label>
             <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
           </form>
@@ -478,20 +478,20 @@ export default async function ExpedienteDetallePage({
                       <input type="hidden" name="accion" value="editar" />
                       <label className="text-[11px]">
                         <span className="mb-0.5 block font-medium text-stone-500">Nombre</span>
-                        <input name="nombre" defaultValue={doc.nombre} className="w-56 rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                        <input name="nombre" defaultValue={doc.nombre} className="w-56 rounded-md border border-stone-200 px-2 py-1 text-xs" />
                       </label>
                       <label className="text-[11px]">
                         <span className="mb-0.5 block font-medium text-stone-500">Folios</span>
-                        <input name="numeroFolios" type="number" min={1} defaultValue={doc.numeroFolios} className="w-16 rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                        <input name="numeroFolios" type="number" min={1} defaultValue={doc.numeroFolios} className="w-16 rounded-md border border-stone-200 px-2 py-1 text-xs" />
                       </label>
                       <label className="text-[11px]">
                         <span className="mb-0.5 block font-medium text-stone-500">Fecha del documento</span>
-                        <input name="fechaDocumento" type="date" defaultValue={doc.fechaDocumento ? doc.fechaDocumento.toISOString().slice(0, 10) : ""} className="rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                        <input name="fechaDocumento" type="date" defaultValue={doc.fechaDocumento ? doc.fechaDocumento.toISOString().slice(0, 10) : ""} className="rounded-md border border-stone-200 px-2 py-1 text-xs" />
                       </label>
                       {(expediente.subserie?.tiposDocumentales.length ?? 0) > 0 && (
                         <label className="text-[11px]">
                           <span className="mb-0.5 block font-medium text-stone-500">Tipo documental</span>
-                          <select name="tipoDocumentalId" defaultValue={doc.tipoDocumentalId ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-1 text-xs">
+                          <select name="tipoDocumentalId" defaultValue={doc.tipoDocumentalId ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs">
                             <option value="">— Sin tipo —</option>
                             {expediente.subserie!.tiposDocumentales.map((t) => (
                               <option key={t.id} value={t.id}>{t.nombre}</option>
@@ -499,13 +499,13 @@ export default async function ExpedienteDetallePage({
                           </select>
                         </label>
                       )}
-                      <button type="submit" className="rounded-md border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50">Guardar corrección</button>
+                      <button type="submit" className="rounded-md border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50">Guardar corrección</button>
                     </form>
                     <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
                       <input type="hidden" name="accion" value="retirar" />
                       <label className="flex-1 text-[11px]" style={{ minWidth: 220 }}>
                         <span className="mb-0.5 block font-medium text-stone-500">Retirar del índice — motivo</span>
-                        <input name="motivo" required placeholder="Ej. se subió el archivo equivocado" className="w-full rounded-md border border-stone-300 px-2 py-1 text-xs" />
+                        <input name="motivo" required placeholder="Ej. se subió el archivo equivocado" className="w-full rounded-md border border-stone-200 px-2 py-1 text-xs" />
                       </label>
                       <button type="submit" className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50">
                         <Undo2 className="h-3 w-3" aria-hidden />
@@ -577,7 +577,7 @@ export default async function ExpedienteDetallePage({
           <form action={`/api/correspondencia/expedientes/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px]">
               <Field label="Nivel de acceso" required>
-                <select name="nivelAcceso" required defaultValue={expediente.nivelAcceso} className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm">
+                <select name="nivelAcceso" required defaultValue={expediente.nivelAcceso} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
                   {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
                     <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
                   ))}
@@ -586,10 +586,10 @@ export default async function ExpedienteDetallePage({
             </div>
             <div className="min-w-[260px] flex-1">
               <Field label="Fundamento" help="Obligatorio si elige clasificado o reservado.">
-                <input name="fundamento" defaultValue={expediente.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                <input name="fundamento" defaultValue={expediente.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </Field>
             </div>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Guardar
             </button>
@@ -605,7 +605,7 @@ export default async function ExpedienteDetallePage({
             definitivo, aunque el expediente nunca se borra.
           </SectionHelp>
           <form action={`/api/correspondencia/expedientes/${id}/cerrar`} method="post">
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Cerrar expediente y firmar índice
             </button>
@@ -626,7 +626,7 @@ export default async function ExpedienteDetallePage({
           <form action={`/api/correspondencia/expedientes/${id}/reabrir`} method="post" className="flex flex-wrap items-end gap-3">
             <div className="min-w-[260px] flex-1">
               <Field label="Motivo" required>
-                <input name="motivo" required className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+                <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </Field>
             </div>
             <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100">

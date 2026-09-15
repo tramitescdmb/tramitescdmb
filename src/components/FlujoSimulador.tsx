@@ -49,7 +49,7 @@ export function FlujoSimulador({ pasos, transiciones }: { pasos: Paso[]; transic
       <button
         type="button"
         onClick={() => setActivo(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
       >
         <Play className="h-3.5 w-3.5" aria-hidden /> Simular el flujo
       </button>

@@ -104,7 +104,7 @@ export default async function SolicitantesPage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="NIT, cédula, nombre o apellido…"
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           />
         </div>
         <div className="min-w-[200px]">
@@ -112,7 +112,7 @@ export default async function SolicitantesPage({
           <select
             name="municipio"
             defaultValue={municipio ?? ""}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
           >
             <option value="">Todos</option>
             <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>

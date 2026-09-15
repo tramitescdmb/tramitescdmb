@@ -471,7 +471,7 @@ export default async function ExpedienteDetallePage({
                 <select
                   name="estado"
                   defaultValue={expediente.estado}
-                  className="rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                  className="rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
                 >
                   {ESTADOS.map((e) => (
                     <option key={e} value={e}>
@@ -483,12 +483,12 @@ export default async function ExpedienteDetallePage({
               <Field label="Motivo (opcional)" help="Queda registrado en la bitácora del expediente.">
                 <input
                   name="motivo"
-                  className="w-64 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                  className="w-64 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
                 />
               </Field>
               <button
                 type="submit"
-                className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                className="rounded-md border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
               >
                 Guardar estado
               </button>
@@ -528,9 +528,9 @@ export default async function ExpedienteDetallePage({
                 <input
                   name="texto"
                   placeholder="Agregar una nota o comentario al expediente…"
-                  className="flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                  className="flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
                 />
-                <button type="submit" className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
+                <button type="submit" className="rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
                   Comentar
                 </button>
               </form>

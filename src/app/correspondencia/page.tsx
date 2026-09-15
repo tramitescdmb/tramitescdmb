@@ -140,7 +140,7 @@ export default async function CorrespondenciaBandejaPage({
             <ul className="max-h-64 space-y-1 overflow-y-auto">
               {firmables.map((c) => (
                 <li key={c.id} className="flex items-start gap-2 text-sm">
-                  <input type="checkbox" name="comunicacionId" value={c.id} className="mt-1 rounded border-stone-300" />
+                  <input type="checkbox" name="comunicacionId" value={c.id} className="mt-1 rounded border-stone-200" />
                   <span>
                     <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                     <span className="ml-1 rounded bg-stone-100 px-1 text-[10px] text-stone-500">{ETIQUETA_TIPO[c.tipo] ?? c.tipo}</span>
@@ -175,7 +175,7 @@ export default async function CorrespondenciaBandejaPage({
         <form method="get" className="flex flex-wrap items-end gap-2 border-t border-stone-100 p-3">
           <label className="min-w-[220px] flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-300 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
               <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
               <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder='Ej. concesión aguas  ·  "aprovechamiento forestal"  ·  vertimientos -renovación' className="w-full text-sm outline-none" />
             </span>
@@ -183,7 +183,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Tipo</span>
-            <select name="tipo" defaultValue={sp.tipo ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="tipo" defaultValue={sp.tipo ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               <option value="">Todos</option>
               {opciones.tipos.map((t) => (
                 <option key={t} value={t}>{ETIQUETA_TIPO[t] ?? t}</option>
@@ -193,7 +193,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Estado</span>
-            <select name="estado" defaultValue={sp.estado ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="estado" defaultValue={sp.estado ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               <option value="">Todos</option>
               {opciones.estados.map((e) => (
                 <option key={e} value={e}>{ETIQUETA_ESTADO[e] ?? e}</option>
@@ -203,7 +203,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Dependencia</span>
-            <select name="dependencia" defaultValue={sp.dependencia ?? ""} className="max-w-[160px] rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="dependencia" defaultValue={sp.dependencia ?? ""} className="max-w-[160px] rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               <option value="">Todas</option>
               {opciones.dependencias.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
@@ -215,7 +215,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Término de ley</span>
-            <select name="vencimiento" defaultValue={sp.vencimiento ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="vencimiento" defaultValue={sp.vencimiento ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               <option value="">Cualquiera</option>
               <option value="vencidas">Vencidas</option>
               <option value="por_vencer">Por vencer (3 días)</option>
@@ -224,7 +224,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Despacho</span>
-            <select name="despacho" defaultValue={sp.despacho ?? ""} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="despacho" defaultValue={sp.despacho ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               <option value="">Cualquiera</option>
               <option value="sin_despachar">Sin despachar</option>
               <option value="despachadas">Despachadas</option>
@@ -233,17 +233,17 @@ export default async function CorrespondenciaBandejaPage({
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Desde</span>
-            <input type="date" name="desde" defaultValue={sp.desde ?? ""} className="rounded-md border border-stone-300 px-2 py-2 text-sm" />
+            <input type="date" name="desde" defaultValue={sp.desde ?? ""} className="rounded-md border border-stone-200 px-2 py-2 text-sm" />
           </label>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Hasta</span>
-            <input type="date" name="hasta" defaultValue={sp.hasta ?? ""} className="rounded-md border border-stone-300 px-2 py-2 text-sm" />
+            <input type="date" name="hasta" defaultValue={sp.hasta ?? ""} className="rounded-md border border-stone-200 px-2 py-2 text-sm" />
           </label>
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Orden</span>
-            <select name="orden" defaultValue={orden} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="orden" defaultValue={orden} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               {Object.entries(ETIQUETA_ORDEN).map(([valor, etiqueta]) => (
                 <option key={valor} value={valor}>{etiqueta}</option>
               ))}
@@ -252,7 +252,7 @@ export default async function CorrespondenciaBandejaPage({
 
           <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
           {hayFiltros && (
-            <Link href="/correspondencia" className="rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+            <Link href="/correspondencia" className="rounded-md border border-stone-200 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
           )}
           <DescargarCsvBoton href={hrefDescarga()} />
         </form>
@@ -268,11 +268,11 @@ export default async function CorrespondenciaBandejaPage({
                 <PlusCircle className="h-4 w-4" aria-hidden />
                 Radicar recibida
               </Link>
-              <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <Send className="h-4 w-4" aria-hidden />
                 Radicar enviada
               </Link>
-              <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <FileEdit className="h-4 w-4" aria-hidden />
                 Nuevo memorando
               </Link>

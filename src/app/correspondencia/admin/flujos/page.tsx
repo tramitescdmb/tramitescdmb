@@ -9,7 +9,7 @@ import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 export default async function FlujosPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -41,7 +41,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap items-center gap-2">
         <form action="/api/correspondencia/flujos" method="post">
           <input type="hidden" name="accion" value="cargar-plantillas" />
-          <button className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+          <button className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
             <Download className="h-3.5 w-3.5" aria-hidden />
             Cargar flujos de plantilla
           </button>
@@ -88,7 +88,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
             <Link
               key={f.id}
               href={`/correspondencia/admin/flujos/${f.id}`}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 hover:border-stone-300"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 hover:border-stone-200"
             >
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-stone-800">

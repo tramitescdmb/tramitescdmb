@@ -21,7 +21,7 @@ export type ItemDisposicionPendiente = {
 
 type Agrupacion = "ninguna" | "serie" | "subserie";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 /**
  * Antes cada comunicación pendiente tenía su propio formulario y botón —
@@ -118,7 +118,7 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
         )}
         <label className="flex items-center gap-1.5 text-xs text-stone-500">
           Agrupar por
-          <select value={agrupacion} onChange={(e) => setAgrupacion(e.target.value as Agrupacion)} className="rounded-md border border-stone-300 px-2 py-1 text-xs">
+          <select value={agrupacion} onChange={(e) => setAgrupacion(e.target.value as Agrupacion)} className="rounded-md border border-stone-200 px-2 py-1 text-xs">
             <option value="ninguna">Sin agrupar (por fecha)</option>
             <option value="serie">Serie</option>
             <option value="subserie">Subserie</option>
@@ -142,7 +142,7 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
                         checked={seleccion.has(c.id)}
                         disabled={c.sinDisposicionDefinida}
                         onChange={() => alternar(c.id)}
-                        className="mt-1 rounded border-stone-300"
+                        className="mt-1 rounded border-stone-200"
                         aria-label={`Seleccionar ${c.radicado}`}
                       />
                       <div className="min-w-0">

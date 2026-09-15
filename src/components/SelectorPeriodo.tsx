@@ -51,7 +51,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
         value={desde}
         onChange={(e) => setDesde(e.target.value)}
         aria-label="Desde"
-        className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
       />
       <span className="text-xs text-stone-400">a</span>
       <input
@@ -59,13 +59,13 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
         value={hasta}
         onChange={(e) => setHasta(e.target.value)}
         aria-label="Hasta"
-        className="rounded-md border border-stone-300 px-2 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
       />
       <button
         type="button"
         onClick={aplicar}
         disabled={!desde || !hasta}
-        className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Aplicar
       </button>
@@ -74,7 +74,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
           type="button"
           onClick={quitar}
           title="Quitar el filtro y volver a ver todo el histórico"
-          className="flex items-center gap-1 rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 transition hover:bg-stone-50"
+          className="flex items-center gap-1 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-600 transition hover:bg-stone-50"
         >
           <X className="h-3.5 w-3.5" aria-hidden />
           Ver total

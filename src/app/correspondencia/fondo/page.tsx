@@ -145,7 +145,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
             <select
               name="fondo"
               defaultValue={FONDO}
-              className="rounded-md border border-stone-300 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500"
+              className="rounded-md border border-stone-200 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500"
             >
               {grupoActivo.miembros.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -166,14 +166,14 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
               name="q"
               defaultValue={filtros.q ?? ""}
               placeholder="Asunto, tercero, NIT o cédula, número o id de documento"
-              className="w-full rounded-md border border-stone-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-cdmb-500 focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 py-2 pl-8 pr-3 text-sm outline-none focus:border-cdmb-500 focus:ring-1 focus:ring-cdmb-500"
             />
           </span>
         </label>
         {esPsdocuments && (
           <label className="text-sm">
             <span className="mb-1 block font-medium text-stone-600">Serie</span>
-            <select name="serie" defaultValue={filtros.serie ?? ""} className="rounded-md border border-stone-300 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500">
+            <select name="serie" defaultValue={filtros.serie ?? ""} className="rounded-md border border-stone-200 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500">
               <option value="">Todas</option>
               {panel.series.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -189,7 +189,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
             type="date"
             name="desde"
             defaultValue={filtros.desde ?? ""}
-            className="rounded-md border border-stone-300 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
+            className="rounded-md border border-stone-200 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
           />
         </label>
         <label className="text-sm">
@@ -198,13 +198,13 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
             type="date"
             name="hasta"
             defaultValue={filtros.hasta ?? ""}
-            className="rounded-md border border-stone-300 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
+            className="rounded-md border border-stone-200 py-2 px-2 text-sm outline-none focus:border-cdmb-500"
           />
         </label>
         {esPsdocuments && (
           <label className="text-sm">
             <span className="mb-1 block font-medium text-stone-600">Imagen</span>
-            <select name="imagen" defaultValue={filtros.imagen ?? ""} className="rounded-md border border-stone-300 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500">
+            <select name="imagen" defaultValue={filtros.imagen ?? ""} className="rounded-md border border-stone-200 py-2 pl-2 pr-7 text-sm outline-none focus:border-cdmb-500">
               <option value="">Todos</option>
               <option value="si">Con imagen</option>
               <option value="no">Sin imagen</option>

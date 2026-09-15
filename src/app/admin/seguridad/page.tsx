@@ -3,7 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { Field, SectionHelp } from "@/components/Field";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
 export default async function SeguridadPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -37,7 +37,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
             marcha sin que los funcionarios lo usen hasta que esté listo.
           </SectionHelp>
           <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
-            <input type="checkbox" name="sgdeaVisibleFuncionarios" defaultChecked={config.sgdeaVisibleFuncionarios} className="mt-0.5 rounded border-stone-300" />
+            <input type="checkbox" name="sgdeaVisibleFuncionarios" defaultChecked={config.sgdeaVisibleFuncionarios} className="mt-0.5 rounded border-stone-200" />
             <span>
               <strong>SGDEA — Correspondencia y Archivo</strong> visible para los funcionarios
               <span className="mt-0.5 block text-xs text-stone-400">
@@ -94,15 +94,15 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
           </div>
           <div className="mt-4 flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" name="passwordRequiereMayuscula" defaultChecked={config.passwordRequiereMayuscula} className="rounded border-stone-300" />
+              <input type="checkbox" name="passwordRequiereMayuscula" defaultChecked={config.passwordRequiereMayuscula} className="rounded border-stone-200" />
               Exigir una mayúscula
             </label>
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" name="passwordRequiereNumero" defaultChecked={config.passwordRequiereNumero} className="rounded border-stone-300" />
+              <input type="checkbox" name="passwordRequiereNumero" defaultChecked={config.passwordRequiereNumero} className="rounded border-stone-200" />
               Exigir un número
             </label>
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" name="passwordRequiereEspecial" defaultChecked={config.passwordRequiereEspecial} className="rounded border-stone-300" />
+              <input type="checkbox" name="passwordRequiereEspecial" defaultChecked={config.passwordRequiereEspecial} className="rounded border-stone-200" />
               Exigir un carácter especial
             </label>
           </div>

@@ -190,7 +190,7 @@ function Editor({
             key={t}
             type="button"
             onClick={() => agregar(t)}
-            className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50"
+            className="inline-flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50"
           >
             <Plus className="h-3 w-3" aria-hidden /> {ETIQUETA_TIPO[t]}
           </button>
@@ -239,7 +239,7 @@ function Editor({
                 <input
                   value={(nodoSel.data as unknown as DatosNodo).nombre}
                   onChange={(e) => editarNodo(nodoSel.id, { nombre: e.target.value })}
-                  className="w-full rounded-md border border-stone-300 px-2 py-1"
+                  className="w-full rounded-md border border-stone-200 px-2 py-1"
                 />
               </label>
               <label className="block">
@@ -247,7 +247,7 @@ function Editor({
                 <select
                   value={(nodoSel.data as unknown as DatosNodo).tipo}
                   onChange={(e) => editarNodo(nodoSel.id, { tipo: e.target.value as Tipo })}
-                  className="w-full rounded-md border border-stone-300 bg-white px-2 py-1"
+                  className="w-full rounded-md border border-stone-200 bg-white px-2 py-1"
                 >
                   {(["TAREA", "REVISION", "DECISION", "FIN"] as Tipo[]).map((t) => (
                     <option key={t} value={t}>{ETIQUETA_TIPO[t]}</option>
@@ -267,7 +267,7 @@ function Editor({
                 <input
                   value={String(edgeSel.label ?? "")}
                   onChange={(e) => editarEdge(edgeSel.id, e.target.value)}
-                  className="w-full rounded-md border border-stone-300 px-2 py-1"
+                  className="w-full rounded-md border border-stone-200 px-2 py-1"
                   placeholder="Continuar / Aprobar / Devolver…"
                 />
               </label>

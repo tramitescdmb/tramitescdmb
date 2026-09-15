@@ -13,7 +13,7 @@ import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 
-const inputCls = "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 const TIPOS_PASO = ["TAREA", "REVISION", "DECISION", "FIN"] as const;
 const ASIGNACIONES = ["DEPENDENCIA_COMUNICACION", "DEPENDENCIA_FIJA", "CARGO", "RADICADOR", "RESPONSABLE_PASO_ANTERIOR", "MANUAL"] as const;
 
@@ -110,13 +110,13 @@ export default async function FlujoEditorPage({
         <div className="sm:col-span-3 flex flex-wrap items-center gap-3">
           <button className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar datos</button>
           <FormBoton accion={accion} name="accion" value={flujo.activo ? "desactivar" : "activar"} disabled={!flujo.activo && flujo.problemas.length > 0}
-            className={flujo.activo ? "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}>
+            className={flujo.activo ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}>
             {flujo.activo ? "Desactivar" : "Activar flujo"}
           </FormBoton>
-          <FormBoton accion={accion} name="accion" value="duplicar" className="border border-stone-300 bg-white text-stone-700 hover:bg-stone-50">
+          <FormBoton accion={accion} name="accion" value="duplicar" className="border border-stone-200 bg-white text-stone-700 hover:bg-stone-50">
             Duplicar
           </FormBoton>
-          <a href={`/api/correspondencia/flujos/${flujo.id}/bpmn`} className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+          <a href={`/api/correspondencia/flujos/${flujo.id}/bpmn`} className="rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
             Descargar BPMN
           </a>
           {flujo._count.instancias === 0 && (
@@ -138,7 +138,7 @@ export default async function FlujoEditorPage({
         <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
           {dependencias.map((d) => (
             <label key={d.id} className="flex items-center gap-1.5 text-xs text-stone-700">
-              <input type="checkbox" name="dependenciaId" value={d.id} defaultChecked={flujo.dependenciasOperadoras.includes(d.id)} className="rounded border-stone-300" />
+              <input type="checkbox" name="dependenciaId" value={d.id} defaultChecked={flujo.dependenciasOperadoras.includes(d.id)} className="rounded border-stone-200" />
               {d.nombre}
             </label>
           ))}
@@ -207,11 +207,11 @@ export default async function FlujoEditorPage({
                   <input type="hidden" name="desdePasoId" value={paso.id} />
                   <label className="text-xs">
                     <span className="mb-0.5 block text-stone-500">Opción</span>
-                    <input name="etiqueta" placeholder="Continuar / Aprobar / Devolver…" className="rounded-md border border-stone-300 px-2 py-1 text-sm" required />
+                    <input name="etiqueta" placeholder="Continuar / Aprobar / Devolver…" className="rounded-md border border-stone-200 px-2 py-1 text-sm" required />
                   </label>
                   <label className="text-xs">
                     <span className="mb-0.5 block text-stone-500">Va al paso</span>
-                    <select name="haciaPasoId" className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm" required defaultValue="">
+                    <select name="haciaPasoId" className="rounded-md border border-stone-200 bg-white px-2 py-1 text-sm" required defaultValue="">
                       <option value="" disabled>Elegir…</option>
                       {flujo.pasos.filter((x) => x.id !== paso.id).map((x) => (
                         <option key={x.id} value={x.id}>{x.orden}. {x.nombre}</option>
@@ -266,15 +266,15 @@ export default async function FlujoEditorPage({
           </div>
         ))}
 
-        <form action={accion} method="post" className="flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-stone-300 bg-stone-50/60 p-4">
+        <form action={accion} method="post" className="flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-stone-200 bg-stone-50/60 p-4">
           <input type="hidden" name="accion" value="agregar-paso" />
           <label className="text-sm">
             <span className="mb-0.5 block text-xs text-stone-500">Nuevo paso</span>
-            <input name="nombre" placeholder="Nombre del paso" className="rounded-md border border-stone-300 px-3 py-2 text-sm" required />
+            <input name="nombre" placeholder="Nombre del paso" className="rounded-md border border-stone-200 px-3 py-2 text-sm" required />
           </label>
           <label className="text-sm">
             <span className="mb-0.5 block text-xs text-stone-500">Tipo</span>
-            <select name="tipo" defaultValue="TAREA" className="rounded-md border border-stone-300 bg-white px-2 py-2 text-sm">
+            <select name="tipo" defaultValue="TAREA" className="rounded-md border border-stone-200 bg-white px-2 py-2 text-sm">
               {TIPOS_PASO.map((t) => (<option key={t} value={t}>{ETIQUETA_TIPO_PASO[t]}</option>))}
             </select>
           </label>

@@ -4,7 +4,7 @@ import { Printer } from "lucide-react";
 
 const ESTILOS = {
   primario: { boton: "bg-cdmb-600 px-4 py-2 text-white hover:bg-cdmb-700", icono: "h-4 w-4" },
-  secundario: { boton: "border border-stone-300 bg-white px-3 py-2 text-stone-700 hover:bg-stone-50", icono: "h-3.5 w-3.5" },
+  secundario: { boton: "border border-stone-200 bg-white px-3 py-2 text-stone-700 hover:bg-stone-50", icono: "h-3.5 w-3.5" },
 };
 
 /** Único botón "Imprimir" del proyecto — llama a window.print() y se oculta a sí mismo al imprimir. Junto

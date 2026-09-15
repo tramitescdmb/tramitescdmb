@@ -78,7 +78,7 @@ export function SubirDocumentoExpedienteForm({
     <div className="space-y-3">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       <p className="text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
+      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
         <Upload className="h-4 w-4" aria-hidden />
         Agregar archivos
         <input type="file" multiple accept={ACCEPT_DOCUMENTOS} className="hidden" onChange={(e) => agregarArchivos(e.target.files)} />
@@ -102,7 +102,7 @@ export function SubirDocumentoExpedienteForm({
             type="date"
             value={fechaDocumento}
             onChange={(e) => setFechaDocumento(e.target.value)}
-            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+            className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
           />
           <span className="text-xs text-stone-400">Opcional — solo si es distinta de hoy</span>
         </label>
@@ -117,7 +117,7 @@ export function SubirDocumentoExpedienteForm({
             value={numeroFolios}
             onChange={(e) => setNumeroFolios(e.target.value)}
             placeholder="1"
-            className="w-20 rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+            className="w-20 rounded-md border border-stone-200 px-2 py-1.5 text-sm"
           />
           <span className="text-xs text-stone-400">Opcional — para el índice foliado; si no se indica, cuenta como 1</span>
         </label>
@@ -128,7 +128,7 @@ export function SubirDocumentoExpedienteForm({
           <select
             value={tipoDocumentalId}
             onChange={(e) => setTipoDocumentalId(e.target.value)}
-            className="rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+            className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
           >
             <option value="">— Sin especificar —</option>
             {tiposDocumentales.map((t) => (
@@ -144,7 +144,7 @@ export function SubirDocumentoExpedienteForm({
           <select
             value={reemplazaId}
             onChange={(e) => setReemplazaId(e.target.value)}
-            className="max-w-[240px] rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+            className="max-w-[240px] rounded-md border border-stone-200 px-2 py-1.5 text-sm"
           >
             <option value="">— No, es un documento nuevo —</option>
             {documentosExistentes.map((d) => (
