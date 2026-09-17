@@ -20,6 +20,7 @@ export function Sidebar({
   mostrarVital,
   mostrarSinca,
   mostrarCorrespondencia,
+  mostrarContratacion,
   nombre,
   subtitulo,
   iniciales,
@@ -29,6 +30,7 @@ export function Sidebar({
   mostrarVital: boolean;
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
+  mostrarContratacion: boolean;
   nombre: string;
   subtitulo: string;
   iniciales: string;
@@ -109,6 +111,7 @@ export function Sidebar({
         mostrarVital={mostrarVital}
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
+        mostrarContratacion={mostrarContratacion}
         colapsado={colapsado}
       />
 

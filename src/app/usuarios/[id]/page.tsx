@@ -34,6 +34,7 @@ export default async function EditarUsuarioPage({
         cargos: true,
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
+        contratista: { select: { identificacion: true, nombreORazonSocial: true, tipoPersona: true } },
       },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
@@ -102,6 +103,9 @@ export default async function EditarUsuarioPage({
           usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)
         }
         estadoCuentaActual={usuario.estadoCuenta}
+        rolContratacionActual={usuario.rolContratacion}
+        rolContratacionVigenteHastaActual={usuario.rolContratacionVigenteHasta ? usuario.rolContratacionVigenteHasta.toISOString().slice(0, 10) : null}
+        contratistaActual={usuario.contratista}
       />
     </div>
   );

@@ -22,6 +22,19 @@ export const ACCEPT_DOCUMENTOS = EXTENSIONES_PERMITIDAS.map((ext) => `.${ext}`).
 
 export const TAMANO_MAXIMO_BYTES = 25 * 1024 * 1024; // 25 MB
 
+/**
+ * Tope propio del módulo de Contratación (pedido explícito del usuario: 2MB
+ * por archivo, con compresión de imágenes en el cliente antes de subir — ver
+ * src/lib/compresion-cliente.ts). Un PDF no se puede recomprimir de verdad en
+ * este stack (no hay Ghostscript en Vercel serverless); si sigue por encima
+ * del tope tras el intento best-effort, se rechaza con este mensaje.
+ */
+export const TAMANO_MAXIMO_CONTRATACION_BYTES = 2 * 1024 * 1024; // 2 MB
+
+export function mensajeArchivoDemasiadoGrandeContratacion(fileName: string): string {
+  return `"${fileName}" pesa más de 2 MB, el máximo permitido en Contratación. Reduzca su tamaño (comprima el PDF o baje la resolución de la imagen) antes de subirlo.`;
+}
+
 export function extensionDe(fileName: string): string {
   const idx = fileName.lastIndexOf(".");
   return idx === -1 ? "" : fileName.slice(idx + 1).toLowerCase();

@@ -19,6 +19,7 @@ export function MobileNav({
   mostrarVital,
   mostrarSinca,
   mostrarCorrespondencia,
+  mostrarContratacion,
   nombre,
   subtitulo,
   iniciales,
@@ -27,6 +28,7 @@ export function MobileNav({
   mostrarVital: boolean;
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
+  mostrarContratacion: boolean;
   nombre: string;
   subtitulo: string;
   iniciales: string;
@@ -78,6 +80,7 @@ export function MobileNav({
               mostrarVital={mostrarVital}
               mostrarSinca={mostrarSinca}
               mostrarCorrespondencia={mostrarCorrespondencia}
+              mostrarContratacion={mostrarContratacion}
             />
 
             <div className="border-t border-graphite-100 p-3">

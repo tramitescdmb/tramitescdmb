@@ -177,6 +177,14 @@ model Usuario {
   // qué rol tuvo y hasta cuándo.
   rolCorrespondenciaVigenteHasta DateTime?
 
+  // --- Contratación (ver bloque al final del archivo) ---
+  // Rol dentro del módulo de Contratación (null + no ADMIN = sin acceso).
+  // Vigencia opcional (mismo patrón que rolCorrespondenciaVigenteHasta):
+  // pensada para que el acceso de un Contratista/Supervisor venza solo al
+  // terminar su contrato, sin que un ADMIN tenga que quitárselo a mano.
+  rolContratacion             RolContratacion?
+  rolContratacionVigenteHasta DateTime?
+
   dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
   dependenciasResponsable         Dependencia[]           @relation("DependenciaResponsable")
   comunicacionesRadicadas         Comunicacion[]          @relation("ComunicacionRadicadaPor")
@@ -198,6 +206,16 @@ model Usuario {
   flujosCreados                   FlujoTrabajo[]          @relation("FlujoCreadoPor")
   instanciasFlujoIniciadas        InstanciaFlujo[]        @relation("InstanciaFlujoIniciadoPor")
   pasosFlujoEjecutados            PasoEjecutado[]         @relation("PasoEjecutadoResponsable")
+
+  // --- Contratación ---
+  contratista                     Contratista?                      @relation("ContratistaUsuario")
+  expedientesContractualesCreados ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
+  supervisionesContrato           ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
+  etapasContratacionAprobadas     EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
+  documentosContratoSubidos       DocumentoContrato[]               @relation("DocContratoSubidoPor")
+  documentosContratoValidados     DocumentoContrato[]               @relation("DocContratoValidadoPor")
+  firmasDocumentoContrato         FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
+  eventosContratacion             EventoContratacion[]              @relation("EventoContratacionUsuario")
 
   @@index([dependenciaId])
 }
@@ -407,20 +425,20 @@ model SincaNitSnapshot {
 /// Un documento del fondo histórico (una fila de C.PSIDEAW_<serie> de psdocuments,
 /// o un radicado de C.COR_* del SIC). `fondo` + `refId` identifican el origen.
 model FondoDocumento {
-  id             String  @id // "<fondo>:<refId>", ej. "psdocuments:482913"
-  fondo          String // "psdocuments" | "sic-recibida" | "sic-enviada" | "sic-pqr"
-  refId          String // DOC_IDDOCUM (psdocuments) o NUMERADI_REC-ANO_REC (SIC)
-  serieId        Int? // TIP_IDTIPDO (psdocuments)
-  serieNombre    String? // "CORRESPONDENCIA", "CONTABILIDAD-TESORERIA", ...
-  oficina        String? // dependencia / subdirección productora
+  id          String  @id // "<fondo>:<refId>", ej. "psdocuments:482913"
+  fondo       String // "psdocuments" | "sic-recibida" | "sic-enviada" | "sic-pqr"
+  refId       String // DOC_IDDOCUM (psdocuments) o NUMERADI_REC-ANO_REC (SIC)
+  serieId     Int? // TIP_IDTIPDO (psdocuments)
+  serieNombre String? // "CORRESPONDENCIA", "CONTABILIDAD-TESORERIA", ...
+  oficina     String? // dependencia / subdirección productora
 
-  numero         String? // número visible (radicado, comprobante, etc.)
-  numeroEntrada  String?
-  numeroSalida   String?
-  fecha          DateTime? // fecha principal del documento (para ordenar/filtrar)
-  anio           Int? // derivado de `fecha`
-  fechaEntrada   DateTime?
-  fechaSalida    DateTime?
+  numero        String? // número visible (radicado, comprobante, etc.)
+  numeroEntrada String?
+  numeroSalida  String?
+  fecha         DateTime? // fecha principal del documento (para ordenar/filtrar)
+  anio          Int? // derivado de `fecha`
+  fechaEntrada  DateTime?
+  fechaSalida   DateTime?
 
   asunto         String? @db.Text
   razonSocial    String? // remitente / tercero / razón social
@@ -430,14 +448,14 @@ model FondoDocumento {
   ciclo          String? // DOC_CICLO ("GESTION", ...)
   identificacion String? // NIT / cédula del solicitante o tercero (NITSOL_ATC, NIT_REC, ...)
 
-  tieneImagen    Boolean @default(false) // hay fila en PSIDEA_VERSION
-  numArchivos    Int     @default(0)
-  rutaOriginal   String? // VER_CAMINO||VER_ARCHIVO de la última versión — SOLO referencia, no es un enlace servible
+  tieneImagen  Boolean @default(false) // hay fila en PSIDEA_VERSION
+  numArchivos  Int     @default(0)
+  rutaOriginal String? // VER_CAMINO||VER_ARCHIVO de la última versión — SOLO referencia, no es un enlace servible
 
   /// SOLO las columnas de la tabla origen que NO quedaron ya en un campo
   /// normalizado (para no duplicar texto — Supabase Free tiene 500 MB).
   /// null cuando no sobra nada. Cada valor se recorta a ~120 caracteres.
-  campos         Json?
+  campos Json?
 
   /// id de la corrida de sincronización que tocó esta fila por última vez.
   sincronizacionId String?
@@ -1010,11 +1028,12 @@ model Dependencia {
   usuarios    Usuario[]         @relation("UsuarioDependencia")
   series      SerieDocumental[]
 
-  comunicacionesDestino   Comunicacion[]         @relation("ComunicacionDependenciaDestino")
-  comunicacionesOrigen    Comunicacion[]         @relation("ComunicacionDependenciaOrigen")
-  distribuciones          Distribucion[]
-  expedientesDocumentales ExpedienteDocumental[]
-  pasosFlujo              PasoFlujo[]            @relation("PasoFlujoDependencia")
+  comunicacionesDestino    Comunicacion[]          @relation("ComunicacionDependenciaDestino")
+  comunicacionesOrigen     Comunicacion[]          @relation("ComunicacionDependenciaOrigen")
+  distribuciones           Distribucion[]
+  expedientesDocumentales  ExpedienteDocumental[]
+  pasosFlujo               PasoFlujo[]             @relation("PasoFlujoDependencia")
+  expedientesContractuales ExpedienteContractual[]
 
   @@index([parentId])
 }
@@ -1398,26 +1417,26 @@ model ComunicacionDocumento {
 
 // Distribución/reparto de una comunicación a una dependencia y/o funcionario.
 model Distribucion {
-  id              String    @id @default(cuid())
-  comunicacionId  String
-  dependenciaId   String?
-  usuarioId       String?
-  instrucciones   String?   @db.Text
-  termino         Int? // días para responder (se convierte a fechaVencimiento en Fase 3)
-  fechaAsignacion DateTime  @default(now())
-  fechaAcuse      DateTime? // cuándo el destinatario dio acuse de recibido
-  asignadoPorId   String?
+  id               String    @id @default(cuid())
+  comunicacionId   String
+  dependenciaId    String?
+  usuarioId        String?
+  instrucciones    String?   @db.Text
+  termino          Int? // días para responder (se convierte a fechaVencimiento en Fase 3)
+  fechaAsignacion  DateTime  @default(now())
+  fechaAcuse       DateTime? // cuándo el destinatario dio acuse de recibido
+  asignadoPorId    String?
   // Reparto vigente vs. historial: un reparto se puede hacer a VARIOS funcionarios a
   // la vez (un lote), y un reparto posterior desactiva el anterior salvo que se pida
   // "sumar". `activa` = sigue siendo un destinatario actual de la comunicación.
-  activa          Boolean   @default(true)
+  activa           Boolean   @default(true)
   // Devolución del reparto a la ventanilla: el funcionario al que se le repartió
   // puede devolverlo indicando por qué no le corresponde — salvo que falten 3 días
   // hábiles o menos para el vencimiento del término de ley. Al devolver, la
   // distribución deja de estar activa y la comunicación vuelve a EN_REPARTO.
-  devueltaEn      DateTime?
-  motivoDevolucion String?  @db.Text
-  createdAt       DateTime  @default(now())
+  devueltaEn       DateTime?
+  motivoDevolucion String?   @db.Text
+  createdAt        DateTime  @default(now())
 
   comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   dependencia  Dependencia? @relation(fields: [dependenciaId], references: [id])
@@ -1586,9 +1605,9 @@ model DocumentoArchivo {
   // se marca con motivo y queda fuera del índice, del hash, del FUID y del PDF
   // consolidado, pero trazado en la bitácora (mismo principio que ANULADA en una
   // comunicación). Un expediente CERRADO ya no admite ninguna de las dos.
-  retiradoEn             DateTime?
-  retiradoPorId          String?
-  motivoRetiro           String?   @db.Text
+  retiradoEn    DateTime?
+  retiradoPorId String?
+  motivoRetiro  String?   @db.Text
 
   expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
@@ -1775,4 +1794,217 @@ model PasoEjecutado {
   responsable Usuario?       @relation("PasoEjecutadoResponsable", fields: [responsableId], references: [id])
 
   @@index([instanciaId])
+}
+
+// ---------------------------------------------------------------------------
+// Contratación — manejador de expedientes digitales de contratación (Manual de
+// Contratación y de Supervisión o Interventoría A-BS-MA01). Deliberadamente
+// AISLADO de Trámites 2.0 y del SGDEA de Correspondencia (mismo criterio ya
+// aplicado con ExpedienteDocumental: nunca reutilizar un dominio de otro
+// módulo, ver la lección documentada sobre "Expediente"/"Comunicacion").
+// No es un ERP de contratación: no reemplaza SECOP II (plataforma
+// transaccional real de la CDMB, Cap. 14 del Manual), no valida cuantías ni
+// reglas jurídicas de cada modalidad de selección — solo gestiona el
+// expediente, el flujo documental por etapa, el acceso por rol y la firma.
+// ---------------------------------------------------------------------------
+
+enum RolContratacion {
+  ADMINISTRADOR_CONTRATACION
+  JEFE_CONTRATACION
+  SUPERVISOR_INTERVENTOR
+  CONTRATISTA
+}
+
+// Cap. 6/7/10 del Manual: las 3 etapas de un mismo expediente (no se crea un
+// expediente nuevo por etapa, es el mismo consecutivo de principio a fin).
+enum EtapaContratacion {
+  PRECONTRACTUAL
+  CONTRACTUAL
+  POSTCONTRACTUAL
+}
+
+// Informativo únicamente (Cap. 6.2 del Manual) — no dispara ninguna rama de
+// lógica ni formulario distinto; solo sirve para filtrar/reportar.
+enum ModalidadSeleccion {
+  LICITACION_PUBLICA
+  SELECCION_ABREVIADA_MENOR_CUANTIA
+  SELECCION_ABREVIADA_SUBASTA_INVERSA
+  SELECCION_ABREVIADA_ENAJENACION_BIENES
+  CONCURSO_MERITOS
+  CONTRATACION_DIRECTA
+  MINIMA_CUANTIA
+  CONVENIO_ASOCIACION
+  ARRENDAMIENTO
+  OTRA
+}
+
+enum EstadoValidacionDocumentoContrato {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+// Persona/empresa contratista. Deliberadamente separado de Solicitante (Trámites
+// ambientales): es un dominio distinto (proveedor del Estado, no solicitante de
+// un permiso ambiental) aunque ambos se identifiquen por NIT/cédula.
+// usuarioId es opcional: se llena solo cuando ese contratista tiene cuenta de
+// dominio (Directorio Activo) de la CDMB y se le da acceso al módulo — ver
+// src/lib/directorio-activo.ts, reutilizado tal cual, sin autenticación nueva.
+model Contratista {
+  id                 String   @id @default(cuid())
+  identificacion     String   @unique
+  tipoPersona        String // "NATURAL" | "JURIDICA"
+  nombreORazonSocial String
+  contactoEmail      String?
+  contactoTelefono   String?
+  usuarioId          String?  @unique
+  createdAt          DateTime @default(now())
+
+  usuario     Usuario?                @relation("ContratistaUsuario", fields: [usuarioId], references: [id])
+  expedientes ExpedienteContractual[]
+}
+
+model ExpedienteContractual {
+  id                       String             @id @default(cuid())
+  numero                   String             @unique // CDMB-CTO-2026-000001 (generarConsecutivo, serie "CTO")
+  objeto                   String             @db.Text
+  modalidadSeleccion       ModalidadSeleccion
+  valor                    Decimal?           @db.Decimal(18, 2)
+  fechaInicio              DateTime?
+  fechaFinEstimada         DateTime?
+  dependenciaSolicitanteId String
+  etapaActual              EtapaContratacion  @default(PRECONTRACTUAL)
+  cerrado                  Boolean            @default(false)
+  fechaCierre              DateTime?
+  contratistaId            String?
+  creadoPorId              String
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  dependenciaSolicitante Dependencia  @relation(fields: [dependenciaSolicitanteId], references: [id])
+  contratista            Contratista? @relation(fields: [contratistaId], references: [id])
+  creadoPor              Usuario      @relation("ExpContractualCreadoPor", fields: [creadoPorId], references: [id])
+
+  supervisores ExpedienteContractualSupervisor[]
+  etapas       EtapaExpedienteContractual[]
+  documentos   DocumentoContrato[]
+  eventos      EventoContratacion[]
+
+  @@index([etapaActual])
+  @@index([dependenciaSolicitanteId])
+  @@index([contratistaId])
+}
+
+// Muchos-a-muchos: el Manual (Cap. 9) permite designar más de un supervisor por
+// contrato, y un mismo funcionario puede supervisar varios contratos a la vez.
+model ExpedienteContractualSupervisor {
+  id           String @id @default(cuid())
+  expedienteId String
+  usuarioId    String
+  rol          String @default("SUPERVISOR") // "SUPERVISOR" | "INTERVENTOR" | "APOYO_SUPERVISION"
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  usuario    Usuario               @relation("SupervisorDeExpediente", fields: [usuarioId], references: [id])
+
+  @@unique([expedienteId, usuarioId])
+  @@index([usuarioId])
+}
+
+// Estado de cada una de las 3 etapas DENTRO de un mismo expediente — permite
+// que el Jefe de Contratación apruebe el paso de una etapa a la siguiente con
+// su propia fecha/comentario, sin crear un expediente nuevo por etapa.
+model EtapaExpedienteContractual {
+  id            String            @id @default(cuid())
+  expedienteId  String
+  etapa         EtapaContratacion
+  abiertaEn     DateTime          @default(now())
+  completadaEn  DateTime?
+  aprobadaPorId String?
+  comentario    String?           @db.Text
+
+  expediente  ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  aprobadaPor Usuario?              @relation("EtapaContratacionAprobadaPor", fields: [aprobadaPorId], references: [id])
+
+  @@unique([expedienteId, etapa])
+}
+
+// Documento del expediente contractual. A DIFERENCIA de DocumentoArchivo
+// (SGDEA) — que nunca se borra, solo se "retira" con motivo trazado — ESTE
+// modelo sí admite UPDATE/DELETE reales por Administrador de Contratación y
+// Jefe de Contratación, sin dejar ninguna fila en EventoContratacion. Es una
+// decisión explícita e informada del usuario, exclusiva de este módulo
+// (~1000 contratistas rotando, errores de captura frecuentes) — NUNCA
+// replicar este comportamiento en DocumentoArchivo ni en ningún otro dominio
+// del proyecto sin la misma conversación explícita.
+model DocumentoContrato {
+  id           String            @id @default(cuid())
+  expedienteId String
+  etapa        EtapaContratacion
+  categoria    String? // texto libre, con sugerencias tomadas de Formatos/* (src/lib/contratacion-categorias.ts)
+  nombre       String
+  storagePath  String
+  mimeType     String
+  tamanoBytes  Int
+  hashSha256   String?
+  subidoPorId  String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  // Firma electrónica selectiva (punto 4 del pedido): no todo documento la
+  // necesita. Alternativa a firmar dentro de la app: el documento ya viene
+  // firmado/publicado en SECOP II, que actúa como su propio mecanismo de
+  // firma — en ese caso no hace falta volver a firmarlo aquí.
+  requiereFirma        Boolean                           @default(false)
+  firmadoEnSecop       Boolean                           @default(false)
+  estadoValidacion     EstadoValidacionDocumentoContrato @default(PENDIENTE)
+  validadoPorId        String?
+  validadoEn           DateTime?
+  comentarioValidacion String?                           @db.Text
+
+  expediente  ExpedienteContractual   @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor   Usuario                 @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
+  validadoPor Usuario?                @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
+  firma       FirmaDocumentoContrato?
+
+  @@index([expedienteId])
+  @@index([etapa])
+}
+
+// Evento de firma electrónica de UN documento de contratación — modelo propio
+// (no se reutiliza Firma, del SGDEA de Correspondencia, para no arriesgar ese
+// modelo compartido con datos de otro dominio); mismo criterio de
+// hash+identidad+timestamp ya validado en Correspondencia (Ley 527/1999 +
+// Decreto 1074/2015).
+model FirmaDocumentoContrato {
+  id                String    @id @default(cuid())
+  documentoId       String    @unique
+  usuarioId         String
+  fechaHora         DateTime  @default(now())
+  hashContenido     String
+  proveedor         String    @default("interno")
+  formato           String    @default("hash-sha256")
+  selloTiempoEn     DateTime?
+  selloTiempoFuente String?
+  selloTiempoToken  String?
+
+  documento DocumentoContrato @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  usuario   Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])
+}
+
+// Bitácora del módulo (mismo espíritu que ExpedienteEvento de Trámites 2.0) —
+// registra TODO lo que ocurre en un expediente contractual, EXCEPTO la
+// excepción explícita de arriba (edición/eliminación de DocumentoContrato por
+// Administrador/Jefe de Contratación no escribe aquí).
+model EventoContratacion {
+  id           String   @id @default(cuid())
+  expedienteId String
+  tipo         String // CREACION | DOCUMENTO_SUBIDO | ETAPA_APROBADA | DOCUMENTO_FIRMADO | DOCUMENTO_RECHAZADO | ...
+  detalle      String?  @db.Text
+  usuarioId    String?
+  createdAt    DateTime @default(now())
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  usuario    Usuario?              @relation("EventoContratacionUsuario", fields: [usuarioId], references: [id])
+
+  @@index([expedienteId])
 }

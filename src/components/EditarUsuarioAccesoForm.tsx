@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine, Search } from "lucide-react";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
 
@@ -13,6 +13,7 @@ type Nivel = "VER" | "EDITAR";
 type Seccion = "VITAL_BASE" | "VITAL_DASHBOARD" | "SINCA_BASE" | "SINCA_DASHBOARD" | "SINCA_MINERIA";
 type RolCorrespondencia = "OPERADOR_VENTANILLA" | "FUNCIONARIO_DEPENDENCIA" | "JEFE_DEPENDENCIA" | "ADMIN_ARCHIVO";
 type EstadoCuenta = "HABILITADA" | "DESHABILITADA" | "BLOQUEADA" | "SUSPENDIDA";
+type RolContratacion = "ADMINISTRADOR_CONTRATACION" | "JEFE_CONTRATACION" | "SUPERVISOR_INTERVENTOR" | "CONTRATISTA";
 
 const ESTADOS_CUENTA: { valor: EstadoCuenta; etiqueta: string; ayuda: string; clase: string }[] = [
   { valor: "HABILITADA", etiqueta: "Habilitada", ayuda: "Puede iniciar sesión con normalidad.", clase: "border-cdmb-600 bg-cdmb-50 text-cdmb-800" },
@@ -26,6 +27,13 @@ const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayud
   { valor: "FUNCIONARIO_DEPENDENCIA", etiqueta: "Funcionario de dependencia", ayuda: "Recibe y gestiona lo que le distribuyan a su dependencia." },
   { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia", ayuda: "Además puede repartir dentro de su propia dependencia." },
   { valor: "ADMIN_ARCHIVO", etiqueta: "Administrador de archivo", ayuda: "Administra dependencias y TRD/CCD; ve todo el módulo." },
+];
+
+const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: string }[] = [
+  { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "Crea expedientes; único junto a Jefe que puede editar/eliminar archivos sin dejar traza." },
+  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Aprueba el paso de etapa y revisa/firma documentos; mismo permiso de edición sin traza." },
+  { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Sube y firma documentos solo de los expedientes que tenga asignados." },
+  { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes solo en Contractual/Postcontractual de su propio expediente." },
 ];
 
 const BOTON_BASE = "flex-1 rounded-md border px-2 py-1 text-[11px] font-medium transition";
@@ -49,6 +57,7 @@ const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-cargos", etiqueta: "Cargos" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
   { id: "seccion-correspondencia", etiqueta: "Correspondencia" },
+  { id: "seccion-contratacion", etiqueta: "Contratación" },
   { id: "seccion-tramites", etiqueta: "Trámites" },
 ];
 
@@ -127,6 +136,9 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual,
   denominacionComplementoActual,
   accesoFirmaActual,
+  rolContratacionActual,
+  rolContratacionVigenteHastaActual,
+  contratistaActual,
 }: {
   usuarioId: string;
   nombreActual: string;
@@ -148,6 +160,9 @@ export function EditarUsuarioAccesoForm({
   politicaPassword: { longitudMinima: number; longitudMaxima: number };
   vigenciaPassword?: { vencida: boolean; diasRestantes: number | null };
   estadoCuentaActual: EstadoCuenta;
+  rolContratacionActual?: RolContratacion | null;
+  rolContratacionVigenteHastaActual?: string | null;
+  contratistaActual?: { identificacion: string; nombreORazonSocial: string; tipoPersona: string } | null;
 }) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreActual);
@@ -163,6 +178,11 @@ export function EditarUsuarioAccesoForm({
   const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
   const [rolCorrespondencia, setRolCorrespondencia] = useState<RolCorrespondencia | "">(rolCorrespondenciaActual ?? "");
   const [rolCorrespondenciaVigenteHasta, setRolCorrespondenciaVigenteHasta] = useState(rolCorrespondenciaVigenteHastaActual ?? "");
+  const [rolContratacion, setRolContratacion] = useState<RolContratacion | "">(rolContratacionActual ?? "");
+  const [rolContratacionVigenteHasta, setRolContratacionVigenteHasta] = useState(rolContratacionVigenteHastaActual ?? "");
+  const [contratistaIdentificacion, setContratistaIdentificacion] = useState(contratistaActual?.identificacion ?? "");
+  const [contratistaNombre, setContratistaNombre] = useState(contratistaActual?.nombreORazonSocial ?? "");
+  const [contratistaTipoPersona, setContratistaTipoPersona] = useState(contratistaActual?.tipoPersona ?? "NATURAL");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -242,6 +262,10 @@ export function EditarUsuarioAccesoForm({
       setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
       return;
     }
+    if (rolContratacion === "CONTRATISTA" && !contratistaIdentificacion.trim()) {
+      setError("Indique la identificación (NIT/cédula) del contratista.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     setOk(false);
@@ -263,6 +287,11 @@ export function EditarUsuarioAccesoForm({
           dependenciaId: dependenciaId || null,
           rolCorrespondencia: rolCorrespondencia || null,
           rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
+          rolContratacion: rolContratacion || null,
+          rolContratacionVigenteHasta: rolContratacion ? (rolContratacionVigenteHasta || null) : null,
+          ...(rolContratacion === "CONTRATISTA"
+            ? { contratistaIdentificacion: contratistaIdentificacion.trim(), contratistaNombre: contratistaNombre.trim(), contratistaTipoPersona }
+            : {}),
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
       });
@@ -684,6 +713,93 @@ export function EditarUsuarioAccesoForm({
             )}
           </div>
         </div>
+      </section>
+
+      <section id="seccion-contratacion" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion icono={Briefcase} titulo="Contratación" ayuda="Acceso al manejador de expedientes digitales de contratación." />
+        <p className="mb-3 text-xs text-stone-400">
+          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba.
+        </p>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setRolContratacion("")}
+            aria-pressed={rolContratacion === ""}
+            title="Sin acceso al módulo de Contratación"
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              rolContratacion === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
+            }`}
+          >
+            Sin acceso
+          </button>
+          {ROLES_CONTRATACION.map((r) => (
+            <button
+              key={r.valor}
+              type="button"
+              onClick={() => setRolContratacion(r.valor)}
+              aria-pressed={rolContratacion === r.valor}
+              title={r.ayuda}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                rolContratacion === r.valor
+                  ? "border-cdmb-600 bg-cdmb-600 text-white"
+                  : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+              }`}
+            >
+              {r.etiqueta}
+            </button>
+          ))}
+        </div>
+
+        {rolContratacion !== "" && (
+          <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone-600">
+            Vigente hasta
+            <input
+              type="date"
+              value={rolContratacionVigenteHasta}
+              onChange={(e) => setRolContratacionVigenteHasta(e.target.value)}
+              className="rounded-md border border-stone-200 px-2 py-1 text-sm"
+            />
+            <span className="text-stone-400">
+              Opcional — pensado para que venza solo al terminar el contrato, sin quitárselo a mano.
+            </span>
+          </label>
+        )}
+
+        {rolContratacion === "CONTRATISTA" && (
+          <div className="grid gap-3 rounded-lg border border-stone-100 bg-stone-50/60 p-3 sm:grid-cols-3">
+            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
+              <span className="mb-1 flex items-center gap-1"><Search className="h-3.5 w-3.5" aria-hidden /> Identificación (NIT/cédula)</span>
+              <input
+                value={contratistaIdentificacion}
+                onChange={(e) => setContratistaIdentificacion(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </label>
+            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
+              Nombre o razón social
+              <input
+                value={contratistaNombre}
+                onChange={(e) => setContratistaNombre(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </label>
+            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
+              Tipo
+              <select
+                value={contratistaTipoPersona}
+                onChange={(e) => setContratistaTipoPersona(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              >
+                <option value="NATURAL">Persona natural</option>
+                <option value="JURIDICA">Persona jurídica</option>
+              </select>
+            </label>
+            <p className="text-[11px] text-stone-400 sm:col-span-3">
+              Vincula esta cuenta al registro de Contratista con esa identificación (lo crea si no existe). Al
+              iniciar sesión por Directorio Activo, este vínculo determina a qué expediente(s) tiene acceso.
+            </p>
+          </div>
+        )}
       </section>
 
       <section id="seccion-tramites" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">

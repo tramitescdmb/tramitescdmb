@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { verificarSesion as getSession } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permisos";
+import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
+import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { getConfiguracionSitio } from "@/lib/config-sitio";
+
+/** Firma de subida para un documento DIRECTO a un expediente contractual (bucket "documentos",
+ * mismo patrón que el resto del proyecto — ver src/lib/storage.ts). */
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+
+  const expediente = await db.expedienteContractual.findUnique({
+    where: { id },
+    select: { id: true, contratistaId: true, etapaActual: true, cerrado: true },
+  });
+  if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+  if (expediente.cerrado) return NextResponse.json({ error: "Este expediente está cerrado." }, { status: 409 });
+
+  const body = await req.json().catch(() => null);
+  const fileName = body?.fileName ? String(body.fileName) : "";
+  if (!fileName) return NextResponse.json({ error: "Falta fileName." }, { status: 400 });
+
+  const etapa = body?.etapa && typeof body.etapa === "string" ? body.etapa : expediente.etapaActual;
+  if (!puedeSubirDocumentoContrato(permisos, expediente, etapa)) {
+    return NextResponse.json({ error: "No tiene permiso para subir documentos en esta etapa de este expediente." }, { status: 403 });
+  }
+
+  const { extensionesPermitidas } = await getConfiguracionSitio();
+  if (!extensionPermitidaEn(fileName, extensionesPermitidas)) {
+    return NextResponse.json({ error: mensajeTipoNoPermitidoEn(fileName, extensionesPermitidas) }, { status: 400 });
+  }
+
+  const path = buildStoragePath(id, fileName);
+  const { token } = await crearUrlSubidaFirmada(path);
+  return NextResponse.json({ path, token });
+}

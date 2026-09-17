@@ -1,0 +1,43 @@
+import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { Briefcase, ShieldCheck } from "lucide-react";
+import { ContratacionTabs } from "@/components/ContratacionTabs";
+import { verificarSesion as getSession } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion } from "@/lib/permisos";
+
+/**
+ * Módulo de Contratación — manejador de expedientes digitales (Manual de
+ * Contratación y de Supervisión o Interventoría A-BS-MA01). Denegado por
+ * defecto: requiere un rol de contratación asignado (o ser ADMIN de la app).
+ */
+export default async function ContratacionLayout({ children }: { children: ReactNode }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAccederContratacion(permisos)) redirect("/");
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
+            <Briefcase className="h-4 w-4" aria-hidden />
+          </span>
+          <h1 className="text-xl font-semibold text-stone-900">Contratación</h1>
+          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <ShieldCheck className="h-3 w-3" aria-hidden />
+            Manejador de expedientes digitales
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-stone-500">
+          Expediente, flujo documental, firma selectiva y control de acceso por rol — no reemplaza SECOP II ni
+          valida cuantías o reglas jurídicas de cada modalidad de selección (Manual A-BS-MA01).
+        </p>
+      </div>
+
+      <ContratacionTabs permitido={{ administrar: puedeAdministrarContratacion(permisos) }} />
+
+      <div>{children}</div>
+    </div>
+  );
+}

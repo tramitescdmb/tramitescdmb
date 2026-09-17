@@ -2,8 +2,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   extensionPermitida,
   mensajeArchivoDemasiadoGrande,
+  mensajeArchivoDemasiadoGrandeContratacion,
   mensajeTipoNoPermitido,
   TAMANO_MAXIMO_BYTES,
+  TAMANO_MAXIMO_CONTRATACION_BYTES,
 } from "@/lib/uploads-config";
 
 export type ArchivoSubido = {
@@ -136,6 +138,41 @@ export async function subirArchivoPublico(folder: string, file: File): Promise<A
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ folder, fileName: file.name }),
+  });
+  if (!signRes.ok) {
+    const body = await signRes.json().catch(() => ({}));
+    throw new Error(body.error || `No se pudo preparar la subida de "${file.name}".`);
+  }
+  const { path, token } = await signRes.json();
+
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
+
+  return {
+    path,
+    nombre: file.name,
+    mimeType: file.type || "application/octet-stream",
+    tamanoBytes: file.size,
+  };
+}
+
+/**
+ * Sube un archivo DIRECTO a un expediente contractual (módulo de Contratación):
+ * pega a /api/contratacion/expedientes/[id]/upload-sign. Tope propio de 2MB —
+ * el llamador debe pasar el archivo YA comprimido (ver
+ * src/lib/compresion-cliente.ts); esto vuelve a validar el tamaño final, el
+ * servidor lo valida una tercera vez al confirmar (nunca confiar solo en el
+ * cliente).
+ */
+export async function subirArchivoContrato(expedienteId: string, file: File): Promise<ArchivoSubido> {
+  if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
+  if (file.size > TAMANO_MAXIMO_CONTRATACION_BYTES) throw new Error(mensajeArchivoDemasiadoGrandeContratacion(file.name));
+
+  const signRes = await fetch(`/api/contratacion/expedientes/${expedienteId}/upload-sign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileName: file.name }),
   });
   if (!signRes.ok) {
     const body = await signRes.json().catch(() => ({}));

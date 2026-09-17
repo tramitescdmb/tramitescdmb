@@ -12,8 +12,10 @@ import {
   type PermisosUsuario,
 } from "./permisos";
 
-const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true };
-const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false };
+const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>() } as const;
+
+const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
+const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false, ...BASE_CONTRATACION };
 const conAcceso: PermisosUsuario = {
   esAdmin: false,
   tramites: new Map([
@@ -24,6 +26,7 @@ const conAcceso: PermisosUsuario = {
   correspondencia: null,
   dependenciaId: null,
   puedeFirmar: false,
+  ...BASE_CONTRATACION,
 };
 
 describe("puedeAccederTramite", () => {
@@ -74,10 +77,10 @@ describe("puedeAccederSeccion", () => {
 });
 
 describe("puedeVerNivelAccesoExpediente", () => {
-  const funcionarioDepA: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: "depA", puedeFirmar: true };
-  const funcionarioDepB: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: "depB", puedeFirmar: true };
-  const sinDependencia: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: null, puedeFirmar: true };
-  const adminArchivo: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "ADMIN_ARCHIVO", dependenciaId: null, puedeFirmar: true };
+  const funcionarioDepA: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: "depA", puedeFirmar: true, ...BASE_CONTRATACION };
+  const funcionarioDepB: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: "depB", puedeFirmar: true, ...BASE_CONTRATACION };
+  const sinDependencia: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "FUNCIONARIO_DEPENDENCIA", dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
+  const adminArchivo: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: "ADMIN_ARCHIVO", dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
 
   it("una PUBLICA la ve cualquiera con acceso a correspondencia, sin importar la dependencia", () => {
     expect(puedeVerNivelAccesoExpediente(funcionarioDepB, { nivelAcceso: "PUBLICA", dependenciaId: "depA" })).toBe(true);
@@ -110,6 +113,7 @@ const perm = (correspondencia: PermisosUsuario["correspondencia"], extra: Partia
   correspondencia,
   dependenciaId: null,
   puedeFirmar: false,
+  ...BASE_CONTRATACION,
   ...extra,
 });
 

@@ -25,6 +25,7 @@
     "@xyflow/react": "^12.11.6",
     "asn1js": "^3.0.10",
     "bcryptjs": "^2.4.3",
+    "browser-image-compression": "^2.0.2",
     "bwip-js": "^4.11.4",
     "jose": "^5.9.6",
     "leaflet": "^1.9.4",

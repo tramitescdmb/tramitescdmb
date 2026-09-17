@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion } from "@prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
@@ -23,6 +23,12 @@ export type PermisosUsuario = {
   dependenciaId: string | null;
   /** ¿Puede firmar electrónicamente? ADMIN siempre; un funcionario según `Usuario.accesoFirma`. */
   puedeFirmar: boolean;
+  /** Rol dentro del módulo de Contratación. null = sin acceso (salvo ADMIN). */
+  contratacion: RolContratacion | null;
+  /** Id de Contratista vinculado a este usuario, si lo tiene (login por Directorio Activo). */
+  contratistaId: string | null;
+  /** Ids de ExpedienteContractual donde este usuario es supervisor/interventor. */
+  supervisaExpedientes: Set<string>;
 };
 
 type UsuarioFresco = {
@@ -35,6 +41,10 @@ type UsuarioFresco = {
   rolCorrespondenciaVigenteHasta: Date | null;
   dependenciaId: string | null;
   accesoFirma: boolean;
+  rolContratacion: RolContratacion | null;
+  rolContratacionVigenteHasta: Date | null;
+  contratistaId: string | null;
+  supervisaExpedientes: string[];
 } | null;
 
 /**
@@ -58,6 +68,10 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       rolCorrespondenciaVigenteHasta: true,
       dependenciaId: true,
       accesoFirma: true,
+      rolContratacion: true,
+      rolContratacionVigenteHasta: true,
+      contratista: { select: { id: true } },
+      supervisionesContrato: { select: { expedienteId: true } },
     },
   });
   if (!usuario) return null;
@@ -71,6 +85,10 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     rolCorrespondenciaVigenteHasta: usuario.rolCorrespondenciaVigenteHasta,
     dependenciaId: usuario.dependenciaId,
     accesoFirma: usuario.accesoFirma,
+    rolContratacion: usuario.rolContratacion,
+    rolContratacionVigenteHasta: usuario.rolContratacionVigenteHasta,
+    contratistaId: usuario.contratista?.id ?? null,
+    supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
   };
 });
 
@@ -92,6 +110,11 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   // "Locker" del SGDEA: mientras `sgdeaVisibleFuncionarios` esté en false, para todos menos ADMIN
   // es como no tener rol de correspondencia — no ven el módulo ni pueden llamar a sus APIs.
   const sgdeaOculto = !config.sgdeaVisibleFuncionarios && !esAdmin;
+  // Mismo criterio MoReq 6.3 que rolCorrespondenciaVigenteHasta: pensado para que
+  // el acceso de un Contratista/Supervisor venza solo al terminar su contrato.
+  const rolContratacionVencido = Boolean(
+    usuario?.rolContratacionVigenteHasta && usuario.rolContratacionVigenteHasta < new Date()
+  );
   return {
     esAdmin,
     tramites,
@@ -99,6 +122,9 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     correspondencia: usuario?.activo && !rolVencido && !sgdeaOculto ? usuario.rolCorrespondencia : null,
     dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
     puedeFirmar: esAdmin || Boolean(usuario?.activo && usuario.accesoFirma),
+    contratacion: usuario?.activo && !rolContratacionVencido ? usuario.rolContratacion : null,
+    contratistaId: usuario?.activo ? usuario.contratistaId : null,
+    supervisaExpedientes: new Set(usuario?.activo ? usuario.supervisaExpedientes : []),
   };
 });
 
@@ -288,4 +314,81 @@ export function puedeVerNivelAccesoExpediente(
 /** ¿Puede cerrar un expediente documental (firma del índice electrónico, Art. 4.3.2.4 Acuerdo 001/2024 AGN)? */
 export function puedeCerrarExpediente(permisos: PermisosUsuario): boolean {
   return puedeAdministrarArchivo(permisos);
+}
+
+// --- Módulo de Contratación ----------------------------------------------
+// Manejador de expedientes digitales de contratación (Manual A-BS-MA01),
+// deliberadamente aislado del SGDEA de correspondencia. Denegado por
+// defecto, igual que los demás módulos: sin `rolContratacion` (y sin ser
+// ADMIN) no se entra.
+
+/** ¿Puede entrar al módulo de Contratación? */
+export function puedeAccederContratacion(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.contratacion !== null;
+}
+
+/**
+ * Administrador de Contratación: crea expedientes, asigna supervisor(es) y
+ * contratista, y — junto con `puedeAprobarEtapaContratacion` — es uno de los
+ * DOS únicos roles que pueden editar/eliminar un `DocumentoContrato` SIN dejar
+ * traza en `EventoContratacion` (ver `puedeEditarSinTrazaDocumentoContrato`).
+ */
+export function puedeAdministrarContratacion(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION";
+}
+
+/** Jefe de Contratación: aprueba el paso de una etapa a la siguiente. */
+export function puedeAprobarEtapaContratacion(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.contratacion === "JEFE_CONTRATACION";
+}
+
+/**
+ * Excepción explícita y deliberada, pedida por el usuario tras advertir el
+ * riesgo de auditoría (ver plan `virtual-knitting-kettle.md`): SOLO
+ * Administrador de Contratación y Jefe de Contratación pueden editar/eliminar
+ * un `DocumentoContrato` sin que quede ninguna fila en `EventoContratacion` —
+ * ni Supervisor/Interventor ni Contratista tienen este permiso. Motivo: ~1000
+ * contratistas rotando, errores de captura frecuentes, exigir siempre una
+ * traza sería inviable operativamente. Exclusivo de este módulo — NUNCA
+ * replicar este patrón en DocumentoArchivo (SGDEA) ni en ningún otro dominio.
+ */
+export function puedeEditarSinTrazaDocumentoContrato(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
+/**
+ * ¿Puede subir un documento a este expediente, en esta etapa? Reglas del
+ * Manual (confirmadas por el usuario): Administrador/Jefe siempre; Supervisor
+ * solo si está asignado a ese expediente; Contratista solo en su propio
+ * expediente y NUNCA en Precontractual (ahí el documento lo produce la
+ * Oficina de Contratación o el Supervisor, el contratista aún no interviene).
+ */
+export function puedeSubirDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; contratistaId: string | null },
+  etapa: EtapaContratacion
+): boolean {
+  if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
+  if (permisos.contratacion === "CONTRATISTA") {
+    return etapa !== "PRECONTRACTUAL" && permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  }
+  return false;
+}
+
+/** ¿Puede revisar y firmar electrónicamente un documento de este expediente? Jefe o Supervisor asignado. */
+export function puedeFirmarDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (puedeAprobarEtapaContratacion(permisos)) return true;
+  return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
+}
+
+/** ¿Puede VER este expediente contractual? Administrador/Jefe ven todos; Supervisor los suyos; Contratista el propio. */
+export function puedeVerExpedienteContractual(
+  permisos: PermisosUsuario,
+  expediente: { id: string; contratistaId: string | null }
+): boolean {
+  if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
+  if (permisos.contratacion === "CONTRATISTA") return permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  return false;
 }

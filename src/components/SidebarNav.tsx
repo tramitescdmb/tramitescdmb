@@ -7,6 +7,7 @@ import {
   Link2,
   Archive,
   Mail,
+  Briefcase,
   UserCog,
   ShieldCheck,
   Palette,
@@ -25,6 +26,7 @@ const ITEM_TRAMITES: Item = {
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
 const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
+const ITEM_CONTRATACION: Item = { href: "/contratacion", label: "Contratación", icon: Briefcase, prefijo: "/contratacion" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
@@ -43,6 +45,7 @@ export function SidebarNav({
   mostrarVital = false,
   mostrarSinca = false,
   mostrarCorrespondencia = false,
+  mostrarContratacion = false,
   colapsado = false,
 }: {
   esAdmin: boolean;
@@ -52,6 +55,8 @@ export function SidebarNav({
   mostrarSinca?: boolean;
   /** El usuario tiene acceso al módulo de correspondencia (SGDEA). */
   mostrarCorrespondencia?: boolean;
+  /** El usuario tiene acceso al módulo de Contratación. */
+  mostrarContratacion?: boolean;
   /** Sidebar de escritorio reducido a una franja de íconos (ver Sidebar.tsx) — el menú móvil nunca pasa esto en true. */
   colapsado?: boolean;
 }) {
@@ -68,6 +73,7 @@ export function SidebarNav({
   const principal = [
     ITEM_TRAMITES,
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
+    ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),
     ...(mostrarVital ? [ITEM_VITAL] : []),
     ...(mostrarSinca ? [ITEM_HISTORICO] : []),
   ];

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, EstadoCuenta } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
@@ -7,6 +7,7 @@ import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPasswor
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
+import { vincularContratistaAUsuario, desvincularContratistaDeUsuario } from "@/lib/contratacion";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
 const SECCIONES_VALIDAS: SeccionSoloLectura[] = ["VITAL_BASE", "VITAL_DASHBOARD", "SINCA_BASE", "SINCA_DASHBOARD", "SINCA_MINERIA"];
@@ -15,6 +16,12 @@ const ROLES_CORRESPONDENCIA_VALIDOS: RolCorrespondencia[] = [
   "FUNCIONARIO_DEPENDENCIA",
   "JEFE_DEPENDENCIA",
   "ADMIN_ARCHIVO",
+];
+const ROLES_CONTRATACION_VALIDOS: RolContratacion[] = [
+  "ADMINISTRADOR_CONTRATACION",
+  "JEFE_CONTRATACION",
+  "SUPERVISOR_INTERVENTOR",
+  "CONTRATISTA",
 ];
 const ESTADOS_CUENTA_VALIDOS: EstadoCuenta[] = ["HABILITADA", "DESHABILITADA", "BLOQUEADA", "SUSPENDIDA"];
 
@@ -83,6 +90,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? (typeof body.rolCorrespondenciaVigenteHasta === "string" && body.rolCorrespondenciaVigenteHasta ? new Date(body.rolCorrespondenciaVigenteHasta) : null)
     : undefined;
 
+  // Contratación — mismo criterio de "in body" para distinguir "no tocar" de "quitar".
+  const rolContratacion: RolContratacion | null | undefined = "rolContratacion" in body
+    ? (ROLES_CONTRATACION_VALIDOS.includes(body.rolContratacion) ? body.rolContratacion : null)
+    : undefined;
+  const rolContratacionVigenteHasta: Date | null | undefined = "rolContratacionVigenteHasta" in body
+    ? (typeof body.rolContratacionVigenteHasta === "string" && body.rolContratacionVigenteHasta ? new Date(body.rolContratacionVigenteHasta) : null)
+    : undefined;
+  const contratistaIdentificacion = typeof body.contratistaIdentificacion === "string" ? body.contratistaIdentificacion.trim() : "";
+  const contratistaNombre = typeof body.contratistaNombre === "string" ? body.contratistaNombre.trim() : "";
+  const contratistaTipoPersona: "NATURAL" | "JURIDICA" = body.contratistaTipoPersona === "JURIDICA" ? "JURIDICA" : "NATURAL";
+
+  if (rolContratacion === "CONTRATISTA" && !contratistaIdentificacion) {
+    return NextResponse.json({ error: "Indique la identificación (NIT/cédula) del contratista." }, { status: 400 });
+  }
+
   if (dependenciaId) {
     const dep = await db.dependencia.findUnique({ where: { id: dependenciaId }, select: { id: true } });
     if (!dep) return NextResponse.json({ error: "La dependencia seleccionada no existe." }, { status: 400 });
@@ -134,6 +156,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
         ...(rolCorrespondenciaVigenteHasta !== undefined ? { rolCorrespondenciaVigenteHasta } : {}),
+        ...(rolContratacion !== undefined ? { rolContratacion } : {}),
+        ...(rolContratacionVigenteHasta !== undefined ? { rolContratacionVigenteHasta } : {}),
         ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
     });
@@ -154,6 +178,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
   });
+
+  if (rolContratacion === "CONTRATISTA") {
+    await vincularContratistaAUsuario(id, {
+      identificacion: contratistaIdentificacion,
+      nombreORazonSocial: contratistaNombre || undefined,
+      tipoPersona: contratistaTipoPersona,
+    });
+  } else if (rolContratacion !== undefined) {
+    // Cambió a otro rol (o se le quitó el acceso): se desvincula el registro de Contratista de
+    // este usuario, sin borrarlo — sus expedientes históricos como contratista siguen intactos.
+    await desvincularContratistaDeUsuario(id);
+  }
 
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",

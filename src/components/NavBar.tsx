@@ -2,7 +2,7 @@ import Link from "next/link";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
-import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion } from "@/lib/permisos";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 
@@ -34,6 +34,7 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_DASHBOARD") ||
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
+  const mostrarContratacion = puedeAccederContratacion(permisos);
   const subtitulo = session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario";
 
   const marca = (
@@ -59,6 +60,7 @@ export async function NavBar() {
         mostrarVital={mostrarVital}
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
+        mostrarContratacion={mostrarContratacion}
         nombre={session.nombre}
         subtitulo={subtitulo}
         iniciales={iniciales(session.nombre)}
@@ -73,6 +75,7 @@ export async function NavBar() {
             mostrarVital={mostrarVital}
             mostrarSinca={mostrarSinca}
             mostrarCorrespondencia={mostrarCorrespondencia}
+            mostrarContratacion={mostrarContratacion}
             nombre={session.nombre}
             subtitulo={subtitulo}
             iniciales={iniciales(session.nombre)}
