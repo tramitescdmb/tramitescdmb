@@ -89,6 +89,7 @@ export default async function CatalogoTramitesPage() {
       etiqueta: cat.etiqueta,
       clases: cat.clases,
       iconoGrande: <cat.Icono className="h-6 w-6" aria-hidden />,
+      iconoChico: <cat.Icono className="h-[17px] w-[17px]" aria-hidden />,
     },
     items: porCategoria.get(cat.id) ?? [],
   })).filter((s) => s.items.length > 0);
