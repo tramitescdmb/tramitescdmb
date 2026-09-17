@@ -44,9 +44,101 @@ export const ETIQUETA_ROL_CONTRATACION: Record<RolContratacion, string> = {
   CONTRATISTA: "Contratista",
 };
 
+/** Orden de despliegue en los formularios: Contratación directa primero por ser, con
+ * amplio margen, la modalidad más usada en la CDMB (pedido explícito del usuario). */
+export const ORDEN_MODALIDADES: ModalidadSeleccion[] = [
+  "CONTRATACION_DIRECTA",
+  "MINIMA_CUANTIA",
+  "SELECCION_ABREVIADA_MENOR_CUANTIA",
+  "SELECCION_ABREVIADA_SUBASTA_INVERSA",
+  "SELECCION_ABREVIADA_ENAJENACION_BIENES",
+  "CONCURSO_MERITOS",
+  "LICITACION_PUBLICA",
+  "CONVENIO_ASOCIACION",
+  "ARRENDAMIENTO",
+  "OTRA",
+];
+
 export async function generarNumeroExpedienteContractual(anio: number = new Date().getFullYear()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_CONTRATO, anio);
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
+}
+
+/** Requisitos del catálogo (data/contratacion/requisitos.json, sembrado con
+ * prisma/seed-contratacion.ts) que aplican a un expediente en UNA etapa: los
+ * comunes a cualquier modalidad (modalidadSeleccion=null) más los propios de
+ * la modalidad de ESTE expediente, en el orden del Manual. */
+export async function obtenerRequisitosDeEtapa(modalidad: ModalidadSeleccion, etapa: EtapaContratacion) {
+  return db.requisitoDocumentoContratacion.findMany({
+    where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }] },
+    orderBy: { orden: "asc" },
+  });
+}
+
+export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>[number] & {
+  documento:
+    | {
+        id: string;
+        nombre: string;
+        mimeType: string;
+        estadoValidacion: string;
+        requiereFirma: boolean;
+        firmadoEnSecop: boolean;
+        createdAt: Date;
+        subidoPorNombre: string;
+        firmaFechaHora: Date | null;
+        firmaFormato: string | null;
+      }
+    | null;
+};
+
+/** Cruza el catálogo de requisitos de una etapa con los documentos YA subidos a ese
+ * expediente en esa etapa — un requisito puede tener 0 o 1 documento vinculado (si se
+ * sube más de uno para el mismo requisito, se muestra el más reciente en el checklist;
+ * los anteriores no se pierden, siguen en la lista general de documentos del expediente). */
+export function cruzarChecklist(
+  requisitos: Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>,
+  documentos: {
+    id: string;
+    requisitoId: string | null;
+    nombre: string;
+    mimeType: string;
+    estadoValidacion: string;
+    requiereFirma: boolean;
+    firmadoEnSecop: boolean;
+    createdAt: Date;
+    subidoPor: { nombre: string };
+    firma: { fechaHora: Date; formato: string } | null;
+  }[]
+): ItemChecklist[] {
+  return requisitos.map((r) => {
+    const candidatos = documentos.filter((d) => d.requisitoId === r.id);
+    const ultimo = candidatos.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null;
+    return {
+      ...r,
+      documento: ultimo
+        ? {
+            id: ultimo.id,
+            nombre: ultimo.nombre,
+            mimeType: ultimo.mimeType,
+            estadoValidacion: ultimo.estadoValidacion,
+            requiereFirma: ultimo.requiereFirma,
+            firmadoEnSecop: ultimo.firmadoEnSecop,
+            createdAt: ultimo.createdAt,
+            subidoPorNombre: ultimo.subidoPor.nombre,
+            firmaFechaHora: ultimo.firma?.fechaHora ?? null,
+            firmaFormato: ultimo.firma?.formato ?? null,
+          }
+        : null,
+    };
+  });
+}
+
+/** Nombres de los requisitos OBLIGATORIOS de una etapa que todavía no tienen documento
+ * subido — se usa para avisar (no bloquear, salvo la excepción del contratista) al
+ * aprobar el paso de etapa. */
+export function requisitosObligatoriosFaltantes(checklist: ItemChecklist[]): string[] {
+  return checklist.filter((c) => c.obligatorio && !c.documento).map((c) => c.nombre);
 }
 
 /** Bitácora del módulo (mismo espíritu que ExpedienteEvento) — ver la EXCEPCIÓN
@@ -103,6 +195,7 @@ export async function agregarDocumentoContrato(datos: {
   expedienteId: string;
   etapa: EtapaContratacion;
   categoria?: string | null;
+  requisitoId?: string | null;
   nombre: string;
   storagePath: string;
   mimeType: string;
@@ -121,6 +214,7 @@ export async function agregarDocumentoContrato(datos: {
       expedienteId: datos.expedienteId,
       etapa: datos.etapa,
       categoria: datos.categoria?.trim() || null,
+      requisitoId: datos.requisitoId || null,
       nombre: datos.nombre,
       storagePath: datos.storagePath,
       mimeType: datos.mimeType,
@@ -233,16 +327,67 @@ export async function rechazarDocumentoContrato(documentoId: string, usuarioId: 
   await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_RECHAZADO", `Se rechazó "${doc.nombre}": ${comentario.trim()}`, usuarioId);
 }
 
+/** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del
+ * catálogo sin subir. No bloquea la aprobación (el módulo es un manejador de
+ * expedientes, no un motor de validación jurídica) — el caller decide si reintenta
+ * con `forzar=true` tras mostrarle la lista al usuario. */
+export class FaltanRequisitosError extends Error {
+  constructor(public readonly faltantes: string[]) {
+    super(`Faltan ${faltantes.length} documento(s) obligatorio(s) de esta etapa: ${faltantes.join("; ")}`);
+    this.name = "FaltanRequisitosError";
+  }
+}
+
 /** Aprueba el paso de la etapa actual a la siguiente (o cierra el expediente si ya
  * estaba en Postcontractual) — el Jefe de Contratación valida cada transición
- * (Cap. 6/7/10 del Manual), sin crear un expediente nuevo por etapa. */
-export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
+ * (Cap. 6/7/10 del Manual), sin crear un expediente nuevo por etapa.
+ *
+ * Dos controles del checklist real (pedido explícito del usuario):
+ * 1. Nunca se pasa de Precontractual a Contractual sin conocer al contratista
+ *    (persona natural o jurídica) — bloqueo DURO, sin `forzar` que lo salte.
+ * 2. Si a la etapa que se cierra le faltan documentos OBLIGATORIOS del catálogo,
+ *    se avisa (FaltanRequisitosError) en vez de aprobar directo; con `forzar=true`
+ *    se aprueba de todas formas (el catálogo es una guía, no una camisa de fuerza).
+ */
+export async function aprobarEtapaContratacion(
+  expedienteId: string,
+  usuarioId: string,
+  comentario?: string | null,
+  forzar = false
+) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true },
+    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, contratistaId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
+
+  if (expediente.etapaActual === "PRECONTRACTUAL" && !expediente.contratistaId) {
+    throw new Error(
+      "No se puede pasar a la etapa Contractual sin conocer al contratista (persona natural o jurídica). Vincúlelo primero desde el expediente."
+    );
+  }
+
+  if (!forzar) {
+    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual);
+    const documentos = await db.documentoContrato.findMany({
+      where: { expedienteId, etapa: expediente.etapaActual },
+      select: {
+        id: true,
+        requisitoId: true,
+        nombre: true,
+        mimeType: true,
+        estadoValidacion: true,
+        requiereFirma: true,
+        firmadoEnSecop: true,
+        createdAt: true,
+        subidoPor: { select: { nombre: true } },
+        firma: { select: { fechaHora: true, formato: true } },
+      },
+    });
+    const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentos));
+    if (faltantes.length > 0) throw new FaltanRequisitosError(faltantes);
+  }
 
   const idx = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   await db.etapaExpedienteContractual.upsert({
@@ -276,6 +421,56 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     `Se aprobó el paso de ${ETIQUETA_ETAPA[expediente.etapaActual]} a ${ETIQUETA_ETAPA[siguiente]}.`,
     usuarioId
   );
+}
+
+/** Retrocede el expediente a la etapa inmediatamente anterior — corrige un avance
+ * hecho por error (pedido explícito del usuario: "si me equivoqué... no me deja
+ * regresar"). Reabre la etapa anterior (limpia completadaEn/aprobadaPorId) y, si el
+ * expediente ya estaba cerrado, lo reabre. Administrador o Jefe de Contratación. */
+export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
+  if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
+  const expediente = await db.expedienteContractual.findUnique({
+    where: { id: expedienteId },
+    select: { etapaActual: true, cerrado: true },
+  });
+  if (!expediente) throw new Error("El expediente no existe.");
+
+  const idxEfectivo = expediente.cerrado ? ETAPAS_ORDEN.length - 1 : ETAPAS_ORDEN.indexOf(expediente.etapaActual);
+  if (idxEfectivo === 0) throw new Error("El expediente ya está en la primera etapa (Precontractual).");
+
+  const anterior = ETAPAS_ORDEN[idxEfectivo - 1]!;
+  await db.expedienteContractual.update({
+    where: { id: expedienteId },
+    data: { etapaActual: anterior, cerrado: false, fechaCierre: null },
+  });
+  await db.etapaExpedienteContractual.upsert({
+    where: { expedienteId_etapa: { expedienteId, etapa: anterior } },
+    update: { completadaEn: null, aprobadaPorId: null },
+    create: { expedienteId, etapa: anterior },
+  });
+  await registrarEventoContratacion(
+    expedienteId,
+    "ETAPA_RETROCEDIDA",
+    `Se retrocedió de ${expediente.cerrado ? "Cerrado" : ETIQUETA_ETAPA[expediente.etapaActual]} a ${ETIQUETA_ETAPA[anterior]}: ${motivo.trim()}`,
+    usuarioId
+  );
+}
+
+/** Elimina COMPLETAMENTE un expediente contractual (documentos, etapas, eventos y
+ * firmas asociadas, por cascada) — incluso si está cerrado. Reservado al
+ * Administrador de Contratación (ver puedeEliminarExpedienteContractual); decisión
+ * explícita del usuario, más severa que la excepción de borrado de un solo
+ * documento. Devuelve las rutas de storage de los documentos para que el caller
+ * intente borrarlas del bucket (best-effort, fuera de esta función de dominio). */
+export async function eliminarExpedienteContractualCompleto(expedienteId: string): Promise<{ storagePaths: string[] }> {
+  const expediente = await db.expedienteContractual.findUnique({
+    where: { id: expedienteId },
+    select: { documentos: { select: { storagePath: true } } },
+  });
+  if (!expediente) throw new Error("El expediente no existe.");
+  const storagePaths = expediente.documentos.map((d) => d.storagePath);
+  await db.expedienteContractual.delete({ where: { id: expedienteId } });
+  return { storagePaths };
 }
 
 /** Vincula (o crea) el Contratista asociado a un Usuario con rolContratacion=CONTRATISTA —

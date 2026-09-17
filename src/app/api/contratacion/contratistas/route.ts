@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { TipoPersonaContratista } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 
-/** Crea un Contratista directamente (antes de que tenga cuenta de dominio CDMB) — el Administrador
- * de Contratación lo registra al crear el expediente si aún no existe. */
+/** Crea un Contratista en el registro maestro del módulo — desde `/contratacion/contratistas/nuevo`
+ * o, si aún no existe, al crear un expediente. Administrador o Jefe de Contratación. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeGestionarContratistas(permisos)) {
     return NextResponse.json({ error: "No tiene permiso." }, { status: 403 });
   }
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const identificacion = String(body.identificacion || "").trim();
   const nombreORazonSocial = String(body.nombreORazonSocial || "").trim();
-  const tipoPersona = body.tipoPersona === "JURIDICA" ? "JURIDICA" : "NATURAL";
+  const tipoPersona: TipoPersonaContratista = body.tipoPersona === "JURIDICA" ? "JURIDICA" : "NATURAL";
 
   if (!identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
   if (!nombreORazonSocial) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
       tipoPersona,
       contactoEmail: String(body.contactoEmail || "").trim() || null,
       contactoTelefono: String(body.contactoTelefono || "").trim() || null,
+      direccion: String(body.direccion || "").trim() || null,
+      ciudad: String(body.ciudad || "").trim() || null,
     },
   });
 

@@ -12,6 +12,7 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:contratacion": "tsx prisma/seed-contratacion.ts",
     "db:studio": "prisma studio",
     "sinca:sync": "tsx scripts/sinca-sync.ts",
     "sinca:enrich": "tsx scripts/sinca-enrich.ts"

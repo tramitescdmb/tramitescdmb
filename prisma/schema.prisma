@@ -1850,15 +1850,31 @@ enum EstadoValidacionDocumentoContrato {
 // usuarioId es opcional: se llena solo cuando ese contratista tiene cuenta de
 // dominio (Directorio Activo) de la CDMB y se le da acceso al módulo — ver
 // src/lib/directorio-activo.ts, reutilizado tal cual, sin autenticación nueva.
+enum TipoPersonaContratista {
+  NATURAL
+  JURIDICA
+}
+
+// Registro maestro propio de Contratación — DELIBERADAMENTE separado del `Solicitante` de
+// Trámites ambientales 2.0 (mismo criterio que el resto del proyecto: dominios distintos no
+// comparten modelo, aunque ambos se identifiquen por NIT/cédula). Se alimenta/gestiona desde
+// `/contratacion/contratistas` (buscar, crear, editar) — no solo implícitamente al crear un
+// expediente. `usuarioId` sigue siendo el vínculo opcional a una cuenta de Directorio Activo,
+// que se administra desde `/usuarios/[id]` (control de acceso, no dato de contacto).
 model Contratista {
-  id                 String   @id @default(cuid())
-  identificacion     String   @unique
-  tipoPersona        String // "NATURAL" | "JURIDICA"
+  id                 String                 @id @default(cuid())
+  identificacion     String                 @unique
+  tipoPersona        TipoPersonaContratista @default(NATURAL)
   nombreORazonSocial String
   contactoEmail      String?
   contactoTelefono   String?
-  usuarioId          String?  @unique
-  createdAt          DateTime @default(now())
+  direccion          String?
+  // Texto libre (no la lista acotada de 13 municipios de la jurisdicción CDMB que usa
+  // Solicitante) — un contratista puede estar radicado en cualquier ciudad del país.
+  ciudad             String?
+  usuarioId          String?                @unique
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
   usuario     Usuario?                @relation("ContratistaUsuario", fields: [usuarioId], references: [id])
   expedientes ExpedienteContractual[]
@@ -1936,11 +1952,47 @@ model EtapaExpedienteContractual {
 // (~1000 contratistas rotando, errores de captura frecuentes) — NUNCA
 // replicar este comportamiento en DocumentoArchivo ni en ningún otro dominio
 // del proyecto sin la misma conversación explícita.
+// Catálogo de documentos exigidos por el Manual A-BS-MA01 y sus 33 procedimientos
+// (A-BS-PR25 a A-BS-PR57), sembrado una sola vez (prisma/seed-contratacion.ts) desde
+// data/contratacion/requisitos.json — extraído de las tablas ACTIVIDAD/RESPONSABLE/
+// DOCUMENTOS de cada procedimiento real (mismo método que los 30 procedimientos de
+// Trámites ambientales 2.0). `modalidadSeleccion=null` = aplica a CUALQUIER
+// modalidad (documentos comunes de planeación en Precontractual, o de ejecución/
+// cierre en Contractual/Postcontractual, que no dependen de cómo se seleccionó al
+// contratista). `fuente` cita el procedimiento exacto para que quede trazable de
+// dónde salió cada exigencia (o "SECOP II" / "Sistema financiero CDMB" cuando el
+// documento no lo expide esta plataforma).
+model RequisitoDocumentoContratacion {
+  id                 String              @id @default(cuid())
+  modalidadSeleccion ModalidadSeleccion?
+  etapa              EtapaContratacion
+  orden              Int                 @default(0)
+  nombre             String
+  codigoFormato      String? // A-BS-FOxx, si el Manual define una plantilla
+  obligatorio        Boolean             @default(true)
+  // El documento se tramita/genera fuera de esta plataforma (SECOP II, o el
+  // sistema financiero de la CDMB para CDP/modificación del PAA) — igual se
+  // habilita el espacio para subir la evidencia, nunca se bloquea la carga.
+  gestionadoEnSecop  Boolean             @default(false)
+  notaOrigenExterno  String?             @db.Text
+  fuente             String? // "Manual A-BS-MA01, Procedimiento A-BS-PR29" o "SECOP II"
+  activo             Boolean             @default(true)
+
+  documentos DocumentoContrato[]
+
+  @@index([modalidadSeleccion])
+  @@index([etapa])
+}
+
 model DocumentoContrato {
   id           String            @id @default(cuid())
   expedienteId String
   etapa        EtapaContratacion
   categoria    String? // texto libre, con sugerencias tomadas de Formatos/* (src/lib/contratacion-categorias.ts)
+  // Vínculo opcional al requisito del catálogo que este archivo satisface — null
+  // = documento libre, no anticipado por el catálogo (el módulo sigue permitiendo
+  // subir cualquier cosa, el catálogo es una guía, no una camisa de fuerza).
+  requisitoId  String?
   nombre       String
   storagePath  String
   mimeType     String
@@ -1961,13 +2013,15 @@ model DocumentoContrato {
   validadoEn           DateTime?
   comentarioValidacion String?                           @db.Text
 
-  expediente  ExpedienteContractual   @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  subidoPor   Usuario                 @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
-  validadoPor Usuario?                @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
+  expediente  ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor   Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
+  validadoPor Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
+  requisito   RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
   firma       FirmaDocumentoContrato?
 
   @@index([expedienteId])
   @@index([etapa])
+  @@index([requisitoId])
 }
 
 // Evento de firma electrónica de UN documento de contratación — modelo propio

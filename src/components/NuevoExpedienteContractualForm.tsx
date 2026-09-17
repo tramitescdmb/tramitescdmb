@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Building2, Wallet, CalendarDays, UserCog, Search } from "lucide-react";
 import { Field, SectionHelp } from "@/components/Field";
+import { CampoMoneda } from "@/components/CampoMoneda";
+import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 
 type Opcion = { id: string; nombre: string };
 type ModalidadOpcion = { valor: string; etiqueta: string };
@@ -123,25 +125,10 @@ export function NuevoExpedienteContractualForm({
           </select>
         </Field>
         <Field label="Dependencia solicitante" required icon={<Building2 className="h-4 w-4" />}>
-          <select
-            value={dependenciaSolicitanteId}
-            onChange={(e) => setDependenciaSolicitanteId(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          >
-            <option value="">— Seleccione —</option>
-            {dependencias.map((d) => (
-              <option key={d.id} value={d.id}>{d.nombre}</option>
-            ))}
-          </select>
+          <BuscadorDependencia dependencias={dependencias} value={dependenciaSolicitanteId} onChange={setDependenciaSolicitanteId} />
         </Field>
         <Field label="Valor del contrato" icon={<Wallet className="h-4 w-4" />} help="Opcional, en pesos colombianos.">
-          <input
-            type="number"
-            min={0}
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
+          <CampoMoneda value={valor} onChange={setValor} />
         </Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Fecha de inicio" icon={<CalendarDays className="h-4 w-4" />}>

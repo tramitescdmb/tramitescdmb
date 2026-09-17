@@ -51,6 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       expedienteId: id,
       etapa,
       categoria: body.categoria ? String(body.categoria) : null,
+      requisitoId: body.requisitoId ? String(body.requisitoId) : null,
       nombre,
       storagePath,
       mimeType,

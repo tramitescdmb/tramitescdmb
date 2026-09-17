@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAprobarEtapaContratacion } from "@/lib/permisos";
-import { aprobarEtapaContratacion } from "@/lib/contratacion";
+import { aprobarEtapaContratacion, FaltanRequisitosError } from "@/lib/contratacion";
 
 /** Aprueba el paso de la etapa actual a la siguiente (o cierra el expediente si ya estaba en
- * Postcontractual) — reservado al Jefe de Contratación (o ADMIN de la app). */
+ * Postcontractual) — reservado al Jefe de Contratación (o ADMIN de la app). Si a la etapa le
+ * faltan documentos obligatorios del catálogo, responde 409 con la lista (no bloquea del todo:
+ * el caller puede reintentar con forzar=true tras mostrársela al usuario). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -16,9 +18,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => ({}));
   try {
-    await aprobarEtapaContratacion(id, session.userId, typeof body?.comentario === "string" ? body.comentario : null);
+    await aprobarEtapaContratacion(
+      id,
+      session.userId,
+      typeof body?.comentario === "string" ? body.comentario : null,
+      Boolean(body?.forzar)
+    );
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof FaltanRequisitosError) {
+      return NextResponse.json({ error: err.message, faltantes: err.faltantes }, { status: 409 });
+    }
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo aprobar la etapa." }, { status: 400 });
   }
 }

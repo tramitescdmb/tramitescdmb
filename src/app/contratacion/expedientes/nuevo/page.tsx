@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
 import { db } from "@/lib/db";
-import { ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
 import { NuevoExpedienteContractualForm } from "@/components/NuevoExpedienteContractualForm";
@@ -28,7 +28,7 @@ export default async function NuevoExpedienteContractualPage() {
       <NuevoExpedienteContractualForm
         dependencias={dependencias}
         supervisores={supervisores}
-        modalidades={Object.entries(ETIQUETA_MODALIDAD).map(([valor, etiqueta]) => ({ valor, etiqueta }))}
+        modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
       />
     </section>
   );

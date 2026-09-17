@@ -382,6 +382,31 @@ export function puedeFirmarDocumentoContrato(permisos: PermisosUsuario, expedien
   return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
 }
 
+/** ¿Puede ver el registro maestro de Contratistas (buscar/listar/detalle)? Cualquier rol de
+ * gestión del módulo — deliberadamente EXCLUYE al propio rol Contratista, que no debe poder
+ * navegar el registro de contacto de otros contratistas. */
+export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION" || permisos.contratacion === "JEFE_CONTRATACION" || permisos.contratacion === "SUPERVISOR_INTERVENTOR";
+}
+
+/** ¿Puede crear/editar el registro maestro de un Contratista? Mismo nivel que la edición sin
+ * traza de documentos: Administrador y Jefe de Contratación. */
+export function puedeGestionarContratistas(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
+/** ¿Puede aprobar el paso de etapa O retroceder una etapa ya aprobada (corrección de un error)?
+ * Mismo nivel que la edición sin traza de documentos: Administrador y Jefe de Contratación. */
+export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
+/** ¿Puede eliminar un expediente contractual COMPLETO (incluso cerrado)? Reservado al
+ * Administrador de Contratación — es más severo que editar/eliminar un solo documento. */
+export function puedeEliminarExpedienteContractual(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos);
+}
+
 /** ¿Puede VER este expediente contractual? Administrador/Jefe ven todos; Supervisor los suyos; Contratista el propio. */
 export function puedeVerExpedienteContractual(
   permisos: PermisosUsuario,
