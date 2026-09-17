@@ -23,15 +23,16 @@ export default async function ContratacionLayout({ children }: { children: React
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
             <Briefcase className="h-4 w-4" aria-hidden />
           </span>
-          <h1 className="text-xl font-semibold text-stone-900">Contratación</h1>
+          <h1 className="text-xl font-semibold text-stone-900">SIGEC</h1>
           <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Manejador de expedientes digitales
           </span>
         </div>
         <p className="mt-1 text-sm text-stone-500">
-          Expediente, flujo documental, firma selectiva y control de acceso por rol — no reemplaza SECOP II ni
-          valida cuantías o reglas jurídicas de cada modalidad de selección (Manual A-BS-MA01).
+          Sistema Integrado de Gestión de Expedientes de Contratación — expediente, flujo documental, firma
+          selectiva y control de acceso por rol. No reemplaza SECOP II ni valida cuantías o reglas jurídicas de
+          cada modalidad de selección (Manual de Contratación A-BS-MA01).
         </p>
       </div>
 

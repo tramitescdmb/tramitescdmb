@@ -9,10 +9,16 @@ import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContrata
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
-/** Sube UN archivo atado a un requisito puntual del catálogo (checklist) — a
+/**
+ * Sube UN archivo atado a un requisito puntual del catálogo (checklist) — a
  * diferencia de SubirDocumentosContratoForm (multi-archivo libre, para lo que
- * no está en el catálogo), acá ya se sabe qué documento es: el nombre lo pone
- * el catálogo, no el usuario. */
+ * no está en el catálogo), acá ya se sabe qué documento es.
+ *
+ * El nombre que queda guardado (`DocumentoContrato.nombre`) es el del
+ * PROCEDIMIENTO, no el del archivo que subió el usuario (ej. "IMG_2384.pdf")
+ * — así se ve/exporta/previsualiza siempre con el nombre real del documento
+ * exigido por el Manual, sin depender de cómo llamó el archivo quien lo subió.
+ */
 export function SubirDocumentoRequisitoForm({
   expedienteId,
   etapa,
@@ -27,6 +33,8 @@ export function SubirDocumentoRequisitoForm({
   firmadoEnSecopSugerido: boolean;
 }) {
   const router = useRouter();
+  const [requiereFirma, setRequiereFirma] = useState(false);
+  const [firmadoEnSecop, setFirmadoEnSecop] = useState(firmadoEnSecopSugerido);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,13 +56,13 @@ export function SubirDocumentoRequisitoForm({
         body: JSON.stringify({
           etapa,
           requisitoId,
-          categoria: requisitoNombre,
-          nombre: subido.nombre,
+          nombre: requisitoNombre,
           storagePath: subido.path,
           mimeType: subido.mimeType,
           tamanoBytes: subido.tamanoBytes,
           hashSha256,
-          firmadoEnSecop: firmadoEnSecopSugerido,
+          requiereFirma,
+          firmadoEnSecop,
         }),
       });
       if (!res.ok) {
@@ -71,6 +79,23 @@ export function SubirDocumentoRequisitoForm({
 
   return (
     <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2 text-[10px] text-stone-500">
+        <label className="flex items-center gap-1" title="El Jefe de Contratación o el Supervisor asignado podrá revisarlo y estamparle la firma electrónica">
+          <input type="checkbox" checked={requiereFirma} disabled={firmadoEnSecop} onChange={(e) => setRequiereFirma(e.target.checked)} />
+          Requiere firma
+        </label>
+        <label className="flex items-center gap-1" title="Ya viene firmado o publicado en SECOP II — no hace falta volver a firmarlo aquí">
+          <input
+            type="checkbox"
+            checked={firmadoEnSecop}
+            onChange={(e) => {
+              setFirmadoEnSecop(e.target.checked);
+              if (e.target.checked) setRequiereFirma(false);
+            }}
+          />
+          Firmado en SECOP II
+        </label>
+      </div>
       <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-cdmb-200 bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-100">
         <UploadCloud className="h-3.5 w-3.5" aria-hidden />
         {subiendo ? "Subiendo…" : "Subir"}

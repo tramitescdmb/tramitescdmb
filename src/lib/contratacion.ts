@@ -205,17 +205,38 @@ export async function agregarDocumentoContrato(datos: {
   requiereFirma?: boolean;
   firmadoEnSecop?: boolean;
 }) {
-  const expediente = await db.expedienteContractual.findUnique({ where: { id: datos.expedienteId }, select: { cerrado: true } });
+  const expediente = await db.expedienteContractual.findUnique({
+    where: { id: datos.expedienteId },
+    select: { cerrado: true, modalidadSeleccion: true },
+  });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
+
+  // Si el archivo se ata a un requisito del catálogo, el NOMBRE que queda guardado es
+  // SIEMPRE el del procedimiento (nunca el nombre de archivo que mandó el cliente) —
+  // nunca confiar solo en el cliente para algo que se usa en vistas previas, exportes y
+  // la propia auditoría del expediente. También se valida que el requisito de verdad
+  // aplique a la etapa y modalidad de ESTE expediente, para que no se pueda "colar" un
+  // documento marcado como si perteneciera a otro requisito distinto.
+  let nombre = datos.nombre.trim();
+  let categoria = datos.categoria?.trim() || null;
+  if (datos.requisitoId) {
+    const requisito = await db.requisitoDocumentoContratacion.findUnique({ where: { id: datos.requisitoId } });
+    if (!requisito || requisito.etapa !== datos.etapa || (requisito.modalidadSeleccion && requisito.modalidadSeleccion !== expediente.modalidadSeleccion)) {
+      throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
+    }
+    nombre = requisito.nombre;
+    categoria = null; // redundante: el nombre ya identifica el documento del catálogo
+  }
+  if (!nombre) throw new Error("El documento debe tener un nombre.");
 
   const documento = await db.documentoContrato.create({
     data: {
       expedienteId: datos.expedienteId,
       etapa: datos.etapa,
-      categoria: datos.categoria?.trim() || null,
+      categoria,
       requisitoId: datos.requisitoId || null,
-      nombre: datos.nombre,
+      nombre,
       storagePath: datos.storagePath,
       mimeType: datos.mimeType,
       tamanoBytes: datos.tamanoBytes,
@@ -229,7 +250,7 @@ export async function agregarDocumentoContrato(datos: {
   await registrarEventoContratacion(
     datos.expedienteId,
     "DOCUMENTO_SUBIDO",
-    `Se subió "${datos.nombre}" (${ETIQUETA_ETAPA[datos.etapa]})`,
+    `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]})`,
     datos.subidoPorId
   );
   return documento;
