@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { LogOut } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia } from "@/lib/permisos";
-import { SidebarNav } from "@/components/SidebarNav";
+import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 
 function iniciales(nombre: string) {
@@ -51,34 +50,19 @@ export async function NavBar() {
     </Link>
   );
 
-  const salir = (
-    <form action="/api/auth/logout" method="post">
-      <button className="flex items-center gap-1.5 rounded-lg border border-graphite-200 px-3 py-1.5 text-xs font-medium text-graphite-600 transition-transform hover:bg-graphite-50 active:scale-95">
-        <LogOut className="h-3.5 w-3.5" aria-hidden />
-        Salir
-      </button>
-    </form>
-  );
-
   return (
     <>
-      {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana. */}
-      <aside className="sticky top-0 hidden h-screen w-64 flex-none flex-col border-r border-graphite-100 bg-white lg:flex">
-        <div className="border-b border-graphite-100 px-4 py-4">{marca}</div>
-        <SidebarNav esAdmin={esAdmin} mostrarVital={mostrarVital} mostrarSinca={mostrarSinca} mostrarCorrespondencia={mostrarCorrespondencia} />
-        <div className="border-t border-graphite-100 p-3">
-          <Link href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-graphite-50">
-            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
-              {iniciales(session.nombre)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-graphite-800">{session.nombre}</p>
-              <p className="truncate text-xs text-graphite-400">{subtitulo}</p>
-            </div>
-          </Link>
-          <div className="mt-1.5 px-2">{salir}</div>
-        </div>
-      </aside>
+      {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana (colapsable, ver Sidebar.tsx). */}
+      <Sidebar
+        logoUrl={config.logoUrl}
+        esAdmin={esAdmin}
+        mostrarVital={mostrarVital}
+        mostrarSinca={mostrarSinca}
+        mostrarCorrespondencia={mostrarCorrespondencia}
+        nombre={session.nombre}
+        subtitulo={subtitulo}
+        iniciales={iniciales(session.nombre)}
+      />
 
       {/* Pantallas chicas: solo la marca y el botón de menú — el resto vive en el panel que abre. */}
       <header className="border-b border-graphite-100 bg-white lg:hidden">
