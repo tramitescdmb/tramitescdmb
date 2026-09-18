@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { Briefcase, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion } from "@/lib/permisos";
@@ -28,6 +29,14 @@ export default async function ContratacionLayout({ children }: { children: React
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Manejador de expedientes digitales
           </span>
+          <Link
+            href="/contratacion/ayuda"
+            aria-label="Ayuda — guía de referencia de SIGEC"
+            className="ml-auto flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
+          >
+            <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+            Ayuda
+          </Link>
         </div>
         <p className="mt-1 text-sm text-stone-500">
           Sistema Integrado de Gestión de Expedientes de Contratación — expediente, flujo documental, firma
