@@ -51,6 +51,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
             codigo: s.codigo,
             nombre: s.nombre,
             dependenciaId: s.dependenciaId,
+            dependenciaNombre: s.dependencia?.nombre ?? null,
             subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
           }))}
           plantillas={plantillas}

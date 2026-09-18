@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Field, SectionHelp } from "@/components/Field";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
+import { BuscadorDependencia } from "@/components/BuscadorDependencia";
+import { BuscadorSubserieTRD, type SerieBuscable } from "@/components/BuscadorSubserieTRD";
 
 type Dependencia = { id: string; nombre: string };
-type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; subseries: Subserie[] };
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
@@ -18,21 +18,15 @@ export function NuevoExpedienteDocumentalForm({
   usuarioNombre = "",
 }: {
   dependencias: Dependencia[];
-  series: Serie[];
+  series: SerieBuscable[];
   plantillas?: PlantillaOpcion[];
   usuarioNombre?: string;
 }) {
   const [dependenciaId, setDependenciaId] = useState(dependencias.length === 1 ? dependencias[0]!.id : "");
   const [serieId, setSerieId] = useState("");
+  const [subserieId, setSubserieId] = useState("");
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
-
-  const seriesDeDependencia = useMemo(() => {
-    const sinDependencia = series.filter((s) => !s.dependenciaId);
-    if (!dependenciaId) return sinDependencia;
-    return [...series.filter((s) => s.dependenciaId === dependenciaId), ...sinDependencia];
-  }, [series, dependenciaId]);
-  const subseries = useMemo(() => seriesDeDependencia.find((s) => s.id === serieId)?.subseries ?? [], [seriesDeDependencia, serieId]);
 
   return (
     <form action="/api/correspondencia/expedientes" method="post" className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
@@ -55,37 +49,22 @@ export function NuevoExpedienteDocumentalForm({
 
       <div className="border-t border-stone-100 pt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Dependencia y clasificación (TRD)</h3>
-        <SectionHelp>La serie documental depende de la dependencia elegida (cada una tiene su propia TRD).</SectionHelp>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <SectionHelp>Opcional clasificar por serie/subserie — busque por código, nombre o dependencia.</SectionHelp>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Dependencia" required>
-            <select
-              name="dependenciaId"
-              required
-              value={dependenciaId}
-              onChange={(e) => { setDependenciaId(e.target.value); setSerieId(""); }}
-              className={inputCls}
-            >
-              <option value="">— Seleccione —</option>
-              {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
-            </select>
+            <BuscadorDependencia dependencias={dependencias} value={dependenciaId} onChange={setDependenciaId} />
+            <input type="hidden" name="dependenciaId" value={dependenciaId} required />
           </Field>
-          <Field label="Serie documental (TRD)">
-            <select
-              name="serieId"
-              value={serieId}
-              onChange={(e) => setSerieId(e.target.value)}
-              className={inputCls}
-              disabled={!dependenciaId}
-            >
-              <option value="">— Sin clasificar —</option>
-              {seriesDeDependencia.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-            </select>
-          </Field>
-          <Field label="Subserie">
-            <select name="subserieId" className={inputCls} disabled={!subseries.length}>
-              <option value="">{subseries.length ? "— Seleccione —" : "—"}</option>
-              {subseries.map((ss) => (<option key={ss.id} value={ss.id}>{ss.codigo} — {ss.nombre}</option>))}
-            </select>
+          <Field label="Serie / subserie (TRD)">
+            <BuscadorSubserieTRD
+              series={series}
+              serieId={serieId}
+              subserieId={subserieId}
+              dependenciaPreferidaId={dependenciaId || null}
+              onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
+              nameSerie="serieId"
+              nameSubserie="subserieId"
+            />
           </Field>
         </div>
       </div>

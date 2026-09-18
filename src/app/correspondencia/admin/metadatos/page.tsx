@@ -8,6 +8,7 @@ import { listarSeriesVigentes } from "@/lib/trd";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
+import { SelectorSerieBusqueda } from "@/components/SelectorSerieBusqueda";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 const TIPOS = ["TEXTO", "NUMERO", "FECHA", "LISTA", "BOOLEANO"] as const;
@@ -57,14 +58,10 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
               {AMBITOS.map((a) => (<option key={a} value={a}>{ETIQUETA_AMBITO_CAMPO[a]}</option>))}
             </select>
           </Field>
-          <Field label="Serie (opcional)" help="Si se elige, el campo solo aplica a lo clasificado en esa serie.">
-            <select name="serieId" className={inputCls} defaultValue="">
-              <option value="">— Todas —</option>
-              {series.map((s) => (
-                <option key={s.id} value={s.id}>{s.codigo} — {s.nombre}{s.dependencia ? ` (${s.dependencia.nombre})` : ""}</option>
-              ))}
-            </select>
-          </Field>
+          <div>
+            <SelectorSerieBusqueda series={series} />
+            <p className="mt-1 text-xs text-stone-500">Opcional — si se elige, el campo solo aplica a lo clasificado en esa serie.</p>
+          </div>
           <Field label="Valor por defecto" help="Se hereda como valor inicial (útil con una serie).">
             <input name="valorPorDefecto" className={inputCls} />
           </Field>
@@ -108,12 +105,9 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
                     {AMBITOS.map((a) => (<option key={a} value={a}>{ETIQUETA_AMBITO_CAMPO[a]}</option>))}
                   </select>
                 </Field>
-                <Field label="Serie">
-                  <select name="serieId" defaultValue={c.serieId ?? ""} className={inputCls}>
-                    <option value="">— Todas —</option>
-                    {series.map((s) => (<option key={s.id} value={s.id}>{s.codigo} — {s.nombre}</option>))}
-                  </select>
-                </Field>
+                <div>
+                  <SelectorSerieBusqueda series={series} valorInicial={c.serieId ?? undefined} />
+                </div>
                 <Field label="Valor por defecto"><input name="valorPorDefecto" defaultValue={c.valorPorDefecto ?? ""} className={inputCls} /></Field>
                 <div className="sm:col-span-3">
                   <Field label="Ayuda"><input name="ayuda" defaultValue={c.ayuda ?? ""} className={inputCls} /></Field>
