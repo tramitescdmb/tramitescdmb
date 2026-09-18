@@ -417,3 +417,37 @@ export function puedeVerExpedienteContractual(
   if (permisos.contratacion === "CONTRATISTA") return permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
   return false;
 }
+
+/** ¿Alguna vez se le asignó a este usuario firmar/dar visto bueno/leer algún documento de este
+ * expediente? Es una concesión de visibilidad ADICIONAL (nunca la única forma de entrar al
+ * módulo: sigue exigiendo tener algún `rolContratacion`) para el caso real que motivó pedir
+ * "usuarios de solo lectura": alguien con acceso al módulo pero sin rol normal sobre ESTE
+ * expediente en particular (ej. un funcionario de otra dependencia agregado como lector). */
+export async function tieneSolicitudFirmaEnExpedienteContractual(usuarioId: string, expedienteId: string): Promise<boolean> {
+  const n = await db.solicitudFirma.count({ where: { usuarioAsignadoId: usuarioId, documentoContrato: { expedienteId } } });
+  return n > 0;
+}
+
+/**
+ * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre un documento de
+ * este expediente? Mismo nivel que antes podía firmar directo (ya no firma directo: ahora
+ * designa a quién le corresponde) — Jefe de Contratación/Admin, o el Supervisor asignado a ese
+ * expediente.
+ */
+export const puedeAsignarFirmantesDocumentoContrato = puedeFirmarDocumentoContrato;
+
+/**
+ * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre esta comunicación?
+ * En SGDEA es el jefe de LA DEPENDENCIA de la comunicación (JEFE_DEPENDENCIA con la misma
+ * dependencia que el destino/origen), o un rol superior (ADMIN_ARCHIVO/ADMIN).
+ */
+export function puedeAsignarFirmantesComunicacion(
+  permisos: PermisosUsuario,
+  comunicacion: { dependenciaDestinoId: string | null; dependenciaOrigenId: string | null }
+): boolean {
+  if (!puedeAccederCorrespondencia(permisos)) return false;
+  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return true;
+  if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
+  const dependenciaComunicacion = comunicacion.dependenciaDestinoId ?? comunicacion.dependenciaOrigenId;
+  return dependenciaComunicacion !== null && dependenciaComunicacion === permisos.dependenciaId;
+}

@@ -13,7 +13,11 @@ import {
   puedeFirmar,
   puedeResponderComoAsignado,
   puedeDevolverReparto,
+  puedeAsignarFirmantesComunicacion,
 } from "@/lib/permisos";
+import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
@@ -174,6 +178,10 @@ export default async function CorrespondenciaDetallePage({
         orderBy: { fechaHora: "asc" },
         include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
       },
+      solicitudesFirma: {
+        orderBy: { orden: "asc" },
+        include: { usuarioAsignado: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
+      },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
         include: { dependencia: { select: { nombre: true } }, usuario: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
@@ -198,6 +206,14 @@ export default async function CorrespondenciaDetallePage({
   const puedeRadicarUsuario = puedeRadicar(permisos);
   const puedeDespacharUsuario = puedeDespachar(permisos);
   const puedeFirmarUsuario = puedeFirmar(permisos);
+  const puedeAsignarFirmantesUsuario = puedeAsignarFirmantesComunicacion(permisos, c);
+  const usuariosOpciones = puedeAsignarFirmantesUsuario
+    ? await db.usuario.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
+    : [];
+  const miSolicitudFirma = c.solicitudesFirma.find(
+    (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
+  );
+  const puedoActuarMiSolicitud = miSolicitudFirma && puedeActuarSolicitud(c.solicitudesFirma, miSolicitudFirma);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
@@ -401,9 +417,18 @@ export default async function CorrespondenciaDetallePage({
         </Tarjeta>
       )}
 
-      {c.firmas.length > 0 && (
-        <Tarjeta titulo="Firma electrónica">
-          <SelloFirmaElectronica firmas={c.firmas} />
+      {(c.firmas.length > 0 || c.solicitudesFirma.length > 0 || puedeAsignarFirmantesUsuario) && (
+        <Tarjeta
+          titulo="Firma electrónica"
+          extra={
+            c.firmas.length > 0 ? (
+              <Link href={`/correspondencia/${id}/ficha-firma`} className="text-xs font-medium text-cdmb-700 hover:underline">
+                Ficha técnica completa
+              </Link>
+            ) : undefined
+          }
+        >
+          {c.firmas.length > 0 && <SelloFirmaElectronica firmas={c.firmas} />}
           {puedeFirmarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
             <form action={`/api/correspondencia/${id}/firmar`} method="post" className="mt-3">
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
@@ -411,6 +436,53 @@ export default async function CorrespondenciaDetallePage({
                 Agregar mi firma
               </button>
             </form>
+          )}
+
+          {(c.solicitudesFirma.length > 0 || puedeAsignarFirmantesUsuario) && (
+            <div className="mt-3 border-t border-stone-100 pt-3">
+              <p className="mb-1.5 text-xs font-medium text-stone-500">Firmantes / lectores designados</p>
+              {c.solicitudesFirma.length > 0 ? (
+                <div className="mb-2 flex flex-wrap gap-1">
+                  {c.solicitudesFirma.map((s) => (
+                    <span
+                      key={s.id}
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                        s.estado === "COMPLETADA" ? "bg-emerald-50 text-emerald-700" : s.estado === "RECHAZADA" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {s.usuarioAsignado.nombre} · {s.rol === "FIRMA" ? "firma" : s.rol === "VISTO_BUENO" ? "visto bueno" : "lectura"} ·{" "}
+                      {s.estado === "COMPLETADA" ? "completada" : s.estado === "RECHAZADA" ? "rechazada" : "pendiente"}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mb-2 text-xs text-stone-400">Todavía no hay nadie designado.</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {puedoActuarMiSolicitud && (
+                  <ConfirmarFirmaModal
+                    rol={miSolicitudFirma!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                    endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/completar`}
+                    endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/rechazar`}
+                    documentoNombre={c.asunto}
+                    contenidoTexto={c.contenido ?? ""}
+                  />
+                )}
+                {puedeAsignarFirmantesUsuario && (
+                  <AsignarFirmantesModal
+                    endpointAsignar={`/api/correspondencia/${id}/solicitudes-firma`}
+                    usuarios={usuariosOpciones}
+                    firmantesActuales={c.solicitudesFirma.map((s) => ({
+                      id: s.id,
+                      usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+                      rol: s.rol,
+                      orden: s.orden,
+                      estado: s.estado,
+                    }))}
+                  />
+                )}
+              </div>
+            </div>
           )}
         </Tarjeta>
       )}

@@ -13,6 +13,7 @@ import {
   Archive,
   ChevronDown,
   ExternalLink,
+  PenLine,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,7 +31,7 @@ type Item = { href: string; label: string; permiso?: Clave; prefijo?: boolean; e
 type Grupo = { label: string; icon: LucideIcon; permiso: Clave; href?: string; items?: Item[]; alinearDerecha?: boolean };
 
 /** Rutas que NO son la bandeja aunque cuelguen de /correspondencia. */
-const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo"];
+const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon"];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
   (p.startsWith("/correspondencia/") && !NO_BANDEJA.some((s) => p.startsWith(`/correspondencia/${s}`)));
@@ -59,6 +60,7 @@ const GRUPOS: Grupo[] = [
       { href: "/correspondencia/disposicion", label: "Disposición final", permiso: "admin", prefijo: true },
     ],
   },
+  { label: "Buzón de firmas", icon: PenLine, permiso: "bandeja", href: "/correspondencia/buzon" },
   { label: "Plantillas", icon: FileText, permiso: "bandeja", href: "/correspondencia/plantillas" },
   { label: "Fondo histórico", icon: Archive, permiso: "fondoHistorico", href: "/correspondencia/fondo" },
   {

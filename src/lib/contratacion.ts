@@ -1,10 +1,8 @@
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
-import { resolverFirma } from "@/lib/firma-proveedor";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, Prisma } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
 
 /**
  * Módulo de Contratación — manejador de expedientes digitales de contratación
@@ -88,6 +86,15 @@ export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>
         subidoPorNombre: string;
         firmaFechaHora: Date | null;
         firmaFormato: string | null;
+        totalFirmas: number;
+        solicitudesFirma: {
+          id: string;
+          rol: RolFirmante;
+          orden: number;
+          estado: EstadoSolicitudFirma;
+          usuarioAsignadoId: string;
+          usuarioAsignadoNombre: string;
+        }[];
       }
     | null;
 };
@@ -108,12 +115,21 @@ export function cruzarChecklist(
     firmadoEnSecop: boolean;
     createdAt: Date;
     subidoPor: { nombre: string };
-    firma: { fechaHora: Date; formato: string } | null;
+    firmas: { fechaHora: Date; formato: string }[];
+    solicitudesFirma: {
+      id: string;
+      rol: RolFirmante;
+      orden: number;
+      estado: EstadoSolicitudFirma;
+      usuarioAsignadoId: string;
+      usuarioAsignado: { nombre: string };
+    }[];
   }[]
 ): ItemChecklist[] {
   return requisitos.map((r) => {
     const candidatos = documentos.filter((d) => d.requisitoId === r.id);
     const ultimo = candidatos.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null;
+    const ultimaFirma = ultimo ? [...ultimo.firmas].sort((a, b) => b.fechaHora.getTime() - a.fechaHora.getTime())[0] ?? null : null;
     return {
       ...r,
       documento: ultimo
@@ -126,8 +142,17 @@ export function cruzarChecklist(
             firmadoEnSecop: ultimo.firmadoEnSecop,
             createdAt: ultimo.createdAt,
             subidoPorNombre: ultimo.subidoPor.nombre,
-            firmaFechaHora: ultimo.firma?.fechaHora ?? null,
-            firmaFormato: ultimo.firma?.formato ?? null,
+            firmaFechaHora: ultimaFirma?.fechaHora ?? null,
+            firmaFormato: ultimaFirma?.formato ?? null,
+            totalFirmas: ultimo.firmas.length,
+            solicitudesFirma: ultimo.solicitudesFirma.map((s) => ({
+              id: s.id,
+              rol: s.rol,
+              orden: s.orden,
+              estado: s.estado,
+              usuarioAsignadoId: s.usuarioAsignadoId,
+              usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+            })),
           }
         : null,
     };
@@ -264,10 +289,26 @@ export async function agregarDocumentoContrato(datos: {
  */
 export async function editarDocumentoContratoSinTraza(
   documentoId: string,
-  datos: { nombre?: string; categoria?: string | null; etapa?: EtapaContratacion; requiereFirma?: boolean; firmadoEnSecop?: boolean }
-) {
+  datos: {
+    nombre?: string;
+    categoria?: string | null;
+    etapa?: EtapaContratacion;
+    requiereFirma?: boolean;
+    firmadoEnSecop?: boolean;
+    // Reemplazo real del archivo (no solo el nombre) — pedido explícito del usuario tras
+    // probar que "Editar" solo cambiaba el nombre. El archivo anterior se borra del storage
+    // (lo hace el caller, ver la ruta de API) y cualquier firma/solicitud previa queda
+    // invalidada: estaban sobre un contenido que ya no existe.
+    archivo?: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
+  }
+): Promise<{ storagePathAnterior: string | null }> {
   const nombre = datos.nombre?.trim();
-  return db.documentoContrato.update({
+  const anterior = datos.archivo
+    ? await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } })
+    : null;
+  if (datos.archivo && !anterior) throw new Error("El documento no existe.");
+
+  await db.documentoContrato.update({
     where: { id: documentoId },
     data: {
       ...(nombre ? { nombre } : {}),
@@ -275,8 +316,26 @@ export async function editarDocumentoContratoSinTraza(
       ...(datos.etapa ? { etapa: datos.etapa } : {}),
       ...(datos.requiereFirma !== undefined ? { requiereFirma: datos.requiereFirma } : {}),
       ...(datos.firmadoEnSecop !== undefined ? { firmadoEnSecop: datos.firmadoEnSecop } : {}),
+      ...(datos.archivo
+        ? {
+            storagePath: datos.archivo.storagePath,
+            mimeType: datos.archivo.mimeType,
+            tamanoBytes: datos.archivo.tamanoBytes,
+            hashSha256: datos.archivo.hashSha256,
+            estadoValidacion: "PENDIENTE" as const,
+            validadoPorId: null,
+            validadoEn: null,
+          }
+        : {}),
     },
   });
+
+  if (datos.archivo) {
+    await db.firmaDocumentoContrato.deleteMany({ where: { documentoId } });
+    await db.solicitudFirma.deleteMany({ where: { documentoContratoId: documentoId } });
+  }
+
+  return { storagePathAnterior: anterior?.storagePath ?? null };
 }
 
 /**
@@ -291,61 +350,6 @@ export async function eliminarDocumentoContratoSinTraza(documentoId: string): Pr
   if (!doc) throw new Error("El documento no existe.");
   await db.documentoContrato.delete({ where: { id: documentoId } });
   return { storagePath: doc.storagePath };
-}
-
-function hashContenidoFirmaDocumento(datos: { documentoId: string; nombre: string; hashSha256: string | null; fechaIso: string }): string {
-  const base = [datos.documentoId, datos.nombre, datos.hashSha256 ?? "", datos.fechaIso].join("␟");
-  return crypto.createHash("sha256").update(base, "utf8").digest("hex");
-}
-
-/** Revisa y aprueba un documento marcado `requiereFirma`: crea su FirmaDocumentoContrato
- * (hash + identidad + timestamp, mismo mecanismo ya validado en el SGDEA) y lo marca APROBADO. */
-export async function firmarDocumentoContrato(documentoId: string, usuarioId: string) {
-  const doc = await db.documentoContrato.findUnique({
-    where: { id: documentoId },
-    include: { firma: { select: { id: true } } },
-  });
-  if (!doc) throw new Error("El documento no existe.");
-  if (doc.firma) throw new Error("Este documento ya tiene una firma registrada.");
-  if (!doc.requiereFirma) throw new Error("Este documento no fue marcado como que requiere firma electrónica.");
-  if (doc.firmadoEnSecop) throw new Error("Este documento ya viene firmado/publicado en SECOP II — no requiere firma interna.");
-
-  const fechaIso = new Date().toISOString();
-  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
-  const resuelto = await resolverFirma(hashContenido);
-
-  await db.$transaction([
-    db.firmaDocumentoContrato.create({
-      data: {
-        documentoId: doc.id,
-        usuarioId,
-        hashContenido,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    }),
-    db.documentoContrato.update({
-      where: { id: doc.id },
-      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
-    }),
-  ]);
-
-  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_FIRMADO", `Se firmó "${doc.nombre}"`, usuarioId);
-}
-
-export async function rechazarDocumentoContrato(documentoId: string, usuarioId: string, comentario: string) {
-  if (!comentario.trim()) throw new Error("Indique por qué se rechaza el documento.");
-  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { id: true, nombre: true, expedienteId: true } });
-  if (!doc) throw new Error("El documento no existe.");
-
-  await db.documentoContrato.update({
-    where: { id: documentoId },
-    data: { estadoValidacion: "RECHAZADO", validadoPorId: usuarioId, validadoEn: new Date(), comentarioValidacion: comentario.trim() },
-  });
-  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_RECHAZADO", `Se rechazó "${doc.nombre}": ${comentario.trim()}`, usuarioId);
 }
 
 /** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del
@@ -403,7 +407,8 @@ export async function aprobarEtapaContratacion(
         firmadoEnSecop: true,
         createdAt: true,
         subidoPor: { select: { nombre: true } },
-        firma: { select: { fechaHora: true, formato: true } },
+        firmas: { select: { fechaHora: true, formato: true } },
+        solicitudesFirma: { select: { id: true, rol: true, orden: true, estado: true, usuarioAsignadoId: true, usuarioAsignado: { select: { nombre: true } } } },
       },
     });
     const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentos));

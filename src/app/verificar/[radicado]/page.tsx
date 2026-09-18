@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CheckCircle2, XCircle } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, XCircle, FileSignature } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatearFechaHoraLarga as fechaHora, formatearFecha } from "@/lib/fecha";
 import { ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
@@ -29,7 +30,7 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
 
   const c = await db.comunicacion.findUnique({
     where: { radicado: num },
-    select: { radicado: true, tipo: true, estado: true, fechaRadicacion: true, folios: true, anio: true },
+    select: { id: true, radicado: true, tipo: true, estado: true, fechaRadicacion: true, folios: true, anio: true },
   });
 
   if (!c) {
@@ -85,6 +86,14 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
           confirma la existencia y el estado del radicado; no revela el contenido, que está sujeto a las reglas
           de acceso a la información (Ley 1712 de 2014).
         </p>
+
+        <Link
+          href={`/correspondencia/${c.id}/ficha-firma`}
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+        >
+          <FileSignature className="h-3.5 w-3.5" aria-hidden />
+          Ver ficha técnica completa de firmas (requiere inicio de sesión)
+        </Link>
       </div>
     </div>
   );
@@ -96,7 +105,7 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
 async function VerificarExpedienteContractual({ numero }: { numero: string }) {
   const e = await db.expedienteContractual.findUnique({
     where: { numero },
-    select: { numero: true, modalidadSeleccion: true, etapaActual: true, cerrado: true, createdAt: true },
+    select: { id: true, numero: true, modalidadSeleccion: true, etapaActual: true, cerrado: true, createdAt: true },
   });
 
   if (!e) {
@@ -145,6 +154,14 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
           Esta página confirma la existencia y el estado del expediente contractual; no revela el objeto del
           contrato ni datos del contratista, sujetos a las reglas de acceso a la información (Ley 1712 de 2014).
         </p>
+
+        <Link
+          href={`/contratacion/expedientes/${e.id}/ficha-firma`}
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+        >
+          <FileSignature className="h-3.5 w-3.5" aria-hidden />
+          Ver ficha técnica completa de firmas (requiere inicio de sesión)
+        </Link>
       </div>
     </div>
   );

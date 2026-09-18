@@ -31,6 +31,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true });
   }
 
+  if ("expedienteRelacionadoId" in body) {
+    const expedienteRelacionadoId = body.expedienteRelacionadoId ? String(body.expedienteRelacionadoId).trim() : null;
+    if (expedienteRelacionadoId === id) return NextResponse.json({ error: "Un expediente no puede relacionarse consigo mismo." }, { status: 400 });
+    let relacionado: { numero: string } | null = null;
+    if (expedienteRelacionadoId) {
+      relacionado = await db.expedienteContractual.findUnique({ where: { id: expedienteRelacionadoId }, select: { numero: true } });
+      if (!relacionado) return NextResponse.json({ error: "El expediente relacionado no existe." }, { status: 404 });
+    }
+    await db.expedienteContractual.update({ where: { id }, data: { expedienteRelacionadoId } });
+    await registrarEventoContratacion(
+      id,
+      "EXPEDIENTE_RELACIONADO",
+      relacionado ? `Se vinculó como relacionado el expediente ${relacionado.numero}.` : "Se quitó la vinculación con otro expediente.",
+      session.userId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: "Nada que actualizar." }, { status: 400 });
 }
 

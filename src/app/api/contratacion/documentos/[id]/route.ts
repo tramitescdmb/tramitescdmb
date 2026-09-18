@@ -26,15 +26,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   const etapa = body.etapa && (ETAPAS_ORDEN as string[]).includes(body.etapa) ? (body.etapa as EtapaContratacion) : undefined;
+  const archivo =
+    body.archivo && typeof body.archivo.storagePath === "string" && typeof body.archivo.mimeType === "string" && Number.isFinite(body.archivo.tamanoBytes)
+      ? {
+          storagePath: body.archivo.storagePath as string,
+          mimeType: body.archivo.mimeType as string,
+          tamanoBytes: Number(body.archivo.tamanoBytes),
+          hashSha256: typeof body.archivo.hashSha256 === "string" ? body.archivo.hashSha256 : null,
+        }
+      : undefined;
 
   try {
-    await editarDocumentoContratoSinTraza(id, {
+    const { storagePathAnterior } = await editarDocumentoContratoSinTraza(id, {
       nombre: typeof body.nombre === "string" ? body.nombre : undefined,
       categoria: "categoria" in body ? (body.categoria ? String(body.categoria) : null) : undefined,
       etapa,
       requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
       firmadoEnSecop: "firmadoEnSecop" in body ? Boolean(body.firmadoEnSecop) : undefined,
+      archivo,
     });
+    if (archivo && storagePathAnterior) {
+      await deleteDocumento(storagePathAnterior).catch(() => {}); // best-effort, ver DELETE más abajo
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo editar el documento." }, { status: 400 });

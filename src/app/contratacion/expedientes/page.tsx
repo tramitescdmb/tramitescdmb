@@ -4,13 +4,14 @@ import { Briefcase, Plus } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion } from "@/lib/permisos";
 import { listarExpedientesContractuales, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
+import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFecha } from "@/lib/fecha";
 
 export default async function ExpedientesContratacionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; etapa?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; etapa?: string; dependenciaId?: string; page?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -18,7 +19,10 @@ export default async function ExpedientesContratacionPage({
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const sp = await searchParams;
-  const { filas, total, page, totalPaginas } = await listarExpedientesContractuales(sp, permisos);
+  const [{ filas, total, page, totalPaginas }, dependencias] = await Promise.all([
+    listarExpedientesContractuales(sp, permisos),
+    listarDependenciasActivas(),
+  ]);
 
   return (
     <section className="space-y-4">
@@ -55,6 +59,16 @@ export default async function ExpedientesContratacionPage({
           <option value="">Todas las etapas</option>
           {ETAPAS_ORDEN.map((e) => (
             <option key={e} value={e}>{ETIQUETA_ETAPA[e]}</option>
+          ))}
+        </select>
+        <select
+          name="dependenciaId"
+          defaultValue={sp.dependenciaId ?? ""}
+          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        >
+          <option value="">Todas las dependencias</option>
+          {dependencias.map((d) => (
+            <option key={d.id} value={d.id}>{d.nombre}</option>
           ))}
         </select>
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">

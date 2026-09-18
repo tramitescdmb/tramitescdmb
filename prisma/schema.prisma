@@ -217,6 +217,10 @@ model Usuario {
   firmasDocumentoContrato         FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
   eventosContratacion             EventoContratacion[]              @relation("EventoContratacionUsuario")
 
+  // --- Solicitud de firma/visto bueno (compartida SGDEA + SIGEC) ---
+  solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
+  solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
+
   @@index([dependenciaId])
 }
 
@@ -1352,10 +1356,11 @@ model Comunicacion {
   respuestas                 Comunicacion[]        @relation("ComunicacionRespuesta")
   actaEliminacion            ActaEliminacion?      @relation(fields: [actaEliminacionId], references: [id])
 
-  documentos      ComunicacionDocumento[]
-  distribuciones  Distribucion[]
-  firmas          Firma[]
-  instanciasFlujo InstanciaFlujo[]
+  documentos       ComunicacionDocumento[]
+  distribuciones   Distribucion[]
+  firmas           Firma[]
+  instanciasFlujo  InstanciaFlujo[]
+  solicitudesFirma SolicitudFirma[]
 
   @@index([tipo])
   @@index([anio])
@@ -1460,6 +1465,9 @@ model Firma {
   comunicacionId String?
   documentoId    String?
   ip             String?
+  // Agente de usuario (navegador/dispositivo) desde donde se firmó — dato técnico
+  // exigido en la ficha de firma, junto con `ip`. Null en firmas de antes de este campo.
+  userAgent      String?
 
   // Proveedor y formato de la firma (abstracción para enchufar una CA acreditada
   // después — ver src/lib/firma-proveedor.ts). Estampado cronológico: `selloTiempoEn`
@@ -1471,11 +1479,78 @@ model Firma {
   selloTiempoFuente String?
   selloTiempoToken  String?
 
-  usuario      Usuario       @relation("FirmaUsuario", fields: [usuarioId], references: [id])
-  comunicacion Comunicacion? @relation(fields: [comunicacionId], references: [id])
+  usuario          Usuario          @relation("FirmaUsuario", fields: [usuarioId], references: [id])
+  comunicacion     Comunicacion?    @relation(fields: [comunicacionId], references: [id])
+  solicitudesFirma SolicitudFirma[] @relation("SolicitudFirmaEvento")
 
   @@index([comunicacionId])
   @@index([usuarioId])
+}
+
+// ---------------------------------------------------------------------------
+// Solicitud de firma/visto bueno — capa de ASIGNACIÓN sobre el mecanismo de
+// firma que ya existía (Firma en SGDEA, FirmaDocumentoContrato en SIGEC).
+// Deliberadamente COMPARTIDA entre los dos módulos (a diferencia de Firma vs
+// FirmaDocumentoContrato, que siguen separadas): "quién debe firmar/ver, en
+// qué orden, y si ya lo hizo" es un concepto de flujo de trabajo genérico, no
+// una regla de negocio propia de cada dominio — por eso un solo modelo con dos
+// FKs opcionales (exactamente una debe estar llena) en vez de duplicar toda
+// esta lógica dos veces. Antes de esto, Firma SIEMPRE nacía completada (no
+// existía el concepto de "pendiente de firmar"); esta tabla es la que sí
+// modela lo pendiente, y solo al completarse crea la fila real de
+// Firma/FirmaDocumentoContrato (que sigue siendo el evento inmutable).
+// ---------------------------------------------------------------------------
+
+enum RolFirmante {
+  FIRMA // debe firmar electrónicamente (Ley 527/1999)
+  VISTO_BUENO // solo debe revisar/confirmar que lo vio — no firma legalmente
+  // Acceso de solo lectura al documento/comunicación, sin ninguna acción pendiente:
+  // se crea ya en estado COMPLETADA (no aparece como pendiente en el buzón, solo
+  // en "compartido conmigo") — es una concesión de visibilidad, no un paso de flujo.
+  LECTURA
+}
+
+enum EstadoSolicitudFirma {
+  PENDIENTE
+  COMPLETADA
+  RECHAZADA
+}
+
+model SolicitudFirma {
+  id                  String  @id @default(cuid())
+  comunicacionId      String?
+  documentoContratoId String?
+
+  usuarioAsignadoId String
+  rol               RolFirmante          @default(FIRMA)
+  // Orden de firma: firmantes con el MISMO número actúan en cualquier momento,
+  // sin esperarse entre sí ("no importa quién firme primero"); un firmante con
+  // un número mayor no puede actuar hasta que TODOS los de número menor (rol
+  // FIRMA, sin contar los rechazados) estén en COMPLETADA — así se decide
+  // "quién firma primero" solo con la numeración, sin un campo aparte.
+  orden             Int                  @default(1)
+  estado            EstadoSolicitudFirma @default(PENDIENTE)
+  comentario        String?              @db.Text // motivo si RECHAZADA
+
+  asignadoPorId String
+  asignadoEn    DateTime  @default(now())
+  completadoEn  DateTime?
+
+  // Vínculo al evento real ya ejecutado, cuando estado=COMPLETADA y rol=FIRMA
+  // (un VISTO_BUENO/LECTURA no genera Firma, solo se marca completada).
+  firmaId            String?
+  firmaDocContratoId String?
+
+  comunicacion      Comunicacion?           @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  documentoContrato DocumentoContrato?      @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
+  usuarioAsignado   Usuario                 @relation("SolicitudFirmaAsignado", fields: [usuarioAsignadoId], references: [id])
+  asignadoPor       Usuario                 @relation("SolicitudFirmaAsignadoPor", fields: [asignadoPorId], references: [id])
+  firma             Firma?                  @relation("SolicitudFirmaEvento", fields: [firmaId], references: [id])
+  firmaDocContrato  FirmaDocumentoContrato? @relation("SolicitudFirmaEventoContrato", fields: [firmaDocContratoId], references: [id])
+
+  @@index([comunicacionId])
+  @@index([documentoContratoId])
+  @@index([usuarioAsignadoId, estado])
 }
 
 enum EstadoExpedienteDocumental {
@@ -1897,18 +1972,27 @@ model ExpedienteContractual {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
 
-  dependenciaSolicitante Dependencia  @relation(fields: [dependenciaSolicitanteId], references: [id])
-  contratista            Contratista? @relation(fields: [contratistaId], references: [id])
-  creadoPor              Usuario      @relation("ExpContractualCreadoPor", fields: [creadoPorId], references: [id])
+  // Un mismo contratista puede tener varios contratos en distintos periodos del
+  // año — cada uno sigue siendo SU PROPIO expediente (nunca se fusionan). Esto
+  // solo permite referenciar que un expediente es continuación/prórroga/relacionado
+  // de otro anterior, para poder verlos enlazados sin perder la separación real.
+  expedienteRelacionadoId String?
 
-  supervisores ExpedienteContractualSupervisor[]
-  etapas       EtapaExpedienteContractual[]
-  documentos   DocumentoContrato[]
-  eventos      EventoContratacion[]
+  dependenciaSolicitante Dependencia            @relation(fields: [dependenciaSolicitanteId], references: [id])
+  contratista            Contratista?           @relation(fields: [contratistaId], references: [id])
+  creadoPor              Usuario                @relation("ExpContractualCreadoPor", fields: [creadoPorId], references: [id])
+  expedienteRelacionado  ExpedienteContractual? @relation("ExpedienteContractualRelacionado", fields: [expedienteRelacionadoId], references: [id])
+
+  supervisores                ExpedienteContractualSupervisor[]
+  etapas                      EtapaExpedienteContractual[]
+  documentos                  DocumentoContrato[]
+  eventos                     EventoContratacion[]
+  expedientesQueLoReferencian ExpedienteContractual[]           @relation("ExpedienteContractualRelacionado")
 
   @@index([etapaActual])
   @@index([dependenciaSolicitanteId])
   @@index([contratistaId])
+  @@index([expedienteRelacionadoId])
 }
 
 // Muchos-a-muchos: el Manual (Cap. 9) permite designar más de un supervisor por
@@ -2013,11 +2097,12 @@ model DocumentoContrato {
   validadoEn           DateTime?
   comentarioValidacion String?                           @db.Text
 
-  expediente  ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  subidoPor   Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
-  validadoPor Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
-  requisito   RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
-  firma       FirmaDocumentoContrato?
+  expediente       ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor        Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
+  validadoPor      Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
+  requisito        RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  firmas           FirmaDocumentoContrato[]
+  solicitudesFirma SolicitudFirma[]
 
   @@index([expedienteId])
   @@index([etapa])
@@ -2028,21 +2113,29 @@ model DocumentoContrato {
 // (no se reutiliza Firma, del SGDEA de Correspondencia, para no arriesgar ese
 // modelo compartido con datos de otro dominio); mismo criterio de
 // hash+identidad+timestamp ya validado en Correspondencia (Ley 527/1999 +
-// Decreto 1074/2015).
+// Decreto 1074/2015). Ya NO es único por documento (`documentoId` sin
+// `@unique`): un documento puede requerir varios firmantes (co-firmas), igual
+// que `Firma` en el SGDEA.
 model FirmaDocumentoContrato {
   id                String    @id @default(cuid())
-  documentoId       String    @unique
+  documentoId       String
   usuarioId         String
   fechaHora         DateTime  @default(now())
   hashContenido     String
+  ip                String?
+  userAgent         String?
   proveedor         String    @default("interno")
   formato           String    @default("hash-sha256")
   selloTiempoEn     DateTime?
   selloTiempoFuente String?
   selloTiempoToken  String?
 
-  documento DocumentoContrato @relation(fields: [documentoId], references: [id], onDelete: Cascade)
-  usuario   Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])
+  documento        DocumentoContrato @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  usuario          Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])
+  solicitudesFirma SolicitudFirma[]  @relation("SolicitudFirmaEventoContrato")
+
+  @@index([documentoId])
+  @@index([usuarioId])
 }
 
 // Bitácora del módulo (mismo espíritu que ExpedienteEvento de Trámites 2.0) —

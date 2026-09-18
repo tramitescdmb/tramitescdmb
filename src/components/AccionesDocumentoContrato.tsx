@@ -1,89 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PenLine, XCircle, Trash2, Pencil } from "lucide-react";
-
-export function FirmarRechazarDocumentoContrato({ documentoId }: { documentoId: string }) {
-  const router = useRouter();
-  const [cargando, setCargando] = useState<"firmar" | "rechazar" | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function firmar() {
-    setCargando("firmar");
-    setError(null);
-    try {
-      const res = await fetch(`/api/contratacion/documentos/${documentoId}/firmar`, { method: "POST" });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || "No se pudo firmar.");
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado.");
-    } finally {
-      setCargando(null);
-    }
-  }
-
-  async function rechazar() {
-    const comentario = window.prompt("Motivo del rechazo:");
-    if (comentario === null) return;
-    if (!comentario.trim()) return setError("Debe indicar un motivo.");
-    setCargando("rechazar");
-    setError(null);
-    try {
-      const res = await fetch(`/api/contratacion/documentos/${documentoId}/rechazar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comentario }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || "No se pudo rechazar.");
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado.");
-    } finally {
-      setCargando(null);
-    }
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1">
-      <button
-        type="button"
-        onClick={firmar}
-        disabled={cargando !== null}
-        title="Revisar y aprobar: estampa la firma electrónica"
-        className="inline-flex items-center gap-1 rounded-md border border-cdmb-200 bg-cdmb-50 px-2 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-100 disabled:opacity-50"
-      >
-        <PenLine className="h-3 w-3" aria-hidden />
-        {cargando === "firmar" ? "Firmando…" : "Firmar"}
-      </button>
-      <button
-        type="button"
-        onClick={rechazar}
-        disabled={cargando !== null}
-        title="Rechazar este documento (exige motivo)"
-        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
-      >
-        <XCircle className="h-3 w-3" aria-hidden />
-        Rechazar
-      </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
-    </span>
-  );
-}
+import { Trash2, Pencil, Upload, X } from "lucide-react";
+import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 
 /** EXCEPCIÓN deliberada de este módulo: editar/eliminar aquí NO deja ninguna traza en la bitácora del
  * expediente — solo visible/habilitado para Administrador/Jefe de Contratación (el gate real está en
- * el servidor, esto solo evita mostrar el botón a quien de todas formas recibiría 403). */
-export function EditarEliminarDocumentoContrato({ documentoId, nombreActual }: { documentoId: string; nombreActual: string }) {
+ * el servidor, esto solo evita mostrar el botón a quien de todas formas recibiría 403).
+ *
+ * "Editar" abre un modal con dos acciones independientes: cambiar el nombre (como antes), o
+ * REEMPLAZAR el archivo real — antes solo existía lo primero, y el usuario probó que cambiar
+ * el "nombre" no tocaba el PDF/imagen subido. Reemplazar borra el archivo anterior del storage
+ * e invalida cualquier firma/solicitud previa (ver editarDocumentoContratoSinTraza): estaban
+ * sobre un contenido que ya no existe.
+ */
+export function EditarEliminarDocumentoContrato({
+  documentoId,
+  expedienteId,
+  nombreActual,
+}: {
+  documentoId: string;
+  expedienteId: string;
+  nombreActual: string;
+}) {
   const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const [nombre, setNombre] = useState(nombreActual);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  async function editar() {
-    const nombre = window.prompt("Nuevo nombre del documento:", nombreActual);
-    if (nombre === null || !nombre.trim()) return;
+  async function guardarNombre() {
+    if (!nombre.trim() || nombre.trim() === nombreActual) return setAbierto(false);
     setCargando(true);
     setError(null);
     try {
@@ -94,6 +43,31 @@ export function EditarEliminarDocumentoContrato({ documentoId, nombreActual }: {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo editar.");
+      setAbierto(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  async function reemplazarArchivo(file: File) {
+    setCargando(true);
+    setError(null);
+    try {
+      const subido = await subirArchivoContrato(expedienteId, file);
+      const hashSha256 = await sha256Hex(file);
+      const res = await fetch(`/api/contratacion/documentos/${documentoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          archivo: { storagePath: subido.path, mimeType: subido.mimeType, tamanoBytes: subido.tamanoBytes, hashSha256 },
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo reemplazar el archivo.");
+      setAbierto(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
@@ -122,10 +96,9 @@ export function EditarEliminarDocumentoContrato({ documentoId, nombreActual }: {
     <span className="inline-flex items-center gap-1">
       <button
         type="button"
-        onClick={editar}
-        disabled={cargando}
+        onClick={() => setAbierto(true)}
         title="Editar (Administrador/Jefe de Contratación — sin traza)"
-        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
       >
         <Pencil className="h-3 w-3" aria-hidden />
       </button>
@@ -138,7 +111,60 @@ export function EditarEliminarDocumentoContrato({ documentoId, nombreActual }: {
       >
         <Trash2 className="h-3 w-3" aria-hidden />
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+
+      {abierto && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-stone-900">Editar documento</h3>
+              <button type="button" onClick={() => setAbierto(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+
+            <label className="block text-xs font-medium text-stone-600">
+              Nombre
+              <div className="mt-1 flex gap-1.5">
+                <input
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={guardarNombre}
+                  disabled={cargando}
+                  className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+                >
+                  Guardar
+                </button>
+              </div>
+            </label>
+
+            <div className="mt-4 border-t border-stone-100 pt-3">
+              <p className="mb-1.5 text-xs font-medium text-stone-600">Reemplazar archivo</p>
+              <p className="mb-2 text-[11px] text-stone-400">
+                Sube un archivo nuevo en lugar del actual. El archivo anterior se borra y cualquier firma ya
+                registrada sobre él queda invalidada (deberá volver a firmarse).
+              </p>
+              <input
+                ref={fileRef}
+                type="file"
+                onChange={(e) => e.target.files?.[0] && reemplazarArchivo(e.target.files[0])}
+                disabled={cargando}
+                className="block w-full text-xs text-stone-600 file:mr-2 file:rounded-md file:border-0 file:bg-stone-100 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-stone-700 hover:file:bg-stone-200"
+              />
+              {cargando && (
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-stone-400">
+                  <Upload className="h-3 w-3 animate-pulse" aria-hidden /> Subiendo…
+                </p>
+              )}
+            </div>
+
+            {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+          </div>
+        </div>
+      )}
     </span>
   );
 }

@@ -7,7 +7,7 @@ import {
   obtenerPermisosUsuario,
   puedeVerExpedienteContractual,
   puedeSubirDocumentoContrato,
-  puedeFirmarDocumentoContrato,
+  puedeAsignarFirmantesDocumentoContrato,
   puedeEditarSinTrazaDocumentoContrato,
   puedeAprobarEtapaContratacion,
   puedeGestionarEtapasContratacion,
@@ -22,6 +22,7 @@ import {
   cruzarChecklist,
   type ItemChecklist,
 } from "@/lib/contratacion";
+import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { CATEGORIAS_SUGERIDAS } from "@/lib/contratacion-categorias";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
@@ -30,11 +31,14 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { SubirDocumentosContratoForm } from "@/components/SubirDocumentosContratoForm";
 import { SubirDocumentoRequisitoForm } from "@/components/SubirDocumentoRequisitoForm";
-import { FirmarRechazarDocumentoContrato, EditarEliminarDocumentoContrato } from "@/components/AccionesDocumentoContrato";
+import { EditarEliminarDocumentoContrato } from "@/components/AccionesDocumentoContrato";
+import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { AprobarEtapaContratoBoton } from "@/components/AprobarEtapaContratoBoton";
 import { RetrocederEtapaBoton } from "@/components/RetrocederEtapaBoton";
 import { EliminarExpedienteBoton } from "@/components/EliminarExpedienteBoton";
 import { VincularContratistaForm } from "@/components/VincularContratistaForm";
+import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -47,6 +51,22 @@ const CLASE_ESTADO_VALIDACION: Record<string, string> = {
   RECHAZADO: "bg-red-50 text-red-700",
 };
 
+const ETIQUETA_ROL_FIRMANTE: Record<string, string> = {
+  FIRMA: "firma",
+  VISTO_BUENO: "visto bueno",
+  LECTURA: "lectura",
+};
+const ETIQUETA_ESTADO_SOLICITUD: Record<string, string> = {
+  PENDIENTE: "pendiente",
+  COMPLETADA: "completada",
+  RECHAZADA: "rechazada",
+};
+const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
+  PENDIENTE: "bg-amber-50 text-amber-700",
+  COMPLETADA: "bg-emerald-50 text-emerald-700",
+  RECHAZADA: "bg-red-50 text-red-700",
+};
+
 export default async function DetalleExpedienteContractualPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -57,23 +77,54 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     where: { id },
     include: {
       dependenciaSolicitante: { select: { nombre: true } },
-      contratista: { select: { nombreORazonSocial: true, identificacion: true } },
+      contratista: { select: { id: true, nombreORazonSocial: true, identificacion: true } },
+      expedienteRelacionado: { select: { numero: true } },
+      expedientesQueLoReferencian: { select: { id: true, numero: true } },
       supervisores: { include: { usuario: { select: { nombre: true } } } },
       documentos: {
         orderBy: { createdAt: "asc" },
-        include: { subidoPor: { select: { nombre: true } }, firma: true },
+        include: {
+          subidoPor: { select: { nombre: true } },
+          firmas: true,
+          solicitudesFirma: { include: { usuarioAsignado: { select: { nombre: true } } }, orderBy: { orden: "asc" } },
+        },
       },
     },
   });
   if (!expediente) notFound();
   if (!puedeVerExpedienteContractual(permisos, expediente)) redirect("/contratacion");
 
+  const usuariosOpciones = await db.usuario.findMany({
+    where: { activo: true },
+    select: { id: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
+  // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
+  const otrosContratosDelContratista = expediente.contratista
+    ? await db.expedienteContractual.findMany({
+        where: { contratistaId: expediente.contratista.id, id: { not: id } },
+        select: { id: true, numero: true, objeto: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
+  const puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeRetroceder = puedeGestionarEtapasContratacion(permisos) && (idxActual > 0 || expediente.cerrado);
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
   const faltaContratista = !expediente.contratista && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado;
+  // Por qué NO se ve el botón de aprobar etapa, cuando corresponde — antes desaparecía en
+  // silencio y el usuario probando la app no entendía si era un bug o le faltaba algo.
+  const motivoEtapaOculta = expediente.cerrado
+    ? null
+    : !puedeAprobar
+      ? "Solo el Jefe de Contratación (o un Administrador del sistema) puede aprobar el paso de etapa."
+      : faltaContratista
+        ? null // ya tiene su propio aviso (VincularContratistaForm más abajo)
+        : null;
 
   // Checklist real por etapa (catálogo del Manual A-BS-MA01 cruzado con lo ya subido) —
   // solo se calcula para las etapas ya alcanzadas (actual o completadas); una etapa
@@ -109,6 +160,13 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
               <QrCode className="h-3.5 w-3.5" aria-hidden />
               Rótulo / QR
             </Link>
+            <Link
+              href={`/contratacion/expedientes/${id}/ficha-firma`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            >
+              <FileCheck2 className="h-3.5 w-3.5" aria-hidden />
+              Ficha técnica de firmas
+            </Link>
             {puedeEliminarExpedienteContractual(permisos) && <EliminarExpedienteBoton expedienteId={id} numero={expediente.numero} />}
           </div>
         </div>
@@ -121,6 +179,30 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5"><UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Supervisor(es):</dt><dd className="font-medium text-stone-800">{expediente.supervisores.length ? expediente.supervisores.map((s) => s.usuario.nombre).join(", ") : "—"}</dd></div>
         </dl>
+
+        {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeAdministrarContratacion(permisos) && otrosContratosDelContratista.length > 0)) && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stone-100 pt-3 text-xs text-stone-500">
+            {expediente.expedienteRelacionado && <span>Relacionado con <span className="font-medium text-stone-700">{expediente.expedienteRelacionado.numero}</span></span>}
+            {expediente.expedientesQueLoReferencian.length > 0 && (
+              <span>
+                Referenciado por{" "}
+                {expediente.expedientesQueLoReferencian.map((e, i) => (
+                  <span key={e.id}>
+                    {i > 0 && ", "}
+                    <Link href={`/contratacion/expedientes/${e.id}`} className="font-medium text-cdmb-700 hover:underline">{e.numero}</Link>
+                  </span>
+                ))}
+              </span>
+            )}
+            {puedeAdministrarContratacion(permisos) && otrosContratosDelContratista.length > 0 && (
+              <VincularExpedienteRelacionadoForm
+                expedienteId={id}
+                opciones={otrosContratosDelContratista}
+                actualId={expediente.expedienteRelacionadoId}
+              />
+            )}
+          </div>
+        )}
 
         {faltaContratista && (
           <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -163,6 +245,12 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 expedienteId={id}
                 etiquetaSiguiente={siguienteEtapa ? ETIQUETA_ETAPA[siguienteEtapa] : "Cierre del expediente"}
               />
+            )}
+            {motivoEtapaOculta && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-stone-400" title={motivoEtapaOculta}>
+                <Lock className="h-3 w-3 flex-none" aria-hidden />
+                {motivoEtapaOculta}
+              </span>
             )}
           </div>
         </div>
@@ -226,21 +314,57 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       <p className="text-[11px] text-stone-400">
                         Subido por {item.documento.subidoPorNombre} el {formatearFechaHora(item.documento.createdAt)}
                         {item.documento.firmaFechaHora &&
-                          ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")})`}
+                          ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
                       </p>
+                    )}
+                    {item.documento && item.documento.solicitudesFirma.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {item.documento.solicitudesFirma.map((s) => (
+                          <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                            {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   {item.documento ? (
-                    <div className="flex flex-none items-center gap-1.5">
+                    <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`}>
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
                       </span>
                       <VistaPreviaDocumento url={`/api/contratacion-documentos/${item.documento.id}`} nombre={item.documento.nombre} mimeType={item.documento.mimeType} />
-                      {item.documento.requiereFirma && !item.documento.firmadoEnSecop && item.documento.estadoValidacion === "PENDIENTE" && puedeFirmarDocumentoContrato(permisos, { id: expediente.id }) && (
-                        <FirmarRechazarDocumentoContrato documentoId={item.documento.id} />
+                      {(() => {
+                        const doc = item.documento!;
+                        const miSolicitud = doc.solicitudesFirma.find(
+                          (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
+                        );
+                        const puedeActuarYo = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
+                        return puedeActuarYo ? (
+                          <ConfirmarFirmaModal
+                            rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                            endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
+                            endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
+                            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+                            documentoNombre={doc.nombre}
+                            documentoMimeType={doc.mimeType}
+                          />
+                        ) : null;
+                      })()}
+                      {puedeAsignarFirmantes && (
+                        <AsignarFirmantesModal
+                          endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
+                          usuarios={usuariosOpciones}
+                          firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
+                            id: s.id,
+                            usuarioAsignadoNombre: s.usuarioAsignadoNombre,
+                            rol: s.rol,
+                            orden: s.orden,
+                            estado: s.estado,
+                          }))}
+                        />
                       )}
                       {puedeEditarSinTrazaDocumentoContrato(permisos) && (
-                        <EditarEliminarDocumentoContrato documentoId={item.documento.id} nombreActual={item.documento.nombre} />
+                        <EditarEliminarDocumentoContrato documentoId={item.documento.id} expedienteId={id} nombreActual={item.documento.nombre} />
                       )}
                     </div>
                   ) : puedeSubir ? (
@@ -262,14 +386,52 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
               <div className="mb-3">
                 <p className="mb-1.5 text-xs font-medium text-stone-500">Otros documentos subidos en esta etapa (fuera del catálogo)</p>
                 <ul className="space-y-1.5">
-                  {documentosLibres.map((doc) => (
-                    <li key={doc.id} className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm">
-                      <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
-                      {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
-                      <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
-                      {puedeEditarSinTrazaDocumentoContrato(permisos) && <EditarEliminarDocumentoContrato documentoId={doc.id} nombreActual={doc.nombre} />}
-                    </li>
-                  ))}
+                  {documentosLibres.map((doc) => {
+                    const solicitudes = doc.solicitudesFirma.map((s) => ({
+                      id: s.id,
+                      usuarioAsignadoId: s.usuarioAsignadoId,
+                      usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+                      rol: s.rol,
+                      orden: s.orden,
+                      estado: s.estado,
+                    }));
+                    const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
+                    const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+                    return (
+                      <li key={doc.id} className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm">
+                        <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
+                        {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
+                        {solicitudes.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {solicitudes.map((s) => (
+                              <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                        {puedeActuarYo && (
+                          <ConfirmarFirmaModal
+                            rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                            endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/completar`}
+                            endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/rechazar`}
+                            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+                            documentoNombre={doc.nombre}
+                            documentoMimeType={doc.mimeType}
+                          />
+                        )}
+                        {puedeAsignarFirmantes && (
+                          <AsignarFirmantesModal
+                            endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
+                            usuarios={usuariosOpciones}
+                            firmantesActuales={solicitudes}
+                          />
+                        )}
+                        {puedeEditarSinTrazaDocumentoContrato(permisos) && <EditarEliminarDocumentoContrato documentoId={doc.id} expedienteId={id} nombreActual={doc.nombre} />}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}

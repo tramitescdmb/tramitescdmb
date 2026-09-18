@@ -233,7 +233,7 @@ export async function sellarFirmasConTsa(comunicacionId: string) {
  * hash sobre el mismo contenido (asunto + cuerpo + radicado), con su propio
  * sello de tiempo. No cambia el estado ni el contenido.
  */
-export async function agregarCofirma(comunicacionId: string, usuarioId: string, ip: string | null) {
+export async function agregarCofirma(comunicacionId: string, usuarioId: string, ip: string | null, userAgent: string | null = null) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
     select: { id: true, tipo: true, estado: true, radicado: true, asunto: true, contenido: true, firmas: { select: { usuarioId: true } } },
@@ -253,6 +253,7 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
       hashContenido,
       tipo: "ELECTRONICA_HASH",
       ip,
+      userAgent,
       proveedor: datos.proveedor,
       formato: datos.formato,
       selloTiempoEn: datos.selloTiempoEn,

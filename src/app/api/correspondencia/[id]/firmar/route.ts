@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    await agregarCofirma(id, session.userId, ip);
+    await agregarCofirma(id, session.userId, ip, userAgent);
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo registrar la firma.");
     return NextResponse.redirect(volver, { status: 303 });
