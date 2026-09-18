@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion, puedeEliminarExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeEliminarExpedienteContractual } from "@/lib/permisos";
 import { eliminarExpedienteContractualCompleto, registrarEventoContratacion } from "@/lib/contratacion";
 import { deleteDocumento } from "@/lib/storage";
 
-/** Vincula el contratista a un expediente ya creado (necesario antes de aprobar el paso a
- * Contractual) — Administrador de Contratación. Punto de extensión para futuros campos
- * editables del expediente (objeto, valor, fechas) si hiciera falta más adelante. */
+/** Vincula el contratista (o el expediente relacionado) a un expediente ya creado — Administrador
+ * o Jefe de Contratación. Punto de extensión para futuros campos editables del expediente (objeto,
+ * valor, fechas) si hiciera falta más adelante. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeGestionarContratistas(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para editar este expediente." }, { status: 403 });
   }
 
@@ -28,6 +28,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     await db.expedienteContractual.update({ where: { id }, data: { contratistaId } });
     await registrarEventoContratacion(id, "CONTRATISTA_VINCULADO", `Se vinculó a ${contratista.nombreORazonSocial} como contratista.`, session.userId);
+    return NextResponse.json({ ok: true });
+  }
+
+  if ("supervisorUsuarioIds" in body) {
+    const idsBody: unknown = body.supervisorUsuarioIds;
+    const supervisorUsuarioIds = Array.isArray(idsBody) ? [...new Set(idsBody.filter((v): v is string => typeof v === "string" && v.trim() !== ""))] : [];
+    if (supervisorUsuarioIds.length > 0) {
+      const usuarios = await db.usuario.findMany({ where: { id: { in: supervisorUsuarioIds }, activo: true }, select: { id: true } });
+      if (usuarios.length !== supervisorUsuarioIds.length) {
+        return NextResponse.json({ error: "Alguno de los usuarios elegidos no existe o está inactivo." }, { status: 400 });
+      }
+    }
+    await db.$transaction([
+      db.expedienteContractualSupervisor.deleteMany({ where: { expedienteId: id } }),
+      ...(supervisorUsuarioIds.length > 0
+        ? [db.expedienteContractualSupervisor.createMany({ data: supervisorUsuarioIds.map((usuarioId) => ({ expedienteId: id, usuarioId })) })]
+        : []),
+    ]);
+    await registrarEventoContratacion(id, "SUPERVISORES_ACTUALIZADOS", `Se actualizó la lista de supervisor(es)/interventor(es) (${supervisorUsuarioIds.length}).`, session.userId);
     return NextResponse.json({ ok: true });
   }
 

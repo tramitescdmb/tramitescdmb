@@ -13,7 +13,7 @@ import {
   Scale,
 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeEditarSinTrazaDocumentoContrato } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { ETIQUETA_ROL_CONTRATACION, ETIQUETA_ETAPA } from "@/lib/contratacion";
 import { BotonImprimir } from "@/components/BotonImprimir";
@@ -85,7 +85,7 @@ export default async function ContratacionAyudaPage() {
   if (!session) redirect("/login");
   const [permisos, config] = await Promise.all([obtenerPermisosUsuario(session.userId), getConfiguracionSitio()]);
   if (!puedeAccederContratacion(permisos)) redirect("/contratacion");
-  const esAdministrador = puedeAdministrarContratacion(permisos);
+  const esAdministrador = puedeEditarSinTrazaDocumentoContrato(permisos);
 
   const grupoGeneral = (
     <>

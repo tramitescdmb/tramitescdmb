@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Building2, Wallet, CalendarDays, UserCog, Search } from "lucide-react";
+import { FileText, Building2, Wallet, CalendarDays, UserCog, Search, UserPlus } from "lucide-react";
 import { Field, SectionHelp } from "@/components/Field";
 import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 
 type Opcion = { id: string; nombre: string };
 type ModalidadOpcion = { valor: string; etiqueta: string };
+type TipoPersona = "NATURAL" | "JURIDICA";
 
 export function NuevoExpedienteContractualForm({
   dependencias,
@@ -32,6 +33,10 @@ export function NuevoExpedienteContractualForm({
   const [contratistaId, setContratistaId] = useState<string | null>(null);
   const [contratistaNombre, setContratistaNombre] = useState<string | null>(null);
   const [buscandoContratista, setBuscandoContratista] = useState(false);
+  const [contratistaNoEncontrado, setContratistaNoEncontrado] = useState(false);
+  const [nuevoTipoPersona, setNuevoTipoPersona] = useState<TipoPersona>("NATURAL");
+  const [nuevoNombreORazonSocial, setNuevoNombreORazonSocial] = useState("");
+  const [creandoContratista, setCreandoContratista] = useState(false);
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +54,7 @@ export function NuevoExpedienteContractualForm({
     if (!contratistaIdentificacion.trim()) return;
     setBuscandoContratista(true);
     setError(null);
+    setContratistaNoEncontrado(false);
     try {
       const res = await fetch(`/api/contratacion/contratistas/buscar?identificacion=${encodeURIComponent(contratistaIdentificacion.trim())}`);
       if (res.ok) {
@@ -58,9 +64,38 @@ export function NuevoExpedienteContractualForm({
       } else {
         setContratistaId(null);
         setContratistaNombre(null);
+        setContratistaNoEncontrado(true);
       }
+    } catch {
+      setError("No se pudo consultar el registro de contratistas. Intente de nuevo.");
     } finally {
       setBuscandoContratista(false);
+    }
+  }
+
+  async function crearContratista() {
+    if (!nuevoNombreORazonSocial.trim()) return setError("Indique el nombre o razón social del contratista.");
+    setCreandoContratista(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/contratacion/contratistas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identificacion: contratistaIdentificacion.trim(),
+          tipoPersona: nuevoTipoPersona,
+          nombreORazonSocial: nuevoNombreORazonSocial.trim(),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo crear el contratista.");
+      setContratistaId(body.id);
+      setContratistaNombre(nuevoNombreORazonSocial.trim());
+      setContratistaNoEncontrado(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setCreandoContratista(false);
     }
   }
 
@@ -162,6 +197,7 @@ export function NuevoExpedienteContractualForm({
               setContratistaIdentificacion(e.target.value);
               setContratistaId(null);
               setContratistaNombre(null);
+              setContratistaNoEncontrado(false);
             }}
             placeholder="NIT o cédula"
             className="w-48 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
@@ -176,13 +212,43 @@ export function NuevoExpedienteContractualForm({
           </button>
           {contratistaId && contratistaNombre && (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-              Encontrado: {contratistaNombre}
+              {contratistaNoEncontrado ? "Creado: " : "Encontrado: "}{contratistaNombre}
             </span>
           )}
-          {!contratistaId && contratistaIdentificacion.trim() && !buscandoContratista && (
-            <span className="text-xs text-stone-400">No registrado — puede vincularse después desde el expediente.</span>
-          )}
         </div>
+
+        {contratistaNoEncontrado && !contratistaId && (
+          <div className="mt-2 space-y-2 rounded-md border border-amber-300 bg-amber-50/50 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-amber-900">
+              <UserPlus className="h-3.5 w-3.5" aria-hidden />
+              No hay ningún contratista con esa identificación — créelo aquí, queda listo para este expediente.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <select
+                value={nuevoTipoPersona}
+                onChange={(e) => setNuevoTipoPersona(e.target.value as TipoPersona)}
+                className="rounded-md border border-stone-200 px-2.5 py-1.5 text-xs"
+              >
+                <option value="NATURAL">Persona natural</option>
+                <option value="JURIDICA">Persona jurídica</option>
+              </select>
+              <input
+                value={nuevoNombreORazonSocial}
+                onChange={(e) => setNuevoNombreORazonSocial(e.target.value)}
+                placeholder="Nombre o razón social"
+                className="rounded-md border border-stone-200 px-2.5 py-1.5 text-xs"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={crearContratista}
+              disabled={creandoContratista}
+              className="rounded-md bg-amber-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-900 disabled:opacity-50"
+            >
+              {creandoContratista ? "Creando…" : "Crear contratista"}
+            </button>
+          </div>
+        )}
       </Field>
 
       {supervisores.length > 0 && (

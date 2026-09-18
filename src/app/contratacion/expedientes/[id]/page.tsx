@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2 } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
   obtenerPermisosUsuario,
   puedeVerExpedienteContractual,
+  tieneSolicitudFirmaEnExpedienteContractual,
   puedeSubirDocumentoContrato,
   puedeAsignarFirmantesDocumentoContrato,
   puedeEditarSinTrazaDocumentoContrato,
   puedeAprobarEtapaContratacion,
   puedeGestionarEtapasContratacion,
   puedeEliminarExpedienteContractual,
-  puedeAdministrarContratacion,
+  puedeGestionarContratistas,
 } from "@/lib/permisos";
 import {
   ETAPAS_ORDEN,
@@ -39,6 +40,7 @@ import { RetrocederEtapaBoton } from "@/components/RetrocederEtapaBoton";
 import { EliminarExpedienteBoton } from "@/components/EliminarExpedienteBoton";
 import { VincularContratistaForm } from "@/components/VincularContratistaForm";
 import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
+import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -92,13 +94,24 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     },
   });
   if (!expediente) notFound();
-  if (!puedeVerExpedienteContractual(permisos, expediente)) redirect("/contratacion");
+  if (
+    !puedeVerExpedienteContractual(permisos, expediente) &&
+    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, id))
+  ) {
+    redirect("/contratacion");
+  }
 
-  const usuariosOpciones = await db.usuario.findMany({
-    where: { activo: true },
+  const supervisoresDisponibles = await db.usuario.findMany({
+    where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+    orderBy: { nombre: "asc" },
     select: { id: true, nombre: true },
+  });
+  const usuariosOpcionesCrudo = await db.usuario.findMany({
+    where: { activo: true },
+    select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
     orderBy: { nombre: "asc" },
   });
+  const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
   // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
   const otrosContratosDelContratista = expediente.contratista
@@ -177,10 +190,21 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           <div className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Valor:</dt><dd className="font-medium text-stone-800">{formatearPesosCO(expediente.valor?.toString())}</dd></div>
           <div className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Vigencia:</dt><dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</dd></div>
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
-          <div className="flex items-center gap-1.5"><UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Supervisor(es):</dt><dd className="font-medium text-stone-800">{expediente.supervisores.length ? expediente.supervisores.map((s) => s.usuario.nombre).join(", ") : "—"}</dd></div>
+          <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
+            <UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <dt className="text-stone-500">Supervisor(es):</dt>
+            <dd className="font-medium text-stone-800">{expediente.supervisores.length ? expediente.supervisores.map((s) => s.usuario.nombre).join(", ") : "—"}</dd>
+            {puedeGestionarContratistas(permisos) && (
+              <EditarSupervisoresForm
+                expedienteId={id}
+                supervisoresDisponibles={supervisoresDisponibles}
+                supervisoresActualesIds={expediente.supervisores.map((s) => s.usuarioId)}
+              />
+            )}
+          </div>
         </dl>
 
-        {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeAdministrarContratacion(permisos) && otrosContratosDelContratista.length > 0)) && (
+        {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0)) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stone-100 pt-3 text-xs text-stone-500">
             {expediente.expedienteRelacionado && <span>Relacionado con <span className="font-medium text-stone-700">{expediente.expedienteRelacionado.numero}</span></span>}
             {expediente.expedientesQueLoReferencian.length > 0 && (
@@ -194,7 +218,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 ))}
               </span>
             )}
-            {puedeAdministrarContratacion(permisos) && otrosContratosDelContratista.length > 0 && (
+            {puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0 && (
               <VincularExpedienteRelacionadoForm
                 expedienteId={id}
                 opciones={otrosContratosDelContratista}
@@ -213,7 +237,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 jurídica).
               </span>
             </div>
-            {puedeAdministrarContratacion(permisos) && <VincularContratistaForm expedienteId={id} />}
+            {puedeGestionarContratistas(permisos) && <VincularContratistaForm expedienteId={id} />}
           </div>
         )}
 
@@ -294,7 +318,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
             <ul className="mb-3 divide-y divide-stone-100 rounded-lg border border-stone-100">
               {checklist.map((item) => (
-                <li key={item.id} className="flex flex-wrap items-center gap-2 p-2.5">
+                <li
+                  key={item.id}
+                  id={item.documento ? `documento-${item.documento.id}` : undefined}
+                  className="flex flex-wrap items-center gap-2 rounded-md p-2.5 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+                >
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-800">
                       {item.nombre}
@@ -303,6 +331,22 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       </span>
                       {item.gestionadoEnSecop && (
                         <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
+                      )}
+                      {item.documento?.requiereFirma && !item.documento.firmadoEnSecop && (
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "animate-pulse bg-amber-100 text-amber-800"
+                          }`}
+                          title={
+                            item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
+                              ? "Ya tiene firmante(s) asignado(s)"
+                              : "Falta asignar quién debe firmarlo"
+                          }
+                        >
+                          {item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+                        </span>
                       )}
                     </p>
                     <p className="text-[11px] text-stone-400">
@@ -333,6 +377,18 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
                       </span>
                       <VistaPreviaDocumento url={`/api/contratacion-documentos/${item.documento.id}`} nombre={item.documento.nombre} mimeType={item.documento.mimeType} />
+                      {item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 && (
+                        <a
+                          href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                        >
+                          <Printer className="h-3.5 w-3.5" aria-hidden />
+                          Con firma
+                        </a>
+                      )}
                       {(() => {
                         const doc = item.documento!;
                         const miSolicitud = doc.solicitudesFirma.find(
@@ -364,7 +420,12 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         />
                       )}
                       {puedeEditarSinTrazaDocumentoContrato(permisos) && (
-                        <EditarEliminarDocumentoContrato documentoId={item.documento.id} expedienteId={id} nombreActual={item.documento.nombre} />
+                        <EditarEliminarDocumentoContrato
+                          documentoId={item.documento.id}
+                          expedienteId={id}
+                          nombreActual={item.documento.nombre}
+                          requiereFirmaActual={item.documento.requiereFirma}
+                        />
                       )}
                     </div>
                   ) : puedeSubir ? (
@@ -398,9 +459,22 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                     const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
                     const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
                     return (
-                      <li key={doc.id} className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm">
+                      <li
+                        key={doc.id}
+                        id={`documento-${doc.id}`}
+                        className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+                      >
                         <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
                         {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
+                        {doc.requiereFirma && !doc.firmadoEnSecop && (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+                          </span>
+                        )}
                         {solicitudes.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {solicitudes.map((s) => (
@@ -411,6 +485,18 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           </div>
                         )}
                         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                        {doc.mimeType === "application/pdf" && doc.firmas.length > 0 && (
+                          <a
+                            href={`/api/contratacion-documentos/${doc.id}/rotulado`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                          >
+                            <Printer className="h-3.5 w-3.5" aria-hidden />
+                            Con firma
+                          </a>
+                        )}
                         {puedeActuarYo && (
                           <ConfirmarFirmaModal
                             rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
@@ -428,7 +514,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             firmantesActuales={solicitudes}
                           />
                         )}
-                        {puedeEditarSinTrazaDocumentoContrato(permisos) && <EditarEliminarDocumentoContrato documentoId={doc.id} expedienteId={id} nombreActual={doc.nombre} />}
+                        {puedeEditarSinTrazaDocumentoContrato(permisos) && (
+                          <EditarEliminarDocumentoContrato
+                            documentoId={doc.id}
+                            expedienteId={id}
+                            nombreActual={doc.nombre}
+                            requiereFirmaActual={doc.requiereFirma}
+                          />
+                        )}
                       </li>
                     );
                   })}

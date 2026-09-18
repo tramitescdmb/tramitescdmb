@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 
 /**
  * Módulo de Contratación — manejador de expedientes digitales (Manual de
@@ -45,7 +45,7 @@ export default async function ContratacionLayout({ children }: { children: React
         </p>
       </div>
 
-      <ContratacionTabs permitido={{ administrar: puedeAdministrarContratacion(permisos) }} />
+      <ContratacionTabs permitido={{ administrar: puedeGestionarContratistas(permisos) }} />
 
       <div>{children}</div>
     </div>

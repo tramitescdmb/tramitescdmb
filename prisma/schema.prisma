@@ -1535,6 +1535,12 @@ model SolicitudFirma {
   asignadoPorId String
   asignadoEn    DateTime  @default(now())
   completadoEn  DateTime?
+  // IP/user-agent de quien completó (firmó o dio visto bueno) — para VISTO_BUENO es el ÚNICO
+  // registro técnico que queda (no genera Firma/FirmaDocumentoContrato); para FIRMA es redundante
+  // con el mismo dato ya guardado en Firma/FirmaDocumentoContrato, pero se deja aquí también para
+  // poder mostrar la ficha técnica de un vistazo sin tener que resolver la relación.
+  ip            String?
+  userAgent     String?
 
   // Vínculo al evento real ya ejecutado, cuando estado=COMPLETADA y rol=FIRMA
   // (un VISTO_BUENO/LECTURA no genera Firma, solo se marca completada).

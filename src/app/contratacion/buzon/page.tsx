@@ -38,7 +38,7 @@ export default async function BuzonContratacionPage() {
               <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}</span>
               {s.puedeActuar ? (
                 <Link
-                  href={`/contratacion/expedientes/${s.documentoContrato?.expedienteId}`}
+                  href={`/contratacion/expedientes/${s.documentoContrato?.expedienteId}#documento-${s.documentoContrato?.id}`}
                   className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
                 >
                   <PenLine className="h-3.5 w-3.5" aria-hidden />

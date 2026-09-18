@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
@@ -11,7 +11,7 @@ export default async function NuevoExpedienteContractualPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) redirect("/contratacion");
+  if (!puedeGestionarContratistas(permisos)) redirect("/contratacion");
 
   const [dependencias, supervisores] = await Promise.all([
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),

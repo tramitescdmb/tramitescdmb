@@ -46,16 +46,22 @@ export function AsignarFirmantesModal({
   firmantesActuales,
 }: {
   endpointAsignar: string;
-  usuarios: { id: string; nombre: string }[];
+  usuarios: { id: string; nombre: string; dependenciaNombre?: string | null }[];
   firmantesActuales: FirmanteAsignado[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [usuarioId, setUsuarioId] = useState("");
+  const [filtro, setFiltro] = useState("");
   const [rol, setRol] = useState<RolFirmante>("FIRMA");
   const [orden, setOrden] = useState(1);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const q = filtro.trim().toLowerCase();
+  const usuariosFiltrados = q
+    ? usuarios.filter((u) => u.nombre.toLowerCase().includes(q) || (u.dependenciaNombre ?? "").toLowerCase().includes(q))
+    : usuarios;
 
   async function agregar() {
     if (!usuarioId) return setError("Seleccione una persona.");
@@ -123,15 +129,24 @@ export function AsignarFirmantesModal({
             <div className="space-y-2 border-t border-stone-100 pt-3">
               <label className="block text-xs font-medium text-stone-600">
                 Persona
+                <input
+                  type="text"
+                  value={filtro}
+                  onChange={(e) => setFiltro(e.target.value)}
+                  placeholder="Filtrar por nombre o dependencia…"
+                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                />
                 <select
                   value={usuarioId}
                   onChange={(e) => setUsuarioId(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  size={Math.min(6, Math.max(3, usuariosFiltrados.length))}
+                  className="mt-1.5 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
                 >
-                  <option value="">Seleccione…</option>
-                  {usuarios.map((u) => (
+                  {usuariosFiltrados.length === 0 && <option disabled>Sin coincidencias</option>}
+                  {usuariosFiltrados.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.nombre}
+                      {u.dependenciaNombre ? ` — ${u.dependenciaNombre}` : ""}
                     </option>
                   ))}
                 </select>

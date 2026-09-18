@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { Briefcase, FileClock, FileCheck2, FileArchive, Inbox, UserSquare2, FilePlus2, HelpCircle } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarContratacion, puedeVerRegistroContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { db } from "@/lib/db";
@@ -53,7 +53,7 @@ export default async function PanelContratacionPage() {
       <TituloSeccion icon={Briefcase}>Panel de Contratación</TituloSeccion>
 
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-        {puedeAdministrarContratacion(permisos) && (
+        {puedeGestionarContratistas(permisos) && (
           <AccesoRapido href="/contratacion/expedientes/nuevo" icon={FilePlus2} label="Nuevo expediente" />
         )}
         <AccesoRapido href="/contratacion/expedientes" icon={Briefcase} label="Expedientes" />

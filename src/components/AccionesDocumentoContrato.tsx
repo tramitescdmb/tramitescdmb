@@ -19,27 +19,31 @@ export function EditarEliminarDocumentoContrato({
   documentoId,
   expedienteId,
   nombreActual,
+  requiereFirmaActual = false,
 }: {
   documentoId: string;
   expedienteId: string;
   nombreActual: string;
+  /** Antes solo se podía marcar "requiere firma" al SUBIR el documento — si se olvidaba, no había
+   * forma de corregirlo después ni de habilitar la asignación de firmantes. */
+  requiereFirmaActual?: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState(nombreActual);
+  const [requiereFirma, setRequiereFirma] = useState(requiereFirmaActual);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  async function guardarNombre() {
-    if (!nombre.trim() || nombre.trim() === nombreActual) return setAbierto(false);
+  async function guardarCambios() {
     setCargando(true);
     setError(null);
     try {
       const res = await fetch(`/api/contratacion/documentos/${documentoId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: nombre.trim() }),
+        body: JSON.stringify({ nombre: nombre.trim() || nombreActual, requiereFirma }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo editar.");
@@ -124,22 +128,31 @@ export function EditarEliminarDocumentoContrato({
 
             <label className="block text-xs font-medium text-stone-600">
               Nombre
-              <div className="mt-1 flex gap-1.5">
-                <input
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={guardarNombre}
-                  disabled={cargando}
-                  className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
-                >
-                  Guardar
-                </button>
-              </div>
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+              />
             </label>
+
+            <label className="mt-3 flex items-center gap-2 text-xs font-medium text-stone-600">
+              <input
+                type="checkbox"
+                checked={requiereFirma}
+                onChange={(e) => setRequiereFirma(e.target.checked)}
+                className="rounded border-stone-300"
+              />
+              Requiere firma electrónica
+            </label>
+
+            <button
+              type="button"
+              onClick={guardarCambios}
+              disabled={cargando}
+              className="mt-3 w-full rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+            >
+              Guardar cambios
+            </button>
 
             <div className="mt-4 border-t border-stone-100 pt-3">
               <p className="mb-1.5 text-xs font-medium text-stone-600">Reemplazar archivo</p>

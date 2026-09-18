@@ -530,7 +530,7 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" ayuda="Determina qué pasos de un trámite puede gestionar." />
+        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" ayuda="Solo aplica a Trámites ambientales 2.0 — determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni SIGEC." />
         <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
           {cargos.map((c) => {

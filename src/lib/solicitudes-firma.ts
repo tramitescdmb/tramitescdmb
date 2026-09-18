@@ -24,6 +24,11 @@ function whereObjetivo(objetivo: ObjetivoSolicitud) {
  * contrato. `LECTURA` no es un paso de flujo de trabajo (no hay nada que
  * "hacer"): nace ya `COMPLETADA`, es solo una concesión de visibilidad.
  */
+/** Tope de firmantes (rol FIRMA) por documento/comunicación — pedido explícito del usuario: para
+ * un contrato, más de 4 personas firmando el mismo documento no es realista operativamente.
+ * VISTO_BUENO y LECTURA no cuentan para este límite. */
+const MAX_FIRMANTES_POR_OBJETIVO = 4;
+
 export async function asignarFirmantes(
   objetivo: ObjetivoSolicitud,
   asignadoPorId: string,
@@ -45,6 +50,14 @@ export async function asignarFirmantes(
       if (!c) throw new Error("La comunicación no existe.");
       if (c.tipo === "RECIBIDA") throw new Error("Una comunicación recibida no se firma: no tiene un contenido redactado por la Corporación.");
       if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+    }
+
+    const firmantesExistentes = await db.solicitudFirma.count({
+      where: { ...whereObjetivo(objetivo), rol: "FIRMA", estado: { not: "RECHAZADA" } },
+    });
+    const nuevosFirma = firmantes.filter((f) => f.rol === "FIRMA").length;
+    if (firmantesExistentes + nuevosFirma > MAX_FIRMANTES_POR_OBJETIVO) {
+      throw new Error(`Máximo ${MAX_FIRMANTES_POR_OBJETIVO} firmantes por documento (ya hay ${firmantesExistentes}).`);
     }
   }
 
@@ -130,7 +143,7 @@ export async function completarSolicitudFirma(
   }
 
   if (solicitud.rol === "VISTO_BUENO") {
-    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date() } });
+    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), ip, userAgent } });
     return;
   }
 
@@ -159,7 +172,7 @@ export async function completarSolicitudFirma(
     });
     await db.solicitudFirma.update({
       where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaDocContratoId: firma.id },
+      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaDocContratoId: firma.id, ip, userAgent },
     });
     await reevaluarEstadoDocumentoContrato(doc.id, usuarioId);
     await db.eventoContratacion.create({
@@ -192,7 +205,7 @@ export async function completarSolicitudFirma(
     });
     await db.solicitudFirma.update({
       where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id },
+      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id, ip, userAgent },
     });
   }
 }

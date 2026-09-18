@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
 
-/** Crea un expediente contractual — lo abre la Oficina de Contratación (Administrador de Contratación). */
+/** Crea un expediente contractual — lo abre la Oficina de Contratación (Administrador o Jefe de
+ * Contratación; antes exigía Administrador exclusivamente, dejando al Jefe sin poder crear
+ * expedientes pese a tener el mismo nivel operativo en el resto del módulo). */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeGestionarContratistas(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para crear expedientes de contratación." }, { status: 403 });
   }
 

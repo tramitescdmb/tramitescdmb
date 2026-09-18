@@ -209,7 +209,13 @@ export default async function CorrespondenciaDetallePage({
   const puedeFirmarUsuario = puedeFirmar(permisos);
   const puedeAsignarFirmantesUsuario = puedeAsignarFirmantesComunicacion(permisos, c);
   const usuariosOpciones = puedeAsignarFirmantesUsuario
-    ? await db.usuario.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
+    ? (
+        await db.usuario.findMany({
+          where: { activo: true },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+          orderBy: { nombre: "asc" },
+        })
+      ).map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }))
     : [];
   const miSolicitudFirma = c.solicitudesFirma.find(
     (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"

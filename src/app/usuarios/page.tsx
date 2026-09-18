@@ -14,6 +14,7 @@ import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFecha } from "@/lib/fecha";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
+import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
 
 const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
@@ -234,6 +235,24 @@ export default async function UsuariosPage({
                         {u.rolCorrespondenciaVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta)}`}
                       </span>
                     )}
+                    {u.rolContratacion && (
+                      <span
+                        className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
+                        title="Rol dentro del módulo de Contratación (SIGEC)"
+                      >
+                        {ETIQUETA_ROL_CONTRATACION[u.rolContratacion] ?? u.rolContratacion}
+                      </span>
+                    )}
+                    {u.rolContratacion && u.rolContratacionVigenteHasta && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          u.rolContratacionVigenteHasta < new Date() ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                        }`}
+                        title="Pasada esta fecha, pierde el rol de contratación automáticamente"
+                      >
+                        {u.rolContratacionVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolContratacionVigenteHasta)}`}
+                      </span>
+                    )}
                   </>
                 )}
                 <span
@@ -452,7 +471,7 @@ export default async function UsuariosPage({
           <Field
             label="Cargo(s) en la CDMB"
             icon={<Briefcase className={iconSm} />}
-            help="Su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.). Se usan para resaltarle qué pasos de un trámite le corresponden. Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
+            help="Solo aplica a Trámites ambientales 2.0: su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.) se usan ahí para resaltarle qué pasos de un trámite le corresponden. No tiene efecto en SGDEA ni en SIGEC — esos módulos usan sus propios roles (Correspondencia / Contratación, abajo). Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
           >
             <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
               {cargos.map((c) => (

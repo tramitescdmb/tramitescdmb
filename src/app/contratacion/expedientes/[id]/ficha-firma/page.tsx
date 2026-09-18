@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { FileSignature, ShieldCheck } from "lucide-react";
+import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
@@ -25,7 +25,7 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
       objeto: true,
       contratistaId: true,
       documentos: {
-        where: { firmas: { some: {} } },
+        where: { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
@@ -33,6 +33,11 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
           firmas: {
             orderBy: { fechaHora: "asc" },
             include: { usuario: { select: { nombre: true, denominacionEmpleo: true } } },
+          },
+          solicitudesFirma: {
+            where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
+            orderBy: { completadoEn: "asc" },
+            include: { usuarioAsignado: { select: { nombre: true, denominacionEmpleo: true } } },
           },
         },
       },
@@ -80,6 +85,22 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
                         <Dato k="Identificador de la firma" v={f.id} mono />
                         {f.selloTiempoEn && <Dato k="Sello de tiempo" v={`${formatearFechaHoraLarga(f.selloTiempoEn)} — ${f.selloTiempoFuente ?? ""}`} />}
                         {f.selloTiempoToken && <Dato k="Token RFC-3161" v={f.selloTiempoToken} mono />}
+                      </dl>
+                    </li>
+                  ))}
+                  {doc.solicitudesFirma.map((s) => (
+                    <li key={s.id} className="rounded-lg border border-sky-100 bg-sky-50/50 p-3 text-sm">
+                      <p className="flex items-center gap-1.5 font-medium text-stone-900">
+                        <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
+                        {s.usuarioAsignado.nombre}
+                        {s.usuarioAsignado.denominacionEmpleo && <span className="font-normal text-stone-500"> — {s.usuarioAsignado.denominacionEmpleo}</span>}
+                        <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
+                      </p>
+                      <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                        <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />
+                        <Dato k="Dirección IP" v={s.ip ?? "no disponible"} mono />
+                        <Dato k="Agente de usuario" v={s.userAgent ?? "no disponible"} mono />
+                        <Dato k="Identificador" v={s.id} mono />
                       </dl>
                     </li>
                   ))}
