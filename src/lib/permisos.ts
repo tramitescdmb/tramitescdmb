@@ -350,16 +350,19 @@ export function puedeAccederContratacion(permisos: PermisosUsuario): boolean {
 }
 
 /**
- * Administrador de Contratación: crea expedientes, asigna supervisor(es) y
- * contratista, y — junto con `puedeAprobarEtapaContratacion` — es uno de los
- * DOS únicos roles que pueden editar/eliminar un `DocumentoContrato` SIN dejar
- * traza en `EventoContratacion` (ver `puedeEditarSinTrazaDocumentoContrato`).
+ * Administrador de Contratación: el encargado de sistemas, con permisos totales sobre el módulo.
+ * Decisión explícita del usuario (2026-09-18): Jefe de Contratación tiene el MISMO nivel
+ * operativo (ver `puedeAprobarEtapaContratacion`) — los dos valores del enum se mantienen
+ * separados solo por motivo organizacional (quién ostenta cada cargo real), no porque tengan
+ * capacidades distintas dentro de la app.
  */
 export function puedeAdministrarContratacion(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION";
 }
 
-/** Jefe de Contratación: aprueba el paso de una etapa a la siguiente. */
+/** Jefe de Contratación: mismo nivel operativo que Administrador (ver arriba, fusionados desde
+ * 2026-09-18) — aprueba el paso de etapa, gestiona expedientes/contratistas de TODA la entidad, y
+ * puede eliminar un expediente completo. */
 export function puedeAprobarEtapaContratacion(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.contratacion === "JEFE_CONTRATACION";
 }
@@ -391,6 +394,7 @@ export function puedeSubirDocumentoContrato(
   etapa: EtapaContratacion
 ): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
   if (permisos.contratacion === "CONTRATISTA") {
     return etapa !== "PRECONTRACTUAL" && permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
@@ -398,17 +402,51 @@ export function puedeSubirDocumentoContrato(
   return false;
 }
 
-/** ¿Puede revisar y firmar electrónicamente un documento de este expediente? Jefe o Supervisor asignado. */
-export function puedeFirmarDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
-  if (puedeAprobarEtapaContratacion(permisos)) return true;
+/**
+ * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre un documento de este
+ * expediente? Administrador/Jefe de Contratación: cualquiera. Funcionario de Contratación:
+ * cualquiera (es justamente su función transversal — "parametrizar" quién firma cada documento,
+ * sin poder firmar ni gestionar él mismo). Jefe de dependencia/Subdirector: solo los de SU propia
+ * dependencia solicitante. Supervisor/Interventor: solo los que supervisa (incluido poder enviar
+ * un documento a firma del propio contratista). El Contratista NUNCA asigna firmantes — solo
+ * firma lo que le asignen (decisión explícita del usuario, 2026-09-18).
+ */
+export function puedeAsignarFirmantesDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; dependenciaSolicitanteId: string }
+): boolean {
+  if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
+  if (permisos.contratacion === "JEFE_DEPENDENCIA") return permisos.dependenciaId === expediente.dependenciaSolicitanteId;
+  if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
+  return false;
+}
+
+/**
+ * ¿Puede este Supervisor/Interventor editar o eliminar un documento de un expediente que
+ * supervisa — CON traza en `EventoContratacion` (a diferencia de la excepción SIN traza de
+ * Administrador/Jefe, ver `puedeEditarSinTrazaDocumentoContrato`)? Pedido explícito del usuario
+ * (2026-09-18): "gestionar o eliminar archivos de esos contratos bajo su supervisión, en caso algo
+ * le quedara mal" — deliberadamente CON registro: a diferencia de la excepción de
+ * Administrador/Jefe (motivada por ~1000 contratistas rotando), aquí no hay el mismo volumen que
+ * justifique renunciar a la trazabilidad.
+ */
+export function puedeEditarConTrazaDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
   return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
 }
 
 /** ¿Puede ver el registro maestro de Contratistas (buscar/listar/detalle)? Cualquier rol de
- * gestión del módulo — deliberadamente EXCLUYE al propio rol Contratista, que no debe poder
- * navegar el registro de contacto de otros contratistas. */
+ * gestión o revisión transversal del módulo — deliberadamente EXCLUYE a Jefe de
+ * dependencia/Subdirector (acotado a su propia dependencia) y al rol Contratista, que no debe
+ * poder navegar el registro de contacto de otros contratistas. */
 export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean {
-  return permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION" || permisos.contratacion === "JEFE_CONTRATACION" || permisos.contratacion === "SUPERVISOR_INTERVENTOR";
+  return (
+    permisos.esAdmin ||
+    permisos.contratacion === "ADMINISTRADOR_CONTRATACION" ||
+    permisos.contratacion === "JEFE_CONTRATACION" ||
+    permisos.contratacion === "FUNCIONARIO_CONTRATACION" ||
+    permisos.contratacion === "SUPERVISOR_INTERVENTOR"
+  );
 }
 
 /** ¿Puede crear/editar el registro maestro de un Contratista? Mismo nivel que la edición sin
@@ -423,18 +461,29 @@ export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boo
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
-/** ¿Puede eliminar un expediente contractual COMPLETO (incluso cerrado)? Reservado al
- * Administrador de Contratación — es más severo que editar/eliminar un solo documento. */
+/** ¿Puede eliminar un expediente contractual COMPLETO (incluso cerrado)? Administrador o Jefe de
+ * Contratación (fusionados en capacidades desde 2026-09-18) — más severo que editar/eliminar un
+ * solo documento, ya no exclusivo del Administrador. */
 export function puedeEliminarExpedienteContractual(permisos: PermisosUsuario): boolean {
-  return puedeAdministrarContratacion(permisos);
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
-/** ¿Puede VER este expediente contractual? Administrador/Jefe ven todos; Supervisor los suyos; Contratista el propio. */
+/**
+ * ¿Puede VER este expediente contractual?
+ * - Administrador/Jefe de Contratación: todos, de cualquier dependencia.
+ * - Funcionario de Contratación: todos — rol de revisión/apoyo transversal sin poder de gestión
+ *   (sube documentos con traza normal, asigna firmantes, pero no aprueba etapas ni elimina nada).
+ * - Jefe de dependencia/Subdirector: solo los de SU PROPIA dependencia solicitante.
+ * - Supervisor/Interventor: solo los que supervisa.
+ * - Contratista: solo el(los) suyo(s).
+ */
 export function puedeVerExpedienteContractual(
   permisos: PermisosUsuario,
-  expediente: { id: string; contratistaId: string | null }
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string }
 ): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
+  if (permisos.contratacion === "JEFE_DEPENDENCIA") return permisos.dependenciaId === expediente.dependenciaSolicitanteId;
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
   if (permisos.contratacion === "CONTRATISTA") return permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
   return false;
@@ -449,14 +498,6 @@ export async function tieneSolicitudFirmaEnExpedienteContractual(usuarioId: stri
   const n = await db.solicitudFirma.count({ where: { usuarioAsignadoId: usuarioId, documentoContrato: { expedienteId } } });
   return n > 0;
 }
-
-/**
- * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre un documento de
- * este expediente? Mismo nivel que antes podía firmar directo (ya no firma directo: ahora
- * designa a quién le corresponde) — Jefe de Contratación/Admin, o el Supervisor asignado a ese
- * expediente.
- */
-export const puedeAsignarFirmantesDocumentoContrato = puedeFirmarDocumentoContrato;
 
 /**
  * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre esta comunicación?

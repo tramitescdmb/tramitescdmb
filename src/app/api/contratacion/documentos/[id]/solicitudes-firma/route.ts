@@ -15,9 +15,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true } });
+  const doc = await db.documentoContrato.findUnique({
+    where: { id },
+    select: { expedienteId: true, expediente: { select: { dependenciaSolicitanteId: true } } },
+  });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
-  if (!puedeAsignarFirmantesDocumentoContrato(permisos, { id: doc.expedienteId })) {
+  if (!puedeAsignarFirmantesDocumentoContrato(permisos, { id: doc.expedienteId, dependenciaSolicitanteId: doc.expediente.dependenciaSolicitanteId })) {
     return NextResponse.json({ error: "No tiene permiso para asignar firmantes en este expediente." }, { status: 403 });
   }
 

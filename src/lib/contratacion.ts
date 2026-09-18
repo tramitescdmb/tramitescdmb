@@ -38,6 +38,8 @@ export const ETIQUETA_MODALIDAD: Record<ModalidadSeleccion, string> = {
 export const ETIQUETA_ROL_CONTRATACION: Record<RolContratacion, string> = {
   ADMINISTRADOR_CONTRATACION: "Administrador de Contratación",
   JEFE_CONTRATACION: "Jefe de Contratación",
+  FUNCIONARIO_CONTRATACION: "Funcionario de Contratación",
+  JEFE_DEPENDENCIA: "Jefe de dependencia / Subdirector",
   SUPERVISOR_INTERVENTOR: "Supervisor / Interventor",
   CONTRATISTA: "Contratista",
 };
@@ -352,6 +354,36 @@ export async function eliminarDocumentoContratoSinTraza(documentoId: string): Pr
   return { storagePath: doc.storagePath };
 }
 
+/**
+ * Variante CON traza de `editarDocumentoContratoSinTraza` — mismo efecto sobre el documento, pero
+ * SÍ registra el cambio en `EventoContratacion`. Usada por Supervisor/Interventor sobre un
+ * expediente que supervisa (ver `puedeEditarConTrazaDocumentoContrato` en permisos.ts): a
+ * diferencia de la excepción de Administrador/Jefe, aquí no hay el mismo volumen de contratistas
+ * que justifique renunciar a la trazabilidad — pedido explícito del usuario (2026-09-18).
+ */
+export async function editarDocumentoContratoConTraza(
+  documentoId: string,
+  datos: Parameters<typeof editarDocumentoContratoSinTraza>[1],
+  usuarioId: string
+): Promise<{ storagePathAnterior: string | null }> {
+  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, expedienteId: true } });
+  if (!doc) throw new Error("El documento no existe.");
+  const resultado = await editarDocumentoContratoSinTraza(documentoId, datos);
+  const detalle = datos.archivo ? `Reemplazó el archivo de "${doc.nombre}"` : `Editó "${doc.nombre}"`;
+  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_EDITADO", detalle, usuarioId);
+  return resultado;
+}
+
+/** Variante CON traza de `eliminarDocumentoContratoSinTraza` — ver el porqué en
+ * `editarDocumentoContratoConTraza`. */
+export async function eliminarDocumentoContratoConTraza(documentoId: string, usuarioId: string): Promise<{ storagePath: string }> {
+  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, expedienteId: true } });
+  if (!doc) throw new Error("El documento no existe.");
+  const resultado = await eliminarDocumentoContratoSinTraza(documentoId);
+  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_ELIMINADO", `Eliminó "${doc.nombre}"`, usuarioId);
+  return resultado;
+}
+
 /** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del
  * catálogo sin subir. No bloquea la aprobación (el módulo es un manejador de
  * expedientes, no un motor de validación jurídica) — el caller decide si reintenta
@@ -563,11 +595,20 @@ export type FiltrosContratacion = {
   vista?: string;
 };
 
-/** Denegado por defecto por rol: Administrador/Jefe ven todos los expedientes;
- * Supervisor solo los suyos; Contratista solo el(los) propio(s). */
+/** Denegado por defecto por rol: Administrador/Jefe/Funcionario de Contratación ven todos los
+ * expedientes; Jefe de dependencia/Subdirector solo los de su propia dependencia solicitante;
+ * Supervisor solo los que supervisa; Contratista solo el(los) propio(s). */
 function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.ExpedienteContractualWhereInput {
-  if (permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION" || permisos.contratacion === "JEFE_CONTRATACION") {
+  if (
+    permisos.esAdmin ||
+    permisos.contratacion === "ADMINISTRADOR_CONTRATACION" ||
+    permisos.contratacion === "JEFE_CONTRATACION" ||
+    permisos.contratacion === "FUNCIONARIO_CONTRATACION"
+  ) {
     return {};
+  }
+  if (permisos.contratacion === "JEFE_DEPENDENCIA") {
+    return { dependenciaSolicitanteId: permisos.dependenciaId ?? "__sin_dependencia__" };
   }
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") {
     return { id: { in: Array.from(permisos.supervisaExpedientes) } };
@@ -621,4 +662,83 @@ export async function listarExpedientesContractuales(filtro: FiltrosContratacion
   ]);
 
   return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista };
+}
+
+/* ============================================================================
+ * Dashboard de SIGEC (/contratacion/dashboard) — pedido explícito del usuario
+ * (2026-09-18), "similar a los demás módulos". Tres vistas en una sola consulta
+ * (el módulo es liviano, no hace falta separarlas como el panel de SGDEA):
+ * tiempo por etapa, firmas pendientes vs. completadas/rechazadas, y volumen por
+ * dependencia y modalidad. Respeta el mismo alcance por rol que el listado de
+ * expedientes (construirWhereExpedienteContractual).
+ * ========================================================================== */
+
+function promedioDias(pares: { desde: Date; hasta: Date }[]): number {
+  if (pares.length === 0) return 0;
+  const total = pares.reduce((acc, p) => acc + (p.hasta.getTime() - p.desde.getTime()) / 86_400_000, 0);
+  return Math.round(total / pares.length);
+}
+
+export async function obtenerPanelContratacionVista(permisos: PermisosUsuario) {
+  const where = construirWhereExpedienteContractual({}, permisos);
+
+  const [etapasCompletadas, solicitudesFirma, expedientes] = await Promise.all([
+    db.etapaExpedienteContractual.findMany({
+      where: { completadaEn: { not: null }, expediente: where },
+      select: { etapa: true, abiertaEn: true, completadaEn: true },
+    }),
+    db.solicitudFirma.findMany({
+      where: { documentoContratoId: { not: null }, rol: "FIRMA", documentoContrato: { expediente: where } },
+      select: { estado: true, asignadoEn: true, completadoEn: true },
+    }),
+    db.expedienteContractual.findMany({
+      where,
+      select: { modalidadSeleccion: true, dependenciaSolicitante: { select: { nombre: true } } },
+    }),
+  ]);
+
+  const tiempoPorEtapa = ETAPAS_ORDEN.map((etapa) => {
+    const pares = etapasCompletadas
+      .filter((e) => e.etapa === etapa)
+      .map((e) => ({ desde: e.abiertaEn, hasta: e.completadaEn! }));
+    return { label: ETIQUETA_ETAPA[etapa], value: promedioDias(pares) };
+  });
+
+  const conteoFirmas = { PENDIENTE: 0, COMPLETADA: 0, RECHAZADA: 0 } as Record<EstadoSolicitudFirma, number>;
+  for (const s of solicitudesFirma) conteoFirmas[s.estado]++;
+  const firmas = [
+    { label: "Pendientes", value: conteoFirmas.PENDIENTE },
+    { label: "Completadas", value: conteoFirmas.COMPLETADA },
+    { label: "Rechazadas", value: conteoFirmas.RECHAZADA },
+  ];
+  const tiempoResolucionFirmas = promedioDias(
+    solicitudesFirma
+      .filter((s) => s.estado === "COMPLETADA" && s.completadoEn)
+      .map((s) => ({ desde: s.asignadoEn, hasta: s.completadoEn! }))
+  );
+
+  const porDependenciaMap = new Map<string, number>();
+  const porModalidadMap = new Map<ModalidadSeleccion, number>();
+  for (const e of expedientes) {
+    const nombreDep = e.dependenciaSolicitante.nombre;
+    porDependenciaMap.set(nombreDep, (porDependenciaMap.get(nombreDep) ?? 0) + 1);
+    porModalidadMap.set(e.modalidadSeleccion, (porModalidadMap.get(e.modalidadSeleccion) ?? 0) + 1);
+  }
+  const porDependencia = [...porDependenciaMap.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+  const porModalidad = [...porModalidadMap.entries()]
+    .map(([modalidad, value]) => ({ label: ETIQUETA_MODALIDAD[modalidad], value }))
+    .sort((a, b) => b.value - a.value);
+
+  return {
+    totalExpedientes: expedientes.length,
+    tiempoPorEtapa,
+    firmas,
+    tiempoResolucionFirmas,
+    totalFirmasCompletadas: conteoFirmas.COMPLETADA,
+    porDependencia,
+    porModalidad,
+  };
 }

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { Trash2, Pencil, Upload, X } from "lucide-react";
 import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 
-/** EXCEPCIÓN deliberada de este módulo: editar/eliminar aquí NO deja ninguna traza en la bitácora del
- * expediente — solo visible/habilitado para Administrador/Jefe de Contratación (el gate real está en
- * el servidor, esto solo evita mostrar el botón a quien de todas formas recibiría 403).
+/** Editar/eliminar un documento — dos niveles según quién lo use (el gate real está en el
+ * servidor, `sinTraza` aquí solo ajusta el texto que ve la persona): Administrador/Jefe de
+ * Contratación NO dejan ninguna traza en la bitácora del expediente (excepción deliberada de este
+ * módulo); Supervisor/Interventor sobre un expediente que supervisa SÍ queda registrado
+ * (pedido explícito del usuario, 2026-09-18).
  *
  * "Editar" abre un modal con dos acciones independientes: cambiar el nombre (como antes), o
  * REEMPLAZAR el archivo real — antes solo existía lo primero, y el usuario probó que cambiar
@@ -20,6 +22,7 @@ export function EditarEliminarDocumentoContrato({
   expedienteId,
   nombreActual,
   requiereFirmaActual = false,
+  sinTraza,
 }: {
   documentoId: string;
   expedienteId: string;
@@ -27,6 +30,9 @@ export function EditarEliminarDocumentoContrato({
   /** Antes solo se podía marcar "requiere firma" al SUBIR el documento — si se olvidaba, no había
    * forma de corregirlo después ni de habilitar la asignación de firmantes. */
   requiereFirmaActual?: boolean;
+  /** true = Administrador/Jefe (no queda registrado); false = Supervisor/Interventor (sí queda
+   * registrado en la bitácora del expediente). Solo cambia el texto mostrado. */
+  sinTraza: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -81,7 +87,10 @@ export function EditarEliminarDocumentoContrato({
   }
 
   async function eliminar() {
-    if (!window.confirm(`¿Eliminar "${nombreActual}"? Esta acción no queda registrada en el historial del expediente.`)) return;
+    const advertencia = sinTraza
+      ? "Esta acción no queda registrada en el historial del expediente."
+      : "Esta acción SÍ queda registrada en el historial del expediente.";
+    if (!window.confirm(`¿Eliminar "${nombreActual}"? ${advertencia}`)) return;
     setCargando(true);
     setError(null);
     try {
@@ -101,7 +110,7 @@ export function EditarEliminarDocumentoContrato({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        title="Editar (Administrador/Jefe de Contratación — sin traza)"
+        title={sinTraza ? "Editar (Administrador/Jefe de Contratación — sin traza)" : "Editar (Supervisor/Interventor — queda registrado)"}
         className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
       >
         <Pencil className="h-3 w-3" aria-hidden />
@@ -110,7 +119,7 @@ export function EditarEliminarDocumentoContrato({
         type="button"
         onClick={eliminar}
         disabled={cargando}
-        title="Eliminar (Administrador/Jefe de Contratación — sin traza)"
+        title={sinTraza ? "Eliminar (Administrador/Jefe de Contratación — sin traza)" : "Eliminar (Supervisor/Interventor — queda registrado)"}
         className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
         <Trash2 className="h-3 w-3" aria-hidden />

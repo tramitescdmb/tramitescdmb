@@ -108,23 +108,33 @@ export default async function ContratacionAyudaPage() {
         <Tabla encabezados={["Rol", "Puede", "No puede"]}>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.ADMINISTRADOR_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Crear expedientes, vincular contratista/supervisores, aprobar/retroceder etapas, editar o eliminar documentos sin dejar traza, eliminar un expediente completo, gestionar el registro de Contratistas.</td>
+            <td className="px-2.5 py-1.5">El encargado de sistemas. Todo lo del módulo, sin excepción — permisos totales.</td>
             <td className="px-2.5 py-1.5">—</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Lo mismo que el Administrador, excepto eliminar un expediente completo.</td>
-            <td className="px-2.5 py-1.5">Eliminar el expediente completo (solo Administrador).</td>
+            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula contratista/supervisores, aprueba/retrocede etapas, edita o elimina documentos sin dejar traza, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
+            <td className="px-2.5 py-1.5">—</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
+            <td className="px-2.5 py-1.5">Ve TODA la contratación; sube documentos (queda registrado); asigna quién debe firmar cada documento en cualquier expediente.</td>
+            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar sin traza, eliminar un expediente, gestionar contratistas.</td>
+          </tr>
+          <tr>
+            <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
+            <td className="px-2.5 py-1.5">Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes de otras dependencias, subir documentos, gestionar etapas.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">Ver y subir documentos solo de los expedientes donde está asignado; asignar/firmar/dar visto bueno en esos mismos.</td>
-            <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar sin traza, aprobar el paso de etapa.</td>
+            <td className="px-2.5 py-1.5">Ver, subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos — CON traza — solo en los expedientes donde está asignado.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar/eliminar sin dejar traza, aprobar el paso de etapa, eliminar el expediente completo.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
-            <td className="px-2.5 py-1.5">Ver y subir documentos de su(s) propio(s) expediente(s), solo en etapa Contractual y Postcontractual.</td>
-            <td className="px-2.5 py-1.5">Subir nada en Precontractual (ahí solo sube personal de la CDMB), ver expedientes de otros contratistas.</td>
+            <td className="px-2.5 py-1.5">Ver y subir documentos de su(s) propio(s) expediente(s), solo en etapa Contractual y Postcontractual; firmar lo que le asignen.</td>
+            <td className="px-2.5 py-1.5">Subir nada en Precontractual (ahí solo sube personal de la CDMB), ver expedientes de otros contratistas, asignar firmantes a nadie.</td>
           </tr>
         </Tabla>
         <p className="text-xs text-stone-400">

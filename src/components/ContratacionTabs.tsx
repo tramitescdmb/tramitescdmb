@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FilePlus2, Inbox } from "lucide-react";
+import { LayoutDashboard, Briefcase, FilePlus2, Inbox, ChartColumn } from "lucide-react";
 
 const TABS = [
   { href: "/contratacion", label: "Panel", icon: LayoutDashboard, prefijoExacto: true },
   { href: "/contratacion/expedientes", label: "Expedientes", icon: Briefcase, permiso: undefined },
   { href: "/contratacion/buzon", label: "Buzón", icon: Inbox, permiso: undefined },
+  { href: "/contratacion/dashboard", label: "Dashboard", icon: ChartColumn, permiso: undefined },
   { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente", icon: FilePlus2, permiso: "administrar" as const },
 ];
 

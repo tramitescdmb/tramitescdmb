@@ -13,7 +13,13 @@ type Nivel = "VER" | "EDITAR";
 type Seccion = "VITAL_BASE" | "VITAL_DASHBOARD" | "SINCA_BASE" | "SINCA_DASHBOARD" | "SINCA_MINERIA";
 type RolCorrespondencia = "OPERADOR_VENTANILLA" | "FUNCIONARIO_DEPENDENCIA" | "JEFE_DEPENDENCIA" | "ADMIN_ARCHIVO";
 type EstadoCuenta = "HABILITADA" | "DESHABILITADA" | "BLOQUEADA" | "SUSPENDIDA";
-type RolContratacion = "ADMINISTRADOR_CONTRATACION" | "JEFE_CONTRATACION" | "SUPERVISOR_INTERVENTOR" | "CONTRATISTA";
+type RolContratacion =
+  | "ADMINISTRADOR_CONTRATACION"
+  | "JEFE_CONTRATACION"
+  | "FUNCIONARIO_CONTRATACION"
+  | "JEFE_DEPENDENCIA"
+  | "SUPERVISOR_INTERVENTOR"
+  | "CONTRATISTA";
 
 const ESTADOS_CUENTA: { valor: EstadoCuenta; etiqueta: string; ayuda: string; clase: string }[] = [
   { valor: "HABILITADA", etiqueta: "Habilitada", ayuda: "Puede iniciar sesión con normalidad.", clase: "border-cdmb-600 bg-cdmb-50 text-cdmb-800" },
@@ -30,10 +36,12 @@ const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayud
 ];
 
 const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: string }[] = [
-  { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "Crea expedientes; único junto a Jefe que puede editar/eliminar archivos sin dejar traza." },
-  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Aprueba el paso de etapa y revisa/firma documentos; mismo permiso de edición sin traza." },
-  { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Sube y firma documentos solo de los expedientes que tenga asignados." },
-  { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes solo en Contractual/Postcontractual de su propio expediente." },
+  { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "El encargado de sistemas — permisos totales sobre el módulo. Mismo nivel que Jefe de Contratación." },
+  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Ve y gestiona TODOS los expedientes de la entidad: crea, aprueba etapas, edita/elimina sin traza, elimina expedientes completos." },
+  { valor: "FUNCIONARIO_CONTRATACION", etiqueta: "Funcionario de Contratación", ayuda: "Ve toda la contratación y sube documentos (con traza), y puede asignar quién firma cada documento — sin poder de gestión (no aprueba etapas ni elimina nada)." },
+  { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia / Subdirector", ayuda: "Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante, no de toda la entidad." },
+  { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Ve, sube, firma y puede editar/eliminar (con traza) documentos solo de los expedientes que supervisa." },
+  { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes y firma solo en Contractual/Postcontractual de su propio expediente. Nunca puede asignar firmantes." },
 ];
 
 const BOTON_BASE = "flex-1 rounded-md border px-2 py-1 text-[11px] font-medium transition";

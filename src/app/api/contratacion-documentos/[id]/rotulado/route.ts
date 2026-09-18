@@ -32,6 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           id: true,
           numero: true,
           contratistaId: true,
+          dependenciaSolicitanteId: true,
           dependenciaSolicitante: { select: { nombre: true } },
         },
       },

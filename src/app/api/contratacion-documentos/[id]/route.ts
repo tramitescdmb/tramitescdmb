@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
-    select: { storagePath: true, expediente: { select: { id: true, contratistaId: true } } },
+    select: { storagePath: true, expediente: { select: { id: true, contratistaId: true, dependenciaSolicitanteId: true } } },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Briefcase, FileClock, FileCheck2, FileArchive, Inbox, UserSquare2, FilePlus2, HelpCircle } from "lucide-react";
+import { Briefcase, FileClock, FileCheck2, FileArchive, Inbox, UserSquare2, FilePlus2, HelpCircle, ChartColumn } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
@@ -58,6 +58,7 @@ export default async function PanelContratacionPage() {
         )}
         <AccesoRapido href="/contratacion/expedientes" icon={Briefcase} label="Expedientes" />
         <AccesoRapido href="/contratacion/buzon" icon={Inbox} label="Buzón de firmas" contador={buzon.length} />
+        <AccesoRapido href="/contratacion/dashboard" icon={ChartColumn} label="Dashboard" />
         {puedeVerRegistroContratistas(permisos) && (
           <AccesoRapido href="/contratacion/contratistas" icon={UserSquare2} label="Contratistas" />
         )}

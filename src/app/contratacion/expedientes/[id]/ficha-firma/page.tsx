@@ -24,6 +24,7 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
       numero: true,
       objeto: true,
       contratistaId: true,
+      dependenciaSolicitanteId: true,
       documentos: {
         where: { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
         orderBy: { createdAt: "asc" },
@@ -44,7 +45,11 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
     },
   });
   if (!expediente) notFound();
-  if (!puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId })) redirect("/contratacion");
+  if (
+    !puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId, dependenciaSolicitanteId: expediente.dependenciaSolicitanteId })
+  ) {
+    redirect("/contratacion");
+  }
 
   return (
     <section className="mx-auto max-w-3xl space-y-4">

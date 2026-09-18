@@ -1892,6 +1892,15 @@ model PasoEjecutado {
 enum RolContratacion {
   ADMINISTRADOR_CONTRATACION
   JEFE_CONTRATACION
+  // Ve y sube documentos (con traza normal) de TODA la contratación, y puede asignar firmantes en
+  // cualquier expediente — rol de revisión/apoyo transversal, sin poder de gestión (no aprueba
+  // etapas, no gestiona contratistas, no edita/elimina sin traza). Pedido explícito del usuario
+  // (2026-09-18): "tienen que estar revisando toda la contratación".
+  FUNCIONARIO_CONTRATACION
+  // Ve los expedientes de SU PROPIA dependencia solicitante (no de toda la entidad) y puede
+  // asignar firmantes ahí — mismo concepto que JEFE_DEPENDENCIA en RolCorrespondencia (SGDEA),
+  // pero es un enum aparte porque el ámbito son expedientes contractuales, no comunicaciones.
+  JEFE_DEPENDENCIA
   SUPERVISOR_INTERVENTOR
   CONTRATISTA
 }

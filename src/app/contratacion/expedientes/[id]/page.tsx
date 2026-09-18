@@ -10,6 +10,7 @@ import {
   puedeSubirDocumentoContrato,
   puedeAsignarFirmantesDocumentoContrato,
   puedeEditarSinTrazaDocumentoContrato,
+  puedeEditarConTrazaDocumentoContrato,
   puedeAprobarEtapaContratacion,
   puedeGestionarEtapasContratacion,
   puedeEliminarExpedienteContractual,
@@ -427,12 +428,13 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           }))}
                         />
                       )}
-                      {puedeEditarSinTrazaDocumentoContrato(permisos) && (
+                      {(puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente)) && (
                         <EditarEliminarDocumentoContrato
                           documentoId={item.documento.id}
                           expedienteId={id}
                           nombreActual={item.documento.nombre}
                           requiereFirmaActual={item.documento.requiereFirma}
+                          sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
                         />
                       )}
                     </div>
@@ -522,12 +524,13 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             firmantesActuales={solicitudes}
                           />
                         )}
-                        {puedeEditarSinTrazaDocumentoContrato(permisos) && (
+                        {(puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente)) && (
                           <EditarEliminarDocumentoContrato
                             documentoId={doc.id}
                             expedienteId={id}
                             nombreActual={doc.nombre}
                             requiereFirmaActual={doc.requiereFirma}
+                            sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
                           />
                         )}
                       </li>

@@ -1,25 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import type { EtapaContratacion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeEditarSinTrazaDocumentoContrato } from "@/lib/permisos";
-import { editarDocumentoContratoSinTraza, eliminarDocumentoContratoSinTraza, ETAPAS_ORDEN } from "@/lib/contratacion";
+import { obtenerPermisosUsuario, puedeEditarSinTrazaDocumentoContrato, puedeEditarConTrazaDocumentoContrato } from "@/lib/permisos";
+import {
+  editarDocumentoContratoSinTraza,
+  editarDocumentoContratoConTraza,
+  eliminarDocumentoContratoSinTraza,
+  eliminarDocumentoContratoConTraza,
+  ETAPAS_ORDEN,
+} from "@/lib/contratacion";
 import { deleteDocumento } from "@/lib/storage";
 
 /**
- * EXCEPCIÓN deliberada de este módulo (ver permisos.ts
- * `puedeEditarSinTrazaDocumentoContrato` y el plan de la sesión): editar o
- * eliminar un documento aquí NO deja ninguna fila en `EventoContratacion`.
- * Solo Administrador de Contratación y Jefe de Contratación pueden llamar a
- * esta ruta — confirmado explícitamente por el usuario tras advertir el
- * riesgo de auditoría. NUNCA replicar este patrón fuera de Contratación.
+ * Editar/eliminar un documento tiene DOS caminos, según quién llame:
+ * - Administrador/Jefe de Contratación: EXCEPCIÓN deliberada de este módulo (ver
+ *   `puedeEditarSinTrazaDocumentoContrato`) — no deja ninguna fila en `EventoContratacion`.
+ *   Confirmado explícitamente por el usuario tras advertir el riesgo de auditoría. NUNCA replicar
+ *   este patrón fuera de Contratación.
+ * - Supervisor/Interventor, solo en expedientes que supervisa: SÍ queda registrado en
+ *   `EventoContratacion` (pedido explícito del usuario, 2026-09-18: a diferencia de Admin/Jefe,
+ *   aquí no hay el mismo volumen operativo que justifique renunciar a la trazabilidad).
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeEditarSinTrazaDocumentoContrato(permisos)) {
-    return NextResponse.json({ error: "Solo Administrador o Jefe de Contratación pueden editar un documento." }, { status: 403 });
+
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true } });
+  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+
+  const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
+  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId });
+  if (!sinTraza && !conTraza) {
+    return NextResponse.json({ error: "No tiene permiso para editar este documento." }, { status: 403 });
   }
 
   const body = await req.json().catch(() => null);
@@ -35,16 +50,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           hashSha256: typeof body.archivo.hashSha256 === "string" ? body.archivo.hashSha256 : null,
         }
       : undefined;
+  const datos = {
+    nombre: typeof body.nombre === "string" ? body.nombre : undefined,
+    categoria: "categoria" in body ? (body.categoria ? String(body.categoria) : null) : undefined,
+    etapa,
+    requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
+    firmadoEnSecop: "firmadoEnSecop" in body ? Boolean(body.firmadoEnSecop) : undefined,
+    archivo,
+  };
 
   try {
-    const { storagePathAnterior } = await editarDocumentoContratoSinTraza(id, {
-      nombre: typeof body.nombre === "string" ? body.nombre : undefined,
-      categoria: "categoria" in body ? (body.categoria ? String(body.categoria) : null) : undefined,
-      etapa,
-      requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
-      firmadoEnSecop: "firmadoEnSecop" in body ? Boolean(body.firmadoEnSecop) : undefined,
-      archivo,
-    });
+    const { storagePathAnterior } = sinTraza
+      ? await editarDocumentoContratoSinTraza(id, datos)
+      : await editarDocumentoContratoConTraza(id, datos, session.userId);
     if (archivo && storagePathAnterior) {
       await deleteDocumento(storagePathAnterior).catch(() => {}); // best-effort, ver DELETE más abajo
     }
@@ -59,12 +77,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeEditarSinTrazaDocumentoContrato(permisos)) {
-    return NextResponse.json({ error: "Solo Administrador o Jefe de Contratación pueden eliminar un documento." }, { status: 403 });
+
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true } });
+  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+
+  const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
+  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId });
+  if (!sinTraza && !conTraza) {
+    return NextResponse.json({ error: "No tiene permiso para eliminar este documento." }, { status: 403 });
   }
 
   try {
-    const { storagePath } = await eliminarDocumentoContratoSinTraza(id);
+    const { storagePath } = sinTraza
+      ? await eliminarDocumentoContratoSinTraza(id)
+      : await eliminarDocumentoContratoConTraza(id, session.userId);
     await deleteDocumento(storagePath).catch(() => {}); // best-effort: la fila ya se borró, un residuo en storage no es visible en la app
     return NextResponse.json({ ok: true });
   } catch (err) {
