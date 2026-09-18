@@ -261,6 +261,28 @@ export function puedeDevolverReparto(
   );
 }
 
+/**
+ * ¿Puede este JEFE_DEPENDENCIA redistribuir INTERNAMENTE, dentro de SU PROPIA dependencia, una
+ * comunicación que ya llegó asignada a él o a su dependencia (por reparto de ventanilla si es
+ * RECIBIDA, o directo si es un memorando INTERNA con destinatario)? Distinto de `puedeDistribuir`
+ * (ventanilla/archivo, reparto centralizado): esto es la sub-distribución del jefe a sus propios
+ * colaboradores una vez la comunicación ya está en su oficina — nunca puede redirigirla a otra
+ * dependencia. Pedido explícito del usuario: "casi siempre debe ser el jefe de esa oficina para
+ * que luego él lo distribuya a sus colaboradores".
+ */
+export function puedeSubdistribuirInternamente(
+  permisos: PermisosUsuario,
+  usuarioId: string,
+  comunicacion: { dependenciaDestinoId: string | null },
+  distribucionesVigentes: { usuarioId: string | null; dependenciaId: string | null }[]
+): boolean {
+  if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
+  if (!permisos.dependenciaId || comunicacion.dependenciaDestinoId !== permisos.dependenciaId) return false;
+  return distribucionesVigentes.some(
+    (d) => d.usuarioId === usuarioId || (!d.usuarioId && d.dependenciaId === permisos.dependenciaId)
+  );
+}
+
 /** ¿Puede administrar el archivo (TRD/CCD, dependencias)? */
 export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";

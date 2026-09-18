@@ -16,10 +16,16 @@ export function DistribuirForm({
   comunicacionId,
   dependencias,
   usuarios,
+  dependenciaFija,
+  tituloLista = "Funcionario(s) a cargo",
 }: {
   comunicacionId: string;
   dependencias: Opcion[];
   usuarios: Opcion[];
+  /** Cuando se pasa, la dependencia queda fija (no editable) — uso del jefe de dependencia
+   * redistribuyendo dentro de su propia oficina, nunca hacia otra dependencia. */
+  dependenciaFija?: Opcion;
+  tituloLista?: string;
 }) {
   const [q, setQ] = useState("");
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
@@ -46,13 +52,20 @@ export function DistribuirForm({
       className="mt-4 space-y-3 border-t border-stone-100 pt-4"
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Field label="Dependencia" help="El área que debe atenderla.">
-          <select name="dependenciaId" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
-            <option value="">— Ninguna —</option>
-            {dependencias.map((d) => (
-              <option key={d.id} value={d.id}>{d.nombre}</option>
-            ))}
-          </select>
+        <Field label="Dependencia" help={dependenciaFija ? "Se distribuye dentro de su propia dependencia." : "El área que debe atenderla."}>
+          {dependenciaFija ? (
+            <>
+              <input type="hidden" name="dependenciaId" value={dependenciaFija.id} />
+              <p className="w-full rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-600">{dependenciaFija.nombre}</p>
+            </>
+          ) : (
+            <select name="dependenciaId" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
+              <option value="">— Ninguna —</option>
+              {dependencias.map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          )}
         </Field>
         <Field label="Término (días)" help="Plazo interno, si es distinto al de ley.">
           <input name="termino" type="number" min={1} placeholder="Ej. 15" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
@@ -64,7 +77,7 @@ export function DistribuirForm({
 
       <div>
         <p className="mb-1 text-xs font-medium text-stone-600">
-          Funcionario(s) a cargo{seleccion.size > 0 ? ` — ${seleccion.size} seleccionado(s)` : ""}
+          {tituloLista}{seleccion.size > 0 ? ` — ${seleccion.size} seleccionado(s)` : ""}
         </p>
         <span className="mb-2 flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
           <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />

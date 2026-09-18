@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeDistribuir, puedeSubdistribuirInternamente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
@@ -13,11 +13,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const volver = new URL(`/correspondencia/${id}`, req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeDistribuir(permisos)) {
-    await registrarAccesoDenegadoAccion("distribuir la comunicación", id, session, req.headers);
-    volver.searchParams.set("error", "Solo el administrador o el rol de archivo pueden repartir una comunicación.");
-    return NextResponse.redirect(volver, { status: 303 });
-  }
 
   const form = await req.formData();
   const dependenciaId = String(form.get("dependenciaId") || "") || null;
@@ -35,6 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       id: true,
       radicado: true,
       estado: true,
+      dependenciaDestinoId: true,
       distribuciones: { where: { activa: true }, select: { id: true, usuarioId: true, dependenciaId: true } },
     },
   });
@@ -42,6 +38,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     volver.searchParams.set("error", "La comunicación no existe.");
     return NextResponse.redirect(volver, { status: 303 });
   }
+
+  // Dos formas de llegar aquí: el reparto centralizado (ventanilla/archivo/admin, a CUALQUIER
+  // dependencia) o la sub-distribución de un jefe de dependencia dentro de SU PROPIA oficina, una
+  // vez la comunicación ya le llegó (ver puedeSubdistribuirInternamente en permisos.ts).
+  const esReparoCentralizado = puedeDistribuir(permisos);
+  const esSubdistribucion =
+    !esReparoCentralizado && puedeSubdistribuirInternamente(permisos, session.userId, comunicacion, comunicacion.distribuciones);
+  if (!esReparoCentralizado && !esSubdistribucion) {
+    await registrarAccesoDenegadoAccion("distribuir la comunicación", id, session, req.headers);
+    volver.searchParams.set("error", "No tiene permiso para repartir esta comunicación.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (esSubdistribucion && dependenciaId && dependenciaId !== permisos.dependenciaId) {
+    volver.searchParams.set("error", "Solo puede redistribuir dentro de su propia dependencia.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+
   if (ESTADOS_CERRADOS.includes(comunicacion.estado)) {
     volver.searchParams.set("error", `No se puede distribuir: ${comunicacion.radicado} ya quedó ${ETIQUETA_ESTADO_MIN[comunicacion.estado] ?? comunicacion.estado.toLowerCase()}.`);
     return NextResponse.redirect(volver, { status: 303 });
@@ -56,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     usuarioIds.length
       ? db.usuario.findMany({
           where: { id: { in: usuarioIds } },
-          select: { id: true, nombre: true, activo: true, rol: true, rolCorrespondencia: true },
+          select: { id: true, nombre: true, activo: true, rol: true, rolCorrespondencia: true, dependenciaId: true },
         })
       : [],
   ]);
@@ -64,6 +77,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (dependenciaId && !dependencia) {
     volver.searchParams.set("error", "La dependencia elegida no existe.");
     return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (esSubdistribucion) {
+    const fueraDeOficina = usuarios.filter((u) => u.dependenciaId !== permisos.dependenciaId);
+    if (fueraDeOficina.length > 0) {
+      volver.searchParams.set("error", "Solo puede redistribuir a colaboradores de su propia dependencia.");
+      return NextResponse.redirect(volver, { status: 303 });
+    }
   }
   const sinAcceso = usuarios.filter((u) => u.activo && u.rol !== "ADMIN" && !u.rolCorrespondencia);
   if (sinAcceso.length > 0) {

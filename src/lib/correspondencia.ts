@@ -395,6 +395,11 @@ export type EntradaRadicacionInterna = {
   folios: number;
   dependenciaOrigenId: string;
   dependenciaDestinoId: string;
+  // Persona puntual de la dependencia destino a quien se asigna el memorando al radicarlo — casi
+  // siempre el jefe de esa oficina, para que luego él lo redistribuya a sus colaboradores (ver
+  // puedeSubdistribuirInternamente en permisos.ts). Opcional: sin esto, queda RADICADA sin asignar,
+  // como antes.
+  usuarioDestinoId?: string | null;
   serieId?: string | null;
   subserieId?: string | null;
   documentos?: EntradaDocumento[];
@@ -413,7 +418,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
         radicado,
         anio,
         origen: "VENTANILLA",
-        estado: "RADICADA",
+        estado: entrada.usuarioDestinoId ? "ASIGNADA" : "RADICADA",
         asunto: entrada.asunto,
         contenido: entrada.contenido,
         folios: entrada.folios,
@@ -424,6 +429,17 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
         radicadoPorId: entrada.radicadoPorId,
       },
     });
+
+    if (entrada.usuarioDestinoId) {
+      await tx.distribucion.create({
+        data: {
+          comunicacionId: comunicacion.id,
+          dependenciaId: entrada.dependenciaDestinoId,
+          usuarioId: entrada.usuarioDestinoId,
+          asignadoPorId: entrada.radicadoPorId,
+        },
+      });
+    }
 
     await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
     await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });

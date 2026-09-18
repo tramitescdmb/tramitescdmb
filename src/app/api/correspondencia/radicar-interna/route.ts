@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { radicarInterna, type EntradaDocumento } from "@/lib/correspondencia";
@@ -54,6 +55,23 @@ export async function POST(req: NextRequest) {
   const errLote = validarLoteDocumentosSGDEA(documentos);
   if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
 
+  const usuarioDestinoIdRaw = body.usuarioDestinoId ? String(body.usuarioDestinoId) : null;
+  if (usuarioDestinoIdRaw) {
+    const destino = await db.usuario.findUnique({
+      where: { id: usuarioDestinoIdRaw },
+      select: { activo: true, rol: true, rolCorrespondencia: true, dependenciaId: true },
+    });
+    if (!destino || !destino.activo) {
+      return NextResponse.json({ error: "El destinatario elegido no existe o está inactivo." }, { status: 400 });
+    }
+    if (destino.dependenciaId !== dependenciaDestinoId) {
+      return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
+    }
+    if (destino.rol !== "ADMIN" && !destino.rolCorrespondencia) {
+      return NextResponse.json({ error: "El destinatario no tiene acceso al módulo de correspondencia." }, { status: 400 });
+    }
+  }
+
   try {
     const comunicacion = await radicarInterna({
       asunto,
@@ -61,6 +79,7 @@ export async function POST(req: NextRequest) {
       folios,
       dependenciaOrigenId,
       dependenciaDestinoId,
+      usuarioDestinoId: usuarioDestinoIdRaw,
       serieId: body.serieId ? String(body.serieId) : null,
       subserieId: body.subserieId ? String(body.subserieId) : null,
       documentos,

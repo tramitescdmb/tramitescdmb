@@ -13,11 +13,16 @@ export default async function NuevaInternaPage() {
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
-  const [dependencias, series, usuario, plantillas] = await Promise.all([
+  const [dependencias, series, usuario, plantillas, usuarios] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     db.usuario.findUnique({ where: { id: session.userId }, select: { dependenciaId: true } }),
     listarPlantillas("INTERNA"),
+    db.usuario.findMany({
+      where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+      select: { id: true, nombre: true, dependenciaId: true, rolCorrespondencia: true },
+      orderBy: { nombre: "asc" },
+    }),
   ]);
 
   return (
@@ -31,6 +36,7 @@ export default async function NuevaInternaPage() {
       </div>
       <MemorandoForm
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
+        usuarios={usuarios}
         series={series.map((s) => ({
           id: s.id,
           codigo: s.codigo,

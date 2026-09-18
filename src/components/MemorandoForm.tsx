@@ -15,16 +15,21 @@ import { contextoBase } from "@/lib/plantillas-marcadores";
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
+type UsuarioDestino = { id: string; nombre: string; dependenciaId: string | null; rolCorrespondencia: string | null };
 
 export function MemorandoForm({
   dependencias,
   series,
+  usuarios = [],
   dependenciaOrigenSugerida,
   plantillas = [],
   usuarioNombre = "",
 }: {
   dependencias: Dependencia[];
   series: Serie[];
+  /** Funcionarios activos con acceso al módulo, para asignar el memorando a una persona puntual de
+   * la dependencia destino (casi siempre su jefe) — ver el selector "Asignar a" más abajo. */
+  usuarios?: UsuarioDestino[];
   dependenciaOrigenSugerida: string | null;
   plantillas?: PlantillaOpcion[];
   usuarioNombre?: string;
@@ -32,6 +37,7 @@ export function MemorandoForm({
   const router = useRouter();
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState(dependenciaOrigenSugerida ?? "");
   const [dependenciaDestinoId, setDependenciaDestinoId] = useState("");
+  const [usuarioDestinoId, setUsuarioDestinoId] = useState("");
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
   const [folios, setFolios] = useState(1);
@@ -44,6 +50,18 @@ export function MemorandoForm({
 
   function cambiarDependenciaOrigen(nuevoId: string) {
     setDependenciaOrigenId(nuevoId);
+  }
+
+  const usuariosDestino = usuarios
+    .filter((u) => u.dependenciaId === dependenciaDestinoId)
+    .sort((a, b) => (a.rolCorrespondencia === "JEFE_DEPENDENCIA" ? -1 : b.rolCorrespondencia === "JEFE_DEPENDENCIA" ? 1 : 0));
+
+  function cambiarDependenciaDestino(nuevoId: string) {
+    setDependenciaDestinoId(nuevoId);
+    // El jefe de esa oficina es casi siempre a quien corresponde asignarlo — se preselecciona,
+    // pero se puede cambiar o dejar sin asignar (queda para repartir después, como antes).
+    const jefe = usuarios.find((u) => u.dependenciaId === nuevoId && u.rolCorrespondencia === "JEFE_DEPENDENCIA");
+    setUsuarioDestinoId(jefe?.id ?? "");
   }
 
   function agregarArchivos(lista: FileList | null) {
@@ -80,6 +98,7 @@ export function MemorandoForm({
           folios,
           dependenciaOrigenId,
           dependenciaDestinoId,
+          usuarioDestinoId: usuarioDestinoId || null,
           serieId: serieId || null,
           subserieId: subserieId || null,
           documentos,
@@ -115,11 +134,23 @@ export function MemorandoForm({
             </select>
           </Field>
           <Field label="Dependencia de destino" required>
-            <select value={dependenciaDestinoId} onChange={(e) => setDependenciaDestinoId(e.target.value)} className={inputCls}>
+            <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
               <option value="">— Seleccione —</option>
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
           </Field>
+          {dependenciaDestinoId && (
+            <Field label="Asignar a" help="Casi siempre el jefe de esa oficina, para que él lo redistribuya a sus colaboradores.">
+              <select value={usuarioDestinoId} onChange={(e) => setUsuarioDestinoId(e.target.value)} className={inputCls}>
+                <option value="">— Sin asignar (queda para repartir después) —</option>
+                {usuariosDestino.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nombre}{u.rolCorrespondencia === "JEFE_DEPENDENCIA" ? " (jefe de dependencia)" : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="N.º de folios">
             <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
           </Field>

@@ -14,6 +14,7 @@ import {
   puedeResponderComoAsignado,
   puedeDevolverReparto,
   puedeAsignarFirmantesComunicacion,
+  puedeSubdistribuirInternamente,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -216,6 +217,18 @@ export default async function CorrespondenciaDetallePage({
   const puedoActuarMiSolicitud = miSolicitudFirma && puedeActuarSolicitud(c.solicitudesFirma, miSolicitudFirma);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
+  // Sub-distribución interna del jefe de dependencia (distinta de puedeDistribuirUsuario, que es el
+  // reparto centralizado de ventanilla/archivo): una vez la comunicación ya llegó a SU dependencia
+  // (por reparto de ventanilla si es RECIBIDA, o directo si es INTERNA), el jefe la reparte entre
+  // sus propios colaboradores. Nunca puede redirigirla a otra dependencia.
+  const puedeSubdistribuirUsuario = puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes);
+  const colaboradoresDependencia = puedeSubdistribuirUsuario
+    ? await db.usuario.findMany({
+        where: { activo: true, dependenciaId: permisos.dependenciaId, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+        orderBy: { nombre: "asc" },
+        select: { id: true, nombre: true },
+      })
+    : [];
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const calendario = await getCalendarioLaboral();
   const puedeDevolverUsuario =
@@ -575,6 +588,15 @@ export default async function CorrespondenciaDetallePage({
             <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
               Ya no se puede repartir: quedó {ETIQUETA_ESTADO[c.estado]?.toLowerCase() ?? c.estado.toLowerCase()}.
             </p>
+          )}
+          {!puedeDistribuirUsuario && puedeSubdistribuirUsuario && !ESTADOS_CERRADOS.includes(c.estado) && (
+            <DistribuirForm
+              comunicacionId={id}
+              dependencias={[]}
+              usuarios={colaboradoresDependencia}
+              dependenciaFija={{ id: permisos.dependenciaId!, nombre: c.dependenciaDestino?.nombre ?? "Mi dependencia" }}
+              tituloLista="Colaborador(es) a cargo"
+            />
           )}
 
           {puedeDevolverUsuario && (
