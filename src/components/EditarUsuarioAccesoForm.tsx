@@ -61,6 +61,7 @@ const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-firma", etiqueta: "Datos para la firma" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
+  { id: "seccion-dependencia", etiqueta: "Dependencia" },
   { id: "seccion-estado", etiqueta: "Estado de la cuenta" },
   { id: "seccion-cargos", etiqueta: "Cargos" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
@@ -512,6 +513,24 @@ export function EditarUsuarioAccesoForm({
         )}
       </section>
 
+      <section id="seccion-dependencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <EncabezadoSeccion
+          icono={Building2}
+          titulo="Dependencia"
+          ayuda="A qué oficina pertenece — la usan SGDEA y Contratación (SIGEC) por igual, no es exclusiva de un módulo."
+        />
+        <select
+          value={dependenciaId}
+          onChange={(e) => setDependenciaId(e.target.value)}
+          className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        >
+          <option value="">— Sin dependencia —</option>
+          {(dependencias ?? []).map((d) => (
+            <option key={d.id} value={d.id}>{d.nombre}</option>
+          ))}
+        </select>
+      </section>
+
       <section id="seccion-estado" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={UserCog} titulo="Estado de la cuenta" ayuda="Con cualquier estado que no sea Habilitada, no puede iniciar sesión." />
         <div className="grid max-w-lg grid-cols-2 gap-2 sm:grid-cols-4">
@@ -538,7 +557,7 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) en la CDMB" ayuda="Solo aplica a Trámites ambientales 2.0 — determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni SIGEC." />
+        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni SIGEC." />
         <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
           {cargos.map((c) => {
@@ -658,24 +677,10 @@ export function EditarUsuarioAccesoForm({
       <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
         <p className="mb-3 text-xs text-stone-400">
-          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba.
+          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba. La dependencia se asigna en su
+          propia sección, arriba.
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
-              <Building2 className="h-3.5 w-3.5" aria-hidden /> Dependencia
-            </p>
-            <select
-              value={dependenciaId}
-              onChange={(e) => setDependenciaId(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            >
-              <option value="">— Sin dependencia —</option>
-              {(dependencias ?? []).map((d) => (
-                <option key={d.id} value={d.id}>{d.nombre}</option>
-              ))}
-            </select>
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:max-w-md">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Rol dentro del módulo</p>
             <div className="flex flex-wrap gap-1.5">

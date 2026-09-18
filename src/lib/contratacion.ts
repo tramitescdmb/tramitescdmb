@@ -185,6 +185,10 @@ export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
   valor?: number | null;
+  // Número de contrato real (SECOP II / sistema de contratación) — registro manual de texto
+  // libre, distinto del consecutivo propio de SIGEC (`numero`). A menudo no se conoce todavía al
+  // abrir el expediente en Precontractual, por eso es opcional y editable después.
+  numeroContrato?: string | null;
   fechaInicio?: Date | null;
   fechaFinEstimada?: Date | null;
   dependenciaSolicitanteId: string;
@@ -202,6 +206,7 @@ export async function crearExpedienteContractual(datos: {
       objeto: datos.objeto.trim(),
       modalidadSeleccion: datos.modalidadSeleccion,
       valor: datos.valor ?? null,
+      numeroContrato: datos.numeroContrato?.trim() || null,
       fechaInicio: datos.fechaInicio ?? null,
       fechaFinEstimada: datos.fechaFinEstimada ?? null,
       dependenciaSolicitanteId: datos.dependenciaSolicitanteId,
@@ -385,9 +390,10 @@ export async function eliminarDocumentoContratoConTraza(documentoId: string, usu
 }
 
 /** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del
- * catálogo sin subir. No bloquea la aprobación (el módulo es un manejador de
- * expedientes, no un motor de validación jurídica) — el caller decide si reintenta
- * con `forzar=true` tras mostrarle la lista al usuario. */
+ * catálogo sin subir. Bloquea la aprobación de forma DURA, sin excepción — decisión
+ * explícita del usuario (2026-09-18): "impedir el cierre de cualquier etapa
+ * contractual si falta alguno de los documentos marcados como obligatorios". Antes
+ * era un aviso que se podía saltar con `forzar=true`; ese salto se retiró. */
 export class FaltanRequisitosError extends Error {
   constructor(public readonly faltantes: string[]) {
     super(`Faltan ${faltantes.length} documento(s) obligatorio(s) de esta etapa: ${faltantes.join("; ")}`);
@@ -399,19 +405,13 @@ export class FaltanRequisitosError extends Error {
  * estaba en Postcontractual) — el Jefe de Contratación valida cada transición
  * (Cap. 6/7/10 del Manual), sin crear un expediente nuevo por etapa.
  *
- * Dos controles del checklist real (pedido explícito del usuario):
+ * Dos bloqueos DUROS, sin excepción posible:
  * 1. Nunca se pasa de Precontractual a Contractual sin conocer al contratista
- *    (persona natural o jurídica) — bloqueo DURO, sin `forzar` que lo salte.
- * 2. Si a la etapa que se cierra le faltan documentos OBLIGATORIOS del catálogo,
- *    se avisa (FaltanRequisitosError) en vez de aprobar directo; con `forzar=true`
- *    se aprueba de todas formas (el catálogo es una guía, no una camisa de fuerza).
+ *    (persona natural o jurídica).
+ * 2. Nunca se aprueba una etapa con documentos OBLIGATORIOS del catálogo sin subir
+ *    (ver FaltanRequisitosError) — antes se podía saltar con `forzar=true`, ya no.
  */
-export async function aprobarEtapaContratacion(
-  expedienteId: string,
-  usuarioId: string,
-  comentario?: string | null,
-  forzar = false
-) {
+export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
     select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, contratistaId: true },
@@ -425,7 +425,7 @@ export async function aprobarEtapaContratacion(
     );
   }
 
-  if (!forzar) {
+  {
     const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual);
     const documentos = await db.documentoContrato.findMany({
       where: { expedienteId, etapa: expediente.etapaActual },
@@ -633,6 +633,7 @@ export function construirWhereExpedienteContractual(
     and.push({
       OR: [
         { numero: { contains: q, mode: "insensitive" } },
+        { numeroContrato: { contains: q, mode: "insensitive" } },
         { objeto: { contains: q, mode: "insensitive" } },
         { contratista: { nombreORazonSocial: { contains: q, mode: "insensitive" } } },
       ],

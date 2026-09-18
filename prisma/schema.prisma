@@ -1976,6 +1976,10 @@ model ExpedienteContractual {
   objeto                   String             @db.Text
   modalidadSeleccion       ModalidadSeleccion
   valor                    Decimal?           @db.Decimal(18, 2)
+  // Número de contrato real (el que asigna el sistema de contratación/SECOP II) — registro
+  // manual de texto libre, distinto de `numero` (el consecutivo propio de SIGEC,
+  // CDMB-CTO-2026-000001). Indexado para poder buscarlo.
+  numeroContrato           String?
   fechaInicio              DateTime?
   fechaFinEstimada         DateTime?
   dependenciaSolicitanteId String
@@ -2008,6 +2012,7 @@ model ExpedienteContractual {
   @@index([dependenciaSolicitanteId])
   @@index([contratistaId])
   @@index([expedienteRelacionadoId])
+  @@index([numeroContrato])
 }
 
 // Muchos-a-muchos: el Manual (Cap. 9) permite designar más de un supervisor por

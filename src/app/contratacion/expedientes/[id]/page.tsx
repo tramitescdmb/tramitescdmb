@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -42,6 +42,7 @@ import { EliminarExpedienteBoton } from "@/components/EliminarExpedienteBoton";
 import { VincularContratistaForm } from "@/components/VincularContratistaForm";
 import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
 import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
+import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -197,7 +198,20 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           <div className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Dependencia:</dt><dd className="font-medium text-stone-800">{expediente.dependenciaSolicitante.nombre}</dd></div>
           <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Modalidad:</dt><dd className="font-medium text-stone-800">{ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}</dd></div>
           <div className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Valor:</dt><dd className="font-medium text-stone-800">{formatearPesosCO(expediente.valor?.toString())}</dd></div>
-          <div className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Vigencia:</dt><dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</dd></div>
+          <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º contrato:</dt><dd className="font-medium text-stone-800">{expediente.numeroContrato ?? "Por definir"}</dd></div>
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <dt className="text-stone-500">Vigencia:</dt>
+            <dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</dd>
+            {puedeGestionarContratistas(permisos) && (
+              <EditarDatosContratoForm
+                expedienteId={id}
+                numeroContratoActual={expediente.numeroContrato}
+                fechaInicioActual={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
+                fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
+              />
+            )}
+          </div>
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
             <UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden />
@@ -312,18 +326,26 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
         const puedeSubir = estado === "actual" && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
         const etapaInfo = estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : "border-stone-200 bg-white";
+        // Vista compacta de solo consulta en una etapa ya aprobada (2026-09-18, pedido explícito):
+        // quien no sea Jefe de Contratación/Administrador ni Supervisor de ESTE expediente no ve
+        // botones de asignar firmantes ni de editar/eliminar sobre una etapa ya cerrada — solo
+        // los archivos y sus firmas asociadas, en modo consulta.
+        const puedeGestionarEtapaCerrada =
+          estado !== "completada" || puedeAprobar || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
 
         return (
-          <div key={etapa} className={`rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
-            <div className="mb-3 flex items-center justify-between">
+          <details key={etapa} open={estado === "actual"} className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
+            <summary className="mb-3 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
                 {estado === "completada" && <FileCheck2 className="h-4 w-4 text-emerald-600" aria-hidden />}
                 {ETIQUETA_ETAPA[etapa]}
+                {estado === "completada" && <span className="text-xs font-normal text-stone-400">(clic para expandir)</span>}
               </h3>
-              <span className="text-xs text-stone-400">
+              <span className="flex items-center gap-1.5 text-xs text-stone-400">
                 {checklist.filter((c) => c.documento).length}/{checklist.length} documentos del catálogo
+                {estado === "completada" && <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />}
               </span>
-            </div>
+            </summary>
 
             <ul className="mb-3 divide-y divide-stone-100 rounded-lg border border-stone-100">
               {checklist.map((item) => (
@@ -385,7 +407,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`}>
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
                       </span>
-                      <VistaPreviaDocumento url={`/api/contratacion-documentos/${item.documento.id}`} nombre={item.documento.nombre} mimeType={item.documento.mimeType} />
+                      <VistaPreviaDocumento
+                        url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 ? "/rotulado" : ""}`}
+                        nombre={item.documento.nombre}
+                        mimeType={item.documento.mimeType}
+                      />
                       {item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 && (
                         <a
                           href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
@@ -398,7 +424,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           Con firma
                         </a>
                       )}
-                      {(() => {
+                      {puedeGestionarEtapaCerrada && (() => {
                         const doc = item.documento!;
                         const miSolicitud = doc.solicitudesFirma.find(
                           (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
@@ -415,7 +441,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           />
                         ) : null;
                       })()}
-                      {puedeAsignarFirmantes && (
+                      {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                         <AsignarFirmantesModal
                           endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
                           usuarios={usuariosOpciones}
@@ -428,7 +454,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           }))}
                         />
                       )}
-                      {(puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente)) && (
+                      {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
                         <EditarEliminarDocumentoContrato
                           documentoId={item.documento.id}
                           expedienteId={id}
@@ -494,7 +520,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             ))}
                           </div>
                         )}
-                        <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+                        <VistaPreviaDocumento
+                          url={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                          nombre={doc.nombre}
+                          mimeType={doc.mimeType}
+                        />
                         {doc.mimeType === "application/pdf" && doc.firmas.length > 0 && (
                           <a
                             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -507,7 +537,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             Con firma
                           </a>
                         )}
-                        {puedeActuarYo && (
+                        {puedeGestionarEtapaCerrada && puedeActuarYo && (
                           <ConfirmarFirmaModal
                             rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
                             endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/completar`}
@@ -517,14 +547,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             documentoMimeType={doc.mimeType}
                           />
                         )}
-                        {puedeAsignarFirmantes && (
+                        {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                           <AsignarFirmantesModal
                             endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
                             usuarios={usuariosOpciones}
                             firmantesActuales={solicitudes}
                           />
                         )}
-                        {(puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente)) && (
+                        {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, doc.etapa)) && (
                           <EditarEliminarDocumentoContrato
                             documentoId={doc.id}
                             expedienteId={id}
@@ -550,7 +580,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 </div>
               </details>
             )}
-          </div>
+          </details>
         );
       })}
     </section>

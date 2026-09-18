@@ -1,31 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
-import { Briefcase, FileClock, FileCheck2, FileArchive, Inbox, UserSquare2, FilePlus2, HelpCircle, ChartColumn } from "lucide-react";
+import { Briefcase, FileClock, FileCheck2, FileArchive } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
-import { listarBuzon } from "@/lib/solicitudes-firma";
 import { db } from "@/lib/db";
 import { TituloSeccion, TarjetaKpi, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFecha } from "@/lib/fecha";
-
-function AccesoRapido({ href, icon: Icon, label, contador }: { href: string; icon: LucideIcon; label: string; contador?: number }) {
-  return (
-    <Link
-      href={href}
-      className="relative flex flex-col items-center gap-1.5 rounded-xl border border-stone-200 bg-white p-3 text-center shadow-soft transition hover:border-cdmb-300 hover:bg-cdmb-50/40"
-    >
-      {Boolean(contador) && (
-        <span className="absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-          {contador}
-        </span>
-      )}
-      <Icon className="h-5 w-5 text-cdmb-600" aria-hidden />
-      <span className="text-xs font-medium text-stone-700">{label}</span>
-    </Link>
-  );
-}
 
 export default async function PanelContratacionPage() {
   const session = await getSession();
@@ -34,7 +15,7 @@ export default async function PanelContratacionPage() {
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const where = construirWhereExpedienteContractual({}, permisos);
-  const [precontractual, contractual, postcontractual, cerrados, recientes, buzon] = await Promise.all([
+  const [precontractual, contractual, postcontractual, cerrados, recientes] = await Promise.all([
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "PRECONTRACTUAL", cerrado: false }] } }),
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "CONTRACTUAL", cerrado: false }] } }),
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "POSTCONTRACTUAL", cerrado: false }] } }),
@@ -45,25 +26,11 @@ export default async function PanelContratacionPage() {
       take: 8,
       include: { dependenciaSolicitante: { select: { nombre: true } }, contratista: { select: { nombreORazonSocial: true } } },
     }),
-    listarBuzon(session.userId, "documentoContrato"),
   ]);
 
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Briefcase}>Panel de Contratación</TituloSeccion>
-
-      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-        {puedeGestionarContratistas(permisos) && (
-          <AccesoRapido href="/contratacion/expedientes/nuevo" icon={FilePlus2} label="Nuevo expediente" />
-        )}
-        <AccesoRapido href="/contratacion/expedientes" icon={Briefcase} label="Expedientes" />
-        <AccesoRapido href="/contratacion/buzon" icon={Inbox} label="Buzón de firmas" contador={buzon.length} />
-        <AccesoRapido href="/contratacion/dashboard" icon={ChartColumn} label="Dashboard" />
-        {puedeVerRegistroContratistas(permisos) && (
-          <AccesoRapido href="/contratacion/contratistas" icon={UserSquare2} label="Contratistas" />
-        )}
-        <AccesoRapido href="/contratacion/ayuda" icon={HelpCircle} label="Ayuda" />
-      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <TarjetaKpi icon={FileClock} label="Precontractual" value={precontractual} tono="ambar" />

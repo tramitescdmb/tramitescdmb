@@ -469,7 +469,7 @@ export default async function UsuariosPage({
           </label>
 
           <Field
-            label="Cargo(s) en la CDMB"
+            label="Cargo(s) para Trámites Ambientales 2.0"
             icon={<Briefcase className={iconSm} />}
             help="Solo aplica a Trámites ambientales 2.0: su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.) se usan ahí para resaltarle qué pasos de un trámite le corresponden. No tiene efecto en SGDEA ni en SIGEC — esos módulos usan sus propios roles (Correspondencia / Contratación, abajo). Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
           >

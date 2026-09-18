@@ -123,7 +123,7 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
-            <td className="px-2.5 py-1.5">Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante.</td>
+            <td className="px-2.5 py-1.5">Ve, asigna firmantes y puede firmar (si es asignado) solo en los expedientes de SU PROPIA dependencia solicitante.</td>
             <td className="px-2.5 py-1.5">Ver expedientes de otras dependencias, subir documentos, gestionar etapas.</td>
           </tr>
           <tr>

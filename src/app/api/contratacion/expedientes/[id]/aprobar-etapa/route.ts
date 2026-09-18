@@ -5,8 +5,8 @@ import { aprobarEtapaContratacion, FaltanRequisitosError } from "@/lib/contratac
 
 /** Aprueba el paso de la etapa actual a la siguiente (o cierra el expediente si ya estaba en
  * Postcontractual) — reservado al Jefe de Contratación (o ADMIN de la app). Si a la etapa le
- * faltan documentos obligatorios del catálogo, responde 409 con la lista (no bloquea del todo:
- * el caller puede reintentar con forzar=true tras mostrársela al usuario). */
+ * faltan documentos obligatorios del catálogo, responde 409 con la lista — bloqueo DURO, sin
+ * forma de saltarlo (decisión explícita del usuario, 2026-09-18: antes se podía forzar). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -18,12 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => ({}));
   try {
-    await aprobarEtapaContratacion(
-      id,
-      session.userId,
-      typeof body?.comentario === "string" ? body.comentario : null,
-      Boolean(body?.forzar)
-    );
+    await aprobarEtapaContratacion(id, session.userId, typeof body?.comentario === "string" ? body.comentario : null);
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof FaltanRequisitosError) {

@@ -31,6 +31,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true });
   }
 
+  if ("numeroContrato" in body || "fechaInicio" in body || "fechaFinEstimada" in body) {
+    // Ajuste formal a las fechas reales del Acta de Inicio, y registro del número real del
+    // contrato (SECOP II) — a menudo no se conocen aún al abrir el expediente en Precontractual.
+    await db.expedienteContractual.update({
+      where: { id },
+      data: {
+        ...("numeroContrato" in body ? { numeroContrato: body.numeroContrato ? String(body.numeroContrato).trim() : null } : {}),
+        ...("fechaInicio" in body ? { fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null } : {}),
+        ...("fechaFinEstimada" in body ? { fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null } : {}),
+      },
+    });
+    await registrarEventoContratacion(id, "DATOS_CONTRATO_ACTUALIZADOS", "Se actualizó el número de contrato y/o las fechas del contrato.", session.userId);
+    return NextResponse.json({ ok: true });
+  }
+
   if ("supervisorUsuarioIds" in body) {
     const idsBody: unknown = body.supervisorUsuarioIds;
     const supervisorUsuarioIds = Array.isArray(idsBody) ? [...new Set(idsBody.filter((v): v is string => typeof v === "string" && v.trim() !== ""))] : [];

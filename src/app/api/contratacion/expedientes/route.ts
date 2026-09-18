@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       objeto,
       modalidadSeleccion,
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
+      numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null,
       fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null,
       dependenciaSolicitanteId,

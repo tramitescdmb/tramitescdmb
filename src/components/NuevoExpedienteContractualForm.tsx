@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Building2, Wallet, CalendarDays, UserCog, Search, UserPlus } from "lucide-react";
+import { FileText, Building2, Wallet, CalendarDays, UserCog, Search, UserPlus, Hash } from "lucide-react";
 import { Field, SectionHelp } from "@/components/Field";
 import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
@@ -24,6 +24,7 @@ export function NuevoExpedienteContractualForm({
   const [objeto, setObjeto] = useState("");
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidades[0]?.valor ?? "");
   const [valor, setValor] = useState("");
+  const [numeroContrato, setNumeroContrato] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinEstimada, setFechaFinEstimada] = useState("");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState("");
@@ -112,6 +113,7 @@ export function NuevoExpedienteContractualForm({
           objeto: objeto.trim(),
           modalidadSeleccion,
           valor: valor ? Number(valor) : null,
+          numeroContrato: numeroContrato.trim() || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
           dependenciaSolicitanteId,
@@ -164,6 +166,14 @@ export function NuevoExpedienteContractualForm({
         </Field>
         <Field label="Valor del contrato" icon={<Wallet className="h-4 w-4" />} help="Opcional, en pesos colombianos.">
           <CampoMoneda value={valor} onChange={setValor} />
+        </Field>
+        <Field label="Número de contrato" icon={<Hash className="h-4 w-4" />} help="El del sistema de contratación/SECOP II — a menudo no se conoce todavía; se puede completar después.">
+          <input
+            value={numeroContrato}
+            onChange={(e) => setNumeroContrato(e.target.value)}
+            placeholder="Ej. 045-2026"
+            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          />
         </Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Fecha de inicio" icon={<CalendarDays className="h-4 w-4" />}>

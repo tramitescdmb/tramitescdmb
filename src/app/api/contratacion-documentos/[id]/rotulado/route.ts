@@ -4,15 +4,16 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual } from "@/lib/permisos";
 import { descargarDocumento } from "@/lib/storage";
-import { estamparRotulo } from "@/lib/pdf-rotulado";
+import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
 /**
- * Descarga de un documento de contratación PDF CON el sello de firma electrónica
- * estampado al pie (nombre, fecha, hash, QR de verificación) — antes SIGEC guardaba
- * la firma solo en base de datos, sin marcar nunca el archivo, a diferencia del
- * SGDEA que sí lo hace (ver /api/correspondencia-documentos/[id]/rotulado, mismo
- * `estamparRotulo`). El original en Storage no se modifica.
+ * Descarga de un documento de contratación PDF CON el sello de firma electrónica estampado al
+ * pie (nombre, fecha, hash SHA-256 completo) y un QR de verificación en la esquina superior —
+ * antes SIGEC guardaba la firma solo en base de datos, sin marcar nunca el archivo. A diferencia
+ * de SGDEA, NO lleva ningún rótulo de radicación de correspondencia (un expediente contractual no
+ * tiene radicado) — usa `estamparFirmaSigec`, no el `estamparRotulo` compartido. El original en
+ * Storage no se modifica.
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,14 +27,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       storagePath: true,
       nombre: true,
       mimeType: true,
-      createdAt: true,
       expediente: {
         select: {
           id: true,
           numero: true,
           contratistaId: true,
           dependenciaSolicitanteId: true,
-          dependenciaSolicitante: { select: { nombre: true } },
         },
       },
       firmas: {
@@ -71,17 +70,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   let salida: Uint8Array;
   try {
     const original = await descargarDocumento(doc.storagePath);
-    salida = await estamparRotulo(
+    salida = await estamparFirmaSigec(
       original,
-      {
-        radicado: doc.expediente.numero,
-        tipoEtiqueta: "Documento de contratación",
-        fechaRadicacion: formatearFechaHoraLarga(doc.createdAt),
-        dependencia: doc.expediente.dependenciaSolicitante.nombre,
-        folios: 1,
-        serieCodigo: null,
-        baseUrl: base,
-      },
+      { numeroExpediente: doc.expediente.numero, baseUrl: base },
       doc.firmas.map((f) => ({
         nombre: f.usuario.nombre,
         denominacionEmpleo: f.usuario.denominacionEmpleo,
@@ -103,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return new NextResponse(Buffer.from(salida), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${slug}-firmado.pdf"`,
+      "Content-Disposition": `inline; filename="${slug}-firmado.pdf"`,
     },
   });
 }

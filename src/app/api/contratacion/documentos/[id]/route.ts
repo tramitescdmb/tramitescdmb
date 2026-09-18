@@ -28,11 +28,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true } });
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
 
   const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
-  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId });
+  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId }, doc.etapa);
   if (!sinTraza && !conTraza) {
     return NextResponse.json({ error: "No tiene permiso para editar este documento." }, { status: 403 });
   }
@@ -78,11 +78,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true } });
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
 
   const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
-  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId });
+  const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId }, doc.etapa);
   if (!sinTraza && !conTraza) {
     return NextResponse.json({ error: "No tiene permiso para eliminar este documento." }, { status: 403 });
   }

@@ -429,9 +429,15 @@ export function puedeAsignarFirmantesDocumentoContrato(
  * (2026-09-18): "gestionar o eliminar archivos de esos contratos bajo su supervisión, en caso algo
  * le quedara mal" — deliberadamente CON registro: a diferencia de la excepción de
  * Administrador/Jefe (motivada por ~1000 contratistas rotando), aquí no hay el mismo volumen que
- * justifique renunciar a la trazabilidad.
+ * justifique renunciar a la trazabilidad. Restricción estricta añadida el mismo día: NUNCA sobre
+ * documentos de la etapa Precontractual, aunque el expediente ya haya avanzado de etapa.
  */
-export function puedeEditarConTrazaDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+export function puedeEditarConTrazaDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string },
+  documentoEtapa: EtapaContratacion
+): boolean {
+  if (documentoEtapa === "PRECONTRACTUAL") return false;
   return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
 }
 
