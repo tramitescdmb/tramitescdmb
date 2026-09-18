@@ -193,14 +193,6 @@ export default async function CorrespondenciaDetallePage({
 
   // Auditoría de LECTURA (requisito MoReq: registrar consultas).
   const { ip, userAgent } = datosPeticion(await headers());
-  await registrarAuditoriaDoc({ entidad: "Comunicacion", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${c.radicado}` });
-
-  const bitacora = await db.auditoriaDoc.findMany({
-    where: { entidad: "Comunicacion", entidadId: id },
-    orderBy: { secuencia: "desc" },
-    take: 50,
-    include: { usuario: { select: { nombre: true } } },
-  });
 
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
@@ -208,15 +200,6 @@ export default async function CorrespondenciaDetallePage({
   const puedeDespacharUsuario = puedeDespachar(permisos);
   const puedeFirmarUsuario = puedeFirmar(permisos);
   const puedeAsignarFirmantesUsuario = puedeAsignarFirmantesComunicacion(permisos, c);
-  const usuariosOpciones = puedeAsignarFirmantesUsuario
-    ? (
-        await db.usuario.findMany({
-          where: { activo: true },
-          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
-          orderBy: { nombre: "asc" },
-        })
-      ).map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }))
-    : [];
   const miSolicitudFirma = c.solicitudesFirma.find(
     (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
   );
@@ -228,20 +211,7 @@ export default async function CorrespondenciaDetallePage({
   // (por reparto de ventanilla si es RECIBIDA, o directo si es INTERNA), el jefe la reparte entre
   // sus propios colaboradores. Nunca puede redirigirla a otra dependencia.
   const puedeSubdistribuirUsuario = puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes);
-  const colaboradoresDependencia = puedeSubdistribuirUsuario
-    ? await db.usuario.findMany({
-        where: { activo: true, dependenciaId: permisos.dependenciaId, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
-        orderBy: { nombre: "asc" },
-        select: { id: true, nombre: true },
-      })
-    : [];
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
-  const calendario = await getCalendarioLaboral();
-  const puedeDevolverUsuario =
-    c.tipo === "RECIBIDA" &&
-    !["RESPONDIDA", "ARCHIVADA", "ANULADA"].includes(c.estado) &&
-    puedeDevolverReparto(permisos, session.userId, distribucionesVigentes);
-  const devolucionATiempo = devolucionDeReparoPermitida(c.fechaVencimiento, calendario);
   const devolucionesPrevias = c.distribuciones.filter((d) => d.devueltaEn);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
@@ -254,21 +224,64 @@ export default async function CorrespondenciaDetallePage({
       Boolean(c.respuestaTexto) ||
       documentosRespuesta.length > 0 ||
       (puedeRadicarUsuario && ["ASIGNADA", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "RESPONDIDA"].includes(c.estado)));
-  const plantillasRespuesta = puedeResponder ? await listarPlantillas("RESPUESTA") : [];
-  const terminosVocabulario = puedeDistribuirUsuario && c.estado !== "ANULADA" ? await listarTerminos() : [];
-  const [dependencias, usuarios] = puedeDistribuirUsuario
-    ? await Promise.all([
-        listarDependenciasActivas(),
-        // Solo quien realmente puede entrar al módulo — repartir a alguien sin rol de
-        // correspondencia (y que no sea ADMIN) lo dejaría "asignado" a una comunicación que nunca podrá ver.
-        db.usuario.findMany({
-          where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+
+  // Todas las consultas de aquí para abajo son independientes entre sí (cada una solo depende de
+  // banderas de permiso ya calculadas arriba, en JS puro) — antes se hacían una tras otra.
+  const [
+    ,
+    bitacora,
+    usuariosOpcionesCrudo,
+    colaboradoresDependencia,
+    calendario,
+    plantillasRespuesta,
+    terminosVocabulario,
+    [dependencias, usuarios],
+    seriesVigentes,
+  ] = await Promise.all([
+    registrarAuditoriaDoc({ entidad: "Comunicacion", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${c.radicado}` }),
+    db.auditoriaDoc.findMany({
+      where: { entidad: "Comunicacion", entidadId: id },
+      orderBy: { secuencia: "desc" },
+      take: 50,
+      include: { usuario: { select: { nombre: true } } },
+    }),
+    puedeAsignarFirmantesUsuario
+      ? db.usuario.findMany({
+          where: { activo: true },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+          orderBy: { nombre: "asc" },
+        })
+      : Promise.resolve([]),
+    puedeSubdistribuirUsuario
+      ? db.usuario.findMany({
+          where: { activo: true, dependenciaId: permisos.dependenciaId, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true },
-        }),
-      ])
-    : [[], []];
-  const seriesVigentes = puedeAdministrarArchivoUsuario ? await listarSeriesVigentes() : [];
+        })
+      : Promise.resolve([]),
+    getCalendarioLaboral(),
+    puedeResponder ? listarPlantillas("RESPUESTA") : Promise.resolve([]),
+    puedeDistribuirUsuario && c.estado !== "ANULADA" ? listarTerminos() : Promise.resolve([]),
+    puedeDistribuirUsuario
+      ? Promise.all([
+          listarDependenciasActivas(),
+          // Solo quien realmente puede entrar al módulo — repartir a alguien sin rol de
+          // correspondencia (y que no sea ADMIN) lo dejaría "asignado" a una comunicación que nunca podrá ver.
+          db.usuario.findMany({
+            where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+            orderBy: { nombre: "asc" },
+            select: { id: true, nombre: true },
+          }),
+        ])
+      : Promise.resolve([[], []]),
+    puedeAdministrarArchivoUsuario ? listarSeriesVigentes() : Promise.resolve([]),
+  ]);
+  const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
+  const puedeDevolverUsuario =
+    c.tipo === "RECIBIDA" &&
+    !["RESPONDIDA", "ARCHIVADA", "ANULADA"].includes(c.estado) &&
+    puedeDevolverReparto(permisos, session.userId, distribucionesVigentes);
+  const devolucionATiempo = devolucionDeReparoPermitida(c.fechaVencimiento, calendario);
   const seriesBuscables = seriesVigentes.map((s) => ({
     id: s.id,
     codigo: s.codigo,
