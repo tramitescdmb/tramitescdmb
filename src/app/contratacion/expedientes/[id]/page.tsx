@@ -101,26 +101,30 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     redirect("/contratacion");
   }
 
-  const supervisoresDisponibles = await db.usuario.findMany({
-    where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
-    orderBy: { nombre: "asc" },
-    select: { id: true, nombre: true },
-  });
-  const usuariosOpcionesCrudo = await db.usuario.findMany({
-    where: { activo: true },
-    select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
-    orderBy: { nombre: "asc" },
-  });
+  // Las 3 consultas son independientes entre sí — antes se hacían en secuencia (3 ida y vuelta a
+  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas.
+  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista] = await Promise.all([
+    db.usuario.findMany({
+      where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true },
+    }),
+    db.usuario.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+      orderBy: { nombre: "asc" },
+    }),
+    // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
+    // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
+    expediente.contratista
+      ? db.expedienteContractual.findMany({
+          where: { contratistaId: expediente.contratista.id, id: { not: id } },
+          select: { id: true, numero: true, objeto: true },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+  ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
-  // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
-  // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
-  const otrosContratosDelContratista = expediente.contratista
-    ? await db.expedienteContractual.findMany({
-        where: { contratistaId: expediente.contratista.id, id: { not: id } },
-        select: { id: true, numero: true, objeto: true },
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
@@ -142,19 +146,23 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   // Checklist real por etapa (catálogo del Manual A-BS-MA01 cruzado con lo ya subido) —
   // solo se calcula para las etapas ya alcanzadas (actual o completadas); una etapa
   // futura solo muestra los NOMBRES del catálogo, sin cruzar documentos ni permitir subir.
+  // Las consultas de requisitos por etapa son independientes — se piden todas a la vez en vez
+  // de una por una (a lo sumo 3 etapas, pero cada round-trip a la base suma).
+  const etapasAlcanzadas = ETAPAS_ORDEN.slice(0, idxActual + 1);
+  const etapasFuturas = ETAPAS_ORDEN.slice(idxActual + 1);
+  const [requisitosAlcanzados, requisitosFuturos] = await Promise.all([
+    Promise.all(etapasAlcanzadas.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa))),
+    Promise.all(etapasFuturas.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa))),
+  ]);
   const checklistsPorEtapa = new Map<string, ItemChecklist[]>();
-  for (let i = 0; i <= idxActual; i++) {
-    const etapa = ETAPAS_ORDEN[i]!;
-    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa);
+  etapasAlcanzadas.forEach((etapa, i) => {
     const docs = expediente.documentos.filter((d) => d.etapa === etapa);
-    checklistsPorEtapa.set(etapa, cruzarChecklist(requisitos, docs));
-  }
+    checklistsPorEtapa.set(etapa, cruzarChecklist(requisitosAlcanzados[i]!, docs));
+  });
   const previewFuturo = new Map<string, { nombre: string; obligatorio: boolean }[]>();
-  for (let i = idxActual + 1; i < ETAPAS_ORDEN.length; i++) {
-    const etapa = ETAPAS_ORDEN[i]!;
-    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa);
-    previewFuturo.set(etapa, requisitos.map((r) => ({ nombre: r.nombre, obligatorio: r.obligatorio })));
-  }
+  etapasFuturas.forEach((etapa, i) => {
+    previewFuturo.set(etapa, requisitosFuturos[i]!.map((r) => ({ nombre: r.nombre, obligatorio: r.obligatorio })));
+  });
 
   return (
     <section className="space-y-5">
