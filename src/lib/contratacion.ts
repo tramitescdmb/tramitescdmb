@@ -168,6 +168,95 @@ export function requisitosObligatoriosFaltantes(checklist: ItemChecklist[]): str
   return checklist.filter((c) => c.obligatorio && !c.documento).map((c) => c.nombre);
 }
 
+/* ============================================================================
+ * Catálogo administrable de requisitos (RequisitoDocumentoContratacion) — antes
+ * solo se cargaba por script (`data/contratacion/requisitos.json` + prisma/seed-
+ * contratacion.ts); esto le da al Administrador una pantalla para reordenar,
+ * activar/desactivar y agregar requisitos sin tocar código.
+ * ==========================================================================*/
+
+export async function listarCatalogoRequisitos() {
+  return db.requisitoDocumentoContratacion.findMany({
+    orderBy: [{ etapa: "asc" }, { modalidadSeleccion: { sort: "asc", nulls: "first" } }, { orden: "asc" }],
+  });
+}
+
+export async function crearRequisitoCatalogo(datos: {
+  etapa: EtapaContratacion;
+  modalidadSeleccion?: ModalidadSeleccion | null;
+  nombre: string;
+  codigoFormato?: string | null;
+  fuente?: string | null;
+  obligatorio: boolean;
+}) {
+  if (!datos.nombre.trim()) throw new Error("El nombre del requisito es obligatorio.");
+  const maximo = await db.requisitoDocumentoContratacion.aggregate({
+    where: { etapa: datos.etapa, modalidadSeleccion: datos.modalidadSeleccion ?? null },
+    _max: { orden: true },
+  });
+  return db.requisitoDocumentoContratacion.create({
+    data: {
+      etapa: datos.etapa,
+      modalidadSeleccion: datos.modalidadSeleccion ?? null,
+      orden: (maximo._max.orden ?? 0) + 1,
+      nombre: datos.nombre.trim(),
+      codigoFormato: datos.codigoFormato?.trim() || null,
+      fuente: datos.fuente?.trim() || null,
+      obligatorio: datos.obligatorio,
+    },
+  });
+}
+
+export async function actualizarRequisitoCatalogo(
+  id: string,
+  datos: Partial<{
+    nombre: string;
+    codigoFormato: string | null;
+    fuente: string | null;
+    notaOrigenExterno: string | null;
+    modalidadSeleccion: ModalidadSeleccion | null;
+    obligatorio: boolean;
+    gestionadoEnSecop: boolean;
+    activo: boolean;
+  }>
+) {
+  return db.requisitoDocumentoContratacion.update({
+    where: { id },
+    data: { ...datos, nombre: datos.nombre?.trim() },
+  });
+}
+
+/** Intercambia el `orden` de un requisito con su vecino inmediato dentro del MISMO grupo
+ * (etapa + modalidad) — no tiene efecto si ya está en el extremo del grupo. */
+export async function moverRequisitoCatalogo(id: string, direccion: "arriba" | "abajo") {
+  const actual = await db.requisitoDocumentoContratacion.findUnique({ where: { id } });
+  if (!actual) throw new Error("El requisito no existe.");
+
+  const vecino = await db.requisitoDocumentoContratacion.findFirst({
+    where: {
+      etapa: actual.etapa,
+      modalidadSeleccion: actual.modalidadSeleccion,
+      orden: direccion === "arriba" ? { lt: actual.orden } : { gt: actual.orden },
+    },
+    orderBy: { orden: direccion === "arriba" ? "desc" : "asc" },
+  });
+  if (!vecino) return actual;
+
+  await db.$transaction([
+    db.requisitoDocumentoContratacion.update({ where: { id: actual.id }, data: { orden: vecino.orden } }),
+    db.requisitoDocumentoContratacion.update({ where: { id: vecino.id }, data: { orden: actual.orden } }),
+  ]);
+  return actual;
+}
+
+export async function eliminarRequisitoCatalogo(id: string) {
+  const enUso = await db.documentoContrato.count({ where: { requisitoId: id } });
+  if (enUso > 0) {
+    throw new Error("Este requisito ya tiene documentos cargados — desactívelo en vez de eliminarlo.");
+  }
+  await db.requisitoDocumentoContratacion.delete({ where: { id } });
+}
+
 /** Bitácora del módulo (mismo espíritu que ExpedienteEvento) — ver la EXCEPCIÓN
  * deliberada en permisos.ts (puedeEditarSinTrazaDocumentoContrato): la edición o
  * eliminación de un documento por Administrador/Jefe de Contratación NUNCA pasa

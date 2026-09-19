@@ -63,7 +63,7 @@ export default async function RotuloExpedienteContractualPage({ params }: { para
         <div className="mt-1.5 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[8px] font-semibold uppercase tracking-widest text-stone-500">
-              Expediente contractual — {ETIQUETA_ETAPA[expediente.etapaActual]}
+              Expediente contractual — {expediente.cerrado ? "Cerrado" : ETIQUETA_ETAPA[expediente.etapaActual]}
             </p>
             <p className="font-mono text-lg font-bold leading-tight tracking-tight text-cdmb-900">{expediente.numero}</p>
             <p className="text-[9px] text-stone-600">{formatearFecha(expediente.createdAt)}</p>

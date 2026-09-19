@@ -5,7 +5,7 @@ import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaSigec } from "@/components/MigaSigec";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion } from "@/lib/permisos";
 
 /**
  * Módulo de Contratación — manejador de expedientes digitales (Manual de
@@ -47,7 +47,11 @@ export default async function ContratacionLayout({ children }: { children: React
       </div>
 
       <ContratacionTabs
-        permitido={{ administrar: puedeGestionarContratistas(permisos), verContratistas: puedeVerRegistroContratistas(permisos) }}
+        permitido={{
+          administrar: puedeGestionarContratistas(permisos),
+          verContratistas: puedeVerRegistroContratistas(permisos),
+          soloAdministrador: puedeAdministrarContratacion(permisos),
+        }}
       />
 
       <MigaSigec />

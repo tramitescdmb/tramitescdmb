@@ -18,6 +18,7 @@ const INICIO_GRUPO: Record<string, string> = {
   "Mis firmas": "/contratacion/mis-firmas",
   Dashboard: "/contratacion/dashboard",
   Contratistas: "/contratacion/contratistas",
+  Catálogo: "/contratacion/catalogo",
   Ayuda: "/contratacion/ayuda",
 };
 
@@ -34,6 +35,7 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
   { re: /^\/contratacion\/contratistas\/nuevo/, trail: ["Contratistas", "Nuevo contratista"] },
   { re: /^\/contratacion\/contratistas\/[^/]+/, trail: ["Contratistas", "Contratista"] },
   { re: /^\/contratacion\/contratistas$/, trail: ["Contratistas"] },
+  { re: /^\/contratacion\/catalogo/, trail: ["Catálogo"] },
   { re: /^\/contratacion\/ayuda/, trail: ["Ayuda"] },
   { re: /^\/contratacion$/, trail: ["Panel"] },
 ];

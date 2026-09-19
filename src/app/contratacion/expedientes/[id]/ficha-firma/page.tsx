@@ -68,9 +68,27 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
         {expediente.documentos.length === 0 ? (
           <p className="mt-4 text-sm text-stone-400">Este expediente todavía no tiene ningún documento firmado.</p>
         ) : (
+          <>
+            <p className="mt-4 text-xs text-stone-500">
+              {expediente.documentos.length} documento{expediente.documentos.length === 1 ? "" : "s"} firmado
+              {expediente.documentos.length === 1 ? "" : "s"} ·{" "}
+              {expediente.documentos.reduce((acc, d) => acc + d.firmas.length + d.solicitudesFirma.length, 0)} firma(s)
+              y visto(s) bueno(s) en total
+            </p>
+            {expediente.documentos.length > 3 && (
+              <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-b border-stone-100 pb-3 text-xs print:hidden">
+                {expediente.documentos.map((doc) => (
+                  <li key={doc.id}>
+                    <a href={`#doc-${doc.id}`} className="text-cdmb-700 hover:underline">
+                      {doc.nombre}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           <div className="mt-4 space-y-5">
             {expediente.documentos.map((doc) => (
-              <div key={doc.id}>
+              <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4">
                 <p className="mb-1.5 text-sm font-semibold text-stone-800">{doc.nombre}</p>
                 <ul className="space-y-3">
                   {doc.firmas.map((f) => (
@@ -113,6 +131,7 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
               </div>
             ))}
           </div>
+          </>
         )}
 
         <p className="mt-4 border-t border-stone-100 pt-3 text-[11px] leading-relaxed text-stone-400">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FilePlus2, Inbox, ChartColumn, UserSquare2, FileSignature } from "lucide-react";
+import { LayoutDashboard, Briefcase, FilePlus2, Inbox, ChartColumn, UserSquare2, FileSignature, ListChecks } from "lucide-react";
 
 const TABS = [
   { href: "/contratacion", label: "Panel", icon: LayoutDashboard, prefijoExacto: true, permiso: undefined },
@@ -11,10 +11,11 @@ const TABS = [
   { href: "/contratacion/mis-firmas", label: "Mis firmas", icon: FileSignature, permiso: undefined },
   { href: "/contratacion/dashboard", label: "Dashboard", icon: ChartColumn, permiso: undefined },
   { href: "/contratacion/contratistas", label: "Contratistas", icon: UserSquare2, permiso: "verContratistas" as const },
+  { href: "/contratacion/catalogo", label: "Catálogo", icon: ListChecks, permiso: "soloAdministrador" as const },
   { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente", icon: FilePlus2, permiso: "administrar" as const },
 ];
 
-export function ContratacionTabs({ permitido }: { permitido: { administrar: boolean; verContratistas: boolean } }) {
+export function ContratacionTabs({ permitido }: { permitido: { administrar: boolean; verContratistas: boolean; soloAdministrador: boolean } }) {
   const pathname = usePathname();
   const tabs = TABS.filter((t) => !t.permiso || permitido[t.permiso]);
 
