@@ -5,8 +5,10 @@ import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeEliminarExpedi
 import { eliminarExpedienteContractualCompleto, registrarEventoContratacion } from "@/lib/contratacion";
 import { deleteDocumento } from "@/lib/storage";
 
-/** Vincula el contratista (o el expediente relacionado) a un expediente ya creado — Administrador
- * o Jefe de Contratación. Punto de extensión para futuros campos editables del expediente (objeto,
+/** Vincula el contratista (o el expediente relacionado) de un expediente ya creado, en cualquier
+ * etapa — Administrador o Jefe de Contratación. Norma general: UN contratista por expediente; una vez
+ * vinculado no se reemplaza. El contratista vinculado (si tiene cuenta de acceso) es quien consulta el
+ * expediente y carga documentos desde la etapa Contractual. Punto de extensión para futuros campos editables del expediente (objeto,
  * valor, fechas) si hiciera falta más adelante. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,10 +25,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ("contratistaId" in body) {
     const contratistaId = String(body.contratistaId || "").trim();
     if (!contratistaId) return NextResponse.json({ error: "Falta el contratista." }, { status: 400 });
-    const contratista = await db.contratista.findUnique({ where: { id: contratistaId }, select: { nombreORazonSocial: true } });
+    const [contratista, actual] = await Promise.all([
+      db.contratista.findUnique({ where: { id: contratistaId }, select: { nombreORazonSocial: true } }),
+      db.expedienteContractual.findUnique({ where: { id }, select: { contratista: { select: { id: true, nombreORazonSocial: true } } } }),
+    ]);
     if (!contratista) return NextResponse.json({ error: "El contratista no existe." }, { status: 404 });
+    if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+    if (actual.contratista) {
+      return NextResponse.json(
+        { error: `Este expediente ya tiene contratista (${actual.contratista.nombreORazonSocial}): la norma general es un contratista por expediente.` },
+        { status: 409 }
+      );
+    }
 
-    await db.expedienteContractual.update({ where: { id }, data: { contratistaId } });
+    // La condición `contratistaId: null` en el WHERE evita que dos personas vinculen a la vez y una pise a la otra.
+    const { count } = await db.expedienteContractual.updateMany({ where: { id, contratistaId: null }, data: { contratistaId } });
+    if (count === 0) return NextResponse.json({ error: "Este expediente acaba de recibir un contratista; no se modificó." }, { status: 409 });
     await registrarEventoContratacion(id, "CONTRATISTA_VINCULADO", `Se vinculó a ${contratista.nombreORazonSocial} como contratista.`, session.userId);
     return NextResponse.json({ ok: true });
   }

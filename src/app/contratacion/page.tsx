@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Briefcase, FileClock, FileCheck2, FileArchive } from "lucide-react";
+import { Briefcase, FileClock, FileCheck2, FileArchive, PenLine } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 import { db } from "@/lib/db";
+import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
 import { TituloSeccion, TarjetaKpi, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFecha } from "@/lib/fecha";
 
@@ -15,7 +16,8 @@ export default async function PanelContratacionPage() {
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const where = construirWhereExpedienteContractual({}, permisos);
-  const [precontractual, contractual, postcontractual, cerrados, recientes] = await Promise.all([
+  const [pendientesFirma, precontractual, contractual, postcontractual, cerrados, recientes] = await Promise.all([
+    contarPendientesBuzonContratacion(session.userId),
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "PRECONTRACTUAL", cerrado: false }] } }),
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "CONTRACTUAL", cerrado: false }] } }),
     db.expedienteContractual.count({ where: { AND: [where, { etapaActual: "POSTCONTRACTUAL", cerrado: false }] } }),
@@ -31,6 +33,24 @@ export default async function PanelContratacionPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Briefcase}>Panel de Contratación</TituloSeccion>
+
+      {pendientesFirma.total > 0 && (
+        <Link
+          href="/contratacion/buzon"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm hover:bg-amber-100"
+        >
+          <PenLine className="h-4 w-4 flex-none" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <strong>
+              Tiene {pendientesFirma.total} documento{pendientesFirma.total === 1 ? "" : "s"} pendiente{pendientesFirma.total === 1 ? "" : "s"} por firmar o revisar.
+            </strong>{" "}
+            {pendientesFirma.listos < pendientesFirma.total
+              ? `${pendientesFirma.listos} ya puede${pendientesFirma.listos === 1 ? "" : "n"} firmarse; el resto espera el turno de otro firmante.`
+              : "Ya puede firmarse."}
+          </span>
+          <span className="flex-none text-xs font-semibold underline">Ir al buzón</span>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <TarjetaKpi icon={FileClock} label="Precontractual" value={precontractual} tono="ambar" />

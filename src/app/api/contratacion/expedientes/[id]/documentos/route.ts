@@ -60,6 +60,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       subidoPorId: session.userId,
       requiereFirma: Boolean(body.requiereFirma),
       firmadoEnSecop: Boolean(body.firmadoEnSecop),
+      periodoMes: body.periodoMes ? String(body.periodoMes) : null,
+      periodoEventualId: body.periodoEventualId ? String(body.periodoEventualId) : null,
     });
     return NextResponse.json({ id: documento.id }, { status: 201 });
   } catch (err) {

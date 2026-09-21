@@ -16,6 +16,7 @@ import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
 import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
+import { esRequisitoPorPeriodos } from "../src/lib/periodos-informe";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3100";
 const PASSWORD = "E2e-Sigec-2026!";
@@ -67,7 +68,8 @@ class Cliente {
   }
   async pagina(ruta: string) {
     const res = await this.req(ruta);
-    const html = res.status === 200 ? await res.text() : "";
+    // React intercala «<!-- -->» entre texto y valores interpolados: se quita para poder buscar frases.
+    const html = res.status === 200 ? (await res.text()).replace(/<!-- -->/g, "").replace(/&nbsp;/g, " ") : "";
     return { status: res.status, html, location: res.headers.get("location") };
   }
   async login(email: string) {
@@ -112,6 +114,10 @@ async function main() {
   console.log(`\nE2E SIGEC contra ${BASE}\n`);
   const dependencia = await db.dependencia.findFirst({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } });
   esperar(dependencia, "No hay dependencias activas en la base.");
+
+  // Valor del consecutivo de expedientes ANTES de la prueba, para devolverlo al terminar (ver limpieza).
+  const anioConsecutivo = new Date().getFullYear();
+  const consecutivoInicial = (await db.consecutivoRadicado.findUnique({ where: { serie_anio: { serie: "CTO", anio: anioConsecutivo } } }))?.ultimoNumero ?? 0;
 
   const ids: Record<string, string> = {};
   const c: Record<string, Cliente> = {};
@@ -227,6 +233,9 @@ async function main() {
         modalidadSeleccion: "CONTRATACION_DIRECTA",
         valor: 1500000,
         numeroContrato: `E2E-${SUFIJO}`,
+        // 25 sep → 24 dic: 4 periodos mensuales (25-30 sep, oct, nov, 1-24 dic).
+        fechaInicio: "2026-09-25",
+        fechaFinEstimada: "2026-12-24",
         dependenciaSolicitanteId: dependencia.id,
         contratistaId: ctx.contratistaId,
         supervisorUsuarioIds: [ids.sup],
@@ -332,6 +341,7 @@ async function main() {
           const quien = j === 0 ? c.sup! : c.jefe!;
           const r = await subirDocumento(quien, exp, etapa, `${req.nombre}`.slice(0, 60), {
             requisitoId: req.id,
+            ...(esRequisitoPorPeriodos(req) ? { periodoMes: "2026-09" } : {}),
           });
           esperar(r.status === 201, `"${req.nombre}" → HTTP ${r.status}: ${JSON.stringify(r.data)}`);
           docsSubidos[etapa]!.push(r.data.id);
@@ -344,6 +354,9 @@ async function main() {
           esperar(r.status === 201, `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
           docsSubidos[etapa]!.push(r.data.id);
         });
+        const informe = reqs.find((r) => esRequisitoPorPeriodos(r));
+        esperar(informe, "el catálogo no tiene el Informe de supervisión (A-BS-FO116) en la etapa Contractual");
+        await flujoPeriodos(c, exp, informe.id, docsSubidos);
       }
 
       if (etapa === "PRECONTRACTUAL") {
@@ -423,6 +436,31 @@ async function main() {
       const z = await cli.req(`/api/contratacion/expedientes/${exp}/zip`);
       esperar(r.status !== 200 && z.status === 403, `página ${r.status}, zip ${z.status}`);
     });
+    await paso("Firmante sin rol sobre el expediente: ve SU documento y su ficha, no la ficha del expediente", async () => {
+      esperar(docFirmaId, "sin documento de firma");
+      const cli = new Cliente(`e2e-sigec-ajeno-${SUFIJO}@prueba.invalid`);
+      await cli.login(cli.nombre);
+      const asigna = await c.jefe!.json(`/api/contratacion/documentos/${docFirmaId}/solicitudes-firma`, "POST", { firmantes: [{ usuarioId: ids.ajeno, rol: "FIRMA", orden: 2 }] });
+      esperar(asigna.status === 200, `asignar → ${asigna.status}: ${JSON.stringify(asigna.data)}`);
+      const s = await db.solicitudFirma.findFirst({ where: { documentoContratoId: docFirmaId, usuarioAsignadoId: ids.ajeno } });
+      const firma = await cli.json(`/api/contratacion/solicitudes-firma/${s!.id}/completar`, "POST");
+      esperar(firma.status === 200, `firmar → ${firma.status}: ${JSON.stringify(firma.data)}`);
+
+      const mis = await cli.pagina("/contratacion/mis-firmas");
+      esperar(mis.html.includes("Ver documento") && mis.html.includes(`/api/contratacion-documentos/${docFirmaId}/rotulado`), "Mis firmas no ofrece «Ver documento»");
+      const pdf = await cli.req(`/api/contratacion-documentos/${docFirmaId}/rotulado`);
+      const bytes = Buffer.from(await pdf.arrayBuffer());
+      esperar(pdf.status === 200 && bytes.subarray(0, 4).toString() === "%PDF", `documento firmado → HTTP ${pdf.status}`);
+      const fichaDoc = await cli.pagina(`/contratacion/expedientes/${exp}/ficha-firma?documento=${docFirmaId}`);
+      esperar(fichaDoc.status === 200 && fichaDoc.html.includes("acta-para-firma"), `ficha del documento → HTTP ${fichaDoc.status}`);
+      const fichaTodo = await cli.pagina(`/contratacion/expedientes/${exp}/ficha-firma`);
+      esperar(fichaTodo.status !== 200, "vio la ficha de TODO el expediente sin tener acceso a él");
+      const otroDoc = docsSubidos.PRECONTRACTUAL![0]!;
+      const fichaAjena = await cli.pagina(`/contratacion/expedientes/${exp}/ficha-firma?documento=${otroDoc}`);
+      esperar(fichaAjena.status !== 200, "vio la ficha de un documento que no firmó");
+      const zip = await cli.req(`/api/contratacion/expedientes/${exp}/zip`);
+      esperar(zip.status === 403, `ZIP del expediente → ${zip.status}`);
+    });
     await paso("La bitácora del expediente registró los eventos clave", async () => {
       const eventos = await db.eventoContratacion.findMany({ where: { expedienteId: exp }, select: { tipo: true } });
       const tipos = new Set(eventos.map((e) => e.tipo));
@@ -437,6 +475,66 @@ async function main() {
       const despues = await db.eventoContratacion.count({ where: { expedienteId: exp } });
       esperar(despues === antes, `se registraron ${despues - antes} evento(s)`);
     });
+    console.log("\n8b. Contratistas: vincular en cualquier etapa y eliminar");
+    const numeroDe = async (id: string) => (await db.expedienteContractual.findUniqueOrThrow({ where: { id }, select: { numero: true } })).numero;
+    const nuevoContratista = async (sufijo: string, nombre: string) => {
+      const r = await c.jefe!.json("/api/contratacion/contratistas", "POST", { identificacion: `${identificacion}${sufijo}`, nombreORazonSocial: nombre });
+      esperar(r.status === 201, `crear contratista → ${r.status}: ${JSON.stringify(r.data)}`);
+      return r.data.id as string;
+    };
+    let c2 = "";
+    await paso("La ficha de un contratista sin expedientes ofrece eliminarlo y vincular expedientes", async () => {
+      c2 = await nuevoContratista("2", `Prueba E2E sin expedientes ${SUFIJO}`);
+      const r = await c.jefe!.pagina(`/contratacion/contratistas/${c2}`);
+      esperar(r.status === 200 && r.html.includes("Eliminar contratista") && r.html.includes("Vincular un expediente"), "faltan los controles");
+      const conExp = await c.jefe!.pagina(`/contratacion/contratistas/${ctx.contratistaId}`);
+      esperar(conExp.html.includes("No se puede eliminar mientras pertenezca"), "no explica por qué no se puede eliminar");
+    });
+    await paso("Solo Administrador/Jefe eliminan un contratista (supervisor → 403)", async () => {
+      const r = await c.sup!.json(`/api/contratacion/contratistas/${c2}`, "DELETE");
+      esperar(r.status === 403, `HTTP ${r.status}`);
+    });
+    await paso("Un contratista con expedientes NO se puede eliminar (409)", async () => {
+      const r = await c.jefe!.json(`/api/contratacion/contratistas/${ctx.contratistaId}`, "DELETE");
+      esperar(r.status === 409 && /expediente/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+    });
+    await paso("Un contratista sin expedientes SÍ se elimina y queda en la auditoría", async () => {
+      const r = await c.jefe!.json(`/api/contratacion/contratistas/${c2}`, "DELETE");
+      esperar(r.status === 200, `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+      esperar((await db.contratista.count({ where: { id: c2 } })) === 0, "el registro sigue existiendo");
+      const aud = await db.registroAuditoria.findFirst({ where: { tipo: "CONTRATISTA_ELIMINADO", descripcion: { contains: `${identificacion}2` } } });
+      esperar(aud, "no quedó registro de auditoría");
+      const otra = await c.jefe!.json(`/api/contratacion/contratistas/${c2}`, "DELETE");
+      esperar(otra.status === 404, `segundo borrado → ${otra.status}`);
+    });
+    await paso("Un contratista por expediente: el que ya tiene uno no admite otro (409); uno sin contratista se vincula", async () => {
+      const c3 = await nuevoContratista("3", `Prueba E2E vinculo ${SUFIJO}`);
+      const sup = await c.sup!.json(`/api/contratacion/expedientes/${exp}`, "PATCH", { contratistaId: c3 });
+      esperar(sup.status === 403, `supervisor → ${sup.status}`);
+      const otro = await c.jefe!.json(`/api/contratacion/expedientes/${exp}`, "PATCH", { contratistaId: c3 });
+      esperar(otro.status === 409 && /un contratista por expediente/i.test(otro.data.error), `reemplazar → ${otro.status}: ${JSON.stringify(otro.data)}`);
+      const sigue = await db.expedienteContractual.findUnique({ where: { id: exp }, select: { contratistaId: true } });
+      esperar(sigue?.contratistaId === ctx.contratistaId, "el contratista original fue reemplazado");
+
+      // Expediente sin contratista: se vincula desde la ficha del contratista (aparece en su lista) y no admite un segundo.
+      const e2 = await c.jefe!.json("/api/contratacion/expedientes", "POST", {
+        objeto: `E2E SIGEC ${SUFIJO} — expediente sin contratista`,
+        modalidadSeleccion: "CONTRATACION_DIRECTA",
+        dependenciaSolicitanteId: dependencia.id,
+      });
+      esperar(e2.status === 201, `crear expediente 2 → ${e2.status}: ${JSON.stringify(e2.data)}`);
+      ctx.expedienteIds.push(e2.data.id);
+      const ficha = await c.jefe!.pagina(`/contratacion/contratistas/${c3}`);
+      esperar(ficha.html.includes(e2.data.numero) && !ficha.html.includes(await numeroDe(exp)), "la ficha no ofrece solo expedientes sin contratista");
+      const ok = await c.jefe!.json(`/api/contratacion/expedientes/${e2.data.id}`, "PATCH", { contratistaId: c3 });
+      esperar(ok.status === 200, `vincular → ${ok.status}: ${JSON.stringify(ok.data)}`);
+      const otra = await c.jefe!.json(`/api/contratacion/expedientes/${e2.data.id}`, "PATCH", { contratistaId: ctx.contratistaId });
+      esperar(otra.status === 409, `segundo contratista → ${otra.status}`);
+      const ev = await db.eventoContratacion.findFirst({ where: { expedienteId: e2.data.id, tipo: "CONTRATISTA_VINCULADO" } });
+      esperar(ev, "el vínculo no quedó en la bitácora");
+      const del = await c.jefe!.json(`/api/contratacion/contratistas/${c3}`, "DELETE");
+      esperar(del.status === 409, `borrar un contratista ya vinculado → ${del.status}`);
+    });
     await paso("El supervisor no puede eliminar el expediente (403)", async () => {
       const r = await c.sup!.json(`/api/contratacion/expedientes/${exp}`, "DELETE");
       esperar(r.status === 403, `el supervisor pudo eliminar (HTTP ${r.status})`);
@@ -449,6 +547,12 @@ async function main() {
         const r = await c.admin!.json(`/api/contratacion/expedientes/${id}`, "DELETE");
         esperar(r.status === 200, `DELETE expediente → ${r.status}: ${JSON.stringify(r.data)}`);
       }
+      // Los expedientes de prueba consumen consecutivos CDMB-CTO-AAAA-NNNNNN: al borrarlos quedaría un hueco
+      // en la serie oficial. Se devuelve el contador a su valor previo a la prueba, salvo que un expediente
+      // real con número mayor haya sido creado mientras tanto (nunca se reutiliza un número ya emitido).
+      const restantes = await db.expedienteContractual.findMany({ where: { numero: { startsWith: `CDMB-CTO-${anioConsecutivo}-` } }, select: { numero: true } });
+      const mayor = restantes.reduce((m, e) => Math.max(m, Number(e.numero.split("-").pop()) || 0), 0);
+      await db.consecutivoRadicado.updateMany({ where: { serie: "CTO", anio: anioConsecutivo }, data: { ultimoNumero: Math.max(consecutivoInicial, mayor) } });
       await db.contratista.deleteMany({ where: { OR: [{ id: ctx.contratistaId ?? "-" }, { identificacion: { startsWith: identificacion } }] } });
     });
     await paso("Desactiva los usuarios de prueba (no se borran: quedan en la bitácora de auditoría)", async () => {
@@ -467,6 +571,84 @@ async function main() {
   }
 }
 
+/** Informe de supervisión por periodos: espacios mensuales derivados de las fechas del contrato
+ * (25 sep → 24 dic = 4) + espacios eventuales con nombre propio. El primer periodo (sep) ya se cargó
+ * al subir los obligatorios del catálogo. */
+async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoId: string, docsSubidos: Record<string, string[]>) {
+  const meta = { etapa: "CONTRACTUAL", storagePath: "no-existe/x.pdf", mimeType: "application/pdf", tamanoBytes: 10, nombre: "x", requisitoId };
+  await paso("Informe · sin indicar periodo se rechaza (no sube nada)", async () => {
+    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", meta);
+    esperar(r.status === 400 && /por periodos/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+  });
+  await paso("Informe · un mes fuera de las fechas del contrato se rechaza", async () => {
+    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: "2027-01" });
+    esperar(r.status === 400 && /no existe para las fechas/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+  });
+  await paso("Informe · un periodo que ya tiene documento no admite otro", async () => {
+    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: "2026-09" });
+    esperar(r.status === 400 && /ya tiene un documento/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+  });
+  await paso("Informe · el periodo 1 (25 sep – 30 sep) quedó como «Informe de supervisión 1»", async () => {
+    const d = await db.documentoContrato.findFirst({ where: { expedienteId: exp, requisitoId, periodoMes: "2026-09" } });
+    esperar(d?.nombre.includes("Informe de supervisión 1 (25 sep – 30 sep 2026)"), `nombre: ${d?.nombre}`);
+  });
+  await paso("Informe · el Jefe carga el periodo 2 (octubre) y el contratista el periodo 3 (noviembre)", async () => {
+    const oct = await subirDocumento(c.jefe!, exp, "CONTRACTUAL", "informe-oct", { requisitoId, periodoMes: "2026-10" });
+    esperar(oct.status === 201, `octubre → ${oct.status}: ${JSON.stringify(oct.data)}`);
+    const nov = await subirDocumento(c.contratista!, exp, "CONTRACTUAL", "informe-nov", { requisitoId, periodoMes: "2026-11" });
+    esperar(nov.status === 201, `noviembre (contratista) → ${nov.status}: ${JSON.stringify(nov.data)}`);
+    docsSubidos.CONTRACTUAL!.push(oct.data.id, nov.data.id);
+    const dOct = await db.documentoContrato.findUnique({ where: { id: oct.data.id } });
+    esperar(dOct?.nombre.includes("Informe de supervisión 2 (01 oct – 31 oct 2026)"), `nombre: ${dOct?.nombre}`);
+  });
+  let eventualId = "";
+  await paso("Espacio eventual · el contratista no puede crearlo (403); el supervisor asignado sí, con nombre propio", async () => {
+    const no = await c.contratista!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales`, "POST", { nombre: "no debería" });
+    esperar(no.status === 403, `contratista → ${no.status}`);
+    const vacio = await c.sup!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales`, "POST", { nombre: "  " });
+    esperar(vacio.status === 400, `nombre vacío → ${vacio.status}`);
+    const ok = await c.sup!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales`, "POST", { nombre: "Informe extraordinario por suspensión" });
+    esperar(ok.status === 201, `crear → ${ok.status}: ${JSON.stringify(ok.data)}`);
+    eventualId = ok.data.id;
+    const dup = await c.sup!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales`, "POST", { nombre: "informe EXTRAORDINARIO por suspensión" });
+    esperar(dup.status === 409, `duplicado → ${dup.status}`);
+  });
+  await paso("Espacio eventual · admite su documento y el nombre queda con la descripción", async () => {
+    const r = await subirDocumento(c.jefe!, exp, "CONTRACTUAL", "informe-extra", { requisitoId, periodoEventualId: eventualId });
+    esperar(r.status === 201, `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
+    docsSubidos.CONTRACTUAL!.push(r.data.id);
+    const d = await db.documentoContrato.findUnique({ where: { id: r.data.id } });
+    esperar(d?.nombre.endsWith("— Informe extraordinario por suspensión"), `nombre: ${d?.nombre}`);
+    const otra = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoEventualId: eventualId });
+    esperar(otra.status === 400, `segundo documento en el mismo espacio → ${otra.status}`);
+  });
+  await paso("Espacio eventual · con documento no se puede quitar (409); vacío se renombra y se quita", async () => {
+    const con = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales/${eventualId}`, "DELETE");
+    esperar(con.status === 409, `con documento → ${con.status}`);
+    const vacio = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales`, "POST", { nombre: "Espacio de prueba" });
+    esperar(vacio.status === 201, `crear → ${vacio.status}`);
+    const ren = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales/${vacio.data.id}`, "PATCH", { nombre: "Espacio renombrado" });
+    esperar(ren.status === 200, `renombrar → ${ren.status}`);
+    const del = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales/${vacio.data.id}`, "DELETE");
+    esperar(del.status === 200, `quitar → ${del.status}`);
+  });
+  await paso("Informe · la pantalla del expediente muestra los 4 periodos, el avance y los espacios eventuales", async () => {
+    for (const rol of ["jefe", "contratista"] as const) {
+      const r = await c[rol]!.pagina(`/contratacion/expedientes/${exp}`);
+      esperar(r.status === 200, `${rol}: HTTP ${r.status}`);
+      for (const t of ["Informe de supervisión 1", "Informe de supervisión 4", "Periodo 25 sep – 30 sep 2026", "Periodo 01 dic – 24 dic 2026"]) {
+        esperar(r.html.replace(/&nbsp;/g, " ").includes(t), `${rol}: falta «${t}»`);
+      }
+      esperar(r.html.includes("3 de 4 periodos mensuales"), `${rol}: no muestra el avance «3 de 4»`);
+      esperar(r.html.includes("Informe extraordinario por suspensión"), `${rol}: falta el espacio eventual`);
+    }
+    const jefe = await c.jefe!.pagina(`/contratacion/expedientes/${exp}`);
+    esperar(jefe.html.includes("Agregar un espacio eventual"), "el Jefe no ve cómo agregar un espacio eventual");
+    const cont = await c.contratista!.pagina(`/contratacion/expedientes/${exp}`);
+    esperar(!cont.html.includes("Agregar un espacio eventual"), "el contratista puede agregar espacios");
+  });
+}
+
 /** Ciclo de firma: asignación → buzón del firmante → firma → sello estampado → ficha técnica. */
 async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string>, exp: string, docId: string) {
   let solicitudId = "";
@@ -476,6 +658,15 @@ async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string
     const s = await db.solicitudFirma.findFirst({ where: { documentoContratoId: docId, usuarioAsignadoId: ids.sup } });
     esperar(s?.estado === "PENDIENTE", "no se creó la solicitud pendiente");
     solicitudId = s.id;
+  });
+  await paso("Buzón · muestra el conteo de pendientes por firmar (pestaña, panel y buzón)", async () => {
+    const buzon = await c.sup!.pagina("/contratacion/buzon");
+    esperar(/Tiene 1 documento pendiente por firmar o revisar/.test(buzon.html), "el buzón no dice que tiene 1 pendiente");
+    esperar(buzon.html.includes("1 pendientes por firmar"), "la pestaña Buzón no muestra la insignia");
+    const panel = await c.sup!.pagina("/contratacion");
+    esperar(/Tiene 1 documento pendiente por firmar o revisar/.test(panel.html), "el panel no muestra el aviso");
+    const sinPendientes = await c.contratista!.pagina("/contratacion");
+    esperar(!sinPendientes.html.includes("pendientes por firmar"), "alguien sin pendientes ve la insignia");
   });
   await paso("Firma · la solicitud aparece en el buzón y en la pantalla de firma del supervisor", async () => {
     const buzon = await c.sup!.pagina("/contratacion/buzon");
@@ -495,6 +686,21 @@ async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string
     const doc = await db.documentoContrato.findUnique({ where: { id: docId }, select: { estadoValidacion: true } });
     esperar(doc?.estadoValidacion === "APROBADO", `estado del documento: ${doc?.estadoValidacion}`);
     return `sello ${firma.formato} · documento APROBADO`;
+  });
+  await paso("Buzón · tras firmar, el aviso de pendientes desaparece", async () => {
+    const buzon = await c.sup!.pagina("/contratacion/buzon");
+    const panel = await c.sup!.pagina("/contratacion");
+    esperar(!buzon.html.includes("pendientes por firmar") && !panel.html.includes("pendientes por firmar"), "sigue mostrando pendientes");
+  });
+  await paso("Mis firmas · «Ver documento» abre el PDF firmado y la ficha es solo de ese documento", async () => {
+    const mis = await c.sup!.pagina("/contratacion/mis-firmas");
+    esperar(mis.html.includes("Ver documento") && mis.html.includes(`/api/contratacion-documentos/${docId}/rotulado`), "no hay enlace al documento");
+    esperar(mis.html.includes(`ficha-firma?documento=${docId}`), "la ficha no es por documento");
+    const pdf = await c.sup!.req(`/api/contratacion-documentos/${docId}/rotulado`);
+    const bytes = Buffer.from(await pdf.arrayBuffer());
+    esperar(pdf.status === 200 && bytes.subarray(0, 4).toString() === "%PDF", `HTTP ${pdf.status}`);
+    const ficha = await c.sup!.pagina(`/contratacion/expedientes/${exp}/ficha-firma?documento=${docId}`);
+    esperar(ficha.status === 200 && ficha.html.includes("acta-para-firma"), `ficha → HTTP ${ficha.status}`);
   });
   await paso("Firma · firmar dos veces la misma solicitud se rechaza", async () => {
     const r = await c.sup!.json(`/api/contratacion/solicitudes-firma/${solicitudId}/completar`, "POST");

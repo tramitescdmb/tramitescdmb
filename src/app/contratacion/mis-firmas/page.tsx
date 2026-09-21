@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileSignature, Eye } from "lucide-react";
+import { FileSignature, Eye, FileText } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -19,7 +19,7 @@ export default async function MisFirmasContratacionPage() {
       id: true,
       fechaHora: true,
       hashContenido: true,
-      documento: { select: { nombre: true, expedienteId: true, expediente: { select: { numero: true, objeto: true } } } },
+      documento: { select: { id: true, nombre: true, mimeType: true, expedienteId: true, expediente: { select: { numero: true, objeto: true } } } },
     },
   });
 
@@ -42,8 +42,20 @@ export default async function MisFirmasContratacionPage() {
                   {formatearFechaHoraLarga(f.fechaHora)} · SHA-256 {f.hashContenido.slice(0, 16)}…
                 </p>
               </div>
+              {/* Siempre se puede abrir lo que uno firmó: el PDF con el sello estampado (o el archivo
+                  original si no es PDF) y la ficha técnica de ESTE documento, sin pasar por el expediente. */}
+              <a
+                href={`/api/contratacion-documentos/${f.documento.id}${f.documento.mimeType === "application/pdf" ? "/rotulado" : ""}`}
+                target="_blank"
+                rel="noreferrer"
+                title={f.documento.mimeType === "application/pdf" ? "Abre el PDF con su sello de firma electrónica y QR" : "Abre el archivo firmado"}
+                className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden />
+                Ver documento
+              </a>
               <Link
-                href={`/contratacion/expedientes/${f.documento.expedienteId}/ficha-firma`}
+                href={`/contratacion/expedientes/${f.documento.expedienteId}/ficha-firma?documento=${f.documento.id}`}
                 className="inline-flex flex-none items-center gap-1 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden />

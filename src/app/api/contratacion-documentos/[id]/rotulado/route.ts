@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
@@ -57,7 +57,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (
     !puedeVerExpedienteContractual(permisos, doc.expediente) &&
-    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id))
+    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
+    !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id))
   ) {
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }

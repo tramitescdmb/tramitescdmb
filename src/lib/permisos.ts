@@ -402,6 +402,13 @@ export function puedeSubirDocumentoContrato(
   return false;
 }
 
+/** ¿Puede crear/renombrar/quitar espacios eventuales del informe de supervisión? Quienes pueden
+ * cargar documentos en la etapa Contractual, salvo el Contratista: los espacios los define quien
+ * lleva el expediente, el contratista solo entrega en ellos. */
+export function puedeGestionarPeriodosInforme(permisos: PermisosUsuario, expediente: { id: string; contratistaId: string | null }): boolean {
+  return permisos.contratacion !== "CONTRATISTA" && puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL");
+}
+
 /**
  * ¿Puede asignar quién debe firmar/dar visto bueno/tener solo lectura sobre un documento de este
  * expediente? Administrador/Jefe de Contratación: cualquiera. Funcionario de Contratación:
@@ -503,6 +510,18 @@ export function puedeVerExpedienteContractual(
 export async function tieneSolicitudFirmaEnExpedienteContractual(usuarioId: string, expedienteId: string): Promise<boolean> {
   const n = await db.solicitudFirma.count({ where: { usuarioAsignadoId: usuarioId, documentoContrato: { expedienteId } } });
   return n > 0;
+}
+
+/** ¿Firmó (o se le asignó firmar/revisar/leer) ESTE documento? Quien firmó un archivo puede verlo
+ * siempre — el archivo y su ficha técnica —, sin necesidad de tener acceso al resto del expediente
+ * ni conservar el rol que tenía cuando firmó. Se comprueba contra la firma misma (que nunca se borra
+ * salvo que se borre el documento), no solo contra la solicitud. */
+export async function tieneFirmaOSolicitudEnDocumentoContrato(usuarioId: string, documentoId: string): Promise<boolean> {
+  const [firmas, solicitudes] = await Promise.all([
+    db.firmaDocumentoContrato.count({ where: { usuarioId, documentoId } }),
+    db.solicitudFirma.count({ where: { usuarioAsignadoId: usuarioId, documentoContratoId: documentoId } }),
+  ]);
+  return firmas + solicitudes > 0;
 }
 
 /**

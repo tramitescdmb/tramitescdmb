@@ -15,7 +15,14 @@ const TABS = [
   { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente", icon: FilePlus2, permiso: "administrar" as const },
 ];
 
-export function ContratacionTabs({ permitido }: { permitido: { administrar: boolean; verContratistas: boolean; soloAdministrador: boolean } }) {
+export function ContratacionTabs({
+  permitido,
+  pendientesFirma,
+}: {
+  permitido: { administrar: boolean; verContratistas: boolean; soloAdministrador: boolean };
+  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Buzón». */
+  pendientesFirma: { total: number; listos: number };
+}) {
   const pathname = usePathname();
   const tabs = TABS.filter((t) => !t.permiso || permitido[t.permiso]);
 
@@ -38,6 +45,15 @@ export function ContratacionTabs({ permitido }: { permitido: { administrar: bool
           >
             <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
             {t.label}
+            {t.href === "/contratacion/buzon" && pendientesFirma.total > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ${pendientesFirma.listos > 0 ? "bg-red-600" : "bg-stone-400"}`}
+                title={`${pendientesFirma.total} documento(s) pendiente(s) de su firma o visto bueno${pendientesFirma.listos < pendientesFirma.total ? ` (${pendientesFirma.listos} ya puede(n) firmarse)` : ""}`}
+                aria-label={`${pendientesFirma.total} pendientes por firmar`}
+              >
+                {pendientesFirma.total}
+              </span>
+            )}
           </Link>
         );
       })}

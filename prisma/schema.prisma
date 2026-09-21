@@ -323,6 +323,7 @@ enum TipoAuditoria {
   USUARIO_BLOQUEADO
   USUARIO_ACTUALIZADO
   CONFIGURACION_ACTUALIZADA
+  CONTRATISTA_ELIMINADO
 }
 
 // MoReq 6.36: estados de cuenta distinguibles (antes solo había activo/inactivo).
@@ -2025,6 +2026,7 @@ model ExpedienteContractual {
   supervisores                ExpedienteContractualSupervisor[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
+  periodosEventuales          PeriodoInformeEventual[]
   eventos                     EventoContratacion[]
   expedientesQueLoReferencian ExpedienteContractual[]           @relation("ExpedienteContractualRelacionado")
 
@@ -2132,6 +2134,12 @@ model DocumentoContrato {
   // firma — en ese caso no hace falta volver a firmarlo aquí.
   requiereFirma        Boolean                           @default(false)
   firmadoEnSecop       Boolean                           @default(false)
+  // Informe por periodos (ver src/lib/periodos-informe.ts): un documento de un requisito que se
+  // entrega mes a mes cuelga de UN periodo — o bien de un mes calendario derivado de las fechas del
+  // contrato (`periodoMes`, "AAAA-MM"), o bien de un espacio eventual creado a mano
+  // (`periodoEventualId`). Ambos null = documento normal, sin periodo.
+  periodoMes           String?
+  periodoEventualId    String?
   estadoValidacion     EstadoValidacionDocumentoContrato @default(PENDIENTE)
   validadoPorId        String?
   validadoEn           DateTime?
@@ -2141,12 +2149,29 @@ model DocumentoContrato {
   subidoPor        Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
   validadoPor      Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
   requisito        RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  periodoEventual  PeriodoInformeEventual?         @relation(fields: [periodoEventualId], references: [id], onDelete: SetNull)
   firmas           FirmaDocumentoContrato[]
   solicitudesFirma SolicitudFirma[]
 
   @@index([expedienteId])
   @@index([etapa])
   @@index([requisitoId])
+  @@index([periodoEventualId])
+}
+
+// Espacio de entrega ADICIONAL a los periodos mensuales derivados de las fechas del contrato (ej. un
+// informe extraordinario por una eventualidad), creado a mano y con nombre descriptivo.
+model PeriodoInformeEventual {
+  id           String   @id @default(cuid())
+  expedienteId String
+  nombre       String
+  creadoPorId  String?
+  createdAt    DateTime @default(now())
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  documentos DocumentoContrato[]
+
+  @@index([expedienteId])
 }
 
 // Evento de firma electrónica de UN documento de contratación — modelo propio

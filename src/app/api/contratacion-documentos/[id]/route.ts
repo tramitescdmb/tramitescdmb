@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
 
 /** Descarga (URL firmada) de un documento de un expediente contractual — usado tanto por el enlace
@@ -21,7 +21,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (
     !puedeVerExpedienteContractual(permisos, doc.expediente) &&
-    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id))
+    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
+    !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id))
   ) {
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }

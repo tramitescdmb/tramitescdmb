@@ -250,6 +250,15 @@ export type SolicitudBuzon = {
 };
 
 /** Solicitudes pendientes de un usuario en un módulo (buzón). */
+/** Cuántos documentos de contratación esperan la firma o el visto bueno de este usuario — para el
+ * indicador visible en la pestaña «Buzón» y en el panel (antes había que entrar al buzón para saber
+ * si tenía algo pendiente). `listos` = los que ya puede actuar (no esperan el turno de otro). */
+export async function contarPendientesBuzonContratacion(usuarioId: string): Promise<{ total: number; listos: number }> {
+  const solicitudes = await listarBuzon(usuarioId, "documentoContrato");
+  const accionables = solicitudes.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
+  return { total: accionables.length, listos: accionables.filter((s) => s.puedeActuar).length };
+}
+
 export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "documentoContrato") {
   const solicitudes = await db.solicitudFirma.findMany({
     where: {

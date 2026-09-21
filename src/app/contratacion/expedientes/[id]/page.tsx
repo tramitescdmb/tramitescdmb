@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info } from "lucide-react";
 import { db } from "@/lib/db";
@@ -15,6 +16,7 @@ import {
   puedeGestionarEtapasContratacion,
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
+  puedeGestionarPeriodosInforme,
 } from "@/lib/permisos";
 import {
   ETAPAS_ORDEN,
@@ -25,9 +27,10 @@ import {
   type ItemChecklist,
 } from "@/lib/contratacion";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { calcularPeriodosInforme, esRequisitoPorPeriodos, etiquetaRangoPeriodo } from "@/lib/periodos-informe";
 import { CATEGORIAS_SUGERIDAS } from "@/lib/contratacion-categorias";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
-import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
+import { formatearFecha, formatearFechaHora, formatearFechaSolo } from "@/lib/fecha";
 import { formatearPesosCO } from "@/lib/moneda";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -44,6 +47,7 @@ import { VincularContratistaForm } from "@/components/VincularContratistaForm";
 import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
 import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
 import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
+import { NuevoEspacioInformeForm, EspacioEventualAcciones } from "@/components/EspaciosInformeAcciones";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -86,6 +90,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
       expedienteRelacionado: { select: { numero: true } },
       expedientesQueLoReferencian: { select: { id: true, numero: true } },
       supervisores: { include: { usuario: { select: { nombre: true } } } },
+      periodosEventuales: { orderBy: { createdAt: "asc" } },
       documentos: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -139,6 +144,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
+  // Informe de supervisión: un espacio por cada mes del contrato (derivado de sus fechas) + los
+  // espacios eventuales que se hayan creado a mano — ver src/lib/periodos-informe.ts.
+  const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
+  const hoy = new Date();
+
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
@@ -176,6 +186,191 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   etapasFuturas.forEach((etapa, i) => {
     previewFuturo.set(etapa, requisitosFuturos[i]!.map((r) => ({ nombre: r.nombre, obligatorio: r.obligatorio })));
   });
+
+  type DocumentoExpediente = (typeof expediente.documentos)[number];
+
+  /** Vista previa, sello, firma, asignación y edición de UN documento — los mismos controles que las
+   * demás filas del checklist, usados por los espacios del informe por periodos. */
+  const controlesDocumento = (doc: DocumentoExpediente, etapa: EtapaContratacion, puedeGestionarEtapaCerrada: boolean) => {
+    const solicitudes = doc.solicitudesFirma.map((s) => ({
+      id: s.id,
+      usuarioAsignadoId: s.usuarioAsignadoId,
+      usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+      rol: s.rol,
+      orden: s.orden,
+      estado: s.estado,
+    }));
+    const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
+    const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+    const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
+    return (
+      <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
+          {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
+        </span>
+        {doc.requiereFirma && !doc.firmadoEnSecop && (
+          <span
+            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"}`}
+          >
+            {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+          </span>
+        )}
+        <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+        {firmado && (
+          <a
+            href={`/api/contratacion-documentos/${doc.id}/rotulado`}
+            target="_blank"
+            rel="noreferrer"
+            title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+          >
+            <Printer className="h-3.5 w-3.5" aria-hidden />
+            Con firma
+          </a>
+        )}
+        {puedeGestionarEtapaCerrada && miSolicitud && puedeActuarYo && (
+          <ConfirmarFirmaModal
+            rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+            endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
+            endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
+            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+            documentoNombre={doc.nombre}
+            documentoMimeType={doc.mimeType}
+          />
+        )}
+        {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
+          <AsignarFirmantesModal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
+        )}
+        {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
+          <EditarEliminarDocumentoContrato
+            documentoId={doc.id}
+            expedienteId={id}
+            nombreActual={doc.nombre}
+            requiereFirmaActual={doc.requiereFirma}
+            sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
+          />
+        )}
+      </div>
+    );
+  };
+
+  /** Bloque del requisito que se entrega por periodos (informe de supervisión): una fila por mes del
+   * contrato + las filas eventuales creadas a mano, cada una con su propio espacio de carga. */
+  const panelPorPeriodos = (item: ItemChecklist, etapa: EtapaContratacion, puedeSubirEtapa: boolean, puedeGestionarEtapaCerrada: boolean) => {
+    const docs = expediente.documentos.filter((d) => d.requisitoId === item.id);
+    const claves = new Set(periodosMensuales.map((p) => p.clave));
+    const idsEventuales = new Set(expediente.periodosEventuales.map((e) => e.id));
+    // Documentos de un mes que ya no existe (se cambiaron las fechas del contrato) o sin periodo: no
+    // se pierden, se listan aparte.
+    const sueltos = docs.filter((d) => (d.periodoMes ? !claves.has(d.periodoMes) : d.periodoEventualId ? !idsEventuales.has(d.periodoEventualId) : true));
+    const puedeCrearEspacios = puedeSubirEtapa && puedeGestionarPeriodosInforme(permisos, expediente);
+
+    const fila = (
+      key: string,
+      titulo: string,
+      subtitulo: string,
+      doc: DocumentoExpediente | undefined,
+      subida: { periodoMes?: string; periodoEventualId?: string },
+      pendiente: boolean,
+      extra?: React.ReactNode
+    ) => (
+      <li
+        key={key}
+        id={doc ? `documento-${doc.id}` : undefined}
+        className="flex flex-wrap items-center gap-2 rounded-md p-2 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-stone-800">
+            {titulo}
+            {!doc && pendiente && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por radicar</span>}
+          </p>
+          <p className="text-[11px] text-stone-400">{subtitulo}</p>
+          {doc && (
+            <p className="text-[11px] text-stone-400">
+              Subido por {doc.subidoPor.nombre} el {formatearFechaHora(doc.createdAt)}
+            </p>
+          )}
+        </div>
+        {doc ? (
+          controlesDocumento(doc, etapa, puedeGestionarEtapaCerrada)
+        ) : puedeSubirEtapa ? (
+          <SubirDocumentoRequisitoForm
+            expedienteId={id}
+            etapa={etapa}
+            requisitoId={item.id}
+            requisitoNombre={item.nombre}
+            firmadoEnSecopSugerido={item.gestionadoEnSecop}
+            {...subida}
+          />
+        ) : (
+          <span className="flex-none text-xs text-stone-300">Sin subir</span>
+        )}
+        {extra}
+      </li>
+    );
+
+    return (
+      <div className="basis-full space-y-2 pt-1">
+        {periodosMensuales.length === 0 ? (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Para generar los espacios mensuales de este informe, registre la <strong>fecha de inicio</strong> y la <strong>fecha de fin</strong> del contrato
+            (se ajustan en «Datos del contrato», más arriba). Mientras tanto puede usar espacios eventuales.
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] text-stone-500">
+              {docs.filter((d) => d.periodoMes && claves.has(d.periodoMes)).length} de {periodosMensuales.length} periodos mensuales con informe cargado. Cada periodo
+              se radica desde el día siguiente a su cierre.
+            </p>
+            <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100 bg-stone-50/40">
+              {periodosMensuales.map((p, i) => {
+                const doc = docs.find((d) => d.periodoMes === p.clave);
+                return fila(
+                  `mes-${p.clave}`,
+                  `${item.nombre} ${i + 1}`,
+                  `Periodo ${etiquetaRangoPeriodo(p)} · se radica desde el ${formatearFechaSolo(p.radicaDesde)}`,
+                  doc,
+                  { periodoMes: p.clave },
+                  p.radicaDesde <= hoy
+                );
+              })}
+            </ul>
+          </>
+        )}
+
+        {expediente.periodosEventuales.length > 0 && (
+          <div>
+            <p className="mb-1 text-[11px] font-medium text-stone-500">Espacios eventuales</p>
+            <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100 bg-stone-50/40">
+              {expediente.periodosEventuales.map((e) => {
+                const doc = docs.find((d) => d.periodoEventualId === e.id);
+                return fila(
+                  `ev-${e.id}`,
+                  e.nombre,
+                  "Espacio eventual",
+                  doc,
+                  { periodoEventualId: e.id },
+                  false,
+                  puedeCrearEspacios ? <EspacioEventualAcciones expedienteId={id} periodoId={e.id} nombre={e.nombre} tieneDocumento={Boolean(doc)} /> : null
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {sueltos.length > 0 && (
+          <div>
+            <p className="mb-1 text-[11px] font-medium text-amber-700">Informes fuera de los periodos actuales (cambiaron las fechas del contrato)</p>
+            <ul className="divide-y divide-stone-100 rounded-lg border border-amber-100 bg-amber-50/30">
+              {sueltos.map((d) => fila(`suelto-${d.id}`, d.nombre, "Sin periodo vigente", d, {}, false))}
+            </ul>
+          </div>
+        )}
+
+        {puedeCrearEspacios && <NuevoEspacioInformeForm expedienteId={id} />}
+      </div>
+    );
+  };
 
   return (
     <section className="space-y-5">
@@ -281,6 +476,19 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </div>
         )}
 
+        {/* Un contratista por expediente: si aún no tiene (y ya pasó de Precontractual, donde el aviso de arriba
+            lo exige), se puede vincular en cualquier etapa. Una vez vinculado no se reemplaza. */}
+        {!expediente.contratista && !faltaContratista && puedeGestionarContratistas(permisos) && (
+          <details className="group mt-3 text-xs" open>
+            <summary className="cursor-pointer font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">Vincular un contratista</summary>
+            <p className="mt-1.5 text-stone-500">
+              El contratista vinculado (si tiene cuenta de acceso) puede consultar este expediente —incluidas las etapas Contractual y
+              Postcontractual— y cargar en él sus documentos. Se vincula uno solo por expediente; el vínculo queda en la bitácora.
+            </p>
+            <VincularContratistaForm expedienteId={id} />
+          </details>
+        )}
+
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
           {ETAPAS_ORDEN.map((etapa, i) => {
             const pasada = i < idxActual || expediente.cerrado;
@@ -380,7 +588,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       {item.gestionadoEnSecop && (
                         <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
                       )}
-                      {item.documento?.requiereFirma && !item.documento.firmadoEnSecop && (
+                      {!esRequisitoPorPeriodos(item) && item.documento?.requiereFirma && !item.documento.firmadoEnSecop && (
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                             item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
@@ -406,14 +614,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         </span>
                       )}
                     </p>
-                    {item.documento && (
+                    {item.documento && !esRequisitoPorPeriodos(item) && (
                       <p className="text-[11px] text-stone-400">
                         Subido por {item.documento.subidoPorNombre} el {formatearFechaHora(item.documento.createdAt)}
                         {item.documento.firmaFechaHora &&
                           ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
                       </p>
                     )}
-                    {item.documento && item.documento.solicitudesFirma.length > 0 && (
+                    {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {item.documento.solicitudesFirma.map((s) => (
                           <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
@@ -423,7 +631,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       </div>
                     )}
                   </div>
-                  {item.documento ? (
+                  {esRequisitoPorPeriodos(item) ? (
+                    <span className="flex-none text-xs text-stone-400">
+                      {expediente.documentos.filter((d) => d.requisitoId === item.id).length} informe(s) cargado(s)
+                    </span>
+                  ) : item.documento ? (
                     <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`}>
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
@@ -496,6 +708,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                   ) : (
                     <span className="flex-none text-xs text-stone-300">Sin subir</span>
                   )}
+                  {esRequisitoPorPeriodos(item) && panelPorPeriodos(item, etapa, puedeSubir, puedeGestionarEtapaCerrada)}
                 </li>
               ))}
             </ul>

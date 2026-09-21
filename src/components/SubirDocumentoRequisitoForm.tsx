@@ -25,12 +25,18 @@ export function SubirDocumentoRequisitoForm({
   requisitoId,
   requisitoNombre,
   firmadoEnSecopSugerido,
+  periodoMes,
+  periodoEventualId,
 }: {
   expedienteId: string;
   etapa: EtapaContratacion;
   requisitoId: string;
   requisitoNombre: string;
   firmadoEnSecopSugerido: boolean;
+  /** Requisito que se entrega por periodos (informe de supervisión): a qué periodo corresponde
+   * este archivo — un mes "AAAA-MM" o un espacio eventual. El servidor arma el nombre final. */
+  periodoMes?: string;
+  periodoEventualId?: string;
 }) {
   const router = useRouter();
   const [requiereFirma, setRequiereFirma] = useState(false);
@@ -63,6 +69,8 @@ export function SubirDocumentoRequisitoForm({
           hashSha256,
           requiereFirma,
           firmadoEnSecop,
+          periodoMes,
+          periodoEventualId,
         }),
       });
       if (!res.ok) {

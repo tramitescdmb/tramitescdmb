@@ -5,6 +5,7 @@ import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaSigec } from "@/components/MigaSigec";
 import { verificarSesion as getSession } from "@/lib/permisos";
+import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion } from "@/lib/permisos";
 
 /**
@@ -17,6 +18,7 @@ export default async function ContratacionLayout({ children }: { children: React
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
+  const pendientesFirma = await contarPendientesBuzonContratacion(session.userId);
 
   return (
     <div className="space-y-4">
@@ -47,6 +49,7 @@ export default async function ContratacionLayout({ children }: { children: React
       </div>
 
       <ContratacionTabs
+        pendientesFirma={pendientesFirma}
         permitido={{
           administrar: puedeGestionarContratistas(permisos),
           verContratistas: puedeVerRegistroContratistas(permisos),

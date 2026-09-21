@@ -4,8 +4,10 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas } from "@/lib/permisos";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion";
+import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedienteAContratistaForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { EditarContratistaForm } from "@/components/EditarContratistaForm";
+import { EliminarContratistaBoton } from "@/components/EliminarContratistaBoton";
 
 export default async function ContratistaDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +25,17 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
     },
   });
   if (!contratista) notFound();
+
+  const puedeGestionar = puedeGestionarContratistas(permisos);
+  const vinculables = puedeGestionar
+    ? await db.expedienteContractual.findMany({
+        // Un contratista por expediente: solo se ofrecen los que todavía no tienen uno.
+        where: { contratistaId: null },
+        orderBy: { createdAt: "desc" },
+        take: 300,
+        select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true },
+      })
+    : [];
 
   return (
     <div className="space-y-6">
@@ -93,7 +106,35 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             }}
           />
         )}
+
+        {puedeGestionarContratistas(permisos) && (
+          <div className="mt-4 border-t border-stone-100 pt-3">
+            {contratista.expedientes.length === 0 ? (
+              <EliminarContratistaBoton contratistaId={contratista.id} nombre={contratista.nombreORazonSocial} tieneCuenta={Boolean(contratista.usuario)} />
+            ) : (
+              <p className="text-xs text-stone-400">
+                No se puede eliminar mientras pertenezca a un expediente ({contratista.expedientes.length}). Reasígnelos a otro contratista o elimine esos expedientes primero.
+              </p>
+            )}
+          </div>
+        )}
       </section>
+
+      {puedeGestionar && (
+        <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <h2 className="mb-2 text-sm font-semibold text-stone-900">Vincular un expediente</h2>
+          <VincularExpedienteAContratistaForm
+            contratistaId={contratista.id}
+            tieneCuenta={Boolean(contratista.usuario)}
+            opciones={vinculables.map((e) => ({
+              id: e.id,
+              numero: e.numero,
+              objeto: e.objeto,
+              etapa: e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
+            }))}
+          />
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">

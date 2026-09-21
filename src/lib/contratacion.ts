@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
+import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
 
@@ -334,10 +335,14 @@ export async function agregarDocumentoContrato(datos: {
   subidoPorId: string;
   requiereFirma?: boolean;
   firmadoEnSecop?: boolean;
+  /** Solo para requisitos que se entregan por periodos (informe de supervisión): mes "AAAA-MM"
+   * derivado de las fechas del contrato, o id de un espacio eventual creado a mano. Uno u otro. */
+  periodoMes?: string | null;
+  periodoEventualId?: string | null;
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
-    select: { cerrado: true, modalidadSeleccion: true },
+    select: { cerrado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
@@ -357,6 +362,32 @@ export async function agregarDocumentoContrato(datos: {
     }
     nombre = requisito.nombre;
     categoria = null; // redundante: el nombre ya identifica el documento del catálogo
+
+    if (esRequisitoPorPeriodos(requisito)) {
+      const periodoMes = datos.periodoMes?.trim() || null;
+      const periodoEventualId = datos.periodoEventualId?.trim() || null;
+      if (!periodoMes && !periodoEventualId) throw new Error(`"${requisito.nombre}" se entrega por periodos: indique a qué periodo corresponde.`);
+      if (periodoMes && periodoEventualId) throw new Error("Un documento corresponde a un solo periodo.");
+
+      if (periodoMes) {
+        const periodos = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
+        const idx = periodos.findIndex((p) => p.clave === periodoMes);
+        if (idx < 0) throw new Error("Ese periodo no existe para las fechas de este contrato.");
+        nombre = nombreDocumentoPeriodo(requisito.nombre, periodos[idx]!, idx + 1);
+      } else {
+        const eventual = await db.periodoInformeEventual.findFirst({ where: { id: periodoEventualId!, expedienteId: datos.expedienteId }, select: { nombre: true } });
+        if (!eventual) throw new Error("El espacio eventual indicado no existe en este expediente.");
+        nombre = `${requisito.nombre} — ${eventual.nombre}`;
+      }
+      const yaTiene = await db.documentoContrato.count({
+        where: { expedienteId: datos.expedienteId, requisitoId: requisito.id, ...(periodoMes ? { periodoMes } : { periodoEventualId }) },
+      });
+      if (yaTiene > 0) throw new Error("Este periodo ya tiene un documento cargado: edítelo o elimínelo para cargar otro.");
+    } else if (datos.periodoMes || datos.periodoEventualId) {
+      throw new Error("Este requisito no se entrega por periodos.");
+    }
+  } else if (datos.periodoMes || datos.periodoEventualId) {
+    throw new Error("Solo un documento del catálogo que se entrega por periodos puede asociarse a un periodo.");
   }
   if (!nombre) throw new Error("El documento debe tener un nombre.");
 
@@ -374,6 +405,8 @@ export async function agregarDocumentoContrato(datos: {
       subidoPorId: datos.subidoPorId,
       requiereFirma: Boolean(datos.requiereFirma),
       firmadoEnSecop: Boolean(datos.firmadoEnSecop),
+      periodoMes: datos.periodoMes?.trim() || null,
+      periodoEventualId: datos.periodoEventualId?.trim() || null,
     },
   });
 

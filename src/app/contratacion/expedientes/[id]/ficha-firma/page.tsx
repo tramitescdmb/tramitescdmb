@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import Link from "next/link";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { BotonImprimir } from "@/components/BotonImprimir";
@@ -12,8 +13,15 @@ import { BotonImprimir } from "@/components/BotonImprimir";
  * contractual — misma lógica que la ficha de correspondencia (ver ese archivo para el
  * porqué de exigir sesión en vez de publicarlo junto al QR público de /verificar).
  */
-export default async function FichaFirmaExpedienteContractualPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FichaFirmaExpedienteContractualPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ documento?: string }>;
+}) {
   const { id } = await params;
+  const { documento: documentoId } = await searchParams;
   const session = await getSession();
   if (!session) redirect(`/login?next=/contratacion/expedientes/${id}/ficha-firma`);
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -26,7 +34,13 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
       contratistaId: true,
       dependenciaSolicitanteId: true,
       documentos: {
-        where: { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
+        where: {
+          AND: [
+            { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
+            // ?documento=<id>: ficha de UN solo documento (la que abre «Mis firmas»).
+            ...(documentoId ? [{ id: documentoId }] : []),
+          ],
+        },
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
@@ -45,9 +59,12 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
     },
   });
   if (!expediente) notFound();
-  if (
-    !puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId, dependenciaSolicitanteId: expediente.dependenciaSolicitanteId })
-  ) {
+  const veExpediente = puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId, dependenciaSolicitanteId: expediente.dependenciaSolicitanteId });
+  // Quien firmó un documento siempre puede ver la ficha de ESE documento, aunque no tenga acceso al
+  // resto del expediente — pero solo esa: sin ?documento, o con uno que no firmó, no entra.
+  // El documento debe además pertenecer a ESTE expediente (`expediente.documentos` ya viene filtrado
+  // por él): si no, la URL serviría para ver número y objeto de un expediente ajeno.
+  if (!veExpediente && !(documentoId && expediente.documentos.length > 0 && (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, documentoId)))) {
     redirect("/contratacion");
   }
 
@@ -64,6 +81,14 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
       <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
         <p className="font-mono text-sm text-stone-500">{expediente.numero}</p>
         <p className="mt-0.5 text-base font-medium text-stone-900">{expediente.objeto}</p>
+        {documentoId && veExpediente && (
+          <p className="mt-1 text-xs text-stone-500 print:hidden">
+            Ficha de un solo documento.{" "}
+            <Link href={`/contratacion/expedientes/${id}/ficha-firma`} className="text-cdmb-700 hover:underline">
+              Ver la ficha de todo el expediente
+            </Link>
+          </p>
+        )}
 
         {expediente.documentos.length === 0 ? (
           <p className="mt-4 text-sm text-stone-400">Este expediente todavía no tiene ningún documento firmado.</p>

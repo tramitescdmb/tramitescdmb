@@ -168,6 +168,22 @@ export default async function ContratacionAyudaPage() {
           igual admite subir la evidencia aquí, aunque el trámite ocurra en otra plataforma. También se pueden
           subir documentos libres, fuera del catálogo.
         </p>
+        <p>
+          El <strong>Informe de supervisión</strong> (A-BS-FO116) se entrega <strong>por periodos</strong>, no como un
+          único archivo: el contratista cobra una vez al mes, así que el expediente genera un espacio de carga numerado
+          (Informe de supervisión 1, 2, 3…) por cada mes del contrato, a partir de sus fechas de inicio y de fin (ajustables en «Datos del contrato»). Por ejemplo,
+          un contrato del 25 de septiembre al 24 de diciembre tiene cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct,
+          01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica desde el día siguiente a su cierre. Si cambian las
+          fechas del contrato, los periodos se recalculan y los informes ya cargados en meses que dejan de existir se
+          conservan en un listado aparte.
+        </p>
+        <p>
+          Además de los periodos mensuales se pueden crear <strong>espacios eventuales</strong> con un nombre propio (por
+          ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes. Los crea
+          quien lleva el expediente (Administrador, Jefe, Funcionario de Contratación o el Supervisor asignado); el
+          contratista solo carga su documento en ellos. Un espacio con documento no se puede quitar hasta eliminar el
+          documento.
+        </p>
       </Seccion>
 
       <Seccion n={5} id="editar-sin-traza" icono={Scale} titulo="Editar y eliminar documentos, sin dejar traza" admin>
@@ -209,6 +225,15 @@ export default async function ContratacionAyudaPage() {
           . Firmar o dar visto bueno siempre muestra el documento real antes de confirmar. Un firmante puede
           rechazar (con motivo) en vez de firmar — eso marca el documento como rechazado.
         </p>
+        <p>
+          La cantidad de documentos pendientes se indica con una <strong>insignia en la pestaña «Buzón»</strong> y con un
+          aviso en el Panel (en rojo cuando ya puede firmar alguno; en gris si todos esperan el turno de otro firmante).
+          En{" "}
+          <Link href="/contratacion/mis-firmas" className="font-medium text-cdmb-700 hover:underline">Mis firmas</Link>{" "}
+          queda el historial de lo firmado: <strong>Ver documento</strong> abre siempre el archivo firmado (el PDF con su
+          sello y QR) y <strong>Ver ficha técnica</strong> muestra los datos de la firma de ese documento, sin necesidad de
+          tener acceso al resto del expediente.
+        </p>
       </Seccion>
 
       <Seccion n={7} id="ficha-tecnica" icono={ShieldCheck} titulo="Ficha técnica y verificación por QR">
@@ -232,6 +257,19 @@ export default async function ContratacionAyudaPage() {
           desde <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link>.
           Al vincular un contratista a un expediente que aún no lo tiene, si la búsqueda no encuentra a nadie
           con esa identificación, se puede crear ahí mismo y queda vinculado de una vez.
+        </p>
+        <p>
+          Vincular un expediente a un contratista <strong>no es solo para firmas</strong>: el contratista con cuenta de
+          acceso consulta su expediente —incluidas las etapas Contractual y Postcontractual— y carga en él sus documentos.
+          La norma general es <strong>un contratista por expediente</strong>: el vínculo se hace una sola vez y puede
+          hacerse <strong>en cualquier etapa</strong>, desde el detalle del expediente («Vincular un contratista») o desde la
+          ficha del contratista («Vincular un expediente», que solo ofrece expedientes sin contratista); queda en la
+          bitácora. Para que el contratista pueda ingresar, su cuenta debe tener el rol Contratista (se asigna desde Usuarios).
+        </p>
+        <p>
+          Un contratista <strong>que no pertenece a ningún expediente</strong> puede eliminarse desde su ficha
+          (Administrador o Jefe de Contratación); queda constancia en el registro de auditoría. Si tiene expedientes, primero
+          deben reasignarse a otro contratista o eliminarse.
         </p>
       </Seccion>
 
