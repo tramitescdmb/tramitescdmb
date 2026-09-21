@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { esRegimenTributario } from "@/lib/regimen-tributario";
 
 /** Edita el registro maestro de un Contratista — Administrador o Jefe de Contratación. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const nombreORazonSocial = String(body.nombreORazonSocial || "").trim();
   if (!nombreORazonSocial) return NextResponse.json({ error: "El nombre o razón social no puede quedar vacío." }, { status: 400 });
 
+  const regimenTributario = body.regimenTributario || null;
+  if (regimenTributario && !esRegimenTributario(regimenTributario)) {
+    return NextResponse.json({ error: "El régimen tributario indicado no es válido." }, { status: 400 });
+  }
+
   const actualizado = await db.contratista
     .update({
       where: { id },
@@ -26,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         nombreORazonSocial,
         nombres: String(body.nombres || "").trim() || null,
         apellidos: String(body.apellidos || "").trim() || null,
-        regimenTributario: body.regimenTributario || null,
+        regimenTributario,
         granContribuyente: Boolean(body.granContribuyente),
         contactoEmail: String(body.contactoEmail || "").trim() || null,
         contactoTelefono: String(body.contactoTelefono || "").trim() || null,

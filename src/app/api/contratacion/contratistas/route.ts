@@ -3,6 +3,7 @@ import type { TipoPersonaContratista } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { esRegimenTributario } from "@/lib/regimen-tributario";
 
 /** Crea un Contratista en el registro maestro del módulo — desde `/contratacion/contratistas/nuevo`
  * o, si aún no existe, al crear un expediente. Administrador o Jefe de Contratación. */
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
   if (!identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
   if (!nombreORazonSocial) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
 
+  const regimenTributario = body.regimenTributario || null;
+  if (regimenTributario && !esRegimenTributario(regimenTributario)) {
+    return NextResponse.json({ error: "El régimen tributario indicado no es válido." }, { status: 400 });
+  }
+
   const existente = await db.contratista.findUnique({ where: { identificacion } });
   if (existente) {
     return NextResponse.json({ error: "Ya existe un contratista con esta identificación.", id: existente.id }, { status: 409 });
@@ -36,7 +42,7 @@ export async function POST(req: NextRequest) {
       tipoPersona,
       nombres: String(body.nombres || "").trim() || null,
       apellidos: String(body.apellidos || "").trim() || null,
-      regimenTributario: body.regimenTributario || null,
+      regimenTributario,
       granContribuyente: Boolean(body.granContribuyente),
       contactoEmail: String(body.contactoEmail || "").trim() || null,
       contactoTelefono: String(body.contactoTelefono || "").trim() || null,

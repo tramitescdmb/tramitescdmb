@@ -14,3 +14,7 @@ export const REGIMENES_TRIBUTARIOS = [
 export function regimenTributarioLabel(valor: string | null | undefined): string {
   return REGIMENES_TRIBUTARIOS.find((r) => r.value === valor)?.label ?? "—";
 }
+
+export function esRegimenTributario(valor: unknown): valor is (typeof REGIMENES_TRIBUTARIOS)[number]["value"] {
+  return REGIMENES_TRIBUTARIOS.some((r) => r.value === valor);
+}
