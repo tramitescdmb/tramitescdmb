@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       telefono: String(body.telefono || "").trim() || null,
       direccion: String(body.direccion || "").trim() || null,
       municipio,
+      departamento: String(body.departamento || "").trim() || null,
     },
   });
 

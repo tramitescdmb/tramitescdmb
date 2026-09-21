@@ -132,6 +132,16 @@ model Usuario {
   // ¿Puede firmar electrónicamente oficios/memorandos? Por defecto sí (todos
   // pueden en algún momento); un ADMIN puede retirarlo por persona.
   accesoFirma             Boolean      @default(true)
+  // Identidad para la firma electrónica (pedido explícito del usuario, 2026-09-19): la cédula/NIT
+  // SÍ se estampa junto al nombre en el sello de firma (le da más peso legal que solo el nombre);
+  // el correo de notificación NO se estampa nunca, solo se muestra en la ficha técnica autenticada
+  // (da más trazabilidad sin exponerlo en el documento).
+  cedulaONit              String?
+  correoNotificacion      String?
+  // Cuándo aceptó el aviso de tratamiento de datos del primer ingreso — null = todavía no lo vio
+  // (se le muestra bloqueante hasta que acepte), sin importar si entra por Directorio Activo o
+  // por correo/contraseña.
+  terminosAceptadosEn     DateTime?
   activo                  Boolean      @default(true)
   // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
   // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),
@@ -1955,12 +1965,22 @@ model Contratista {
   id                 String                 @id @default(cuid())
   identificacion     String                 @unique
   tipoPersona        TipoPersonaContratista @default(NATURAL)
+  // Separados para NATURAL (paridad con Solicitante); JURIDICA sigue usando solo
+  // nombreORazonSocial. Se mantiene nombreORazonSocial siempre poblado (para no romper el
+  // resto del módulo, que lo usa como despliegue único) — se compone de nombres+apellidos
+  // al guardar cuando es NATURAL.
+  nombres            String?
+  apellidos          String?
   nombreORazonSocial String
+  regimenTributario  RegimenTributario?
+  granContribuyente  Boolean                @default(false)
   contactoEmail      String?
   contactoTelefono   String?
   direccion          String?
   // Texto libre (no la lista acotada de 13 municipios de la jurisdicción CDMB que usa
-  // Solicitante) — un contratista puede estar radicado en cualquier ciudad del país.
+  // Solicitante) — un contratista puede estar radicado en cualquier ciudad del país. Por eso
+  // van siempre juntos como texto libre, sin el selector de jurisdicción de Solicitante.
+  departamento       String?
   ciudad             String?
   usuarioId          String?                @unique
   createdAt          DateTime               @default(now())

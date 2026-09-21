@@ -24,9 +24,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: {
         nombreORazonSocial,
+        nombres: String(body.nombres || "").trim() || null,
+        apellidos: String(body.apellidos || "").trim() || null,
+        regimenTributario: body.regimenTributario || null,
+        granContribuyente: Boolean(body.granContribuyente),
         contactoEmail: String(body.contactoEmail || "").trim() || null,
         contactoTelefono: String(body.contactoTelefono || "").trim() || null,
         direccion: String(body.direccion || "").trim() || null,
+        departamento: String(body.departamento || "").trim() || null,
         ciudad: String(body.ciudad || "").trim() || null,
       },
     })

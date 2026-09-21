@@ -8,6 +8,9 @@ import { Spinner } from "@/components/Spinner";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { IconUser, IconIdCard, IconMail, IconPhone, IconMapPin, IconBriefcase } from "@/components/icons";
+import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+
+const MUNICIPIOS_CON_FUERA = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
 const iconSm = "h-4 w-4";
 
@@ -23,6 +26,7 @@ export function NuevoSolicitanteForm() {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [municipio, setMunicipio] = useState("");
+  const [departamento, setDepartamento] = useState("");
   const [regimenTributario, setRegimenTributario] = useState("");
   const [granContribuyente, setGranContribuyente] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -60,6 +64,7 @@ export function NuevoSolicitanteForm() {
           telefono,
           direccion,
           municipio,
+          departamento,
           regimenTributario,
           granContribuyente,
         }),
@@ -173,22 +178,14 @@ export function NuevoSolicitanteForm() {
           />
         </Field>
         <Field label="Municipio" required icon={<IconMapPin className={iconSm} />} help="">
-          <select
-            required
-            value={municipio}
-            onChange={(e) => setMunicipio(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          >
-            <option value="" disabled>
-              Seleccione un municipio…
-            </option>
-            <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
-            {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <MunicipioSelectorTercero
+            municipios={MUNICIPIOS_CON_FUERA}
+            municipio={municipio}
+            departamento={departamento}
+            onMunicipio={setMunicipio}
+            onDepartamento={setDepartamento}
+            inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          />
         </Field>
       </div>
 

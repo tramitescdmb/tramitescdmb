@@ -5,6 +5,8 @@ import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion } from "@/lib/permisos";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { AvisoTratamientoDatos } from "@/components/AvisoTratamientoDatos";
+import { db } from "@/lib/db";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -36,6 +38,7 @@ export async function NavBar() {
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
   const subtitulo = session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario";
+  const usuarioTerminos = await db.usuario.findUnique({ where: { id: session.userId }, select: { terminosAceptadosEn: true } });
 
   const marca = (
     <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-graphite-900">
@@ -53,6 +56,8 @@ export async function NavBar() {
 
   return (
     <>
+      <AvisoTratamientoDatos abierto={!usuarioTerminos?.terminosAceptadosEn} />
+
       {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana (colapsable, ver Sidebar.tsx). */}
       <Sidebar
         logoUrl={config.logoUrl}

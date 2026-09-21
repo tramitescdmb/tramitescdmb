@@ -8,6 +8,7 @@ import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 
 type Opcion = { id: string; nombre: string };
+type SupervisorOpcion = { id: string; nombre: string; dependenciaNombre?: string | null };
 type ModalidadOpcion = { valor: string; etiqueta: string };
 type TipoPersona = "NATURAL" | "JURIDICA";
 
@@ -17,7 +18,7 @@ export function NuevoExpedienteContractualForm({
   modalidades,
 }: {
   dependencias: Opcion[];
-  supervisores: Opcion[];
+  supervisores: SupervisorOpcion[];
   modalidades: ModalidadOpcion[];
 }) {
   const router = useRouter();
@@ -29,6 +30,8 @@ export function NuevoExpedienteContractualForm({
   const [fechaFinEstimada, setFechaFinEstimada] = useState("");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState("");
   const [supervisorUsuarioIds, setSupervisorUsuarioIds] = useState<Set<string>>(new Set());
+  const [filtroSupervisor, setFiltroSupervisor] = useState("");
+  const [dependenciaFiltroSupervisor, setDependenciaFiltroSupervisor] = useState("");
 
   const [contratistaIdentificacion, setContratistaIdentificacion] = useState("");
   const [contratistaId, setContratistaId] = useState<string | null>(null);
@@ -41,6 +44,19 @@ export function NuevoExpedienteContractualForm({
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dependenciasSupervisor = Array.from(new Set(supervisores.map((s) => s.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
+  const qSupervisor = filtroSupervisor.trim().toLowerCase();
+  // Igual que en los otros selectores de personas: solo se muestran pastillas una vez que se
+  // busca por nombre o dependencia (además de las ya elegidas), para que la lista no crezca sin
+  // control a medida que aumente el número de supervisores.
+  const supervisoresFiltrados = supervisores.filter(
+    (s) =>
+      supervisorUsuarioIds.has(s.id) ||
+      ((qSupervisor || dependenciaFiltroSupervisor) &&
+        (!qSupervisor || s.nombre.toLowerCase().includes(qSupervisor)) &&
+        (!dependenciaFiltroSupervisor || s.dependenciaNombre === dependenciaFiltroSupervisor))
+  );
 
   function alternarSupervisor(id: string) {
     setSupervisorUsuarioIds((prev) => {
@@ -167,7 +183,7 @@ export function NuevoExpedienteContractualForm({
         <Field label="Valor del contrato" icon={<Wallet className="h-4 w-4" />} help="Opcional, en pesos colombianos.">
           <CampoMoneda value={valor} onChange={setValor} />
         </Field>
-        <Field label="Número de contrato" icon={<Hash className="h-4 w-4" />} help="El del sistema de contratación/SECOP II — a menudo no se conoce todavía; se puede completar después.">
+        <Field label="N.º de contrato SECOP II" icon={<Hash className="h-4 w-4" />}>
           <input
             value={numeroContrato}
             onChange={(e) => setNumeroContrato(e.target.value)}
@@ -262,29 +278,48 @@ export function NuevoExpedienteContractualForm({
       </Field>
 
       {supervisores.length > 0 && (
-        <Field
-          label="Supervisor(es) / Interventor(es)"
-          icon={<UserCog className="h-4 w-4" />}
-          help="El Manual permite designar más de uno por contrato."
-        >
-          <div className="flex flex-wrap gap-1.5">
-            {supervisores.map((s) => {
-              const activo = supervisorUsuarioIds.has(s.id);
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => alternarSupervisor(s.id)}
-                  aria-pressed={activo}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                    activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                  }`}
-                >
-                  {s.nombre}
-                </button>
-              );
-            })}
+        <Field label="Supervisor(es) / Interventor(es)" icon={<UserCog className="h-4 w-4" />}>
+          <div className="mb-2 grid grid-cols-2 gap-1.5">
+            <input
+              type="text"
+              value={filtroSupervisor}
+              onChange={(e) => setFiltroSupervisor(e.target.value)}
+              placeholder="Buscar por nombre…"
+              className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
+            />
+            <select
+              value={dependenciaFiltroSupervisor}
+              onChange={(e) => setDependenciaFiltroSupervisor(e.target.value)}
+              className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
+            >
+              <option value="">Todas las dependencias</option>
+              {dependenciasSupervisor.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
           </div>
+          {!qSupervisor && !dependenciaFiltroSupervisor && supervisorUsuarioIds.size === 0 ? (
+            <p className="text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {supervisoresFiltrados.map((s) => {
+                const activo = supervisorUsuarioIds.has(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => alternarSupervisor(s.id)}
+                    aria-pressed={activo}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    {s.nombre}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Field>
       )}
 

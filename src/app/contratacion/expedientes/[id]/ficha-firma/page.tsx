@@ -33,12 +33,12 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
           nombre: true,
           firmas: {
             orderBy: { fechaHora: "asc" },
-            include: { usuario: { select: { nombre: true, denominacionEmpleo: true } } },
+            include: { usuario: { select: { nombre: true, cedulaONit: true, correoNotificacion: true, denominacionEmpleo: true } } },
           },
           solicitudesFirma: {
             where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
             orderBy: { completadoEn: "asc" },
-            include: { usuarioAsignado: { select: { nombre: true, denominacionEmpleo: true } } },
+            include: { usuarioAsignado: { select: { nombre: true, cedulaONit: true, correoNotificacion: true, denominacionEmpleo: true } } },
           },
         },
       },
@@ -99,6 +99,8 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
                         {f.usuario.denominacionEmpleo && <span className="font-normal text-stone-500"> — {f.usuario.denominacionEmpleo}</span>}
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                        <Dato k="Cédula o NIT" v={f.usuario.cedulaONit ?? "no registrada"} mono />
+                        <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
                         <Dato k="Algoritmo / formato" v={etiquetaFormatoFirma(f.formato)} />
                         <Dato k="Proveedor" v={f.proveedor} />
@@ -120,6 +122,8 @@ export default async function FichaFirmaExpedienteContractualPage({ params }: { 
                         <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                        <Dato k="Cédula o NIT" v={s.usuarioAsignado.cedulaONit ?? "no registrada"} mono />
+                        <Dato k="Correo de notificación" v={s.usuarioAsignado.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />
                         <Dato k="Dirección IP" v={s.ip ?? "no disponible"} mono />
                         <Dato k="Agente de usuario" v={s.userAgent ?? "no disponible"} mono />

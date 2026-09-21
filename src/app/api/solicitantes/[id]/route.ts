@@ -43,6 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         telefono: String(body.telefono || "").trim() || null,
         direccion: String(body.direccion || "").trim() || null,
         municipio,
+        departamento: String(body.departamento || "").trim() || null,
         regimenTributario: body.regimenTributario || null,
         granContribuyente: Boolean(body.granContribuyente),
       },

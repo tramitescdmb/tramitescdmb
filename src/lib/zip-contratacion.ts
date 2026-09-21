@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { db } from "@/lib/db";
 import { descargarDocumento } from "@/lib/storage";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion";
+import { conExtension } from "@/lib/uploads-config";
 
 /** Tope de expedientes por descarga masiva — evita agotar tiempo/memoria del runtime
  * serverless de Vercel si el filtro trae demasiados. Pedido explícito del usuario (2026-09-18). */
@@ -32,14 +33,14 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
   const documentos = await db.documentoContrato.findMany({
     where: { expedienteId },
     orderBy: { createdAt: "asc" },
-    select: { nombre: true, etapa: true, storagePath: true },
+    select: { nombre: true, mimeType: true, etapa: true, storagePath: true },
   });
 
   const usadosPorEtapa = new Map<string, Set<string>>();
   for (const doc of documentos) {
     const carpetaEtapa = carpetaBase.folder(ETIQUETA_ETAPA[doc.etapa]) ?? carpetaBase;
     if (!usadosPorEtapa.has(doc.etapa)) usadosPorEtapa.set(doc.etapa, new Set());
-    const nombre = nombreUnico(usadosPorEtapa.get(doc.etapa)!, doc.nombre);
+    const nombre = nombreUnico(usadosPorEtapa.get(doc.etapa)!, conExtension(doc.nombre, doc.mimeType));
     const contenido = await descargarDocumento(doc.storagePath);
     carpetaEtapa.file(nombre, contenido);
   }

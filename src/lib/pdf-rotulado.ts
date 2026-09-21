@@ -34,6 +34,7 @@ export type DatosRotuloPdf = {
 
 export type FirmaRotuloPdf = {
   nombre: string;
+  cedulaONit: string | null;
   denominacionEmpleo: string | null;
   denominacionComplemento: string | null;
   sexo: string | null;
@@ -100,7 +101,8 @@ export async function estamparRotulo(
     cy -= 11;
     for (const f of firmas) {
       const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-      page.drawText(f.nombre.slice(0, 90), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
+      const nombreLinea = f.cedulaONit ? `${f.nombre} — C.C./NIT ${f.cedulaONit}` : f.nombre;
+      page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
       if (cargo) { page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       if (f.dependencia) { page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       page.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
@@ -159,7 +161,8 @@ export async function estamparFirmaSigec(
   cy -= 11;
   for (const f of firmas) {
     const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-    page.drawText(f.nombre.slice(0, 90), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+    const nombreLinea = f.cedulaONit ? `${f.nombre} — C.C./NIT ${f.cedulaONit}` : f.nombre;
+    page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
     cy -= lh;
     if (cargo) {
       page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });

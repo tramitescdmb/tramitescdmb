@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas } from "@/lib/permisos";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion";
+import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { EditarContratistaForm } from "@/components/EditarContratistaForm";
 
 export default async function ContratistaDetallePage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,11 +50,20 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Ciudad</dt>
-            <dd className="break-words text-stone-800">{contratista.ciudad ?? "—"}</dd>
+            <dd className="break-words text-stone-800">
+              {[contratista.ciudad, contratista.departamento].filter(Boolean).join(" — ") || "—"}
+            </dd>
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Dirección</dt>
             <dd className="break-words text-stone-800">{contratista.direccion ?? "—"}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-stone-400">Régimen tributario</dt>
+            <dd className="break-words text-stone-800">
+              {regimenTributarioLabel(contratista.regimenTributario)}
+              {contratista.granContribuyente ? " · Gran contribuyente" : ""}
+            </dd>
           </div>
           <div className="min-w-0 sm:col-span-2">
             <dt className="text-xs text-stone-400">Cuenta de acceso (Directorio Activo)</dt>
@@ -69,10 +79,16 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
           <EditarContratistaForm
             contratista={{
               id: contratista.id,
+              tipoPersona: contratista.tipoPersona,
+              nombres: contratista.nombres,
+              apellidos: contratista.apellidos,
               nombreORazonSocial: contratista.nombreORazonSocial,
+              regimenTributario: contratista.regimenTributario,
+              granContribuyente: contratista.granContribuyente,
               contactoEmail: contratista.contactoEmail,
               contactoTelefono: contratista.contactoTelefono,
               direccion: contratista.direccion,
+              departamento: contratista.departamento,
               ciudad: contratista.ciudad,
             }}
           />

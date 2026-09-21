@@ -107,6 +107,7 @@ export default async function SolicitanteDetallePage({
               telefono: solicitante.telefono,
               direccion: solicitante.direccion,
               municipio: solicitante.municipio,
+              departamento: solicitante.departamento,
               regimenTributario: solicitante.regimenTributario,
               granContribuyente: solicitante.granContribuyente,
             }}

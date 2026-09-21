@@ -1,8 +1,13 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
+
+/** Tag de caché del catálogo de requisitos — invalidado desde las rutas de
+ * src/app/api/contratacion/catalogo/** cada vez que se crea/edita/mueve/borra un requisito. */
+export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
 /**
  * Módulo de Contratación — manejador de expedientes digitales de contratación
@@ -68,12 +73,16 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
  * prisma/seed-contratacion.ts) que aplican a un expediente en UNA etapa: los
  * comunes a cualquier modalidad (modalidadSeleccion=null) más los propios de
  * la modalidad de ESTE expediente, en el orden del Manual. */
-export async function obtenerRequisitosDeEtapa(modalidad: ModalidadSeleccion, etapa: EtapaContratacion) {
-  return db.requisitoDocumentoContratacion.findMany({
-    where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }] },
-    orderBy: { orden: "asc" },
-  });
-}
+export const obtenerRequisitosDeEtapa = unstable_cache(
+  async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion) => {
+    return db.requisitoDocumentoContratacion.findMany({
+      where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }] },
+      orderBy: { orden: "asc" },
+    });
+  },
+  ["requisitos-de-etapa"],
+  { tags: [TAG_CATALOGO_REQUISITOS] }
+);
 
 export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>[number] & {
   documento:
@@ -514,26 +523,41 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     );
   }
 
+  const documentosEtapa = await db.documentoContrato.findMany({
+    where: { expedienteId, etapa: expediente.etapaActual },
+    select: {
+      id: true,
+      requisitoId: true,
+      nombre: true,
+      mimeType: true,
+      estadoValidacion: true,
+      requiereFirma: true,
+      firmadoEnSecop: true,
+      createdAt: true,
+      subidoPor: { select: { nombre: true } },
+      firmas: { select: { fechaHora: true, formato: true } },
+      solicitudesFirma: { select: { id: true, rol: true, orden: true, estado: true, usuarioAsignadoId: true, usuarioAsignado: { select: { nombre: true } } } },
+    },
+  });
   {
     const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual);
-    const documentos = await db.documentoContrato.findMany({
-      where: { expedienteId, etapa: expediente.etapaActual },
-      select: {
-        id: true,
-        requisitoId: true,
-        nombre: true,
-        mimeType: true,
-        estadoValidacion: true,
-        requiereFirma: true,
-        firmadoEnSecop: true,
-        createdAt: true,
-        subidoPor: { select: { nombre: true } },
-        firmas: { select: { fechaHora: true, formato: true } },
-        solicitudesFirma: { select: { id: true, rol: true, orden: true, estado: true, usuarioAsignadoId: true, usuarioAsignado: { select: { nombre: true } } } },
-      },
-    });
-    const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentos));
+    const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentosEtapa));
     if (faltantes.length > 0) throw new FaltanRequisitosError(faltantes);
+  }
+
+  // Cerrar/avanzar una etapa implica que todo lo suyo ya se revisó — antes solo lo aprobaba
+  // `reevaluarEstadoDocumentoContrato` (src/lib/solicitudes-firma.ts) al completarse una firma
+  // puntual, así que todo lo demás quedaba en PENDIENTE para siempre. No se toca un documento que
+  // todavía espera una firma sin resolver (rol FIRMA, estado PENDIENTE) — eso sí debe seguir
+  // pendiente aunque la etapa avance.
+  const idsParaAprobar = documentosEtapa
+    .filter((d) => d.estadoValidacion === "PENDIENTE" && !d.solicitudesFirma.some((s) => s.rol === "FIRMA" && s.estado === "PENDIENTE"))
+    .map((d) => d.id);
+  if (idsParaAprobar.length > 0) {
+    await db.documentoContrato.updateMany({
+      where: { id: { in: idsParaAprobar } },
+      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
+    });
   }
 
   const idx = ETAPAS_ORDEN.indexOf(expediente.etapaActual);

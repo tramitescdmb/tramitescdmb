@@ -49,6 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               usuario: {
                 select: {
                   nombre: true,
+                  cedulaONit: true,
                   denominacionEmpleo: true,
                   denominacionComplemento: true,
                   sexo: true,
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       },
       c.firmas.map((f) => ({
         nombre: f.usuario.nombre,
+        cedulaONit: f.usuario.cedulaONit,
         denominacionEmpleo: f.usuario.denominacionEmpleo,
         denominacionComplemento: f.usuario.denominacionComplemento,
         sexo: f.usuario.sexo,

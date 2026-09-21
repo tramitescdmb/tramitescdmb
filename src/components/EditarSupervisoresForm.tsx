@@ -15,18 +15,28 @@ export function EditarSupervisoresForm({
   supervisoresActualesIds,
 }: {
   expedienteId: string;
-  supervisoresDisponibles: { id: string; nombre: string }[];
+  supervisoresDisponibles: { id: string; nombre: string; dependenciaNombre?: string | null }[];
   supervisoresActualesIds: string[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(supervisoresActualesIds));
   const [filtro, setFiltro] = useState("");
+  const [dependenciaFiltro, setDependenciaFiltro] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const dependencias = Array.from(new Set(supervisoresDisponibles.map((s) => s.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const q = filtro.trim().toLowerCase();
-  const filtrados = q ? supervisoresDisponibles.filter((s) => s.nombre.toLowerCase().includes(q)) : supervisoresDisponibles;
+  // Los ya elegidos siempre se ven (para poder quitarlos), pero el resto de la lista solo
+  // aparece al buscar — mismo criterio que AsignarFirmantesModal, para que no crezca sin control.
+  const filtrados = supervisoresDisponibles.filter(
+    (s) =>
+      seleccion.has(s.id) ||
+      ((q || dependenciaFiltro) &&
+        (!q || s.nombre.toLowerCase().includes(q)) &&
+        (!dependenciaFiltro || s.dependenciaNombre === dependenciaFiltro))
+  );
 
   function alternar(id: string) {
     setSeleccion((prev) => {
@@ -84,18 +94,34 @@ export function EditarSupervisoresForm({
               </p>
             ) : (
               <>
-                <input
-                  type="text"
-                  value={filtro}
-                  onChange={(e) => setFiltro(e.target.value)}
-                  placeholder="Filtrar por nombre…"
-                  className="mb-2 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                />
+                <div className="mb-2 grid grid-cols-2 gap-1.5">
+                  <input
+                    type="text"
+                    value={filtro}
+                    onChange={(e) => setFiltro(e.target.value)}
+                    placeholder="Buscar por nombre…"
+                    className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  />
+                  <select
+                    value={dependenciaFiltro}
+                    onChange={(e) => setDependenciaFiltro(e.target.value)}
+                    className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Todas las dependencias</option>
+                    {dependencias.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                {!q && !dependenciaFiltro && seleccion.size === 0 && (
+                  <p className="mb-2 text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
+                )}
                 <div className="max-h-56 space-y-1 overflow-y-auto">
                   {filtrados.map((s) => (
                     <label key={s.id} className="flex items-center gap-2 rounded px-1 py-1 text-sm text-stone-700 hover:bg-stone-50">
                       <input type="checkbox" checked={seleccion.has(s.id)} onChange={() => alternar(s.id)} className="rounded border-stone-300" />
                       {s.nombre}
+                      {s.dependenciaNombre && <span className="text-xs text-stone-400">— {s.dependenciaNombre}</span>}
                     </label>
                   ))}
                 </div>

@@ -53,15 +53,24 @@ export function AsignarFirmantesModal({
   const [abierto, setAbierto] = useState(false);
   const [usuarioId, setUsuarioId] = useState("");
   const [filtro, setFiltro] = useState("");
+  const [dependenciaFiltro, setDependenciaFiltro] = useState("");
   const [rol, setRol] = useState<RolFirmante>("FIRMA");
   const [orden, setOrden] = useState(1);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const dependencias = Array.from(new Set(usuarios.map((u) => u.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const q = filtro.trim().toLowerCase();
-  const usuariosFiltrados = q
-    ? usuarios.filter((u) => u.nombre.toLowerCase().includes(q) || (u.dependenciaNombre ?? "").toLowerCase().includes(q))
-    : usuarios;
+  // No se muestra nadie hasta que se busque por nombre o dependencia — con la planta completa de
+  // la CDMB, listar todo de entrada vuelve el cuadro inmanejable a medida que crece el personal.
+  const usuariosFiltrados =
+    q || dependenciaFiltro
+      ? usuarios.filter(
+          (u) =>
+            (!q || u.nombre.toLowerCase().includes(q)) &&
+            (!dependenciaFiltro || u.dependenciaNombre === dependenciaFiltro)
+        )
+      : [];
 
   async function agregar() {
     if (!usuarioId) return setError("Seleccione una persona.");
@@ -129,27 +138,43 @@ export function AsignarFirmantesModal({
             <div className="space-y-2 border-t border-stone-100 pt-3">
               <label className="block text-xs font-medium text-stone-600">
                 Persona
-                <input
-                  type="text"
-                  value={filtro}
-                  onChange={(e) => setFiltro(e.target.value)}
-                  placeholder="Filtrar por nombre o dependencia…"
-                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                />
-                <select
-                  value={usuarioId}
-                  onChange={(e) => setUsuarioId(e.target.value)}
-                  size={Math.min(6, Math.max(3, usuariosFiltrados.length))}
-                  className="mt-1.5 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                >
-                  {usuariosFiltrados.length === 0 && <option disabled>Sin coincidencias</option>}
-                  {usuariosFiltrados.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nombre}
-                      {u.dependenciaNombre ? ` — ${u.dependenciaNombre}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  <input
+                    type="text"
+                    value={filtro}
+                    onChange={(e) => setFiltro(e.target.value)}
+                    placeholder="Buscar por nombre…"
+                    className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  />
+                  <select
+                    value={dependenciaFiltro}
+                    onChange={(e) => setDependenciaFiltro(e.target.value)}
+                    className="rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Todas las dependencias</option>
+                    {dependencias.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                {!q && !dependenciaFiltro ? (
+                  <p className="mt-1.5 text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
+                ) : (
+                  <select
+                    value={usuarioId}
+                    onChange={(e) => setUsuarioId(e.target.value)}
+                    size={Math.min(6, Math.max(3, usuariosFiltrados.length))}
+                    className="mt-1.5 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  >
+                    {usuariosFiltrados.length === 0 && <option disabled>Sin coincidencias</option>}
+                    {usuariosFiltrados.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.nombre}
+                        {u.dependenciaNombre ? ` — ${u.dependenciaNombre}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
               <label className="block text-xs font-medium text-stone-600">
                 Rol

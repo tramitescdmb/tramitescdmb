@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
-import { actualizarRequisitoCatalogo, moverRequisitoCatalogo, eliminarRequisitoCatalogo } from "@/lib/contratacion";
+import { actualizarRequisitoCatalogo, moverRequisitoCatalogo, eliminarRequisitoCatalogo, TAG_CATALOGO_REQUISITOS } from "@/lib/contratacion";
 
 /** Actualiza un requisito del catálogo (nombre/código/fuente/obligatorio/activo) o lo reordena
  * (`{ "direccion": "arriba" | "abajo" }`) dentro de su grupo (misma etapa y modalidad). */
@@ -21,6 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     if (body.direccion === "arriba" || body.direccion === "abajo") {
       await moverRequisitoCatalogo(id, body.direccion);
+      revalidateTag(TAG_CATALOGO_REQUISITOS);
       return NextResponse.json({ ok: true });
     }
 
@@ -35,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.activo === "boolean") datos.activo = body.activo;
 
     await actualizarRequisitoCatalogo(id, datos);
+    revalidateTag(TAG_CATALOGO_REQUISITOS);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo actualizar el requisito." }, { status: 400 });
@@ -52,6 +55,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await eliminarRequisitoCatalogo(id);
+    revalidateTag(TAG_CATALOGO_REQUISITOS);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo eliminar el requisito." }, { status: 400 });

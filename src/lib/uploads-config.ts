@@ -69,3 +69,22 @@ export function mensajeTipoNoPermitidoEn(fileName: string, lista: readonly strin
   const efectiva = lista.length > 0 ? lista : EXTENSIONES_PERMITIDAS;
   return `"${fileName}" no es un tipo de archivo permitido. Se aceptan: ${efectiva.join(", ")}.`;
 }
+
+const EXTENSION_POR_MIME_TYPE: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+};
+
+/** Repone la extensión de un nombre de archivo cuando no la trae — ej. en SIGEC el nombre de un
+ * documento subido contra un requisito del catálogo se guarda como el nombre del REQUISITO, no el
+ * del archivo original (ver SubirDocumentoRequisitoForm.tsx), así que nunca llega con extensión. */
+export function conExtension(nombre: string, mimeType: string): string {
+  if (extensionPermitida(nombre)) return nombre;
+  const ext = EXTENSION_POR_MIME_TYPE[mimeType];
+  return ext ? `${nombre}.${ext}` : nombre;
+}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -105,18 +105,27 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   }
 
   // Las 3 consultas son independientes entre sí — antes se hacían en secuencia (3 ida y vuelta a
-  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas.
+  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas. Las
+  // dos primeras además solo se ejecutan si el usuario puede llegar a usarlas (un Contratista, por
+  // ejemplo, nunca ve los formularios de supervisores/firmantes) — antes se traía SIEMPRE toda la
+  // planta activa, igual que ya se cuidó en el equivalente de SGDEA (correspondencia/[id]/page.tsx).
+  const puedeGestionar = puedeGestionarContratistas(permisos);
+  const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista] = await Promise.all([
-    db.usuario.findMany({
-      where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
-      orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true },
-    }),
-    db.usuario.findMany({
-      where: { activo: true },
-      select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
-      orderBy: { nombre: "asc" },
-    }),
+    puedeGestionar
+      ? db.usuario.findMany({
+          where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+          orderBy: { nombre: "asc" },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+        })
+      : Promise.resolve([]),
+    puedeVerListaUsuarios
+      ? db.usuario.findMany({
+          where: { activo: true },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+          orderBy: { nombre: "asc" },
+        })
+      : Promise.resolve([]),
     // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
     // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
     expediente.contratista
@@ -128,6 +137,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
       : Promise.resolve([]),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
+  const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
@@ -227,7 +237,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             {puedeGestionarContratistas(permisos) && (
               <EditarSupervisoresForm
                 expedienteId={id}
-                supervisoresDisponibles={supervisoresDisponibles}
+                supervisoresDisponibles={supervisoresOpciones}
                 supervisoresActualesIds={expediente.supervisores.map((s) => s.usuarioId)}
               />
             )}
@@ -387,10 +397,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         </span>
                       )}
                     </p>
-                    <p className="text-[11px] text-stone-400">
+                    <p className="flex items-center gap-1 text-[11px] text-stone-400">
                       {item.codigoFormato && `${item.codigoFormato} · `}
                       {item.fuente}
-                      {item.notaOrigenExterno && ` — ${item.notaOrigenExterno}`}
+                      {item.notaOrigenExterno && (
+                        <span title={item.notaOrigenExterno}>
+                          <Info className="h-3 w-3 flex-none text-stone-400" aria-hidden />
+                        </span>
+                      )}
                     </p>
                     {item.documento && (
                       <p className="text-[11px] text-stone-400">

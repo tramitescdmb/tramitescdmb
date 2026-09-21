@@ -145,6 +145,8 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual,
   denominacionComplementoActual,
   accesoFirmaActual,
+  cedulaONitActual,
+  correoNotificacionActual,
   rolContratacionActual,
   rolContratacionVigenteHastaActual,
   contratistaActual,
@@ -156,6 +158,8 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual: string | null;
   denominacionComplementoActual: string | null;
   accesoFirmaActual: boolean;
+  cedulaONitActual: string | null;
+  correoNotificacionActual: string | null;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
@@ -179,6 +183,8 @@ export function EditarUsuarioAccesoForm({
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
+  const [cedulaONit, setCedulaONit] = useState(cedulaONitActual ?? "");
+  const [correoNotificacion, setCorreoNotificacion] = useState(correoNotificacionActual ?? "");
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
@@ -285,6 +291,8 @@ export function EditarUsuarioAccesoForm({
         body: JSON.stringify({
           nombre: nombre.trim(),
           sexo: sexo || null,
+          cedulaONit: cedulaONit.trim() || null,
+          correoNotificacion: correoNotificacion.trim() || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
           accesoFirma,
@@ -355,14 +363,29 @@ export function EditarUsuarioAccesoForm({
         <EncabezadoSeccion
           icono={PenLine}
           titulo="Datos para la firma electrónica"
-          ayuda="Cómo aparece esta persona al pie de un oficio o memorando firmado. No es el cargo de trámites."
+          ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado."
         />
-        <p className="mb-3 text-xs text-stone-400">
-          La <strong>denominación del empleo</strong> es el cargo nominal (Decreto 1083 de 2015). El{" "}
-          <strong>sexo</strong> solo se usa para mostrar la forma correcta (ej. «Coordinadora»). El{" "}
-          <strong>complemento</strong> es opcional (ej. «en Tecnologías de Información»).
-        </p>
         <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-medium text-stone-600">
+            Cédula o NIT
+            <input
+              value={cedulaONit}
+              onChange={(e) => setCedulaONit(e.target.value)}
+              placeholder="Ej. 91234567"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+          </label>
+          <label className="text-xs font-medium text-stone-600">
+            Correo de notificación <span className="font-normal text-stone-400">(no se estampa)</span>
+            <input
+              type="email"
+              value={correoNotificacion}
+              onChange={(e) => setCorreoNotificacion(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+          </label>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-stone-600">
             Sexo
             <select
@@ -422,9 +445,8 @@ export function EditarUsuarioAccesoForm({
             {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
               ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
               : null}
+            {cedulaONit.trim() ? `, C.C./NIT ${cedulaONit.trim()}` : null}
           </span>
-          {" "}
-          <span className="text-stone-400">(la oficina viene de la dependencia de Correspondencia, más abajo)</span>
         </p>
       </section>
 

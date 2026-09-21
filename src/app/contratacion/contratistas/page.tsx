@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Download } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas } from "@/lib/permisos";
@@ -93,6 +93,13 @@ export default async function ContratistasPage({
             Quitar filtro
           </Link>
         )}
+        <a
+          href={`/api/contratacion/contratistas/exportar${busqueda ? `?q=${encodeURIComponent(busqueda)}` : ""}`}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+        >
+          <Download className="h-3.5 w-3.5" aria-hidden />
+          Descargar CSV
+        </a>
       </form>
 
       <ResumenResultados total={total} detalle={busqueda ? `que coinciden con "${busqueda}"` : undefined} />

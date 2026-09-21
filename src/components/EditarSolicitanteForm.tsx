@@ -6,6 +6,9 @@ import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
+import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+
+const MUNICIPIOS_CON_FUERA = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
 type Solicitante = {
   id: string;
@@ -17,6 +20,7 @@ type Solicitante = {
   telefono: string | null;
   direccion: string | null;
   municipio: string;
+  departamento: string | null;
   regimenTributario: string | null;
   granContribuyente: boolean;
 };
@@ -31,6 +35,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
   const [telefono, setTelefono] = useState(solicitante.telefono ?? "");
   const [direccion, setDireccion] = useState(solicitante.direccion ?? "");
   const [municipio, setMunicipio] = useState(solicitante.municipio);
+  const [departamento, setDepartamento] = useState(solicitante.departamento ?? "");
   const [regimenTributario, setRegimenTributario] = useState(solicitante.regimenTributario ?? "");
   const [granContribuyente, setGranContribuyente] = useState(solicitante.granContribuyente);
   const [guardando, setGuardando] = useState(false);
@@ -44,7 +49,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
       const res = await fetch(`/api/solicitantes/${solicitante.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombres, apellidos, razonSocial, email, telefono, direccion, municipio, regimenTributario, granContribuyente }),
+        body: JSON.stringify({ nombres, apellidos, razonSocial, email, telefono, direccion, municipio, departamento, regimenTributario, granContribuyente }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -121,19 +126,14 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
             />
           </Field>
           <Field label="Municipio" required help="">
-            <select
-              required
-              value={municipio}
-              onChange={(e) => setMunicipio(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            >
-              <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
-              {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+            <MunicipioSelectorTercero
+              municipios={MUNICIPIOS_CON_FUERA}
+              municipio={municipio}
+              departamento={departamento}
+              onMunicipio={setMunicipio}
+              onDepartamento={setDepartamento}
+              inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
           </Field>
         </div>
 

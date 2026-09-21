@@ -18,16 +18,17 @@ export default async function NuevoExpedienteContractualPage() {
     db.usuario.findMany({
       where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
     }),
   ]);
+  const supervisoresOpciones = supervisores.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   return (
     <section className="max-w-2xl space-y-4">
       <TituloSeccion icon={FilePlus2}>Nuevo expediente contractual</TituloSeccion>
       <NuevoExpedienteContractualForm
         dependencias={dependencias}
-        supervisores={supervisores}
+        supervisores={supervisoresOpciones}
         modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
       />
     </section>
