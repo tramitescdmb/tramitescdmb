@@ -14,6 +14,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
+import type { EtapaContratacion } from "@prisma/client";
 import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
 import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos } from "../src/lib/periodos-informe";
@@ -74,6 +75,7 @@ class Cliente {
       body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     });
     const data = await res.json().catch(() => ({}));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON de forma libre: cada endpoint responde una forma distinta.
     return { status: res.status, data: data as Record<string, any> };
   }
   async pagina(ruta: string) {
@@ -122,6 +124,7 @@ async function subirDocumento(c: Cliente, expedienteId: string, etapa: string, n
 
 /** Capturas de pantalla opcionales (E2E_CAPTURAS=1): abre las páginas con un navegador real (Edge) usando la
  * sesión de cada usuario de prueba y guarda un PNG en capturas-e2e/ — para revisar el aspecto, no solo el HTML. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- instancia de playwright-core, dependencia opcional sin tipos declarados aquí.
 let navegador: any = null;
 async function capturar(etiqueta: string, cliente: Cliente, ruta: string, opciones: { menu?: string } = {}) {
   if (!process.env.E2E_CAPTURAS) return;
@@ -400,9 +403,9 @@ async function main() {
     });
 
     console.log("\n7. Documentos, firma y ciclo de etapas");
-    const requisitosDe = (etapa: string) =>
+    const requisitosDe = (etapa: EtapaContratacion) =>
       db.requisitoDocumentoContratacion.findMany({
-        where: { etapa: etapa as any, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: "CONTRATACION_DIRECTA" }] },
+        where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: "CONTRATACION_DIRECTA" }] },
         orderBy: { orden: "asc" },
       });
     let docFirmaId: string | undefined;
@@ -549,7 +552,7 @@ async function main() {
     await paso("La bitácora del expediente registró los eventos clave", async () => {
       const eventos = await db.eventoContratacion.findMany({ where: { expedienteId: exp }, select: { tipo: true } });
       const tipos = new Set(eventos.map((e) => e.tipo));
-      for (const t of ["CREACION", "DOCUMENTO_FIRMADO"]) esperar(tipos.has(t as any), `falta el evento ${t} (hay: ${[...tipos].join(", ")})`);
+      for (const t of ["CREACION", "DOCUMENTO_FIRMADO"]) esperar(tipos.has(t), `falta el evento ${t} (hay: ${[...tipos].join(", ")})`);
       return `${eventos.length} eventos: ${[...tipos].join(", ")}`;
     });
     await paso("Administrador/Jefe elimina un documento sin traza en la bitácora (decisión de diseño)", async () => {
