@@ -6,11 +6,18 @@ import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permis
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { NuevoContratistaForm } from "@/components/NuevoContratistaForm";
 
-export default async function NuevoContratistaPage() {
+export default async function NuevoContratistaPage({
+  searchParams,
+}: {
+  // Prellenado desde "Crear contratista" en Nuevo expediente — evita retipear el NIT/cédula ya
+  // escrito ahí.
+  searchParams: Promise<{ identificacion?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeGestionarContratistas(permisos)) redirect("/contratacion/contratistas");
+  const { identificacion } = await searchParams;
 
   return (
     <section className="max-w-xl space-y-4">
@@ -18,7 +25,7 @@ export default async function NuevoContratistaPage() {
         ← Contratistas
       </Link>
       <TituloSeccion icon={UserPlus}>Nuevo contratista</TituloSeccion>
-      <NuevoContratistaForm />
+      <NuevoContratistaForm identificacionInicial={identificacion?.trim() ?? ""} />
     </section>
   );
 }

@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Field } from "@/components/Field";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 
 const inputCls = "w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-export function NuevoContratistaForm() {
+export function NuevoContratistaForm({ identificacionInicial = "" }: { identificacionInicial?: string }) {
   const router = useRouter();
-  const [identificacion, setIdentificacion] = useState("");
+  const [identificacion, setIdentificacion] = useState(identificacionInicial);
   const [tipoPersona, setTipoPersona] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -23,6 +24,9 @@ export function NuevoContratistaForm() {
   const [ciudad, setCiudad] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Si el 409 fue por identificación duplicada, el servidor manda el id del registro existente —
+  // se ofrece editarlo en vez de solo bloquear con el error.
+  const [duplicadoId, setDuplicadoId] = useState<string | null>(null);
 
   const esJuridica = tipoPersona === "JURIDICA";
 
@@ -33,6 +37,7 @@ export function NuevoContratistaForm() {
     }
     setGuardando(true);
     setError(null);
+    setDuplicadoId(null);
     try {
       const nombreORazonSocial = esJuridica ? razonSocial.trim() : `${nombres.trim()} ${apellidos.trim()}`.trim();
       const res = await fetch("/api/contratacion/contratistas", {
@@ -56,6 +61,7 @@ export function NuevoContratistaForm() {
       const body = await res.json().catch(() => ({}));
       if (res.status === 409) {
         setError(body.error);
+        setDuplicadoId(typeof body.id === "string" ? body.id : null);
         return;
       }
       if (!res.ok) throw new Error(body.error || "No se pudo crear el contratista.");
@@ -135,7 +141,17 @@ export function NuevoContratistaForm() {
       </div>
 
       <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-        <span className="text-sm text-red-700">{error}</span>
+        <span className="text-sm text-red-700">
+          {error}
+          {duplicadoId && (
+            <>
+              {" "}
+              <Link href={`/contratacion/contratistas/${duplicadoId}`} className="font-medium underline hover:no-underline">
+                Editar este contratista
+              </Link>
+            </>
+          )}
+        </span>
         <button
           type="button"
           onClick={guardar}
