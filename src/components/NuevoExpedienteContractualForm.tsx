@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Building2, Wallet, CalendarDays, UserCog, Search, UserPlus, Hash } from "lucide-react";
-import { Field, SectionHelp } from "@/components/Field";
+import Link from "next/link";
+import {
+  ClipboardList,
+  FileText,
+  Building2,
+  CircleDollarSign,
+  CalendarRange,
+  Hash,
+  UserSearch,
+  UserPlus,
+  Users,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
+import { Field } from "@/components/Field";
 import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 
@@ -11,6 +25,47 @@ type Opcion = { id: string; nombre: string };
 type SupervisorOpcion = { id: string; nombre: string; dependenciaNombre?: string | null };
 type ModalidadOpcion = { valor: string; etiqueta: string };
 type TipoPersona = "NATURAL" | "JURIDICA";
+
+// Mismo lenguaje visual del inicio de sesión (rounded-xl, halo de foco en vez de un borde seco) —
+// consistente en toda la app, en un formulario que un funcionario va a llenar muchas veces.
+const campoCls =
+  "w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
+  "transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15";
+
+/** Encabezado de una sección del formulario: número, icono en una insignia de color y un título —
+ * divide el formulario en pasos legibles en vez de una sola pared continua de campos. */
+function SeccionFormulario({
+  n,
+  icon: Icon,
+  titulo,
+  subtitulo,
+  tono = "cdmb",
+  children,
+}: {
+  n: number;
+  icon: typeof FileText;
+  titulo: string;
+  subtitulo?: string;
+  tono?: "cdmb" | "techblue";
+  children: ReactNode;
+}) {
+  const insignia = tono === "techblue" ? "bg-techblue-600" : "bg-cdmb-600";
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-xl text-xs font-bold text-white ${insignia}`}>{n}</span>
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+            <Icon className="h-4 w-4 text-stone-400" aria-hidden />
+            {titulo}
+          </h2>
+          {subtitulo && <p className="text-xs text-stone-500">{subtitulo}</p>}
+        </div>
+      </div>
+      <div className="space-y-3 pl-11">{children}</div>
+    </div>
+  );
+}
 
 export function NuevoExpedienteContractualForm({
   dependencias,
@@ -148,190 +203,213 @@ export function NuevoExpedienteContractualForm({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <SectionHelp>
-        Abre el expediente en la etapa Precontractual. El objeto, la modalidad y los datos del contrato son
-        informativos — este módulo gestiona el expediente y el flujo documental, no reemplaza SECOP II ni valida
-        cuantías o reglas jurídicas de la modalidad elegida.
-      </SectionHelp>
-
-      <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
-        <textarea
-          value={objeto}
-          onChange={(e) => setObjeto(e.target.value)}
-          rows={3}
-          placeholder="Descripción del objeto a contratar"
-          className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-        />
-      </Field>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Modalidad de selección" required>
-          <select
-            value={modalidadSeleccion}
-            onChange={(e) => setModalidadSeleccion(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          >
-            {modalidades.map((m) => (
-              <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Dependencia solicitante" required icon={<Building2 className="h-4 w-4" />}>
-          <BuscadorDependencia dependencias={dependencias} value={dependenciaSolicitanteId} onChange={setDependenciaSolicitanteId} />
-        </Field>
-        <Field label="Valor del contrato" icon={<Wallet className="h-4 w-4" />} help="Opcional, en pesos colombianos.">
-          <CampoMoneda value={valor} onChange={setValor} />
-        </Field>
-        <Field label="N.º de contrato SECOP II" icon={<Hash className="h-4 w-4" />}>
-          <input
-            value={numeroContrato}
-            onChange={(e) => setNumeroContrato(e.target.value)}
-            placeholder="Ej. 045-2026"
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Fecha de inicio" icon={<CalendarDays className="h-4 w-4" />}>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            />
-          </Field>
-          <Field label="Fin estimado">
-            <input
-              type="date"
-              value={fechaFinEstimada}
-              onChange={(e) => setFechaFinEstimada(e.target.value)}
-              className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            />
-          </Field>
-        </div>
+    <div className="overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-soft-lg">
+      <div className="flex items-start gap-3 border-b border-stone-100 bg-gradient-to-br from-cdmb-50/70 to-white px-6 py-5">
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-cdmb-600 text-white shadow-sm">
+          <FileText className="h-5 w-5" aria-hidden />
+        </span>
+        <p className="text-sm leading-relaxed text-stone-600">
+          Abre el expediente en la etapa <strong className="text-stone-800">Precontractual</strong>. El objeto, la modalidad y los
+          datos del contrato son informativos — este módulo gestiona el expediente y el flujo documental, no reemplaza SECOP II ni
+          valida cuantías o reglas jurídicas de la modalidad elegida.
+        </p>
       </div>
 
-      <Field
-        label="Contratista"
-        icon={<Search className="h-4 w-4" />}
-        help="Opcional en esta etapa: en Precontractual todavía puede no estar definido. Búsquelo por NIT/cédula si ya se conoce."
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={contratistaIdentificacion}
-            onChange={(e) => {
-              setContratistaIdentificacion(e.target.value);
-              setContratistaId(null);
-              setContratistaNombre(null);
-              setContratistaNoEncontrado(false);
-            }}
-            placeholder="NIT o cédula"
-            className="w-48 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-          />
-          <button
-            type="button"
-            onClick={buscarContratista}
-            disabled={buscandoContratista || !contratistaIdentificacion.trim()}
-            className="rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-          >
-            {buscandoContratista ? "Buscando…" : "Buscar"}
-          </button>
-          {contratistaId && contratistaNombre && (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-              {contratistaNoEncontrado ? "Creado: " : "Encontrado: "}{contratistaNombre}
-            </span>
-          )}
-        </div>
-
-        {contratistaNoEncontrado && !contratistaId && (
-          <div className="mt-2 space-y-2 rounded-md border border-amber-300 bg-amber-50/50 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-medium text-amber-900">
-              <UserPlus className="h-3.5 w-3.5" aria-hidden />
-              No hay ningún contratista con esa identificación — créelo aquí, queda listo para este expediente.
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <select
-                value={nuevoTipoPersona}
-                onChange={(e) => setNuevoTipoPersona(e.target.value as TipoPersona)}
-                className="rounded-md border border-stone-200 px-2.5 py-1.5 text-xs"
-              >
-                <option value="NATURAL">Persona natural</option>
-                <option value="JURIDICA">Persona jurídica</option>
-              </select>
-              <input
-                value={nuevoNombreORazonSocial}
-                onChange={(e) => setNuevoNombreORazonSocial(e.target.value)}
-                placeholder="Nombre o razón social"
-                className="rounded-md border border-stone-200 px-2.5 py-1.5 text-xs"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={crearContratista}
-              disabled={creandoContratista}
-              className="rounded-md bg-amber-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-900 disabled:opacity-50"
-            >
-              {creandoContratista ? "Creando…" : "Crear contratista"}
-            </button>
-          </div>
-        )}
-      </Field>
-
-      {supervisores.length > 0 && (
-        <Field label="Supervisor(es) / Interventor(es)" icon={<UserCog className="h-4 w-4" />}>
-          <div className="mb-2 grid grid-cols-2 gap-1.5">
-            <input
-              type="text"
-              value={filtroSupervisor}
-              onChange={(e) => setFiltroSupervisor(e.target.value)}
-              placeholder="Buscar por nombre…"
-              className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
+      <div className="space-y-8 px-6 py-6">
+        <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
+          <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
+            <textarea
+              value={objeto}
+              onChange={(e) => setObjeto(e.target.value)}
+              rows={3}
+              placeholder="Descripción del objeto a contratar"
+              className={campoCls}
             />
-            <select
-              value={dependenciaFiltroSupervisor}
-              onChange={(e) => setDependenciaFiltroSupervisor(e.target.value)}
-              className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
-            >
-              <option value="">Todas las dependencias</option>
-              {dependenciasSupervisor.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+          </Field>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Modalidad de selección" required>
+              <select value={modalidadSeleccion} onChange={(e) => setModalidadSeleccion(e.target.value)} className={campoCls}>
+                {modalidades.map((m) => (
+                  <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Dependencia solicitante" required icon={<Building2 className="h-4 w-4" />}>
+              <BuscadorDependencia dependencias={dependencias} value={dependenciaSolicitanteId} onChange={setDependenciaSolicitanteId} />
+            </Field>
           </div>
-          {!qSupervisor && !dependenciaFiltroSupervisor && supervisorUsuarioIds.size === 0 ? (
-            <p className="text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {supervisoresFiltrados.map((s) => {
-                const activo = supervisorUsuarioIds.has(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => alternarSupervisor(s.id)}
-                    aria-pressed={activo}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                      activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                    }`}
-                  >
-                    {s.nombre}
-                  </button>
-                );
-              })}
+        </SeccionFormulario>
+
+        <div className="border-t border-dashed border-stone-100" />
+
+        <SeccionFormulario n={2} icon={CircleDollarSign} titulo="Presupuesto y plazo" subtitulo="Todo este bloque es opcional.">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Valor del contrato" icon={<CircleDollarSign className="h-4 w-4" />} help="En pesos colombianos.">
+              <CampoMoneda value={valor} onChange={setValor} className="rounded-xl" />
+            </Field>
+            <Field label="N.º de contrato SECOP II" icon={<Hash className="h-4 w-4" />}>
+              <input
+                value={numeroContrato}
+                onChange={(e) => setNumeroContrato(e.target.value)}
+                placeholder="Ej. 045-2026"
+                className={campoCls}
+              />
+            </Field>
+            <Field label="Fecha de inicio" icon={<CalendarRange className="h-4 w-4" />}>
+              <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className={campoCls} />
+            </Field>
+            <Field label="Fin estimado">
+              <input type="date" value={fechaFinEstimada} onChange={(e) => setFechaFinEstimada(e.target.value)} className={campoCls} />
+            </Field>
+          </div>
+        </SeccionFormulario>
+
+        <div className="border-t border-dashed border-stone-100" />
+
+        <SeccionFormulario
+          n={3}
+          icon={UserSearch}
+          titulo="Contratista"
+          subtitulo="Opcional en esta etapa — en Precontractual todavía puede no estar definido."
+          tono="techblue"
+        >
+          <div className="rounded-xl border border-techblue-100 bg-techblue-50/40 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={contratistaIdentificacion}
+                onChange={(e) => {
+                  setContratistaIdentificacion(e.target.value);
+                  setContratistaId(null);
+                  setContratistaNombre(null);
+                  setContratistaNoEncontrado(false);
+                }}
+                placeholder="NIT o cédula"
+                className={`${campoCls} w-48 bg-white`}
+              />
+              <button
+                type="button"
+                onClick={buscarContratista}
+                disabled={buscandoContratista || !contratistaIdentificacion.trim()}
+                className="rounded-xl border border-techblue-200 bg-white px-3.5 py-2.5 text-xs font-medium text-techblue-700 transition hover:bg-techblue-50 disabled:opacity-50"
+              >
+                {buscandoContratista ? "Buscando…" : "Buscar"}
+              </button>
+              {contratistaId && contratistaNombre && (
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-800">
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                  {contratistaNoEncontrado ? "Creado: " : "Encontrado: "}{contratistaNombre}
+                </span>
+              )}
             </div>
-          )}
-        </Field>
+
+            {contratistaNoEncontrado && !contratistaId && (
+              <div className="mt-3 space-y-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3.5">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-amber-900">
+                  <UserPlus className="h-3.5 w-3.5 flex-none" aria-hidden />
+                  No hay ningún contratista con esa identificación — créelo aquí, queda listo para este expediente.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <select
+                    value={nuevoTipoPersona}
+                    onChange={(e) => setNuevoTipoPersona(e.target.value as TipoPersona)}
+                    className="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs"
+                  >
+                    <option value="NATURAL">Persona natural</option>
+                    <option value="JURIDICA">Persona jurídica</option>
+                  </select>
+                  <input
+                    value={nuevoNombreORazonSocial}
+                    onChange={(e) => setNuevoNombreORazonSocial(e.target.value)}
+                    placeholder="Nombre o razón social"
+                    className="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={crearContratista}
+                  disabled={creandoContratista}
+                  className="rounded-lg bg-amber-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-900 disabled:opacity-50"
+                >
+                  {creandoContratista ? "Creando…" : "Crear contratista"}
+                </button>
+              </div>
+            )}
+          </div>
+        </SeccionFormulario>
+
+        {supervisores.length > 0 && (
+          <>
+            <div className="border-t border-dashed border-stone-100" />
+            <SeccionFormulario n={4} icon={Users} titulo="Supervisión" subtitulo="Opcional — puede asignarse después.">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={filtroSupervisor}
+                  onChange={(e) => setFiltroSupervisor(e.target.value)}
+                  placeholder="Buscar por nombre…"
+                  className={campoCls}
+                />
+                <select value={dependenciaFiltroSupervisor} onChange={(e) => setDependenciaFiltroSupervisor(e.target.value)} className={campoCls}>
+                  <option value="">Todas las dependencias</option>
+                  {dependenciasSupervisor.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              {!qSupervisor && !dependenciaFiltroSupervisor && supervisorUsuarioIds.size === 0 ? (
+                <p className="text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {supervisoresFiltrados.map((s) => {
+                    const activo = supervisorUsuarioIds.has(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => alternarSupervisor(s.id)}
+                        aria-pressed={activo}
+                        className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                          activo
+                            ? "border-cdmb-600 bg-cdmb-600 text-white shadow-sm"
+                            : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:bg-cdmb-50"
+                        }`}
+                      >
+                        {s.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {supervisorUsuarioIds.size > 0 && (
+                <p className="text-xs font-medium text-cdmb-700">
+                  {supervisorUsuarioIds.size} supervisor{supervisorUsuarioIds.size === 1 ? "" : "es"} seleccionado{supervisorUsuarioIds.size === 1 ? "" : "s"}
+                </p>
+              )}
+            </SeccionFormulario>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <div className="mx-6 mb-2 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+          {error}
+        </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-        <span className="text-sm text-red-700">{error}</span>
+      <div className="flex items-center justify-between gap-3 border-t border-stone-100 bg-stone-50/60 px-6 py-4">
+        <Link href="/contratacion/expedientes" className="text-sm font-medium text-stone-500 hover:text-stone-700">
+          Cancelar
+        </Link>
         <button
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-cdmb-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cdmb-700 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {guardando ? "Creando…" : "Crear expediente"}
+          {!guardando && <ArrowRight className="h-4 w-4" aria-hidden />}
         </button>
       </div>
     </div>

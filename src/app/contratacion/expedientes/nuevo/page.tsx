@@ -27,7 +27,7 @@ export default async function NuevoExpedienteContractualPage() {
   const supervisoresOpciones = supervisores.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   return (
-    <section className="max-w-2xl space-y-4">
+    <section className="max-w-3xl space-y-4">
       <TituloSeccion icon={FilePlus2}>Nuevo expediente contractual</TituloSeccion>
       <NuevoExpedienteContractualForm
         dependencias={dependencias}
