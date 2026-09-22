@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
+import { nombreInicialDesdeUsuarioRed } from "@/lib/directorio-activo";
+import { registrarAuditoria } from "@/lib/auditoria";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
 
@@ -729,6 +731,76 @@ export async function vincularContratistaAUsuario(
  * borrar el registro maestro — sus expedientes históricos siguen intactos. */
 export async function desvincularContratistaDeUsuario(usuarioId: string) {
   await db.contratista.updateMany({ where: { usuarioId }, data: { usuarioId: null } });
+}
+
+/**
+ * Vincula este Contratista con un usuario de red (Directorio Activo CDMB) — desde la FICHA del
+ * contratista, no desde Usuarios: opcional, en cualquier momento, sin esperar a que la persona
+ * inicie sesión ni exigir que ya tenga cuenta. No hay forma de "listar" el directorio activo hoy
+ * (el API externo solo valida credenciales, `src/lib/directorio-activo.ts`), así que no se puede
+ * confirmar que el usuario de red exista de verdad: si está mal escrito, el vínculo simplemente
+ * nunca "cobra vida" (nadie inicia sesión con ese usuario) hasta que se corrija.
+ *
+ * - Si el usuario de red ya tiene cuenta en la aplicación: se vincula tal cual. Si esa cuenta YA
+ *   tenía otro rol de contratación (Jefe, Supervisor, Funcionario) o es un ADMIN, se rechaza —
+ *   son casi siempre señal de una cuenta equivocada (un funcionario real, no este contratista); un
+ *   administrador debe revisarlo a mano en vez de que quede vinculado por error.
+ * - Si no existe todavía: se crea una cuenta "cascarón" (mismo patrón que el alta automática al
+ *   iniciar sesión por AD la primera vez, `src/app/api/auth/login/route.ts`) y se le asigna
+ *   rolContratacion=CONTRATISTA — cuando la persona inicie sesión de verdad con ese mismo usuario
+ *   de red, entra directo a esta misma cuenta (coincide por email), sin duplicarla.
+ */
+export async function vincularUsuarioDominioAContratista(contratistaId: string, usuarioRedCrudo: string, actorId: string) {
+  const usuarioRed = usuarioRedCrudo.trim().toLowerCase();
+  if (!usuarioRed) throw new Error("Escriba el usuario de red.");
+  if (/\s/.test(usuarioRed)) throw new Error("El usuario de red no debe contener espacios.");
+
+  const contratista = await db.contratista.findUnique({ where: { id: contratistaId }, select: { id: true, usuarioId: true, nombreORazonSocial: true } });
+  if (!contratista) throw new Error("El contratista no existe.");
+
+  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, select: { id: true, nombre: true, rol: true, rolContratacion: true, contratista: { select: { id: true } } } });
+
+  if (existente) {
+    if (existente.contratista && existente.contratista.id === contratistaId) return existente; // ya vinculado, idempotente
+    if (existente.contratista) throw new Error("Ese usuario de red ya está vinculado a otro contratista.");
+    if (existente.rol === "ADMIN" || (existente.rolContratacion && existente.rolContratacion !== "CONTRATISTA")) {
+      throw new Error(`"${usuarioRed}" ya es una cuenta con otro rol en el sistema (${existente.nombre}) — revise que el usuario de red sea el correcto.`);
+    }
+    await db.$transaction([
+      db.usuario.update({ where: { id: existente.id }, data: { rolContratacion: "CONTRATISTA" } }),
+      db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: existente.id } }),
+    ]);
+    await registrarAuditoria({
+      tipo: "USUARIO_ACTUALIZADO",
+      descripcion: `${existente.nombre} (${usuarioRed}) se vinculó como usuario de dominio de ${contratista.nombreORazonSocial}.`,
+      usuarioId: actorId,
+    });
+    return existente;
+  }
+
+  const creado = await db.usuario.create({
+    data: {
+      email: usuarioRed,
+      nombre: nombreInicialDesdeUsuarioRed(usuarioRed),
+      passwordHash: "directorio-activo:sin-contrasena-local",
+      rol: "FUNCIONARIO",
+      directorioActivo: true,
+      rolContratacion: "CONTRATISTA",
+    },
+  });
+  await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: creado.id } });
+  await registrarAuditoria({
+    tipo: "USUARIO_CREADO",
+    descripcion: `Cuenta de directorio activo "${usuarioRed}" pre-creada y vinculada como usuario de dominio de ${contratista.nombreORazonSocial} (todavía no ha iniciado sesión).`,
+    usuarioId: actorId,
+  });
+  return creado;
+}
+
+/** Quita el vínculo de usuario de dominio de un Contratista (desde su ficha) — no borra ni
+ * desactiva la cuenta, solo deja de asociarla a este contratista. */
+export async function desvincularUsuarioDominioDeContratista(contratistaId: string) {
+  await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: null } });
 }
 
 export type FiltrosContratacion = {

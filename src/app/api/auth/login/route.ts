@@ -8,6 +8,7 @@ import {
   autenticarDirectorioActivo,
   directorioActivoConfigurado,
   guardarTokenDirectorioActivo,
+  nombreInicialDesdeUsuarioRed,
 } from "@/lib/directorio-activo";
 
 /**
@@ -180,13 +181,7 @@ async function ingresarPorDirectorioActivo(
 
   let usuario = existente;
   if (!usuario) {
-    const nombreInicial =
-      usuarioRed
-        .split("@")[0]
-        .split(/[.\-_]+/)
-        .filter(Boolean)
-        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(" ") || usuarioRed;
+    const nombreInicial = nombreInicialDesdeUsuarioRed(usuarioRed);
 
     usuario = await db.usuario.create({
       data: {

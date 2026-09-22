@@ -8,6 +8,7 @@ import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedie
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { EditarContratistaForm } from "@/components/EditarContratistaForm";
 import { EliminarContratistaBoton } from "@/components/EliminarContratistaBoton";
+import { VincularUsuarioDominioForm } from "@/components/VincularUsuarioDominioForm";
 
 export default async function ContratistaDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -80,11 +81,15 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </dd>
           </div>
           <div className="min-w-0 sm:col-span-2">
-            <dt className="text-xs text-stone-400">Cuenta de acceso (Directorio Activo)</dt>
-            <dd className="break-words text-stone-800">
-              {contratista.usuario
-                ? `${contratista.usuario.nombre} (${contratista.usuario.email})`
-                : "No vinculada — se asigna desde Usuarios."}
+            <dt className="text-xs text-stone-400">Usuario de dominio (Directorio Activo)</dt>
+            <dd className="mt-1">
+              {puedeGestionarContratistas(permisos) ? (
+                <VincularUsuarioDominioForm contratistaId={contratista.id} usuarioActual={contratista.usuario} />
+              ) : (
+                <span className="text-sm text-stone-800">
+                  {contratista.usuario ? `${contratista.usuario.nombre} (${contratista.usuario.email})` : "No vinculado."}
+                </span>
+              )}
             </dd>
           </div>
         </dl>

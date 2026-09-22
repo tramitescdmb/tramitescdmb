@@ -224,9 +224,8 @@ export function NuevoExpedienteContractualForm({
         </p>
       </div>
 
-      <div className="grid gap-x-6 gap-y-5 px-6 py-5 lg:grid-cols-5">
-        <div className="space-y-5 lg:col-span-3">
-          <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
+      <div className="space-y-5 px-6 py-5">
+        <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
             <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
               <textarea
                 value={objeto}
@@ -274,9 +273,9 @@ export function NuevoExpedienteContractualForm({
               </Field>
             </div>
           </SeccionFormulario>
-        </div>
 
-        <div className="space-y-5 lg:col-span-2">
+          <div className="border-t border-dashed border-stone-100" />
+
           <SeccionFormulario
             n={3}
             icon={UserSearch}
@@ -360,8 +359,10 @@ export function NuevoExpedienteContractualForm({
           </SeccionFormulario>
 
           {supervisores.length > 0 && (
-            <SeccionFormulario n={4} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+            <>
+              <div className="border-t border-dashed border-stone-100" />
+              <SeccionFormulario n={4} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   type="text"
                   value={filtroSupervisor}
@@ -405,9 +406,9 @@ export function NuevoExpedienteContractualForm({
                   {supervisorUsuarioIds.size} supervisor{supervisorUsuarioIds.size === 1 ? "" : "es"} seleccionado{supervisorUsuarioIds.size === 1 ? "" : "s"}
                 </p>
               )}
-            </SeccionFormulario>
+              </SeccionFormulario>
+            </>
           )}
-        </div>
       </div>
 
       {error && (
