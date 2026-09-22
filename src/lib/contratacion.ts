@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
-import { nombreInicialDesdeUsuarioRed } from "@/lib/directorio-activo";
+import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { registrarAuditoria } from "@/lib/auditoria";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";

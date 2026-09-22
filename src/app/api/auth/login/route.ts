@@ -8,8 +8,8 @@ import {
   autenticarDirectorioActivo,
   directorioActivoConfigurado,
   guardarTokenDirectorioActivo,
-  nombreInicialDesdeUsuarioRed,
 } from "@/lib/directorio-activo";
+import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 
 /**
  * Único punto de entrada del inicio de sesión. El formulario de /login manda
