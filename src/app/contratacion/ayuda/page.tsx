@@ -11,6 +11,8 @@ import {
   Link2,
   Search,
   Scale,
+  LayoutDashboard,
+  Settings2,
 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeEditarSinTrazaDocumentoContrato } from "@/lib/permisos";
@@ -190,9 +192,8 @@ export default async function ContratacionAyudaPage() {
         <p>
           Decisión explícita e informada: Administrador y Jefe de Contratación pueden editar el nombre,
           <strong> reemplazar el archivo real</strong> o eliminar un documento sin que quede ninguna fila en la
-          bitácora del expediente — a diferencia del SGDEA de Correspondencia, que nunca borra nada. Motivo:
-          alta rotación de contratistas y errores de captura frecuentes; exigir siempre trazabilidad sería
-          inviable operativamente.
+          bitácora del expediente. Motivo: alta rotación de contratistas y errores de captura frecuentes;
+          exigir siempre trazabilidad sería inviable operativamente.
         </p>
         <p className="text-xs text-stone-400">
           Reemplazar el archivo borra el anterior del almacenamiento e invalida cualquier firma o solicitud de
@@ -291,17 +292,52 @@ export default async function ContratacionAyudaPage() {
     </>
   );
 
+  const grupoAdministracion = (
+    <>
+      <Seccion n={11} id="tablero" icono={LayoutDashboard} titulo="Tablero (Panel)">
+        <p>
+          El <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">Panel</Link> reúne cuatro
+          vistas unidas por un ciclo de anillos. <strong>Mi trabajo pendiente</strong>: documentos por firmar o revisar e
+          informes de supervisión cuyo periodo ya cerró y siguen sin cargarse, de los expedientes que usted ve.{" "}
+          <strong>Expedientes</strong>: cuántos hay en cada etapa y los más recientes. <strong>Indicadores</strong>: tiempos
+          por etapa, firmas y distribución por dependencia y modalidad. <strong>Sistema</strong>: volumen del módulo y
+          actividad reciente (solo Administrador o Jefe de Contratación).
+        </p>
+      </Seccion>
+
+      <Seccion n={12} id="menu-administracion" icono={Settings2} titulo="Menú, configuración y administración" admin>
+        <p>
+          Todas las opciones del menú se muestran a todos los usuarios, para que el módulo se vea completo. Las que el usuario
+          no puede usar aparecen <strong>atenuadas, con un candado y la leyenda de quién sí puede</strong>; no abren nada. Esto
+          es solo la vitrina: el acceso real lo controla cada pantalla y cada operación del servidor.
+        </p>
+        <Tabla encabezados={["Opción", "Quién la usa", "Para qué"]}>
+          <tr><td className="px-2.5 py-1.5"><strong>Expedientes → Nuevo expediente</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Abrir un expediente contractual.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Configuración → Catálogo de requisitos</strong></td><td className="px-2.5 py-1.5">Administrador de Contratación</td><td className="px-2.5 py-1.5">Agregar, ordenar, activar o desactivar los documentos exigidos por etapa y modalidad.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del SIGEC</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de todos los expedientes, con filtros.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Usuarios y roles</strong></td><td className="px-2.5 py-1.5">Administrador del sistema</td><td className="px-2.5 py-1.5">Asignar el rol de contratación, cargos y accesos de cada persona.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Auditoría de cuentas</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Inicios de sesión, gestión de usuarios y cambios de configuración.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Seguridad</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Intentos de acceso, política de contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</td></tr>
+        </Tabla>
+        <p className="text-xs text-stone-400">
+          Seguridad y Auditoría de cuentas son las mismas de toda la aplicación: un cambio aquí rige para todos los usuarios.
+        </p>
+      </Seccion>
+    </>
+  );
+
   const grupos = [
     { id: "general", label: "Qué es y roles", contenido: grupoGeneral },
     { id: "expediente", label: "Expediente y documentos", contenido: grupoExpediente },
     { id: "firma", label: "Firma y verificación", contenido: grupoFirma },
     { id: "datos", label: "Contratistas y filtros", contenido: grupoDatos },
+    { id: "administracion", label: "Tablero y administración", contenido: grupoAdministracion },
   ];
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/contratacion" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+        <Link href="/contratacion/panel" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Volver al panel
         </Link>

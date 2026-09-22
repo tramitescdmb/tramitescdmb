@@ -39,6 +39,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
     radicar: puedeRadicar(permisos),
     distribuir: puedeDistribuir(permisos),
     admin: puedeAdministrarArchivo(permisos),
+    administradorSistema: permisos.esAdmin,
     fondoHistorico: fondoHistoricoConfigurado(),
   };
 

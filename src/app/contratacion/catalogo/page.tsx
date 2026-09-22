@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { ListChecks } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
@@ -13,7 +14,9 @@ export default async function CatalogoRequisitosPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) redirect("/contratacion");
+  if (!puedeAdministrarContratacion(permisos)) {
+    return <AccesoRestringido titulo="Catálogo de requisitos" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
+  }
 
   const requisitos = await listarCatalogoRequisitos();
 

@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-/** Parámetros de bloqueo de acceso por intentos fallidos (MoReq 6.12) — antes fijos en código. */
+/** Pantallas desde las que se puede guardar la seguridad y a las que se regresa (lista blanca: el
+ * destino llega en el formulario y nunca se redirige a una URL arbitraria). */
+const RUTAS_DE_RETORNO = ["/admin/seguridad", "/contratacion/seguridad"];
+
+/** Parámetros de bloqueo de acceso por intentos fallidos (MoReq 6.12), contraseñas, formatos y sello
+ * de tiempo. La disponibilidad de módulos NO se toca aquí: vive en /api/configuracion-modulos. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  const volver = new URL("/admin/seguridad", req.url);
-  if (!session || session.rol !== "ADMIN") {
+  const form = await req.formData();
+  const destino = String(form.get("volver") || "");
+  const volver = new URL(RUTAS_DE_RETORNO.includes(destino) ? destino : "/admin/seguridad", req.url);
+  // Administrador del sistema, Administrador de Contratación o Jefe de Contratación.
+  const permitido = session ? puedeAdministrarSigec(await obtenerPermisosUsuario(session.userId)) : false;
+  if (!session || !permitido) {
     volver.searchParams.set("error", "Solo un administrador puede cambiar esto.");
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  const form = await req.formData();
-  const sgdeaVisibleFuncionarios = form.get("sgdeaVisibleFuncionarios") === "on";
   const tsaRaw = String(form.get("selloTiempoTsaUrl") || "").trim();
   const selloTiempoTsaUrl = /^https?:\/\/.+/i.test(tsaRaw) ? tsaRaw.slice(0, 300) : null;
   const maxIntentos = Math.min(20, Math.max(3, Number(form.get("loginMaxIntentos")) || 5));
@@ -46,7 +53,6 @@ export async function POST(req: NextRequest) {
   const extensionesFinal = extensionesPermitidas.length > 0 ? extensionesPermitidas : EXTENSIONES_POR_DEFECTO;
 
   const datos = {
-    sgdeaVisibleFuncionarios,
     selloTiempoTsaUrl,
     loginMaxIntentos: maxIntentos,
     loginVentanaMinutos: ventanaMinutos,
@@ -69,7 +75,7 @@ export async function POST(req: NextRequest) {
 
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
-    descripcion: `${session.nombre} actualizó la política de seguridad: SGDEA ${sgdeaVisibleFuncionarios ? "visible" : "oculto (solo ADMIN)"}; acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
+    descripcion: `${session.nombre} actualizó la política de seguridad: acceso ${maxIntentos} intentos/${ventanaMinutos} min; contraseña ${longitudMinima}-${longitudMaxima} caracteres, ${
       [requiereMayuscula && "mayúscula", requiereNumero && "número", requiereEspecial && "especial"].filter(Boolean).join("+") || "sin reglas de complejidad"
     }, histórico ${historialCantidad}, vigencia ${vigenciaDias ?? "sin vencimiento"} (mínima ${vigenciaMinimaDias || "sin mínimo"}); formatos permitidos: ${extensionesFinal.join(", ")}.`,
     usuarioId: session.userId,

@@ -12,13 +12,11 @@ import { ChevronRight, Home } from "lucide-react";
  */
 
 const INICIO_GRUPO: Record<string, string> = {
-  Panel: "/contratacion",
+  Panel: "/contratacion/panel",
   Expedientes: "/contratacion/expedientes",
-  Buzón: "/contratacion/buzon",
+  "Buzón de firmas": "/contratacion/buzon",
   "Mis firmas": "/contratacion/mis-firmas",
-  Dashboard: "/contratacion/dashboard",
   Contratistas: "/contratacion/contratistas",
-  Catálogo: "/contratacion/catalogo",
   Ayuda: "/contratacion/ayuda",
 };
 
@@ -28,16 +26,21 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
   { re: /^\/contratacion\/expedientes\/[^/]+\/rotulo/, trail: ["Expedientes", "Expediente", "Rótulo"] },
   { re: /^\/contratacion\/expedientes\/[^/]+/, trail: ["Expedientes", "Expediente"] },
   { re: /^\/contratacion\/expedientes$/, trail: ["Expedientes"] },
-  { re: /^\/contratacion\/firmar\/[^/]+/, trail: ["Buzón", "Firmar documento"] },
-  { re: /^\/contratacion\/buzon/, trail: ["Buzón"] },
+  { re: /^\/contratacion\/firmar\/[^/]+/, trail: ["Buzón de firmas", "Firmar documento"] },
+  { re: /^\/contratacion\/buzon/, trail: ["Buzón de firmas"] },
   { re: /^\/contratacion\/mis-firmas/, trail: ["Mis firmas"] },
-  { re: /^\/contratacion\/dashboard/, trail: ["Dashboard"] },
+  { re: /^\/contratacion\/panel\/expedientes/, trail: ["Panel", "Expedientes"] },
+  { re: /^\/contratacion\/panel\/indicadores/, trail: ["Panel", "Indicadores"] },
+  { re: /^\/contratacion\/panel\/sistema/, trail: ["Panel", "Sistema"] },
+  { re: /^\/contratacion\/panel/, trail: ["Panel", "Mi trabajo pendiente"] },
   { re: /^\/contratacion\/contratistas\/nuevo/, trail: ["Contratistas", "Nuevo contratista"] },
   { re: /^\/contratacion\/contratistas\/[^/]+/, trail: ["Contratistas", "Contratista"] },
   { re: /^\/contratacion\/contratistas$/, trail: ["Contratistas"] },
-  { re: /^\/contratacion\/catalogo/, trail: ["Catálogo"] },
+  { re: /^\/contratacion\/catalogo/, trail: ["Configuración", "Catálogo de requisitos"] },
+  { re: /^\/contratacion\/bitacora/, trail: ["Administración", "Bitácora del SIGEC"] },
+  { re: /^\/contratacion\/auditoria/, trail: ["Administración", "Auditoría de cuentas"] },
+  { re: /^\/contratacion\/seguridad/, trail: ["Administración", "Seguridad"] },
   { re: /^\/contratacion\/ayuda/, trail: ["Ayuda"] },
-  { re: /^\/contratacion$/, trail: ["Panel"] },
 ];
 
 export function MigaSigec() {
@@ -47,7 +50,7 @@ export function MigaSigec() {
 
   return (
     <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-stone-400">
-      <Link href="/contratacion" className="flex items-center gap-1 hover:text-cdmb-700">
+      <Link href="/contratacion/panel" className="flex items-center gap-1 hover:text-cdmb-700">
         <Home className="h-3.5 w-3.5" aria-hidden />
         SIGEC
       </Link>

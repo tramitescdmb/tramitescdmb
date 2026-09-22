@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
@@ -11,7 +12,9 @@ export default async function NuevoExpedienteContractualPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeGestionarContratistas(permisos)) redirect("/contratacion");
+  if (!puedeGestionarContratistas(permisos)) {
+    return <AccesoRestringido titulo="Nuevo expediente" quien="administrador o jefe de contratación" volverHref="/contratacion/expedientes" volverLabel="Ver expedientes" />;
+  }
 
   const [dependencias, supervisores] = await Promise.all([
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),

@@ -1,62 +1,75 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FilePlus2, Inbox, ChartColumn, UserSquare2, FileSignature, ListChecks } from "lucide-react";
+import { LayoutDashboard, Briefcase, Inbox, UserSquare2, FileSignature, Settings2, ShieldCheck } from "lucide-react";
+import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
-const TABS = [
-  { href: "/contratacion", label: "Panel", icon: LayoutDashboard, prefijoExacto: true, permiso: undefined },
-  { href: "/contratacion/expedientes", label: "Expedientes", icon: Briefcase, permiso: undefined },
-  { href: "/contratacion/buzon", label: "Buzón", icon: Inbox, permiso: undefined },
-  { href: "/contratacion/mis-firmas", label: "Mis firmas", icon: FileSignature, permiso: undefined },
-  { href: "/contratacion/dashboard", label: "Dashboard", icon: ChartColumn, permiso: undefined },
-  { href: "/contratacion/contratistas", label: "Contratistas", icon: UserSquare2, permiso: "verContratistas" as const },
-  { href: "/contratacion/catalogo", label: "Catálogo", icon: ListChecks, permiso: "soloAdministrador" as const },
-  { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente", icon: FilePlus2, permiso: "administrar" as const },
-];
+export type PermitidoContratacion = {
+  /** Crear expedientes y gestionar contratistas: Administrador o Jefe de Contratación. */
+  administrar: boolean;
+  verContratistas: boolean;
+  /** Catálogo de requisitos: solo el Administrador de Contratación. */
+  soloAdministrador: boolean;
+  /** Bitácora, Seguridad y Auditoría: Administrador o Jefe de Contratación. */
+  gestion: boolean;
+  /** Usuarios y roles: solo el administrador del sistema. */
+  administradorSistema: boolean;
+};
+
+const SOLO_ADMIN = "Solo administrador";
+const ADMIN_O_JEFE = "Solo administrador o jefe de contratación";
+
+/** Una entrada que el usuario no puede usar se muestra igual, bloqueada y con la leyenda de quién sí. */
+const entrada = (ok: boolean, leyenda: string, it: ItemMenu): ItemMenu => (ok ? it : { ...it, bloqueadoPara: leyenda });
 
 export function ContratacionTabs({
   permitido,
   pendientesFirma,
 }: {
-  permitido: { administrar: boolean; verContratistas: boolean; soloAdministrador: boolean };
-  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Buzón». */
+  permitido: PermitidoContratacion;
+  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Buzón de firmas». */
   pendientesFirma: { total: number; listos: number };
 }) {
-  const pathname = usePathname();
-  const tabs = TABS.filter((t) => !t.permiso || permitido[t.permiso]);
+  const grupos: GrupoMenu[] = [
+    { label: "Panel", icon: LayoutDashboard, href: "/contratacion/panel" },
+    {
+      label: "Expedientes",
+      icon: Briefcase,
+      items: [
+        { href: "/contratacion/expedientes", label: "Expedientes contractuales" },
+        entrada(permitido.administrar, ADMIN_O_JEFE, { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente" }),
+      ],
+    },
+    permitido.verContratistas
+      ? { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas" }
+      : { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas", bloqueadoPara: ADMIN_O_JEFE },
+    {
+      label: "Buzón de firmas",
+      icon: Inbox,
+      href: "/contratacion/buzon",
+      insignia: {
+        valor: pendientesFirma.total,
+        alerta: pendientesFirma.listos > 0,
+        titulo: `${pendientesFirma.total} pendientes por firmar${pendientesFirma.listos < pendientesFirma.total ? ` (${pendientesFirma.listos} ya puede(n) firmarse)` : ""}`,
+      },
+    },
+    { label: "Mis firmas", icon: FileSignature, href: "/contratacion/mis-firmas" },
+    {
+      label: "Configuración",
+      icon: Settings2,
+      alinearDerecha: true,
+      items: [entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true })],
+    },
+    {
+      label: "Administración",
+      icon: ShieldCheck,
+      items: [
+        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del SIGEC", prefijo: true }),
+        entrada(permitido.administradorSistema, SOLO_ADMIN, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
+        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/auditoria", label: "Auditoría de cuentas", prefijo: true }),
+        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true }),
+      ],
+    },
+  ];
 
-  return (
-    <nav
-      className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1"
-      aria-label="Secciones de Contratación"
-    >
-      {tabs.map((t) => {
-        const activo = t.prefijoExacto ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
-        const Icon = t.icon;
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            aria-current={activo ? "page" : undefined}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              activo ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200" : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
-            }`}
-          >
-            <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
-            {t.label}
-            {t.href === "/contratacion/buzon" && pendientesFirma.total > 0 && (
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ${pendientesFirma.listos > 0 ? "bg-red-600" : "bg-stone-400"}`}
-                title={`${pendientesFirma.total} documento(s) pendiente(s) de su firma o visto bueno${pendientesFirma.listos < pendientesFirma.total ? ` (${pendientesFirma.listos} ya puede(n) firmarse)` : ""}`}
-                aria-label={`${pendientesFirma.total} pendientes por firmar`}
-              >
-                {pendientesFirma.total}
-              </span>
-            )}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  return <BarraModulo grupos={grupos} ariaLabel="Secciones de SIGEC" />;
 }

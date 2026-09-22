@@ -402,6 +402,12 @@ export function puedeSubirDocumentoContrato(
   return false;
 }
 
+/** ¿Puede usar la Bitácora del SIGEC, la Auditoría de cuentas y la Seguridad desde el módulo de
+ * Contratación? Administrador del sistema, Administrador de Contratación o Jefe de Contratación. */
+export function puedeAdministrarSigec(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
 /** ¿Puede crear/renombrar/quitar espacios eventuales del informe de supervisión? Quienes pueden
  * cargar documentos en la etapa Contractual, salvo el Contratista: los espacios los define quien
  * lleva el expediente, el contratista solo entrega en ellos. */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos } from "./periodos-informe";
+import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos, periodosPorRadicar } from "./periodos-informe";
 
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
 const iso = (x: Date) => x.toISOString().slice(0, 10);
@@ -53,5 +53,27 @@ describe("etiquetaRangoPeriodo / esRequisitoPorPeriodos", () => {
     expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO116" })).toBe(true);
     expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO117" })).toBe(false);
     expect(esRequisitoPorPeriodos({ codigoFormato: null })).toBe(false);
+  });
+});
+
+describe("periodosPorRadicar", () => {
+  const periodos = calcularPeriodosInforme(d("2026-09-25"), d("2026-12-24"));
+
+  it("antes de que cierre el primer periodo no hay nada por radicar", () => {
+    expect(periodosPorRadicar(periodos, new Set(), d("2026-09-30"))).toEqual([]);
+  });
+
+  it("el 1 de octubre ya se puede radicar el informe 1 (25 sep – 30 sep)", () => {
+    const r = periodosPorRadicar(periodos, new Set(), d("2026-10-01"));
+    expect(r.map((x) => [x.numero, x.periodo.clave, x.diasDeRetraso])).toEqual([[1, "2026-09", 0]]);
+  });
+
+  it("los ya cargados no cuentan y el retraso se mide desde el día de radicación", () => {
+    const r = periodosPorRadicar(periodos, new Set(["2026-09"]), d("2026-11-05"));
+    expect(r.map((x) => [x.numero, x.diasDeRetraso])).toEqual([[2, 4]]);
+  });
+
+  it("terminado el contrato, los 4 informes sin cargar están por radicar", () => {
+    expect(periodosPorRadicar(periodos, new Set(), d("2027-01-15")).map((x) => x.numero)).toEqual([1, 2, 3, 4]);
   });
 });

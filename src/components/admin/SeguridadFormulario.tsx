@@ -1,0 +1,131 @@
+import { Field, SectionHelp } from "@/components/Field";
+import type { getConfiguracionSitio } from "@/lib/config-sitio";
+
+type ConfiguracionSitio = Awaited<ReturnType<typeof getConfiguracionSitio>>;
+
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+
+/**
+ * Formulario de Seguridad (acceso, contraseñas, formatos de archivo y sello de tiempo) — compartido
+ * por todos los módulos: cada uno lo monta en su propia ruta y dentro de su propio marco, y el
+ * `volver` indica a qué pantalla regresar tras guardar. Es configuración de TODA la aplicación, así
+ * que no menciona a ningún módulo en particular. La disponibilidad de módulos vive aparte
+ * (/admin/modulos), reservada al administrador del sistema.
+ */
+export function SeguridadFormulario({
+  config,
+  volver,
+  ok,
+  error,
+}: {
+  config: ConfiguracionSitio;
+  /** Ruta de regreso tras guardar (debe estar en la lista blanca de la API). */
+  volver: string;
+  ok?: string;
+  error?: string;
+}) {
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-stone-900">Seguridad</h1>
+        <p className="text-sm text-stone-500">Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</p>
+      </div>
+
+      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
+      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+      <SectionHelp>Bloqueo temporal tras exceder los intentos fallidos, en cuenta institucional y directorio activo.</SectionHelp>
+
+      <form action="/api/configuracion-seguridad" method="post" className="space-y-6">
+        <input type="hidden" name="volver" value={volver} />
+
+        <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-soft sm:grid-cols-2">
+          <Field label="Intentos fallidos permitidos" help="Entre 3 y 20.">
+            <input type="number" name="loginMaxIntentos" min={3} max={20} defaultValue={config.loginMaxIntentos} required className={inputCls} />
+          </Field>
+          <Field label="Minutos de espera" help="Entre 1 y 120.">
+            <input type="number" name="loginVentanaMinutos" min={1} max={120} defaultValue={config.loginVentanaMinutos} required className={inputCls} />
+          </Field>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <h2 className="text-sm font-semibold text-stone-900">Política de contraseñas</h2>
+          <SectionHelp>
+            Aplica al crear o restablecer una contraseña — no revisa retroactivamente las existentes. Las obviamente débiles (ej.
+            &quot;12345678&quot;) se rechazan siempre, sin importar esta configuración.
+          </SectionHelp>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Longitud mínima" help="Entre 6 y 64 caracteres.">
+              <input type="number" name="passwordLongitudMinima" min={6} max={64} defaultValue={config.passwordLongitudMinima} required className={inputCls} />
+            </Field>
+            <Field label="Longitud máxima" help="Hasta 128. Bcrypt ignora lo que pase de 72 bytes.">
+              <input type="number" name="passwordLongitudMaxima" min={6} max={128} defaultValue={config.passwordLongitudMaxima} required className={inputCls} />
+            </Field>
+            <Field label="Contraseñas anteriores a recordar" help="0 desactiva la revisión. Máximo 10.">
+              <input type="number" name="passwordHistorialCantidad" min={0} max={10} defaultValue={config.passwordHistorialCantidad} required className={inputCls} />
+            </Field>
+            <Field label="Vigencia en días" help="Vacío o 0 = nunca vence. Se avisa en la ficha del usuario.">
+              <input type="number" name="passwordVigenciaDias" min={0} max={3650} defaultValue={config.passwordVigenciaDias ?? ""} className={inputCls} />
+            </Field>
+            <Field
+              label="Vigencia mínima en días"
+              help="0 desactiva. Evita ciclar contraseñas para saltarse el histórico; no aplica a un restablecimiento por administrador."
+            >
+              <input type="number" name="passwordVigenciaMinimaDias" min={0} max={365} defaultValue={config.passwordVigenciaMinimaDias} className={inputCls} />
+            </Field>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input type="checkbox" name="passwordRequiereMayuscula" defaultChecked={config.passwordRequiereMayuscula} className="rounded border-stone-200" />
+              Exigir una mayúscula
+            </label>
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input type="checkbox" name="passwordRequiereNumero" defaultChecked={config.passwordRequiereNumero} className="rounded border-stone-200" />
+              Exigir un número
+            </label>
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input type="checkbox" name="passwordRequiereEspecial" defaultChecked={config.passwordRequiereEspecial} className="rounded border-stone-200" />
+              Exigir un carácter especial
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <h2 className="text-sm font-semibold text-stone-900">Formatos de archivo permitidos</h2>
+          <SectionHelp>
+            Formatos aceptados al subir un documento, en toda la aplicación. Separados por coma o espacio, sin el punto (
+            <span className="font-mono">pdf, jpg, docx</span>) — exigidos por el servidor, no solo sugeridos por el navegador. Vacío restablece los
+            valores de fábrica.
+          </SectionHelp>
+          <div className="mt-3">
+            <Field label="Extensiones permitidas">
+              <input
+                type="text"
+                name="extensionesPermitidas"
+                defaultValue={config.extensionesPermitidas.join(", ")}
+                placeholder="pdf, jpg, jpeg, png, doc, docx, xls, xlsx"
+                className={inputCls}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <h2 className="text-sm font-semibold text-stone-900">Firma electrónica</h2>
+          <div className="mt-3">
+            <Field
+              label="Autoridad de sello de tiempo (RFC 3161)"
+              help="URL de una TSA para el estampado cronológico de las firmas electrónicas. Vacío: el sello se apoya solo en el registro y el hash de la firma. Ej.: https://freetsa.org/tsr"
+            >
+              <input type="url" name="selloTiempoTsaUrl" defaultValue={config.selloTiempoTsaUrl ?? ""} placeholder="https://…/tsr" className={inputCls} />
+            </Field>
+          </div>
+        </div>
+
+        <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+          Guardar
+        </button>
+      </form>
+    </div>
+  );
+}

@@ -16,12 +16,22 @@ import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
 import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
-import { esRequisitoPorPeriodos } from "../src/lib/periodos-informe";
+import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos } from "../src/lib/periodos-informe";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3100";
 const PASSWORD = "E2e-Sigec-2026!";
 const SUFIJO = Date.now().toString(36);
 const ETAPAS = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"] as const;
+
+// Fechas del contrato relativas a hoy (75 días atrás → 45 adelante): los primeros periodos ya cerraron
+// (deben verse «por radicar» en el panel) y los últimos todavía no. Los periodos esperados se calculan con
+// la misma función que usa la aplicación.
+const DIA_MS = 24 * 60 * 60 * 1000;
+const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+const INICIO_CONTRATO = iso(Date.now() - 75 * DIA_MS);
+const FIN_CONTRATO = iso(Date.now() + 45 * DIA_MS);
+const PERIODOS = calcularPeriodosInforme(new Date(`${INICIO_CONTRATO}T00:00:00Z`), new Date(`${FIN_CONTRATO}T00:00:00Z`));
+const nombreInforme = (i: number) => `Informe de supervisión ${i + 1} (${etiquetaRangoPeriodo(PERIODOS[i]!)})`;
 
 type Rol = "ADMINISTRADOR_CONTRATACION" | "JEFE_CONTRATACION" | "FUNCIONARIO_CONTRATACION" | "SUPERVISOR_INTERVENTOR" | "CONTRATISTA";
 const USUARIOS: Record<string, { rol: Rol | null; terminos: boolean; cedula?: string }> = {
@@ -110,6 +120,31 @@ async function subirDocumento(c: Cliente, expedienteId: string, etapa: string, n
   });
 }
 
+/** Capturas de pantalla opcionales (E2E_CAPTURAS=1): abre las páginas con un navegador real (Edge) usando la
+ * sesión de cada usuario de prueba y guarda un PNG en capturas-e2e/ — para revisar el aspecto, no solo el HTML. */
+let navegador: any = null;
+async function capturar(etiqueta: string, cliente: Cliente, ruta: string, opciones: { menu?: string } = {}) {
+  if (!process.env.E2E_CAPTURAS) return;
+  try {
+    const modulo = "playwright-core";
+    const { chromium } = await import(modulo);
+    navegador ??= await chromium.launch({ channel: "msedge" });
+    const contexto = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
+    await contexto.addCookies([{ name: "sinca_session", value: cliente.cookie.slice("sinca_session=".length), url: BASE }]);
+    const pagina = await contexto.newPage();
+    await pagina.goto(BASE + ruta, { waitUntil: "load", timeout: 30000 });
+    await pagina.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+    if (opciones.menu) {
+      await pagina.getByRole("button", { name: opciones.menu }).click({ timeout: 5000 });
+      await pagina.waitForTimeout(250);
+    }
+    await pagina.screenshot({ path: `capturas-e2e/${etiqueta}.png`, fullPage: !opciones.menu });
+    await contexto.close();
+  } catch (err) {
+    console.log(`  (captura «${etiqueta}» omitida: ${err instanceof Error ? err.message.split("\n")[0] : err})`);
+  }
+}
+
 async function main() {
   console.log(`\nE2E SIGEC contra ${BASE}\n`);
   const dependencia = await db.dependencia.findFirst({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } });
@@ -176,6 +211,55 @@ async function main() {
       esperar(a.status === 403 && b.status === 403, `contratistas ${a.status}, expedientes ${b.status}`);
     });
 
+    await paso("Rutas de entrada: /contratacion y /contratacion/dashboard llevan al tablero", async () => {
+      const a = await c.jefe!.pagina("/contratacion");
+      const b = await c.jefe!.pagina("/contratacion/dashboard");
+      esperar(a.status === 307 && a.location?.endsWith("/contratacion/panel"), `/contratacion → ${a.status} ${a.location}`);
+      esperar(b.status === 307 && b.location?.endsWith("/contratacion/panel/indicadores"), `/contratacion/dashboard → ${b.status} ${b.location}`);
+    });
+    await paso("Administración: cada sección muestra su contenido a quien puede y «Acceso restringido» a quien no", async () => {
+      const casos: { ruta: string; ok: string; puede: (keyof typeof c)[]; noPuede: (keyof typeof c)[] }[] = [
+        { ruta: "/contratacion/bitacora", ok: "Bitácora del SIGEC", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
+        { ruta: "/contratacion/seguridad", ok: "Política de contraseñas", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
+        { ruta: "/contratacion/auditoria", ok: "Auditoría de cuentas", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo"] },
+        { ruta: "/contratacion/catalogo", ok: "Catálogo de requisitos documentales", puede: ["admin"], noPuede: ["jefe", "sup", "apoyo"] },
+        { ruta: "/contratacion/panel/sistema", ok: "Actividad reciente", puede: ["jefe", "admin"], noPuede: ["sup", "contratista"] },
+        { ruta: "/contratacion/expedientes/nuevo", ok: "Nuevo expediente", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
+        { ruta: "/admin/modulos", ok: "Disponibilidad de módulos", puede: [], noPuede: ["jefe", "admin", "sup"] },
+        { ruta: "/usuarios", ok: "Usuarios", puede: [], noPuede: ["jefe", "admin"] },
+      ];
+      for (const caso of casos) {
+        for (const rol of caso.puede) {
+          const r = await c[rol]!.pagina(caso.ruta);
+          esperar(r.status === 200 && r.html.includes(caso.ok) && !r.html.includes("Acceso restringido"), `${caso.ruta} como ${rol}: HTTP ${r.status}, sin «${caso.ok}»`);
+        }
+        for (const rol of caso.noPuede) {
+          const r = await c[rol]!.pagina(caso.ruta);
+          esperar(r.status === 200 && r.html.includes("Acceso restringido"), `${caso.ruta} como ${rol}: debía mostrar «Acceso restringido» (HTTP ${r.status})`);
+        }
+      }
+    });
+    await capturar("01-menu-administracion-supervisor", c.sup!, "/contratacion/panel", { menu: "Administración" });
+    await capturar("02-menu-administracion-jefe", c.jefe!, "/contratacion/panel", { menu: "Administración" });
+    await capturar("03-menu-expedientes-jefe", c.jefe!, "/contratacion/panel", { menu: "Expedientes" });
+    await capturar("04-seguridad-restringida-supervisor", c.sup!, "/contratacion/seguridad");
+    await capturar("05-seguridad-jefe", c.jefe!, "/contratacion/seguridad");
+    await capturar("06-auditoria-jefe", c.jefe!, "/contratacion/auditoria");
+    await capturar("07-bitacora-jefe", c.jefe!, "/contratacion/bitacora");
+    await capturar("08-panel-sistema-jefe", c.jefe!, "/contratacion/panel/sistema");
+    await capturar("09-panel-indicadores-jefe", c.jefe!, "/contratacion/panel/indicadores");
+    await paso("La API de seguridad rechaza (sin cambiar nada) a quien no administra", async () => {
+      const form = new FormData();
+      form.set("volver", "/contratacion/seguridad");
+      form.set("loginMaxIntentos", "3");
+      const res = await fetch(BASE + "/api/configuracion-seguridad", { method: "POST", body: form, redirect: "manual", headers: { cookie: c.sup!.cookie } });
+      esperar(res.status === 303 && /error=/.test(res.headers.get("location") ?? ""), `HTTP ${res.status} → ${res.headers.get("location")}`);
+      const mod = new FormData();
+      mod.set("sgdeaVisibleFuncionarios", "on");
+      const m = await fetch(BASE + "/api/configuracion-modulos", { method: "POST", body: mod, redirect: "manual", headers: { cookie: c.jefe!.cookie } });
+      esperar(m.status === 303 && /error=/.test(m.headers.get("location") ?? ""), `módulos como jefe → HTTP ${m.status} → ${m.headers.get("location")}`);
+    });
+
     console.log("\n3. Contratista");
     identificacion = `9${Date.now().toString().slice(-9)}`;
     await paso("Jefe crea contratista persona natural con los campos nuevos", async () => {
@@ -233,9 +317,8 @@ async function main() {
         modalidadSeleccion: "CONTRATACION_DIRECTA",
         valor: 1500000,
         numeroContrato: `E2E-${SUFIJO}`,
-        // 25 sep → 24 dic: 4 periodos mensuales (25-30 sep, oct, nov, 1-24 dic).
-        fechaInicio: "2026-09-25",
-        fechaFinEstimada: "2026-12-24",
+        fechaInicio: INICIO_CONTRATO,
+        fechaFinEstimada: FIN_CONTRATO,
         dependenciaSolicitanteId: dependencia.id,
         contratistaId: ctx.contratistaId,
         supervisorUsuarioIds: [ids.sup],
@@ -250,7 +333,9 @@ async function main() {
 
     console.log("\n5. Pantallas (HTML renderizado por el servidor)");
     const paginasJefe = [
-      "/contratacion", "/contratacion/dashboard", "/contratacion/expedientes", "/contratacion/expedientes/nuevo",
+      "/contratacion/panel", "/contratacion/panel/expedientes", "/contratacion/panel/indicadores", "/contratacion/panel/sistema",
+      "/contratacion/bitacora", "/contratacion/seguridad", "/contratacion/auditoria",
+      "/contratacion/expedientes", "/contratacion/expedientes/nuevo",
       `/contratacion/expedientes/${exp}`, `/contratacion/expedientes/${exp}/rotulo`, "/contratacion/contratistas",
       "/contratacion/contratistas/nuevo", `/contratacion/contratistas/${ctx.contratistaId}`, "/contratacion/buzon",
       "/contratacion/mis-firmas", "/contratacion/ayuda",
@@ -272,11 +357,11 @@ async function main() {
       esperar(r.html.includes("Precontractual"), "no aparece la etapa");
     });
     await paso("Aviso de datos personales: aparece al primer ingreso y deja de aparecer al aceptar", async () => {
-      const antes = await c.apoyo!.pagina("/contratacion");
+      const antes = await c.apoyo!.pagina("/contratacion/panel");
       esperar(antes.status === 200 && antes.html.includes("Tratamiento de datos personales"), "no se mostró el aviso");
       const ok = await c.apoyo!.json("/api/mi-cuenta/aceptar-terminos", "POST");
       esperar(ok.status === 200, `POST → ${ok.status}`);
-      const despues = await c.apoyo!.pagina("/contratacion");
+      const despues = await c.apoyo!.pagina("/contratacion/panel");
       esperar(!despues.html.includes("Tratamiento de datos personales"), "el aviso siguió apareciendo");
     });
 
@@ -341,7 +426,7 @@ async function main() {
           const quien = j === 0 ? c.sup! : c.jefe!;
           const r = await subirDocumento(quien, exp, etapa, `${req.nombre}`.slice(0, 60), {
             requisitoId: req.id,
-            ...(esRequisitoPorPeriodos(req) ? { periodoMes: "2026-09" } : {}),
+            ...(esRequisitoPorPeriodos(req) ? { periodoMes: PERIODOS[0]!.clave } : {}),
           });
           esperar(r.status === 201, `"${req.nombre}" → HTTP ${r.status}: ${JSON.stringify(r.data)}`);
           docsSubidos[etapa]!.push(r.data.id);
@@ -559,6 +644,7 @@ async function main() {
       const r = await db.usuario.updateMany({ where: { email: { startsWith: "e2e-sigec-", endsWith: `-${SUFIJO}@prueba.invalid` } }, data: { activo: false, rolContratacion: null } });
       return `${r.count} usuarios`;
     });
+    await navegador?.close();
     await db.$disconnect();
   }
 
@@ -581,25 +667,25 @@ async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoI
     esperar(r.status === 400 && /por periodos/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
   });
   await paso("Informe · un mes fuera de las fechas del contrato se rechaza", async () => {
-    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: "2027-01" });
+    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: "2099-01" });
     esperar(r.status === 400 && /no existe para las fechas/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
   });
   await paso("Informe · un periodo que ya tiene documento no admite otro", async () => {
-    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: "2026-09" });
+    const r = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/documentos`, "POST", { ...meta, periodoMes: PERIODOS[0]!.clave });
     esperar(r.status === 400 && /ya tiene un documento/i.test(r.data.error), `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
   });
-  await paso("Informe · el periodo 1 (25 sep – 30 sep) quedó como «Informe de supervisión 1»", async () => {
-    const d = await db.documentoContrato.findFirst({ where: { expedienteId: exp, requisitoId, periodoMes: "2026-09" } });
-    esperar(d?.nombre.includes("Informe de supervisión 1 (25 sep – 30 sep 2026)"), `nombre: ${d?.nombre}`);
+  await paso("Informe · el periodo 1 quedó como «Informe de supervisión 1 (rango)»", async () => {
+    const d = await db.documentoContrato.findFirst({ where: { expedienteId: exp, requisitoId, periodoMes: PERIODOS[0]!.clave } });
+    esperar(d?.nombre === nombreInforme(0), `nombre: ${d?.nombre} (esperado ${nombreInforme(0)})`);
   });
-  await paso("Informe · el Jefe carga el periodo 2 (octubre) y el contratista el periodo 3 (noviembre)", async () => {
-    const oct = await subirDocumento(c.jefe!, exp, "CONTRACTUAL", "informe-oct", { requisitoId, periodoMes: "2026-10" });
-    esperar(oct.status === 201, `octubre → ${oct.status}: ${JSON.stringify(oct.data)}`);
-    const nov = await subirDocumento(c.contratista!, exp, "CONTRACTUAL", "informe-nov", { requisitoId, periodoMes: "2026-11" });
-    esperar(nov.status === 201, `noviembre (contratista) → ${nov.status}: ${JSON.stringify(nov.data)}`);
-    docsSubidos.CONTRACTUAL!.push(oct.data.id, nov.data.id);
-    const dOct = await db.documentoContrato.findUnique({ where: { id: oct.data.id } });
-    esperar(dOct?.nombre.includes("Informe de supervisión 2 (01 oct – 31 oct 2026)"), `nombre: ${dOct?.nombre}`);
+  await paso("Informe · el Jefe carga el informe 3 y el contratista el 4 (el 2 queda pendiente)", async () => {
+    const tres = await subirDocumento(c.jefe!, exp, "CONTRACTUAL", "informe-3", { requisitoId, periodoMes: PERIODOS[2]!.clave });
+    esperar(tres.status === 201, `informe 3 → ${tres.status}: ${JSON.stringify(tres.data)}`);
+    const cuatro = await subirDocumento(c.contratista!, exp, "CONTRACTUAL", "informe-4", { requisitoId, periodoMes: PERIODOS[3]!.clave });
+    esperar(cuatro.status === 201, `informe 4 (contratista) → ${cuatro.status}: ${JSON.stringify(cuatro.data)}`);
+    docsSubidos.CONTRACTUAL!.push(tres.data.id, cuatro.data.id);
+    const d3 = await db.documentoContrato.findUnique({ where: { id: tres.data.id } });
+    esperar(d3?.nombre === nombreInforme(2), `nombre: ${d3?.nombre} (esperado ${nombreInforme(2)})`);
   });
   let eventualId = "";
   await paso("Espacio eventual · el contratista no puede crearlo (403); el supervisor asignado sí, con nombre propio", async () => {
@@ -632,20 +718,34 @@ async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoI
     const del = await c.jefe!.json(`/api/contratacion/expedientes/${exp}/periodos-eventuales/${vacio.data.id}`, "DELETE");
     esperar(del.status === 200, `quitar → ${del.status}`);
   });
-  await paso("Informe · la pantalla del expediente muestra los 4 periodos, el avance y los espacios eventuales", async () => {
+  await paso("Informe · la pantalla del expediente muestra los informes numerados, el avance y los espacios eventuales", async () => {
+    const n = PERIODOS.length;
     for (const rol of ["jefe", "contratista"] as const) {
       const r = await c[rol]!.pagina(`/contratacion/expedientes/${exp}`);
       esperar(r.status === 200, `${rol}: HTTP ${r.status}`);
-      for (const t of ["Informe de supervisión 1", "Informe de supervisión 4", "Periodo 25 sep – 30 sep 2026", "Periodo 01 dic – 24 dic 2026"]) {
-        esperar(r.html.replace(/&nbsp;/g, " ").includes(t), `${rol}: falta «${t}»`);
+      for (const t of ["Informe de supervisión 1", `Informe de supervisión ${n}`, `Periodo ${etiquetaRangoPeriodo(PERIODOS[0]!)}`, `Periodo ${etiquetaRangoPeriodo(PERIODOS[n - 1]!)}`]) {
+        esperar(r.html.includes(t), `${rol}: falta «${t}»`);
       }
-      esperar(r.html.includes("3 de 4 periodos mensuales"), `${rol}: no muestra el avance «3 de 4»`);
+      esperar(r.html.includes(`3 de ${n} periodos mensuales`), `${rol}: no muestra el avance «3 de ${n}»`);
       esperar(r.html.includes("Informe extraordinario por suspensión"), `${rol}: falta el espacio eventual`);
     }
     const jefe = await c.jefe!.pagina(`/contratacion/expedientes/${exp}`);
     esperar(jefe.html.includes("Agregar un espacio eventual"), "el Jefe no ve cómo agregar un espacio eventual");
     const cont = await c.contratista!.pagina(`/contratacion/expedientes/${exp}`);
     esperar(!cont.html.includes("Agregar un espacio eventual"), "el contratista puede agregar espacios");
+  });
+  await capturar("13-expediente-informes-jefe", c.jefe!, `/contratacion/expedientes/${exp}`);
+  await capturar("14-expediente-informes-contratista", c.contratista!, `/contratacion/expedientes/${exp}`);
+  await capturar("15-panel-trabajo-jefe", c.jefe!, "/contratacion/panel");
+  await capturar("16-panel-expedientes-jefe", c.jefe!, "/contratacion/panel/expedientes");
+  await paso("Panel · «Mi trabajo pendiente» lista el informe 2 (periodo ya cerrado y sin cargar)", async () => {
+    const r = await c.jefe!.pagina("/contratacion/panel");
+    esperar(r.status === 200 && r.html.includes("Informes por radicar"), `HTTP ${r.status}`);
+    esperar(r.html.includes("Informe de supervisión 2"), "no aparece el informe 2 entre los pendientes por radicar");
+    const cont = await c.contratista!.pagina("/contratacion/panel");
+    esperar(cont.html.includes("Informe de supervisión 2"), "el contratista no ve su informe pendiente");
+    const bit = await c.jefe!.pagina("/contratacion/bitacora?tipo=PERIODO_INFORME_CREADO");
+    esperar(bit.html.includes("Informe extraordinario por suspensión"), "la bitácora del SIGEC no lista la creación del espacio eventual");
   });
 }
 
@@ -663,11 +763,13 @@ async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string
     const buzon = await c.sup!.pagina("/contratacion/buzon");
     esperar(/Tiene 1 documento pendiente por firmar o revisar/.test(buzon.html), "el buzón no dice que tiene 1 pendiente");
     esperar(buzon.html.includes("1 pendientes por firmar"), "la pestaña Buzón no muestra la insignia");
-    const panel = await c.sup!.pagina("/contratacion");
-    esperar(/Tiene 1 documento pendiente por firmar o revisar/.test(panel.html), "el panel no muestra el aviso");
-    const sinPendientes = await c.contratista!.pagina("/contratacion");
+    const panel = await c.sup!.pagina("/contratacion/panel");
+    esperar(panel.html.includes("1 pendientes por firmar") && panel.html.includes("Por firmar ahora"), "el panel no muestra los pendientes");
+    const sinPendientes = await c.contratista!.pagina("/contratacion/panel");
     esperar(!sinPendientes.html.includes("pendientes por firmar"), "alguien sin pendientes ve la insignia");
   });
+  await capturar("10-panel-pendientes-supervisor", c.sup!, "/contratacion/panel");
+  await capturar("11-buzon-supervisor", c.sup!, "/contratacion/buzon");
   await paso("Firma · la solicitud aparece en el buzón y en la pantalla de firma del supervisor", async () => {
     const buzon = await c.sup!.pagina("/contratacion/buzon");
     const firmar = await c.sup!.pagina(`/contratacion/firmar/${solicitudId}`);
@@ -689,9 +791,10 @@ async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string
   });
   await paso("Buzón · tras firmar, el aviso de pendientes desaparece", async () => {
     const buzon = await c.sup!.pagina("/contratacion/buzon");
-    const panel = await c.sup!.pagina("/contratacion");
+    const panel = await c.sup!.pagina("/contratacion/panel");
     esperar(!buzon.html.includes("pendientes por firmar") && !panel.html.includes("pendientes por firmar"), "sigue mostrando pendientes");
   });
+  await capturar("12-mis-firmas-supervisor", c.sup!, "/contratacion/mis-firmas");
   await paso("Mis firmas · «Ver documento» abre el PDF firmado y la ficha es solo de ese documento", async () => {
     const mis = await c.sup!.pagina("/contratacion/mis-firmas");
     esperar(mis.html.includes("Ver documento") && mis.html.includes(`/api/contratacion-documentos/${docId}/rotulado`), "no hay enlace al documento");

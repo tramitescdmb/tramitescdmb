@@ -1,21 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  Inbox,
-  Settings2,
-  FolderOpen,
-  ShieldCheck,
-  FileText,
-  LayoutDashboard,
-  Archive,
-  ChevronDown,
-  ExternalLink,
-  PenLine,
-  type LucideIcon,
-} from "lucide-react";
+import { Inbox, Settings2, FolderOpen, ShieldCheck, FileText, LayoutDashboard, Archive, PenLine } from "lucide-react";
+import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
 type Permitido = {
   bandeja: boolean;
@@ -23,12 +9,10 @@ type Permitido = {
   radicar: boolean;
   distribuir: boolean;
   admin: boolean;
+  /** Usuarios, auditoría de cuentas y seguridad son de toda la aplicación: solo el administrador del sistema. */
+  administradorSistema: boolean;
   fondoHistorico: boolean;
 };
-type Clave = keyof Permitido;
-
-type Item = { href: string; label: string; permiso?: Clave; prefijo?: boolean; externo?: boolean };
-type Grupo = { label: string; icon: LucideIcon; permiso: Clave; href?: string; items?: Item[]; alinearDerecha?: boolean };
 
 /** Rutas que NO son la bandeja aunque cuelguen de /correspondencia. */
 const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon"];
@@ -36,230 +20,79 @@ const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
   (p.startsWith("/correspondencia/") && !NO_BANDEJA.some((s) => p.startsWith(`/correspondencia/${s}`)));
 
-const GRUPOS: Grupo[] = [
-  { label: "Panel", icon: LayoutDashboard, permiso: "bandeja", href: "/correspondencia/panel" },
-  {
-    label: "Correspondencia",
-    icon: Inbox,
-    permiso: "bandeja",
-    items: [
-      { href: "/correspondencia", label: "Bandeja de radicados" },
-      { href: "/correspondencia/nueva", label: "Radicar recibida", permiso: "radicar" },
-      { href: "/correspondencia/nueva/enviada", label: "Radicar enviada", permiso: "radicar" },
-      { href: "/correspondencia/nueva/interna", label: "Radicar memorando", permiso: "radicar" },
-      { href: "/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO", label: "Distribución y reparto", permiso: "distribuir" },
-    ],
-  },
-  {
-    label: "Expedientes y archivo",
-    icon: FolderOpen,
-    permiso: "expedientes",
-    items: [
-      { href: "/correspondencia/expedientes", label: "Expedientes documentales", prefijo: true },
-      { href: "/correspondencia/expedientes/nuevo", label: "Abrir expediente" },
-      { href: "/correspondencia/disposicion", label: "Disposición final", permiso: "admin", prefijo: true },
-    ],
-  },
-  { label: "Buzón de firmas", icon: PenLine, permiso: "bandeja", href: "/correspondencia/buzon" },
-  { label: "Plantillas", icon: FileText, permiso: "bandeja", href: "/correspondencia/plantillas" },
-  { label: "Fondo histórico", icon: Archive, permiso: "fondoHistorico", href: "/correspondencia/fondo" },
-  {
-    label: "Configuración",
-    icon: Settings2,
-    permiso: "admin",
-    alinearDerecha: true,
-    items: [
-      { href: "/correspondencia/admin", label: "Dependencias y TRD" },
-      { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
-      { href: "/correspondencia/admin/metadatos", label: "Campos de metadato", prefijo: true },
-      { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
-      { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true },
-    ],
-  },
-  {
-    // MoReq cap. 6 (Control y Seguridad): usuarios, roles, contraseñas y auditoría son
-    // parte del SGDEA. Hoy comparten pantalla con el resto de la app; cuando el SGDEA
-    // se separe como módulo propio, estas rutas se namespacean bajo /correspondencia.
-    label: "Administración",
-    icon: ShieldCheck,
-    permiso: "admin",
-    alinearDerecha: true,
-    items: [
-      { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA" },
-      { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true },
-      { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true },
-      { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true },
-    ],
-  },
-];
+const SOLO_ADMIN = "Solo administrador";
 
-function rutaDe(href: string) {
-  return href.split("?")[0]!;
-}
+/** Un ítem que requiere el permiso `admin` se muestra a todos, pero bloqueado para quien no lo tiene. */
+const paraAdmin = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.admin ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
+const paraAdminSistema = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.administradorSistema ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 
 export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
-  const pathname = usePathname();
-
-  const itemActivo = (it: Item) => {
-    // Atajos con filtros en la URL (?tipo=…) no son "una página": no se marcan activos.
-    if (it.href.includes("?")) return false;
-    const ruta = rutaDe(it.href);
-    if (ruta === "/correspondencia") return esRutaBandeja(pathname);
-    return it.prefijo ? pathname === ruta || pathname.startsWith(ruta + "/") : pathname === ruta;
-  };
-
-  const grupoActivo = (g: Grupo) => {
-    if (g.href) {
-      const ruta = rutaDe(g.href);
-      return pathname === ruta || pathname.startsWith(ruta + "/");
-    }
-    return (g.items ?? []).some((it) => itemActivo(it));
-  };
-
-  const gruposVisibles = GRUPOS.map((g) => {
-    if (!permitido[g.permiso]) return null;
-    if (g.href) return { grupo: g, items: [] as Item[] };
-    const items = (g.items ?? []).filter((it) => !it.permiso || permitido[it.permiso]);
-    return items.length > 0 ? { grupo: g, items } : null;
-  }).filter((x): x is { grupo: Grupo; items: Item[] } => x !== null);
-
-  // El primer grupo marcado alinearDerecha empuja a sí mismo y a los que le
-  // siguen hacia el borde derecho de la barra (Configuración / Administración).
-  const primerDerechaIdx = gruposVisibles.findIndex(({ grupo }) => grupo.alinearDerecha);
-
-  return (
-    <nav
-      className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1"
-      aria-label="Secciones del SGDEA"
-    >
-      {gruposVisibles.map(({ grupo, items }, i) => {
-        const empujar = i === primerDerechaIdx;
-        return grupo.href ? (
-          <EnlaceSimple key={grupo.label} grupo={grupo} activo={grupoActivo(grupo)} empujar={empujar} />
-        ) : (
-          <MenuGrupo
-            key={grupo.label}
-            grupo={grupo}
-            items={items}
-            activo={grupoActivo(grupo)}
-            itemActivo={itemActivo}
-            empujar={empujar}
-          />
-        );
-      })}
-    </nav>
-  );
-}
-
-function claseTab(activo: boolean) {
-  return `flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-    activo
-      ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200"
-      : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
-  }`;
-}
-
-function EnlaceSimple({ grupo, activo, empujar }: { grupo: Grupo; activo: boolean; empujar?: boolean }) {
-  const Icon = grupo.icon;
-  return (
-    <Link
-      href={grupo.href!}
-      aria-current={activo ? "page" : undefined}
-      className={`${claseTab(activo)} ${empujar ? "ml-auto" : ""}`}
-    >
-      <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
-      {grupo.label}
-    </Link>
-  );
-}
-
-function MenuGrupo({
-  grupo,
-  items,
-  activo,
-  itemActivo,
-  empujar,
-}: {
-  grupo: Grupo;
-  items: Item[];
-  activo: boolean;
-  itemActivo: (it: Item) => boolean;
-  empujar?: boolean;
-}) {
-  const [abierto, setAbierto] = useState(false);
-  const contenedor = useRef<HTMLDivElement>(null);
-  const boton = useRef<HTMLButtonElement>(null);
-  const menuId = useId();
-  const pathname = usePathname();
-  const Icon = grupo.icon;
-
-  // Cerrar al cambiar de ruta.
-  useEffect(() => setAbierto(false), [pathname]);
-
-  // Cerrar al hacer clic afuera o pulsar Escape.
-  useEffect(() => {
-    if (!abierto) return;
-    const alClic = (e: MouseEvent) => {
-      if (contenedor.current && !contenedor.current.contains(e.target as Node)) setAbierto(false);
-    };
-    const alTeclado = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setAbierto(false);
-        boton.current?.focus();
-      }
-    };
-    document.addEventListener("mousedown", alClic);
-    document.addEventListener("keydown", alTeclado);
-    return () => {
-      document.removeEventListener("mousedown", alClic);
-      document.removeEventListener("keydown", alTeclado);
-    };
-  }, [abierto]);
+  const grupos: (GrupoMenu | null)[] = [
+    { label: "Panel", icon: LayoutDashboard, href: "/correspondencia/panel" },
+    {
+      label: "Correspondencia",
+      icon: Inbox,
+      items: [
+        { href: "/correspondencia", label: "Bandeja de radicados" },
+        ...(permitido.radicar
+          ? [
+              { href: "/correspondencia/nueva", label: "Radicar recibida" },
+              { href: "/correspondencia/nueva/enviada", label: "Radicar enviada" },
+              { href: "/correspondencia/nueva/interna", label: "Radicar memorando" },
+            ]
+          : []),
+        ...(permitido.distribuir ? [{ href: "/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO", label: "Distribución y reparto" }] : []),
+      ],
+    },
+    permitido.expedientes
+      ? {
+          label: "Expedientes y archivo",
+          icon: FolderOpen,
+          items: [
+            { href: "/correspondencia/expedientes", label: "Expedientes documentales", prefijo: true },
+            { href: "/correspondencia/expedientes/nuevo", label: "Abrir expediente" },
+            paraAdmin(permitido, { href: "/correspondencia/disposicion", label: "Disposición final", prefijo: true }),
+          ],
+        }
+      : null,
+    { label: "Buzón de firmas", icon: PenLine, href: "/correspondencia/buzon" },
+    { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
+    permitido.fondoHistorico ? { label: "Fondo histórico", icon: Archive, href: "/correspondencia/fondo" } : null,
+    {
+      label: "Configuración",
+      icon: Settings2,
+      alinearDerecha: true,
+      items: [
+        { href: "/correspondencia/admin", label: "Dependencias y TRD" },
+        { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
+        { href: "/correspondencia/admin/metadatos", label: "Campos de metadato", prefijo: true },
+        { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
+        { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true },
+      ].map((it) => paraAdmin(permitido, it)),
+    },
+    {
+      // MoReq cap. 6 (Control y Seguridad): usuarios, roles, contraseñas y auditoría son
+      // parte del SGDEA. Hoy comparten pantalla con el resto de la app.
+      label: "Administración",
+      icon: ShieldCheck,
+      items: [
+        paraAdmin(permitido, { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA" }),
+        paraAdminSistema(permitido, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
+        paraAdminSistema(permitido, { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true }),
+        paraAdminSistema(permitido, { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true }),
+      ],
+    },
+  ];
 
   return (
-    <div ref={contenedor} className={`relative ${empujar ? "ml-auto" : ""}`}>
-      <button
-        ref={boton}
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={abierto}
-        aria-controls={menuId}
-        onClick={() => setAbierto((v) => !v)}
-        className={claseTab(activo)}
-      >
-        <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
-        {grupo.label}
-        <ChevronDown className={`h-3.5 w-3.5 text-stone-400 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
-      </button>
-
-      {abierto && (
-        <div
-          id={menuId}
-          role="menu"
-          aria-label={grupo.label}
-          className={`absolute top-full z-20 mt-2 min-w-[15rem] rounded-xl border border-stone-200 bg-white shadow-soft p-1.5 shadow-xl ring-1 ring-black/5 ${
-            grupo.alinearDerecha ? "right-0" : "left-0"
-          }`}
-        >
-          {items.map((it) => {
-            const act = itemActivo(it);
-            return (
-              <Link
-                key={it.href}
-                href={it.href}
-                role="menuitem"
-                aria-current={act ? "page" : undefined}
-                className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                  act ? "bg-cdmb-50 font-medium text-cdmb-800" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-                }`}
-              >
-                {it.label}
-                {it.externo && <ExternalLink className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <BarraModulo
+      grupos={grupos.filter((g): g is GrupoMenu => g !== null)}
+      ariaLabel="Secciones del SGDEA"
+      esItemActivo={(it, pathname) => {
+        const ruta = it.href.split("?")[0]!;
+        if (ruta === "/correspondencia") return esRutaBandeja(pathname);
+        return it.prefijo ? pathname === ruta || pathname.startsWith(ruta + "/") : pathname === ruta;
+      }}
+    />
   );
 }

@@ -69,8 +69,21 @@ export function nombreDocumentoPeriodo(nombreRequisito: string, periodo: Pick<Pe
 
 /** Requisitos del catálogo que se entregan por periodos (código de formato del Manual A-BS-MA01):
  * A-BS-FO116 = Informe de supervisión. */
-const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116"];
+export const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116"];
 
 export function esRequisitoPorPeriodos(requisito: { codigoFormato: string | null }): boolean {
   return requisito.codigoFormato !== null && CODIGOS_FORMATO_POR_PERIODOS.includes(requisito.codigoFormato);
+}
+
+/** Periodos que ya se podían radicar (`radicaDesde` <= hoy) y todavía no tienen informe cargado, con su
+ * número de orden dentro del contrato (Informe 1, 2…). `hoy` es el día calendario (medianoche UTC). */
+export function periodosPorRadicar(
+  periodos: PeriodoInforme[],
+  clavesConInforme: ReadonlySet<string>,
+  hoy: Date
+): { numero: number; periodo: PeriodoInforme; diasDeRetraso: number }[] {
+  return periodos
+    .map((periodo, i) => ({ numero: i + 1, periodo }))
+    .filter(({ periodo }) => periodo.radicaDesde <= hoy && !clavesConInforme.has(periodo.clave))
+    .map(({ numero, periodo }) => ({ numero, periodo, diasDeRetraso: Math.floor((hoy.getTime() - periodo.radicaDesde.getTime()) / MS_DIA) }));
 }

@@ -6,7 +6,7 @@ import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaSigec } from "@/components/MigaSigec";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion, puedeAdministrarSigec } from "@/lib/permisos";
 
 /**
  * Módulo de Contratación — manejador de expedientes digitales (Manual de
@@ -54,6 +54,8 @@ export default async function ContratacionLayout({ children }: { children: React
           administrar: puedeGestionarContratistas(permisos),
           verContratistas: puedeVerRegistroContratistas(permisos),
           soloAdministrador: puedeAdministrarContratacion(permisos),
+          gestion: puedeAdministrarSigec(permisos),
+          administradorSistema: permisos.esAdmin,
         }}
       />
 

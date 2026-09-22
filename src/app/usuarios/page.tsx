@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AccesoRestringido } from "@/components/AccesoRestringido";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -81,7 +82,7 @@ export default async function UsuariosPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.rol !== "ADMIN") redirect("/");
+  if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Usuarios y roles" volverHref="/" volverLabel="Ir al inicio" />;
 
   const { error, ok, page: pageParam, q } = await searchParams;
   const pagina = Math.max(1, Number(pageParam) || 1);

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Users, Plus, Download } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -19,7 +20,9 @@ export default async function ContratistasPage({
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
-  if (!puedeVerRegistroContratistas(permisos)) redirect("/contratacion");
+  if (!puedeVerRegistroContratistas(permisos)) {
+    return <AccesoRestringido titulo="Contratistas" quien="administrador, jefe o funcionario de contratación, o supervisor" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
+  }
 
   const { q, page: pageParam } = await searchParams;
   const busqueda = q?.trim();

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Palette,
   Lock,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,13 +27,14 @@ const ITEM_TRAMITES: Item = {
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
 const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
-const ITEM_CONTRATACION: Item = { href: "/contratacion", label: "SIGEC", icon: Briefcase, prefijo: "/contratacion" };
+const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "SIGEC", icon: Briefcase, prefijo: "/contratacion" };
 
 const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog },
   { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
   { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
   { href: "/admin/seguridad", label: "Seguridad", icon: Lock },
+  { href: "/admin/modulos", label: "Módulos", icon: LayoutGrid },
 ];
 
 /**
