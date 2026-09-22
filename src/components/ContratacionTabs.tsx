@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Briefcase, Inbox, UserSquare2, FileSignature, Settings2, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Briefcase, Inbox, UserSquare2, ShieldCheck } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
 export type PermitidoContratacion = {
@@ -26,7 +26,7 @@ export function ContratacionTabs({
   pendientesFirma,
 }: {
   permitido: PermitidoContratacion;
-  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Buzón de firmas». */
+  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Firmas». */
   pendientesFirma: { total: number; listos: number };
 }) {
   const grupos: GrupoMenu[] = [
@@ -43,27 +43,29 @@ export function ContratacionTabs({
       ? { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas" }
       : { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas", bloqueadoPara: ADMIN_O_JEFE },
     {
-      label: "Buzón de firmas",
+      // Buzón (lo pendiente de resolver) y el historial de lo ya firmado son las dos caras de lo
+      // mismo — antes vivían como dos pestañas separadas en el mismo nivel que Expedientes.
+      label: "Firmas",
       icon: Inbox,
-      href: "/contratacion/buzon",
+      items: [
+        { href: "/contratacion/buzon", label: "Buzón de firmas" },
+        { href: "/contratacion/mis-firmas", label: "Mis firmas" },
+      ],
       insignia: {
         valor: pendientesFirma.total,
         alerta: pendientesFirma.listos > 0,
         titulo: `${pendientesFirma.total} pendientes por firmar${pendientesFirma.listos < pendientesFirma.total ? ` (${pendientesFirma.listos} ya puede(n) firmarse)` : ""}`,
       },
     },
-    { label: "Mis firmas", icon: FileSignature, href: "/contratacion/mis-firmas" },
     {
-      label: "Configuración",
-      icon: Settings2,
-      alinearDerecha: true,
-      items: [entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true })],
-    },
-    {
+      // Configuración estructural del módulo (catálogo) y control de cuentas/seguridad, en un solo
+      // menú — separados eran dos desplegables de un único ítem cada uno, que sobraba.
       label: "Administración",
       icon: ShieldCheck,
+      lado: "derecha",
       items: [
-        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del SIGEC", prefijo: true }),
+        entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true }),
+        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del SIGEC", prefijo: true, separador: true }),
         entrada(permitido.administradorSistema, SOLO_ADMIN, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/auditoria", label: "Auditoría de cuentas", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true }),

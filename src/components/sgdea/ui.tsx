@@ -109,3 +109,110 @@ export function TarjetaKpi({
     inner
   );
 }
+
+/* ------------------------------------------------------------------ Esqueletos de carga */
+// Usados desde `loading.tsx` de cada ruta (convención de Next.js: se muestran de inmediato al
+// navegar, mientras la página de destino todavía está resolviendo sus datos) — antes ninguna
+// pantalla mostraba nada mientras cargaba, así que un clic parecía "no hacer nada" hasta que
+// terminaba de resolver, en vez de sentirse en marcha.
+
+/** Barra pulsante — la pieza mínima de la que se arman los esqueletos de abajo. */
+export function Esqueleto({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-stone-200/70 ${className}`} />;
+}
+
+/** Cabecera de sección (título) en su versión de carga — mismo alto que `TituloSeccion`. */
+export function EsqueletoTitulo() {
+  return (
+    <div className="flex items-baseline justify-between gap-2 border-b-2 border-stone-100 pb-1.5">
+      <Esqueleto className="h-5 w-56" />
+      <Esqueleto className="h-4 w-16" />
+    </div>
+  );
+}
+
+/** Tablero: título + fila de tarjetas KPI + un panel grande — para paneles e indicadores. */
+export function EsqueletoTablero({ tarjetas = 4 }: { tarjetas?: number }) {
+  return (
+    <div className="space-y-4">
+      <EsqueletoTitulo />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: tarjetas }).map((_, i) => (
+          <div key={i} className="space-y-2 rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
+            <Esqueleto className="h-3 w-20" />
+            <Esqueleto className="h-7 w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-soft">
+        <Esqueleto className="mb-3 h-4 w-40" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Esqueleto key={i} className="h-3 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Listado/tabla: título + barra de filtros + filas — para bandejas, expedientes, contratistas… */
+export function EsqueletoLista({ filas = 8 }: { filas?: number }) {
+  return (
+    <div className="space-y-4">
+      <EsqueletoTitulo />
+      <Esqueleto className="h-9 w-full max-w-md" />
+      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-soft">
+        {Array.from({ length: filas }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-4">
+            <Esqueleto className="h-4 flex-1" />
+            <Esqueleto className="h-4 w-20" />
+            <Esqueleto className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Ficha/detalle: título + una tarjeta grande de datos + un bloque secundario — expedientes, fichas. */
+export function EsqueletoDetalle() {
+  return (
+    <div className="space-y-4">
+      <EsqueletoTitulo />
+      <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+        <Esqueleto className="h-4 w-2/3" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Esqueleto key={i} className="h-3 w-full" />
+          ))}
+        </div>
+      </div>
+      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+        <Esqueleto className="mb-3 h-4 w-40" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Esqueleto key={i} className="h-3 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Formulario: título + campos apilados — para las pantallas "Nuevo…". */
+export function EsqueletoFormulario({ campos = 5 }: { campos?: number }) {
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <EsqueletoTitulo />
+      <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+        {Array.from({ length: campos }).map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <Esqueleto className="h-3 w-32" />
+            <Esqueleto className="h-9 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

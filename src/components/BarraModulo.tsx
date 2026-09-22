@@ -8,9 +8,14 @@ import { ChevronDown, ExternalLink, Lock, type LucideIcon } from "lucide-react";
 /**
  * Barra de menú de un módulo (SGDEA, SIGEC…): grupos con o sin desplegable, insignia opcional y
  * entradas BLOQUEADAS. Una entrada bloqueada se muestra a todos —así el sistema se ve completo y el
- * usuario sabe que existe— pero atenuada, con candado y la leyenda de quién puede usarla; no navega.
+ * usuario sabe que existe— pero atenuada, con candado y la leyenda de quién sí puede usarla; no navega.
  * El control real de acceso sigue estando en cada página y en cada ruta de API: esto solo es la
  * vitrina, nunca la puerta.
+ *
+ * Los grupos se reparten en DOS bloques independientes (navegación a la izquierda, gestión a la
+ * derecha) que envuelven cada uno por su cuenta — a diferencia de un solo `flex-wrap` con "empujar a
+ * la derecha", que se rompe apenas hay más grupos de los que caben en una línea (el que debía quedar
+ * al borde derecho termina flotando a la izquierda de su propia fila).
  */
 
 export type ItemMenu = {
@@ -18,6 +23,9 @@ export type ItemMenu = {
   label: string;
   prefijo?: boolean;
   externo?: boolean;
+  /** Línea divisoria ANTES de esta entrada, para separar dentro de un mismo desplegable (ej.
+   * configuración estructural arriba, cuentas y seguridad abajo). */
+  separador?: boolean;
   /** Leyenda de quién puede usarla (ej. «Solo administrador»). Presente = entrada bloqueada. */
   bloqueadoPara?: string;
 };
@@ -28,7 +36,8 @@ export type GrupoMenu = {
   /** Enlace directo (sin desplegable). */
   href?: string;
   items?: ItemMenu[];
-  alinearDerecha?: boolean;
+  /** "izquierda" (navegación del módulo) o "derecha" (configuración/gestión). Por defecto "izquierda". */
+  lado?: "izquierda" | "derecha";
   /** Presente = todo el grupo está bloqueado para este usuario. */
   bloqueadoPara?: string;
   insignia?: { valor: number; alerta: boolean; titulo: string };
@@ -64,19 +73,24 @@ export function BarraModulo({
     return (g.items ?? []).some(itemActivo);
   };
 
-  // El primer grupo marcado «alinearDerecha» se empuja a sí mismo y a los siguientes hacia el borde derecho.
-  const primerDerechaIdx = grupos.findIndex((g) => g.alinearDerecha);
+  const bloque = (lado: "izquierda" | "derecha") =>
+    grupos
+      .filter((g) => (g.lado ?? "izquierda") === lado)
+      .map((g) =>
+        g.href ? (
+          <EnlaceSimple key={g.label} grupo={g} activo={grupoActivo(g)} />
+        ) : (
+          <MenuGrupo key={g.label} grupo={g} activo={grupoActivo(g)} itemActivo={itemActivo} />
+        )
+      );
+
+  const izquierda = bloque("izquierda");
+  const derecha = bloque("derecha");
 
   return (
-    <nav className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1" aria-label={ariaLabel}>
-      {grupos.map((g, i) => {
-        const empujar = i === primerDerechaIdx;
-        return g.href ? (
-          <EnlaceSimple key={g.label} grupo={g} activo={grupoActivo(g)} empujar={empujar} />
-        ) : (
-          <MenuGrupo key={g.label} grupo={g} activo={grupoActivo(g)} itemActivo={itemActivo} empujar={empujar} />
-        );
-      })}
+    <nav className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 p-1" aria-label={ariaLabel}>
+      <div className="flex flex-wrap items-center gap-1">{izquierda}</div>
+      {derecha.length > 0 && <div className="flex flex-wrap items-center gap-1">{derecha}</div>}
     </nav>
   );
 }
@@ -100,11 +114,11 @@ function Insignia({ insignia }: { insignia: NonNullable<GrupoMenu["insignia"]> }
   );
 }
 
-function EnlaceSimple({ grupo, activo, empujar }: { grupo: GrupoMenu; activo: boolean; empujar?: boolean }) {
+function EnlaceSimple({ grupo, activo }: { grupo: GrupoMenu; activo: boolean }) {
   const Icon = grupo.icon;
   if (grupo.bloqueadoPara) {
     return (
-      <span aria-disabled="true" title={grupo.bloqueadoPara} className={`${claseTab(false, true)} ${empujar ? "ml-auto" : ""}`}>
+      <span aria-disabled="true" title={grupo.bloqueadoPara} className={claseTab(false, true)}>
         <Icon className="h-4 w-4 text-stone-300" aria-hidden />
         {grupo.label}
         <Lock className="h-3 w-3 text-stone-300" aria-hidden />
@@ -113,7 +127,7 @@ function EnlaceSimple({ grupo, activo, empujar }: { grupo: GrupoMenu; activo: bo
     );
   }
   return (
-    <Link href={grupo.href!} aria-current={activo ? "page" : undefined} className={`${claseTab(activo)} ${empujar ? "ml-auto" : ""}`}>
+    <Link href={grupo.href!} aria-current={activo ? "page" : undefined} className={claseTab(activo)}>
       <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
       {grupo.label}
       {grupo.insignia && grupo.insignia.valor > 0 && <Insignia insignia={grupo.insignia} />}
@@ -121,17 +135,7 @@ function EnlaceSimple({ grupo, activo, empujar }: { grupo: GrupoMenu; activo: bo
   );
 }
 
-function MenuGrupo({
-  grupo,
-  activo,
-  itemActivo,
-  empujar,
-}: {
-  grupo: GrupoMenu;
-  activo: boolean;
-  itemActivo: (it: ItemMenu) => boolean;
-  empujar?: boolean;
-}) {
+function MenuGrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: boolean; itemActivo: (it: ItemMenu) => boolean }) {
   const [abierto, setAbierto] = useState(false);
   const contenedor = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
@@ -163,7 +167,7 @@ function MenuGrupo({
   }, [abierto]);
 
   return (
-    <div ref={contenedor} className={`relative ${empujar ? "ml-auto" : ""}`}>
+    <div ref={contenedor} className="relative">
       <button
         ref={boton}
         type="button"
@@ -175,6 +179,7 @@ function MenuGrupo({
       >
         <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : todoBloqueado ? "text-stone-300" : "text-stone-400"}`} aria-hidden />
         {grupo.label}
+        {grupo.insignia && grupo.insignia.valor > 0 && <Insignia insignia={grupo.insignia} />}
         {todoBloqueado && <Lock className="h-3 w-3 text-stone-300" aria-hidden />}
         <ChevronDown className={`h-3.5 w-3.5 text-stone-400 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
       </button>
@@ -184,41 +189,46 @@ function MenuGrupo({
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className={`absolute top-full z-20 mt-2 min-w-[16rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${grupo.alinearDerecha ? "right-0" : "left-0"}`}
+          className="absolute right-0 top-full z-20 mt-2 min-w-[16rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 sm:left-0 sm:right-auto"
         >
           {items.map((it) => {
             const leyenda = it.bloqueadoPara ?? grupo.bloqueadoPara;
+            const divisor = it.separador && <div key={`${it.href}-sep`} role="separator" className="my-1 border-t border-stone-100" />;
             if (leyenda) {
               return (
-                <span
-                  key={it.href}
-                  role="menuitem"
-                  aria-disabled="true"
-                  title={leyenda}
-                  className="flex cursor-not-allowed items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-stone-400"
-                >
-                  <span>
-                    {it.label}
-                    <span className="block text-[10px] font-medium uppercase tracking-wide text-stone-300">{leyenda}</span>
+                <div key={it.href}>
+                  {divisor}
+                  <span
+                    role="menuitem"
+                    aria-disabled="true"
+                    title={leyenda}
+                    className="flex cursor-not-allowed items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-stone-400"
+                  >
+                    <span>
+                      {it.label}
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-stone-300">{leyenda}</span>
+                    </span>
+                    <Lock className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />
                   </span>
-                  <Lock className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />
-                </span>
+                </div>
               );
             }
             const act = itemActivo(it);
             return (
-              <Link
-                key={it.href}
-                href={it.href}
-                role="menuitem"
-                aria-current={act ? "page" : undefined}
-                className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                  act ? "bg-cdmb-50 font-medium text-cdmb-800" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-                }`}
-              >
-                {it.label}
-                {it.externo && <ExternalLink className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />}
-              </Link>
+              <div key={it.href}>
+                {divisor}
+                <Link
+                  href={it.href}
+                  role="menuitem"
+                  aria-current={act ? "page" : undefined}
+                  className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+                    act ? "bg-cdmb-50 font-medium text-cdmb-800" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                  }`}
+                >
+                  {it.label}
+                  {it.externo && <ExternalLink className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />}
+                </Link>
+              </div>
             );
           })}
         </div>

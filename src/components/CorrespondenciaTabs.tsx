@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Settings2, FolderOpen, ShieldCheck, FileText, LayoutDashboard, Archive, PenLine } from "lucide-react";
+import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, Archive, PenLine } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
 type Permitido = {
@@ -59,24 +59,18 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
     { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
     permitido.fondoHistorico ? { label: "Fondo histórico", icon: Archive, href: "/correspondencia/fondo" } : null,
     {
-      label: "Configuración",
-      icon: Settings2,
-      alinearDerecha: true,
-      items: [
-        { href: "/correspondencia/admin", label: "Dependencias y TRD" },
-        { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true },
-        { href: "/correspondencia/admin/metadatos", label: "Campos de metadato", prefijo: true },
-        { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true },
-        { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true },
-      ].map((it) => paraAdmin(permitido, it)),
-    },
-    {
-      // MoReq cap. 6 (Control y Seguridad): usuarios, roles, contraseñas y auditoría son
-      // parte del SGDEA. Hoy comparten pantalla con el resto de la app.
+      // Configuración estructural del módulo (TRD, flujos, metadatos) y control de cuentas/seguridad
+      // (MoReq cap. 6), en un solo menú — antes eran dos desplegables uno junto al otro.
       label: "Administración",
-      icon: ShieldCheck,
+      icon: Settings2,
+      lado: "derecha",
       items: [
-        paraAdmin(permitido, { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA" }),
+        paraAdmin(permitido, { href: "/correspondencia/admin", label: "Dependencias y TRD" }),
+        paraAdmin(permitido, { href: "/correspondencia/admin/flujos", label: "Flujos de trabajo", prefijo: true }),
+        paraAdmin(permitido, { href: "/correspondencia/admin/metadatos", label: "Campos de metadato", prefijo: true }),
+        paraAdmin(permitido, { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true }),
+        paraAdmin(permitido, { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true }),
+        paraAdmin(permitido, { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA", separador: true }),
         paraAdminSistema(permitido, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true }),

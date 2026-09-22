@@ -17,25 +17,26 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
   if (!puedeAccederContratacion(permisos)) redirect("/");
   if (!puedeVerRegistroContratistas(permisos)) redirect("/contratacion");
 
-  const contratista = await db.contratista.findUnique({
-    where: { id },
-    include: {
-      usuario: { select: { nombre: true, email: true } },
-      expedientes: { orderBy: { createdAt: "desc" }, select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true } },
-    },
-  });
-  if (!contratista) notFound();
-
   const puedeGestionar = puedeGestionarContratistas(permisos);
-  const vinculables = puedeGestionar
-    ? await db.expedienteContractual.findMany({
-        // Un contratista por expediente: solo se ofrecen los que todavía no tienen uno.
-        where: { contratistaId: null },
-        orderBy: { createdAt: "desc" },
-        take: 300,
-        select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true },
-      })
-    : [];
+  const [contratista, vinculables] = await Promise.all([
+    db.contratista.findUnique({
+      where: { id },
+      include: {
+        usuario: { select: { nombre: true, email: true } },
+        expedientes: { orderBy: { createdAt: "desc" }, select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true } },
+      },
+    }),
+    // Un contratista por expediente: solo se ofrecen los que todavía no tienen uno.
+    puedeGestionar
+      ? db.expedienteContractual.findMany({
+          where: { contratistaId: null },
+          orderBy: { createdAt: "desc" },
+          take: 300,
+          select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  if (!contratista) notFound();
 
   return (
     <div className="space-y-6">
