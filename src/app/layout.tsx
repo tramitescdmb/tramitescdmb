@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { NavBar } from "@/components/NavBar";
 import { FranjaGovCo } from "@/components/FranjaGovCo";
 import { Footer } from "@/components/Footer";
 import { PublicShellHeader } from "@/components/PublicShellHeader";
 import "./globals.css";
 
-// Inter: geométrica, neutral y muy legible en pantalla — la base tipográfica
-// de la línea de diseño tecnológica del sistema (ver tailwind.config.ts).
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Inter: geométrica, neutral y muy legible en pantalla — la base tipográfica de la línea de diseño
+// tecnológica del sistema (ver tailwind.config.ts). Auto-hospedada (./fonts/inter-variable.woff2,
+// variable en todo el eje de peso — extraída de @fontsource-variable/inter) en vez de `next/font/google`:
+// esta última descarga el archivo desde Google Fonts DURANTE el build, y ese fetch falló de forma
+// intermitente en GitHub Actions ("Cannot read properties of null") — al no depender de ninguna red
+// externa en build time, el build queda determinista en cualquier entorno.
+const inter = localFont({
+  src: "./fonts/inter-variable.woff2",
+  weight: "100 900",
   variable: "--font-sans",
   display: "swap",
 });
