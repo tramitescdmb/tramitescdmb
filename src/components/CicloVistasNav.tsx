@@ -44,10 +44,7 @@ export function CicloVistasNav({ nodos, rutaRaiz, ariaLabel }: { nodos: NodoCicl
                         </span>
                       )}
                     </span>
-                    <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-stone-300">
-                      {i + 1} / {nodos.length}
-                    </span>
-                    <span className={`mt-0.5 text-xs font-semibold leading-tight ${activo ? "text-cdmb-800" : "text-stone-500 group-hover:text-stone-800"}`}>
+                    <span className={`mt-1 text-xs font-semibold leading-tight ${activo ? "text-cdmb-800" : "text-stone-500 group-hover:text-stone-800"}`}>
                       {nodo.label}
                     </span>
                     <span className="mt-0.5 hidden text-[11px] leading-tight text-stone-400 sm:block">{nodo.desc}</span>
