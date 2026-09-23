@@ -76,12 +76,16 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
 /** Requisitos del catálogo (data/contratacion/requisitos.json, sembrado con
  * prisma/seed-contratacion.ts) que aplican a un expediente en UNA etapa: los
  * comunes a cualquier modalidad (modalidadSeleccion=null) más los propios de
- * la modalidad de ESTE expediente, en el orden del Manual. */
+ * la modalidad de ESTE expediente, en el orden del Manual. Los obligatorios
+ * siempre van primero (pedido explícito del usuario, 2026-09-23) — `orden` sigue
+ * siendo el criterio de desempate dentro de cada grupo, pero ya no basta por sí
+ * solo: con 94 filas curadas a mano, algún opcional había quedado con un `orden`
+ * menor que el de un obligatorio de la misma modalidad. */
 export const obtenerRequisitosDeEtapa = unstable_cache(
   async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion) => {
     return db.requisitoDocumentoContratacion.findMany({
       where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }] },
-      orderBy: { orden: "asc" },
+      orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
   },
   ["requisitos-de-etapa"],

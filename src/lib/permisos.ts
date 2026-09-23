@@ -486,6 +486,20 @@ export function puedeGestionarContratistas(permisos: PermisosUsuario): boolean {
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
+/**
+ * ¿Puede ver/gestionar el expediente COMPLETO, sin importar la etapa (incluso una todavía no
+ * alcanzada, o una ya cerrada) — y editar sus datos generales (modalidad, valor, dependencia
+ * solicitante, número de contrato, contratista)? Pedido explícito del usuario (2026-09-23):
+ * "el administrador, el jefe de contratacion y los funcionarios de contratacion pueden ver todas
+ * las etapas de todos los contratos, asi como editarlos". Deliberadamente MÁS ANGOSTO que
+ * `puedeGestionarContratistas` (Admin+Jefe): incluye también a Funcionario de Contratación, pero
+ * solo para esto — Funcionario sigue sin poder gestionar el registro maestro de Contratistas, los
+ * supervisores del expediente, ni eliminar expedientes/documentos sin traza.
+ */
+export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || permisos.contratacion === "FUNCIONARIO_CONTRATACION";
+}
+
 /** ¿Puede aprobar el paso de etapa O retroceder una etapa ya aprobada (corrección de un error)?
  * Mismo nivel que la edición sin traza de documentos: Administrador y Jefe de Contratación. */
 export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {

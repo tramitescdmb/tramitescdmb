@@ -49,11 +49,12 @@ describe("etiquetaRangoPeriodo / esRequisitoPorPeriodos", () => {
     expect(etiquetaRangoPeriodo({ desde: d("2026-09-25"), hasta: d("2026-09-30") })).toBe("25 sep – 30 sep 2026");
     expect(etiquetaRangoPeriodo({ desde: d("2026-12-25"), hasta: d("2027-01-05") })).toBe("25 dic 2026 – 05 ene 2027");
   });
-  it("el informe de supervisión, el formato de cumplimiento y el acta de pago parcial se entregan por periodos", () => {
+  it("el informe de supervisión (general y de obra pública), el formato de cumplimiento y el acta de pago parcial se entregan por periodos", () => {
     expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO116" })).toBe(true);
     expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO132" })).toBe(true);
     expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO127" })).toBe(true);
-    expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO117" })).toBe(false);
+    expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO117" })).toBe(true);
+    expect(esRequisitoPorPeriodos({ codigoFormato: "A-BS-FO74" })).toBe(false);
     expect(esRequisitoPorPeriodos({ codigoFormato: null })).toBe(false);
   });
 });

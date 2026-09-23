@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -16,6 +16,7 @@ import {
   puedeGestionarEtapasContratacion,
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
+  puedeGestionarExpedienteCompleto,
   puedeGestionarPeriodosInforme,
   puedeValidarDocumentoContrato,
 } from "@/lib/permisos";
@@ -23,6 +24,7 @@ import {
   ETAPAS_ORDEN,
   ETIQUETA_ETAPA,
   ETIQUETA_MODALIDAD,
+  ORDEN_MODALIDADES,
   obtenerRequisitosDeEtapa,
   cruzarChecklist,
   type ItemChecklist,
@@ -78,6 +80,10 @@ const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
   RECHAZADA: "bg-red-50 text-red-700",
 };
 
+// Ítems del catálogo que conviene resaltar en el checklist — hoy solo la hoja de vida SIGEP,
+// pedido explícito del usuario (2026-09-23) para que no pase desapercibida entre el resto.
+const ITEMS_DESTACADOS = new Set(["Hoja de vida SIGEP"]);
+
 const ETIQUETA_ACCION_AUDITORIA: Record<string, string> = {
   CREA: "Subió",
   MODIFICA: "Editó",
@@ -124,15 +130,16 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     redirect("/contratacion");
   }
 
-  // Las 3 consultas son independientes entre sí — antes se hacían en secuencia (3 ida y vuelta a
-  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas. Las
-  // dos primeras además solo se ejecutan si el usuario puede llegar a usarlas (un Contratista, por
-  // ejemplo, nunca ve los formularios de supervisores/firmantes) — antes se traía SIEMPRE toda la
-  // planta activa, igual que ya se cuidó en el equivalente de SGDEA (correspondencia/[id]/page.tsx).
+  // Las consultas son independientes entre sí — antes se hacían en secuencia (varias ida y vuelta a
+  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas. Varias
+  // además solo se ejecutan si el usuario puede llegar a usarlas (un Contratista, por ejemplo,
+  // nunca ve los formularios de supervisores/firmantes) — antes se traía SIEMPRE toda la planta
+  // activa, igual que ya se cuidó en el equivalente de SGDEA (correspondencia/[id]/page.tsx).
   const puedeGestionar = puedeGestionarContratistas(permisos);
+  const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos);
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const idsDocumentos = expediente.documentos.map((d) => d.id);
-  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad] = await Promise.all([
+  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -170,6 +177,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           include: { usuario: { select: { nombre: true } } },
         })
       : Promise.resolve([]),
+    // Para el selector de "Editar datos generales" (modalidad/valor/DEPENDENCIA/número/fechas) —
+    // solo si el usuario puede llegar a usarlo.
+    puedeEditarDatosGenerales
+      ? db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
+      : Promise.resolve([]),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
@@ -197,25 +209,17 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         ? null // ya tiene su propio aviso (VincularContratistaForm más abajo)
         : null;
 
-  // Checklist real por etapa (catálogo del Manual A-BS-MA01 cruzado con lo ya subido) —
-  // solo se calcula para las etapas ya alcanzadas (actual o completadas); una etapa
-  // futura solo muestra los NOMBRES del catálogo, sin cruzar documentos ni permitir subir.
-  // Las consultas de requisitos por etapa son independientes — se piden todas a la vez en vez
-  // de una por una (a lo sumo 3 etapas, pero cada round-trip a la base suma).
-  const etapasAlcanzadas = ETAPAS_ORDEN.slice(0, idxActual + 1);
-  const etapasFuturas = ETAPAS_ORDEN.slice(idxActual + 1);
-  const [requisitosAlcanzados, requisitosFuturos] = await Promise.all([
-    Promise.all(etapasAlcanzadas.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa))),
-    Promise.all(etapasFuturas.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa))),
-  ]);
+  // Checklist real por etapa (catálogo del Manual A-BS-MA01 cruzado con lo ya subido) — para
+  // LAS 3 etapas, no solo la alcanzada: desde 2026-09-23, Administrador/Jefe/Funcionario de
+  // Contratación (y el supervisor designado, solo lectura) pueden ver y adelantar documentos en
+  // una etapa que el expediente todavía no alcanza (ver `puedeVerEtapaCompleta` más abajo) — antes
+  // una etapa futura solo mostraba los NOMBRES del catálogo. Las consultas de requisitos por etapa
+  // son independientes — se piden las 3 a la vez en vez de una por una.
+  const requisitosPorEtapa = await Promise.all(ETAPAS_ORDEN.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa)));
   const checklistsPorEtapa = new Map<string, ItemChecklist[]>();
-  etapasAlcanzadas.forEach((etapa, i) => {
+  ETAPAS_ORDEN.forEach((etapa, i) => {
     const docs = expediente.documentos.filter((d) => d.etapa === etapa);
-    checklistsPorEtapa.set(etapa, cruzarChecklist(requisitosAlcanzados[i]!, docs));
-  });
-  const previewFuturo = new Map<string, { nombre: string; obligatorio: boolean }[]>();
-  etapasFuturas.forEach((etapa, i) => {
-    previewFuturo.set(etapa, requisitosFuturos[i]!.map((r) => ({ nombre: r.nombre, obligatorio: r.obligatorio })));
+    checklistsPorEtapa.set(etapa, cruzarChecklist(requisitosPorEtapa[i]!, docs));
   });
 
   type DocumentoExpediente = (typeof expediente.documentos)[number];
@@ -441,6 +445,19 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
               etiqueta="Descargar todo (ZIP)"
               titulo="Descarga en un ZIP todos los documentos del expediente, en carpetas por etapa"
             />
+            {puedeEditarDatosGenerales && (
+              <EditarDatosContratoForm
+                expedienteId={id}
+                modalidadActual={expediente.modalidadSeleccion}
+                modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
+                valorActual={expediente.valor?.toString() ?? null}
+                dependenciaActualId={expediente.dependenciaSolicitanteId}
+                dependencias={dependencias}
+                numeroContratoActual={expediente.numeroContrato}
+                fechaInicioActual={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
+                fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
+              />
+            )}
             {puedeEliminarExpedienteContractual(permisos) && <EliminarExpedienteBoton expedienteId={id} numero={expediente.numero} />}
           </div>
         </div>
@@ -454,14 +471,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Vigencia:</dt>
             <dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</dd>
-            {puedeGestionarContratistas(permisos) && (
-              <EditarDatosContratoForm
-                expedienteId={id}
-                numeroContratoActual={expediente.numeroContrato}
-                fechaInicioActual={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
-                fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
-              />
-            )}
           </div>
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
@@ -511,20 +520,24 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 jurídica).
               </span>
             </div>
-            {puedeGestionarContratistas(permisos) && <VincularContratistaForm expedienteId={id} />}
+            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} />}
           </div>
         )}
 
-        {/* Un contratista por expediente: si aún no tiene (y ya pasó de Precontractual, donde el aviso de arriba
-            lo exige), se puede vincular en cualquier etapa. Una vez vinculado no se reemplaza. */}
-        {!expediente.contratista && !faltaContratista && puedeGestionarContratistas(permisos) && (
-          <details className="group mt-3 text-xs" open>
-            <summary className="cursor-pointer font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">Vincular un contratista</summary>
+        {/* Si aún no tiene contratista (y ya pasó de Precontractual, donde el aviso de arriba lo exige), se
+            puede vincular en cualquier etapa. Si YA tiene uno, el mismo formulario sirve para cambiarlo
+            (pedido explícito del usuario, 2026-09-23 — pide confirmación porque reemplaza a quien tenía
+            acceso al expediente). */}
+        {!faltaContratista && puedeEditarDatosGenerales && (
+          <details className="group mt-3 text-xs" open={!expediente.contratista}>
+            <summary className="cursor-pointer font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
+              {expediente.contratista ? "Cambiar el contratista" : "Vincular un contratista"}
+            </summary>
             <p className="mt-1.5 text-stone-500">
               El contratista vinculado (si tiene cuenta de acceso) puede consultar este expediente —incluidas las etapas Contractual y
-              Postcontractual— y cargar en él sus documentos. Se vincula uno solo por expediente; el vínculo queda en la bitácora.
+              Postcontractual— y cargar en él sus documentos. El vínculo (y cualquier cambio) queda en la bitácora.
             </p>
-            <VincularContratistaForm expedienteId={id} />
+            <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} />
           </details>
         )}
 
@@ -569,8 +582,20 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
       {ETAPAS_ORDEN.map((etapa, i) => {
         const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
+        // Quién puede ver/gestionar una etapa AÚN NO ALCANZADA con todo su detalle (no solo los
+        // nombres del catálogo) — pedido explícito del usuario (2026-09-23): Administrador, Jefe y
+        // Funcionario de Contratación ven y adelantan documentos en cualquier etapa de cualquier
+        // expediente; el supervisor designado ve (no necesariamente edita) todas las etapas del
+        // contrato que le fue asignado. El resto (Jefe de dependencia, Contratista) sigue viendo
+        // solo los nombres del catálogo hasta que la etapa se alcance de verdad.
+        const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos);
+        const puedeVerEtapaCompleta =
+          estado !== "bloqueada" ||
+          puedeGestionarPrivilegiado ||
+          (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
 
-        if (estado === "bloqueada") {
+        if (estado === "bloqueada" && !puedeVerEtapaCompleta) {
+          const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
           return (
             <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
               <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-stone-500">
@@ -578,8 +603,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 {ETIQUETA_ETAPA[etapa]} — se habilita al completar {ETIQUETA_ETAPA[ETAPAS_ORDEN[i - 1]!]}
               </h3>
               <ul className="grid grid-cols-1 gap-1 text-xs text-stone-400 sm:grid-cols-2">
-                {(previewFuturo.get(etapa) ?? []).map((r) => (
-                  <li key={r.nombre}>• {r.nombre}{!r.obligatorio && " (opcional)"}</li>
+                {checklistFuturo.map((r) => (
+                  <li key={r.id}>• {r.nombre}{!r.obligatorio && " (opcional)"}</li>
                 ))}
               </ul>
             </div>
@@ -588,38 +613,53 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
         const checklist = checklistsPorEtapa.get(etapa) ?? [];
         const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
-        const puedeSubir = estado === "actual" && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
-        const etapaInfo = estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : "border-stone-200 bg-white";
+        const puedeSubir = (estado === "actual" || puedeGestionarPrivilegiado) && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
+        const etapaInfo =
+          estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
         // Vista compacta de solo consulta en una etapa ya aprobada (2026-09-18, pedido explícito):
-        // quien no sea Jefe de Contratación/Administrador ni Supervisor de ESTE expediente no ve
-        // botones de asignar firmantes ni de editar/eliminar sobre una etapa ya cerrada — solo
-        // los archivos y sus firmas asociadas, en modo consulta.
+        // quien no sea Jefe/Administrador/Funcionario de Contratación ni Supervisor de ESTE
+        // expediente no ve botones de asignar firmantes ni de editar/eliminar sobre una etapa ya
+        // cerrada — solo los archivos y sus firmas asociadas, en modo consulta. Una etapa AÚN NO
+        // ALCANZADA (visible por lo de arriba) sigue esta misma regla: sin privilegio o sin ser el
+        // supervisor designado, no se llega aquí (ver `puedeVerEtapaCompleta`), así que solo falta
+        // que quien sí llega tenga además permiso de gestión, no solo de consulta.
         const puedeGestionarEtapaCerrada =
-          estado !== "completada" || puedeAprobar || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
+          estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
 
         return (
           <details key={etapa} open={estado === "actual"} className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
             <summary className="mb-3 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
                 {estado === "completada" && <FileCheck2 className="h-4 w-4 text-emerald-600" aria-hidden />}
+                {estado === "bloqueada" && <Lock className="h-4 w-4 text-amber-500" aria-hidden />}
                 {ETIQUETA_ETAPA[etapa]}
                 {estado === "completada" && <span className="text-xs font-normal text-stone-400">(clic para expandir)</span>}
+                {estado === "bloqueada" && (
+                  <span className="text-xs font-normal text-amber-600" title="El expediente todavía no llega a esta etapa — se está viendo por adelantado porque su rol lo permite.">
+                    (aún no alcanzada — clic para expandir)
+                  </span>
+                )}
               </h3>
               <span className="flex items-center gap-1.5 text-xs text-stone-400">
                 {checklist.filter((c) => c.documento).length}/{checklist.length} documentos del catálogo
-                {estado === "completada" && <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />}
+                {estado !== "actual" && <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />}
               </span>
             </summary>
 
             <ul className="mb-3 divide-y divide-stone-100 rounded-lg border border-stone-100">
-              {checklist.map((item) => (
+              {checklist.map((item) => {
+                const destacado = ITEMS_DESTACADOS.has(item.nombre);
+                return (
                 <li
                   key={item.id}
                   id={item.documento ? `documento-${item.documento.id}` : undefined}
-                  className="flex flex-wrap items-center gap-2 rounded-md p-2.5 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+                  className={`flex flex-wrap items-center gap-2 rounded-md p-2.5 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300 ${
+                    destacado ? "bg-cdmb-50/60 ring-1 ring-inset ring-cdmb-200" : ""
+                  }`}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-800">
+                      {destacado && <ArrowRight className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />}
                       {item.nombre}
                       <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${item.obligatorio ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-500"}`}>
                         {item.obligatorio ? "Obligatorio" : "Opcional"}
@@ -752,7 +792,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                   )}
                   {esRequisitoPorPeriodos(item) && panelPorPeriodos(item, etapa, puedeSubir, puedeGestionarEtapaCerrada)}
                 </li>
-              ))}
+                );
+              })}
             </ul>
 
             {documentosLibres.length > 0 && (

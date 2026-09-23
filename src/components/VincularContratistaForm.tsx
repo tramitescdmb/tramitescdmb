@@ -11,8 +11,14 @@ type TipoPersona = "NATURAL" | "JURIDICA";
  * contratista, persona natural o jurídica). Busca por identificación; si no existe en el
  * registro de Contratistas (base propia de este módulo, separada de Solicitante de Trámites
  * ambientales 2.0 — no comparten NITs), permite crearlo aquí mismo y lo vincula de una vez,
- * mismo espíritu que "Buscar" en Nuevo expediente de Trámites 2.0. */
-export function VincularContratistaForm({ expedienteId }: { expedienteId: string }) {
+ * mismo espíritu que "Buscar" en Nuevo expediente de Trámites 2.0.
+ *
+ * `contratistaActual`: cuando el expediente YA tiene un contratista vinculado, este mismo
+ * formulario sirve para CAMBIARLO (pedido explícito del usuario, 2026-09-23 — antes la norma era
+ * "un contratista por expediente, nunca se reemplaza"; un error de captura ya no exige borrar el
+ * expediente completo) — pide confirmación antes de vincular, porque reemplaza a quien tenía
+ * acceso al expediente y sus documentos. */
+export function VincularContratistaForm({ expedienteId, contratistaActual }: { expedienteId: string; contratistaActual?: { nombreORazonSocial: string } | null }) {
   const router = useRouter();
   const [identificacion, setIdentificacion] = useState("");
   const [encontrado, setEncontrado] = useState<{ id: string; nombreORazonSocial: string } | null>(null);
@@ -40,7 +46,10 @@ export function VincularContratistaForm({ expedienteId }: { expedienteId: string
     }
   }
 
-  async function vincularId(id: string) {
+  async function vincularId(id: string, nombre: string) {
+    if (contratistaActual && !window.confirm(`¿Cambiar el contratista de «${contratistaActual.nombreORazonSocial}» a «${nombre}»? El anterior deja de tener acceso a este expediente.`)) {
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -77,7 +86,7 @@ export function VincularContratistaForm({ expedienteId }: { expedienteId: string
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo crear el contratista.");
-      await vincularId(body.id);
+      await vincularId(body.id, nombreORazonSocial.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
       setGuardando(false);
@@ -86,6 +95,11 @@ export function VincularContratistaForm({ expedienteId }: { expedienteId: string
 
   return (
     <div className="mt-2 space-y-2">
+      {contratistaActual && (
+        <p className="text-[11px] text-amber-700">
+          Contratista actual: <strong>{contratistaActual.nombreORazonSocial}</strong>. Buscar y vincular otro lo reemplaza.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={identificacion}
@@ -111,11 +125,11 @@ export function VincularContratistaForm({ expedienteId }: { expedienteId: string
             <span className="text-xs font-medium text-amber-900">{encontrado.nombreORazonSocial}</span>
             <button
               type="button"
-              onClick={() => vincularId(encontrado.id)}
+              onClick={() => vincularId(encontrado.id, encontrado.nombreORazonSocial)}
               disabled={guardando}
               className="rounded-md bg-amber-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-900 disabled:opacity-50"
             >
-              {guardando ? "Vinculando…" : "Vincular"}
+              {guardando ? "Vinculando…" : contratistaActual ? "Cambiar" : "Vincular"}
             </button>
           </>
         )}

@@ -115,13 +115,13 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula contratista/supervisores, aprueba/retrocede etapas, edita o elimina documentos sin dejar traza, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
+            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula/cambia contratista y supervisores, aprueba/retrocede etapas, edita o elimina documentos sin dejar traza, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
             <td className="px-2.5 py-1.5">—</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Ve TODA la contratación; sube documentos (queda registrado); asigna quién debe firmar cada documento en cualquier expediente.</td>
-            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar sin traza, eliminar un expediente, gestionar contratistas.</td>
+            <td className="px-2.5 py-1.5">Ve y edita TODA la contratación, en cualquier etapa (incluso una que el expediente aún no alcanza, o ya cerrada — no solo la etapa actual); sube documentos (queda registrado); edita los datos generales del expediente (modalidad, valor, dependencia, número de contrato, contratista); asigna quién debe firmar cada documento en cualquier expediente.</td>
+            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar sin traza, eliminar un expediente, gestionar el registro de Contratistas o los supervisores.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
@@ -130,7 +130,7 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">Ver, subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos — CON traza — solo en los expedientes donde está asignado.</td>
+            <td className="px-2.5 py-1.5">Ver TODAS las etapas y archivos de los expedientes donde está asignado (incluida una que aún no se alcanza); subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos — CON traza — en esos mismos expedientes.</td>
             <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar/eliminar sin dejar traza, aprobar el paso de etapa, eliminar el expediente completo.</td>
           </tr>
           <tr>
@@ -153,8 +153,17 @@ export default async function ContratacionAyudaPage() {
         <p>
           Un contrato es <strong>un solo expediente</strong> de principio a fin — nunca se crea uno nuevo por
           etapa. Las tres etapas ({ETIQUETA_ETAPA.PRECONTRACTUAL} → {ETIQUETA_ETAPA.CONTRACTUAL} →{" "}
-          {ETIQUETA_ETAPA.POSTCONTRACTUAL}) son secuenciales: solo se puede subir documentos en la etapa ACTUAL;
-          las futuras se ven bloqueadas (candado) y las completadas quedan en solo lectura.
+          {ETIQUETA_ETAPA.POSTCONTRACTUAL}) son secuenciales para el flujo normal: solo se puede subir documentos en
+          la etapa ACTUAL; las futuras se ven bloqueadas (candado, solo los nombres del catálogo) y las completadas
+          quedan en solo lectura.
+        </p>
+        <p>
+          Excepción (pedido explícito del usuario, 2026-09-23): Administrador, Jefe y Funcionario de Contratación
+          ven y pueden adelantar documentos en <strong>cualquier</strong> etapa de <strong>cualquier</strong> expediente,
+          esté alcanzada o no, e incluso una ya completada — la etapa aparece marcada &quot;(aún no alcanzada)&quot;
+          para que quede claro que el expediente formalmente sigue en la etapa anterior. El supervisor/interventor
+          designado también ve (no necesariamente edita) todas las etapas de los expedientes que le fueron asignados,
+          aunque el expediente todavía no llegue ahí.
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>No se puede pasar de Precontractual a Contractual sin un contratista vinculado (persona natural o jurídica) — bloqueo duro, sin excepción.</li>
@@ -165,15 +174,17 @@ export default async function ContratacionAyudaPage() {
 
       <Seccion n={4} id="checklist" icono={FileCheck2} titulo="Checklist de documentos">
         <p>
-          Cada etapa muestra el catálogo de documentos exigidos por el Manual A-BS-MA01 (obligatorios y
-          opcionales), cruzado con lo ya subido. Un documento marcado <Chip tono="cdmb">Se gestiona en SECOP II</Chip>{" "}
+          Cada etapa muestra el catálogo de documentos exigidos por el Manual A-BS-MA01, cruzado con lo ya subido —
+          siempre con los <strong>obligatorios primero y los opcionales a continuación</strong>, sin importar el
+          orden interno del catálogo. Un documento marcado <Chip tono="cdmb">Se gestiona en SECOP II</Chip>{" "}
           igual admite subir la evidencia aquí, aunque el trámite ocurra en otra plataforma. También se pueden
           subir documentos libres, fuera del catálogo.
         </p>
         <p>
           Precontractual exige la <strong>Hoja de vida SIGEP</strong> (se certifica en el SIGEP II de Función
-          Pública, no en esta plataforma — aquí solo se sube la evidencia). Cualquier documento del checklist
-          puede además <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
+          Pública, no en esta plataforma — aquí solo se sube la evidencia) — se resalta con una flecha en el
+          checklist para que no pase desapercibida. Cualquier documento del checklist puede además{" "}
+          <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
           Administrador, Jefe o Funcionario de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
           alguien de Contratación ya lo revisó, aparte de la aprobación automática que ya ocurre al firmar un
           documento o al cerrar la etapa. Administrador/Jefe validan sin dejar traza (ver más abajo); Funcionario
@@ -186,24 +197,35 @@ export default async function ContratacionAyudaPage() {
           final del detalle de cada expediente, en &quot;Trazabilidad de los documentos&quot;.
         </p>
         <p>
-          Tres requisitos se entregan <strong>por periodos</strong>, no como un único archivo, porque van al ritmo de la
+          Cuatro requisitos se entregan <strong>por periodos</strong>, no como un único archivo, porque van al ritmo de la
           cuenta de cobro mensual del contratista: el <strong>Informe de supervisión</strong> (A-BS-FO116), el{" "}
-          <strong>Formato único de informe de cumplimiento</strong> (A-BS-FO132) y el <strong>Acta de recibo — pago
-          parcial</strong> (A-BS-FO127). Cada uno genera su propio espacio de carga numerado (Informe de supervisión 1,
-          2, 3… — igual para los otros dos) por cada mes del contrato, a partir de sus fechas de inicio y de fin
-          (ajustables en «Datos del contrato»). Por ejemplo, un contrato del 25 de septiembre al 24 de diciembre tiene
-          cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct, 01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica
-          desde el día siguiente a su cierre. Si cambian las fechas del contrato, los periodos se recalculan y los
-          informes ya cargados en meses que dejan de existir se conservan en un listado aparte. La lista de periodos
-          está colapsada por defecto (se ve el avance sin abrirla) para no hacerse enorme cuando son muchos meses.
+          <strong>Formato único de informe de cumplimiento</strong> (A-BS-FO132), el <strong>Acta de recibo — pago
+          parcial</strong> (A-BS-FO127) y el <strong>Informe de supervisión para obra pública</strong> (A-BS-FO117, solo
+          en contratos de obra). Cada uno genera su propio espacio de carga numerado (Informe de supervisión 1,
+          2, 3… — igual para los otros tres) por cada mes del contrato, a partir de sus fechas de inicio y de fin
+          (ajustables en «Editar datos generales», ver la sección de Datos del expediente más abajo). Por ejemplo, un
+          contrato del 25 de septiembre al 24 de diciembre tiene cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct,
+          01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica desde el día siguiente a su cierre. Si cambian las
+          fechas del contrato, los periodos se recalculan y los informes ya cargados en meses que dejan de existir se
+          conservan en un listado aparte. La lista de periodos está colapsada por defecto (se ve el avance sin
+          abrirla) para no hacerse enorme cuando son muchos meses.
         </p>
         <p>
           Además de los periodos mensuales se pueden crear <strong>espacios eventuales</strong> con un nombre propio (por
           ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes — cada uno
-          de los tres requisitos por periodos tiene los suyos propios, no se comparten entre sí. Los crea
+          de los cuatro requisitos por periodos tiene los suyos propios, no se comparten entre sí. Los crea
           quien lleva el expediente (Administrador, Jefe, Funcionario de Contratación o el Supervisor asignado); el
           contratista solo carga su documento en ellos. Un espacio con documento no se puede quitar hasta eliminar el
           documento.
+        </p>
+        <p>
+          <strong>Datos del expediente</strong> (modalidad, valor, dependencia solicitante, número de contrato,
+          fechas de inicio/fin, contratista): editables en cualquier momento por Administrador, Jefe o Funcionario
+          de Contratación con el botón &quot;Editar datos generales&quot; del detalle del expediente — antes solo se
+          fijaban al crearlo (salvo número de contrato y fechas, que ya eran editables solo por Administrador/Jefe).
+          Cambiar el contratista de uno ya vinculado pide confirmación: el anterior deja de tener acceso al
+          expediente. Supervisor(es)/interventor(es) y el expediente relacionado siguen siendo exclusivos de
+          Administrador/Jefe.
         </p>
       </Seccion>
 
