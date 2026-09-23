@@ -171,6 +171,21 @@ export default async function ContratacionAyudaPage() {
           subir documentos libres, fuera del catálogo.
         </p>
         <p>
+          Precontractual exige la <strong>Hoja de vida SIGEP</strong> (se certifica en el SIGEP II de Función
+          Pública, no en esta plataforma — aquí solo se sube la evidencia). Cualquier documento del checklist
+          puede además <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
+          Administrador, Jefe o Funcionario de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
+          alguien de Contratación ya lo revisó, aparte de la aprobación automática que ya ocurre al firmar un
+          documento o al cerrar la etapa. Administrador/Jefe validan sin dejar traza (ver más abajo); Funcionario
+          de Contratación sí queda registrado.
+        </p>
+        <p>
+          Subir, editar, eliminar o validar un documento (salvo la excepción de Administrador/Jefe) deja un
+          eslabón en una <strong>cadena de hash inalterable</strong> — el mismo mecanismo que ya usa el SGDEA
+          (cada eslabón encadena su hash con el del anterior; alterar o borrar uno se puede detectar). Se ve al
+          final del detalle de cada expediente, en &quot;Trazabilidad de los documentos&quot;.
+        </p>
+        <p>
           El <strong>Informe de supervisión</strong> (A-BS-FO116) se entrega <strong>por periodos</strong>, no como un
           único archivo: el contratista cobra una vez al mes, así que el expediente genera un espacio de carga numerado
           (Informe de supervisión 1, 2, 3…) por cada mes del contrato, a partir de sus fechas de inicio y de fin (ajustables en «Datos del contrato»). Por ejemplo,
@@ -198,6 +213,12 @@ export default async function ContratacionAyudaPage() {
         <p className="text-xs text-stone-400">
           Reemplazar el archivo borra el anterior del almacenamiento e invalida cualquier firma o solicitud de
           firma ya registrada sobre ese documento — quedaban sobre un contenido que ya no existe.
+        </p>
+        <p>
+          La misma excepción aplica a <strong>validar</strong> un documento y a la <strong>cadena de hash</strong>{" "}
+          del expediente (ver la sección de Checklist): lo que hace Administrador o Jefe de Contratación no deja
+          fila en ninguna de las dos. Funcionario de Contratación y Supervisor/Interventor SÍ quedan registrados
+          en ambas — es la misma regla, no una excepción aparte.
         </p>
       </Seccion>
     </>
@@ -266,6 +287,13 @@ export default async function ContratacionAyudaPage() {
           hacerse <strong>en cualquier etapa</strong>, desde el detalle del expediente («Vincular un contratista») o desde la
           ficha del contratista («Vincular un expediente», que solo ofrece expedientes sin contratista); queda en la
           bitácora. Para que el contratista pueda ingresar, su cuenta debe tener el rol Contratista (se asigna desde Usuarios).
+        </p>
+        <p>
+          Un contratista puede además vincularse a su <strong>usuario de red (Directorio Activo)</strong> — al
+          crearlo o después, desde su ficha. Es opcional y no depende de que la persona ya haya iniciado sesión:
+          si esa cuenta no existe todavía, se crea (sin permisos hasta que un administrador se los asigne); el
+          día que la persona entre de verdad con ese mismo usuario, cae en la misma cuenta. Así el expediente
+          queda relacionado también con la identidad de dominio del contratista, no solo con su registro.
         </p>
         <p>
           Un contratista <strong>que no pertenece a ningún expediente</strong> puede eliminarse desde su ficha

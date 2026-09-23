@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, type LucideIcon } from "lucide-react";
+import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -16,6 +16,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   DOCUMENTO_FIRMADO: { icono: FileSignature, clase: "text-emerald-600", texto: "Documento firmado" },
   DOCUMENTO_RECHAZADO: { icono: FileX2, clase: "text-red-600", texto: "Documento rechazado" },
   DOCUMENTO_EDITADO: { icono: FilePen, clase: "text-stone-500", texto: "Documento editado" },
+  DOCUMENTO_VALIDADO: { icono: CheckCircle2, clase: "text-emerald-600", texto: "Documento validado" },
   DOCUMENTO_ELIMINADO: { icono: Trash2, clase: "text-stone-500", texto: "Documento eliminado" },
   ETAPA_APROBADA: { icono: ArrowRightCircle, clase: "text-emerald-600", texto: "Etapa aprobada" },
   ETAPA_RETROCEDIDA: { icono: Undo2, clase: "text-amber-600", texto: "Etapa retrocedida" },

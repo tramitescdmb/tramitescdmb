@@ -60,7 +60,11 @@ export default async function RootLayout({
               <NavBar />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">{children}</main>
+              {/* Sin límite de ancho (antes max-w-6xl/1152px): en pantallas anchas dejaba sin usar buena
+                  parte del área junto al sidebar — notorio en páginas densas (checklist de documentos,
+                  tableros). Las pantallas que sí quieren quedar angostas (formularios tipo "Nuevo…")
+                  ya ponen su propio max-w local. */}
+              <main className="w-full flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">{children}</main>
               <div className="print:hidden">
                 <Footer />
               </div>

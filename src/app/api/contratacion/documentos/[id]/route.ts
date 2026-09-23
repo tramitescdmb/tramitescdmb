@@ -11,6 +11,7 @@ import {
   ETAPAS_ORDEN,
 } from "@/lib/contratacion";
 import { deleteDocumento } from "@/lib/storage";
+import { datosPeticion } from "@/lib/auditoria-doc";
 
 /**
  * Editar/eliminar un documento tiene DOS caminos, según quién llame:
@@ -62,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const { storagePathAnterior } = sinTraza
       ? await editarDocumentoContratoSinTraza(id, datos)
-      : await editarDocumentoContratoConTraza(id, datos, session.userId);
+      : await editarDocumentoContratoConTraza(id, datos, session.userId, datosPeticion(req.headers));
     if (archivo && storagePathAnterior) {
       await deleteDocumento(storagePathAnterior).catch(() => {}); // best-effort, ver DELETE más abajo
     }
@@ -72,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -90,7 +91,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     const { storagePath } = sinTraza
       ? await eliminarDocumentoContratoSinTraza(id)
-      : await eliminarDocumentoContratoConTraza(id, session.userId);
+      : await eliminarDocumentoContratoConTraza(id, session.userId, datosPeticion(req.headers));
     await deleteDocumento(storagePath).catch(() => {}); // best-effort: la fila ya se borró, un residuo en storage no es visible en la app
     return NextResponse.json({ ok: true });
   } catch (err) {

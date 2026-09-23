@@ -5,6 +5,7 @@ import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
 
@@ -341,6 +342,8 @@ export async function agregarDocumentoContrato(datos: {
    * derivado de las fechas del contrato, o id de un espacio eventual creado a mano. Uno u otro. */
   periodoMes?: string | null;
   periodoEventualId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
@@ -418,6 +421,18 @@ export async function agregarDocumentoContrato(datos: {
     `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]})`,
     datos.subidoPorId
   );
+  // A diferencia de editar/eliminar, subir un documento NUNCA tiene excepción "sin traza" (ni
+  // siquiera para Administrador/Jefe) — siempre queda quién lo subió, también en la cadena de
+  // hash inalterable (misma bitácora que usa el SGDEA, `src/lib/auditoria-doc.ts`).
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documento.id,
+    accion: "CREA",
+    usuarioId: datos.subidoPorId,
+    ip: datos.ip ?? null,
+    userAgent: datos.userAgent ?? null,
+    detalle: `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]}) al expediente`,
+  });
   return documento;
 }
 
@@ -502,24 +517,89 @@ export async function eliminarDocumentoContratoSinTraza(documentoId: string): Pr
 export async function editarDocumentoContratoConTraza(
   documentoId: string,
   datos: Parameters<typeof editarDocumentoContratoSinTraza>[1],
-  usuarioId: string
+  usuarioId: string,
+  peticion?: { ip?: string | null; userAgent?: string | null }
 ): Promise<{ storagePathAnterior: string | null }> {
   const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, expedienteId: true } });
   if (!doc) throw new Error("El documento no existe.");
   const resultado = await editarDocumentoContratoSinTraza(documentoId, datos);
   const detalle = datos.archivo ? `Reemplazó el archivo de "${doc.nombre}"` : `Editó "${doc.nombre}"`;
   await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_EDITADO", detalle, usuarioId);
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documentoId,
+    accion: "MODIFICA",
+    usuarioId,
+    ip: peticion?.ip ?? null,
+    userAgent: peticion?.userAgent ?? null,
+    detalle,
+  });
   return resultado;
 }
 
 /** Variante CON traza de `eliminarDocumentoContratoSinTraza` — ver el porqué en
  * `editarDocumentoContratoConTraza`. */
-export async function eliminarDocumentoContratoConTraza(documentoId: string, usuarioId: string): Promise<{ storagePath: string }> {
+export async function eliminarDocumentoContratoConTraza(
+  documentoId: string,
+  usuarioId: string,
+  peticion?: { ip?: string | null; userAgent?: string | null }
+): Promise<{ storagePath: string }> {
   const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, expedienteId: true } });
   if (!doc) throw new Error("El documento no existe.");
   const resultado = await eliminarDocumentoContratoSinTraza(documentoId);
   await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_ELIMINADO", `Eliminó "${doc.nombre}"`, usuarioId);
+  // El documento ya no existe, pero el eslabón de la cadena de hash queda igual (referencia el
+  // id, no depende de que la fila siga viva) — es justamente el punto: probar que existió y se
+  // borró, aunque ya no esté.
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documentoId,
+    accion: "ELIMINA",
+    usuarioId,
+    ip: peticion?.ip ?? null,
+    userAgent: peticion?.userAgent ?? null,
+    detalle: `Eliminó "${doc.nombre}"`,
+  });
   return resultado;
+}
+
+/**
+ * Marca un documento del checklist como validado (ej. la hoja de vida SIGEP) — a diferencia de
+ * `estadoValidacion=APROBADO` que ya se fija automáticamente al completarse una firma o al
+ * aprobar el paso de etapa, esta es una validación MANUAL explícita (Administrador/Jefe/
+ * Funcionario de Contratación, ver `puedeValidarDocumentoContrato`). Misma regla de traza que
+ * editar/eliminar: Administrador/Jefe no dejan rastro (ni en EventoContratacion ni en la cadena
+ * de hash); Funcionario de Contratación sí.
+ */
+export async function validarDocumentoContrato(
+  documentoId: string,
+  usuarioId: string,
+  opts: { sinTraza: boolean; ip?: string | null; userAgent?: string | null }
+): Promise<void> {
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: { nombre: true, expedienteId: true, estadoValidacion: true },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+
+  await db.documentoContrato.update({
+    where: { id: documentoId },
+    data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
+  });
+
+  if (opts.sinTraza) return;
+  const detalle = `Validó "${doc.nombre}"`;
+  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_VALIDADO", detalle, usuarioId);
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documentoId,
+    accion: "VALIDA",
+    usuarioId,
+    ip: opts.ip ?? null,
+    userAgent: opts.userAgent ?? null,
+    detalle,
+  });
 }
 
 /** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del

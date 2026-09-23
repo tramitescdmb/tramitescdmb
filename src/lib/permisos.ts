@@ -454,6 +454,18 @@ export function puedeEditarConTrazaDocumentoContrato(
   return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
 }
 
+/**
+ * ¿Puede marcar un documento del checklist como validado (ej. la hoja de vida SIGEP en
+ * Precontractual)? Administrador/Jefe de Contratación (validan sin dejar traza, misma excepción
+ * que editar/eliminar sin traza) y Funcionario de Contratación (SÍ queda en la bitácora y en la
+ * cadena de hash — pedido explícito del usuario). Deliberadamente NO incluye a Supervisor ni a
+ * Jefe de dependencia: esta validación es del equipo de Contratación, no de quien supervisa la
+ * ejecución del contrato.
+ */
+export function puedeValidarDocumentoContrato(permisos: PermisosUsuario): boolean {
+  return puedeEditarSinTrazaDocumentoContrato(permisos) || permisos.contratacion === "FUNCIONARIO_CONTRATACION";
+}
+
 /** ¿Puede ver el registro maestro de Contratistas (buscar/listar/detalle)? Cualquier rol de
  * gestión o revisión transversal del módulo — deliberadamente EXCLUYE a Jefe de
  * dependencia/Subdirector (acotado a su propia dependencia) y al rol Contratista, que no debe

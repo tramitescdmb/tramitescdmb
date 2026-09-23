@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permisos";
 import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
+import { datosPeticion } from "@/lib/auditoria-doc";
 
 /**
  * Confirma un documento YA SUBIDO al storage (solo metadatos en este POST, no
@@ -46,6 +47,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: mensajeArchivoDemasiadoGrandeContratacion(nombre) }, { status: 400 });
   }
 
+  const { ip, userAgent } = datosPeticion(req.headers);
+
   try {
     const documento = await agregarDocumentoContrato({
       expedienteId: id,
@@ -62,6 +65,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       firmadoEnSecop: Boolean(body.firmadoEnSecop),
       periodoMes: body.periodoMes ? String(body.periodoMes) : null,
       periodoEventualId: body.periodoEventualId ? String(body.periodoEventualId) : null,
+      ip,
+      userAgent,
     });
     return NextResponse.json({ id: documento.id }, { status: 201 });
   } catch (err) {

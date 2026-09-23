@@ -20,7 +20,7 @@ export default async function NuevoContratistaPage({
   const { identificacion } = await searchParams;
 
   return (
-    <section className="max-w-xl space-y-4">
+    <section className="mx-auto max-w-xl space-y-4">
       <Link href="/contratacion/contratistas" className="text-sm text-cdmb-700 hover:underline">
         ← Contratistas
       </Link>

@@ -1020,6 +1020,7 @@ enum AccionAuditoriaDoc {
   CARGA_FALLIDA // MoReq 4.6: un intento de agregar un documento a un expediente fue rechazado (validación), para poder reportarlo
   ERROR_EJECUCION // MoReq 6.11: una operación falló a mitad de camino (excepción no controlada en una acción del módulo), para poder identificarla en la bitácora
   FLUJO // MoReq cap. 7: inicio, avance o cierre de un flujo de trabajo sobre una comunicación
+  VALIDA // SIGEC: un funcionario/jefe de contratación aprueba manualmente un documento del checklist (ej. hoja de vida SIGEP)
 }
 
 // Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.

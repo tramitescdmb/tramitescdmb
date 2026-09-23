@@ -22,6 +22,7 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
   const [direccion, setDireccion] = useState("");
   const [departamento, setDepartamento] = useState("");
   const [ciudad, setCiudad] = useState("");
+  const [usuarioRed, setUsuarioRed] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Si el 409 fue por identificación duplicada, el servidor manda el id del registro existente —
@@ -56,6 +57,7 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
           direccion,
           departamento,
           ciudad,
+          usuarioRed: usuarioRed.trim() || undefined,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -65,6 +67,11 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         return;
       }
       if (!res.ok) throw new Error(body.error || "No se pudo crear el contratista.");
+      // El contratista SÍ se creó aunque el usuario de red no se haya podido vincular (ej. ya
+      // existe con otro rol) — se avisa, pero no se bloquea la creación por eso.
+      if (body.advertenciaUsuarioRed) {
+        window.alert(`El contratista se creó, pero no se pudo vincular el usuario de red: ${body.advertenciaUsuarioRed}`);
+      }
       router.push(`/contratacion/contratistas/${body.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
@@ -139,6 +146,13 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
           </label>
         </div>
       </div>
+
+      <Field
+        label="Usuario de red (Directorio Activo)"
+        help="Opcional. Si la persona no tiene cuenta todavía, se le crea una — el día que inicie sesión de verdad con ese mismo usuario, entra a esta misma cuenta. Vincula este contratista con el usuario de dominio, para que sus expedientes también queden asociados a él."
+      >
+        <input value={usuarioRed} onChange={(e) => setUsuarioRed(e.target.value)} placeholder="Ej. jperez" className={inputCls} />
+      </Field>
 
       <div className="flex items-center justify-between border-t border-stone-100 pt-4">
         <span className="text-sm text-red-700">

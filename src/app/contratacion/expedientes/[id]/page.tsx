@@ -17,6 +17,7 @@ import {
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
   puedeGestionarPeriodosInforme,
+  puedeValidarDocumentoContrato,
 } from "@/lib/permisos";
 import {
   ETAPAS_ORDEN,
@@ -48,6 +49,7 @@ import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedien
 import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
 import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
 import { NuevoEspacioInformeForm, EspacioEventualAcciones } from "@/components/EspaciosInformeAcciones";
+import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -74,6 +76,19 @@ const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
   PENDIENTE: "bg-amber-50 text-amber-700",
   COMPLETADA: "bg-emerald-50 text-emerald-700",
   RECHAZADA: "bg-red-50 text-red-700",
+};
+
+const ETIQUETA_ACCION_AUDITORIA: Record<string, string> = {
+  CREA: "Subió",
+  MODIFICA: "Editó",
+  ELIMINA: "Eliminó",
+  VALIDA: "Validó",
+};
+const CLASE_ACCION_AUDITORIA: Record<string, string> = {
+  CREA: "bg-cdmb-50 text-cdmb-700",
+  MODIFICA: "bg-amber-50 text-amber-700",
+  ELIMINA: "bg-red-50 text-red-700",
+  VALIDA: "bg-emerald-50 text-emerald-700",
 };
 
 export default async function DetalleExpedienteContractualPage({ params }: { params: Promise<{ id: string }> }) {
@@ -116,7 +131,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   // planta activa, igual que ya se cuidó en el equivalente de SGDEA (correspondencia/[id]/page.tsx).
   const puedeGestionar = puedeGestionarContratistas(permisos);
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
-  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista] = await Promise.all([
+  const idsDocumentos = expediente.documentos.map((d) => d.id);
+  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad] = await Promise.all([
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -140,6 +156,20 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           orderBy: { createdAt: "desc" },
         })
       : Promise.resolve([]),
+    // Cadena de hash inalterable (misma bitácora que usa el SGDEA, src/lib/auditoria-doc.ts) de
+    // lo que se le ha hecho a los documentos que HOY tiene el expediente — subir, editar,
+    // eliminar, validar. Administrador/Jefe de Contratación no dejan fila aquí (excepción
+    // deliberada del módulo, ver permisos.ts): su ausencia es intencional, no un hueco.
+    // Limitación conocida: un documento ya ELIMINADO deja de estar en `idsDocumentos`, así que su
+    // propio historial (incluida su fila ELIMINA) no aparece en esta vista por expediente — sigue
+    // íntegro en la cadena general, solo no se puede filtrar por expediente sin guardar más datos.
+    idsDocumentos.length > 0
+      ? db.auditoriaDoc.findMany({
+          where: { entidad: "DocumentoContrato", entidadId: { in: idsDocumentos } },
+          orderBy: { secuencia: "asc" },
+          include: { usuario: { select: { nombre: true } } },
+        })
+      : Promise.resolve([]),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
@@ -152,6 +182,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
+  const puedeValidar = puedeValidarDocumentoContrato(permisos);
   const puedeRetroceder = puedeGestionarEtapasContratacion(permisos) && (idxActual > 0 || expediente.cerrado);
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
@@ -216,6 +247,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </span>
         )}
         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
+        {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
         {firmado && (
           <a
             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -645,6 +677,9 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         nombre={item.documento.nombre}
                         mimeType={item.documento.mimeType}
                       />
+                      {puedeValidar && item.documento.estadoValidacion !== "APROBADO" && (
+                        <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
+                      )}
                       {item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 && (
                         <a
                           href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
@@ -759,6 +794,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           nombre={doc.nombre}
                           mimeType={doc.mimeType}
                         />
+                        {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
                         {doc.mimeType === "application/pdf" && doc.firmas.length > 0 && (
                           <a
                             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -817,6 +853,41 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </details>
         );
       })}
+
+      {trazabilidad.length > 0 && (
+        <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+              <Hash className="h-4 w-4 text-stone-400" aria-hidden />
+              Trazabilidad de los documentos
+            </h3>
+            <span className="flex items-center gap-1.5 text-xs text-stone-400">
+              {trazabilidad.length} movimiento{trazabilidad.length === 1 ? "" : "s"}
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <p className="mb-3 text-xs text-stone-500">
+            Registro inalterable con cadena de hash (cada movimiento encadena su hash con el del anterior) — el mismo
+            mecanismo del SGDEA. Administrador y Jefe de Contratación no dejan fila aquí: es la excepción deliberada
+            de este módulo (ver Ayuda).
+          </p>
+          <ul className="divide-y divide-stone-100 text-xs">
+            {[...trazabilidad].reverse().map((mov) => (
+              <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
+                  {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>
+                <span className="flex-none text-stone-400">{mov.usuario?.nombre ?? "—"}</span>
+                <span className="flex-none text-stone-400">{formatearFechaHora(mov.createdAt)}</span>
+                <span className="flex-none font-mono text-[10px] text-stone-300" title={`Hash: ${mov.hash}\nHash anterior: ${mov.hashAnterior ?? "(primer eslabón)"}`}>
+                  {mov.hash.slice(0, 10)}…
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { esRegimenTributario } from "@/lib/regimen-tributario";
+import { vincularUsuarioDominioAContratista } from "@/lib/contratacion";
 
 /** Crea un Contratista en el registro maestro del módulo — desde `/contratacion/contratistas/nuevo`
  * o, si aún no existe, al crear un expediente. Administrador o Jefe de Contratación. */
@@ -52,5 +53,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ id: creado.id }, { status: 201 });
+  // Opcional: vincula (o pre-crea) el usuario de red de una vez, en el mismo paso — no bloquea la
+  // creación del contratista si falla (ej. ese usuario ya existe con otro rol); se avisa aparte.
+  const usuarioRed = typeof body.usuarioRed === "string" ? body.usuarioRed.trim() : "";
+  let advertenciaUsuarioRed: string | undefined;
+  if (usuarioRed) {
+    try {
+      await vincularUsuarioDominioAContratista(creado.id, usuarioRed, session.userId);
+    } catch (err) {
+      advertenciaUsuarioRed = err instanceof Error ? err.message : "No se pudo vincular el usuario de red.";
+    }
+  }
+
+  return NextResponse.json({ id: creado.id, advertenciaUsuarioRed }, { status: 201 });
 }

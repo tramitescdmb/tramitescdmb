@@ -27,7 +27,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
     : todasDependencias.filter((d) => d.id === permisos.dependenciaId);
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4">
       <div>
         <h2 className="text-base font-semibold text-stone-900">Abrir un expediente documental</h2>
         <p className="text-sm text-stone-500">
