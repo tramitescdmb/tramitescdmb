@@ -186,17 +186,21 @@ export default async function ContratacionAyudaPage() {
           final del detalle de cada expediente, en &quot;Trazabilidad de los documentos&quot;.
         </p>
         <p>
-          El <strong>Informe de supervisión</strong> (A-BS-FO116) se entrega <strong>por periodos</strong>, no como un
-          único archivo: el contratista cobra una vez al mes, así que el expediente genera un espacio de carga numerado
-          (Informe de supervisión 1, 2, 3…) por cada mes del contrato, a partir de sus fechas de inicio y de fin (ajustables en «Datos del contrato»). Por ejemplo,
-          un contrato del 25 de septiembre al 24 de diciembre tiene cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct,
-          01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica desde el día siguiente a su cierre. Si cambian las
-          fechas del contrato, los periodos se recalculan y los informes ya cargados en meses que dejan de existir se
-          conservan en un listado aparte.
+          Tres requisitos se entregan <strong>por periodos</strong>, no como un único archivo, porque van al ritmo de la
+          cuenta de cobro mensual del contratista: el <strong>Informe de supervisión</strong> (A-BS-FO116), el{" "}
+          <strong>Formato único de informe de cumplimiento</strong> (A-BS-FO132) y el <strong>Acta de recibo — pago
+          parcial</strong> (A-BS-FO127). Cada uno genera su propio espacio de carga numerado (Informe de supervisión 1,
+          2, 3… — igual para los otros dos) por cada mes del contrato, a partir de sus fechas de inicio y de fin
+          (ajustables en «Datos del contrato»). Por ejemplo, un contrato del 25 de septiembre al 24 de diciembre tiene
+          cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct, 01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica
+          desde el día siguiente a su cierre. Si cambian las fechas del contrato, los periodos se recalculan y los
+          informes ya cargados en meses que dejan de existir se conservan en un listado aparte. La lista de periodos
+          está colapsada por defecto (se ve el avance sin abrirla) para no hacerse enorme cuando son muchos meses.
         </p>
         <p>
           Además de los periodos mensuales se pueden crear <strong>espacios eventuales</strong> con un nombre propio (por
-          ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes. Los crea
+          ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes — cada uno
+          de los tres requisitos por periodos tiene los suyos propios, no se comparten entre sí. Los crea
           quien lleva el expediente (Administrador, Jefe, Funcionario de Contratación o el Supervisor asignado); el
           contratista solo carga su documento en ellos. Un espacio con documento no se puede quitar hasta eliminar el
           documento.

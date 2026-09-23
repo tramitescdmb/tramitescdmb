@@ -8,6 +8,15 @@ import { conExtension } from "@/lib/uploads-config";
  * serverless de Vercel si el filtro trae demasiados. Pedido explícito del usuario (2026-09-18). */
 export const MAX_EXPEDIENTES_ZIP_MASIVO = 50;
 
+/** JSZip (como casi cualquier lector de zip) trata "/" y "\" como separador de carpeta dentro de
+ * un nombre de archivo — varios nombres del catálogo los llevan literalmente (ej. "Estudio del
+ * sector / estudio de mercado", con la barra como parte del nombre, no como jerarquía) y eso creaba
+ * subcarpetas por accidente con un archivo roto adentro. Se reemplazan por un guión visualmente
+ * parecido antes de escribir al zip — el nombre real en la base de datos no se toca. */
+function sanearNombreZip(nombre: string): string {
+  return nombre.replace(/[\\/]+/g, " - ").trim();
+}
+
 function nombreUnico(usados: Set<string>, nombre: string): string {
   if (!usados.has(nombre)) {
     usados.add(nombre);
@@ -26,23 +35,50 @@ function nombreUnico(usados: Set<string>, nombre: string): string {
   return candidato;
 }
 
-/** Agrega al ZIP los documentos de UN expediente, en carpetas por etapa. `carpetaBase` es el
- * folder de JSZip donde colgar las subcarpetas de etapa (la raíz del zip, o la carpeta del
- * expediente cuando se arma un ZIP masivo de varios). */
+/** Agrega al ZIP los documentos de UN expediente, en carpetas por etapa (solo esas 3 — nunca una
+ * subcarpeta por documento). Única excepción: cuando un mismo requisito del catálogo tiene VARIOS
+ * documentos (ej. el Informe de supervisión, uno por periodo/mes), esos quedan juntos en una
+ * subcarpeta con el nombre del requisito — evita una fila larga de archivos casi idénticos sueltos
+ * en la carpeta de la etapa. `carpetaBase` es el folder de JSZip donde colgar las subcarpetas de
+ * etapa (la raíz del zip, o la carpeta del expediente cuando se arma un ZIP masivo de varios). */
 async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: string) {
   const documentos = await db.documentoContrato.findMany({
     where: { expedienteId },
     orderBy: { createdAt: "asc" },
-    select: { nombre: true, mimeType: true, etapa: true, storagePath: true },
+    select: { nombre: true, mimeType: true, etapa: true, storagePath: true, requisitoId: true },
   });
 
-  const usadosPorEtapa = new Map<string, Set<string>>();
+  // Nombre del REQUISITO (no el del documento, que para los que se entregan por periodos ya lleva
+  // el número/rango pegado, ej. "Informe de supervisión 3 (…)") — se usa como nombre de la
+  // subcarpeta cuando aplica.
+  const idsRequisito = [...new Set(documentos.map((d) => d.requisitoId).filter((id): id is string => Boolean(id)))];
+  const requisitos = idsRequisito.length
+    ? await db.requisitoDocumentoContratacion.findMany({ where: { id: { in: idsRequisito } }, select: { id: true, nombre: true } })
+    : [];
+  const nombreRequisitoPorId = new Map(requisitos.map((r) => [r.id, r.nombre]));
+
+  const porEtapaYRequisito = new Map<string, number>();
+  for (const doc of documentos) {
+    if (!doc.requisitoId) continue;
+    const clave = `${doc.etapa}::${doc.requisitoId}`;
+    porEtapaYRequisito.set(clave, (porEtapaYRequisito.get(clave) ?? 0) + 1);
+  }
+
+  const usadosPorCarpeta = new Map<string, Set<string>>();
   for (const doc of documentos) {
     const carpetaEtapa = carpetaBase.folder(ETIQUETA_ETAPA[doc.etapa]) ?? carpetaBase;
-    if (!usadosPorEtapa.has(doc.etapa)) usadosPorEtapa.set(doc.etapa, new Set());
-    const nombre = nombreUnico(usadosPorEtapa.get(doc.etapa)!, conExtension(doc.nombre, doc.mimeType));
+    const clave = doc.requisitoId ? `${doc.etapa}::${doc.requisitoId}` : null;
+    const variosDelMismoRequisito = clave ? (porEtapaYRequisito.get(clave) ?? 0) > 1 : false;
+    const carpetaDestino =
+      variosDelMismoRequisito && doc.requisitoId
+        ? (carpetaEtapa.folder(sanearNombreZip(nombreRequisitoPorId.get(doc.requisitoId) ?? "Otros")) ?? carpetaEtapa)
+        : carpetaEtapa;
+
+    const claveCarpeta = variosDelMismoRequisito ? `${clave}` : doc.etapa;
+    if (!usadosPorCarpeta.has(claveCarpeta)) usadosPorCarpeta.set(claveCarpeta, new Set());
+    const nombre = nombreUnico(usadosPorCarpeta.get(claveCarpeta)!, sanearNombreZip(conExtension(doc.nombre, doc.mimeType)));
     const contenido = await descargarDocumento(doc.storagePath);
-    carpetaEtapa.file(nombre, contenido);
+    carpetaDestino.file(nombre, contenido);
   }
   return documentos.length;
 }
@@ -64,7 +100,7 @@ export async function construirZipMasivo(expedientes: { id: string; numero: stri
   const zip = new JSZip();
   const usados = new Set<string>();
   for (const e of expedientes) {
-    const nombreCarpeta = nombreUnico(usados, (e.numeroContrato ?? e.numero).replace(/[\\/]/g, "-"));
+    const nombreCarpeta = nombreUnico(usados, sanearNombreZip((e.numeroContrato ?? e.numero)));
     const carpeta = zip.folder(nombreCarpeta)!;
     await agregarDocumentosExpediente(carpeta, e.id);
   }

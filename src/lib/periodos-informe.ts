@@ -67,9 +67,11 @@ export function nombreDocumentoPeriodo(nombreRequisito: string, periodo: Pick<Pe
   return `${nombreRequisito} ${numero} (${etiquetaRangoPeriodo(periodo)})`;
 }
 
-/** Requisitos del catálogo que se entregan por periodos (código de formato del Manual A-BS-MA01):
- * A-BS-FO116 = Informe de supervisión. */
-export const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116"];
+/** Requisitos del catálogo que se entregan por periodos, uno por cada mes del contrato — igual que
+ * la cuenta de cobro del contratista (código de formato del Manual A-BS-MA01):
+ * A-BS-FO116 = Informe de supervisión, A-BS-FO132 = Formato único de informe de cumplimiento,
+ * A-BS-FO127 = Acta de recibo — pago parcial. */
+export const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116", "A-BS-FO132", "A-BS-FO127"];
 
 export function esRequisitoPorPeriodos(requisito: { codigoFormato: string | null }): boolean {
   return requisito.codigoFormato !== null && CODIGOS_FORMATO_POR_PERIODOS.includes(requisito.codigoFormato);

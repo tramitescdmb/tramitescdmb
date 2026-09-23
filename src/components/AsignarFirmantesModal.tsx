@@ -159,21 +159,33 @@ export function AsignarFirmantesModal({
                 </div>
                 {!q && !dependenciaFiltro ? (
                   <p className="mt-1.5 text-xs text-stone-400">Escriba un nombre o elija una dependencia para buscar.</p>
+                ) : usuariosFiltrados.length === 0 ? (
+                  <p className="mt-1.5 text-xs text-stone-400">Sin coincidencias.</p>
                 ) : (
-                  <select
-                    value={usuarioId}
-                    onChange={(e) => setUsuarioId(e.target.value)}
-                    size={Math.min(6, Math.max(3, usuariosFiltrados.length))}
-                    className="mt-1.5 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                  >
-                    {usuariosFiltrados.length === 0 && <option disabled>Sin coincidencias</option>}
-                    {usuariosFiltrados.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nombre}
-                        {u.dependenciaNombre ? ` — ${u.dependenciaNombre}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  // Pastillas en vez de un <select size> nativo — con ese listbox, un clic sobre una
+                  // opción a veces actualizaba lo que se veía en pantalla pero no el estado de React
+                  // (el botón "Agregar" seguía pidiendo "Seleccione una persona" aunque se viera
+                  // marcada). Mismo patrón que ya usan Supervisión y Nuevo expediente para elegir
+                  // personas de una lista filtrada.
+                  <div className="mt-1.5 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded-md border border-stone-200 p-2">
+                    {usuariosFiltrados.map((u) => {
+                      const activo = usuarioId === u.id;
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => setUsuarioId(u.id)}
+                          aria-pressed={activo}
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                            activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                          }`}
+                        >
+                          {u.nombre}
+                          {u.dependenciaNombre ? ` — ${u.dependenciaNombre}` : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </label>
               <label className="block text-xs font-medium text-stone-600">

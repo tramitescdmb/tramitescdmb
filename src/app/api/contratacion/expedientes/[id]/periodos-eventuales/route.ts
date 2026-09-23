@@ -4,8 +4,11 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarPeriodosInforme } from "@/lib/permisos";
 import { registrarEventoContratacion } from "@/lib/contratacion";
 
-/** Crea un espacio ADICIONAL de entrega del informe de supervisión, con nombre descriptivo, para
- * una eventualidad que no cabe en los periodos mensuales derivados de las fechas del contrato. */
+/** Crea un espacio ADICIONAL de entrega de un requisito "por periodos" (Informe de supervisión,
+ * Formato único de informe de cumplimiento, Acta de recibo — pago parcial), con nombre
+ * descriptivo, para una eventualidad que no cabe en los periodos mensuales derivados de las
+ * fechas del contrato. Va atado a UN requisito (`requisitoId`) — con más de un requisito "por
+ * periodos" en el mismo expediente, un espacio de uno no debe aparecer como opción en los otros. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -20,14 +23,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (expediente.cerrado) return NextResponse.json({ error: "Este expediente está cerrado." }, { status: 409 });
 
   const body = await req.json().catch(() => null);
+  const requisitoId = String(body?.requisitoId || "").trim();
   const nombre = String(body?.nombre || "").trim();
+  if (!requisitoId) return NextResponse.json({ error: "Falta indicar a qué requisito pertenece el espacio." }, { status: 400 });
   if (!nombre) return NextResponse.json({ error: "Escriba el nombre del espacio (ej. «Informe extraordinario por suspensión»)." }, { status: 400 });
   if (nombre.length > 120) return NextResponse.json({ error: "El nombre no puede superar los 120 caracteres." }, { status: 400 });
 
-  const duplicado = await db.periodoInformeEventual.findFirst({ where: { expedienteId: id, nombre: { equals: nombre, mode: "insensitive" } }, select: { id: true } });
-  if (duplicado) return NextResponse.json({ error: "Ya existe un espacio con ese nombre en este expediente." }, { status: 409 });
+  const requisito = await db.requisitoDocumentoContratacion.findUnique({ where: { id: requisitoId }, select: { id: true } });
+  if (!requisito) return NextResponse.json({ error: "El requisito indicado no existe." }, { status: 400 });
 
-  const creado = await db.periodoInformeEventual.create({ data: { expedienteId: id, nombre, creadoPorId: session.userId } });
+  const duplicado = await db.periodoInformeEventual.findFirst({
+    where: { expedienteId: id, requisitoId, nombre: { equals: nombre, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (duplicado) return NextResponse.json({ error: "Ya existe un espacio con ese nombre para este requisito." }, { status: 409 });
+
+  const creado = await db.periodoInformeEventual.create({ data: { expedienteId: id, requisitoId, nombre, creadoPorId: session.userId } });
   await registrarEventoContratacion(id, "PERIODO_INFORME_CREADO", `Se creó el espacio de informe «${nombre}».`, session.userId);
   return NextResponse.json({ id: creado.id }, { status: 201 });
 }

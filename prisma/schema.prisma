@@ -2105,7 +2105,8 @@ model RequisitoDocumentoContratacion {
   fuente             String? // "Manual A-BS-MA01, Procedimiento A-BS-PR29" o "SECOP II"
   activo             Boolean             @default(true)
 
-  documentos DocumentoContrato[]
+  documentos         DocumentoContrato[]
+  periodosEventuales PeriodoInformeEventual[]
 
   @@index([modalidadSeleccion])
   @@index([etapa])
@@ -2165,14 +2166,21 @@ model DocumentoContrato {
 model PeriodoInformeEventual {
   id           String   @id @default(cuid())
   expedienteId String
+  // A qué requisito del catálogo pertenece este espacio — necesario desde que más de un requisito
+  // se entrega "por periodos" en el mismo expediente (Informe de supervisión, Formato único de
+  // informe de cumplimiento, Acta de recibo — pago parcial): sin esto, un espacio eventual creado
+  // para uno aparecía también como opción de carga en los otros.
+  requisitoId  String
   nombre       String
   creadoPorId  String?
   createdAt    DateTime @default(now())
 
-  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  expediente ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  requisito  RequisitoDocumentoContratacion  @relation(fields: [requisitoId], references: [id], onDelete: Cascade)
   documentos DocumentoContrato[]
 
   @@index([expedienteId])
+  @@index([requisitoId])
 }
 
 // Evento de firma electrónica de UN documento de contratación — modelo propio

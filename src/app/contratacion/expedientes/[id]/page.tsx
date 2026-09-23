@@ -291,7 +291,10 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const panelPorPeriodos = (item: ItemChecklist, etapa: EtapaContratacion, puedeSubirEtapa: boolean, puedeGestionarEtapaCerrada: boolean) => {
     const docs = expediente.documentos.filter((d) => d.requisitoId === item.id);
     const claves = new Set(periodosMensuales.map((p) => p.clave));
-    const idsEventuales = new Set(expediente.periodosEventuales.map((e) => e.id));
+    // Solo los espacios eventuales de ESTE requisito — con varios requisitos "por periodos" en el
+    // mismo expediente, el de uno no debe ofrecerse como opción en los otros.
+    const eventualesDelRequisito = expediente.periodosEventuales.filter((e) => e.requisitoId === item.id);
+    const idsEventuales = new Set(eventualesDelRequisito.map((e) => e.id));
     // Documentos de un mes que ya no existe (se cambiaron las fechas del contrato) o sin periodo: no
     // se pierden, se listan aparte.
     const sueltos = docs.filter((d) => (d.periodoMes ? !claves.has(d.periodoMes) : d.periodoEventualId ? !idsEventuales.has(d.periodoEventualId) : true));
@@ -349,11 +352,15 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             (se ajustan en «Datos del contrato», más arriba). Mientras tanto puede usar espacios eventuales.
           </p>
         ) : (
-          <>
-            <p className="text-[11px] text-stone-500">
-              {docs.filter((d) => d.periodoMes && claves.has(d.periodoMes)).length} de {periodosMensuales.length} periodos mensuales con informe cargado. Cada periodo
-              se radica desde el día siguiente a su cierre.
-            </p>
+          // Colapsado por defecto — con un requisito por periodos que ya reparte en 12+ meses (y
+          // ahora puede haber hasta 3 de estos por expediente), dejarlo siempre abierto hacía la
+          // página enorme. El resumen de avance queda visible igual, sin necesidad de abrirlo.
+          <details className="group/periodos">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] text-stone-500 [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="h-3 w-3 flex-none transition-transform group-open/periodos:rotate-180" aria-hidden />
+              {docs.filter((d) => d.periodoMes && claves.has(d.periodoMes)).length} de {periodosMensuales.length} periodos mensuales con informe cargado — clic para ver cada uno
+            </summary>
+            <p className="mb-1.5 mt-1.5 text-[11px] text-stone-400">Cada periodo se radica desde el día siguiente a su cierre.</p>
             <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100 bg-stone-50/40">
               {periodosMensuales.map((p, i) => {
                 const doc = docs.find((d) => d.periodoMes === p.clave);
@@ -367,14 +374,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 );
               })}
             </ul>
-          </>
+          </details>
         )}
 
-        {expediente.periodosEventuales.length > 0 && (
+        {eventualesDelRequisito.length > 0 && (
           <div>
             <p className="mb-1 text-[11px] font-medium text-stone-500">Espacios eventuales</p>
             <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100 bg-stone-50/40">
-              {expediente.periodosEventuales.map((e) => {
+              {eventualesDelRequisito.map((e) => {
                 const doc = docs.find((d) => d.periodoEventualId === e.id);
                 return fila(
                   `ev-${e.id}`,
@@ -399,7 +406,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </div>
         )}
 
-        {puedeCrearEspacios && <NuevoEspacioInformeForm expedienteId={id} />}
+        {puedeCrearEspacios && <NuevoEspacioInformeForm expedienteId={id} requisitoId={item.id} />}
       </div>
     );
   };
