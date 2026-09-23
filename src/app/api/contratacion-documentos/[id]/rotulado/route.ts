@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
+import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
 /**
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               denominacionComplemento: true,
               sexo: true,
               dependencia: { select: { nombre: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true } },
             },
           },
         },
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       { numeroExpediente: doc.expediente.numero, baseUrl: base },
       doc.firmas.map((f) => ({
         nombre: f.usuario.nombre,
-        cedulaONit: f.usuario.cedulaONit,
+        cedulaONit: identidadFirmante(f.usuario).cedulaONit,
         denominacionEmpleo: f.usuario.denominacionEmpleo,
         denominacionComplemento: f.usuario.denominacionComplemento,
         sexo: f.usuario.sexo,

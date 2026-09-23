@@ -58,6 +58,15 @@ const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   APROBADO: "Aprobado",
   RECHAZADO: "Rechazado",
 };
+// Por qué un documento queda "Pendiente de revisión" — pedido explícito del usuario (2026-09-23):
+// no era obvio por qué un documento sin firma pendiente seguía así ("Designación de supervisor").
+// Se aprueba solo al firmarse (si requiere firma), al validarse manualmente con el botón "Validar",
+// o al cerrar/aprobar la etapa — no apenas al subirse.
+const TITULO_ESTADO_VALIDACION: Record<string, string> = {
+  PENDIENTE: "Se aprueba al firmarse (si requiere firma), al validarlo manualmente, o al aprobar el paso de esta etapa.",
+  APROBADO: "Ya fue revisado y aprobado.",
+  RECHAZADO: "Quien lo revisó lo rechazó — vea el motivo en la trazabilidad, al final de la página.",
+};
 const CLASE_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "bg-amber-50 text-amber-700",
   APROBADO: "bg-emerald-50 text-emerald-700",
@@ -139,7 +148,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos);
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const idsDocumentos = expediente.documentos.map((d) => d.id);
-  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, rechazos] = await Promise.all([
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -182,6 +191,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     puedeEditarDatosGenerales
       ? db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
       : Promise.resolve([]),
+    // Historial de rechazos al firmar/revisar — pedido explícito del usuario (2026-09-23): un
+    // rechazo NO se queda pegado a la fila del documento (ver más arriba), solo vive en el aviso
+    // del buzón mientras está activo y AQUÍ, al final de la página, para siempre.
+    db.eventoContratacion.findMany({
+      where: { expedienteId: id, tipo: "DOCUMENTO_RECHAZADO" },
+      orderBy: { createdAt: "desc" },
+      include: { usuario: { select: { nombre: true } } },
+    }),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
@@ -240,7 +257,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
     return (
       <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[doc.estadoValidacion]}>
           {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
         </span>
         {doc.requiereFirma && !doc.firmadoEnSecop && (
@@ -700,13 +717,18 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
                       </p>
                     )}
-                    {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.length > 0 && (
+                    {/* Un rechazo NO se queda pegado aquí — pedido explícito del usuario (2026-09-23): se ve en el
+                        aviso del buzón de quien lo subió/del Jefe mientras está activo, y siempre en la
+                        trazabilidad al final de la página, nunca en la fila del documento. */}
+                    {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.some((s) => s.estado !== "RECHAZADA") && (
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {item.documento.solicitudesFirma.map((s) => (
-                          <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                            {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
-                          </span>
-                        ))}
+                        {item.documento.solicitudesFirma
+                          .filter((s) => s.estado !== "RECHAZADA")
+                          .map((s) => (
+                            <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                              {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                            </span>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -716,7 +738,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                     </span>
                   ) : item.documento ? (
                     <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[item.documento.estadoValidacion]}>
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
                       </span>
                       <VistaPreviaDocumento
@@ -828,13 +850,15 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
                           </span>
                         )}
-                        {solicitudes.length > 0 && (
+                        {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
                           <div className="flex flex-wrap gap-1">
-                            {solicitudes.map((s) => (
-                              <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                                {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]}
-                              </span>
-                            ))}
+                            {solicitudes
+                              .filter((s) => s.estado !== "RECHAZADA")
+                              .map((s) => (
+                                <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                  {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]}
+                                </span>
+                              ))}
                           </div>
                         )}
                         <VistaPreviaDocumento
@@ -901,6 +925,35 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </details>
         );
       })}
+
+      {rechazos.length > 0 && (
+        <details className="group rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
+          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+              <AlertTriangle className="h-4 w-4 text-red-500" aria-hidden />
+              Rechazos al firmar/revisar
+            </h3>
+            <span className="flex items-center gap-1.5 text-xs text-stone-400">
+              {rechazos.length} rechazo{rechazos.length === 1 ? "" : "s"}
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <p className="mb-3 text-xs text-stone-500">
+            Un rechazo ya no se muestra pegado a la fila del documento — mientras está activo, aparece como aviso en
+            el buzón de quien lo subió y de Administrador/Jefe de Contratación; aquí queda para siempre, aunque el
+            aviso ya se haya descartado o se haya limpiado solo al corregir el archivo.
+          </p>
+          <ul className="divide-y divide-stone-100 text-xs">
+            {rechazos.map((ev) => (
+              <li key={ev.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <span className="min-w-0 flex-1 text-stone-700">{ev.detalle}</span>
+                <span className="flex-none text-stone-400">{ev.usuario?.nombre ?? "—"}</span>
+                <span className="flex-none text-stone-400">{formatearFechaHora(ev.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {trazabilidad.length > 0 && (
         <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">

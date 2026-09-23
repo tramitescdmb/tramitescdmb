@@ -144,16 +144,20 @@ export async function estamparFirmaSigec(
   const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
   const qr = await pdf.embedPng(qrPngBytes);
 
-  // QR únicamente, esquina superior derecha — sin caja de radicado ni código de barras.
-  const qrSize = 70;
+  // QR únicamente, esquina superior derecha — sin caja de radicado ni código de barras. Tamaño
+  // reducido un 30% (era 70) — pedido explícito del usuario (2026-09-23): quedaba
+  // desproporcionadamente grande frente al resto del sello.
+  const qrSize = 49;
   const qx = Math.max(12, width - qrSize - 20);
   const qy = Math.max(12, height - qrSize - 20);
   page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
   page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
 
-  // Sello de firma al pie — mismo criterio que estamparRotulo, pero con el hash COMPLETO.
+  // Sello de firma al pie — mismo criterio que estamparRotulo, pero con el hash COMPLETO. La
+  // cédula/NIT va en su PROPIA línea debajo del nombre (antes iba pegada al nombre con un guion)
+  // — pedido explícito del usuario (2026-09-23) — por eso el bloque reserva una línea más.
   const lh = 7.4;
-  const altoBloque = 5 * lh + 3;
+  const altoBloque = 6 * lh + 3;
   let cy = 18 + 12 + firmas.length * altoBloque + 8;
   page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
   cy -= 9;
@@ -161,9 +165,12 @@ export async function estamparFirmaSigec(
   cy -= 11;
   for (const f of firmas) {
     const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-    const nombreLinea = f.cedulaONit ? `${f.nombre} — C.C./NIT ${f.cedulaONit}` : f.nombre;
-    page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+    page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
     cy -= lh;
+    if (f.cedulaONit) {
+      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: 6, font, color: GRIS });
+      cy -= lh;
+    }
     if (cargo) {
       page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
       cy -= lh;

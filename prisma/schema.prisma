@@ -226,6 +226,8 @@ model Usuario {
   documentosContratoValidados     DocumentoContrato[]               @relation("DocContratoValidadoPor")
   firmasDocumentoContrato         FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
   eventosContratacion             EventoContratacion[]              @relation("EventoContratacionUsuario")
+  avisosRechazoRecibidos          AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
+  avisosRechazoGenerados          AvisoRechazoDocumento[]           @relation("AvisoRechazoRechazadoPor")
 
   // --- Solicitud de firma/visto bueno (compartida SGDEA + SIGEC) ---
   solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
@@ -2029,6 +2031,7 @@ model ExpedienteContractual {
   documentos                  DocumentoContrato[]
   periodosEventuales          PeriodoInformeEventual[]
   eventos                     EventoContratacion[]
+  avisosRechazo               AvisoRechazoDocumento[]
   expedientesQueLoReferencian ExpedienteContractual[]           @relation("ExpedienteContractualRelacionado")
 
   @@index([etapaActual])
@@ -2154,11 +2157,36 @@ model DocumentoContrato {
   periodoEventual  PeriodoInformeEventual?         @relation(fields: [periodoEventualId], references: [id], onDelete: SetNull)
   firmas           FirmaDocumentoContrato[]
   solicitudesFirma SolicitudFirma[]
+  avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([expedienteId])
   @@index([etapa])
   @@index([requisitoId])
   @@index([periodoEventualId])
+}
+
+// Aviso de que un documento fue rechazado al firmar/revisar — pedido explícito del usuario
+// (2026-09-23): quien lo subió y el Jefe de Contratación deben enterarse en un buzón propio, no
+// solo ver el estado "rechazada" de la SolicitudFirma (que además ya no se muestra pegado al
+// documento, ver la página del expediente — queda solo en la trazabilidad de abajo). Se borra
+// manualmente (quien lo ve puede descartarlo) o automáticamente cuando se reemplaza el archivo
+// del documento rechazado (ver editarDocumentoContratoSinTraza) — "una vez subsanado".
+model AvisoRechazoDocumento {
+  id                  String   @id @default(cuid())
+  expedienteId        String
+  documentoContratoId String
+  mensaje             String   @db.Text
+  rechazadoPorId      String?
+  subidoPorId         String
+  createdAt           DateTime @default(now())
+
+  expediente        ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  documentoContrato DocumentoContrato     @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
+  rechazadoPor      Usuario?              @relation("AvisoRechazoRechazadoPor", fields: [rechazadoPorId], references: [id])
+  subidoPor         Usuario               @relation("AvisoRechazoSubidoPor", fields: [subidoPorId], references: [id])
+
+  @@index([expedienteId])
+  @@index([documentoContratoId])
 }
 
 // Espacio de entrega ADICIONAL a los periodos mensuales derivados de las fechas del contrato (ej. un

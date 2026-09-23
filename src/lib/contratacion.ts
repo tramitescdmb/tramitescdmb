@@ -73,6 +73,25 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
 }
 
+/**
+ * Cédula/NIT y correo de notificación de un firmante para la ficha técnica y el sello de firma: si
+ * el funcionario no tiene su propia cédula/correo capturados (`Usuario.cedulaONit`/
+ * `correoNotificacion` — se editan en `/usuarios/[id]`), se usa el del Contratista vinculado a su
+ * cuenta, si tiene uno. Sin esto, un contratista con identificación registrada en su propio
+ * expediente (`Contratista.identificacion`) aparecía como "no registrado" solo porque ese dato vive
+ * en otra tabla. Pedido explícito del usuario (2026-09-23).
+ */
+export function identidadFirmante(u: {
+  cedulaONit?: string | null;
+  correoNotificacion?: string | null;
+  contratista?: { identificacion: string; contactoEmail: string | null } | null;
+}): { cedulaONit: string | null; correoNotificacion: string | null } {
+  return {
+    cedulaONit: u.cedulaONit ?? u.contratista?.identificacion ?? null,
+    correoNotificacion: u.correoNotificacion ?? u.contratista?.contactoEmail ?? null,
+  };
+}
+
 /** Requisitos del catálogo (data/contratacion/requisitos.json, sembrado con
  * prisma/seed-contratacion.ts) que aplican a un expediente en UNA etapa: los
  * comunes a cualquier modalidad (modalidadSeleccion=null) más los propios de
@@ -492,6 +511,10 @@ export async function editarDocumentoContratoSinTraza(
   if (datos.archivo) {
     await db.firmaDocumentoContrato.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoContratoId: documentoId } });
+    // Reemplazar el archivo ES la manera de "subsanar" un rechazo — el aviso ya cumplió su
+    // propósito (avisar) y el motivo sigue en la trazabilidad de abajo (EventoContratacion), así
+    // que no hace falta que la persona lo borre a mano. Pedido explícito del usuario (2026-09-23).
+    await db.avisoRechazoDocumento.deleteMany({ where: { documentoContratoId: documentoId } });
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };
@@ -1044,4 +1067,28 @@ export async function obtenerPanelContratacionVista(permisos: PermisosUsuario) {
     porDependencia,
     porModalidad,
   };
+}
+
+/**
+ * Avisos de documentos rechazados visibles para este usuario: los que él mismo subió (para poder
+ * corregirlos) y, si es Administrador o Jefe de Contratación, TODOS los del módulo (pedido
+ * explícito del usuario, 2026-09-23 — "debe llegar ese mensaje a un buzon de quien lo subio y del
+ * jefe de contratación"). Funcionario/Supervisor/Contratista solo ven los suyos propios.
+ * `veTodos` lo calcula el llamador (`puedeGestionarContratistas(permisos)`) — esta función recibe
+ * el booleano ya resuelto, no `PermisosUsuario`/`permisos.ts` directamente, para no arrastrar su
+ * cadena de imports (`getSession` → `next/headers`) hacia este módulo: `CatalogoRequisitosAdmin.tsx`
+ * (un Client Component) importa cosas de `contratacion.ts`, y cualquier import de VALOR (no de tipo)
+ * de `permisos.ts` aquí rompe el build con "next/headers en un Client Component" — ya pasó una vez
+ * con `directorio-activo.ts`, mismo mecanismo.
+ */
+export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos: boolean) {
+  return db.avisoRechazoDocumento.findMany({
+    where: veTodos ? {} : { subidoPorId: usuarioId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      documentoContrato: { select: { id: true, nombre: true, mimeType: true, firmas: { select: { id: true } }, expedienteId: true, expediente: { select: { numero: true } } } },
+      rechazadoPor: { select: { nombre: true } },
+      subidoPor: { select: { nombre: true } },
+    },
+  });
 }

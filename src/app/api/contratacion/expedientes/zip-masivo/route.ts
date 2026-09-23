@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
@@ -42,7 +43,9 @@ export async function GET(req: NextRequest) {
   });
 
   try {
-    const zip = await construirZipMasivo(expedientes);
+    const h = await headers();
+    const baseUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+    const zip = await construirZipMasivo(expedientes, baseUrl);
     return new NextResponse(new Uint8Array(zip), {
       headers: {
         "Content-Type": "application/zip",

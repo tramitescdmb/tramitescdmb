@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import Link from "next/link";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
+import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
@@ -47,12 +48,32 @@ export default async function FichaFirmaExpedienteContractualPage({
           nombre: true,
           firmas: {
             orderBy: { fechaHora: "asc" },
-            include: { usuario: { select: { nombre: true, cedulaONit: true, correoNotificacion: true, denominacionEmpleo: true } } },
+            include: {
+              usuario: {
+                select: {
+                  nombre: true,
+                  cedulaONit: true,
+                  correoNotificacion: true,
+                  denominacionEmpleo: true,
+                  contratista: { select: { identificacion: true, contactoEmail: true } },
+                },
+              },
+            },
           },
           solicitudesFirma: {
             where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
             orderBy: { completadoEn: "asc" },
-            include: { usuarioAsignado: { select: { nombre: true, cedulaONit: true, correoNotificacion: true, denominacionEmpleo: true } } },
+            include: {
+              usuarioAsignado: {
+                select: {
+                  nombre: true,
+                  cedulaONit: true,
+                  correoNotificacion: true,
+                  denominacionEmpleo: true,
+                  contratista: { select: { identificacion: true, contactoEmail: true } },
+                },
+              },
+            },
           },
         },
       },
@@ -116,7 +137,9 @@ export default async function FichaFirmaExpedienteContractualPage({
               <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4">
                 <p className="mb-1.5 text-sm font-semibold text-stone-800">{doc.nombre}</p>
                 <ul className="space-y-3">
-                  {doc.firmas.map((f) => (
+                  {doc.firmas.map((f) => {
+                    const identidad = identidadFirmante(f.usuario);
+                    return (
                     <li key={f.id} className="rounded-lg border border-stone-100 bg-stone-50/60 p-3 text-sm">
                       <p className="flex items-center gap-1.5 font-medium text-stone-900">
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
@@ -124,8 +147,8 @@ export default async function FichaFirmaExpedienteContractualPage({
                         {f.usuario.denominacionEmpleo && <span className="font-normal text-stone-500"> — {f.usuario.denominacionEmpleo}</span>}
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-                        <Dato k="Cédula o NIT" v={f.usuario.cedulaONit ?? "no registrada"} mono />
-                        <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
+                        <Dato k="Cédula o NIT" v={identidad.cedulaONit ?? "no registrada"} mono />
+                        <Dato k="Correo de notificación" v={identidad.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
                         <Dato k="Algoritmo / formato" v={etiquetaFormatoFirma(f.formato)} />
                         <Dato k="Proveedor" v={f.proveedor} />
@@ -137,8 +160,11 @@ export default async function FichaFirmaExpedienteContractualPage({
                         {f.selloTiempoToken && <Dato k="Token RFC-3161" v={f.selloTiempoToken} mono />}
                       </dl>
                     </li>
-                  ))}
-                  {doc.solicitudesFirma.map((s) => (
+                    );
+                  })}
+                  {doc.solicitudesFirma.map((s) => {
+                    const identidadVb = identidadFirmante(s.usuarioAsignado);
+                    return (
                     <li key={s.id} className="rounded-lg border border-sky-100 bg-sky-50/50 p-3 text-sm">
                       <p className="flex items-center gap-1.5 font-medium text-stone-900">
                         <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
@@ -147,15 +173,16 @@ export default async function FichaFirmaExpedienteContractualPage({
                         <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-                        <Dato k="Cédula o NIT" v={s.usuarioAsignado.cedulaONit ?? "no registrada"} mono />
-                        <Dato k="Correo de notificación" v={s.usuarioAsignado.correoNotificacion ?? "no registrado"} />
+                        <Dato k="Cédula o NIT" v={identidadVb.cedulaONit ?? "no registrada"} mono />
+                        <Dato k="Correo de notificación" v={identidadVb.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />
                         <Dato k="Dirección IP" v={s.ip ?? "no disponible"} mono />
                         <Dato k="Agente de usuario" v={s.userAgent ?? "no disponible"} mono />
                         <Dato k="Identificador" v={s.id} mono />
                       </dl>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             ))}

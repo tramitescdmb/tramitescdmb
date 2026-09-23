@@ -210,12 +210,18 @@ export async function completarSolicitudFirma(
   }
 }
 
-/** Rechaza una solicitud asignada (el firmante/revisor decide NO firmar/dar visto bueno). */
+/** Rechaza una solicitud asignada (el firmante/revisor decide NO firmar/dar visto bueno). Además de
+ * quedar en la trazabilidad del expediente, genera un AVISO en el buzón de quien subió el
+ * documento y del Jefe de Contratación — pedido explícito del usuario (2026-09-23): antes el único
+ * rastro visible era el estado "rechazada" de la solicitud, pegado a la fila del documento (que ya
+ * no se muestra ahí, ver la página del expediente). El aviso se borra solo o a mano — ver
+ * `avisosRechazoParaUsuario`/la ruta DELETE del aviso y `editarDocumentoContratoSinTraza`
+ * (se limpia automáticamente al reemplazar el archivo, que es "subsanarlo"). */
 export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: string, comentario: string) {
   if (!comentario.trim()) throw new Error("Indique el motivo del rechazo.");
   const solicitud = await db.solicitudFirma.findUnique({
     where: { id: solicitudId },
-    include: { documentoContrato: { select: { id: true, nombre: true, expedienteId: true } } },
+    include: { documentoContrato: { select: { id: true, nombre: true, expedienteId: true, subidoPorId: true } } },
   });
   if (!solicitud) throw new Error("La solicitud no existe.");
   if (solicitud.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
@@ -234,6 +240,15 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
         tipo: "DOCUMENTO_RECHAZADO",
         detalle: `Se rechazó la firma de "${solicitud.documentoContrato.nombre}": ${comentario.trim()}`,
         usuarioId,
+      },
+    });
+    await db.avisoRechazoDocumento.create({
+      data: {
+        expedienteId: solicitud.documentoContrato.expedienteId,
+        documentoContratoId: solicitud.documentoContrato.id,
+        mensaje: comentario.trim(),
+        rechazadoPorId: usuarioId,
+        subidoPorId: solicitud.documentoContrato.subidoPorId,
       },
     });
   }
@@ -269,7 +284,16 @@ export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "doc
     include: {
       asignadoPor: { select: { nombre: true } },
       comunicacion: { select: { id: true, radicado: true, asunto: true } },
-      documentoContrato: { select: { id: true, nombre: true, expedienteId: true, expediente: { select: { numero: true } } } },
+      documentoContrato: {
+        select: {
+          id: true,
+          nombre: true,
+          mimeType: true,
+          expedienteId: true,
+          expediente: { select: { numero: true } },
+          firmas: { select: { id: true } },
+        },
+      },
     },
     orderBy: { asignadoEn: "asc" },
   });

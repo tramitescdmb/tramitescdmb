@@ -26,7 +26,7 @@ export default async function PanelMiTrabajoSigecPage() {
         <TarjetaKpi icon={PenLine} label="Por firmar ahora" value={p.firmas.listos} tono="azul" href="/contratacion/buzon" />
         <TarjetaKpi icon={Hourglass} label="Esperando turno" value={esperando} tono="ambar" href="/contratacion/buzon" />
         <TarjetaKpi icon={CalendarClock} label="Informes por radicar" value={p.informes.total} tono="rojo" />
-        {gestiona && <TarjetaKpi icon={UserX} label="Sin contratista" value={p.sinContratista} tono="ambar" href="/contratacion/expedientes" />}
+        {gestiona && <TarjetaKpi icon={UserX} label="Expedientes sin contratista" value={p.sinContratista} tono="ambar" href="/contratacion/expedientes" />}
       </div>
       <p className="text-xs text-stone-400">
         Cuenta lo asignado a usted: documentos que esperan su firma o visto bueno, e informes de supervisión de los expedientes que usted ve cuyo

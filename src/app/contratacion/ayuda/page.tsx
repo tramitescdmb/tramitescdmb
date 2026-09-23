@@ -270,8 +270,16 @@ export default async function ContratacionAyudaPage() {
         <p>
           Lo pendiente de cada persona aparece en su{" "}
           <Link href="/contratacion/buzon" className="font-medium text-cdmb-700 hover:underline">Buzón de firmas</Link>
-          . Firmar o dar visto bueno siempre muestra el documento real antes de confirmar. Un firmante puede
-          rechazar (con motivo) en vez de firmar — eso marca el documento como rechazado.
+          , con la vista previa de un solo documento (no del expediente completo). Firmar o dar visto bueno siempre
+          muestra el documento real antes de confirmar.
+        </p>
+        <p>
+          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. Desde 2026-09-23 esto ya no se
+          queda solo como un estado pegado a la fila del documento: genera un <strong>aviso</strong> en el buzón de
+          quien subió el archivo y de Administrador/Jefe de Contratación, con el motivo — se puede descartar a mano,
+          o se limpia solo cuando se reemplaza el archivo rechazado por uno corregido. El historial completo de
+          rechazos (aunque el aviso ya se haya limpiado) queda al final del detalle del expediente, en «Rechazos al
+          firmar/revisar».
         </p>
         <p>
           La cantidad de documentos pendientes se indica con una <strong>insignia en la pestaña «Buzón»</strong> y con un
@@ -280,7 +288,9 @@ export default async function ContratacionAyudaPage() {
           <Link href="/contratacion/mis-firmas" className="font-medium text-cdmb-700 hover:underline">Mis firmas</Link>{" "}
           queda el historial de lo firmado: <strong>Ver documento</strong> abre siempre el archivo firmado (el PDF con su
           sello y QR) y <strong>Ver ficha técnica</strong> muestra los datos de la firma de ese documento, sin necesidad de
-          tener acceso al resto del expediente.
+          tener acceso al resto del expediente. El sello impreso en el PDF lleva, debajo del nombre de cada firmante,
+          su cédula o NIT — el mismo archivo estampado (nunca el original sin firma) es el que se descarga también
+          dentro del ZIP del expediente.
         </p>
       </Seccion>
 
@@ -291,6 +301,13 @@ export default async function ContratacionAyudaPage() {
           datos técnicos completos de cada firma — hash, IP, agente de usuario, identificador, sello de
           tiempo — están en <em>Ficha técnica de firmas</em>, que exige haber iniciado sesión (protección de
           datos personales, Ley 1581/2012).
+        </p>
+        <p className="text-xs text-stone-400">
+          La cédula/NIT y el correo de notificación de la ficha se toman de la cuenta del firmante
+          (<em>Usuarios y roles</em>) y, si están vacíos ahí, del Contratista vinculado a esa cuenta — así un
+          contratista que ya tiene su identificación en su propio registro no aparece como &quot;no registrada&quot;.
+          Un funcionario de la CDMB sin Contratista vinculado sí necesita que alguien le registre la cédula en su
+          cuenta para que deje de verse así.
         </p>
       </Seccion>
     </>

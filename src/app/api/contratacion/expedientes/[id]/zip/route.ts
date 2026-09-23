@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
@@ -22,7 +23,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    const zip = await construirZipExpediente(id);
+    const h = await headers();
+    const baseUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+    const zip = await construirZipExpediente(id, expediente.numero, baseUrl);
     return new NextResponse(new Uint8Array(zip), {
       headers: {
         "Content-Type": "application/zip",
