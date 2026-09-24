@@ -3,6 +3,7 @@ import { resolverFirma } from "@/lib/firma-proveedor";
 import { hashContenidoFirma } from "@/lib/firma";
 import type { RolFirmante, EstadoSolicitudFirma } from "@prisma/client";
 import crypto from "crypto";
+import { estadoPorFirmas } from "@/lib/estado-firmas";
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
@@ -98,6 +99,11 @@ export async function asignarFirmantes(
     completadoEn: f.rol === "LECTURA" ? new Date() : null,
   }));
   await db.solicitudFirma.createMany({ data });
+
+  if (firmantes.some((f) => f.rol === "FIRMA")) {
+    if (objetivo.tipo === "documentoContrato") await reevaluarEstadoDocumentoContrato(objetivo.id, asignadoPorId);
+    else if (objetivo.tipo === "documentoExpediente") await reevaluarEstadoDocumentoExpediente(objetivo.id, asignadoPorId);
+  }
 }
 
 export function puedeActuarSolicitud(
@@ -112,39 +118,27 @@ export function puedeActuarSolicitud(
 
 async function reevaluarEstadoDocumentoContrato(documentoId: string, usuarioId: string) {
   const solicitudes = await db.solicitudFirma.findMany({ where: { documentoContratoId: documentoId, rol: "FIRMA" } });
-  if (solicitudes.length === 0) {
-    await db.documentoContrato.update({
-      where: { id: documentoId },
-      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
-    });
-    return;
-  }
-  if (solicitudes.some((s) => s.estado === "RECHAZADA")) {
+  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { estadoValidacion: true } });
+  const estado = estadoPorFirmas(solicitudes);
+  if (estado === "APROBADO") {
+    await db.documentoContrato.update({ where: { id: documentoId }, data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() } });
+  } else if (estado === "RECHAZADO") {
     await db.documentoContrato.update({ where: { id: documentoId }, data: { estadoValidacion: "RECHAZADO" } });
-  } else if (solicitudes.every((s) => s.estado === "COMPLETADA")) {
-    await db.documentoContrato.update({
-      where: { id: documentoId },
-      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
-    });
+  } else if (doc?.estadoValidacion === "RECHAZADO") {
+    await db.documentoContrato.update({ where: { id: documentoId }, data: { estadoValidacion: "PENDIENTE", validadoPorId: null, validadoEn: null } });
   }
 }
 
 async function reevaluarEstadoDocumentoExpediente(documentoId: string, usuarioId: string) {
   const solicitudes = await db.solicitudFirma.findMany({ where: { documentoExpedienteId: documentoId, rol: "FIRMA" } });
-  if (solicitudes.length === 0) {
-    await db.expedienteDocumento.update({
-      where: { id: documentoId },
-      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
-    });
-    return;
-  }
-  if (solicitudes.some((s) => s.estado === "RECHAZADA")) {
+  const doc = await db.expedienteDocumento.findUnique({ where: { id: documentoId }, select: { estadoValidacion: true } });
+  const estado = estadoPorFirmas(solicitudes);
+  if (estado === "APROBADO") {
+    await db.expedienteDocumento.update({ where: { id: documentoId }, data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() } });
+  } else if (estado === "RECHAZADO") {
     await db.expedienteDocumento.update({ where: { id: documentoId }, data: { estadoValidacion: "RECHAZADO" } });
-  } else if (solicitudes.every((s) => s.estado === "COMPLETADA")) {
-    await db.expedienteDocumento.update({
-      where: { id: documentoId },
-      data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
-    });
+  } else if (doc?.estadoValidacion === "RECHAZADO") {
+    await db.expedienteDocumento.update({ where: { id: documentoId }, data: { estadoValidacion: "PENDIENTE", validadoPorId: null, validadoEn: null } });
   }
 }
 
