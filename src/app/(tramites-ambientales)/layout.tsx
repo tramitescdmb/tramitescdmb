@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Leaf } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
+import { SIN_PENDIENTES_FIRMA } from "@/lib/calidad-firma";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite } from "@/lib/permisos";
 
@@ -12,7 +13,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   const permisos = await obtenerPermisosUsuario(session.userId);
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
-  const pendientesFirma = mostrarFirmas ? await contarPendientesBuzonTramite(session.userId) : { total: 0, listos: 0 };
+  const pendientesFirma = mostrarFirmas ? await contarPendientesBuzonTramite(session.userId) : SIN_PENDIENTES_FIRMA;
 
   return (
     <div className="space-y-4">

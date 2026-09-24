@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent } from "lucide-react";
+import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, ArrowRight } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
@@ -7,7 +7,10 @@ import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getPendientes } from "@/lib/pendientes";
-import { obtenerPermisosUsuario } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { listarBuzon } from "@/lib/solicitudes-firma";
+import { resumirPendientesFirma, rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
+import { GloboPendientes } from "@/components/GloboPendientes";
 import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
@@ -28,7 +31,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const session = await getSession();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
-  const [d, pendientes] = await Promise.all([getDashboardData(tramiteIds, rango), getPendientes(session)]);
+  const [d, pendientes, buzonFirmas] = await Promise.all([
+    getDashboardData(tramiteIds, rango),
+    getPendientes(session),
+    session && permisos && puedeAccederFirmasTramite(permisos) ? listarBuzon(session.userId, "documentoExpediente") : Promise.resolve([]),
+  ]);
+  const resumenFirmas = resumirPendientesFirma(buzonFirmas);
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
@@ -41,6 +49,42 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+
+      {resumenFirmas.total > 0 && (
+        <div className={`rounded-xl border p-4 shadow-soft ${resumenFirmas.listos > 0 ? "border-red-200 bg-red-50/40" : "border-stone-200 bg-white"}`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
+              <PenLine className={`h-4 w-4 ${resumenFirmas.listos > 0 ? "text-red-600" : "text-stone-400"}`} aria-hidden />
+              Firmas pendientes
+              <GloboPendientes pendientes={resumenFirmas} />
+            </h2>
+            <Link href="/firmas/buzon" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+              Ir al buzón de firmas <ArrowRight className="h-3 w-3" aria-hidden />
+            </Link>
+          </div>
+          <p className="mt-1 text-xs text-stone-600">{textoPendientesFirma(resumenFirmas)}.</p>
+          <ul className="mt-2 divide-y divide-stone-100">
+            {buzonFirmas.slice(0, 5).map((s) => (
+              <li key={s.id} className="flex items-center gap-3 py-1.5 text-sm">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-stone-800">{s.documentoExpediente?.nombre}</p>
+                  <p className="truncate text-xs text-stone-400">
+                    {s.documentoExpediente?.expediente.numero} · {s.rol === "FIRMA" ? "Debe firmar" : "Visto bueno"}
+                    {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
+                  </p>
+                </div>
+                {s.puedeActuar ? (
+                  <Link href={`/firmas/firmar/${s.id}`} className="flex-none rounded-md bg-cdmb-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-cdmb-700">
+                    {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
+                  </Link>
+                ) : (
+                  <span className="flex-none text-[11px] text-stone-400">Espera turno</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <MisPendientes resumen={pendientes} />
 

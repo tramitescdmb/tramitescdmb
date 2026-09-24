@@ -1,3 +1,4 @@
+import { resumirPendientesFirma } from "@/lib/calidad-firma";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
@@ -68,6 +69,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
     firmas: {
       total: firmas.length,
       listos: firmas.filter((s) => s.puedeActuar).length,
+      resumen: resumirPendientesFirma(firmas),
       lista: firmas.slice(0, 8),
     },
     informes: { total: informes.length, lista: informes.slice(0, 10) },

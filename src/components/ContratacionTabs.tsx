@@ -1,5 +1,6 @@
 "use client";
 
+import { textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 import { LayoutDashboard, Briefcase, Inbox, UserSquare2, ShieldCheck } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
@@ -21,7 +22,7 @@ export function ContratacionTabs({
   pendientesFirma,
 }: {
   permitido: PermitidoContratacion;
-  pendientesFirma: { total: number; listos: number };
+  pendientesFirma: ResumenPendientesFirma;
 }) {
   const grupos: GrupoMenu[] = [
     { label: "Panel", icon: LayoutDashboard, href: "/contratacion/panel" },
@@ -46,7 +47,7 @@ export function ContratacionTabs({
       insignia: {
         valor: pendientesFirma.total,
         alerta: pendientesFirma.listos > 0,
-        titulo: `${pendientesFirma.total} pendientes por firmar${pendientesFirma.listos < pendientesFirma.total ? ` (${pendientesFirma.listos} ya puede(n) firmarse)` : ""}`,
+        titulo: textoPendientesFirma(pendientesFirma),
       },
     },
     {

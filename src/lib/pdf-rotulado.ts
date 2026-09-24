@@ -135,40 +135,42 @@ async function estamparFirmasExpediente(
   page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
   page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
 
-  const lh = 7.4;
-  const altoBloque = 6 * lh + 3;
-  let cy = 18 + 12 + firmas.length * altoBloque + 8;
+  const tamanos = (f: FirmaRotuloPdf) =>
+    rotuloCalidadFirma(f.calidad) ? { nombre: 5.6, linea: 5.2, meta: 4.8, lh: 6.4 } : { nombre: 6.5, linea: 6, meta: 5.5, lh: 7.4 };
+  const altoTotal = firmas.reduce((acc, f) => acc + 6 * tamanos(f).lh + 3, 0);
+  let cy = 18 + 12 + altoTotal + 8;
   page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
   cy -= 9;
   page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
   cy -= 11;
   for (const f of firmas) {
+    const t = tamanos(f);
     const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
     const rotulo = rotuloCalidadFirma(f.calidad);
     if (rotulo) {
       const etiqueta = `${rotulo}: `;
-      page.drawText(etiqueta, { x: 24, y: cy, size: 6.5, font: fontBold, color: VERDE });
-      page.drawText(f.nombre.slice(0, 90), { x: 24 + fontBold.widthOfTextAtSize(etiqueta, 6.5), y: cy, size: 6.5, font: fontBold, color: GRIS });
+      page.drawText(etiqueta, { x: 24, y: cy, size: t.nombre, font: fontBold, color: VERDE });
+      page.drawText(f.nombre.slice(0, 90), { x: 24 + fontBold.widthOfTextAtSize(etiqueta, t.nombre), y: cy, size: t.nombre, font: fontBold, color: GRIS });
     } else {
-      page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+      page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: t.nombre, font: fontBold, color: GRIS });
     }
-    cy -= lh;
+    cy -= t.lh;
     if (f.cedulaONit) {
-      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
+      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: t.linea, font, color: GRIS });
+      cy -= t.lh;
     }
     if (cargo) {
-      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
+      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: t.linea, font, color: GRIS });
+      cy -= t.lh;
     }
     if (f.dependencia) {
-      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
+      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: t.linea, font, color: GRIS });
+      cy -= t.lh;
     }
-    page.drawText(f.fechaHora, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
-    cy -= lh;
-    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
-    cy -= lh + 3;
+    page.drawText(f.fechaHora, { x: 24, y: cy, size: t.meta, font, color: GRIS_CLARO });
+    cy -= t.lh;
+    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: t.meta, font, color: GRIS_CLARO });
+    cy -= t.lh + 3;
   }
   page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
 

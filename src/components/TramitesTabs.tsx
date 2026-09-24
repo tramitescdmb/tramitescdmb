@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine } from "lucide-react";
 import { GloboPendientes } from "@/components/GloboPendientes";
+import { SIN_PENDIENTES_FIRMA, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
 const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
@@ -16,11 +17,11 @@ const TABS = [
 export function TramitesTabs({
   mostrarSolicitantes = true,
   mostrarFirmas = true,
-  pendientesFirma = { total: 0, listos: 0 },
+  pendientesFirma = SIN_PENDIENTES_FIRMA,
 }: {
   mostrarSolicitantes?: boolean;
   mostrarFirmas?: boolean;
-  pendientesFirma?: { total: number; listos: number };
+  pendientesFirma?: ResumenPendientesFirma;
 }) {
   const pathname = usePathname();
   const tabs = TABS.filter((t) => (!t.requiereTramite || mostrarSolicitantes) && (!t.requiereFirmas || mostrarFirmas));

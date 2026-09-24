@@ -4,6 +4,7 @@ import { hashContenidoFirma } from "@/lib/firma";
 import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
+import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
@@ -361,16 +362,12 @@ export type SolicitudBuzon = {
   asignadoPor: { nombre: string };
 };
 
-export async function contarPendientesBuzonContratacion(usuarioId: string): Promise<{ total: number; listos: number }> {
-  const solicitudes = await listarBuzon(usuarioId, "documentoContrato");
-  const accionables = solicitudes.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
-  return { total: accionables.length, listos: accionables.filter((s) => s.puedeActuar).length };
+export async function contarPendientesBuzonContratacion(usuarioId: string): Promise<ResumenPendientesFirma> {
+  return resumirPendientesFirma(await listarBuzon(usuarioId, "documentoContrato"));
 }
 
-export async function contarPendientesBuzonTramite(usuarioId: string): Promise<{ total: number; listos: number }> {
-  const solicitudes = await listarBuzon(usuarioId, "documentoExpediente");
-  const accionables = solicitudes.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
-  return { total: accionables.length, listos: accionables.filter((s) => s.puedeActuar).length };
+export async function contarPendientesBuzonTramite(usuarioId: string): Promise<ResumenPendientesFirma> {
+  return resumirPendientesFirma(await listarBuzon(usuarioId, "documentoExpediente"));
 }
 
 export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "documentoContrato" | "documentoExpediente") {

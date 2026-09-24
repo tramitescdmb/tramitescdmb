@@ -131,7 +131,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                   {ordenarPorCalidad(doc.firmas, (f) => f.calidad).map((f) => {
                     const identidad = identidadFirmante(f.usuario);
                     return (
-                    <li key={f.id} className="rounded-lg border border-stone-100 bg-stone-50/60 p-3 text-sm">
+                    <li key={f.id} className={`rounded-lg border border-stone-100 bg-stone-50/60 ${rotuloCalidadFirma(f.calidad) ? "p-2.5 text-xs" : "p-3 text-sm"}`}>
                       <p className="flex items-center gap-1.5 font-medium text-stone-900">
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
                         {f.usuario.nombre}

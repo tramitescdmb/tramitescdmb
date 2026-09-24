@@ -10,7 +10,7 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { AvisoRechazoAcciones } from "@/components/AvisoRechazoAcciones";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
 import { formatearFechaHora } from "@/lib/fecha";
-import { rotuloCalidadFirma } from "@/lib/calidad-firma";
+import { rotuloCalidadFirma, resumirPendientesFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
@@ -30,7 +30,7 @@ export default async function BuzonFirmasTramitesPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
-      <FirmasSubNav pendientes={{ total: solicitudes.length, listos: solicitudes.filter((s) => s.puedeActuar).length }} />
+      <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} />
 
       {avisosRechazo.length > 0 && (
         <div className="space-y-2">

@@ -29,3 +29,41 @@ export function ordenarPorCalidad<T>(items: T[], calidad: (item: T) => string | 
     .sort((a, b) => peso(a.item) - peso(b.item) || a.i - b.i)
     .map((x) => x.item);
 }
+
+export type ResumenPendientesFirma = {
+  total: number;
+  listos: number;
+  principal: number;
+  proyecto: number;
+  reviso: number;
+  vistoBueno: number;
+};
+
+export const SIN_PENDIENTES_FIRMA: ResumenPendientesFirma = { total: 0, listos: 0, principal: 0, proyecto: 0, reviso: 0, vistoBueno: 0 };
+
+export function resumirPendientesFirma(solicitudes: { rol: string; calidad?: string | null; puedeActuar: boolean }[]): ResumenPendientesFirma {
+  const r = { ...SIN_PENDIENTES_FIRMA };
+  for (const s of solicitudes) {
+    if (s.rol === "FIRMA") {
+      if (s.calidad === "PROYECTO") r.proyecto++;
+      else if (s.calidad === "REVISO") r.reviso++;
+      else r.principal++;
+    } else if (s.rol === "VISTO_BUENO") r.vistoBueno++;
+    else continue;
+    r.total++;
+    if (s.puedeActuar) r.listos++;
+  }
+  return r;
+}
+
+export function textoPendientesFirma(r: ResumenPendientesFirma): string {
+  const partes = [
+    r.principal ? `${r.principal} como firmante principal` : null,
+    r.proyecto ? `${r.proyecto} como proyectó` : null,
+    r.reviso ? `${r.reviso} como revisó` : null,
+    r.vistoBueno ? `${r.vistoBueno} de visto bueno` : null,
+  ].filter(Boolean);
+  const base = `${r.total} pendiente${r.total === 1 ? "" : "s"} por firmar o revisar`;
+  const turno = r.listos < r.total ? ` · ${r.listos} ya puede${r.listos === 1 ? "" : "n"} atenderse` : "";
+  return `${base}${partes.length ? `: ${partes.join(", ")}` : ""}${turno}`;
+}

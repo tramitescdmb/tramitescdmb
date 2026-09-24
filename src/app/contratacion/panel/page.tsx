@@ -5,6 +5,7 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederCont
 import { obtenerTrabajoPendienteContratacion } from "@/lib/contratacion-panel";
 import { TituloSeccion, TarjetaKpi, EstadoVacio, Panel, Sub } from "@/components/sgdea/ui";
 import { formatearFechaSolo } from "@/lib/fecha";
+import { rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
 
@@ -28,6 +29,7 @@ export default async function PanelMiTrabajoSigecPage() {
         <TarjetaKpi icon={CalendarClock} label="Informes por radicar" value={p.informes.total} tono="rojo" />
         {gestiona && <TarjetaKpi icon={UserX} label="Expedientes sin contratista" value={p.sinContratista} tono="ambar" href="/contratacion/expedientes" />}
       </div>
+      {p.firmas.total > 0 && <p className="text-xs font-medium text-stone-600">{textoPendientesFirma(p.firmas.resumen)}.</p>}
       <p className="text-xs text-stone-400">
         Cuenta lo asignado a usted: documentos que esperan su firma o visto bueno, e informes de supervisión de los expedientes que usted ve cuyo
         periodo ya cerró y aún no tienen documento cargado.
@@ -52,6 +54,7 @@ export default async function PanelMiTrabajoSigecPage() {
                     <p className="truncate font-medium text-stone-800">{s.documentoContrato?.nombre}</p>
                     <p className="truncate text-xs text-stone-400">
                       {s.documentoContrato?.expediente.numero} · {ETIQUETA_ROL[s.rol] ?? s.rol}
+                      {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
                     </p>
                   </div>
                   {s.puedeActuar ? (
