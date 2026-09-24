@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
 /** Descarta (borra) un aviso de documento rechazado del buzón — se limpia solo cuando se reemplaza
- * el archivo rechazado, pero la persona también puede descartarlo a mano en cualquier momento. */
-export function AvisoRechazoAcciones({ avisoId }: { avisoId: string }) {
+ * el archivo rechazado, pero la persona también puede descartarlo a mano en cualquier momento.
+ * `endpoint` es la base de la ruta (sin el id) — cada módulo tiene la suya. */
+export function AvisoRechazoAcciones({ avisoId, endpoint = "/api/contratacion/avisos-rechazo" }: { avisoId: string; endpoint?: string }) {
   const router = useRouter();
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export function AvisoRechazoAcciones({ avisoId }: { avisoId: string }) {
     setBorrando(true);
     setError(null);
     try {
-      const res = await fetch(`/api/contratacion/avisos-rechazo/${avisoId}`, { method: "DELETE" });
+      const res = await fetch(`${endpoint}/${avisoId}`, { method: "DELETE" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo descartar el aviso.");
       router.refresh();

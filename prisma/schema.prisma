@@ -170,7 +170,9 @@ model Usuario {
   expedientesCreados    Expediente[]           @relation("CreadoPor")
   expedientesAsignados  Expediente[]           @relation("ResponsableActual")
   expedientesAsignacion Expediente[]           @relation("ExpedienteUsuariosAsignados")
-  documentos            ExpedienteDocumento[]
+  documentos            ExpedienteDocumento[]      @relation("ExpedienteDocumentoSubidoPor")
+  documentosValidados   ExpedienteDocumento[]      @relation("ExpedienteDocumentoValidadoPor")
+  firmasExpediente      FirmaExpedienteDocumento[] @relation("FirmaExpedienteDocumentoUsuario")
   eventos               ExpedienteEvento[]
   registrosAuditoria    RegistroAuditoria[]
   visitasTecnicas       VisitaTecnica[]
@@ -538,8 +540,10 @@ model DocumentoRequeridoDefinicion {
   obligatorio   Boolean          @default(true)
   notas         String?
   aplicaA       TipoSolicitante? // null = aplica a cualquier solicitante; si no, solo es obligatorio para ese tipo (ej. "Certificado de Existencia y Representación Legal" solo para JURIDICA)
+  puedeFirmarse Boolean          @default(true) // desactivable por documento desde el catálogo; todos empiezan habilitados
 
-  tramiteTipo TramiteTipo @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+  tramiteTipo TramiteTipo           @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+  documentos  ExpedienteDocumento[]
 
   @@index([tramiteTipoId])
 }
@@ -748,6 +752,8 @@ model Expediente {
   // Comunicaciones (correspondencia/memorandos) archivadas dentro de este expediente — unificación SGDEA.
   comunicaciones Comunicacion[]
 
+  avisosRechazo AvisoRechazoDocumento[]
+
   @@index([tramiteTipoId])
   @@index([estado])
   @@index([municipio])
@@ -758,18 +764,65 @@ model ExpedienteDocumento {
   id           String   @id @default(cuid())
   expedienteId String
   pasoNumero   Int?
+  requisitoId  String? // a qué documento del catálogo del trámite corresponde, cuando se subió desde uno de esos espacios (null si es "otro documento" libre)
   nombre       String
   descripcion  String?
   storagePath  String
   mimeType     String
   tamanoBytes  Int
+  hashSha256   String?
   subidoPorId  String
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
-  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  subidoPor  Usuario    @relation(fields: [subidoPorId], references: [id])
+  requiereFirma        Boolean                   @default(true)
+  estadoValidacion     EstadoValidacionDocumento @default(PENDIENTE)
+  validadoPorId        String?
+  validadoEn           DateTime?
+  comentarioValidacion String?                   @db.Text
+
+  expediente       Expediente                    @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor        Usuario                       @relation("ExpedienteDocumentoSubidoPor", fields: [subidoPorId], references: [id])
+  validadoPor      Usuario?                      @relation("ExpedienteDocumentoValidadoPor", fields: [validadoPorId], references: [id])
+  requisito        DocumentoRequeridoDefinicion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  firmas           FirmaExpedienteDocumento[]
+  solicitudesFirma SolicitudFirma[]
+  avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([expedienteId])
+  @@index([requisitoId])
+}
+
+enum EstadoValidacionDocumento {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+// Firma electrónica de un documento de Trámites ambientales — mismo esquema que
+// FirmaDocumentoContrato (hash + identidad + timestamp, Ley 527/1999), modelo propio para no
+// mezclar los dos dominios. Solo firman cuentas del dominio/correo institucional: el solicitante
+// externo de un trámite nunca aparece aquí.
+model FirmaExpedienteDocumento {
+  id                String    @id @default(cuid())
+  documentoId       String
+  usuarioId         String
+  fechaHora         DateTime  @default(now())
+  hashContenido     String
+  ip                String?
+  userAgent         String?
+  proveedor         String    @default("interno")
+  formato           String    @default("hash-sha256")
+  selloTiempoEn     DateTime?
+  selloTiempoFuente String?
+  selloTiempoToken  String?
+
+  documento        ExpedienteDocumento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  usuario          Usuario             @relation("FirmaExpedienteDocumentoUsuario", fields: [usuarioId], references: [id])
+  solicitudesFirma SolicitudFirma[]    @relation("SolicitudFirmaEventoExpediente")
+
+  @@index([documentoId])
+  @@index([usuarioId])
 }
 
 enum TipoEvento {
@@ -777,7 +830,11 @@ enum TipoEvento {
   CAMBIO_ESTADO
   AVANCE_PASO
   DOCUMENTO_SUBIDO
+  DOCUMENTO_EDITADO
   DOCUMENTO_ELIMINADO
+  DOCUMENTO_FIRMADO
+  DOCUMENTO_VALIDADO
+  DOCUMENTO_RECHAZADO
   COMENTARIO
   ASIGNACION_CAMBIADA
   VISITA_REGISTRADA
@@ -1531,9 +1588,10 @@ enum EstadoSolicitudFirma {
 }
 
 model SolicitudFirma {
-  id                  String  @id @default(cuid())
-  comunicacionId      String?
-  documentoContratoId String?
+  id                    String  @id @default(cuid())
+  comunicacionId        String?
+  documentoContratoId   String?
+  documentoExpedienteId String?
 
   usuarioAsignadoId String
   rol               RolFirmante          @default(FIRMA)
@@ -1558,18 +1616,22 @@ model SolicitudFirma {
 
   // Vínculo al evento real ya ejecutado, cuando estado=COMPLETADA y rol=FIRMA
   // (un VISTO_BUENO/LECTURA no genera Firma, solo se marca completada).
-  firmaId            String?
-  firmaDocContratoId String?
+  firmaId              String?
+  firmaDocContratoId   String?
+  firmaExpedienteId    String?
 
-  comunicacion      Comunicacion?           @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
-  documentoContrato DocumentoContrato?      @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
-  usuarioAsignado   Usuario                 @relation("SolicitudFirmaAsignado", fields: [usuarioAsignadoId], references: [id])
-  asignadoPor       Usuario                 @relation("SolicitudFirmaAsignadoPor", fields: [asignadoPorId], references: [id])
-  firma             Firma?                  @relation("SolicitudFirmaEvento", fields: [firmaId], references: [id])
-  firmaDocContrato  FirmaDocumentoContrato? @relation("SolicitudFirmaEventoContrato", fields: [firmaDocContratoId], references: [id])
+  comunicacion        Comunicacion?             @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  documentoContrato   DocumentoContrato?        @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
+  documentoExpediente ExpedienteDocumento?      @relation(fields: [documentoExpedienteId], references: [id], onDelete: Cascade)
+  usuarioAsignado     Usuario                   @relation("SolicitudFirmaAsignado", fields: [usuarioAsignadoId], references: [id])
+  asignadoPor         Usuario                   @relation("SolicitudFirmaAsignadoPor", fields: [asignadoPorId], references: [id])
+  firma               Firma?                    @relation("SolicitudFirmaEvento", fields: [firmaId], references: [id])
+  firmaDocContrato    FirmaDocumentoContrato?   @relation("SolicitudFirmaEventoContrato", fields: [firmaDocContratoId], references: [id])
+  firmaExpediente     FirmaExpedienteDocumento? @relation("SolicitudFirmaEventoExpediente", fields: [firmaExpedienteId], references: [id])
 
   @@index([comunicacionId])
   @@index([documentoContratoId])
+  @@index([documentoExpedienteId])
   @@index([usuarioAsignadoId, estado])
 }
 
@@ -2172,21 +2234,27 @@ model DocumentoContrato {
 // manualmente (quien lo ve puede descartarlo) o automáticamente cuando se reemplaza el archivo
 // del documento rechazado (ver editarDocumentoContratoSinTraza) — "una vez subsanado".
 model AvisoRechazoDocumento {
-  id                  String   @id @default(cuid())
-  expedienteId        String
-  documentoContratoId String
-  mensaje             String   @db.Text
-  rechazadoPorId      String?
-  subidoPorId         String
-  createdAt           DateTime @default(now())
+  id                    String   @id @default(cuid())
+  expedienteId          String?
+  expedienteTramiteId   String?
+  documentoContratoId   String?
+  documentoExpedienteId String?
+  mensaje               String   @db.Text
+  rechazadoPorId        String?
+  subidoPorId           String
+  createdAt             DateTime @default(now())
 
-  expediente        ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  documentoContrato DocumentoContrato     @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
-  rechazadoPor      Usuario?              @relation("AvisoRechazoRechazadoPor", fields: [rechazadoPorId], references: [id])
-  subidoPor         Usuario               @relation("AvisoRechazoSubidoPor", fields: [subidoPorId], references: [id])
+  expediente          ExpedienteContractual? @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  expedienteTramite   Expediente?            @relation(fields: [expedienteTramiteId], references: [id], onDelete: Cascade)
+  documentoContrato   DocumentoContrato?     @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
+  documentoExpediente ExpedienteDocumento?   @relation(fields: [documentoExpedienteId], references: [id], onDelete: Cascade)
+  rechazadoPor        Usuario?               @relation("AvisoRechazoRechazadoPor", fields: [rechazadoPorId], references: [id])
+  subidoPor           Usuario                @relation("AvisoRechazoSubidoPor", fields: [subidoPorId], references: [id])
 
   @@index([expedienteId])
+  @@index([expedienteTramiteId])
   @@index([documentoContratoId])
+  @@index([documentoExpedienteId])
 }
 
 // Espacio de entrega ADICIONAL a los periodos mensuales derivados de las fechas del contrato (ej. un

@@ -2,25 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LibraryBig, FolderOpen, Users } from "lucide-react";
+import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
   { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
   { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
   { href: "/solicitantes", label: "Solicitantes", icon: Users, requiereTramite: true },
+  { href: "/firmas/buzon", label: "Firmas", icon: PenLine, prefijo: "/firmas", requiereFirmas: true },
 ];
 
-export function TramitesTabs({ mostrarSolicitantes = true }: { mostrarSolicitantes?: boolean }) {
+export function TramitesTabs({ mostrarSolicitantes = true, mostrarFirmas = true }: { mostrarSolicitantes?: boolean; mostrarFirmas?: boolean }) {
   const pathname = usePathname();
-  const tabs = mostrarSolicitantes ? TABS : TABS.filter((t) => !t.requiereTramite);
+  const tabs = TABS.filter((t) => (!t.requiereTramite || mostrarSolicitantes) && (!t.requiereFirmas || mostrarFirmas));
   return (
     <nav
       className="flex items-center gap-1 overflow-x-auto rounded-xl border border-stone-200 bg-stone-50/80 p-1"
       aria-label="Trámites ambientales"
     >
       {tabs.map((t) => {
-        const activo = t.exacto ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
+        const activo = t.prefijo ? pathname.startsWith(t.prefijo) : t.exacto ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
         const Icon = t.icon;
         return (
           <Link

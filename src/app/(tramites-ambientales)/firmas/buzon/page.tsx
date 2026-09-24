@@ -1,0 +1,130 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Inbox, PenLine, Lock, AlertTriangle } from "lucide-react";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { AccesoRestringido } from "@/components/AccesoRestringido";
+import { listarBuzon } from "@/lib/solicitudes-firma";
+import { listarAvisosRechazoTramiteParaUsuario } from "@/lib/tramites-firma";
+import { TituloSeccion } from "@/components/sgdea/ui";
+import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
+import { AvisoRechazoAcciones } from "@/components/AvisoRechazoAcciones";
+import { FirmasSubNav } from "@/components/FirmasSubNav";
+import { formatearFechaHora } from "@/lib/fecha";
+
+const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
+
+/** Documentos de Trámites ambientales pendientes de la firma o el visto bueno del usuario, y
+ * avisos de documentos que alguien rechazó al firmar/revisar. Buzón propio del módulo — no
+ * comparte lista con el de Contratación ni con el de Correspondencia. */
+export default async function BuzonFirmasTramitesPage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAccederFirmasTramite(permisos)) {
+    return <AccesoRestringido titulo="Firmas" quien="con acceso a algún trámite" volverHref="/tramites" volverLabel="Volver a Trámites" />;
+  }
+
+  const [solicitudes, avisosRechazo] = await Promise.all([
+    listarBuzon(session.userId, "documentoExpediente"),
+    listarAvisosRechazoTramiteParaUsuario(session.userId, session.rol === "ADMIN"),
+  ]);
+
+  return (
+    <section className="space-y-4">
+      <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
+      <FirmasSubNav />
+
+      {avisosRechazo.length > 0 && (
+        <div className="space-y-2">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-red-800">
+            <AlertTriangle className="h-4 w-4 flex-none" aria-hidden />
+            {avisosRechazo.length} documento{avisosRechazo.length === 1 ? "" : "s"} rechazado{avisosRechazo.length === 1 ? "" : "s"} al firmar/revisar
+          </p>
+          <ul className="divide-y divide-red-100 rounded-xl border border-red-200 bg-red-50/40 shadow-sm">
+            {avisosRechazo.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-start gap-3 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-stone-800">{a.documentoExpediente.nombre}</p>
+                  <p className="text-xs text-stone-500">
+                    Expediente{" "}
+                    <Link href={`/expedientes/${a.documentoExpediente.expedienteId}`} className="text-cdmb-700 hover:underline">
+                      {a.documentoExpediente.expediente.numero}
+                    </Link>{" "}
+                    · Subido por {a.subidoPor.nombre} · Rechazado por {a.rechazadoPor?.nombre ?? "—"} el {formatearFechaHora(a.createdAt)}
+                  </p>
+                  <p className="mt-1 text-xs text-stone-700">Motivo: {a.mensaje}</p>
+                  <p className="mt-1 text-[11px] text-stone-400">
+                    Este aviso se borra solo al reemplazar el archivo con uno corregido, o puede descartarlo ahora si ya lo resolvió de otra forma.
+                  </p>
+                </div>
+                <VistaPreviaDocumento
+                  url={`/api/documentos/${a.documentoExpediente.id}${a.documentoExpediente.firmas.length > 0 ? "/rotulado" : ""}`}
+                  nombre={a.documentoExpediente.nombre}
+                  mimeType={a.documentoExpediente.mimeType}
+                />
+                <AvisoRechazoAcciones avisoId={a.id} endpoint="/api/avisos-rechazo" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {solicitudes.length > 0 && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <strong>
+            Tiene {solicitudes.length} documento{solicitudes.length === 1 ? "" : "s"} pendiente{solicitudes.length === 1 ? "" : "s"} por firmar o revisar
+          </strong>
+          {solicitudes.some((s) => !s.puedeActuar) &&
+            ` (${solicitudes.filter((s) => s.puedeActuar).length} ya puede${solicitudes.filter((s) => s.puedeActuar).length === 1 ? "" : "n"} actuarse ahora).`}
+        </p>
+      )}
+
+      {solicitudes.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/60 p-6 text-center text-sm text-stone-400">
+          No tiene documentos pendientes de firmar o revisar.
+        </p>
+      ) : (
+        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+          {solicitudes.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center gap-3 p-4">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-stone-800">{s.documentoExpediente?.nombre}</p>
+                <p className="text-xs text-stone-400">
+                  Expediente{" "}
+                  {s.documentoExpediente && (
+                    <Link href={`/expedientes/${s.documentoExpediente.expedienteId}`} className="text-cdmb-700 hover:underline" title="Ir al expediente completo">
+                      {s.documentoExpediente.expediente.numero}
+                    </Link>
+                  )}{" "}
+                  · Asignado por {s.asignadoPor.nombre}
+                </p>
+              </div>
+              <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}</span>
+              {s.puedeActuar ? (
+                <Link
+                  href={`/firmas/firmar/${s.id}`}
+                  className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                >
+                  <PenLine className="h-3.5 w-3.5" aria-hidden />
+                  {s.rol === "FIRMA" ? "Firmar" : "Dar visto bueno"}
+                </Link>
+              ) : (
+                <span className="inline-flex flex-none items-center gap-1 rounded-md border border-stone-200 px-3 py-1.5 text-xs text-stone-400" title="Debe(n) resolver primero quien(es) tiene(n) un turno anterior">
+                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                  Esperando turno
+                </span>
+              )}
+              {s.documentoExpediente && (
+                <VistaPreviaDocumento
+                  url={`/api/documentos/${s.documentoExpediente.id}${s.documentoExpediente.firmas.length > 0 ? "/rotulado" : ""}`}
+                  nombre={s.documentoExpediente.nombre}
+                  mimeType={s.documentoExpediente.mimeType}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Leaf } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite } from "@/lib/permisos";
 
 /**
  * Sección "Trámites ambientales": el panel, el catálogo de trámites, los
@@ -27,6 +27,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
+  const mostrarFirmas = puedeAccederFirmasTramite(permisos);
 
   return (
     <div className="space-y-4">
@@ -37,7 +38,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
         <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
       </div>
 
-      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} />
+      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} />
 
       {children}
     </div>

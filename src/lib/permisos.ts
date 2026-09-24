@@ -29,6 +29,8 @@ export type PermisosUsuario = {
   contratistaId: string | null;
   /** Ids de ExpedienteContractual donde este usuario es supervisor/interventor. */
   supervisaExpedientes: Set<string>;
+  /** Nombres de los cargos asignados (tabla Cargo, no un enum) — vacío para un FUNCIONARIO sin cargo. */
+  cargos: Set<string>;
 };
 
 type UsuarioFresco = {
@@ -125,6 +127,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     contratacion: usuario?.activo && !rolContratacionVencido ? usuario.rolContratacion : null,
     contratistaId: usuario?.activo ? usuario.contratistaId : null,
     supervisaExpedientes: new Set(usuario?.activo ? usuario.supervisaExpedientes : []),
+    cargos: new Set(usuario?.activo ? usuario.cargos : []),
   };
 });
 
@@ -570,4 +573,34 @@ export function puedeAsignarFirmantesComunicacion(
   if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
   const dependenciaComunicacion = comunicacion.dependenciaDestinoId ?? comunicacion.dependenciaOrigenId;
   return dependenciaComunicacion !== null && dependenciaComunicacion === permisos.dependenciaId;
+}
+
+// --- Firma electrónica en Trámites ambientales 2.0 --------------------------------------
+
+const CARGO_SIN_ESPECIFICO = "Otro / sin cargo específico";
+
+/** ¿Tiene algún cargo real asignado, distinto del genérico "Otro / sin cargo específico"? Base de
+ * casi toda acción de firma en Trámites: cualquier cargo identificado puede asignar firmantes o
+ * validar un documento; quien no tiene cargo, o solo tiene ese genérico, no. */
+function tieneCargoEspecifico(permisos: PermisosUsuario): boolean {
+  return [...permisos.cargos].some((c) => c !== CARGO_SIN_ESPECIFICO);
+}
+
+/** ¿Ve el menú de Firmas (Buzón / Mis firmas) del módulo de Trámites? Igual criterio que
+ * puedeAccederSolicitantes: alcanza con tener acceso a algún trámite. */
+export function puedeAccederFirmasTramite(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.tramites.size > 0;
+}
+
+/** ¿Puede designar quién debe firmar, dar visto bueno o tener solo lectura sobre un documento de
+ * un expediente de trámites? Cualquier cargo identificado, o el administrador. El solicitante
+ * externo del trámite nunca aparece como opción: no tiene cuenta de usuario en este sistema. */
+export function puedeAsignarFirmantesDocumentoTramite(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || tieneCargoEspecifico(permisos);
+}
+
+/** ¿Puede marcar un documento del expediente como validado? Mismo criterio que asignar
+ * firmantes. */
+export function puedeValidarDocumentoTramite(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || tieneCargoEspecifico(permisos);
 }

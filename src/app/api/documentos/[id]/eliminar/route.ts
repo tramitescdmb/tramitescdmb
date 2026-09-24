@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { deleteDocumento } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -65,6 +66,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       pasoNumero: documento.pasoNumero,
       usuarioId: session.userId,
     },
+  });
+  await registrarAuditoriaDoc({
+    entidad: "ExpedienteDocumento",
+    entidadId: id,
+    accion: "ELIMINA",
+    usuarioId: session.userId,
+    ...datosPeticion(req.headers),
+    detalle: descripcion,
   });
 
   return NextResponse.json({ ok: true });

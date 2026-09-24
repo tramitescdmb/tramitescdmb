@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeEditarExpediente } from "@/lib/permisos";
+import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-type ArchivoInput = { path: string; nombre: string; mimeType: string; tamanoBytes: number; descripcion?: string | null };
+type ArchivoInput = {
+  path: string;
+  nombre: string;
+  mimeType: string;
+  tamanoBytes: number;
+  descripcion?: string | null;
+  hashSha256?: string | null;
+  requiereFirma?: boolean;
+};
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,18 +34,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No hay archivos para guardar." }, { status: 400 });
   }
 
-  await db.expedienteDocumento.createMany({
-    data: validos.map((a) => ({
-      expedienteId: id,
-      pasoNumero,
-      nombre: a.nombre,
-      descripcion: a.descripcion?.trim() || descripcionDefecto,
-      storagePath: a.path,
-      mimeType: a.mimeType || "application/octet-stream",
-      tamanoBytes: a.tamanoBytes || 0,
-      subidoPorId: session.userId,
-    })),
-  });
+  const subidos = await db.$transaction(
+    validos.map((a) =>
+      db.expedienteDocumento.create({
+        data: {
+          expedienteId: id,
+          pasoNumero,
+          nombre: a.nombre,
+          descripcion: a.descripcion?.trim() || descripcionDefecto,
+          storagePath: a.path,
+          mimeType: a.mimeType || "application/octet-stream",
+          tamanoBytes: a.tamanoBytes || 0,
+          hashSha256: a.hashSha256 || null,
+          requiereFirma: a.requiereFirma !== false,
+          subidoPorId: session.userId,
+        },
+        select: { id: true, nombre: true },
+      })
+    )
+  );
+  const { ip, userAgent } = datosPeticion(req.headers);
+  for (const doc of subidos) {
+    await registrarAuditoriaDoc({
+      entidad: "ExpedienteDocumento",
+      entidadId: doc.id,
+      accion: "CREA",
+      usuarioId: session.userId,
+      ip,
+      userAgent,
+      detalle: `Se subió "${doc.nombre}" al expediente`,
+    });
+  }
 
   await db.expedienteEvento.create({
     data: {

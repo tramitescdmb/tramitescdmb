@@ -1082,8 +1082,8 @@ export async function obtenerPanelContratacionVista(permisos: PermisosUsuario) {
  * con `directorio-activo.ts`, mismo mecanismo.
  */
 export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos: boolean) {
-  return db.avisoRechazoDocumento.findMany({
-    where: veTodos ? {} : { subidoPorId: usuarioId },
+  const avisos = await db.avisoRechazoDocumento.findMany({
+    where: { documentoContratoId: { not: null }, ...(veTodos ? {} : { subidoPorId: usuarioId }) },
     orderBy: { createdAt: "desc" },
     include: {
       documentoContrato: { select: { id: true, nombre: true, mimeType: true, firmas: { select: { id: true } }, expedienteId: true, expediente: { select: { numero: true } } } },
@@ -1091,4 +1091,7 @@ export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos:
       subidoPor: { select: { nombre: true } },
     },
   });
+  // El filtro de arriba garantiza que documentoContrato nunca es null aquí — Prisma no puede
+  // reflejar eso en el tipo por sí solo, así que se estrecha una vez y listo.
+  return avisos as (typeof avisos[number] & { documentoContrato: NonNullable<(typeof avisos)[number]["documentoContrato"]> })[];
 }

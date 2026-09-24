@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
@@ -11,12 +11,49 @@ import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico, cargosEnTexto, puedeGestionarPaso } from "@/lib/cargos";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
-import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
+import {
+  obtenerPermisosUsuario,
+  puedeAccederTramite,
+  puedeEditarTramite,
+  puedeAsignarFirmantesDocumentoTramite,
+  puedeValidarDocumentoTramite,
+} from "@/lib/permisos";
+import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
+import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
+import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
+import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
+import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
-import { formatearFecha } from "@/lib/fecha";
+import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
+
+const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
+  PENDIENTE: "Pendiente de revisión",
+  APROBADO: "Aprobado",
+  RECHAZADO: "Rechazado",
+};
+const CLASE_ESTADO_VALIDACION: Record<string, string> = {
+  PENDIENTE: "bg-amber-50 text-amber-700",
+  APROBADO: "bg-emerald-50 text-emerald-700",
+  RECHAZADO: "bg-red-50 text-red-700",
+};
+const ETIQUETA_ROL_FIRMANTE: Record<string, string> = { FIRMA: "firma", VISTO_BUENO: "visto bueno", LECTURA: "lectura" };
+const ETIQUETA_ESTADO_SOLICITUD: Record<string, string> = { PENDIENTE: "pendiente", COMPLETADA: "completada", RECHAZADA: "rechazada" };
+const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
+  PENDIENTE: "bg-amber-50 text-amber-700",
+  COMPLETADA: "bg-emerald-50 text-emerald-700",
+  RECHAZADA: "bg-red-50 text-red-700",
+};
+const ETIQUETA_ACCION_AUDITORIA: Record<string, string> = { CREA: "Subió", MODIFICA: "Editó", ELIMINA: "Eliminó", VALIDA: "Validó" };
+const CLASE_ACCION_AUDITORIA: Record<string, string> = {
+  CREA: "bg-cdmb-50 text-cdmb-700",
+  MODIFICA: "bg-amber-50 text-amber-700",
+  ELIMINA: "bg-red-50 text-red-700",
+  VALIDA: "bg-emerald-50 text-emerald-700",
+};
 
 const ESTADOS = [
   "RADICADO",
@@ -56,7 +93,14 @@ export default async function ExpedienteDetallePage({
       include: {
         tramiteTipo: true,
         flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
-        documentos: { orderBy: { createdAt: "desc" }, include: { subidoPor: true } },
+        documentos: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            subidoPor: true,
+            firmas: true,
+            solicitudesFirma: { include: { usuarioAsignado: { select: { nombre: true } } }, orderBy: { orden: "asc" } },
+          },
+        },
         eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
         visitasTecnicas: { orderBy: { createdAt: "desc" }, include: { capturadoPor: true } },
         creadoPor: true,
@@ -67,7 +111,11 @@ export default async function ExpedienteDetallePage({
         comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, tipo: true, radicado: true, asunto: true, fechaRadicacion: true, estado: true } },
       },
     }),
-    db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, cargos: { select: { nombre: true } } } }),
+    db.usuario.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, cargos: { select: { nombre: true } }, dependencia: { select: { nombre: true } } },
+    }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
   ]);
 
@@ -75,11 +123,32 @@ export default async function ExpedienteDetallePage({
 
   const session = await getSession();
   let puedeEditar = true;
+  let puedeAsignarFirmantes = false;
+  let puedeValidar = false;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
     puedeEditar = puedeEditarTramite(permisos, expediente.tramiteTipoId);
+    puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoTramite(permisos);
+    puedeValidar = puedeValidarDocumentoTramite(permisos);
   }
+
+  const idsDocumentos = expediente.documentos.map((d) => d.id);
+  const [rechazos, trazabilidad] = await Promise.all([
+    db.expedienteEvento.findMany({
+      where: { expedienteId: id, tipo: "DOCUMENTO_RECHAZADO" },
+      orderBy: { createdAt: "desc" },
+      include: { usuario: { select: { nombre: true } } },
+    }),
+    idsDocumentos.length > 0
+      ? db.auditoriaDoc.findMany({
+          where: { entidad: "ExpedienteDocumento", entidadId: { in: idsDocumentos } },
+          orderBy: { secuencia: "asc" },
+          include: { usuario: { select: { nombre: true } } },
+        })
+      : Promise.resolve([]),
+  ]);
+  const usuariosOpciones = usuariosActivos.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const pasos = expediente.flujo.pasos;
   const currentIndex = pasos.findIndex((p) => p.numero === expediente.pasoActualNumero);
   const pasoActual = currentIndex >= 0 ? pasos[currentIndex] : null;
@@ -115,6 +184,13 @@ export default async function ExpedienteDetallePage({
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold text-stone-900">{expediente.numero}</h1>
           <EstadoBadge estado={expediente.estado} />
+          <Link
+            href={`/expedientes/${expediente.id}/ficha-firma`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+          >
+            <FileText className="h-3.5 w-3.5" aria-hidden />
+            Ficha técnica de firmas
+          </Link>
         </div>
         <p className="text-sm text-stone-500">
           <Link href={`/tramites/${expediente.tramiteTipo.slug}`} className="hover:text-cdmb-700">
@@ -597,43 +673,119 @@ export default async function ExpedienteDetallePage({
                       </p>
                     </div>
                     <ul className="divide-y divide-stone-100">
-                      {docs.map((doc) => (
-                        <li key={doc.id} className="flex items-start gap-2 px-4 py-2.5 text-sm">
-                          <div className="min-w-0 flex-1">
-                            <a
-                              href={`/api/documentos/${doc.id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline"
-                            >
-                              <FileText className="h-3.5 w-3.5 flex-none" aria-hidden />
-                              {doc.nombre}
-                            </a>
-                            {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
-                            <p className="text-xs text-stone-400">
-                              {doc.subidoPor.nombre} · {formatearFecha(doc.createdAt)}
-                            </p>
-                          </div>
-                          {(() => {
-                            const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
-                            const puede =
-                              puedeEditar &&
-                              puedeIntentarEliminarDocumento({
-                                esAdmin: session?.rol === "ADMIN",
-                                esQuienLoSubio: session?.userId === doc.subidoPorId,
-                                etapaAbierta: abierta,
-                              });
-                            return (
-                              <EliminarDocumentoBoton
-                                documentoId={doc.id}
+                      {docs.map((doc) => {
+                        const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
+                        const puede =
+                          puedeEditar &&
+                          puedeIntentarEliminarDocumento({
+                            esAdmin: session?.rol === "ADMIN",
+                            esQuienLoSubio: session?.userId === doc.subidoPorId,
+                            etapaAbierta: abierta,
+                          });
+                        const solicitudes = doc.solicitudesFirma.map((s) => ({
+                          id: s.id,
+                          usuarioAsignadoId: s.usuarioAsignadoId,
+                          usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+                          rol: s.rol,
+                          orden: s.orden,
+                          estado: s.estado,
+                        }));
+                        const miSolicitud = session
+                          ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
+                          : undefined;
+                        const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+                        const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
+                        return (
+                          <li key={doc.id} className="flex flex-wrap items-start gap-2 px-4 py-2.5 text-sm">
+                            <div className="min-w-0 flex-1">
+                              <a
+                                href={`/api/documentos/${doc.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline"
+                              >
+                                <FileText className="h-3.5 w-3.5 flex-none" aria-hidden />
+                                {doc.nombre}
+                              </a>
+                              {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
+                              <p className="text-xs text-stone-400">
+                                {doc.subidoPor.nombre} · {formatearFecha(doc.createdAt)}
+                              </p>
+                              {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {solicitudes
+                                    .filter((s) => s.estado !== "RECHAZADA")
+                                    .map((s) => (
+                                      <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                        {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                                      </span>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
+                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
+                                {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
+                              </span>
+                              {doc.requiereFirma && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                    solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
+                                  }`}
+                                >
+                                  {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+                                </span>
+                              )}
+                              <VistaPreviaDocumento
+                                url={`/api/documentos/${doc.id}${firmado ? "/rotulado" : ""}`}
                                 nombre={doc.nombre}
-                                etapaAbierta={abierta}
-                                puedeEliminar={puede}
+                                mimeType={doc.mimeType}
                               />
-                            );
-                          })()}
-                        </li>
-                      ))}
+                              {puedeValidar && doc.estadoValidacion !== "APROBADO" && (
+                                <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} endpoint={`/api/documentos/${doc.id}/validar`} />
+                              )}
+                              {firmado && (
+                                <a
+                                  href={`/api/documentos/${doc.id}/rotulado`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                                >
+                                  <Printer className="h-3.5 w-3.5" aria-hidden />
+                                  Con firma
+                                </a>
+                              )}
+                              {miSolicitud && puedeActuarYo && (
+                                <ConfirmarFirmaModal
+                                  rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                                  endpointCompletar={`/api/solicitudes-firma/${miSolicitud.id}/completar`}
+                                  endpointRechazar={`/api/solicitudes-firma/${miSolicitud.id}/rechazar`}
+                                  documentoUrl={`/api/documentos/${doc.id}`}
+                                  documentoNombre={doc.nombre}
+                                  documentoMimeType={doc.mimeType}
+                                />
+                              )}
+                              {puedeAsignarFirmantes && (
+                                <AsignarFirmantesModal
+                                  endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
+                                  usuarios={usuariosOpciones}
+                                  firmantesActuales={solicitudes}
+                                />
+                              )}
+                              <EditarDocumentoBoton
+                                documentoId={doc.id}
+                                expedienteId={expediente.id}
+                                nombreActual={doc.nombre}
+                                requiereFirmaActual={doc.requiereFirma}
+                                etapaAbierta={abierta}
+                                puedeEditar={puede}
+                              />
+                              <EliminarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} etapaAbierta={abierta} puedeEliminar={puede} />
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 );
@@ -742,6 +894,69 @@ export default async function ExpedienteDetallePage({
           </div>
         </div>
       </div>
+
+      {rechazos.length > 0 && (
+        <details className="group rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
+          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+              <AlertTriangle className="h-4 w-4 text-red-500" aria-hidden />
+              Rechazos al firmar/revisar
+            </h3>
+            <span className="flex items-center gap-1.5 text-xs text-stone-400">
+              {rechazos.length} rechazo{rechazos.length === 1 ? "" : "s"}
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <p className="mb-3 text-xs text-stone-500">
+            Mientras está activo, un rechazo aparece como aviso en el buzón de firmas de quien subió el
+            documento; aquí queda para siempre, aunque el aviso ya se haya descartado o se haya limpiado
+            solo al corregir el archivo.
+          </p>
+          <ul className="divide-y divide-stone-100 text-xs">
+            {rechazos.map((ev) => (
+              <li key={ev.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <span className="min-w-0 flex-1 text-stone-700">{ev.descripcion}</span>
+                <span className="flex-none text-stone-400">{ev.usuario.nombre}</span>
+                <span className="flex-none text-stone-400">{formatearFechaHora(ev.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {trazabilidad.length > 0 && (
+        <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+              <Hash className="h-4 w-4 text-stone-400" aria-hidden />
+              Trazabilidad de los documentos
+            </h3>
+            <span className="flex items-center gap-1.5 text-xs text-stone-400">
+              {trazabilidad.length} movimiento{trazabilidad.length === 1 ? "" : "s"}
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <p className="mb-3 text-xs text-stone-500">
+            Registro inalterable con cadena de hash (cada movimiento encadena su hash con el del anterior) —
+            el mismo mecanismo del SGDEA.
+          </p>
+          <ul className="divide-y divide-stone-100 text-xs">
+            {[...trazabilidad].reverse().map((mov) => (
+              <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
+                  {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>
+                <span className="flex-none text-stone-400">{mov.usuario?.nombre ?? "—"}</span>
+                <span className="flex-none text-stone-400">{formatearFechaHora(mov.createdAt)}</span>
+                <span className="flex-none font-mono text-[10px] text-stone-300" title={`Hash: ${mov.hash}\nHash anterior: ${mov.hashAnterior ?? "(primer eslabón)"}`}>
+                  {mov.hash.slice(0, 10)}…
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

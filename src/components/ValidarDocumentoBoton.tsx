@@ -9,9 +9,18 @@ import { BadgeCheck } from "lucide-react";
  * Administrador/Jefe/Funcionario de Contratación, ver `puedeValidarDocumentoContrato`. Solo se
  * muestra si el estado no es ya APROBADO (lo controla el caller). Administrador/Jefe no dejan
  * ninguna traza al validar (misma excepción que editar/eliminar sin traza); Funcionario de
- * Contratación sí — eso lo decide el servidor, no esta pantalla.
+ * Contratación sí — eso lo decide el servidor, no esta pantalla. Reutilizado en Trámites
+ * ambientales con su propio endpoint (buzones separados, misma mecánica).
  */
-export function ValidarDocumentoBoton({ documentoId, nombre }: { documentoId: string; nombre: string }) {
+export function ValidarDocumentoBoton({
+  documentoId,
+  nombre,
+  endpoint = `/api/contratacion/documentos/${documentoId}/validar`,
+}: {
+  documentoId: string;
+  nombre: string;
+  endpoint?: string;
+}) {
   const router = useRouter();
   const [validando, setValidando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +30,7 @@ export function ValidarDocumentoBoton({ documentoId, nombre }: { documentoId: st
     setValidando(true);
     setError(null);
     try {
-      const res = await fetch(`/api/contratacion/documentos/${documentoId}/validar`, { method: "POST" });
+      const res = await fetch(endpoint, { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo validar el documento.");
       router.refresh();

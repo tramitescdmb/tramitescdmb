@@ -12,7 +12,7 @@ import {
   type PermisosUsuario,
 } from "./permisos";
 
-const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>() } as const;
+const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>(), cargos: new Set<string>() } as const;
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
 const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false, ...BASE_CONTRATACION };

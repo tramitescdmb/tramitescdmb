@@ -120,12 +120,10 @@ export type DatosFirmaSigec = {
 };
 
 /**
- * Variante para SIGEC (Contratación): SIN el rótulo de radicación de correspondencia (un
+ * Variante para el módulo de Contratación: SIN el rótulo de radicación de correspondencia (un
  * expediente contractual no tiene radicado) — solo un código QR de verificación en la esquina
- * superior derecha y el sello de firma al pie, con el hash SHA-256 COMPLETO (sin truncar).
- * Decisión explícita del usuario (2026-09-18): "eliminar el recuadro automático de radicación...
- * reemplazar por un código QR... no debe hablar de SGDEA". No dibuja nada si el documento no
- * tiene ninguna firma todavía.
+ * superior derecha y el sello de firma al pie, con el hash SHA-256 completo (sin truncar). No
+ * dibuja nada si el documento todavía no tiene ninguna firma.
  */
 export async function estamparFirmaSigec(
   pdfBytes: Buffer | Uint8Array,
@@ -144,9 +142,7 @@ export async function estamparFirmaSigec(
   const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
   const qr = await pdf.embedPng(qrPngBytes);
 
-  // QR únicamente, esquina superior derecha — sin caja de radicado ni código de barras. Tamaño
-  // reducido un 30% (era 70) — pedido explícito del usuario (2026-09-23): quedaba
-  // desproporcionadamente grande frente al resto del sello.
+  // QR únicamente, esquina superior derecha — sin caja de radicado ni código de barras.
   const qrSize = 49;
   const qx = Math.max(12, width - qrSize - 20);
   const qy = Math.max(12, height - qrSize - 20);
@@ -154,8 +150,74 @@ export async function estamparFirmaSigec(
   page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
 
   // Sello de firma al pie — mismo criterio que estamparRotulo, pero con el hash COMPLETO. La
-  // cédula/NIT va en su PROPIA línea debajo del nombre (antes iba pegada al nombre con un guion)
-  // — pedido explícito del usuario (2026-09-23) — por eso el bloque reserva una línea más.
+  // cédula/NIT va en su propia línea debajo del nombre, por eso el bloque reserva una línea más.
+  const lh = 7.4;
+  const altoBloque = 6 * lh + 3;
+  let cy = 18 + 12 + firmas.length * altoBloque + 8;
+  page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
+  cy -= 9;
+  page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
+  cy -= 11;
+  for (const f of firmas) {
+    const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
+    page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+    cy -= lh;
+    if (f.cedulaONit) {
+      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: 6, font, color: GRIS });
+      cy -= lh;
+    }
+    if (cargo) {
+      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
+      cy -= lh;
+    }
+    if (f.dependencia) {
+      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
+      cy -= lh;
+    }
+    page.drawText(f.fechaHora, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+    cy -= lh;
+    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+    cy -= lh + 3;
+  }
+  page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+
+  return pdf.save();
+}
+
+export type DatosFirmaTramite = {
+  numeroExpediente: string;
+  baseUrl: string;
+};
+
+/**
+ * Variante para Trámites ambientales 2.0: mismo criterio que estamparFirmaSigec (QR de
+ * verificación arriba a la derecha, sello de firma al pie con el hash completo, sin rótulo de
+ * radicación de correspondencia) — el número de expediente aquí es el del trámite
+ * (ej. "M-DA-PR05-2026-0001"), no un radicado de correspondencia ni un contrato.
+ */
+export async function estamparFirmaTramite(
+  pdfBytes: Buffer | Uint8Array,
+  datos: DatosFirmaTramite,
+  firmas: FirmaRotuloPdf[],
+): Promise<Uint8Array> {
+  const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+  if (firmas.length === 0) return pdf.save();
+
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const page = pdf.getPages()[0];
+  if (!page) return pdf.save();
+  const { width, height } = page.getSize();
+
+  const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
+  const qr = await pdf.embedPng(qrPngBytes);
+
+  const qrSize = 49;
+  const qx = Math.max(12, width - qrSize - 20);
+  const qy = Math.max(12, height - qrSize - 20);
+  page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
+  page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
+
   const lh = 7.4;
   const altoBloque = 6 * lh + 3;
   let cy = 18 + 12 + firmas.length * altoBloque + 8;

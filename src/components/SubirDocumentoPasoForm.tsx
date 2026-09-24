@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
-import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { IconX } from "@/components/icons";
 import { Receipt, FileText } from "lucide-react";
@@ -37,6 +37,7 @@ export function SubirDocumentoPasoForm({
 
   const [archivosPorDoc, setArchivosPorDoc] = useState<Record<string, File | null>>({});
   const [archivosExtra, setArchivosExtra] = useState<File[]>([]);
+  const [requiereFirma, setRequiereFirma] = useState(true);
   const docInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const extraInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -62,19 +63,29 @@ export function SubirDocumentoPasoForm({
 
     setSubmitting(true);
     try {
-      const archivos: Array<{ path: string; nombre: string; mimeType: string; tamanoBytes: number; descripcion?: string }> = [];
+      const archivos: Array<{
+        path: string;
+        nombre: string;
+        mimeType: string;
+        tamanoBytes: number;
+        descripcion?: string;
+        hashSha256: string | null;
+        requiereFirma: boolean;
+      }> = [];
 
       for (const nombreDoc of documentosDelPaso) {
         const file = archivosPorDoc[nombreDoc];
         if (!file) continue;
         setProgreso(`Subiendo "${file.name}"…`);
         const subido = await subirArchivoDirecto(expedienteId, file);
-        archivos.push({ ...subido, descripcion: nombreDoc });
+        const hashSha256 = await sha256Hex(file);
+        archivos.push({ ...subido, descripcion: nombreDoc, hashSha256, requiereFirma });
       }
       for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
         const subido = await subirArchivoDirecto(expedienteId, file);
-        archivos.push({ ...subido, descripcion: "Documento adicional aportado durante este paso." });
+        const hashSha256 = await sha256Hex(file);
+        archivos.push({ ...subido, descripcion: "Documento adicional aportado durante este paso.", hashSha256, requiereFirma });
       }
 
       setProgreso("Guardando…");
@@ -199,6 +210,17 @@ export function SubirDocumentoPasoForm({
           </ul>
         )}
       </Field>
+
+      <label className="flex items-center gap-2 text-xs text-stone-600">
+        <input
+          type="checkbox"
+          checked={requiereFirma}
+          onChange={(e) => setRequiereFirma(e.target.checked)}
+          disabled={submitting}
+          className="rounded border-stone-300"
+        />
+        Estos documentos requieren firma electrónica
+      </label>
 
       <div className="flex flex-wrap items-center gap-3">
         <button
