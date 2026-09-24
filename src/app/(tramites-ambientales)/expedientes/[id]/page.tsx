@@ -197,8 +197,8 @@ export default async function ExpedienteDetallePage({
     const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
     const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
     return (
-      <li key={doc.id} className="px-4 py-2.5 text-sm">
-        <div className="min-w-0">
+      <li key={doc.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 lg:flex-1">
           <a
             href={`/api/documentos/${doc.id}`}
             target="_blank"
@@ -224,7 +224,7 @@ export default async function ExpedienteDetallePage({
             </div>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 lg:max-w-[60%] lg:justify-end">
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
             {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
           </span>
@@ -338,464 +338,101 @@ export default async function ExpedienteDetallePage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-            <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">
-                  {expediente.solicitanteTipo === "JURIDICA" ? "NIT" : "Cédula de ciudadanía"}
-                </dt>
-                <dd className="break-words text-stone-800">{expediente.solicitanteIdentificacion}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Nombre / razón social</dt>
-                <dd className="break-words text-stone-800">{expediente.solicitanteNombre}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Correo</dt>
-                <dd className="break-all text-stone-800">{expediente.solicitanteEmail ?? "—"}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Teléfono</dt>
-                <dd className="break-words text-stone-800">{expediente.solicitanteTelefono ?? "—"}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Municipio</dt>
-                <dd className="break-words text-stone-800">{expediente.municipio}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Dirección del solicitante</dt>
-                <dd className="break-words text-stone-800">{expediente.solicitanteDireccion ?? "—"}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Dirección donde se adelanta el trámite</dt>
-                <dd className="break-words text-stone-800">{expediente.predioDireccion ?? "—"}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Régimen tributario</dt>
-                <dd className="break-words text-stone-800">{regimenTributarioLabel(expediente.solicitante?.regimenTributario)}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-stone-400">Gran contribuyente</dt>
-                <dd className="text-stone-800">{expediente.solicitante?.granContribuyente ? "Sí" : "No"}</dd>
-              </div>
-            </dl>
-
-            <BloqueDatosPredio
-              claseSolicitud={expediente.claseSolicitud}
-              nombre={expediente.predioNombre}
-              catastral={expediente.predioCatastral}
-              matricula={expediente.predioMatricula}
-              areaM2={expediente.predioAreaM2}
-              areaCultivosM2={expediente.predioAreaCultivosM2}
-              areaBosqueM2={expediente.predioAreaBosqueM2}
-              viviendas={expediente.predioViviendas}
-            />
-
-            <BloqueUbicacion
-              titulo={
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden />
-                  Ubicación del lugar del trámite
-                </span>
-              }
-              lat={expediente.ubicacionLat}
-              lon={expediente.ubicacionLon}
-              planaX={expediente.ubicacionPlanaX}
-              planaY={expediente.ubicacionPlanaY}
-              cartX={expediente.ubicacionCartesianaX}
-              cartY={expediente.ubicacionCartesianaY}
-              cartZ={expediente.ubicacionCartesianaZ}
-            />
-            <BloqueUbicacion
-              titulo={
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden />
-                  Ubicación del solicitante
-                </span>
-              }
-              lat={expediente.solicitanteUbicacionLat}
-              lon={expediente.solicitanteUbicacionLon}
-              planaX={expediente.solicitanteUbicacionPlanaX}
-              planaY={expediente.solicitanteUbicacionPlanaY}
-              cartX={expediente.solicitanteUbicacionCartesianaX}
-              cartY={expediente.solicitanteUbicacionCartesianaY}
-              cartZ={expediente.solicitanteUbicacionCartesianaZ}
-            />
-          </section>
-
-          {pasoActual ? (
-            <section className="rounded-xl border border-cdmb-300 bg-white p-5">
-              <div className="mb-1 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-cdmb-600">
-                  Paso actual ({pasoActual.numero} de {pasos.length})
-                </p>
-                {esMiPaso && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    <Hand className="h-3 w-3" aria-hidden />
-                    Corresponde a su cargo ({session?.cargos.join(", ")})
-                  </span>
-                )}
-              </div>
-              <h2 className="text-lg font-semibold text-stone-900">{pasoActual.titulo}</h2>
-              <p className="mt-2 whitespace-pre-line text-sm text-stone-600">{pasoActual.descripcion}</p>
-
-              <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
-                {pasoActual.responsables.length > 0 && (
-                  <div>
-                    <dt className="flex items-center gap-1 font-medium text-stone-500">
-                      <User className="h-3 w-3" aria-hidden />
-                      Responsable
-                    </dt>
-                    <dd className="text-stone-700">
-                      {Array.from(new Set(pasoActual.responsables.map(cargoCanonico))).join(", ")}
-                    </dd>
-                  </div>
-                )}
-                {pasoActual.documentos.length > 0 && (
-                  <div>
-                    <dt className="flex items-center gap-1 font-medium text-stone-500">
-                      <FileText className="h-3 w-3" aria-hidden />
-                      Documentos/registros de este paso
-                    </dt>
-                    <dd className="text-stone-700">{pasoActual.documentos.join(", ")}</dd>
-                  </div>
-                )}
-                {pasoActual.tiempo && (
-                  <div>
-                    <dt className="flex items-center gap-1 font-medium text-stone-500">
-                      <Clock className="h-3 w-3" aria-hidden />
-                      Tiempo estimado
-                    </dt>
-                    <dd className="text-stone-700">{pasoActual.tiempo}</dd>
-                  </div>
-                )}
-              </dl>
-
-              {puedeEditar && (
-                <div className="mt-4 border-t border-stone-100 pt-4">
-                  <SubirDocumentoPasoForm
-                    expedienteId={expediente.id}
-                    pasoNumero={pasoActual.numero}
-                    documentosDelPaso={pasoActual.documentos}
-                  />
-                </div>
-              )}
-
-              {documentosPasoActual.length > 0 && (
-                <div className="mt-4 border-t border-stone-100 pt-4">
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    Documentos cargados en este paso ({documentosPasoActual.length})
-                  </h3>
-                  <p className="mb-2 text-xs text-stone-500">
-                    Desde aquí se asignan firmantes, se firma, se da visto bueno o se valida cada archivo.
-                  </p>
-                  <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100">
-                    {documentosPasoActual.map((doc) => filaDocumento(doc))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="mt-4 border-t border-stone-100 pt-4">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                  Geoposición de la visita técnica (opcional)
-                </h3>
-                {visitasDelPasoActual.length > 0 && (
-                  <ul className="mb-3 space-y-3">
-                    {visitasDelPasoActual.map((v) => (
-                      <li key={v.id} className="rounded-lg border border-stone-200 bg-stone-50/60 p-3">
-                        <MapaSoloLectura lat={v.lat} lon={v.lon} />
-                        <p className="mt-2 text-xs text-stone-600">
-                          Latitud/longitud: {v.lat.toFixed(6)}, {v.lon.toFixed(6)}
-                          {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
-                        </p>
-                        {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
-                        <p className="mt-0.5 text-xs text-stone-400">
-                          {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {puedeEditar && <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />}
-              </div>
-
-              <div className="mt-4 border-t border-stone-100 pt-4">
-                {!puedeEditar ? (
-                  <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                    <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-                    Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
-                  </p>
-                ) : !puedeAvanzar ? (
-                  <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                    <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-                    Este paso solo puede avanzarlo{" "}
-                    <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
-                    {session && session.cargos.length > 0 ? (
-                      <> — su(s) cargo(s) actual(es): &quot;{session.cargos.join(", ")}&quot;.</>
-                    ) : (
-                      " — no tiene un cargo asignado."
-                    )}{" "}
-                    Puede seguir adjuntando documentos y registrando la visita técnica; para avanzar el paso, pídale
-                    a la persona con ese cargo (o a un administrador) que lo haga.
-                  </p>
-                ) : pasoActual.esDecision ? (
-                  <div className="space-y-2">
-                    <p className="flex items-start gap-1.5 text-xs font-medium text-stone-500">
-                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-                      Este paso requiere una decisión. Seleccione la opción correspondiente para que el
-                      expediente siga el camino correcto:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.isArray(pasoActual.opciones) &&
-                        (pasoActual.opciones as unknown as Opcion[]).map((op, idx) => (
-                          <form key={idx} action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
-                            {op.siguientePaso != null && (
-                              <input type="hidden" name="siguientePasoNumero" value={op.siguientePaso} />
-                            )}
-                            {op.resultado && <input type="hidden" name="resultado" value={op.resultado} />}
-                            <button
-                              type="submit"
-                              className="rounded-md border border-cdmb-300 bg-cdmb-50 px-3 py-1.5 text-sm font-medium text-cdmb-800 hover:bg-cdmb-100"
-                            >
-                              {op.respuesta}
-                            </button>
-                          </form>
-                        ))}
-                      {!Array.isArray(pasoActual.opciones) && siguientePaso && (
-                        <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
-                          <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
-                          <button
-                            type="submit"
-                            className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
-                          >
-                            Continuar al paso {siguientePaso.numero}
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                    <p className="text-xs text-stone-400">
-                      Si ninguna opción corresponde, utilice &quot;Cambiar estado manualmente&quot; más abajo.
-                    </p>
-                  </div>
-                ) : siguientePaso ? (
-                  <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
-                    <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
-                    <button
-                      type="submit"
-                      className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
-                    >
-                      Marcar paso {pasoActual.numero} como completado → continuar al paso {siguientePaso.numero}
-                    </button>
-                  </form>
-                ) : (
-                  <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-                    Este es el último paso del flujo. Si el trámite ya quedó resuelto, debe definirse el
-                    estado final mediante &quot;Cambiar estado manualmente&quot; más abajo.
-                  </p>
-                )}
-              </div>
-            </section>
-          ) : (
-            <SectionHelp>Este expediente no tiene un paso activo (el flujo no tiene pasos definidos).</SectionHelp>
-          )}
-
-          <section>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
-              Todos los pasos del flujo
-            </h2>
-            <ol className="space-y-1.5">
-              {pasos.map((p) => {
-                const estadoPaso =
-                  p.numero < expediente.pasoActualNumero
-                    ? "completado"
-                    : p.numero === expediente.pasoActualNumero
-                      ? "actual"
-                      : "pendiente";
-                return (
-                  <li
-                    key={p.id}
-                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm ${
-                      estadoPaso === "actual"
-                        ? "bg-cdmb-50 text-cdmb-900"
-                        : estadoPaso === "completado"
-                          ? "text-stone-400"
-                          : "text-stone-400"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
-                        estadoPaso === "completado"
-                          ? "bg-green-100 text-green-700"
-                          : estadoPaso === "actual"
-                            ? "bg-cdmb-600 text-white"
-                            : "bg-stone-100 text-stone-400"
-                      }`}
-                    >
-                      {estadoPaso === "completado" ? <Check className="h-3 w-3" aria-hidden /> : p.numero}
-                    </span>
-                    <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
-                      {p.titulo}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-
-          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-            <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
-            <p className="mb-3 text-xs text-stone-500">
-              Utilice esta opción para cerrar el expediente cuando el flujo no cuenta con un botón de
-              decisión que corresponda (por ejemplo, un archivo por desistimiento tácito, o para
-              suspenderlo mientras se espera información externa).
-            </p>
-            {session?.rol !== "ADMIN" ? (
-              <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
-                <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-                Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
-                del flujo. Gestione el expediente desde &quot;Paso actual&quot; más arriba.
-              </p>
-            ) : (
-            <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">
-              <Field label="Nuevo estado" required>
-                <select
-                  name="estado"
-                  defaultValue={expediente.estado}
-                  className="rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-                >
-                  {ESTADOS.map((e) => (
-                    <option key={e} value={e}>
-                      {e.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Motivo (opcional)" help="Queda registrado en la bitácora del expediente.">
-                <input
-                  name="motivo"
-                  className="w-64 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-                />
-              </Field>
-              <button
-                type="submit"
-                className="rounded-md border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-              >
-                Guardar estado
-              </button>
-            </form>
-            )}
-          </section>
-
-          {expediente.comunicaciones.length > 0 && (
-            <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-              <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
-              <p className="mb-3 text-xs text-stone-500">Comunicaciones del módulo de Correspondencia archivadas en este expediente.</p>
-              <ul className="space-y-1.5">
-                {expediente.comunicaciones.map((com) => (
-                  <li key={com.id}>
-                    <Link href={`/correspondencia/${com.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50">
-                      <span className="min-w-0 truncate">
-                        <span className="font-medium text-cdmb-700">{com.radicado}</span>
-                        <span className="ml-2 text-stone-500">{com.asunto}</span>
-                      </span>
-                      <span className="flex-none text-xs text-stone-400">{formatoFechaHistoria.format(com.fechaRadicacion)}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-            <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
-            <p className="mb-3 text-xs text-stone-500">
-              La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
-            </p>
-            {puedeEditar && (
-              <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
-                <input
-                  name="texto"
-                  placeholder="Agregar una nota o comentario al expediente…"
-                  className="flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-                />
-                <button type="submit" className="rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
-                  Comentar
-                </button>
-              </form>
-            )}
-
-            <ol>
-              {expediente.eventos.map((ev, idx) => {
-                const info = infoEvento(ev.tipo);
-                const Icono = info.icono;
-                const esUltimo = idx === expediente.eventos.length - 1;
-                return (
-                  <li key={ev.id} className="relative flex gap-3 pb-5">
-                    {!esUltimo && (
-                      <span className="absolute left-[15px] top-8 bottom-0 w-px bg-stone-200" aria-hidden />
-                    )}
-                    <span
-                      className={`relative z-10 flex h-8 w-8 flex-none items-center justify-center rounded-full ${info.clase}`}
-                      aria-hidden
-                    >
-                      <Icono className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1 pt-1">
-                      <p className="text-sm text-stone-700">{ev.descripcion}</p>
-                      <p className="mt-0.5 text-xs text-stone-400">
-                        <span className="font-medium text-stone-500">{ev.usuario.nombre}</span>
-                        {" · "}
-                        {formatoFechaHistoria.format(ev.createdAt)}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <div className="px-1">
-              <h3 className="text-sm font-semibold text-stone-900">Documentos del expediente</h3>
-              <p className="text-xs text-stone-500">Agrupados por paso, de la radicación en adelante.</p>
+      <div className="space-y-6">
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">
+                {expediente.solicitanteTipo === "JURIDICA" ? "NIT" : "Cédula de ciudadanía"}
+              </dt>
+              <dd className="break-words text-stone-800">{expediente.solicitanteIdentificacion}</dd>
             </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Nombre / razón social</dt>
+              <dd className="break-words text-stone-800">{expediente.solicitanteNombre}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Correo</dt>
+              <dd className="break-all text-stone-800">{expediente.solicitanteEmail ?? "—"}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Teléfono</dt>
+              <dd className="break-words text-stone-800">{expediente.solicitanteTelefono ?? "—"}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Municipio</dt>
+              <dd className="break-words text-stone-800">{expediente.municipio}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Dirección del solicitante</dt>
+              <dd className="break-words text-stone-800">{expediente.solicitanteDireccion ?? "—"}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Dirección donde se adelanta el trámite</dt>
+              <dd className="break-words text-stone-800">{expediente.predioDireccion ?? "—"}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Régimen tributario</dt>
+              <dd className="break-words text-stone-800">{regimenTributarioLabel(expediente.solicitante?.regimenTributario)}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-stone-400">Gran contribuyente</dt>
+              <dd className="text-stone-800">{expediente.solicitante?.granContribuyente ? "Sí" : "No"}</dd>
+            </div>
+          </dl>
 
-            {expediente.documentos.length === 0 ? (
-              <div className="rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-6 text-center text-sm text-stone-400">
-                Sin documentos todavía.
-              </div>
-            ) : (
-              gruposDocumentos.map(([numeroPaso, docs]) => {
-                const tituloPaso = numeroPaso == null ? null : pasos.find((p) => p.numero === numeroPaso)?.titulo;
-                return (
-                  <div key={numeroPaso ?? "radicacion"} className="rounded-xl border border-stone-200 bg-white shadow-soft">
-                    <div className="border-b border-stone-100 bg-stone-50 px-4 py-2 rounded-t-xl">
-                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cdmb-700">
-                        {numeroPaso == null ? (
-                          <>
-                            <Inbox className="h-3.5 w-3.5" aria-hidden />
-                            Documentos de radicación
-                          </>
-                        ) : (
-                          `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`
-                        )}
-                      </p>
-                    </div>
-                    <ul className="divide-y divide-stone-100">
-                      {docs.map((doc) => filaDocumento(doc))}
-                    </ul>
-                  </div>
-                );
-              })
-            )}
+          <BloqueDatosPredio
+            claseSolicitud={expediente.claseSolicitud}
+            nombre={expediente.predioNombre}
+            catastral={expediente.predioCatastral}
+            matricula={expediente.predioMatricula}
+            areaM2={expediente.predioAreaM2}
+            areaCultivosM2={expediente.predioAreaCultivosM2}
+            areaBosqueM2={expediente.predioAreaBosqueM2}
+            viviendas={expediente.predioViviendas}
+          />
+
+          <BloqueUbicacion
+            titulo={
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" aria-hidden />
+                Ubicación del lugar del trámite
+              </span>
+            }
+            lat={expediente.ubicacionLat}
+            lon={expediente.ubicacionLon}
+            planaX={expediente.ubicacionPlanaX}
+            planaY={expediente.ubicacionPlanaY}
+            cartX={expediente.ubicacionCartesianaX}
+            cartY={expediente.ubicacionCartesianaY}
+            cartZ={expediente.ubicacionCartesianaZ}
+          />
+          <BloqueUbicacion
+            titulo={
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" aria-hidden />
+                Ubicación del solicitante
+              </span>
+            }
+            lat={expediente.solicitanteUbicacionLat}
+            lon={expediente.solicitanteUbicacionLon}
+            planaX={expediente.solicitanteUbicacionPlanaX}
+            planaY={expediente.solicitanteUbicacionPlanaY}
+            cartX={expediente.solicitanteUbicacionCartesianaX}
+            cartY={expediente.solicitanteUbicacionCartesianaY}
+            cartZ={expediente.solicitanteUbicacionCartesianaZ}
+          />
+        </section>
+
+        {esTerminal && (
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+            Este expediente ya llegó a un estado final (<EstadoBadge estado={expediente.estado} />) — se
+            puede seguir documentando (por ejemplo, el seguimiento posterior), pero ya no está activo.
           </div>
-
-          <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 text-xs text-stone-500">
+        )}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-xl md:col-span-1 border border-stone-200 bg-white shadow-soft p-4 text-xs text-stone-500">
             <p>
               <span className="font-medium text-stone-700">Radicado:</span>{" "}
               {formatearFecha(expediente.fechaRadicacion)}
@@ -809,15 +446,7 @@ export default async function ExpedienteDetallePage({
               </p>
             )}
           </div>
-
-          {esTerminal && (
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
-              Este expediente ya llegó a un estado final (<EstadoBadge estado={expediente.estado} />) — se
-              puede seguir documentando (por ejemplo, el seguimiento posterior), pero ya no está activo.
-            </div>
-          )}
-
-          <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <div className="rounded-xl md:col-span-2 border border-stone-200 bg-white shadow-soft p-4">
             <h3 className="text-sm font-semibold text-stone-900">Asignado a</h3>
             <p className="mb-2 text-xs text-stone-500">
               Quién(es) deben trabajar este expediente — usuarios puntuales y/o cargos completos.
@@ -894,6 +523,390 @@ export default async function ExpedienteDetallePage({
             )}
           </div>
         </div>
+
+        {pasoActual ? (
+          <section className="rounded-xl border border-cdmb-300 bg-white p-5">
+            <div className="mb-1 flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wide text-cdmb-600">
+                Paso actual ({pasoActual.numero} de {pasos.length})
+              </p>
+              {esMiPaso && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  <Hand className="h-3 w-3" aria-hidden />
+                  Corresponde a su cargo ({session?.cargos.join(", ")})
+                </span>
+              )}
+            </div>
+            <h2 className="text-lg font-semibold text-stone-900">{pasoActual.titulo}</h2>
+            <p className="mt-2 whitespace-pre-line text-sm text-stone-600">{pasoActual.descripcion}</p>
+
+            <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+              {pasoActual.responsables.length > 0 && (
+                <div>
+                  <dt className="flex items-center gap-1 font-medium text-stone-500">
+                    <User className="h-3 w-3" aria-hidden />
+                    Responsable
+                  </dt>
+                  <dd className="text-stone-700">
+                    {Array.from(new Set(pasoActual.responsables.map(cargoCanonico))).join(", ")}
+                  </dd>
+                </div>
+              )}
+              {pasoActual.documentos.length > 0 && (
+                <div>
+                  <dt className="flex items-center gap-1 font-medium text-stone-500">
+                    <FileText className="h-3 w-3" aria-hidden />
+                    Documentos/registros de este paso
+                  </dt>
+                  <dd className="text-stone-700">{pasoActual.documentos.join(", ")}</dd>
+                </div>
+              )}
+              {pasoActual.tiempo && (
+                <div>
+                  <dt className="flex items-center gap-1 font-medium text-stone-500">
+                    <Clock className="h-3 w-3" aria-hidden />
+                    Tiempo estimado
+                  </dt>
+                  <dd className="text-stone-700">{pasoActual.tiempo}</dd>
+                </div>
+              )}
+            </dl>
+
+            {puedeEditar && (
+              <div className="mt-4 border-t border-stone-100 pt-4">
+                <SubirDocumentoPasoForm
+                  expedienteId={expediente.id}
+                  pasoNumero={pasoActual.numero}
+                  documentosDelPaso={pasoActual.documentos}
+                  documentosCargados={documentosPasoActual.map((d) => d.descripcion ?? "")}
+                />
+              </div>
+            )}
+
+            {documentosPasoActual.length > 0 && (
+              <div className="mt-4 border-t border-stone-100 pt-4">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Documentos cargados en este paso ({documentosPasoActual.length})
+                </h3>
+                <p className="mb-2 text-xs text-stone-500">
+                  Desde aquí se asignan firmantes, se firma, se da visto bueno o se valida cada archivo.
+                </p>
+                <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100">
+                  {documentosPasoActual.map((doc) => filaDocumento(doc))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-4 border-t border-stone-100 pt-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                Geoposición de la visita técnica (opcional)
+              </h3>
+              {visitasDelPasoActual.length > 0 && (
+                <ul className="mb-3 space-y-3">
+                  {visitasDelPasoActual.map((v) => (
+                    <li key={v.id} className="rounded-lg border border-stone-200 bg-stone-50/60 p-3">
+                      <MapaSoloLectura lat={v.lat} lon={v.lon} />
+                      <p className="mt-2 text-xs text-stone-600">
+                        Latitud/longitud: {v.lat.toFixed(6)}, {v.lon.toFixed(6)}
+                        {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
+                      </p>
+                      {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
+                      <p className="mt-0.5 text-xs text-stone-400">
+                        {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {puedeEditar && <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />}
+            </div>
+
+            <div className="mt-4 border-t border-stone-100 pt-4">
+              {!puedeEditar ? (
+                <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                  <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                  Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
+                </p>
+              ) : !puedeAvanzar ? (
+                <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                  <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                  Este paso solo puede avanzarlo{" "}
+                  <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
+                  {session && session.cargos.length > 0 ? (
+                    <> — su(s) cargo(s) actual(es): &quot;{session.cargos.join(", ")}&quot;.</>
+                  ) : (
+                    " — no tiene un cargo asignado."
+                  )}{" "}
+                  Puede seguir adjuntando documentos y registrando la visita técnica; para avanzar el paso, pídale
+                  a la persona con ese cargo (o a un administrador) que lo haga.
+                </p>
+              ) : pasoActual.esDecision ? (
+                <div className="space-y-2">
+                  <p className="flex items-start gap-1.5 text-xs font-medium text-stone-500">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+                    Este paso requiere una decisión. Seleccione la opción correspondiente para que el
+                    expediente siga el camino correcto:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.isArray(pasoActual.opciones) &&
+                      (pasoActual.opciones as unknown as Opcion[]).map((op, idx) => (
+                        <form key={idx} action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                          {op.siguientePaso != null && (
+                            <input type="hidden" name="siguientePasoNumero" value={op.siguientePaso} />
+                          )}
+                          {op.resultado && <input type="hidden" name="resultado" value={op.resultado} />}
+                          <button
+                            type="submit"
+                            className="rounded-md border border-cdmb-300 bg-cdmb-50 px-3 py-1.5 text-sm font-medium text-cdmb-800 hover:bg-cdmb-100"
+                          >
+                            {op.respuesta}
+                          </button>
+                        </form>
+                      ))}
+                    {!Array.isArray(pasoActual.opciones) && siguientePaso && (
+                      <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                        <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
+                        <button
+                          type="submit"
+                          className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                        >
+                          Continuar al paso {siguientePaso.numero}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                  <p className="text-xs text-stone-400">
+                    Si ninguna opción corresponde, utilice &quot;Cambiar estado manualmente&quot; más abajo.
+                  </p>
+                </div>
+              ) : siguientePaso ? (
+                <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                  <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                  >
+                    Marcar paso {pasoActual.numero} como completado → continuar al paso {siguientePaso.numero}
+                  </button>
+                </form>
+              ) : (
+                <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
+                  Este es el último paso del flujo. Si el trámite ya quedó resuelto, debe definirse el
+                  estado final mediante &quot;Cambiar estado manualmente&quot; más abajo.
+                </p>
+              )}
+            </div>
+          </section>
+        ) : (
+          <SectionHelp>Este expediente no tiene un paso activo (el flujo no tiene pasos definidos).</SectionHelp>
+        )}
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+            Todos los pasos del flujo
+          </h2>
+          <ol className="space-y-1.5">
+            {pasos.map((p) => {
+              const estadoPaso =
+                p.numero < expediente.pasoActualNumero
+                  ? "completado"
+                  : p.numero === expediente.pasoActualNumero
+                    ? "actual"
+                    : "pendiente";
+              return (
+                <li
+                  key={p.id}
+                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm ${
+                    estadoPaso === "actual"
+                      ? "bg-cdmb-50 text-cdmb-900"
+                      : estadoPaso === "completado"
+                        ? "text-stone-400"
+                        : "text-stone-400"
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
+                      estadoPaso === "completado"
+                        ? "bg-green-100 text-green-700"
+                        : estadoPaso === "actual"
+                          ? "bg-cdmb-600 text-white"
+                          : "bg-stone-100 text-stone-400"
+                    }`}
+                  >
+                    {estadoPaso === "completado" ? <Check className="h-3 w-3" aria-hidden /> : p.numero}
+                  </span>
+                  <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
+                    {p.titulo}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-900">Documentos del expediente</h2>
+              <p className="text-xs text-stone-500">Agrupados por etapa, de la radicación en adelante. Haga clic en una etapa para desplegarla.</p>
+            </div>
+            <span className="text-xs text-stone-400">
+              {expediente.documentos.length} documento{expediente.documentos.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          {expediente.documentos.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-400">Sin documentos todavía.</p>
+          ) : (
+            <div className="space-y-2">
+              {gruposDocumentos.map(([numeroPaso, docs]) => {
+                const tituloPaso = numeroPaso == null ? null : pasos.find((p) => p.numero === numeroPaso)?.titulo;
+                const esActual = numeroPaso === expediente.pasoActualNumero;
+                const sinFirmante = docs.filter((d) => d.requiereFirma && !d.solicitudesFirma.some((s) => s.rol === "FIRMA")).length;
+                return (
+                  <details key={numeroPaso ?? "radicacion"} open={esActual} className="group rounded-lg border border-stone-200">
+                    <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 rounded-lg bg-stone-50 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                      <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cdmb-700">
+                        {numeroPaso == null ? (
+                          <>
+                            <Inbox className="h-3.5 w-3.5 flex-none" aria-hidden />
+                            Documentos de radicación
+                          </>
+                        ) : (
+                          `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`
+                        )}
+                        {esActual && (
+                          <span className="rounded-full bg-cdmb-600 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-white">Paso actual</span>
+                        )}
+                      </span>
+                      <span className="flex flex-none items-center gap-2 text-xs text-stone-400">
+                        {sinFirmante > 0 && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                            {sinFirmante} sin firmante
+                          </span>
+                        )}
+                        {docs.length} documento{docs.length === 1 ? "" : "s"}
+                        <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                      </span>
+                    </summary>
+                    <ul className="divide-y divide-stone-100">{docs.map((doc) => filaDocumento(doc))}</ul>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
+          <p className="mb-3 text-xs text-stone-500">
+            Utilice esta opción para cerrar el expediente cuando el flujo no cuenta con un botón de
+            decisión que corresponda (por ejemplo, un archivo por desistimiento tácito, o para
+            suspenderlo mientras se espera información externa).
+          </p>
+          {session?.rol !== "ADMIN" ? (
+            <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+              <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+              Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
+              del flujo. Gestione el expediente desde &quot;Paso actual&quot; más arriba.
+            </p>
+          ) : (
+          <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">
+            <Field label="Nuevo estado" required>
+              <select
+                name="estado"
+                defaultValue={expediente.estado}
+                className="rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              >
+                {ESTADOS.map((e) => (
+                  <option key={e} value={e}>
+                    {e.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Motivo (opcional)" help="Queda registrado en la bitácora del expediente.">
+              <input
+                name="motivo"
+                className="w-64 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </Field>
+            <button
+              type="submit"
+              className="rounded-md border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              Guardar estado
+            </button>
+          </form>
+          )}
+        </section>
+
+        {expediente.comunicaciones.length > 0 && (
+          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+            <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
+            <p className="mb-3 text-xs text-stone-500">Comunicaciones del módulo de Correspondencia archivadas en este expediente.</p>
+            <ul className="space-y-1.5">
+              {expediente.comunicaciones.map((com) => (
+                <li key={com.id}>
+                  <Link href={`/correspondencia/${com.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50">
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium text-cdmb-700">{com.radicado}</span>
+                      <span className="ml-2 text-stone-500">{com.asunto}</span>
+                    </span>
+                    <span className="flex-none text-xs text-stone-400">{formatoFechaHistoria.format(com.fechaRadicacion)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
+          <p className="mb-3 text-xs text-stone-500">
+            La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
+          </p>
+          {puedeEditar && (
+            <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
+              <input
+                name="texto"
+                placeholder="Agregar una nota o comentario al expediente…"
+                className="flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+              <button type="submit" className="rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
+                Comentar
+              </button>
+            </form>
+          )}
+
+          <ol>
+            {expediente.eventos.map((ev, idx) => {
+              const info = infoEvento(ev.tipo);
+              const Icono = info.icono;
+              const esUltimo = idx === expediente.eventos.length - 1;
+              return (
+                <li key={ev.id} className="relative flex gap-3 pb-5">
+                  {!esUltimo && (
+                    <span className="absolute left-[15px] top-8 bottom-0 w-px bg-stone-200" aria-hidden />
+                  )}
+                  <span
+                    className={`relative z-10 flex h-8 w-8 flex-none items-center justify-center rounded-full ${info.clase}`}
+                    aria-hidden
+                  >
+                    <Icono className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1 pt-1">
+                    <p className="text-sm text-stone-700">{ev.descripcion}</p>
+                    <p className="mt-0.5 text-xs text-stone-400">
+                      <span className="font-medium text-stone-500">{ev.usuario.nombre}</span>
+                      {" · "}
+                      {formatoFechaHistoria.format(ev.createdAt)}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
       </div>
 
       {rechazos.length > 0 && (
