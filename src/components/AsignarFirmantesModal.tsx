@@ -27,6 +27,7 @@ const CLASE_ESTADO: Record<EstadoSolicitudFirma, string> = {
 
 export type FirmanteAsignado = {
   id: string;
+  usuarioAsignadoId?: string;
   usuarioAsignadoNombre: string;
   rol: RolFirmante;
   orden: number;
@@ -53,11 +54,15 @@ export function AsignarFirmantesModal({
   const [error, setError] = useState<string | null>(null);
 
   const dependencias = Array.from(new Set(usuarios.map((u) => u.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
+  const yaAsignados = new Set(
+    firmantesActuales.filter((f) => f.rol !== "LECTURA" && f.estado !== "RECHAZADA" && f.usuarioAsignadoId).map((f) => f.usuarioAsignadoId!)
+  );
   const q = filtro.trim().toLowerCase();
   const usuariosFiltrados =
     q || dependenciaFiltro
       ? usuarios.filter(
           (u) =>
+            (rol === "LECTURA" || !yaAsignados.has(u.id)) &&
             (!q || u.nombre.toLowerCase().includes(q)) &&
             (!dependenciaFiltro || u.dependenciaNombre === dependenciaFiltro)
         )

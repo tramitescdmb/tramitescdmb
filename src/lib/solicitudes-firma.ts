@@ -17,12 +17,47 @@ function whereObjetivo(objetivo: ObjetivoSolicitud) {
 
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
 
+async function usuariosQueYaFirmaron(objetivo: ObjetivoSolicitud, usuarioIds: string[]): Promise<string[]> {
+  const where = { usuarioId: { in: usuarioIds } };
+  const select = { usuario: { select: { nombre: true } } };
+  const filas =
+    objetivo.tipo === "documentoExpediente"
+      ? await db.firmaExpedienteDocumento.findMany({ where: { ...where, documentoId: objetivo.id }, select })
+      : objetivo.tipo === "documentoContrato"
+        ? await db.firmaDocumentoContrato.findMany({ where: { ...where, documentoId: objetivo.id }, select })
+        : await db.firma.findMany({ where: { ...where, comunicacionId: objetivo.id }, select });
+  return filas.map((f) => f.usuario.nombre);
+}
+
 export async function asignarFirmantes(
   objetivo: ObjetivoSolicitud,
   asignadoPorId: string,
   firmantes: { usuarioId: string; rol: RolFirmante; orden?: number }[]
 ) {
   if (firmantes.length === 0) throw new Error("Debe indicar al menos una persona.");
+
+  const conAccion = firmantes.filter((f) => f.rol !== "LECTURA");
+  if (new Set(conAccion.map((f) => f.usuarioId)).size !== conAccion.length) {
+    throw new Error("La misma persona aparece más de una vez en la asignación.");
+  }
+  if (conAccion.length > 0) {
+    const ids = conAccion.map((f) => f.usuarioId);
+    const activas = await db.solicitudFirma.findMany({
+      where: { ...whereObjetivo(objetivo), usuarioAsignadoId: { in: ids }, rol: { not: "LECTURA" }, estado: { not: "RECHAZADA" } },
+      select: { rol: true, estado: true, usuarioAsignado: { select: { nombre: true } } },
+    });
+    if (activas.length > 0) {
+      const a = activas[0]!;
+      const que = a.rol === "FIRMA" ? "la firma" : "el visto bueno";
+      throw new Error(
+        a.estado === "COMPLETADA"
+          ? `${a.usuarioAsignado.nombre} ya completó ${que} de este documento.`
+          : `${a.usuarioAsignado.nombre} ya tiene pendiente ${que} de este documento.`
+      );
+    }
+    const firmaron = await usuariosQueYaFirmaron(objetivo, ids);
+    if (firmaron.length > 0) throw new Error(`${firmaron[0]} ya firmó este documento.`);
+  }
 
   if (firmantes.some((f) => f.rol === "FIRMA")) {
     if (objetivo.tipo === "documentoContrato") {
@@ -151,8 +186,12 @@ export async function completarSolicitudFirma(
 
   if (solicitud.documentoContrato) {
     const doc = solicitud.documentoContrato;
-    const firmasPrevias = await db.firmaDocumentoContrato.findMany({ where: { documentoId: doc.id }, select: { usuarioId: true } });
-    if (firmasPrevias.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó este documento.");
+    const previa = await db.firmaDocumentoContrato.findFirst({ where: { documentoId: doc.id, usuarioId }, select: { id: true } });
+    if (previa) {
+      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaDocContratoId: previa.id, ip, userAgent } });
+      await reevaluarEstadoDocumentoContrato(doc.id, usuarioId);
+      return;
+    }
 
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
@@ -181,8 +220,12 @@ export async function completarSolicitudFirma(
     });
   } else if (solicitud.documentoExpediente) {
     const doc = solicitud.documentoExpediente;
-    const firmasPrevias = await db.firmaExpedienteDocumento.findMany({ where: { documentoId: doc.id }, select: { usuarioId: true } });
-    if (firmasPrevias.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó este documento.");
+    const previa = await db.firmaExpedienteDocumento.findFirst({ where: { documentoId: doc.id, usuarioId }, select: { id: true } });
+    if (previa) {
+      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaExpedienteId: previa.id, ip, userAgent } });
+      await reevaluarEstadoDocumentoExpediente(doc.id, usuarioId);
+      return;
+    }
 
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
@@ -218,8 +261,11 @@ export async function completarSolicitudFirma(
   } else if (solicitud.comunicacion) {
     const c = solicitud.comunicacion;
     if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
-    const firmasPrevias = await db.firma.findMany({ where: { comunicacionId: c.id }, select: { usuarioId: true } });
-    if (firmasPrevias.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó esta comunicación.");
+    const previa = await db.firma.findFirst({ where: { comunicacionId: c.id, usuarioId }, select: { id: true } });
+    if (previa) {
+      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: previa.id, ip, userAgent } });
+      return;
+    }
 
     const fechaHora = new Date();
     const hashContenido = hashContenidoFirma({ radicado: c.radicado, asunto: c.asunto, contenido: c.contenido, fechaIso: fechaHora.toISOString() });

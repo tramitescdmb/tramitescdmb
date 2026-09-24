@@ -718,6 +718,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           usuarios={usuariosOpciones}
                           firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
                             id: s.id,
+                            usuarioAsignadoId: s.usuarioAsignadoId,
                             usuarioAsignadoNombre: s.usuarioAsignadoNombre,
                             rol: s.rol,
                             orden: s.orden,

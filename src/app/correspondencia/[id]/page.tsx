@@ -484,6 +484,7 @@ export default async function CorrespondenciaDetallePage({
                     usuarios={usuariosOpciones}
                     firmantesActuales={c.solicitudesFirma.map((s) => ({
                       id: s.id,
+                      usuarioAsignadoId: s.usuarioAsignadoId,
                       usuarioAsignadoNombre: s.usuarioAsignado.nombre,
                       rol: s.rol,
                       orden: s.orden,
