@@ -18,7 +18,6 @@ function saludo(hora: number) {
   return "Buenas noches";
 }
 
-/** Hora local en Bogotá (UTC-5, sin horario de verano) — el servidor corre en UTC, no en la hora de Colombia. */
 function horaBogota(): number {
   return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
 }

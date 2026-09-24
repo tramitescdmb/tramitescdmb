@@ -21,11 +21,7 @@ export type FilaVital = {
   docs: number;
 };
 
-/** Tabla de solicitudes de VITAL con columnas redimensionables (ancho recordado por navegador). */
 export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; sinResultadosTexto: string }) {
-  // Clave nueva (antes "vital-solicitudes"): un ancho ya guardado en el navegador pisaba el ajuste
-  // a ANCHOS_DEFECTO (ver feedback-caches-grandes-y-anchos-tabla) — Identificación se quedaba en 90
-  // aunque el código ya pidiera 120, y su valor truncaba con "...".
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("vital-solicitudes-v2", ANCHOS_DEFECTO);
 
   return (

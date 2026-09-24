@@ -1,37 +1,15 @@
-/**
- * Cálculo de días hábiles y festivos de Colombia (Ley 51 de 1983 — Ley Emiliani),
- * para los términos legales de respuesta (Ley 1437/2011 · CPACA) del SGDEA.
- *
- * Puro y sin dependencias (no hay librería de fechas en el proyecto). Trabaja en
- * UTC sobre fechas-solo-día para no depender de zona horaria (Colombia es UTC-5
- * fijo, sin horario de verano). Los festivos de ley se calculan; los días
- * compensados/cierres de la entidad y la jornada semanal se pasan como
- * `CalendarioLaboral` (se cargan de base en src/lib/calendario-laboral.ts).
- */
-
-/**
- * Ajustes de la entidad al calendario: días extra que NO se laboran (además de
- * los festivos de ley) y qué días de la semana SÍ son laborables
- * (getUTCDay: 0=domingo … 6=sábado; por defecto lunes a viernes).
- */
 export type CalendarioLaboral = {
-  diasNoLaborables?: Set<string>; // YYYY-MM-DD adicionales
-  diasSemana?: number[]; // días de la semana laborables; vacío/ausente = [1..5]
+  diasNoLaborables?: Set<string>;
+  diasSemana?: number[];
 };
 
 const DIAS_SEMANA_DEFECTO = [1, 2, 3, 4, 5];
 
-/** Minutos desde medianoche de una hora "HH:MM". Devuelve NaN si no es válida. */
 function minutosDeHora(h: string): number {
   const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(h);
   return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
 }
 
-/**
- * Horas de trabajo de un día según la jornada: bloque de la mañana
- * (`inicio`→`fin`) más el de la tarde (`inicioTarde`→`finTarde`) si la jornada es
- * partida. Devuelve 0 si las horas no son válidas.
- */
 export function horasDeJornada(j: {
   inicio: string;
   fin: string;
@@ -57,7 +35,6 @@ function fechaUTC(anio: number, mesBase0: number, dia: number): Date {
   return new Date(Date.UTC(anio, mesBase0, dia));
 }
 
-/** Domingo de Pascua (algoritmo de Computus, gregoriano anónimo). */
 function domingoPascua(anio: number): Date {
   const a = anio % 19;
   const b = Math.floor(anio / 100);
@@ -71,7 +48,7 @@ function domingoPascua(anio: number): Date {
   const k = c % 4;
   const l = (32 + 2 * e + 2 * i - h - k) % 7;
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const mes = Math.floor((h + l - 7 * m + 114) / 31); // 3 = marzo, 4 = abril
+  const mes = Math.floor((h + l - 7 * m + 114) / 31);
   const dia = ((h + l - 7 * m + 114) % 31) + 1;
   return fechaUTC(anio, mes - 1, dia);
 }
@@ -80,39 +57,35 @@ function sumarDias(fecha: Date, n: number): Date {
   return new Date(fecha.getTime() + n * 86_400_000);
 }
 
-/** Traslada un festivo al lunes siguiente (regla Emiliani), salvo que ya sea lunes. */
 function lunesSiguiente(fecha: Date): Date {
-  const dow = fecha.getUTCDay(); // 0 = domingo, 1 = lunes
+  const dow = fecha.getUTCDay();
   if (dow === 1) return fecha;
   const dias = dow === 0 ? 1 : 8 - dow;
   return sumarDias(fecha, dias);
 }
 
-/** Conjunto de festivos (YYYY-MM-DD) de Colombia para un año. */
 export function festivosColombia(anio: number): Set<string> {
   const fijos = [
-    fechaUTC(anio, 0, 1), // Año Nuevo
-    fechaUTC(anio, 4, 1), // Día del Trabajo
-    fechaUTC(anio, 6, 20), // Independencia
-    fechaUTC(anio, 7, 7), // Batalla de Boyacá
-    fechaUTC(anio, 11, 8), // Inmaculada Concepción
-    fechaUTC(anio, 11, 25), // Navidad
+    fechaUTC(anio, 0, 1),
+    fechaUTC(anio, 4, 1),
+    fechaUTC(anio, 6, 20),
+    fechaUTC(anio, 7, 7),
+    fechaUTC(anio, 11, 8),
+    fechaUTC(anio, 11, 25),
   ];
-  // Emiliani: se trasladan al lunes siguiente.
   const emiliani = [
-    fechaUTC(anio, 0, 6), // Reyes Magos
-    fechaUTC(anio, 2, 19), // San José
-    fechaUTC(anio, 5, 29), // San Pedro y San Pablo
-    fechaUTC(anio, 7, 15), // Asunción de la Virgen
-    fechaUTC(anio, 9, 12), // Día de la Raza
-    fechaUTC(anio, 10, 1), // Todos los Santos
-    fechaUTC(anio, 10, 11), // Independencia de Cartagena
+    fechaUTC(anio, 0, 6),
+    fechaUTC(anio, 2, 19),
+    fechaUTC(anio, 5, 29),
+    fechaUTC(anio, 7, 15),
+    fechaUTC(anio, 9, 12),
+    fechaUTC(anio, 10, 1),
+    fechaUTC(anio, 10, 11),
   ].map(lunesSiguiente);
 
   const pascua = domingoPascua(anio);
   const juevesSanto = sumarDias(pascua, -3);
   const viernesSanto = sumarDias(pascua, -2);
-  // Ascensión (+43), Corpus Christi (+64), Sagrado Corazón (+71): trasladados a lunes.
   const ascension = lunesSiguiente(sumarDias(pascua, 43));
   const corpus = lunesSiguiente(sumarDias(pascua, 64));
   const sagradoCorazon = lunesSiguiente(sumarDias(pascua, 71));
@@ -130,7 +103,6 @@ export function esFestivo(fecha: Date): boolean {
   return festivosColombia(fecha.getUTCFullYear()).has(iso(fecha));
 }
 
-/** Un día es hábil si: es un día laborable de la semana de la entidad, no es festivo de ley, y no es un día no laborado configurado. */
 export function esDiaHabil(fecha: Date, cal?: CalendarioLaboral): boolean {
   const laborables = cal?.diasSemana?.length ? cal.diasSemana : DIAS_SEMANA_DEFECTO;
   if (!laborables.includes(fecha.getUTCDay())) return false;
@@ -139,11 +111,6 @@ export function esDiaHabil(fecha: Date, cal?: CalendarioLaboral): boolean {
   return true;
 }
 
-/**
- * Suma `n` días HÁBILES a una fecha (para calcular el vencimiento de un término).
- * El día de partida no cuenta; se avanza hasta acumular `n` días hábiles. Devuelve
- * una fecha-solo-día en UTC.
- */
 export function sumarDiasHabiles(desde: Date, n: number, cal?: CalendarioLaboral): Date {
   let cursor = fechaUTC(desde.getUTCFullYear(), desde.getUTCMonth(), desde.getUTCDate());
   let restantes = n;
@@ -154,7 +121,6 @@ export function sumarDiasHabiles(desde: Date, n: number, cal?: CalendarioLaboral
   return cursor;
 }
 
-/** Días hábiles entre dos fechas (excluye la de inicio, incluye la final si es hábil). */
 export function diasHabilesEntre(inicio: Date, fin: Date, cal?: CalendarioLaboral): number {
   if (fin <= inicio) return 0;
   let cursor = fechaUTC(inicio.getUTCFullYear(), inicio.getUTCMonth(), inicio.getUTCDate());

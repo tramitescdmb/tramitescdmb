@@ -1,8 +1,3 @@
-/**
- * Insignia de estado del expediente. El color va acompañado siempre de la
- * etiqueta de texto y de un punto — el estado nunca se comunica solo por
- * color (accesibilidad: daltonismo, impresión en blanco y negro).
- */
 const ESTILOS: Record<string, { chip: string; punto: string }> = {
   RADICADO: { chip: "bg-techblue-50 text-techblue-700 ring-techblue-600/20", punto: "bg-techblue-500" },
   EN_TRAMITE: { chip: "bg-amber-50 text-amber-800 ring-amber-600/20", punto: "bg-amber-500" },

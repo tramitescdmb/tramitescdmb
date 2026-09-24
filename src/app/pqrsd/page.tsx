@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   description: "Radique peticiones, quejas, reclamos, sugerencias y denuncias ante la CDMB.",
 };
 
-// Página pública (sin autenticación) — habilitada por prefijo en src/middleware.ts.
 export default function PqrsdPublicoPage() {
   const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 

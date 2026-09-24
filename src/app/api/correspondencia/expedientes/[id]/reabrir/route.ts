@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeCerrarExpediente } from "@/lib/permisos";
 import { reabrirExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Reabre un expediente cerrado (MoReq 1.14) — mismo permiso que lo cierra, motivo obligatorio y auditado. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

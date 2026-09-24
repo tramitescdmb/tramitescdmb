@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck } from "lucide-react";
 
-/**
- * Validación manual de un documento del checklist (ej. la hoja de vida SIGEP en Precontractual) —
- * Administrador/Jefe/Funcionario de Contratación, ver `puedeValidarDocumentoContrato`. Solo se
- * muestra si el estado no es ya APROBADO (lo controla el caller). Administrador/Jefe no dejan
- * ninguna traza al validar (misma excepción que editar/eliminar sin traza); Funcionario de
- * Contratación sí — eso lo decide el servidor, no esta pantalla. Reutilizado en Trámites
- * ambientales con su propio endpoint (buzones separados, misma mecánica).
- */
 export function ValidarDocumentoBoton({
   documentoId,
   nombre,

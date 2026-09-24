@@ -22,9 +22,6 @@ export const ETIQUETA_ACCION_BITACORA: Record<string, string> = {
 
 export type FiltrosBitacora = { accion?: AccionAuditoriaDoc; entidad?: string; desde?: string; hasta?: string };
 
-/** Where compartido entre el listado paginado y la exportación — mismos filtros en los dos. Un
- * "desde"/"hasta" mal formado (URL editada a mano, enlace viejo) se ignora en vez de reventar la consulta
- * — Prisma no acepta un Date inválido como valor de filtro. */
 export function construirWhereBitacora(filtros: FiltrosBitacora) {
   const desde = filtros.desde ? parsearFechaLocal(filtros.desde) : null;
   const hasta = filtros.hasta ? parsearFechaLocal(filtros.hasta) : null;
@@ -42,11 +39,6 @@ export function construirWhereBitacora(filtros: FiltrosBitacora) {
   };
 }
 
-/**
- * Bitácora inalterable con filtros (MoReq 6.14) — paginada, más reciente primero.
- * Vive en su propia página (no dentro del Panel): crece indefinidamente y no debe
- * competir por tiempo de carga con las gráficas del panel de reportes.
- */
 export async function listarBitacoraFiltrada(filtros: FiltrosBitacora, pagina: number, porPagina = 30) {
   const where = construirWhereBitacora(filtros);
 

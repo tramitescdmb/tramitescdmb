@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeFirmar } from "@/lib/permisos";
 import { agregarCofirma } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Firma adicional (co-firma) de un oficio o memorando ya radicado (MoReq 1.37). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

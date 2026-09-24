@@ -8,7 +8,6 @@ import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } f
 
 const NIVELES_VALIDOS: NivelAccesoInformacion[] = ["PUBLICA", "CLASIFICADA", "RESERVADA"];
 
-/** Cambia el nivel de acceso a la información de una comunicación (Ley 1712/2014). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

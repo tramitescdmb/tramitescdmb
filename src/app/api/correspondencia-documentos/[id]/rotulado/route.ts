@@ -10,12 +10,6 @@ import { formatearFechaHoraLarga } from "@/lib/fecha";
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
-/**
- * Descarga de un documento PDF de correspondencia CON el rótulo de radicación
- * estampado (número + código de barras + QR de verificación) y, si la
- * comunicación está firmada, el sello de firma electrónica al pie. El original
- * en Storage no se modifica — esto genera una copia derivada.
- */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

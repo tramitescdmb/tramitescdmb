@@ -12,7 +12,6 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };
 
-/** Ícono, etiqueta y color por tipo de evento — fuente única para la línea de tiempo del expediente. */
 export function infoEvento(tipo: string) {
   return EVENTOS[tipo] ?? { ...EVENTO_DEFECTO, etiqueta: tipo };
 }

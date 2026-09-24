@@ -1,29 +1,6 @@
 import { db } from "@/lib/db";
 import { cargosEnTexto, normalizar } from "@/lib/cargos";
 
-/**
- * "Sus pendientes" del panel de inicio: qué le toca a CADA funcionario al
- * entrar, deducido de tres cosas que ya existen en el expediente —
- *
- *  1. las asignaciones (a su usuario puntual o a su cargo completo — ver
- *     `Expediente.usuariosAsignados` / `cargosAsignados`),
- *  2. el cargo que menciona el texto de `responsables` del PASO ACTUAL
- *     (mismo reconocimiento por palabra clave de `src/lib/cargos.ts`), y
- *  3. el estado del expediente (INFORMACION_ADICIONAL_REQUERIDA es un
- *     pendiente en sí mismo).
- *
- * No agrega ninguna tabla nueva: es una lectura sobre lo que ya se guarda.
- * La parte de clasificación (`clasificarPendientes`) es pura y está cubierta
- * por pruebas; `getPendientes` solo hace la consulta y la normaliza.
- *
- * Diferencia por rol:
- *  - FUNCIONARIO: solo lo que le corresponde por cargo o por asignación.
- *  - ADMIN: además ve, de forma global, las decisiones pendientes y los
- *    expedientes con información adicional requerida (vista de supervisión);
- *    los "pasos por completar" y "documentos por cargar" se le muestran solo
- *    para los expedientes asignados a su nombre, para no listarle todo.
- */
-
 export type EstadoExp =
   | "RADICADO"
   | "EN_TRAMITE"
@@ -52,7 +29,6 @@ export type ExpedientePendientes = {
   pasoActualNumero: number;
   tramiteNombre: string;
   pasos: PasoPendientes[];
-  /** Documentos ya cargados: `pasoNumero` null = subido en la radicación (= paso 1). */
   documentosCargados: { pasoNumero: number | null; descripcion: string | null; nombre: string }[];
   usuariosAsignadosIds: string[];
   cargosAsignadosNombres: string[];
@@ -70,13 +46,11 @@ export type ItemPendiente = {
   tramiteNombre: string;
   pasoNumero: number;
   pasoTitulo: string;
-  /** Texto extra según el tipo — p. ej. el nombre del documento que falta. */
   detalle?: string;
 };
 
 export type ResumenPendientes = {
   esAdmin: boolean;
-  /** Expedientes activos asignados a su usuario o a su cargo. */
   asignadosTotal: number;
   decisiones: ItemPendiente[];
   gestionPaso: ItemPendiente[];
@@ -103,7 +77,6 @@ export function clasificarPendientes(
     e.usuariosAsignadosIds.includes(sesion.userId) ||
     sesion.cargos.some((c) => e.cargosAsignadosNombres.includes(c));
 
-  /** ¿Este paso le corresponde por alguno de sus cargos o porque el expediente está asignado a su nombre? */
   const leCorresponde = (e: ExpedientePendientes, paso: PasoPendientes) => {
     if (asignadoAlUsuario(e)) return true;
     if (sesion.cargos.length === 0) return false;
@@ -140,9 +113,6 @@ export function clasificarPendientes(
       gestionPaso.push(item(e, paso));
     }
 
-    // Documentos que el paso pide en el procedimiento y que todavía no se han cargado
-    // en ese paso. Un documento cuenta como cargado si hay un archivo del mismo paso
-    // cuya descripción (o nombre) coincide con el nombre del documento requerido.
     if (mio) {
       for (const nombreDoc of paso.documentos) {
         const objetivo = clave(nombreDoc);

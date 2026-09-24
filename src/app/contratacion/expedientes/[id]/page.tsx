@@ -58,10 +58,6 @@ const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   APROBADO: "Aprobado",
   RECHAZADO: "Rechazado",
 };
-// Por qué un documento queda "Pendiente de revisión" — pedido explícito del usuario (2026-09-23):
-// no era obvio por qué un documento sin firma pendiente seguía así ("Designación de supervisor").
-// Se aprueba solo al firmarse (si requiere firma), al validarse manualmente con el botón "Validar",
-// o al cerrar/aprobar la etapa — no apenas al subirse.
 const TITULO_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Se aprueba al firmarse (si requiere firma), al validarlo manualmente, o al aprobar el paso de esta etapa.",
   APROBADO: "Ya fue revisado y aprobado.",
@@ -89,8 +85,6 @@ const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
   RECHAZADA: "bg-red-50 text-red-700",
 };
 
-// Ítems del catálogo que conviene resaltar en el checklist — hoy solo la hoja de vida SIGEP,
-// pedido explícito del usuario (2026-09-23) para que no pase desapercibida entre el resto.
 const ITEMS_DESTACADOS = new Set(["Hoja de vida SIGEP"]);
 
 const ETIQUETA_ACCION_AUDITORIA: Record<string, string> = {
@@ -139,11 +133,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     redirect("/contratacion");
   }
 
-  // Las consultas son independientes entre sí — antes se hacían en secuencia (varias ida y vuelta a
-  // la base en vez de 1), lo cual pesa en una página que ya de por sí hace varias consultas. Varias
-  // además solo se ejecutan si el usuario puede llegar a usarlas (un Contratista, por ejemplo,
-  // nunca ve los formularios de supervisores/firmantes) — antes se traía SIEMPRE toda la planta
-  // activa, igual que ya se cuidó en el equivalente de SGDEA (correspondencia/[id]/page.tsx).
   const puedeGestionar = puedeGestionarContratistas(permisos);
   const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos);
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
@@ -163,8 +152,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           orderBy: { nombre: "asc" },
         })
       : Promise.resolve([]),
-    // Otros contratos del MISMO contratista — para poder marcar prórrogas/continuaciones como
-    // relacionadas sin fusionar expedientes (un contratista puede tener varios en el año).
     expediente.contratista
       ? db.expedienteContractual.findMany({
           where: { contratistaId: expediente.contratista.id, id: { not: id } },
@@ -172,13 +159,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           orderBy: { createdAt: "desc" },
         })
       : Promise.resolve([]),
-    // Cadena de hash inalterable (misma bitácora que usa el SGDEA, src/lib/auditoria-doc.ts) de
-    // lo que se le ha hecho a los documentos que HOY tiene el expediente — subir, editar,
-    // eliminar, validar. Administrador/Jefe de Contratación no dejan fila aquí (excepción
-    // deliberada del módulo, ver permisos.ts): su ausencia es intencional, no un hueco.
-    // Limitación conocida: un documento ya ELIMINADO deja de estar en `idsDocumentos`, así que su
-    // propio historial (incluida su fila ELIMINA) no aparece en esta vista por expediente — sigue
-    // íntegro en la cadena general, solo no se puede filtrar por expediente sin guardar más datos.
     idsDocumentos.length > 0
       ? db.auditoriaDoc.findMany({
           where: { entidad: "DocumentoContrato", entidadId: { in: idsDocumentos } },
@@ -186,14 +166,9 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           include: { usuario: { select: { nombre: true } } },
         })
       : Promise.resolve([]),
-    // Para el selector de "Editar datos generales" (modalidad/valor/DEPENDENCIA/número/fechas) —
-    // solo si el usuario puede llegar a usarlo.
     puedeEditarDatosGenerales
       ? db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
       : Promise.resolve([]),
-    // Historial de rechazos al firmar/revisar — pedido explícito del usuario (2026-09-23): un
-    // rechazo NO se queda pegado a la fila del documento (ver más arriba), solo vive en el aviso
-    // del buzón mientras está activo y AQUÍ, al final de la página, para siempre.
     db.eventoContratacion.findMany({
       where: { expedienteId: id, tipo: "DOCUMENTO_RECHAZADO" },
       orderBy: { createdAt: "desc" },
@@ -203,8 +178,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
-  // Informe de supervisión: un espacio por cada mes del contrato (derivado de sus fechas) + los
-  // espacios eventuales que se hayan creado a mano — ver src/lib/periodos-informe.ts.
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const hoy = new Date();
 
@@ -216,22 +189,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
   const faltaContratista = !expediente.contratista && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado;
-  // Por qué NO se ve el botón de aprobar etapa, cuando corresponde — antes desaparecía en
-  // silencio y el usuario probando la app no entendía si era un bug o le faltaba algo.
   const motivoEtapaOculta = expediente.cerrado
     ? null
     : !puedeAprobar
       ? "Solo el Jefe de Contratación (o un Administrador del sistema) puede aprobar el paso de etapa."
       : faltaContratista
-        ? null // ya tiene su propio aviso (VincularContratistaForm más abajo)
+        ? null
         : null;
 
-  // Checklist real por etapa (catálogo del Manual A-BS-MA01 cruzado con lo ya subido) — para
-  // LAS 3 etapas, no solo la alcanzada: desde 2026-09-23, Administrador/Jefe/Funcionario de
-  // Contratación (y el supervisor designado, solo lectura) pueden ver y adelantar documentos en
-  // una etapa que el expediente todavía no alcanza (ver `puedeVerEtapaCompleta` más abajo) — antes
-  // una etapa futura solo mostraba los NOMBRES del catálogo. Las consultas de requisitos por etapa
-  // son independientes — se piden las 3 a la vez en vez de una por una.
   const requisitosPorEtapa = await Promise.all(ETAPAS_ORDEN.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa)));
   const checklistsPorEtapa = new Map<string, ItemChecklist[]>();
   ETAPAS_ORDEN.forEach((etapa, i) => {
@@ -241,8 +206,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
   type DocumentoExpediente = (typeof expediente.documentos)[number];
 
-  /** Vista previa, sello, firma, asignación y edición de UN documento — los mismos controles que las
-   * demás filas del checklist, usados por los espacios del informe por periodos. */
   const controlesDocumento = (doc: DocumentoExpediente, etapa: EtapaContratacion, puedeGestionarEtapaCerrada: boolean) => {
     const solicitudes = doc.solicitudesFirma.map((s) => ({
       id: s.id,
@@ -307,17 +270,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     );
   };
 
-  /** Bloque del requisito que se entrega por periodos (informe de supervisión): una fila por mes del
-   * contrato + las filas eventuales creadas a mano, cada una con su propio espacio de carga. */
   const panelPorPeriodos = (item: ItemChecklist, etapa: EtapaContratacion, puedeSubirEtapa: boolean, puedeGestionarEtapaCerrada: boolean) => {
     const docs = expediente.documentos.filter((d) => d.requisitoId === item.id);
     const claves = new Set(periodosMensuales.map((p) => p.clave));
-    // Solo los espacios eventuales de ESTE requisito — con varios requisitos "por periodos" en el
-    // mismo expediente, el de uno no debe ofrecerse como opción en los otros.
     const eventualesDelRequisito = expediente.periodosEventuales.filter((e) => e.requisitoId === item.id);
     const idsEventuales = new Set(eventualesDelRequisito.map((e) => e.id));
-    // Documentos de un mes que ya no existe (se cambiaron las fechas del contrato) o sin periodo: no
-    // se pierden, se listan aparte.
     const sueltos = docs.filter((d) => (d.periodoMes ? !claves.has(d.periodoMes) : d.periodoEventualId ? !idsEventuales.has(d.periodoEventualId) : true));
     const puedeCrearEspacios = puedeSubirEtapa && puedeGestionarPeriodosInforme(permisos, expediente);
 
@@ -373,9 +330,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             (se ajustan en «Datos del contrato», más arriba). Mientras tanto puede usar espacios eventuales.
           </p>
         ) : (
-          // Colapsado por defecto — con un requisito por periodos que ya reparte en 12+ meses (y
-          // ahora puede haber hasta 3 de estos por expediente), dejarlo siempre abierto hacía la
-          // página enorme. El resumen de avance queda visible igual, sin necesidad de abrirlo.
           <details className="group/periodos">
             <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] text-stone-500 [&::-webkit-details-marker]:hidden">
               <ChevronDown className="h-3 w-3 flex-none transition-transform group-open/periodos:rotate-180" aria-hidden />
@@ -541,10 +495,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           </div>
         )}
 
-        {/* Si aún no tiene contratista (y ya pasó de Precontractual, donde el aviso de arriba lo exige), se
-            puede vincular en cualquier etapa. Si YA tiene uno, el mismo formulario sirve para cambiarlo
-            (pedido explícito del usuario, 2026-09-23 — pide confirmación porque reemplaza a quien tenía
-            acceso al expediente). */}
         {!faltaContratista && puedeEditarDatosGenerales && (
           <details className="group mt-3 text-xs" open={!expediente.contratista}>
             <summary className="cursor-pointer font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
@@ -599,12 +549,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
       {ETAPAS_ORDEN.map((etapa, i) => {
         const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
-        // Quién puede ver/gestionar una etapa AÚN NO ALCANZADA con todo su detalle (no solo los
-        // nombres del catálogo) — pedido explícito del usuario (2026-09-23): Administrador, Jefe y
-        // Funcionario de Contratación ven y adelantan documentos en cualquier etapa de cualquier
-        // expediente; el supervisor designado ve (no necesariamente edita) todas las etapas del
-        // contrato que le fue asignado. El resto (Jefe de dependencia, Contratista) sigue viendo
-        // solo los nombres del catálogo hasta que la etapa se alcance de verdad.
         const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos);
         const puedeVerEtapaCompleta =
           estado !== "bloqueada" ||
@@ -633,13 +577,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         const puedeSubir = (estado === "actual" || puedeGestionarPrivilegiado) && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
         const etapaInfo =
           estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
-        // Vista compacta de solo consulta en una etapa ya aprobada (2026-09-18, pedido explícito):
-        // quien no sea Jefe/Administrador/Funcionario de Contratación ni Supervisor de ESTE
-        // expediente no ve botones de asignar firmantes ni de editar/eliminar sobre una etapa ya
-        // cerrada — solo los archivos y sus firmas asociadas, en modo consulta. Una etapa AÚN NO
-        // ALCANZADA (visible por lo de arriba) sigue esta misma regla: sin privilegio o sin ser el
-        // supervisor designado, no se llega aquí (ver `puedeVerEtapaCompleta`), así que solo falta
-        // que quien sí llega tenga además permiso de gestión, no solo de consulta.
         const puedeGestionarEtapaCerrada =
           estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
 
@@ -717,9 +654,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
                       </p>
                     )}
-                    {/* Un rechazo NO se queda pegado aquí — pedido explícito del usuario (2026-09-23): se ve en el
-                        aviso del buzón de quien lo subió/del Jefe mientras está activo, y siempre en la
-                        trazabilidad al final de la página, nunca en la fila del documento. */}
                     {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.some((s) => s.estado !== "RECHAZADA") && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {item.documento.solicitudesFirma
@@ -939,7 +873,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             </span>
           </summary>
           <p className="mb-3 text-xs text-stone-500">
-            Un rechazo ya no se muestra pegado a la fila del documento — mientras está activo, aparece como aviso en
+            Mientras está activo, un rechazo aparece como aviso en
             el buzón de quien lo subió y de Administrador/Jefe de Contratación; aquí queda para siempre, aunque el
             aviso ya se haya descartado o se haya limpiado solo al corregir el archivo.
           </p>
@@ -968,9 +902,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             </span>
           </summary>
           <p className="mb-3 text-xs text-stone-500">
-            Registro inalterable con cadena de hash (cada movimiento encadena su hash con el del anterior) — el mismo
-            mecanismo del SGDEA. Administrador y Jefe de Contratación no dejan fila aquí: es la excepción deliberada
-            de este módulo (ver Ayuda).
+            Registro inalterable con cadena de hash: cada movimiento encadena su hash con el del anterior. Las
+            acciones de Administrador y Jefe de Contratación no se registran aquí.
           </p>
           <ul className="divide-y divide-stone-100 text-xs">
             {[...trazabilidad].reverse().map((mov) => (

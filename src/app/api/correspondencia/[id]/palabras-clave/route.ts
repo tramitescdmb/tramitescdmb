@@ -4,10 +4,6 @@ import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { etiquetarComunicacion } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/**
- * Fija las palabras clave (vocabulario controlado, MoReq 5.5) de una comunicación.
- * Reservado a quien distribuye/gestiona correspondencia — es catalogación descriptiva.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

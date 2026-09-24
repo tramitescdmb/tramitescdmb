@@ -3,7 +3,6 @@ import { revalidateTag } from "next/cache";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { crearDiaNoLaborado, CALENDARIO_LABORAL_TAG } from "@/lib/calendario-laboral";
 
-/** Registra un día no laborado (día compensado / cierre institucional). Solo ADMIN. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/calendario-laboral", req.url);

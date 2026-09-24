@@ -16,20 +16,9 @@ import {
 type Punto = { lat: number; lon: number };
 
 export type MapaUbicacionHandle = {
-  /** Geocodifica el texto y coloca el pin — la llama quien tenga el campo "Dirección" (fuera de este componente, para no pedirla dos veces). */
   buscarDireccion: (direccion: string) => void;
 };
 
-/**
- * `prefijo` nombra los inputs ocultos que emite (`{prefijo}Lat`, `{prefijo}Lon`, ...) — hace
- * falta cuando un mismo formulario usa dos mapas a la vez (ej. dirección del solicitante Y
- * dirección del predio, que son dos cosas distintas), para que no choquen los `name`.
- *
- * A propósito NO tiene su propio campo de texto de dirección: antes lo tenía (una caja
- * "Buscar una dirección" adentro del mapa) además del campo "Dirección" del formulario que lo
- * envuelve — la misma dirección se pedía dos veces. Ahora el padre controla el texto y dispara
- * la búsqueda con este `ref` (ver NuevoExpedienteForm.tsx).
- */
 export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string; prefijo?: string }>(
   function MapaUbicacion({ municipio, prefijo = "ubicacion" }, ref) {
     const contenedorRef = useRef<HTMLDivElement>(null);

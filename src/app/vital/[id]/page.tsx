@@ -36,7 +36,6 @@ const txt = (v: unknown): string | null => {
   return VACIOS.has(s.toLowerCase()) ? null : s;
 };
 
-// Convierte "primerNombre" / "numero_identificacion" en "Primer nombre"
 const humanizar = (clave: string): string => {
   const conEspacios = clave
     .replace(/[_-]+/g, " ")
@@ -47,7 +46,6 @@ const humanizar = (clave: string): string => {
   return conEspacios.charAt(0).toUpperCase() + conEspacios.slice(1);
 };
 
-// Etiquetas amables para los campos que VITAL manda del solicitante
 const ETIQUETAS_SOLICITANTE: Record<string, string> = {
   tipoPersona: "Tipo de persona",
   tipoIdentificacion: "Tipo de identificación",
@@ -137,8 +135,6 @@ function esPersonaJuridica(i: Interesado): boolean {
   return tp.includes("jur") || Boolean(txt(i.razonSocial));
 }
 
-// VITAL suele repetir el mismo interesado 2+ veces dentro de `solicitanteRaw` (confirmado en
-// datos reales) — sin este filtro la tarjeta de Solicitante mostraba la misma persona duplicada.
 function dedupeInteresados(lista: Interesado[]): Interesado[] {
   const vistos = new Set<string>();
   const resultado: Interesado[] = [];
@@ -162,7 +158,6 @@ function DatosInteresado({ i }: { i: Interesado }) {
   const depto = txt(i.departamentoResidencia) ?? txt(i.departamento);
   const lugar = [municipio, depto].filter(Boolean).join(", ");
 
-  // Campos que ya mostramos arriba; el resto se lista genérico
   const yaMostrados = new Set([
     "razonSocial", "primerNombre", "segundoNombre", "primerApellido", "segundoApellido",
     "nombreCompleto", "numeroIdentificacion", "identificacion", "tipoIdentificacion",
@@ -184,8 +179,6 @@ function DatosInteresado({ i }: { i: Interesado }) {
           <p className="truncate text-sm font-medium text-stone-900" title={nombre ?? undefined}>
             {nombre ?? txt(i.tipoPersona) ?? "Solicitante sin nombre reportado"}
           </p>
-          {/* Solo como subtítulo si no es ya lo que se muestra arriba (si no hay nombre, la línea
-              principal cae en tipoPersona y repetirlo abajo mostraría el mismo texto dos veces). */}
           {nombre && txt(i.tipoPersona) && <p className="text-xs text-stone-400">{txt(i.tipoPersona)}</p>}
         </div>
       </div>
@@ -270,7 +263,6 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         Volver a las solicitudes
       </Link>
 
-      {/* Cabecera */}
       <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h2>
@@ -301,7 +293,6 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         </dl>
       </div>
 
-      {/* Solicitante(s) */}
       <Tarjeta
         icon={interesados.length > 0 && esPersonaJuridica(interesados[0]) ? Building2 : User}
         titulo={interesados.length > 1 ? `Solicitantes (${interesados.length})` : "Solicitante"}
@@ -323,12 +314,10 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         )}
       </Tarjeta>
 
-      {/* Campos del formulario */}
       <Tarjeta icon={ClipboardList} titulo="Datos del formulario del trámite">
         <CamposFormulario datos={solicitud.camposTramite} />
       </Tarjeta>
 
-      {/* Documentos */}
       <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${solicitud.documentos.length})`}>
         {solicitud.documentos.length === 0 ? (
           <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>

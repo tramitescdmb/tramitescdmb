@@ -110,9 +110,6 @@ export async function POST(req: NextRequest) {
   const flujo = tramite.flujos.find((f) => f.id === flujoId);
   if (!flujo) return NextResponse.json({ error: "Flujo no encontrado." }, { status: 404 });
 
-  // Los documentos marcados "obligatorio" (aplicables al tipo de solicitante elegido, ej. el
-  // recibo/constancia de pago) deben venir cargados para poder radicar — no basta con mostrar la
-  // etiqueta "Obligatorio" en el formulario, hay que impedir la radicación si falta alguno.
   const idsDocumentosAportados = new Set(
     (documentos || []).map((d) => d.documentoRequeridoId).filter((id): id is string => Boolean(id))
   );
@@ -129,10 +126,6 @@ export async function POST(req: NextRequest) {
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
   const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);
 
-  // Las planas y cartesianas nunca se confían del cliente — se recalculan aquí a partir de lat/lon,
-  // que es la única representación que viaja del formulario (ver MapaUbicacion.tsx). El predio/
-  // proyecto y el solicitante son dos ubicaciones independientes (ej. empresa con sede en
-  // Bucaramanga pidiendo un permiso para un proyecto en otro municipio) — se calculan por separado.
   function calcularUbicacion(prefijo: string, punto?: { lat: number | null; lon: number | null }) {
     const datos: Record<string, number | null> = {
       [`${prefijo}Lat`]: null,
@@ -161,9 +154,6 @@ export async function POST(req: NextRequest) {
     ...calcularUbicacion("solicitanteUbicacion", solicitanteUbicacion),
   };
 
-  // Registro maestro por NIT/cédula: se reutiliza si ya existe (actualizando solo contacto, sin
-  // pisar el régimen si esta vez no se mandó) o se crea si es la primera vez que se ve esta
-  // identificación — ver el comentario en el modelo Solicitante (prisma/schema.prisma) del porqué.
   const identificacionSolicitante = solicitante.identificacion.trim();
   const nombresTrim = solicitante.nombres?.trim() || null;
   const apellidosTrim = solicitante.apellidos?.trim() || null;

@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 
-/** Dependencias activas para los desplegables (ventanilla, distribución). */
 export async function listarDependenciasActivas() {
   return db.dependencia.findMany({
     where: { activo: true },
@@ -9,7 +8,6 @@ export async function listarDependenciasActivas() {
   });
 }
 
-/** Todas las dependencias (incluye inactivas) para el admin. */
 export async function listarDependencias() {
   return db.dependencia.findMany({
     orderBy: [{ nivel: "asc" }, { orden: "asc" }, { nombre: "asc" }],

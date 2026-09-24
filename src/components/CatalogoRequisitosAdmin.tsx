@@ -22,16 +22,6 @@ export type RequisitoCatalogo = {
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-/** Pantalla administrable del catálogo de requisitos documentales — antes solo se podía
- * agregar/reordenar/activar editando `data/contratacion/requisitos.json` y corriendo el seed. Los
- * cambios se reflejan de inmediato en el checklist de cada expediente (mismo `activo`/`orden` que
- * ya consume `obtenerRequisitosDeEtapa`). Reservado al Administrador de Contratación.
- *
- * Navegación por MODALIDAD primero (no por etapa): mostrar las 10 modalidades desplegadas a la vez
- * dentro de cada etapa hacía ver el catálogo como si todo fuera común a todas — en Precontractual,
- * el 90% de los requisitos SÍ dependen de la modalidad (ver data/contratacion/requisitos.json).
- * Elegir una modalidad muestra su checklist real por etapa: los comunes de esa etapa + los propios
- * de la modalidad, separados y etiquetados, para que quede claro qué se está editando. */
 export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoCatalogo[] }) {
   const router = useRouter();
   const [modalidad, setModalidad] = useState<ModalidadSeleccion>(ORDEN_MODALIDADES[0]);

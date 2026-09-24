@@ -2,15 +2,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
-/**
- * Piezas visuales del SGDEA — un solo lugar para el aspecto de encabezados,
- * tarjetas de indicador, paneles y estados vacíos, para que la bandeja, los
- * expedientes, la disposición final y el tablero se vean igual.
- */
-
-/* ------------------------------------------------------------------ Encabezados */
-
-/** Título de una sección: subrayado verde CDMB, con conteo y acción opcionales. */
 export function TituloSeccion({
   icon: Icon,
   children,
@@ -38,18 +29,14 @@ export function TituloSeccion({
   );
 }
 
-/** Subtítulo simple dentro de un panel. */
 export function Sub({ children }: { children: ReactNode }) {
   return <h3 className="text-sm font-semibold text-stone-900">{children}</h3>;
 }
-
-/* ------------------------------------------------------------------ Contenedores */
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl border border-stone-100 bg-white p-5 shadow-soft ${className}`}>{children}</div>;
 }
 
-/** Estado vacío uniforme (misma caja que un panel, texto centrado y tenue). */
 export function EstadoVacio({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
   return (
     <div className="rounded-2xl border border-stone-100 bg-white px-4 py-10 text-center text-sm text-stone-400 shadow-soft">
@@ -58,8 +45,6 @@ export function EstadoVacio({ children, icon: Icon }: { children: ReactNode; ico
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ Indicadores */
 
 const TONOS_KPI: Record<string, string> = {
   neutro: "text-stone-400",
@@ -110,18 +95,10 @@ export function TarjetaKpi({
   );
 }
 
-/* ------------------------------------------------------------------ Esqueletos de carga */
-// Usados desde `loading.tsx` de cada ruta (convención de Next.js: se muestran de inmediato al
-// navegar, mientras la página de destino todavía está resolviendo sus datos) — antes ninguna
-// pantalla mostraba nada mientras cargaba, así que un clic parecía "no hacer nada" hasta que
-// terminaba de resolver, en vez de sentirse en marcha.
-
-/** Barra pulsante — la pieza mínima de la que se arman los esqueletos de abajo. */
 export function Esqueleto({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-stone-200/70 ${className}`} />;
 }
 
-/** Cabecera de sección (título) en su versión de carga — mismo alto que `TituloSeccion`. */
 export function EsqueletoTitulo() {
   return (
     <div className="flex items-baseline justify-between gap-2 border-b-2 border-stone-100 pb-1.5">
@@ -131,7 +108,6 @@ export function EsqueletoTitulo() {
   );
 }
 
-/** Tablero: título + fila de tarjetas KPI + un panel grande — para paneles e indicadores. */
 export function EsqueletoTablero({ tarjetas = 4 }: { tarjetas?: number }) {
   return (
     <div className="space-y-4">
@@ -156,7 +132,6 @@ export function EsqueletoTablero({ tarjetas = 4 }: { tarjetas?: number }) {
   );
 }
 
-/** Listado/tabla: título + barra de filtros + filas — para bandejas, expedientes, contratistas… */
 export function EsqueletoLista({ filas = 8 }: { filas?: number }) {
   return (
     <div className="space-y-4">
@@ -175,7 +150,6 @@ export function EsqueletoLista({ filas = 8 }: { filas?: number }) {
   );
 }
 
-/** Ficha/detalle: título + una tarjeta grande de datos + un bloque secundario — expedientes, fichas. */
 export function EsqueletoDetalle() {
   return (
     <div className="space-y-4">
@@ -200,7 +174,6 @@ export function EsqueletoDetalle() {
   );
 }
 
-/** Formulario: título + campos apilados — para las pantallas "Nuevo…". */
 export function EsqueletoFormulario({ campos = 5 }: { campos?: number }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4">

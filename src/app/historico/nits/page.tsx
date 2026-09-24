@@ -46,12 +46,6 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   const { porPagina, vista } = parsePorPagina(filtros.vista);
   const f = procesarFiltrosNit(filtros);
 
-  // Todo el listado sale de un único snapshot cacheado (ver src/lib/sinca-nit-stats.ts): el API de
-  // SINCA 1.0 no tiene forma de "darme ya agrupado por tercero" ni de ordenar por cantidad de
-  // vinculadas, así que agrupar es algo que solo se puede hacer de este lado — y haciéndolo sobre
-  // el registro COMPLETO (no una muestra acotada) los totales de aquí, de la paginación y del panel
-  // de estadísticas de abajo siempre cuadran entre sí. El filtro/orden en sí vive en sinca-nit.ts
-  // (`filtrarYOrdenarEntidadesNit`) para que la exportación a CSV use exactamente la misma lógica.
   let entidades: EntidadNit[] = [];
   let error = false;
   let calculadoEn: string | null = null;

@@ -3,11 +3,6 @@ const MESES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "jul
 
 type Fila = { anio: number; meses: number[] };
 
-/**
- * Calor año (fila) × mes (columna). Codificación secuencial de un solo tono
- * (azul), opacidad proporcional al valor. Con muchos años se parte en dos
- * bloques lado a lado para no ocupar tanto alto.
- */
 export function HeatmapMesAnio({ filas, emptyMessage }: { filas: Fila[]; emptyMessage: string }) {
   if (filas.length === 0) {
     return <p className="px-1 py-8 text-center text-sm text-stone-400">{emptyMessage}</p>;

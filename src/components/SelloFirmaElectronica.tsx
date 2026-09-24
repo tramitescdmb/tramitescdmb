@@ -17,13 +17,6 @@ type FirmaSello = {
   selloTiempoToken?: string | null;
 };
 
-/**
- * Sello de firma electrónica (Ley 527/1999 · Decreto 1074/2015) — deliberadamente
- * compacto y por líneas: nombre, denominación del empleo, oficina y la marca de
- * tiempo con el hash, una por firmante; el fundamento legal una sola vez al pie.
- * Firma electrónica (identifica al firmante y garantiza la integridad) — distinta
- * de la firma digital con certificado de una entidad de certificación acreditada.
- */
 export function SelloFirmaElectronica({ firmas, className = "" }: { firmas: FirmaSello[]; className?: string }) {
   if (!firmas.length) return null;
 

@@ -11,12 +11,6 @@ import { formatearFechaHora } from "@/lib/fecha";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
-/** Documentos de contratación pendientes de MI firma/visto bueno — antes no existía ningún
- * lugar centralizado para saber "qué me falta firmar"; había que entrar expediente por
- * expediente. Solo lo pendiente que ya puede actuarse aparece resaltado; lo bloqueado por
- * turno se muestra igual, pero deshabilitado. Además, avisos de documentos que alguien rechazó al
- * firmar/revisar — para quien los subió y para Administrador/Jefe de Contratación (pedido explícito
- * del usuario, 2026-09-23): antes el único rastro era el estado "rechazada" pegado al documento. */
 export default async function BuzonContratacionPage() {
   const session = await getSession();
   if (!session) redirect("/login");

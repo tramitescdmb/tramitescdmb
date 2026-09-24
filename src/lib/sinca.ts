@@ -1,23 +1,3 @@
-/**
- * Cliente del API de SINCA 1.0 (Laravel + Sanctum), endpoint
- * `GET /api/presinca/resoluciones` — histórico de trámites ambientales con
- * resolución de fondo.
- *
- * Este módulo NO se usa desde el navegador ni desde el middleware: solo desde
- * la sincronización (src/lib/sinca-sync.ts) y, si hiciera falta, desde rutas
- * API en Node.
- *
- * Autenticación: cuenta de servicio fija. Hace `POST /admin/login` una vez y
- * reutiliza el token (Sanctum) mientras el proceso viva; si el API responde
- * 401 se descarta y se vuelve a autenticar una vez.
- *
- * Variables de entorno:
- *   SINCA_API_URL       URL base sin barra final. Ej.: http://168.90.14.182/api
- *   SINCA_API_CLIENTE   Campo `name` del login (web|app|postman|desktop). Def. "web".
- *   SINCA_API_USUARIO   Usuario de la cuenta de servicio.
- *   SINCA_API_PASSWORD  Contraseña de la cuenta de servicio.
- */
-
 function baseUrl() {
   return process.env.SINCA_API_URL?.trim().replace(/\/+$/, "") || null;
 }
@@ -75,8 +55,6 @@ async function fetchConToken(path: string): Promise<Response> {
   return res;
 }
 
-// --- Tipos del API -----------------------------------------------------------
-
 type Etiquetado = { label: string | null; value: string | null } | null;
 
 export type SincaResolucionApi = {
@@ -121,10 +99,6 @@ export type OpcionesListado = {
   expediente?: string;
 };
 
-/**
- * Una página de `GET /api/presinca/resoluciones`. El API acepta hasta ~1000
- * registros por página en este endpoint.
- */
 export async function listarResoluciones(opts: OpcionesListado = {}): Promise<PaginadorApi<SincaResolucionApi>> {
   const params = new URLSearchParams({
     per_page: String(opts.perPage ?? 200),
@@ -146,10 +120,6 @@ export async function listarResoluciones(opts: OpcionesListado = {}): Promise<Pa
   return cuerpo;
 }
 
-// --- Detalle de una resolución --------------------------------------------------
-// `GET /presinca/resoluciones/{nrosolicitud_sol}` devuelve bastante más que el
-// listado: los documentos emitidos (incl. la resolución de fondo) y el interesado.
-
 export type SincaDocumentoEmitido = {
   fechaemision_edc: string | null;
   fechavigencia_edc: string | null;
@@ -158,7 +128,7 @@ export type SincaDocumentoEmitido = {
   nrodocumento_edc: string | null;
   referencia_edc: string | null;
   foliosdoc_edc: number | null;
-  caminopdf_edc: string | null; // ruta del archivo en el servidor de la CDMB (no es una URL)
+  caminopdf_edc: string | null;
   edc_caminodoc_edc: string | null;
   caminodoc_edc: string | null;
   idempleadoelabora_emp: string | number | null;
@@ -240,18 +210,12 @@ export type SincaNit = {
   clave_ser?: string | null;
   municipios?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
   municipios_dom?: { nombre_mun?: string | null; departamentos?: { nombre_dpt?: string | null } | null } | null;
-  // Forma plana que devuelve /presinca/nit (además de la anidada "municipios" de arriba, usada en otros endpoints).
   departamento?: string | null;
   municipio?: string | null;
   departamento_dom?: string | null;
   municipio_dom?: string | null;
   [k: string]: unknown;
 };
-
-// --- Registro de NIT/cédulas ------------------------------------------------
-// `GET /presinca/nit` — registro de terceros (personas y empresas) de SINCA
-// 1.0, independiente de las solicitudes; se puede buscar por número de NIT,
-// cédula o nombre/razón social.
 
 export type OpcionesBusquedaNit = {
   perPage?: number;
@@ -261,13 +225,6 @@ export type OpcionesBusquedaNit = {
   search?: string;
 };
 
-/**
- * Columnas por las que `/presinca/nit` acepta ordenar — lista cerrada, la
- * confirma el propio API rechazando cualquier otra con 422 ("El column es
- * inválido. Los valores permitidos son: ..."). No soporta filtrar por
- * municipio/año/tipo/régimen del lado del servidor, solo `search` (nit,
- * cédula o nombre) y estas columnas para `column`/`order`.
- */
 export const SINCA_NIT_COLUMNAS = [
   { value: "nombre_nit", label: "Nombre / razón social" },
   { value: "apell_nit", label: "Apellido / complemento del nombre" },
@@ -284,11 +241,6 @@ export function esColumnaNitValida(v: string): v is SincaNitColumna {
   return SINCA_NIT_COLUMNAS_VALIDAS.includes(v);
 }
 
-/**
- * Cada fila es en realidad una vinculación NIT↔solicitud (el mismo NIT se
- * repite una vez por cada solicitud a la que ha estado asociado), no un
- * registro único por tercero.
- */
 export type SincaNitListado = SincaNit & {
   rn: string;
   nrosolicitud_sol: number | string;
@@ -315,7 +267,6 @@ export async function buscarNits(opts: OpcionesBusquedaNit = {}): Promise<Pagina
   return cuerpo;
 }
 
-/** `null` si el API responde 404 para ese número de solicitud. */
 export async function obtenerResolucionDetalle(nroSolicitud: number): Promise<SincaResolucionDetalleApi | null> {
   const res = await fetchConToken(`/presinca/resoluciones/${nroSolicitud}`);
   if (res.status === 404) return null;
@@ -330,14 +281,6 @@ export type ArchivoResolucion =
   | { ok: true; datos: ArrayBuffer; contentType: string; nombre: string }
   | { ok: false; estado: number; mensaje: string };
 
-/**
- * Descarga el archivo (PDF/imagen/Word) de un documento de la resolución.
- * `POST /presinca/resoluciones/file` con `{ ruta: <caminopdf_edc> }` — la misma
- * llamada que hace el sistema anterior. `ruta` es una ruta de archivo en el
- * servidor documental de la CDMB (ej. `N:\solNNNN_DocJur3_de_YYYYMMDD.pdf`), no
- * una URL; el backend la resuelve contra su unidad de red. Si esa unidad no es
- * alcanzable desde donde corre el API, responde 400 "No existe archivo".
- */
 export async function descargarArchivoResolucion(ruta: string): Promise<ArchivoResolucion> {
   const base = process.env.SINCA_API_URL?.trim().replace(/\/+$/, "");
   if (!base) return { ok: false, estado: 503, mensaje: "SINCA 1.0 no está configurado." };
@@ -369,9 +312,7 @@ export async function descargarArchivoResolucion(ruta: string): Promise<ArchivoR
     try {
       const j = (await res.json()) as { message?: string };
       if (j?.message) mensaje = j.message;
-    } catch {
-      /* noop */
-    }
+    } catch {}
     return { ok: false, estado: res.status === 200 ? 502 : res.status, mensaje };
   }
 

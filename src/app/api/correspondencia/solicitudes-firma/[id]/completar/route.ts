@@ -3,8 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { completarSolicitudFirma } from "@/lib/solicitudes-firma";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
-/** Completa (firma/da visto bueno) una solicitud de firma de correspondencia asignada al
- * usuario que llama esta ruta — captura IP/user-agent reales para la ficha técnica de firma. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

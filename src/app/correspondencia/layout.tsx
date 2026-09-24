@@ -10,16 +10,11 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, pued
 import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Módulo de Correspondencia y Gestión Documental (SGDEA). Denegado por defecto:
- * requiere un rol de correspondencia asignado (o ser ADMIN). Ver src/lib/permisos.ts.
- */
 export default async function CorrespondenciaLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederCorrespondencia(permisos)) {
-    // MoReq 6.9: registrar el intento de entrar a un módulo sin permiso.
     const { ip, userAgent } = datosPeticion(await headers());
     await registrarAuditoriaDoc({
       entidad: "Acceso",

@@ -19,17 +19,17 @@ describe("flujoAMermaid", () => {
     expect(m).toContain('inicio((" "))');
     expect(m).toContain("inicio --> n1");
     expect(m).toContain('n1["1 · Asignación y estudio"]');
-    expect(m).toContain('n2{{"2 · Revisión"}}'); // hexágono para REVISION
-    expect(m).toContain('n3(["3 · Cierre"])'); // stadium para FIN
+    expect(m).toContain('n2{{"2 · Revisión"}}');
+    expect(m).toContain('n3(["3 · Cierre"])');
     expect(m).toContain('n1 -->|"Continuar"| n2');
-    expect(m).toContain('n2 -->|"Devolver"| n1'); // ciclo hacia atrás
+    expect(m).toContain('n2 -->|"Devolver"| n1');
   });
 
   it("marca el paso actual y los pasos hechos", () => {
     const m = flujoAMermaid(pasos, trans, { pasoActualId: "b", pasosHechosIds: ["a", "b"] });
     expect(m).toContain("class n2 actual");
-    expect(m).toContain("class n1 hecho"); // a está hecho y no es el actual
-    expect(m).not.toContain("class n2 hecho"); // el actual no se marca también como hecho
+    expect(m).toContain("class n1 hecho");
+    expect(m).not.toContain("class n2 hecho");
   });
 
   it("escapa comillas y recorta nombres largos", () => {
@@ -37,7 +37,7 @@ describe("flujoAMermaid", () => {
       [{ id: "x", orden: 1, nombre: 'Paso "raro" con un nombre extremadamente largo que no cabe entero', tipo: "TAREA" }],
       [],
     );
-    expect(m).not.toMatch(/n1\[".*".*".*"\]/); // sin comillas internas sin escapar
+    expect(m).not.toMatch(/n1\[".*".*".*"\]/);
     expect(m).toContain("…");
   });
 

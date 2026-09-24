@@ -6,12 +6,6 @@ import { registrarRespuestaFuncionario, type EntradaDocumento } from "@/lib/corr
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Guarda el borrador de respuesta del funcionario a quien se distribuyó una
- * RECIBIDA — no radica nada, es la constancia de qué respondió (texto y/o
- * documentos ya redactados) para que ventanilla/gestión documental la radique
- * como oficio de salida.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

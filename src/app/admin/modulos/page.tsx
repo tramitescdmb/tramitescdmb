@@ -5,11 +5,6 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 
-/**
- * Disponibilidad de módulos — sección aparte de Seguridad, solo para el administrador del sistema.
- * Antes este interruptor vivía dentro de Seguridad; se separó para que Seguridad pueda usarse desde
- * cualquier módulo (y por sus administradores) sin darles poder sobre qué módulos ve el resto.
- */
 export default async function ModulosPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");

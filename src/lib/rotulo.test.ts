@@ -23,6 +23,6 @@ describe("códigos del rótulo", () => {
     const svg = qrVerificacion("https://x.gov.co", "CDMB-E-2026-000045");
     const m = svg.match(/viewBox="0 0 (\d+) (\d+)"/);
     expect(m).not.toBeNull();
-    expect(m![1]).toBe(m![2]); // QR es cuadrado
+    expect(m![1]).toBe(m![2]);
   });
 });

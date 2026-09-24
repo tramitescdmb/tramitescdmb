@@ -6,11 +6,6 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const inputCls = "min-w-0 flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-/** Crea un espacio ADICIONAL de entrega de un requisito "por periodos", con nombre descriptivo,
- * para una eventualidad que no cabe en los periodos mensuales (ej. «Informe extraordinario por
- * suspensión»). Va atado a `requisitoId`: con más de un requisito por periodos en el mismo
- * expediente (informe de supervisión, formato de cumplimiento, acta de pago parcial…), un espacio
- * de uno no debe ofrecerse como opción en los otros. */
 export function NuevoEspacioInformeForm({ expedienteId, requisitoId }: { expedienteId: string; requisitoId: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -85,7 +80,6 @@ export function NuevoEspacioInformeForm({ expedienteId, requisitoId }: { expedie
   );
 }
 
-/** Renombrar o quitar un espacio eventual (solo se puede quitar si todavía no tiene documento). */
 export function EspacioEventualAcciones({
   expedienteId,
   periodoId,

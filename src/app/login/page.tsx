@@ -20,8 +20,6 @@ export default async function LoginPage({
   const params = await searchParams;
   const error = params.error ? ERRORES[params.error] ?? params.error : null;
   const next = params.next ?? "/";
-  // Por defecto se ofrece el directorio activo de la CDMB (la mayoría de los
-  // funcionarios); la cuenta institucional queda como segunda opción.
   const modo = params.modo === "institucional" ? "institucional" : "directorio-activo";
   const config = await getConfiguracionSitio();
   const hayDirectorioActivo = directorioActivoConfigurado();

@@ -18,7 +18,6 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
   const sp = await searchParams;
   const [plantillas, categorias] = await Promise.all([listarPlantillasAdmin(), listarCategoriasPlantilla()]);
 
-  // Agrupar por categoría para la lista.
   const grupos = new Map<string, typeof plantillas>();
   for (const p of plantillas) {
     const k = p.categoria ?? "Sin categoría";

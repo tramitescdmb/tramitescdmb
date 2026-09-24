@@ -9,9 +9,6 @@ import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
 
 const TIPOS_PQRSD = Object.keys(TERMINO_DIAS_HABILES) as TipoPQRSD[];
 
-// Código de seguimiento para radicación anónima: reemplaza a la identificación
-// como secreto para consultar el estado (no hay datos del ciudadano). Alfabeto
-// sin caracteres ambiguos (0/O, 1/I/L).
 const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 function generarCodigoSeguimiento() {
   let c = "";
@@ -19,14 +16,6 @@ function generarCodigoSeguimiento() {
   return `${c.slice(0, 4)}-${c.slice(4)}`;
 }
 
-/**
- * Ventanilla pública de PQRSD (Fase 3, sin autenticación) — genera un radicado
- * unificado con el resto de correspondencia. Sin CAPTCHA de terceros: se
- * combina límite por IP (verificarLimiteEnvio), honeypot y tiempo mínimo de
- * llenado. Exige identificación + municipio + un medio de contacto porque,
- * a diferencia de la ventanilla interna, esto es lo único que permite luego
- * consultar el estado en /pqrsd/consultar y darle respuesta al ciudadano.
- */
 export async function POST(req: NextRequest) {
   const { ip, userAgent } = datosPeticion(req.headers);
   const limite = await verificarLimiteEnvio(ip, "pqrsd:radicar");
@@ -39,8 +28,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
-  // Honeypot: campo oculto que solo un bot llenaría. Se responde éxito
-  // simulado (sin radicar nada) para no revelarle la trampa.
   if (typeof body.sitioWeb === "string" && body.sitioWeb.trim() !== "") {
     return NextResponse.json({ radicado: "CDMB-R-0000-000000" });
   }
@@ -65,9 +52,6 @@ export async function POST(req: NextRequest) {
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
   if (!contenido) return NextResponse.json({ error: "Describa su solicitud." }, { status: 400 });
 
-  // Radicación anónima (art. 38 Ley 190/1995; arts. 67-70 Ley 1474/2011): no se
-  // exige identificación ni contacto. El código de seguimiento pasa a ocupar el
-  // lugar de la identificación como secreto para la consulta pública de estado.
   const codigoSeguimiento = anonima ? generarCodigoSeguimiento() : null;
 
   if (!anonima) {
@@ -109,7 +93,7 @@ export async function POST(req: NextRequest) {
         ? {
             tipo: "NATURAL" as TipoSolicitante,
             tipoIdentificacion: null,
-            identificacion: codigoSeguimiento, // secreto de consulta; no crea registro de Tercero (sin municipio)
+            identificacion: codigoSeguimiento,
             nombre: "Anónimo",
             email: null,
             telefono: null,

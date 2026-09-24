@@ -1,4 +1,3 @@
-/** Ruedita de "cargando" — para botones y estados de espera. `claro` = para fondos de color (borde blanco). */
 export function Spinner({ claro = false, className = "h-3.5 w-3.5" }: { claro?: boolean; className?: string }) {
   return (
     <span

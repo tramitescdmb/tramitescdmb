@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
-/** Elimina COMPLETAMENTE el expediente (incluso cerrado) — exige escribir el número exacto
- * como confirmación, dado lo irreversible de la acción (documentos, firmas y bitácora del
- * expediente se borran en cascada). Reservado al Administrador de Contratación. */
 export function EliminarExpedienteBoton({ expedienteId, numero }: { expedienteId: string; numero: string }) {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);

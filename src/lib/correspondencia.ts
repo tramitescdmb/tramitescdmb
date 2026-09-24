@@ -11,23 +11,16 @@ import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { validarPalabrasClave } from "@/lib/vocabulario";
 import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
 
-/**
- * Dominio de correspondencia (SGDEA). Fase 1: radicación de comunicaciones
- * RECIBIDAS en la ventanilla única. El radicado se genera atómicamente dentro
- * de la misma transacción que crea la comunicación (ver src/lib/radicado.ts):
- * si la creación falla, el número se revierte con la transacción, sin huecos.
- */
-
 export type EntradaTercero = {
   tipo: TipoSolicitante;
-  tipoIdentificacion?: string | null; // CC, CE, NIT, PA, TI, ANONIMO...
+  tipoIdentificacion?: string | null;
   identificacion?: string | null;
-  nombre: string; // razón social o nombre completo tal como llega
+  nombre: string;
   email?: string | null;
   telefono?: string | null;
   direccion?: string | null;
   municipio?: string | null;
-  departamento?: string | null; // solo cuando el municipio está fuera de la jurisdicción y se escribe a mano
+  departamento?: string | null;
 };
 
 export type EntradaDocumento = {
@@ -41,24 +34,20 @@ export type EntradaDocumento = {
 
 export type EntradaRadicacionRecibida = {
   asunto: string;
-  contenido?: string | null; // narración de una PQRSD (Fase 3) — el resto de recibidas no lo usa
+  contenido?: string | null;
   folios: number;
   anexosDescripcion?: string | null;
   medio?: MedioComunicacion | null;
-  origen?: OrigenComunicacion | null; // VENTANILLA por defecto; WEB_PQRSD cuando llega del formulario público
+  origen?: OrigenComunicacion | null;
   tercero: EntradaTercero;
   dependenciaDestinoId?: string | null;
   serieId?: string | null;
   subserieId?: string | null;
-  tipoPqrsd?: TipoPQRSD | null; // clasifica la PQRSD y fija su término de ley (Fase 3)
+  tipoPqrsd?: TipoPQRSD | null;
   documentos?: EntradaDocumento[];
-  radicadoPorId: string | null; // null = radicada anónimamente desde el formulario público
+  radicadoPorId: string | null;
 };
 
-/** Vincula al maestro Solicitante SOLO si el tercero viene identificado y con municipio
- * (Solicitante.municipio es obligatorio) — si no, queda solo el snapshot en la comunicación,
- * sin ensuciar el maestro con datos incompletos de un tercero ocasional. Compartido entre
- * remitente (recibida) y destinatario (enviada). */
 async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: EntradaTercero): Promise<string | null> {
   const ident = tercero.identificacion?.trim() || null;
   const muni = tercero.municipio?.trim() || null;
@@ -87,11 +76,6 @@ async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: Entr
   return solicitante.id;
 }
 
-/**
- * Una serie sin subserie deja la clasificación TRD a medias (MoReq 1.34: todo
- * documento debe quedar asociado a una TRD completa) — o las dos, o ninguna. La
- * cascada de la UI ya lo respeta; esto lo garantiza también para llamadas directas.
- */
 function validarClasificacionTrd(serieId?: string | null, subserieId?: string | null) {
   if (serieId && !subserieId) {
     throw new Error("Elija también la subserie: una serie sin subserie deja la clasificación TRD incompleta.");
@@ -101,8 +85,6 @@ function validarClasificacionTrd(serieId?: string | null, subserieId?: string | 
 
 export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
-  // El calendario laboral (días compensados + jornada semanal de la entidad) se
-  // carga FUERA de la transacción — es solo lectura y no debe alargar el lock.
   const calendario = entrada.tipoPqrsd ? await getCalendarioLaboral() : undefined;
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("RECIBIDA", new Date().getFullYear(), tx);
@@ -177,15 +159,12 @@ async function crearDocumentos(
 
 const SELLO_INTERNO = "Bitácora encadenada del SGDEA (SHA-256)";
 
-/** Crea la Firma electrónica (hash) del contenido exacto que se radica, en la misma transacción. */
 async function firmarEnTransaccion(
   tx: Prisma.TransactionClient,
   datos: { comunicacionId: string; usuarioId: string; radicado: string; asunto: string; contenido: string | null }
 ) {
   const fechaHora = new Date();
   const hashContenido = hashContenidoFirma({ radicado: datos.radicado, asunto: datos.asunto, contenido: datos.contenido, fechaIso: fechaHora.toISOString() });
-  // El sello de tiempo interno se fija aquí; si hay una TSA RFC-3161 configurada,
-  // `sellarFirmasConTsa()` (fuera de la transacción, sin bloquear el lock) lo mejora.
   await tx.firma.create({
     data: {
       usuarioId: datos.usuarioId,
@@ -201,13 +180,6 @@ async function firmarEnTransaccion(
   });
 }
 
-/**
- * Mejora el sello de tiempo de las firmas de una comunicación con un token
- * RFC-3161 de la TSA configurada. Se llama DESPUÉS de la transacción de
- * radicación (una llamada de red no debe correr con el lock tomado) y es
- * best-effort: si no hay TSA o no responde, las firmas se quedan con el sello
- * interno.
- */
 export async function sellarFirmasConTsa(comunicacionId: string) {
   const config = await getConfiguracionSitio();
   const tsaUrl = config.selloTiempoTsaUrl?.trim();
@@ -227,12 +199,6 @@ export async function sellarFirmasConTsa(comunicacionId: string) {
   }
 }
 
-/**
- * Firma adicional (co-firma) de un oficio o memorando ya radicado (MoReq 1.37):
- * varios funcionarios pueden firmar el mismo documento. Firma electrónica con
- * hash sobre el mismo contenido (asunto + cuerpo + radicado), con su propio
- * sello de tiempo. No cambia el estado ni el contenido.
- */
 export async function agregarCofirma(comunicacionId: string, usuarioId: string, ip: string | null, userAgent: string | null = null) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -263,11 +229,6 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
   });
 }
 
-/**
- * MoReq 3.17: firma varias comunicaciones (ENVIADA/INTERNA) de una sola acción.
- * Omite las que no aplican (recibidas, anuladas, ya firmadas por el usuario) sin
- * abortar el lote. Devuelve el detalle.
- */
 export async function firmarEnLote(comunicacionIds: string[], usuarioId: string, ip: string | null) {
   const ids = [...new Set(comunicacionIds.filter(Boolean))].slice(0, 100);
   if (ids.length === 0) throw new Error("No se seleccionó ninguna comunicación.");
@@ -287,7 +248,6 @@ export async function firmarEnLote(comunicacionIds: string[], usuarioId: string,
   return { firmadas, omitidas };
 }
 
-/** Comunicaciones ENVIADA/INTERNA activas que este usuario todavía no firmó (para la firma en lote). */
 export async function comunicacionesFirmablesPor(usuarioId: string) {
   return db.comunicacion.findMany({
     where: {
@@ -303,7 +263,7 @@ export async function comunicacionesFirmablesPor(usuarioId: string) {
 
 export type EntradaRadicacionEnviada = {
   asunto: string;
-  contenido: string; // cuerpo del oficio — se firma junto con el asunto y el radicado
+  contenido: string;
   folios: number;
   anexosDescripcion?: string | null;
   medio?: MedioComunicacion | null;
@@ -311,7 +271,7 @@ export type EntradaRadicacionEnviada = {
   dependenciaOrigenId?: string | null;
   serieId?: string | null;
   subserieId?: string | null;
-  respondeAId?: string | null; // radica en respuesta a una RECIBIDA — la marca como RESPONDIDA
+  respondeAId?: string | null;
   documentos?: EntradaDocumento[];
   radicadoPorId: string;
 };
@@ -328,9 +288,6 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     if (entrada.respondeAId) {
       const original = await tx.comunicacion.findUnique({ where: { id: entrada.respondeAId }, select: { id: true, tipo: true } });
       if (!original || original.tipo !== "RECIBIDA") throw new Error("La comunicación a la que responde no existe o no es una recibida.");
-      // Los PDF/Word que el funcionario adjuntó a su respuesta se trasladan al oficio de
-      // salida (misma ruta de Storage, sin volver a subir el archivo) — así ventanilla no
-      // tiene que descargarlos y volverlos a cargar a mano.
       const adjuntosRespuesta = await tx.comunicacionDocumento.findMany({
         where: { comunicacionId: entrada.respondeAId, esRespuesta: true },
         select: { nombre: true, descripcion: true, storagePath: true, mimeType: true, tamanoBytes: true, hashSha256: true },
@@ -391,14 +348,10 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
 
 export type EntradaRadicacionInterna = {
   asunto: string;
-  contenido: string; // cuerpo del memorando — se firma junto con el asunto y el radicado
+  contenido: string;
   folios: number;
   dependenciaOrigenId: string;
   dependenciaDestinoId: string;
-  // Persona puntual de la dependencia destino a quien se asigna el memorando al radicarlo — casi
-  // siempre el jefe de esa oficina, para que luego él lo redistribuya a sus colaboradores (ver
-  // puedeSubdistribuirInternamente en permisos.ts). Opcional: sin esto, queda RADICADA sin asignar,
-  // como antes.
   usuarioDestinoId?: string | null;
   serieId?: string | null;
   subserieId?: string | null;
@@ -406,7 +359,6 @@ export type EntradaRadicacionInterna = {
   radicadoPorId: string;
 };
 
-/** Memorando interno entre dependencias — se firma en la misma transacción (Ley 527/1999). */
 export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
@@ -451,7 +403,6 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   });
 }
 
-/** Anula un radicado erróneo dejando motivo (Ley 594/2000: nunca se borra, se anula con constancia). */
 export async function anularComunicacion(comunicacionId: string, motivo: string) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, estado: true } });
   if (!c) throw new Error("La comunicación no existe.");
@@ -460,11 +411,6 @@ export async function anularComunicacion(comunicacionId: string, motivo: string)
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
 }
 
-/**
- * Fija las palabras clave de una comunicación (MoReq 5.5). Cada palabra debe
- * pertenecer al vocabulario controlado activo — las que no, se descartan y se
- * informan.
- */
 export async function etiquetarComunicacion(comunicacionId: string, propuestas: string[]) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true } });
   if (!c) throw new Error("La comunicación no existe.");
@@ -473,12 +419,6 @@ export async function etiquetarComunicacion(comunicacionId: string, propuestas: 
   return { validas, rechazadas };
 }
 
-/**
- * Reclasifica una comunicación ya radicada a otra serie/subserie de la TRD, dejando motivo (MoReq req.
- * 1.30-1.32: reubicar en la clasificación con auditoría y motivo). No reclasifica retroactivamente lo que
- * ya se calculó con la clasificación anterior (ej. términos de ley ya corridos) — solo cambia hacia
- * adelante cuál regla de retención/disposición aplica.
- */
 export async function reclasificarComunicacion(comunicacionId: string, subserieId: string, motivo: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -506,12 +446,6 @@ export async function reclasificarComunicacion(comunicacionId: string, subserieI
   return { anterior, nueva };
 }
 
-/**
- * Guarda (o revisa) el borrador de respuesta de una RECIBIDA. NO radica nada
- * — es la constancia de qué respondió el funcionario asignado, para que
- * ventanilla/gestión documental la retome y la radique como ENVIADA
- * (`respondeAId`) con consecutivo y firma.
- */
 export async function registrarRespuestaFuncionario(
   comunicacionId: string,
   usuarioId: string,
@@ -525,14 +459,9 @@ export async function registrarRespuestaFuncionario(
   if (!c) throw new Error("La comunicación no existe.");
   if (c.tipo !== "RECIBIDA") throw new Error("Solo se responde a comunicaciones recibidas.");
   if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");
-  // Ya se radicó formalmente como oficio de salida (respondeAId) — el borrador cumplió su propósito;
-  // editarlo ahora no cambiaría nada de lo que ya quedó firmado y despachado.
   if (c._count.respuestas > 0) throw new Error("Ya se radicó una respuesta formal para esta comunicación.");
   if (!texto.trim()) throw new Error("Escriba el contenido de la respuesta.");
 
-  // El primer borrador es la señal real de que alguien ya está trabajando en esto — sin esto,
-  // "En trámite" solo se alcanzaba suspendiendo y reactivando un término (un desvío raro), así que en
-  // el flujo normal (asignar → responder → radicar salida) nunca se veía ese paso de la barra de avance.
   const pasaAEnTramite = c.estado === "ASIGNADA" || c.estado === "EN_REPARTO";
 
   return db.$transaction(async (tx) => {
@@ -550,16 +479,8 @@ export async function registrarRespuestaFuncionario(
   });
 }
 
-/**
- * El funcionario al que se le repartió una recibida la DEVUELVE a la ventanilla,
- * indicando por qué no le corresponde. No se permite si faltan 3 días hábiles o
- * menos para el vencimiento del término de ley (cerca del plazo hay que
- * atenderla, no rebotarla). Al devolver, las distribuciones vigentes quedan
- * inactivas con el motivo, se limpia el borrador de respuesta y la comunicación
- * vuelve a EN_REPARTO para que la ventanilla la reparta de nuevo.
- */
 export async function devolverReparto(comunicacionId: string, usuarioId: string, motivo: string) {
-  void usuarioId; // el permiso (ser destinatario del reparto vigente) ya se validó en la ruta
+  void usuarioId;
   if (!motivo.trim()) throw new Error("Indique por qué esta comunicación no le corresponde.");
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -589,11 +510,6 @@ export async function devolverReparto(comunicacionId: string, usuarioId: string,
   return { radicado: c.radicado };
 }
 
-/**
- * Cambia el nivel de acceso a la información de una comunicación (Ley 1712/2014,
- * arts. 6/18/19). PUBLICA no exige fundamento; CLASIFICADA/RESERVADA sí, por
- * escrito — la ley exige poder justificar por qué se restringe el acceso.
- */
 export async function cambiarNivelAccesoComunicacion(comunicacionId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, estado: true, nivelAcceso: true } });
   if (!c) throw new Error("La comunicación no existe.");
@@ -609,7 +525,6 @@ export async function cambiarNivelAccesoComunicacion(comunicacionId: string, niv
   return { anterior: c.nivelAcceso, nuevo: nivelAcceso };
 }
 
-/** Archiva una comunicación ya radicada dentro de un expediente (unificación con Trámites 2.0). */
 export async function archivarEnExpediente(comunicacionId: string, expedienteId: string) {
   const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });
   if (!expediente) throw new Error("El expediente no existe.");
@@ -618,11 +533,6 @@ export async function archivarEnExpediente(comunicacionId: string, expedienteId:
 
 const ESTADOS_DETENIBLES: EstadoComunicacion[] = ["RADICADA", "EN_REPARTO", "ASIGNADA", "EN_TRAMITE"];
 
-/**
- * Detiene el trámite de una RECIBIDA en curso (MoReq 7.18), con motivo. Si tiene
- * término de ley (PQRSD), además lo suspende (Art. 17 CPACA); si no, es una pausa
- * administrativa. En los dos casos pasa a INFORMACION_ADICIONAL_REQUERIDA.
- */
 export async function suspenderTermino(comunicacionId: string, motivo: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -639,11 +549,6 @@ export async function suspenderTermino(comunicacionId: string, motivo: string) {
   });
 }
 
-/**
- * Reanuda un trámite detenido. Si había término de ley, se reanuda por los días
- * hábiles que faltaban, no se reinicia (Art. 17 CPACA); si no, solo vuelve a
- * EN_TRAMITE.
- */
 export async function reactivarTermino(comunicacionId: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -669,12 +574,6 @@ export async function reactivarTermino(comunicacionId: string) {
   });
 }
 
-/**
- * Aplaza una disposición final ya vencida, con motivo obligatorio (MoReq 2.11)
- * — ej. mientras dura un proceso judicial o disciplinario sobre lo que
- * contiene la comunicación. Deja de aparecer como pendiente hasta la fecha
- * indicada; no reinicia el conteo de retención, solo pausa la ejecución.
- */
 export async function aplazarDisposicion(comunicacionId: string, hasta: Date, motivo: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -691,7 +590,6 @@ export async function aplazarDisposicion(comunicacionId: string, hasta: Date, mo
   });
 }
 
-/** Transferencia del archivo de gestión al archivo central (Acuerdo 004/2019 AGN) — solo deja constancia de la fecha. */
 export async function transferirACentral(comunicacionId: string) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, transferidaCentralEn: true } });
   if (!c) throw new Error("La comunicación no existe.");
@@ -699,11 +597,6 @@ export async function transferirACentral(comunicacionId: string) {
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { transferidaCentralEn: new Date() } });
 }
 
-/**
- * Confirmación de que el archivo central recibió el documento y la transferencia
- * concluyó (MoReq 2.17). Hasta este momento la comunicación se "conserva": no se
- * puede ejecutar su disposición final aunque ya haya cumplido la retención.
- */
 export async function confirmarTransferenciaCentral(comunicacionId: string, usuarioId: string) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
@@ -744,15 +637,6 @@ export type ResultadoDespacho = {
   avisoExpediente: string | null;
 };
 
-/**
- * Despacho efectivo de un oficio de salida (MoReq 7.19 — cierre real del ciclo):
- * la ventanilla de salida / gestión documental registra que el oficio YA RADICADO
- * Y FIRMADO se envió de verdad al destinatario (correo, físico, mensajería). Es
- * este paso, no la radicación, el que cierra el ciclo de la recibida a la que
- * responde. Opcionalmente archiva la recibida y la respuesta en un expediente
- * documental de la subserie (lo crea si no existe) — Art. 4.3.2 Acuerdo 001/2024
- * AGN: el expediente es la unidad documental de la actuación completa.
- */
 export async function despacharComunicacion(entrada: EntradaDespacho): Promise<ResultadoDespacho> {
   const c = await db.comunicacion.findUnique({
     where: { id: entrada.comunicacionId },
@@ -776,7 +660,6 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
   const dependenciaExpediente = c.dependenciaOrigenId ?? c.respondeA?.dependenciaDestinoId ?? null;
 
   let avisoExpediente: string | null = null;
-  // El número del expediente se genera FUERA de la transacción (consecutivo atómico propio).
   let numeroNuevoExpediente: string | null = null;
   if (entrada.archivarEnExpediente && !expedienteExistente) {
     if (!dependenciaExpediente) {
@@ -854,15 +737,6 @@ export type ResultadoDisposicionFinalLote = {
   actaId: string | null;
 };
 
-/**
- * Ejecuta la disposición final de una o varias comunicaciones a la vez según
- * lo que diga la TRD de cada una (MoReq 2.9: selección de expedientes vencidos
- * "individual o por lotes" — un lote de un solo elemento cubre el caso
- * individual). Las que exigen acta (eliminación/selección) comparten UNA sola
- * acta — el modelo ActaEliminacion.comunicaciones ya está pensado para un
- * lote. Las que no la exigen (conservación/microfilmación) solo quedan
- * marcadas con la fecha. La comunicación en sí NUNCA se borra de la base.
- */
 export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFinalLote): Promise<ResultadoDisposicionFinalLote> {
   const comunicaciones = await db.comunicacion.findMany({
     where: { id: { in: entrada.comunicacionIds } },
@@ -886,15 +760,10 @@ export async function ejecutarDisposicionFinalLote(entrada: EntradaDisposicionFi
     if (c.fechaDisposicionFinal) { omitidas.push({ id, motivo: `${c.radicado}: ya tiene disposición final ejecutada.` }); continue; }
     const disposiciones = c.subserie?.disposicionesFinal ?? [];
     if (disposiciones.length === 0) { omitidas.push({ id, motivo: `${c.radicado}: su subserie no tiene disposición final definida en la TRD.` }); continue; }
-    // MoReq 2.17: no ejecutar disposición final sobre algo transferido al archivo central cuyo proceso de
-    // transferencia todavía no se confirmó como concluido — se "conserva" hasta esa confirmación.
     if (c.transferidaCentralEn && !c.transferenciaConfirmadaEn) {
       omitidas.push({ id, motivo: `${c.radicado}: transferida al archivo central pero sin confirmar la recepción — se conserva hasta confirmar que el proceso concluyó.` });
       continue;
     }
-    // MoReq 2.13: no destruir (eliminación/selección) una comunicación que sigue archivada dentro de un
-    // expediente — el expediente quedaría con una referencia rota. Conservación/microfilmación sí proceden
-    // (no destruyen nada), por eso este chequeo va solo dentro de la rama que exige acta.
     if (algunaRequiereActa(disposiciones)) {
       const numeroExpediente = c.expediente?.numero ?? c.expedienteDocumental?.numero;
       if (numeroExpediente) {

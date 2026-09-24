@@ -17,7 +17,7 @@ describe("calcularFaseArchivistica", () => {
   const radicacion = d("2020-01-01");
 
   it("en gestión mientras no se cumplan los años de gestión", () => {
-    const ahora = d("2022-01-01"); // 2 de 3 años de gestión
+    const ahora = d("2022-01-01");
     const r = calcularFaseArchivistica(radicacion, 3, 2, ahora);
     expect(r.fase).toBe("GESTION");
     expect(r.fechaFinGestion.toISOString().slice(0, 10)).toBe("2023-01-01");
@@ -25,7 +25,7 @@ describe("calcularFaseArchivistica", () => {
   });
 
   it("pendiente de transferir cuando ya pasó gestión pero no central", () => {
-    const ahora = d("2024-01-01"); // pasó gestión (2023), no ha pasado central (2025)
+    const ahora = d("2024-01-01");
     const r = calcularFaseArchivistica(radicacion, 3, 2, ahora);
     expect(r.fase).toBe("TRANSFERENCIA_PENDIENTE");
   });

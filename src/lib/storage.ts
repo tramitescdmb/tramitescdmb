@@ -28,11 +28,6 @@ export async function uploadDocumento(path: string, file: Buffer, mimeType: stri
   return path;
 }
 
-/**
- * Genera una URL de subida firmada de un solo uso: el navegador sube el archivo
- * directo a Supabase Storage con esto, sin pasar el archivo por el servidor de
- * Next.js/Vercel (que tiene un límite de tamaño de solicitud mucho más chico).
- */
 export async function crearUrlSubidaFirmada(path: string) {
   const supabase = getAdminClient();
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
@@ -53,7 +48,6 @@ export async function deleteDocumento(path: string) {
   if (error) throw error;
 }
 
-/** Descarga el contenido de un documento del bucket como Buffer (para procesarlo en el servidor). */
 export async function descargarDocumento(path: string): Promise<Buffer> {
   const supabase = getAdminClient();
   const { data, error } = await supabase.storage.from(BUCKET).download(path);

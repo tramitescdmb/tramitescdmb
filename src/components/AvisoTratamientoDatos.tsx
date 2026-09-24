@@ -4,12 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 
-/** Aviso de tratamiento de datos personales del primer ingreso (Directorio Activo o
- * correo/contraseña) — bloqueante hasta que el usuario decida. Adaptado de un ejemplo de
- * proveedor de firma electrónica externo (Signio), corrigiendo lo que no aplica: la CDMB opera
- * su propia plataforma y es la responsable directa del tratamiento (Ley 1581/2012), no un
- * proveedor SaaS revendiendo el servicio a un tercero. Enlaces de Términos/Política pendientes
- * de definir (`href="#"`), a pedido explícito del usuario. */
 export function AvisoTratamientoDatos({ abierto }: { abierto: boolean }) {
   const router = useRouter();
   const [visible, setVisible] = useState(abierto);

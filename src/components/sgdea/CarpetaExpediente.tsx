@@ -16,12 +16,6 @@ export type CarpetaData = {
   coincidencias?: string[];
 };
 
-/**
- * Un expediente como una carpeta física: pestaña arriba con el número (el
- * "rótulo del lomo"), el asunto, y en el pie los datos que sirven para
- * ubicarlo en el archivo (dependencia, serie, folios, archivos). Cerrada = con
- * candado y en tono neutro. Toda la tarjeta enlaza al detalle.
- */
 export function CarpetaExpediente({ c }: { c: CarpetaData }) {
   const cerrada = c.estado === "CERRADO";
 
@@ -34,7 +28,6 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
           : "border-amber-200/80 bg-amber-50/50 hover:border-amber-300"
       }`}
     >
-      {/* pestaña */}
       <span
         className={`absolute -top-3 left-0 flex h-3 items-center rounded-t-md border border-b-0 px-2 ${
           cerrada ? "border-stone-200 bg-stone-100" : "border-amber-200/80 bg-amber-100"
@@ -88,7 +81,6 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
   );
 }
 
-/** Cajón / balda: agrupa las carpetas de una dependencia, como un cajón del archivador. */
 export function CajonDependencia({
   nombre,
   total,

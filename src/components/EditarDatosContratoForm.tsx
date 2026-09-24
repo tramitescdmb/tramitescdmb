@@ -9,14 +9,6 @@ import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 type ModalidadOpcion = { valor: string; etiqueta: string };
 type Dependencia = { id: string; nombre: string };
 
-/**
- * Edita los datos generales de un expediente ya creado: modalidad, valor, dependencia
- * solicitante, número de contrato real y fechas — todo lo que, hasta 2026-09-23, solo se podía
- * fijar al crear el expediente (salvo número/fechas, que ya eran editables). Pedido explícito del
- * usuario: estos campos deben poder corregirse después (un error de captura al abrir el
- * expediente, un número de contrato SECOP II que no se conocía todavía, un cambio de dependencia
- * solicitante) sin tener que eliminar y rehacer el expediente completo.
- */
 export function EditarDatosContratoForm({
   expedienteId,
   modalidadActual,

@@ -9,12 +9,10 @@ type Permitido = {
   radicar: boolean;
   distribuir: boolean;
   admin: boolean;
-  /** Usuarios, auditoría de cuentas y seguridad son de toda la aplicación: solo el administrador del sistema. */
   administradorSistema: boolean;
   fondoHistorico: boolean;
 };
 
-/** Rutas que NO son la bandeja aunque cuelguen de /correspondencia. */
 const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon"];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
@@ -22,7 +20,6 @@ const esRutaBandeja = (p: string) =>
 
 const SOLO_ADMIN = "Solo administrador";
 
-/** Un ítem que requiere el permiso `admin` se muestra a todos, pero bloqueado para quien no lo tiene. */
 const paraAdmin = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.admin ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 const paraAdminSistema = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.administradorSistema ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 
@@ -59,8 +56,6 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
     { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
     permitido.fondoHistorico ? { label: "Fondo histórico", icon: Archive, href: "/correspondencia/fondo" } : null,
     {
-      // Configuración estructural del módulo (TRD, flujos, metadatos) y control de cuentas/seguridad
-      // (MoReq cap. 6), en un solo menú — antes eran dos desplegables uno junto al otro.
       label: "Administración",
       icon: Settings2,
       lado: "derecha",

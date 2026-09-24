@@ -3,10 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { editarPlantilla, duplicarPlantilla, esAmbitoValido } from "@/lib/plantillas";
 
-/**
- * Edita una plantilla, la duplica o cambia su estado activo.
- * `accion` = "editar" | "toggle" | "duplicar". Solo administrador de archivo.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

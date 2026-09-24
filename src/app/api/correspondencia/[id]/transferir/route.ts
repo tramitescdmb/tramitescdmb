@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { transferirACentral } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Registra la transferencia del archivo de gestión al archivo central (Acuerdo 004/2019 AGN). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

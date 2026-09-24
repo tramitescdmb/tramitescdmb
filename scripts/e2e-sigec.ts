@@ -1,16 +1,3 @@
-/**
- * Prueba de punta a punta del módulo SIGEC (Contratación) contra un servidor Next en marcha
- * (por defecto http://localhost:3100) y la base configurada en .env.
- *
- *   npx next dev --turbopack -p 3100      (en otra terminal)
- *   npx tsx scripts/e2e-sigec.ts
- *
- * Crea usuarios con correo `e2e-sigec-*@prueba.invalid`, un contratista y un expediente de
- * prueba, recorre el ciclo completo (contratista → expediente → documentos → firma → tres
- * etapas → cierre → ZIP) por las rutas HTTP reales, y al final elimina el expediente (con sus
- * archivos de storage), el contratista y el requisito temporal, y DESACTIVA los usuarios de
- * prueba (no se borran: ya figuran en la bitácora de auditoría).
- */
 import { createClient } from "@supabase/supabase-js";
 import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
@@ -24,9 +11,6 @@ const PASSWORD = "E2e-Sigec-2026!";
 const SUFIJO = Date.now().toString(36);
 const ETAPAS = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"] as const;
 
-// Fechas del contrato relativas a hoy (75 días atrás → 45 adelante): los primeros periodos ya cerraron
-// (deben verse «por radicar» en el panel) y los últimos todavía no. Los periodos esperados se calculan con
-// la misma función que usa la aplicación.
 const DIA_MS = 24 * 60 * 60 * 1000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const INICIO_CONTRATO = iso(Date.now() - 75 * DIA_MS);
@@ -80,7 +64,6 @@ class Cliente {
   }
   async pagina(ruta: string) {
     const res = await this.req(ruta);
-    // React intercala «<!-- -->» entre texto y valores interpolados: se quita para poder buscar frases.
     const html = res.status === 200 ? (await res.text()).replace(/<!-- -->/g, "").replace(/&nbsp;/g, " ") : "";
     return { status: res.status, html, location: res.headers.get("location") };
   }
@@ -104,7 +87,6 @@ async function pdfPrueba(titulo: string): Promise<Uint8Array> {
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
 
-/** Sube un PDF por la misma vía que el navegador (firma → storage → confirmación de metadatos). */
 async function subirDocumento(c: Cliente, expedienteId: string, etapa: string, nombre: string, extra: Record<string, unknown> = {}) {
   const bytes = await pdfPrueba(nombre);
   const firma = await c.json(`/api/contratacion/expedientes/${expedienteId}/upload-sign`, "POST", { fileName: `${nombre}.pdf`, etapa });
@@ -122,8 +104,6 @@ async function subirDocumento(c: Cliente, expedienteId: string, etapa: string, n
   });
 }
 
-/** Capturas de pantalla opcionales (E2E_CAPTURAS=1): abre las páginas con un navegador real (Edge) usando la
- * sesión de cada usuario de prueba y guarda un PNG en capturas-e2e/ — para revisar el aspecto, no solo el HTML. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- instancia de playwright-core, dependencia opcional sin tipos declarados aquí.
 let navegador: any = null;
 async function capturar(etiqueta: string, cliente: Cliente, ruta: string, opciones: { menu?: string } = {}) {
@@ -153,7 +133,6 @@ async function main() {
   const dependencia = await db.dependencia.findFirst({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } });
   esperar(dependencia, "No hay dependencias activas en la base.");
 
-  // Valor del consecutivo de expedientes ANTES de la prueba, para devolverlo al terminar (ver limpieza).
   const anioConsecutivo = new Date().getFullYear();
   const consecutivoInicial = (await db.consecutivoRadicado.findUnique({ where: { serie_anio: { serie: "CTO", anio: anioConsecutivo } } }))?.ultimoNumero ?? 0;
 
@@ -195,7 +174,6 @@ async function main() {
       for (const clave of Object.keys(USUARIOS)) await c[clave]!.login(c[clave]!.nombre);
     });
     await paso("Sin sesión, la API no ejecuta la acción (401 o redirección al login)", async () => {
-      // El middleware redirige al login las rutas protegidas; la propia ruta responde 401 si llegara a ejecutarse.
       const res = await new Cliente("anon").req("/api/contratacion/expedientes", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
       const destino = res.headers.get("location") ?? "";
       esperar(res.status === 401 || (res.status === 307 && destino.includes("/login")), `HTTP ${res.status} → ${destino}`);
@@ -310,7 +288,6 @@ async function main() {
       const fila = await db.contratista.findUnique({ where: { id: ctx.contratistaId } });
       esperar(fila?.ciudad === "Floridablanca", "el cambio no se guardó");
     });
-    // El usuario con rol Contratista queda vinculado a este registro (lo hace el flujo de asignación de rol).
     await db.contratista.update({ where: { id: ctx.contratistaId! }, data: { usuarioId: ids.contratista } });
 
     console.log("\n4. Expediente");
@@ -424,8 +401,6 @@ async function main() {
       }
       await paso(`${etapa}: sube ${obligatorios.length} documento(s) obligatorio(s) del catálogo`, async () => {
         for (const [j, req] of obligatorios.entries()) {
-          // El primero lo sube el supervisor (asignado al expediente), el resto el jefe; en las etapas
-          // posteriores el contratista sube uno propio.
           const quien = j === 0 ? c.sup! : c.jefe!;
           const r = await subirDocumento(quien, exp, etapa, `${req.nombre}`.slice(0, 60), {
             requisitoId: req.id,
@@ -448,8 +423,6 @@ async function main() {
       }
 
       if (etapa === "PRECONTRACTUAL") {
-        // Documento libre (no anticipado por el catálogo) marcado como «requiere firma» — así el ciclo
-        // de firma se prueba aunque el catálogo cambie.
         await paso("Firma · sube un documento libre que requiere firma", async () => {
           const r = await subirDocumento(c.jefe!, exp, etapa, "acta-para-firma", { requiereFirma: true });
           esperar(r.status === 201, `HTTP ${r.status}: ${JSON.stringify(r.data)}`);
@@ -604,7 +577,6 @@ async function main() {
       const sigue = await db.expedienteContractual.findUnique({ where: { id: exp }, select: { contratistaId: true } });
       esperar(sigue?.contratistaId === ctx.contratistaId, "el contratista original fue reemplazado");
 
-      // Expediente sin contratista: se vincula desde la ficha del contratista (aparece en su lista) y no admite un segundo.
       const e2 = await c.jefe!.json("/api/contratacion/expedientes", "POST", {
         objeto: `E2E SIGEC ${SUFIJO} — expediente sin contratista`,
         modalidadSeleccion: "CONTRATACION_DIRECTA",
@@ -635,9 +607,6 @@ async function main() {
         const r = await c.admin!.json(`/api/contratacion/expedientes/${id}`, "DELETE");
         esperar(r.status === 200, `DELETE expediente → ${r.status}: ${JSON.stringify(r.data)}`);
       }
-      // Los expedientes de prueba consumen consecutivos CDMB-CTO-AAAA-NNNNNN: al borrarlos quedaría un hueco
-      // en la serie oficial. Se devuelve el contador a su valor previo a la prueba, salvo que un expediente
-      // real con número mayor haya sido creado mientras tanto (nunca se reutiliza un número ya emitido).
       const restantes = await db.expedienteContractual.findMany({ where: { numero: { startsWith: `CDMB-CTO-${anioConsecutivo}-` } }, select: { numero: true } });
       const mayor = restantes.reduce((m, e) => Math.max(m, Number(e.numero.split("-").pop()) || 0), 0);
       await db.consecutivoRadicado.updateMany({ where: { serie: "CTO", anio: anioConsecutivo }, data: { ultimoNumero: Math.max(consecutivoInicial, mayor) } });
@@ -660,9 +629,6 @@ async function main() {
   }
 }
 
-/** Informe de supervisión por periodos: espacios mensuales derivados de las fechas del contrato
- * (25 sep → 24 dic = 4) + espacios eventuales con nombre propio. El primer periodo (sep) ya se cargó
- * al subir los obligatorios del catálogo. */
 async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoId: string, docsSubidos: Record<string, string[]>) {
   const meta = { etapa: "CONTRACTUAL", storagePath: "no-existe/x.pdf", mimeType: "application/pdf", tamanoBytes: 10, nombre: "x", requisitoId };
   await paso("Informe · sin indicar periodo se rechaza (no sube nada)", async () => {
@@ -752,7 +718,6 @@ async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoI
   });
 }
 
-/** Ciclo de firma: asignación → buzón del firmante → firma → sello estampado → ficha técnica. */
 async function flujoFirma(c: Record<string, Cliente>, ids: Record<string, string>, exp: string, docId: string) {
   let solicitudId = "";
   await paso("Firma · el Jefe asigna al supervisor como firmante", async () => {

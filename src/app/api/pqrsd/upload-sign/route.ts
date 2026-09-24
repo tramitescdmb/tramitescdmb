@@ -8,11 +8,6 @@ import { datosPeticion } from "@/lib/auditoria-doc";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Firma de subida para adjuntos del formulario público de PQRSD (sin sesión).
- * Ruta separada de /api/uploads/sign a propósito: esa exige sesión y no debe
- * abrirse a llamadas anónimas — esta tiene su propio límite por IP.
- */
 export async function POST(req: NextRequest) {
   const { ip } = datosPeticion(req.headers);
   const limite = await verificarLimiteEnvio(ip, "pqrsd:upload-sign", { porHora: 20, porDia: 60 });

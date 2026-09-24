@@ -1,27 +1,7 @@
 import { cookies } from "next/headers";
 
-/**
- * Cliente de la "Conexión por directorio activo CDMB".
- *
- * Autentica a un funcionario contra el API de directorio activo de la
- * Corporación (Laravel + Sanctum) en vez de contra la tabla `Usuario` local.
- * El flujo completo vive en `src/app/api/auth/login-directorio-activo/route.ts`:
- * este archivo solo habla con el API externo y guarda/lee el token que ese API
- * devuelve.
- *
- * IMPORTANTE — este módulo usa `next/headers` (Node runtime). NO debe importarse
- * desde `src/middleware.ts` (Edge Runtime), igual que `src/lib/password.ts`.
- *
- * Configuración (variables de entorno):
- *   DIRECTORIO_ACTIVO_API_URL   URL base del API, sin barra final.
- *                               Ej.: http://168.90.14.182/api
- *   DIRECTORIO_ACTIVO_CLIENTE   Valor del campo `name` que el API exige.
- *                               Uno de: web | app | postman | desktop.
- *                               Por defecto "web".
- */
-
 const COOKIE_TOKEN = "sinca_da_token";
-const TOKEN_DURACION_SEGUNDOS = 60 * 60 * 24 * 7; // 7 días, igual que la sesión propia
+const TOKEN_DURACION_SEGUNDOS = 60 * 60 * 24 * 7;
 
 function baseUrl() {
   const url = process.env.DIRECTORIO_ACTIVO_API_URL?.trim().replace(/\/+$/, "");
@@ -32,19 +12,10 @@ export function directorioActivoConfigurado() {
   return baseUrl() !== null;
 }
 
-// `nombreInicialDesdeUsuarioRed` vive en `@/lib/nombre-usuario-red` (no aquí): este archivo
-// importa `next/headers`, lo que lo vuelve inservible desde un Client Component — ver el
-// comentario en ese archivo.
-
 export type ResultadoAutenticacion =
   | { ok: true; token: string }
   | { ok: false; mensaje: string };
 
-/**
- * Llama a `POST {base}/admin/login`. Devuelve el token de Sanctum si las
- * credenciales son correctas, o un mensaje de error apto para mostrar al
- * funcionario si no.
- */
 export async function autenticarDirectorioActivo(
   usuario: string,
   password: string
@@ -64,12 +35,8 @@ export async function autenticarDirectorioActivo(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      // El API nombra el campo "email" pero espera el usuario de red (el ejemplo
-      // de la documentación es literalmente "usuario", sin dominio).
       body: JSON.stringify({ name: cliente, email: usuario, password }),
       cache: "no-store",
-      // Si el API tarda o la red interna de la CDMB no es alcanzable, no dejamos
-      // colgada la petición de login indefinidamente.
       signal: AbortSignal.timeout(15_000),
     });
   } catch (error) {
@@ -84,9 +51,7 @@ export async function autenticarDirectorioActivo(
   let cuerpo: unknown = null;
   try {
     cuerpo = await respuesta.json();
-  } catch {
-    // sin cuerpo JSON útil
-  }
+  } catch {}
 
   if (respuesta.ok) {
     const token = (cuerpo as { token?: unknown })?.token;
@@ -97,7 +62,6 @@ export async function autenticarDirectorioActivo(
     return { ok: false, mensaje: "El directorio activo respondió de forma inesperada. Reporte el caso al área de sistemas." };
   }
 
-  // 422 de Laravel: { message, errors: { email: [...] } }
   if (respuesta.status === 422) {
     const mensaje = (cuerpo as { message?: unknown })?.message;
     return {
@@ -107,9 +71,6 @@ export async function autenticarDirectorioActivo(
   }
 
   if (respuesta.status === 419) {
-    // Protección CSRF de Laravel. Solo debería ocurrir si /admin/login quedó
-    // detrás del middleware `web` en el API; habría que pedir al área de
-    // sistemas que lo exponga como ruta de API sin CSRF.
     console.error("[directorio-activo] 419 (CSRF) desde el API de login");
     return { ok: false, mensaje: "El directorio activo rechazó la solicitud (CSRF). Reporte el caso al área de sistemas." };
   }
@@ -118,11 +79,6 @@ export async function autenticarDirectorioActivo(
   return { ok: false, mensaje: "El directorio activo no está disponible en este momento. Intente más tarde." };
 }
 
-/**
- * Llama a `DELETE {base}/admin/logout` con el token del funcionario. Es de mejor
- * esfuerzo: si falla, igual cerramos la sesión propia (el que manda es la cookie
- * de esta app, no el token del API).
- */
 export async function cerrarSesionDirectorioActivo(token: string) {
   const base = baseUrl();
   if (!base) return;
@@ -141,8 +97,6 @@ export async function cerrarSesionDirectorioActivo(token: string) {
     console.error("[directorio-activo] no se pudo cerrar sesión en el API (se ignora):", error);
   }
 }
-
-// --- Cookie con el token del API (aparte de la cookie de sesión propia) --------
 
 export async function guardarTokenDirectorioActivo(token: string) {
   const cookieStore = await cookies();

@@ -7,8 +7,6 @@ import type { RolFirmante } from "@prisma/client";
 
 const ROLES_VALIDOS: RolFirmante[] = ["FIRMA", "VISTO_BUENO", "LECTURA"];
 
-/** Asigna quién debe firmar, dar visto bueno o tener solo lectura sobre un documento de un
- * expediente de trámites. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

@@ -9,9 +9,6 @@ import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContrata
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
-/** Carga múltiple con compresión de imágenes en el cliente antes de subir (tope 2MB por archivo). Un
- * PDF que siga pesando de más tras el intento best-effort se rechaza con un mensaje claro — no hay
- * forma real de recomprimir un PDF en este stack (ver src/lib/compresion-cliente.ts). */
 export function SubirDocumentosContratoForm({
   expedienteId,
   etapa,

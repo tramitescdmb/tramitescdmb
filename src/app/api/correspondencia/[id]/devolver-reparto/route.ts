@@ -5,10 +5,6 @@ import { obtenerPermisosUsuario, puedeDevolverReparto } from "@/lib/permisos";
 import { devolverReparto } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/**
- * El funcionario al que se le repartió una recibida la devuelve a la ventanilla,
- * indicando por qué no le corresponde. La ventanilla la reparte de nuevo.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

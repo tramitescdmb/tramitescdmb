@@ -4,8 +4,6 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SeguridadFormulario } from "@/components/admin/SeguridadFormulario";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 
-/** Seguridad (acceso, contraseñas, formatos, sello de tiempo) dentro de SIGEC — el mismo formulario
- * que el resto de la aplicación; visible para el Administrador y el Jefe de Contratación. */
 export default async function SeguridadSigecPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");

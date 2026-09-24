@@ -3,8 +3,6 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrar
 import { AuditoriaCuentas } from "@/components/admin/AuditoriaCuentas";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 
-/** Auditoría de cuentas dentro de SIGEC — el mismo registro que en el resto de la aplicación, sin la
- * actividad de otros módulos; visible para el Administrador y el Jefe de Contratación. */
 export default async function AuditoriaSigecPage({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");

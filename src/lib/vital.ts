@@ -1,28 +1,6 @@
 import { db } from "@/lib/db";
 import { uploadDocumento } from "@/lib/storage";
 
-/**
- * Cliente de la interoperabilidad con VITAL (Ventanilla Integral de Trámites
- * Ambientales en Línea, MinAmbiente).
- *
- * Replica EXACTAMENTE cómo lo hace el sistema anterior (`sinca.cdmb.gov.co`):
- * no habla con VITAL directo, sino con un **proxy** (`.../api/vital`) que
- * reenvía por X-Road a MinAmbiente. Ver reference-vital-sinca1 en la memoria.
- *
- *   SPA → proxy Laravel (VITAL_API_URL) → servidor X-Road → VITAL (MADS-8003)
- *
- * Cada llamada lleva 3 headers de enrutamiento:
- *   X-Road-Url     el servicio X-Road de VITAL           (VITAL_XROAD_URL)
- *   X-Road-Client  la identidad X-Road de la CDMB        (VITAL_XROAD_CLIENT)
- *   X-Road-Token   Bearer <access_token> de `wsToken`
- *
- * Alcance: SOLO LECTURA. No se usan `wsSolicitudesEstado` / `wsSolicitudesRadicados`
- * / `wsNotificacionesEmail` (endpoints de escritura hacia VITAL).
- *
- * Este módulo usa Buffer/fetch de Node — solo se importa desde rutas API y
- * scripts, nunca desde el navegador ni desde el middleware.
- */
-
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
 const XROAD_URL = process.env.VITAL_XROAD_URL?.trim();
 const XROAD_CLIENT = process.env.VITAL_XROAD_CLIENT?.trim();
@@ -31,9 +9,6 @@ const CLIENT_SECRET = process.env.VITAL_CLIENT_SECRET;
 const USERNAME = process.env.VITAL_USERNAME;
 const PASSWORD = process.env.VITAL_PASSWORD;
 
-// El proxy (`.../api/vital`) es una app Laravel/Sanctum: hay que estar logueado
-// en ella (`/admin/login`) además de tener el token de VITAL. Se reutiliza la
-// misma cuenta de servicio que SINCA salvo que se den credenciales propias.
 const PROXY_USUARIO = process.env.VITAL_PROXY_USUARIO || process.env.SINCA_API_USUARIO;
 const PROXY_PASSWORD = process.env.VITAL_PROXY_PASSWORD || process.env.SINCA_API_PASSWORD;
 const proxyLoginUrl = () => (API_URL ? `${API_URL.replace(/\/vital$/, "")}/admin/login` : null);
@@ -42,13 +17,6 @@ export function vitalConfigurado(): boolean {
   return Boolean(API_URL && XROAD_URL && XROAD_CLIENT && CLIENT_ID && CLIENT_SECRET && USERNAME && PASSWORD && PROXY_USUARIO && PROXY_PASSWORD);
 }
 
-/**
- * Catálogo completo de trámites de VITAL (id → nombre), tal como lo expone el
- * proxy de la CDMB en `GET /api/vital/tipo-tramites`. Copiado el 2026-09-01 y
- * refrescable con `refrescarCatalogoTramites()` (lo corre el cron). Son ~117
- * categorías: VITAL usa estos mismos nombres en su portal, por eso se dejan
- * literales aunque algunos arrastren el código interno de versión del trámite.
- */
 export const NOMBRE_TRAMITE_VITAL: Record<number, string> = {
   1: "DAA y/o TDR para EIA",
   2: "Licencia Ambiental.",
@@ -169,29 +137,18 @@ export const NOMBRE_TRAMITE_VITAL: Record<number, string> = {
   130: "Permiso Aprovechamiento Fauna",
 };
 
-/**
- * Trámites que ya se confirmó que la identidad de la CDMB tiene con datos en
- * VITAL (probando `wsObtenerSolicitudes`). Son la semilla de la sincronización;
- * el resto del catálogo se incorpora solo cuando la exploración
- * (`descubrirTramitesNuevos`) encuentra solicitudes y lo guarda en `VitalTramite`.
- */
 export const TRAMITES_VITAL_SEMILLA = [6, 23, 31, 33, 35, 38, 41, 73, 76, 110, 121];
 
-/** @deprecated Nombre viejo; ahora la semilla no es "todo el catálogo". */
 export const TRAMITES_VITAL_DISPONIBLES = TRAMITES_VITAL_SEMILLA;
 
-/** Ids del catálogo completo de VITAL. */
 export const IDS_CATALOGO_VITAL = Object.keys(NOMBRE_TRAMITE_VITAL).map(Number);
 
 export function nombreTramiteVital(id: number): string {
   return NOMBRE_TRAMITE_VITAL[id] ? `(${id}) ${NOMBRE_TRAMITE_VITAL[id]}` : `Trámite ${id}`;
 }
 
-// `urlVitalPublico` vive en `vital-links.ts` (sin dependencias de servidor) para poder importarse
-// también desde componentes cliente, ej. `TablaVital.tsx`. Se re-exporta acá por comodidad.
 export { urlVitalPublico } from "@/lib/vital-links";
 
-/** Trámites VITAL semilla de la sincronización (env `VITAL_TRAMITES`, coma-separado). */
 export function tramitesVital(): number[] {
   const raw = process.env.VITAL_TRAMITES?.trim();
   if (!raw) return TRAMITES_VITAL_SEMILLA;
@@ -199,10 +156,6 @@ export function tramitesVital(): number[] {
   return ids.length ? ids : TRAMITES_VITAL_SEMILLA;
 }
 
-/**
- * Lista de trámites a sincronizar: los conocidos (o los de `VITAL_TRAMITES`) más
- * los que la exploración haya descubierto en la tabla `VitalTramite`.
- */
 export async function tramitesASincronizar(): Promise<number[]> {
   const detectados = await db.vitalTramite.findMany({ where: { activo: true }, select: { idTramite: true } });
   return [...new Set([...tramitesVital(), ...detectados.map((d) => d.idTramite)])].sort((a, b) => a - b);
@@ -216,18 +169,6 @@ async function registrarTramiteDescubierto(id: number, muestraActividad: string 
   });
 }
 
-/**
- * Prueba `wsObtenerSolicitudes` (rango 2010→ayer) sobre ids del catálogo de VITAL
- * que todavía no sincronizamos. Si alguno responde con solicitudes se agrega a
- * `VitalTramite` y entra a la sincronización diaria — así el catálogo se completa
- * solo con lo que la CDMB realmente tiene.
- *
- * - modo normal: `cantidad` ids por corrida, con cursor circular sobre el catálogo.
- * - `completo: true`: recorre TODO el catálogo pendiente de una vez (para un
- *   barrido inicial; puede tardar varios minutos).
- *
- * Devuelve los ids recién descubiertos.
- */
 export async function descubrirTramitesNuevos(cantidad = 40, opts?: { completo?: boolean }): Promise<number[]> {
   if (!vitalConfigurado()) return [];
   const conocidos = new Set(await tramitesASincronizar());
@@ -245,9 +186,7 @@ export async function descubrirTramitesNuevos(cantidad = 40, opts?: { completo?:
         await registrarTramiteDescubierto(id, p[0].nombreActividad ?? null);
         nuevos.push(id);
       }
-    } catch {
-      /* error de bus X-Road (no un "sin datos") — se reintenta en la próxima corrida */
-    }
+    } catch {}
   };
 
   if (opts?.completo) {
@@ -268,8 +207,6 @@ export async function descubrirTramitesNuevos(cantidad = 40, opts?: { completo?:
   await db.vitalDescubrimiento.update({ where: { id: "singleton" }, data: { proximoId: siguiente } });
   return nuevos;
 }
-
-// --- Tokens: 1) sesión en el proxy Laravel  2) access_token de VITAL ---------
 
 let proxyToken: string | null = null;
 let tokenCache: { accessToken: string; expiraEn: number } | null = null;
@@ -336,8 +273,6 @@ async function obtenerToken(forzar = false): Promise<string> {
   return tokenCache.accessToken;
 }
 
-// --- Llamada genérica a un servicio ws* -------------------------------------
-
 function mensajeError(cuerpo: unknown): string {
   if (!cuerpo || typeof cuerpo !== "object") return "error desconocido";
   const o = cuerpo as Record<string, unknown>;
@@ -380,27 +315,15 @@ async function vitalPost<T>(ws: string, body: Record<string, unknown>, extraHead
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
     if (!res.ok) throw new Error(`VITAL ${ws}: HTTP ${res.status}`);
-    return (await res.arrayBuffer()) as unknown as T; // p. ej. /descargar devuelve un blob
+    return (await res.arrayBuffer()) as unknown as T;
   }
   const cuerpo = await res.json().catch(() => null);
   if (!res.ok) throw new Error(`VITAL ${ws}: ${mensajeError(cuerpo)}`);
   return cuerpo as T;
 }
 
-/**
- * VITAL responde "El campo id_tramite no se relaciona con un tramite de la
- * autoridad ambiental autenticada" cuando NO hay solicitudes de ese trámite en
- * el rango (aparece incluso para trámites que sí tenemos, en años sin
- * movimiento). Es una respuesta definitiva: no se reintenta y se trata como
- * lista vacía, no como error.
- */
 const SIN_DATOS_VITAL = /no se relaciona con un tramite|no se relaciona con el tramite|sin resultados|no se encontr/i;
 
-/**
- * El bus X-Road de VITAL es intermitente: la misma llamada a veces devuelve
- * datos y a veces se cae o da timeout. Se reintenta salvo que la respuesta sea
- * el "sin datos" de arriba, que es definitivo.
- */
 async function vitalPostReintentando<T>(ws: string, body: Record<string, unknown>, intentos = 3): Promise<T> {
   let ultimo: unknown;
   for (let i = 0; i < intentos; i++) {
@@ -415,8 +338,6 @@ async function vitalPostReintentando<T>(ws: string, body: Record<string, unknown
   throw ultimo;
 }
 
-// --- Servicios de lectura --------------------------------------------------
-
 export type SolicitudVitalResumen = {
   idVital: string;
   idTramite: number;
@@ -425,11 +346,10 @@ export type SolicitudVitalResumen = {
   nombreActividad: string | null;
 };
 
-/** wsObtenerSolicitudes — lista de solicitudes de un trámite en un rango de fechas. */
 export async function listarSolicitudes(opts: {
   idTramite: number;
-  fechaInicio: string; // AAAA-MM-DD
-  fechaFin: string; // AAAA-MM-DD
+  fechaInicio: string;
+  fechaFin: string;
   indiceRegistroInicial?: number;
   registrosPeticion?: number;
 }): Promise<SolicitudVitalResumen[]> {
@@ -443,7 +363,7 @@ export async function listarSolicitudes(opts: {
       registros_peticion: opts.registrosPeticion ?? 50,
     });
   } catch (err) {
-    if (err instanceof Error && SIN_DATOS_VITAL.test(err.message)) return []; // no hay solicitudes en el rango
+    if (err instanceof Error && SIN_DATOS_VITAL.test(err.message)) return [];
     throw err;
   }
   const arr = Array.isArray(data) ? data : ((data as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (data as { data?: unknown[] })?.data ?? []);
@@ -456,13 +376,11 @@ export async function listarSolicitudes(opts: {
   })).filter((r) => r.idVital);
 }
 
-/** wsSolicitudes — campos del formulario diligenciado por el ciudadano. */
 async function consultarCamposSolicitud(idVital: string): Promise<unknown> {
   const data = await vitalPostReintentando<{ campotramite?: unknown; campoTramite?: unknown; camposTramite?: unknown }>("/wsSolicitudes", { id_vital: idVital });
   return data?.campotramite ?? data?.campoTramite ?? data?.camposTramite ?? data;
 }
 
-/** wsSolicitante — datos del solicitante (VITAL devuelve un arreglo de interesados). */
 async function consultarSolicitante(idVital: string): Promise<Record<string, unknown>[] | null> {
   const data = await vitalPostReintentando<unknown>("/wsSolicitante", { id_vital: idVital });
   if (Array.isArray(data)) return data as Record<string, unknown>[];
@@ -472,24 +390,11 @@ async function consultarSolicitante(idVital: string): Promise<Record<string, unk
 
 type DocumentoVital = { nombre_archivo: string; url_archivo: string };
 
-/** wsDocumentos — documentos adjuntos (la url_archivo es un recurso X-Road, no una URL pública). */
 async function consultarDocumentos(idVital: string): Promise<DocumentoVital[]> {
   const data = await vitalPostReintentando<{ listaDocumentos?: DocumentoVital[]; lista_documentos?: DocumentoVital[] }>("/wsDocumentos", { id_vital: idVital });
   return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
 }
 
-/**
- * POST /descargar con X-Road-Url = url_archivo → devuelve el archivo.
- *
- * No usa `vitalPostReintentando` (que solo distingue "sin datos" de todo lo demás) porque acá hace
- * falta distinguir un 403 de un timeout/5xx transitorio: confirmado en vivo que **todo** intento de
- * descarga desde que existe esta integración devuelve 403 "El usuario no tiene los permisos
- * correctos" — el X-Road de la CDMB tiene acceso a wsObtenerSolicitudes/wsSolicitudes/wsSolicitante/
- * wsDocumentos, pero no al servicio de descarga de archivos. Es un permiso que falta configurar del
- * lado de X-Road, no algo que reintentar vaya a arreglar — así que un 403 no se reintenta y se
- * registra una sola vez; el resto de errores (red, timeout, 5xx) sí se reintenta, igual que las
- * demás llamadas a VITAL.
- */
 async function descargarDocumentoVital(urlArchivo: string, intentos = 3): Promise<{ buffer: Buffer; mimeType: string } | null> {
   if (!API_URL) return null;
   for (let i = 0; i < intentos; i++) {
@@ -526,8 +431,6 @@ async function descargarDocumentoVital(urlArchivo: string, intentos = 3): Promis
   return null;
 }
 
-// --- Sincronización -------------------------------------------------------
-
 function nombreDe(info: Record<string, unknown>): string | null {
   const razon = info.razonSocial ?? info.razon_social;
   if (typeof razon === "string" && razon) return razon;
@@ -544,7 +447,6 @@ function correoDe(info: Record<string, unknown>): string | null {
   return typeof v === "string" && v ? v : null;
 }
 
-/** Trae y guarda (upsert) UNA solicitud: campos + solicitante + documentos nuevos. */
 export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
   const [campos, solicitantes, documentos] = await Promise.all([
     consultarCamposSolicitud(resumen.idVital).catch(() => null),
@@ -596,15 +498,12 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       await db.solicitudVitalDocumento.create({
         data: { solicitudId: solicitud.id, nombre: doc.nombre_archivo, storagePath: path, mimeType: archivo.mimeType, tamanoBytes: archivo.buffer.length },
       });
-    } catch {
-      /* un documento puntual que falle no aborta el resto */
-    }
+    } catch {}
   }
 
   return solicitud;
 }
 
-/** Sincroniza TODAS las solicitudes de un trámite en un rango, paginando de a 50. */
 export async function sincronizarTramite(opts: {
   idTramite: number;
   fechaInicio: string;

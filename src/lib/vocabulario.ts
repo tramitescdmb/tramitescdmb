@@ -1,10 +1,5 @@
 import { db } from "@/lib/db";
 
-/**
- * Vocabulario controlado (MoReq 1.17/5.5): términos normalizados que un
- * administrador de archivo mantiene. Las palabras clave que se guardan en una
- * comunicación o un expediente deben pertenecer a esta lista.
- */
 export async function listarTerminos(soloActivos = true) {
   return db.terminoControlado.findMany({
     where: soloActivos ? { activo: true } : {},
@@ -34,11 +29,6 @@ export async function editarTermino(id: string, datos: { termino?: string; categ
   return db.terminoControlado.update({ where: { id }, data });
 }
 
-/**
- * Filtra una lista de palabras clave propuestas dejando solo las que existen como
- * término activo del vocabulario. Devuelve las válidas (normalizadas, sin
- * duplicados) y las rechazadas.
- */
 export async function validarPalabrasClave(propuestas: string[]): Promise<{ validas: string[]; rechazadas: string[] }> {
   const limpias = Array.from(new Set(propuestas.map((p) => p.trim()).filter(Boolean)));
   if (limpias.length === 0) return { validas: [], rechazadas: [] };

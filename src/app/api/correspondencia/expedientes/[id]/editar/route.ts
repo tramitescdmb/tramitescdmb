@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@
 import { editarExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Renombra (asunto/descripción) un expediente documental ya existente. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

@@ -6,18 +6,6 @@ import { Search, UserPlus } from "lucide-react";
 
 type TipoPersona = "NATURAL" | "JURIDICA";
 
-/** Vincula el contratista de un expediente ya creado — necesario para poder pasar de
- * Precontractual a Contractual (el expediente no puede avanzar sin saber quién es el
- * contratista, persona natural o jurídica). Busca por identificación; si no existe en el
- * registro de Contratistas (base propia de este módulo, separada de Solicitante de Trámites
- * ambientales 2.0 — no comparten NITs), permite crearlo aquí mismo y lo vincula de una vez,
- * mismo espíritu que "Buscar" en Nuevo expediente de Trámites 2.0.
- *
- * `contratistaActual`: cuando el expediente YA tiene un contratista vinculado, este mismo
- * formulario sirve para CAMBIARLO (pedido explícito del usuario, 2026-09-23 — antes la norma era
- * "un contratista por expediente, nunca se reemplaza"; un error de captura ya no exige borrar el
- * expediente completo) — pide confirmación antes de vincular, porque reemplaza a quien tenía
- * acceso al expediente y sus documentos. */
 export function VincularContratistaForm({ expedienteId, contratistaActual }: { expedienteId: string; contratistaActual?: { nombreORazonSocial: string } | null }) {
   const router = useRouter();
   const [identificacion, setIdentificacion] = useState("");

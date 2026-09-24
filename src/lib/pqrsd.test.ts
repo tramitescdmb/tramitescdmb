@@ -36,23 +36,23 @@ describe("calcularVencimiento", () => {
 describe("calcularVencimientoTrasReactivar", () => {
   it("reanuda por los días hábiles que faltaban, no reinicia el término (Art. 17 CPACA)", () => {
     const radicacion = d("2025-01-02");
-    const suspension = sumarDiasHabiles(radicacion, 5); // se consumieron 5 de 15
-    const ahora = suspension; // se reactiva el mismo día que se levanta la suspensión
+    const suspension = sumarDiasHabiles(radicacion, 5);
+    const ahora = suspension;
     const resultado = calcularVencimientoTrasReactivar(radicacion, suspension, ahora, 15);
-    expect(resultado.toISOString()).toBe(sumarDiasHabiles(ahora, 10).toISOString()); // restan 10
+    expect(resultado.toISOString()).toBe(sumarDiasHabiles(ahora, 10).toISOString());
   });
 
   it("no cuenta los días de la propia suspensión: reactivar más tarde no acorta lo que faltaba", () => {
     const radicacion = d("2025-01-02");
     const suspension = sumarDiasHabiles(radicacion, 5);
-    const ahora = sumarDiasHabiles(suspension, 20); // la suspensión duró 20 días hábiles
+    const ahora = sumarDiasHabiles(suspension, 20);
     const resultado = calcularVencimientoTrasReactivar(radicacion, suspension, ahora, 15);
     expect(resultado.toISOString()).toBe(sumarDiasHabiles(ahora, 10).toISOString());
   });
 
   it("nunca da un término restante menor a 1 día (piso defensivo)", () => {
     const radicacion = d("2025-01-02");
-    const suspension = sumarDiasHabiles(radicacion, 8); // ya se habían consumido más de los 5 del término
+    const suspension = sumarDiasHabiles(radicacion, 8);
     const ahora = suspension;
     const resultado = calcularVencimientoTrasReactivar(radicacion, suspension, ahora, 5);
     expect(resultado.toISOString()).toBe(sumarDiasHabiles(ahora, 1).toISOString());

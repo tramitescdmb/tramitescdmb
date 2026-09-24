@@ -1,9 +1,3 @@
-/**
- * Interpretación mínima del User-Agent para la bitácora (MoReq 6.7: registrar
- * navegador y dispositivo). Puro y sin dependencias — no pretende ser exhaustivo,
- * solo poner en palabras lo que ya se guarda como cadena cruda.
- */
-
 export type OrigenUA = { navegador: string; dispositivo: string };
 
 export function interpretarUserAgent(ua: string | null | undefined): OrigenUA {

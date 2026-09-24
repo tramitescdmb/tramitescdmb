@@ -2,12 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-/**
- * Dibuja un flujo de trabajo como flujograma con Mermaid (librería libre, MIT).
- * Recibe la definición ya armada por `flujoAMermaid()` — este componente solo
- * pinta. Se carga Mermaid de forma diferida (dynamic import) para no pesar en el
- * bundle de quien no abre un flujo.
- */
 export function Flujograma({ definicion }: { definicion: string }) {
   const host = useRef<HTMLDivElement>(null);
   const contador = useRef(0);

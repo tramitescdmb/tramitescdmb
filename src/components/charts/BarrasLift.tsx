@@ -1,14 +1,8 @@
 type Item = { label: string; lift: number; casos: number };
 
-// Diverging: por encima de 1,0× (sube) vs por debajo (baja). Dos polos + neutro.
-const SUBE = "#1baf7a"; // aqua/verde
-const BAJA = "#eb6834"; // naranja
+const SUBE = "#1baf7a";
+const BAJA = "#eb6834";
 
-/**
- * Barras divergentes centradas en 1,0× (el promedio). A la derecha, factores que
- * SUBEN la probabilidad; a la izquierda, los que la BAJAN. El largo es la razón
- * de verosimilitud (lift).
- */
 export function BarrasLift({ data, emptyMessage }: { data: Item[]; emptyMessage: string }) {
   if (data.length === 0) return <p className="px-1 py-8 text-center text-sm text-stone-400">{emptyMessage}</p>;
   const maxDesv = Math.max(...data.map((d) => Math.abs(Math.log2(d.lift || 1))), 0.1);
@@ -16,7 +10,7 @@ export function BarrasLift({ data, emptyMessage }: { data: Item[]; emptyMessage:
   return (
     <ul className="space-y-2">
       {data.map((item) => {
-        const l = Math.log2(item.lift || 1); // simétrico: 2× y 0,5× tienen el mismo largo
+        const l = Math.log2(item.lift || 1);
         const frac = Math.min(1, Math.abs(l) / maxDesv);
         const sube = l >= 0;
         return (

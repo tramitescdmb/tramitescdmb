@@ -8,8 +8,6 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 import { SectionHelp } from "@/components/Field";
 import { CatalogoRequisitosAdmin } from "@/components/CatalogoRequisitosAdmin";
 
-/** Catálogo administrable de requisitos documentales por etapa — antes solo se cargaba por script
- * (`data/contratacion/requisitos.json`). Reservado al Administrador de Contratación. */
 export default async function CatalogoRequisitosPage() {
   const session = await getSession();
   if (!session) redirect("/login");

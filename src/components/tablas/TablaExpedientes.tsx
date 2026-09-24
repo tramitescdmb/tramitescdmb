@@ -23,7 +23,6 @@ export type FilaExpediente = {
   fechaUltimoMovimiento: string;
 };
 
-/** Tabla de expedientes con columnas redimensionables (ancho recordado por navegador). */
 export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("expedientes", ANCHOS_DEFECTO);
 

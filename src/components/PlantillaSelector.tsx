@@ -13,12 +13,6 @@ export type PlantillaOpcion = {
   cuerpo: string;
 };
 
-/**
- * Carga una plantilla de documento (MoReq 3.30) en los campos de asunto y
- * contenido de un formulario. No radica nada: rellena los campos (aplicando los
- * marcadores que trae el contexto), que siguen siendo editables. Pide
- * confirmación si ya hay texto y avisa qué marcadores quedaron sin resolver.
- */
 export function PlantillaSelector({
   plantillas,
   contexto = {},
@@ -40,7 +34,6 @@ export function PlantillaSelector({
 
   const seleccionada = plantillas.find((p) => p.id === sel);
 
-  // Agrupa por categoría en <optgroup> si hay categorías.
   const porCategoria = new Map<string, PlantillaOpcion[]>();
   for (const p of plantillas) {
     const k = p.categoria ?? "";

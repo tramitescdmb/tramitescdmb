@@ -1,6 +1,6 @@
 type Point = { label: string; value: number };
 
-const LINE_COLOR = "#2a78d6"; // mismo azul secuencial que BarChartHorizontal — una sola serie
+const LINE_COLOR = "#2a78d6";
 
 const WIDTH = 600;
 const HEIGHT = 180;
@@ -64,7 +64,6 @@ export function AreaTrendChart({ data, emptyMessage }: { data: Point[]; emptyMes
               className="transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
             />
 
-            {/* Tooltip: valor y punto, aparece en hover/foco */}
             <g
               opacity={0}
               className="pointer-events-none transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -79,7 +78,6 @@ export function AreaTrendChart({ data, emptyMessage }: { data: Point[]; emptyMes
         );
       })}
 
-      {/* valor final, directo sobre el último punto (regla: "Lines → value at the end") */}
       <text
         x={Math.min(points[points.length - 1].x + 6, WIDTH - 4)}
         y={points[points.length - 1].y - 6}

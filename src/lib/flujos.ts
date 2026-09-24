@@ -29,8 +29,6 @@ export const ETIQUETA_APLICA_A: Record<string, string> = {
   INTERNA: "Solo memorandos",
 };
 
-/* ============================================================ Definición (admin) */
-
 export async function listarFlujos() {
   return db.flujoTrabajo.findMany({
     orderBy: [{ activo: "desc" }, { nombre: "asc" }],
@@ -74,7 +72,6 @@ export async function crearFlujo(
 ) {
   const nombre = datos.nombre.trim();
   if (!nombre) throw new Error("El nombre del flujo es obligatorio.");
-  // Nace con un primer paso y un cierre, para que sea válido de entrada.
   const flujo = await db.flujoTrabajo.create({
     data: {
       nombre,
@@ -130,7 +127,6 @@ export async function eliminarFlujo(id: string) {
   await db.flujoTrabajo.delete({ where: { id } });
 }
 
-/** MoReq 7.12: una copia editable del flujo, para versionarlo sin tocar el que está en uso. */
 export async function duplicarFlujo(id: string, usuarioId: string) {
   const orig = await db.flujoTrabajo.findUnique({
     where: { id },
@@ -177,18 +173,14 @@ export async function duplicarFlujo(id: string, usuarioId: string) {
   return copia;
 }
 
-/** MoReq 7.8: qué dependencias pueden operar el flujo (vacío = cualquiera con permiso). */
 export async function guardarDependenciasOperadoras(flujoId: string, dependenciaIds: string[]) {
   return db.flujoTrabajo.update({ where: { id: flujoId }, data: { dependenciasOperadoras: [...new Set(dependenciaIds.filter(Boolean))] } });
 }
-
-/* ---------------------------------------------------------------- Pasos */
 
 export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo?: TipoPasoFlujo }) {
   const nombre = datos.nombre.trim() || "Paso sin nombre";
   const ultimo = await db.pasoFlujo.findFirst({ where: { flujoId }, orderBy: { orden: "desc" } });
   const pos = { posX: (ultimo?.posX ?? 160) + 60, posY: (ultimo?.posY ?? 0) + 120 };
-  // El nuevo paso entra ANTES del cierre si el último es FIN.
   if (ultimo?.tipo === "FIN") {
     await db.pasoFlujo.update({ where: { id: ultimo.id }, data: { orden: ultimo.orden + 1 } });
     return db.pasoFlujo.create({
@@ -235,7 +227,6 @@ export async function eliminarPaso(pasoId: string) {
   const paso = await db.pasoFlujo.findUnique({ where: { id: pasoId }, include: { flujo: { include: { pasos: true } } } });
   if (!paso) return;
   if (paso.flujo.pasos.length <= 1) throw new Error("Un flujo debe tener al menos un paso.");
-  // Las transiciones desde/hacia el paso caen por onDelete: Cascade.
   await db.pasoFlujo.delete({ where: { id: pasoId } });
   const restantes = await db.pasoFlujo.findMany({ where: { flujoId: paso.flujoId }, orderBy: { orden: "asc" } });
   await Promise.all(restantes.map((p, i) => db.pasoFlujo.update({ where: { id: p.id }, data: { orden: i + 1 } })));
@@ -255,8 +246,6 @@ export async function moverPaso(pasoId: string, direccion: "arriba" | "abajo") {
   ]);
 }
 
-/* ---------------------------------------------------------------- Transiciones */
-
 export async function agregarTransicion(desdePasoId: string, haciaPasoId: string, etiqueta: string) {
   const desde = await db.pasoFlujo.findUnique({ where: { id: desdePasoId } });
   const hacia = await db.pasoFlujo.findUnique({ where: { id: haciaPasoId } });
@@ -272,17 +261,9 @@ export async function eliminarTransicion(id: string) {
   await db.transicionPaso.delete({ where: { id } });
 }
 
-/* ---------------------------------------------------------------- Lienzo (editor visual) */
-
 export type LienzoNodo = { id: string; nombre?: string; tipo?: TipoPasoFlujo; x: number; y: number };
 export type LienzoTransicion = { id?: string; desdePasoId: string; haciaPasoId: string; etiqueta: string };
 
-/**
- * Reconcilia el flujo con lo que dejó el editor visual: crea los pasos nuevos
- * (id que empieza por "nuevo-"), guarda posiciones, borra los pasos que ya no
- * están (reordenando 1..N), y crea/actualiza/borra transiciones. Un solo
- * endpoint para "Guardar diagrama".
- */
 export async function guardarLienzoFlujo(
   flujoId: string,
   datos: { nodos: LienzoNodo[]; transiciones: LienzoTransicion[] },
@@ -295,7 +276,7 @@ export async function guardarLienzoFlujo(
   if (datos.nodos.length === 0) throw new Error("El flujo debe tener al menos un paso.");
 
   const num = (v: number) => (Number.isFinite(v) ? Math.round(v) : 0);
-  const idReal = new Map<string, string>(); // temp id del lienzo -> id real
+  const idReal = new Map<string, string>();
   let ordenSiguiente = (flujo.pasos.at(-1)?.orden ?? 0) + 1;
 
   for (const n of datos.nodos) {
@@ -322,9 +303,8 @@ export async function guardarLienzoFlujo(
   if (flujo.pasos.length - aBorrarPasos.length + idReal.size - idsExistentesEnLienzo.size < 1) {
     throw new Error("El flujo debe quedar con al menos un paso.");
   }
-  for (const p of aBorrarPasos) await db.pasoFlujo.delete({ where: { id: p.id } }); // cascade: transiciones
+  for (const p of aBorrarPasos) await db.pasoFlujo.delete({ where: { id: p.id } });
 
-  // Posiciones (y nombre/tipo si vinieron editados en el lienzo) de los pasos que quedan.
   for (const n of datos.nodos) {
     if (n.id.startsWith("nuevo-")) continue;
     const data: Record<string, unknown> = { posX: num(n.x), posY: num(n.y) };
@@ -333,11 +313,9 @@ export async function guardarLienzoFlujo(
     await db.pasoFlujo.update({ where: { id: n.id }, data });
   }
 
-  // Reordenar 1..N conservando el orden previo de los que quedan + los nuevos al final.
   const restantes = await db.pasoFlujo.findMany({ where: { flujoId }, orderBy: { orden: "asc" }, select: { id: true } });
   await Promise.all(restantes.map((p, i) => db.pasoFlujo.update({ where: { id: p.id }, data: { orden: i + 1 } })));
 
-  // Transiciones: borrar las que ya no están, crear/actualizar el resto.
   const idsTransEntrantes = new Set(datos.transiciones.filter((t) => t.id && !t.id.startsWith("nueva-")).map((t) => t.id!));
   for (const t of flujo.transiciones) {
     if (!idsTransEntrantes.has(t.id)) await db.transicionPaso.delete({ where: { id: t.id } }).catch(() => {});
@@ -356,8 +334,6 @@ export async function guardarLienzoFlujo(
 
   return obtenerFlujo(flujoId);
 }
-
-/* ---------------------------------------------------------------- Plantillas precargadas */
 
 export async function cargarPlantillasFlujo(usuarioId: string) {
   const existentes = new Set((await db.flujoTrabajo.findMany({ select: { nombre: true } })).map((f) => f.nombre));
@@ -380,7 +356,6 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
             asignacion: p.asignacion,
             slaDiasHabiles: p.slaDiasHabiles ?? null,
             instrucciones: p.instrucciones ?? null,
-            // diseño inicial en cascada para que el lienzo abra ordenado
             posX: 140 + (i % 2) * 40,
             posY: 40 + i * 120,
           })),
@@ -409,9 +384,6 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
   return creados;
 }
 
-/* ============================================================ Ejecución (instancias) */
-
-/** Contexto del usuario para el control de acceso por flujo (MoReq 7.8). */
 export type ContextoOperador = { esAdminArchivo: boolean; dependenciaId: string | null };
 
 function verificarAccesoFlujo(
@@ -420,13 +392,12 @@ function verificarAccesoFlujo(
   ctx?: ContextoOperador,
 ) {
   if (dependenciasOperadoras.length === 0) return;
-  if (!ctx) return; // sin contexto no se aplica (compat.)
+  if (!ctx) return;
   if (ctx.esAdminArchivo) return;
   if (ctx.dependenciaId && dependenciasOperadoras.includes(ctx.dependenciaId)) return;
   throw new Error(`El flujo «${nombreFlujo}» solo lo operan las dependencias autorizadas.`);
 }
 
-/** Flujos activos que se le pueden aplicar a una comunicación de este tipo. */
 export async function flujosAplicables(tipo: TipoComunicacion, ctx?: ContextoOperador) {
   const flujos = await db.flujoTrabajo.findMany({
     where: { activo: true, OR: [{ aplicaA: null }, { aplicaA: tipo }] },
@@ -604,15 +575,11 @@ export async function cancelarInstancia(instanciaId: string, usuarioId: string, 
   });
 }
 
-/* ---------------------------------------------------------------- Término del paso */
-
-/** Fecha límite sugerida para el paso actual (según su `slaDiasHabiles` y el calendario). */
 export function limitePaso(desde: Date | null, slaDiasHabiles: number | null, cal: CalendarioLaboral): Date | null {
   if (!desde || !slaDiasHabiles || slaDiasHabiles <= 0) return null;
   return sumarDiasHabiles(desde, slaDiasHabiles, cal);
 }
 
-/** Estado del término del paso actual — null si el paso no tiene `slaDiasHabiles`. */
 export function estadoTerminoPaso(
   desde: Date | null,
   slaDiasHabiles: number | null,
@@ -626,7 +593,6 @@ export function estadoTerminoPaso(
   return { limite, vencido, diasHabiles };
 }
 
-/** Texto legible de a quién le corresponde un paso (para el detalle de la instancia). */
 export function describirResponsablePaso(
   paso: { asignacion: AsignacionPaso; dependencia?: { nombre: string } | null; cargoClave?: string | null },
   comunicacion: {
@@ -651,7 +617,6 @@ export function describirResponsablePaso(
   }
 }
 
-/** Cuántos flujos en curso tienen el término de su paso actual vencido. */
 export async function contarPasosFlujoVencidos(cal: CalendarioLaboral): Promise<number> {
   const enCurso = await db.instanciaFlujo.findMany({
     where: { estado: "EN_CURSO", pasoActualDesde: { not: null } },
@@ -664,15 +629,10 @@ export async function contarPasosFlujoVencidos(cal: CalendarioLaboral): Promise<
   }).length;
 }
 
-/* ---------------------------------------------------------------- Permisos */
-
-/** Quién puede administrar definiciones de flujo: el mismo nivel que la TRD (MoReq 7.16). */
 export function puedeAdministrarFlujos(permisos: PermisosUsuario) {
   return puedeAdministrarArchivo(permisos);
 }
 
-/** Quién puede iniciar/avanzar un flujo sobre una comunicación: el archivo (que reparte) y los jefes de
- * dependencia (que gobiernan los procesos de su área). */
 export function puedeOperarFlujos(permisos: PermisosUsuario) {
   return (
     puedeAdministrarArchivo(permisos) ||

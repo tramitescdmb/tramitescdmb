@@ -4,10 +4,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
 
-/** Descarga (URL firmada) de un documento de un expediente contractual — usado tanto por el enlace
- * "Abrir" como por VistaPreviaDocumento y ConfirmarFirmaModal (iframe/img apuntan aquí, que
- * redirige a Supabase). Un firmante asignado por SolicitudFirma sin rol normal sobre el
- * expediente TAMBIÉN debe poder verlo — si no, el modal de firma queda con el iframe en blanco. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

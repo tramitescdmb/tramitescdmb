@@ -7,8 +7,6 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
-/** Comunicaciones pendientes de MI firma/visto bueno — mismo mecanismo de asignación
- * (SolicitudFirma) que el buzón de Contratación, ver src/lib/solicitudes-firma.ts. */
 export default async function BuzonCorrespondenciaPage() {
   const session = await getSession();
   if (!session) redirect("/login");

@@ -4,12 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PenLine, Eye, X, XCircle } from "lucide-react";
 
-/**
- * Firma/visto bueno de UNA solicitud ya asignada al usuario — reemplaza el
- * botón "Firmar" anterior (un fetch directo sin mostrar nada). Siempre
- * despliega el documento real antes de poder confirmar: era la queja
- * concreta del usuario ("sale el archivo en blanco").
- */
 export function ConfirmarFirmaModal({
   rol,
   endpointCompletar,
@@ -23,11 +17,8 @@ export function ConfirmarFirmaModal({
   endpointCompletar: string;
   endpointRechazar: string;
   documentoNombre: string;
-  /** Vista previa de un archivo (PDF/imagen) — omitir junto con `documentoMimeType` cuando se use `contenidoTexto`. */
   documentoUrl?: string;
   documentoMimeType?: string;
-  /** Vista previa de TEXTO (ej. el asunto/cuerpo de una comunicación, que es lo que realmente
-   * queda hasheado en la firma) — se usa en vez de `documentoUrl` cuando no hay un archivo único. */
   contenidoTexto?: string;
 }) {
   const router = useRouter();

@@ -4,7 +4,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { puedeEditarExpediente } from "@/lib/permisos";
 
-/** Registra un punto de geoposición capturado en campo (GPS del dispositivo) durante un paso del expediente. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

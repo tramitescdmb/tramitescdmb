@@ -37,7 +37,7 @@ const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayud
 
 const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: string }[] = [
   { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "El encargado de sistemas — permisos totales sobre el módulo. Mismo nivel que Jefe de Contratación." },
-  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Ve y gestiona TODOS los expedientes de la entidad: crea, aprueba etapas, edita/elimina sin traza, elimina expedientes completos." },
+  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Ve y gestiona TODOS los expedientes de la entidad: crea, aprueba etapas, edita/elimina documentos, elimina expedientes completos." },
   { valor: "FUNCIONARIO_CONTRATACION", etiqueta: "Funcionario de Contratación", ayuda: "Ve toda la contratación y sube documentos (con traza), y puede asignar quién firma cada documento — sin poder de gestión (no aprueba etapas ni elimina nada)." },
   { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia / Subdirector", ayuda: "Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante, no de toda la entidad." },
   { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Ve, sube, firma y puede editar/eliminar (con traza) documentos solo de los expedientes que supervisa." },
@@ -100,7 +100,6 @@ function EncabezadoSeccion({ icono: Icono, titulo, ayuda }: { icono: typeof Shie
   );
 }
 
-/** Pastilla compacta para atajos "marcar/quitar todo" — más visible que un enlace de texto plano. */
 function BotonAtajo({
   onClick,
   tono,

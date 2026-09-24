@@ -6,8 +6,6 @@ import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permis
 import { esRegimenTributario } from "@/lib/regimen-tributario";
 import { vincularUsuarioDominioAContratista } from "@/lib/contratacion";
 
-/** Crea un Contratista en el registro maestro del módulo — desde `/contratacion/contratistas/nuevo`
- * o, si aún no existe, al crear un expediente. Administrador o Jefe de Contratación. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -53,8 +51,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Opcional: vincula (o pre-crea) el usuario de red de una vez, en el mismo paso — no bloquea la
-  // creación del contratista si falla (ej. ese usuario ya existe con otro rol); se avisa aparte.
   const usuarioRed = typeof body.usuarioRed === "string" ? body.usuarioRed.trim() : "";
   let advertenciaUsuarioRed: string | undefined;
   if (usuarioRed) {

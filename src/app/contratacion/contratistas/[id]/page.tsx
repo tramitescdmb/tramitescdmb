@@ -27,7 +27,6 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         expedientes: { orderBy: { createdAt: "desc" }, select: { id: true, numero: true, objeto: true, etapaActual: true, cerrado: true } },
       },
     }),
-    // Un contratista por expediente: solo se ofrecen los que todavía no tienen uno.
     puedeGestionar
       ? db.expedienteContractual.findMany({
           where: { contratistaId: null },

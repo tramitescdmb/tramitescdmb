@@ -85,7 +85,6 @@ export function RadicarEnviadaForm({
     setDependenciaOrigenId(nuevoId);
   }
 
-  /** Autocarga los datos de un destinatario recurrente por su identificación (maestro de terceros). */
   async function buscarTercero() {
     const idv = identificacion.trim();
     if (idv.length < 4 || nombre.trim() || terceroCargado) return;
@@ -102,9 +101,7 @@ export function RadicarEnviadaForm({
       if (tercero.municipio) setMunicipio(tercero.municipio);
       if (tercero.departamento) setDepartamento(tercero.departamento);
       setTerceroCargado(true);
-    } catch {
-      /* silencioso */
-    }
+    } catch {}
   }
 
   function agregarArchivos(lista: FileList | null) {

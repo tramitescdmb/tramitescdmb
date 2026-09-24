@@ -41,8 +41,6 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
   }
   if (!sincaConfigurado()) return null;
 
-  // No existe un endpoint de detalle por NIT (probado en vivo: /presinca/nit/{numero} da 404) —
-  // se busca dentro del mismo snapshot cacheado que usa el listado (ver sinca-nit-stats.ts).
   let entidad;
   try {
     const { entidades } = await obtenerSnapshotNit();
@@ -60,7 +58,6 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         Volver al listado
       </Link>
 
-      {/* Cabecera */}
       <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-start gap-2.5">
@@ -80,7 +77,6 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         </div>
       </div>
 
-      {/* Contacto y ubicación */}
       <Tarjeta icon={MapPin} titulo="Contacto y ubicación">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
           <Campo k="Municipio" v={[entidad.municipio, entidad.departamento].filter(Boolean).join(", ") || null} />
@@ -91,7 +87,6 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         </dl>
       </Tarjeta>
 
-      {/* Datos tributarios */}
       <Tarjeta icon={ReceiptText} titulo="Datos tributarios">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
           <Campo k="Régimen tributario" v={entidad.regimen} />
@@ -103,11 +98,9 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         )}
       </Tarjeta>
 
-      {/* Solicitudes vinculadas */}
       <Tarjeta icon={ClipboardList} titulo={`Solicitudes vinculadas (${entidad.vinculaciones.length})`}>
         {(() => {
           const conDetalle = entidad.vinculaciones.filter((v) => v.tieneDetalle).length;
-          // Las que sí tienen detalle van primero, para no tener que buscarlas entre el resto.
           const ordenadas = [...entidad.vinculaciones].sort((a, b) => Number(b.tieneDetalle) - Number(a.tieneDetalle));
           return (
             <>

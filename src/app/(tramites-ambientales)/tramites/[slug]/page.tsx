@@ -10,15 +10,6 @@ import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
 
-/**
- * Algunos trámites (ej. M-DA-PR21: Concesión de Aguas Superficiales vs.
- * Subterráneas) tienen dos flujos que, según el procedimiento oficial, NO
- * son dos secuencias distintas — son una sola tabla de actividades que
- * aplica a ambas modalidades por igual (solo cambian los requisitos de
- * radicación, ya diferenciados en "Documentos para radicar"). Cuando los
- * pasos de todos los flujos a mostrar son idénticos, no tiene sentido
- * repetir la misma lista una vez por flujo.
- */
 function pasosIdenticos(
   a: { numero: number; titulo: string; descripcion: string; tiempo: string | null; esDecision: boolean; responsables: string[]; documentos: string[] }[],
   b: typeof a
@@ -68,15 +59,6 @@ export default async function TramiteDetallePage({
     puedeRadicar = puedeEditarTramite(permisos, tramite.id);
   }
 
-  /**
-   * Cuando se llega desde una tarjeta del catálogo que representa UN flujo
-   * específico (?flujo=... — ver M-DA-PR21: "Concesión de Aguas
-   * Superficiales" y "...Subterráneas" son dos tarjetas, un solo trámite),
-   * la página se enfoca en ESE flujo: título, ficha SUIT, resumen y pasos
-   * son solo de esa modalidad — no debe hablar de la otra. Sin el
-   * parámetro, se ve la página completa del trámite con todos sus flujos,
-   * como siempre.
-   */
   const flujoEnfocado = flujoCodigoFoco ? tramite.flujos.find((f) => f.codigo === flujoCodigoFoco) : undefined;
   const flujosAMostrar = flujoEnfocado ? [flujoEnfocado] : tramite.flujos;
 
@@ -201,7 +183,6 @@ export default async function TramiteDetallePage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          {/* Objeto / alcance / autoridad en una sola tarjeta compacta, con líneas de resumen */}
           <section className="relative overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft p-4 pl-5 text-sm">
             <span className={`absolute inset-y-0 left-0 w-1.5 ${categoria.clases.barra}`} aria-hidden />
             <div className="space-y-3">

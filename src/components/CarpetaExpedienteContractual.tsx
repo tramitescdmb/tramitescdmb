@@ -16,10 +16,6 @@ export type CarpetaContractualData = {
   documentos: number;
 };
 
-/** Un expediente contractual como una carpeta física — mismo patrón visual que
- * `src/components/sgdea/CarpetaExpediente.tsx` del SGDEA, para que perfiles no administrativos
- * (Contratista, Supervisor, Jefe de Dependencia, Funcionario) reconozcan su expediente igual que ya
- * lo hacen en Correspondencia, en vez de leer una tabla densa. */
 export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData }) {
   return (
     <Link

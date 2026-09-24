@@ -1,12 +1,3 @@
-/**
- * Denominación del empleo (nomenclatura de empleos públicos — Decreto 1083 de 2015)
- * para el sello de firma electrónica. Es el cargo NOMINAL del funcionario, distinto
- * del modelo `Cargo`, que es una clave funcional para el bloqueo de pasos de trámite.
- *
- * Se guarda la CLAVE en `Usuario.denominacionEmpleo` (texto, sin enum de BD, como el
- * resto de campos catalogados del proyecto). La forma que se muestra depende del sexo
- * registrado: la mayoría de las denominaciones tienen forma femenina.
- */
 export const DENOMINACIONES_EMPLEO = {
   DIRECTOR_GENERAL: { m: "Director General", f: "Directora General" },
   SUBDIRECTOR: { m: "Subdirector", f: "Subdirectora" },
@@ -45,11 +36,6 @@ export function esSexo(v: unknown): v is "M" | "F" {
   return v === "M" || v === "F";
 }
 
-/**
- * Cómo aparece la denominación en el sello de firma. Sin sexo registrado se usa la
- * forma masculina (genérico). `complemento` (ej. "en Tecnologías de Información") se
- * añade tal cual, sin flexionar.
- */
 export function denominacionParaFirma(
   clave: string | null | undefined,
   sexo: string | null | undefined,
@@ -62,7 +48,6 @@ export function denominacionParaFirma(
   return extra ? `${base} ${extra}` : base;
 }
 
-/** Etiqueta para listas de administración: muestra ambas formas cuando difieren. */
 export function etiquetaDenominacion(clave: DenominacionEmpleoClave): string {
   const { m, f } = DENOMINACIONES_EMPLEO[clave];
   return m === f ? m : `${m} / ${f}`;

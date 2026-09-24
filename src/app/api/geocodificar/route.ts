@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 
-/**
- * Proxy a Nominatim (buscador de OpenStreetMap, gratis, sin API key). Se
- * hace desde el servidor y no directo desde el navegador porque Nominatim
- * pide identificarse con un User-Agent — un fetch() del navegador no puede
- * fijar ese header (el navegador lo controla), así que el servidor sí puede.
- */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

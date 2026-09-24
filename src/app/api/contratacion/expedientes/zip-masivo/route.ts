@@ -6,10 +6,6 @@ import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, type FiltrosContratacion } from "@/lib/contratacion";
 import { construirZipMasivo, MAX_EXPEDIENTES_ZIP_MASIVO } from "@/lib/zip-contratacion";
 
-/** Descarga en un solo ZIP los documentos de VARIOS expedientes a la vez — reutiliza el mismo
- * filtro (y, con él, el mismo alcance por rol) que ya aplica el listado de expedientes, así que
- * nunca puede traer más de lo que el usuario ya puede ver en `/contratacion/expedientes`. Corta en
- * `MAX_EXPEDIENTES_ZIP_MASIVO` para no arriesgar el tiempo/memoria del runtime serverless. */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

@@ -1,12 +1,3 @@
-/**
- * Sincroniza el espejo local `SincaResolucion` con el API de SINCA 1.0.
- *
- * Uso:  npx tsx scripts/sinca-sync.ts
- *
- * Sirve tanto para el backfill inicial (tabla vacía) como para refrescar.
- * Necesita SINCA_API_URL / SINCA_API_USUARIO / SINCA_API_PASSWORD en el entorno
- * (se cargan de .env / .env.local).
- */
 import { sincronizarResoluciones } from "../src/lib/sinca-sync";
 
 async function main() {

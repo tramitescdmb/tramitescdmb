@@ -1,4 +1,3 @@
-/** Nivel de acceso a la información (Ley 1712/2014, arts. 6/18/19) — ver prisma/schema.prisma. */
 export const ETIQUETA_NIVEL_ACCESO: Record<string, string> = {
   PUBLICA: "Pública",
   CLASIFICADA: "Clasificada",

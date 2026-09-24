@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
-/** Descarta (borra) un aviso de documento rechazado del buzón — se limpia solo cuando se reemplaza
- * el archivo rechazado, pero la persona también puede descartarlo a mano en cualquier momento.
- * `endpoint` es la base de la ruta (sin el id) — cada módulo tiene la suya. */
 export function AvisoRechazoAcciones({ avisoId, endpoint = "/api/contratacion/avisos-rechazo" }: { avisoId: string; endpoint?: string }) {
   const router = useRouter();
   const [borrando, setBorrando] = useState(false);

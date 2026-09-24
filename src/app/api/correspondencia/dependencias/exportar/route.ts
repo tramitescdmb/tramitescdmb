@@ -10,7 +10,6 @@ function celda(v: string | number | boolean) {
   return `"${String(v).replace(/"/g, '""')}"`;
 }
 
-/** Organigrama de dependencias en CSV o XML (MoReq 3.27: puntos de intercambio XML). */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

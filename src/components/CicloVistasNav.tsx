@@ -7,11 +7,6 @@ import type { LucideIcon } from "lucide-react";
 
 export type NodoCiclo = { href: string; label: string; desc: string; icon: LucideIcon; insignia?: number };
 
-/**
- * Navegación circular de un tablero: un anillo por vista, unidos como un ciclo (círculo · línea ·
- * círculo). Cada anillo lleva a su propia ruta y solo se carga la vista que se abre. Compartido por
- * los tableros del SGDEA y de SIGEC — cada módulo pasa sus propios nodos y su ruta raíz.
- */
 export function CicloVistasNav({ nodos, rutaRaiz, ariaLabel }: { nodos: NodoCiclo[]; rutaRaiz: string; ariaLabel: string }) {
   const pathname = usePathname();
   const esActivo = (href: string) => (href === rutaRaiz ? pathname === href : pathname.startsWith(href));

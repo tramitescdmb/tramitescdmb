@@ -3,8 +3,6 @@
 import { ListChecks, Briefcase, ChartColumn, ShieldAlert } from "lucide-react";
 import { CicloVistasNav, type NodoCiclo } from "@/components/CicloVistasNav";
 
-/** Anillos del tablero de SIGEC — mismo lenguaje visual que el tablero del otro módulo del sistema
- * (`CicloVistasNav`), con sus propias vistas. «Sistema» solo aparece para quien administra el módulo. */
 export function PanelSigecNav({ gestion, pendientes }: { gestion: boolean; pendientes: number }) {
   const nodos: NodoCiclo[] = [
     { href: "/contratacion/panel", label: "Mi trabajo pendiente", desc: "Firmas e informes por atender", icon: ListChecks, insignia: pendientes },

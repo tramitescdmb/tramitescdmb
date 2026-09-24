@@ -7,8 +7,6 @@ import {
 } from "@/lib/directorio-activo";
 
 export async function POST(req: NextRequest) {
-  // Si el funcionario entró por directorio activo, también se cierra la sesión
-  // en ese API (mejor esfuerzo: aunque falle, se cierra la sesión de la app).
   const daToken = await leerTokenDirectorioActivo();
   if (daToken) {
     await cerrarSesionDirectorioActivo(daToken);

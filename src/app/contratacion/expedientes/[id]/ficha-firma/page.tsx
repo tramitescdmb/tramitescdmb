@@ -9,11 +9,6 @@ import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
-/**
- * Ficha técnica COMPLETA de las firmas de TODOS los documentos de este expediente
- * contractual — misma lógica que la ficha de correspondencia (ver ese archivo para el
- * porqué de exigir sesión en vez de publicarlo junto al QR público de /verificar).
- */
 export default async function FichaFirmaExpedienteContractualPage({
   params,
   searchParams,
@@ -38,7 +33,6 @@ export default async function FichaFirmaExpedienteContractualPage({
         where: {
           AND: [
             { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
-            // ?documento=<id>: ficha de UN solo documento (la que abre «Mis firmas»).
             ...(documentoId ? [{ id: documentoId }] : []),
           ],
         },
@@ -81,10 +75,6 @@ export default async function FichaFirmaExpedienteContractualPage({
   });
   if (!expediente) notFound();
   const veExpediente = puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId, dependenciaSolicitanteId: expediente.dependenciaSolicitanteId });
-  // Quien firmó un documento siempre puede ver la ficha de ESE documento, aunque no tenga acceso al
-  // resto del expediente — pero solo esa: sin ?documento, o con uno que no firmó, no entra.
-  // El documento debe además pertenecer a ESTE expediente (`expediente.documentos` ya viene filtrado
-  // por él): si no, la URL serviría para ver número y objeto de un expediente ajeno.
   if (!veExpediente && !(documentoId && expediente.documentos.length > 0 && (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, documentoId)))) {
     redirect("/contratacion");
   }

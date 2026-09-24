@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 
-/** Busca un Solicitante ya registrado por identificación exacta — para autocompletar al radicar. */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

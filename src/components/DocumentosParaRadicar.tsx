@@ -17,12 +17,6 @@ const FILTROS = [
   { id: "JURIDICA", etiqueta: "Persona jurídica" },
 ] as const;
 
-/**
- * Antes mostraba los 13-14 documentos siempre expandidos, todos juntos —
- * para alguien que ya sabe que es persona natural, tener que leer también
- * los 3-4 que solo aplican a persona jurídica (y viceversa) era ruido. El
- * filtro reutiliza el mismo patrón de píldoras del catálogo.
- */
 export function DocumentosParaRadicar({
   documentos,
   claseIcono,

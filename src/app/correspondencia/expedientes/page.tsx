@@ -41,8 +41,6 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId", "modo"] as const;
   const modo = sp.modo === "tabla" ? "tabla" : "carpetas";
 
-  // Agrupa las carpetas por dependencia (como los cajones de un archivador físico),
-  // conservando el orden de llegada.
   const porDependencia = new Map<string, typeof expedientes>();
   for (const e of expedientes) {
     const k = e.dependencia.nombre;

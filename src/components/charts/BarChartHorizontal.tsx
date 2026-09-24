@@ -1,6 +1,6 @@
 type Item = { label: string; value: number };
 
-const BAR_COLOR = "#2a78d6"; // azul secuencial validado (dataviz skill) — magnitud, una sola serie
+const BAR_COLOR = "#2a78d6";
 
 export function BarChartHorizontal({
   data,

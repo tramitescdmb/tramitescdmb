@@ -8,7 +8,6 @@ import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const TIPOS: TipoComunicacion[] = ["RECIBIDA", "ENVIADA", "INTERNA"];
 
-/** Crea un flujo nuevo o carga las plantillas precargadas. `accion` = "crear" | "cargar-plantillas". */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin/flujos", req.url);

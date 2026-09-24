@@ -3,10 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAprobarEtapaContratacion } from "@/lib/permisos";
 import { aprobarEtapaContratacion, FaltanRequisitosError } from "@/lib/contratacion";
 
-/** Aprueba el paso de la etapa actual a la siguiente (o cierra el expediente si ya estaba en
- * Postcontractual) — reservado al Jefe de Contratación (o ADMIN de la app). Si a la etapa le
- * faltan documentos obligatorios del catálogo, responde 409 con la lista — bloqueo DURO, sin
- * forma de saltarlo (decisión explícita del usuario, 2026-09-18: antes se podía forzar). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

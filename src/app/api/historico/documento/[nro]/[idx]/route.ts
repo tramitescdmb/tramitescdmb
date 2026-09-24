@@ -5,14 +5,6 @@ import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
 export const maxDuration = 60;
 
-/**
- * Sirve el PDF (o Word/imagen) de un documento de una resolución de SINCA 1.0.
- *
- * No recibe la ruta del archivo del cliente (evita que se use como proxy para
- * sondear el servidor de archivos de la CDMB): recibe el número de solicitud y
- * el índice del documento, consulta el detalle en el API para obtener la ruta
- * real y descarga ese archivo.
- */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ nro: string; idx: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
@@ -40,8 +32,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ nro
 
   const archivo = await descargarArchivoResolucion(ruta);
   if (!archivo.ok) {
-    // 400 "No existe archivo" cuando el servidor documental de la CDMB no es
-    // alcanzable desde donde corre el API (p. ej. desde fuera de la red interna).
     return NextResponse.json({ error: archivo.mensaje }, { status: archivo.estado === 400 ? 404 : 502 });
   }
 

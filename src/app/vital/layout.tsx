@@ -5,12 +5,6 @@ import { VitalTabs } from "@/components/VitalTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
-/**
- * Sección VITAL: solicitudes traídas de la Ventanilla Integral de Trámites
- * Ambientales en Línea (MinAmbiente) por X-Road. Solo lectura. El acceso se
- * configura por pestaña desde /usuarios/[id] (denegado por defecto, como los
- * trámites de "Trámites ambientales 2.0") — el ADMIN siempre entra a todo.
- */
 export default async function VitalLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");

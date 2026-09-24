@@ -3,13 +3,6 @@
 import { useState } from "react";
 import { FUERA_DE_JURISDICCION } from "@/lib/municipios";
 
-/**
- * Selector de municipio del tercero (remitente / destinatario / peticionario).
- * Los 13 de la jurisdicción de la CDMB en la lista; si el tercero está fuera, se
- * elige "Otro municipio…" y se escriben a mano el departamento y el municipio
- * para dejar el origen caracterizado (no solo "Fuera de la jurisdicción").
- * El padre guarda `municipio` (texto final) y `departamento` (solo si es de fuera).
- */
 export function MunicipioSelectorTercero({
   municipios,
   municipio,

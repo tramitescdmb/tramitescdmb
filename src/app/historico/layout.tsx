@@ -5,13 +5,6 @@ import { HistoricoTabs } from "@/components/HistoricoTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
-/**
- * Sección "SINCA 1.0 · Consulta histórica". Es un espejo de solo lectura de las
- * solicitudes del sistema anterior. Ninguna pantalla de aquí crea, edita ni
- * elimina datos. El acceso se configura por pestaña desde /usuarios/[id]
- * (denegado por defecto) — "Minería de datos" es la más sensible, pensada
- * para directivos, no cualquier funcionario. El ADMIN siempre entra a todo.
- */
 export default async function HistoricoLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");

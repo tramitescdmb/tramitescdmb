@@ -4,18 +4,13 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-/** Pantallas desde las que se puede guardar la seguridad y a las que se regresa (lista blanca: el
- * destino llega en el formulario y nunca se redirige a una URL arbitraria). */
 const RUTAS_DE_RETORNO = ["/admin/seguridad", "/contratacion/seguridad"];
 
-/** Parámetros de bloqueo de acceso por intentos fallidos (MoReq 6.12), contraseñas, formatos y sello
- * de tiempo. La disponibilidad de módulos NO se toca aquí: vive en /api/configuracion-modulos. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const form = await req.formData();
   const destino = String(form.get("volver") || "");
   const volver = new URL(RUTAS_DE_RETORNO.includes(destino) ? destino : "/admin/seguridad", req.url);
-  // Administrador del sistema, Administrador de Contratación o Jefe de Contratación.
   const permitido = session ? puedeAdministrarSigec(await obtenerPermisosUsuario(session.userId)) : false;
   if (!session || !permitido) {
     volver.searchParams.set("error", "Solo un administrador puede cambiar esto.");
@@ -37,9 +32,6 @@ export async function POST(req: NextRequest) {
   const vigenciaDias = vigenciaRaw > 0 ? Math.min(3650, vigenciaRaw) : null;
   const vigenciaMinimaDias = Math.min(365, Math.max(0, Math.floor(Number(form.get("passwordVigenciaMinimaDias")) || 0)));
 
-  // MoReq 3.1: formatos de captura permitidos, antes fijos en código. Se acepta una lista
-  // separada por comas o espacios ("pdf, jpg, docx"); se normaliza y, si queda vacía (el
-  // admin borró todo por error), se cae a los valores de fábrica — nunca a "nada permitido".
   const EXTENSIONES_POR_DEFECTO = ["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"];
   const extensionesTexto = String(form.get("extensionesPermitidas") || "");
   const extensionesPermitidas = Array.from(

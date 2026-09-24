@@ -5,15 +5,6 @@ import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
 
-/**
- * Expediente electrónico de archivo general (Art. 4.3.2 Acuerdo 001/2024 AGN):
- * la unidad documental de un trámite, actuación o procedimiento de UNA
- * dependencia — a diferencia de `Expediente` (trámites ambientales) y de
- * `Comunicacion` (un radicado puntual). Un funcionario abre uno y le sube
- * documentos directamente, sin que estos tengan que llegar por
- * correspondencia; también se le pueden archivar comunicaciones ya radicadas.
- */
-
 const SERIE_EXPEDIENTE = "X";
 
 export async function generarNumeroExpediente(anio: number = new Date().getFullYear()): Promise<string> {
@@ -65,8 +56,6 @@ export async function agregarDocumentoArchivo(datos: {
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.estado === "CERRADO") throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
 
-  // El tipo documental solo puede ser uno de los definidos en la TRD para la subserie de ESTE expediente —
-  // evita que quede guardado un tipo de otra subserie sin sentido para este expediente.
   if (datos.tipoDocumentalId) {
     const tipo = await db.tipoDocumental.findUnique({ where: { id: datos.tipoDocumentalId }, select: { subserieId: true } });
     if (!tipo || tipo.subserieId !== expediente.subserieId) {
@@ -74,8 +63,6 @@ export async function agregarDocumentoArchivo(datos: {
     }
   }
 
-  // El documento reemplazado tiene que ser de ESTE mismo expediente — versionar entre expedientes distintos
-  // no tiene sentido archivístico (MoReq 3.9).
   if (datos.reemplazaId) {
     const anterior = await db.documentoArchivo.findUnique({ where: { id: datos.reemplazaId }, select: { expedienteDocumentalId: true } });
     if (!anterior || anterior.expedienteDocumentalId !== datos.expedienteDocumentalId) {
@@ -107,11 +94,6 @@ export async function agregarDocumentoArchivo(datos: {
   });
 }
 
-/**
- * Corrige la metadata de un archivo de un expediente ABIERTO (nombre, tipo
- * documental, folios, fecha del documento) — no toca el archivo ni su hash. El
- * expediente cerrado tiene el índice firmado y ya no se edita.
- */
 export async function editarDocumentoArchivo(
   documentoId: string,
   datos: { nombre?: string; tipoDocumentalId?: string | null; numeroFolios?: number | null; fechaDocumento?: Date | null }
@@ -143,13 +125,6 @@ export async function editarDocumentoArchivo(
   });
 }
 
-/**
- * Retira un archivo del índice de un expediente ABIERTO — para un archivo subido
- * por error (equivocado, duplicado). NO se borra la fila ni el archivo del
- * storage: se marca con motivo y queda fuera del índice, del hash, del FUID y del
- * PDF consolidado, pero trazado en la bitácora (mismo principio que ANULADA en
- * una comunicación — Ley 594/2000). Un expediente cerrado ya no lo permite.
- */
 export async function retirarDocumentoArchivo(documentoId: string, usuarioId: string, motivo: string) {
   if (!motivo.trim()) throw new Error("Indique por qué se retira este archivo del índice.");
   const doc = await db.documentoArchivo.findUnique({
@@ -181,11 +156,6 @@ export function esCriterioOrdenValido(v: string | undefined | null): v is Criter
 
 type DocOrdenable = { ordenIndice: number; nombre: string; fechaDocumento: Date | null; createdAt: Date };
 
-/**
- * Ordena los documentos de un expediente para MOSTRARLOS según el criterio
- * configurado en su serie (MoReq 1.46). No afecta `ordenIndice` ni el hash
- * firmado del índice — solo el orden visual.
- */
 export function ordenarDocumentosExpediente<T extends DocOrdenable>(documentos: T[], criterio: CriterioOrdenExpediente): T[] {
   const copia = documentos.slice();
   switch (criterio) {
@@ -199,17 +169,11 @@ export function ordenarDocumentosExpediente<T extends DocOrdenable>(documentos: 
   }
 }
 
-/**
- * Hash del índice electrónico (Art. 4.3.2.2-4 AGN: "firma del índice
- * electrónico" al cerrar el expediente). Resume el orden y la huella de cada
- * documento — si algo cambiara después de cerrado, el hash recalculado ya no
- * coincidiría con el guardado.
- */
 export function calcularHashIndice(
   documentos: { ordenIndice: number; nombre: string; hashSha256: string | null; retiradoEn?: Date | null }[]
 ): string {
   const base = documentos
-    .filter((d) => !d.retiradoEn) // un archivo retirado del índice (corrección en expediente abierto) no cuenta
+    .filter((d) => !d.retiradoEn)
     .slice()
     .sort((a, b) => a.ordenIndice - b.ordenIndice)
     .map((d) => `${d.ordenIndice}|${d.nombre}|${d.hashSha256 ?? ""}`)
@@ -217,9 +181,6 @@ export function calcularHashIndice(
   return crypto.createHash("sha256").update(base).digest("hex");
 }
 
-/** Renombra un expediente (asunto/descripción) — no toca el índice ni su hash, que solo depende de los
- * documentos (ver calcularHashIndice), así que no invalida nada si el expediente ya está cerrado. Aun
- * así se restringe a mientras esté ABIERTO: un cerrado se trata como definitivo en todo lo demás. */
 export async function editarExpedienteDocumental(expedienteId: string, datos: { asunto: string; descripcion?: string | null }) {
   if (!datos.asunto.trim()) throw new Error("El asunto del expediente es obligatorio.");
   const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { estado: true } });
@@ -250,12 +211,6 @@ export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId
   });
 }
 
-/** Reabre un expediente CERRADO (MoReq 1.14: "restringir cambios tras el cierre, con reapertura auditada
- * por un rol admin") — motivo obligatorio, gateado en la ruta por el mismo permiso que cierra
- * (`puedeCerrarExpediente`). Limpia fechaCierre/cerradoPorId/indiceHash: al volver a cerrarse se firma un
- * índice nuevo, sin arrastrar datos de un cierre anterior ya deshecho. El "auditada" del requisito lo
- * cubre por completo la bitácora inalterable (acción REABRE con el motivo en el detalle) — no hace falta
- * un campo propio en el modelo, mismo criterio que CLASIFICA/APLAZA. */
 export async function reabrirExpedienteDocumental(expedienteId: string, motivo: string) {
   if (!motivo.trim()) throw new Error("Reabrir un expediente cerrado exige indicar el motivo.");
   const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { estado: true } });
@@ -268,7 +223,6 @@ export async function reabrirExpedienteDocumental(expedienteId: string, motivo: 
   });
 }
 
-/** Igual que cambiarNivelAccesoComunicacion pero para el expediente documental completo (Ley 1712/2014). */
 export async function cambiarNivelAccesoExpediente(expedienteId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {
   const expediente = await db.expedienteDocumental.findUnique({ where: { id: expedienteId }, select: { id: true, nivelAcceso: true } });
   if (!expediente) throw new Error("El expediente no existe.");
@@ -283,9 +237,6 @@ export async function cambiarNivelAccesoExpediente(expedienteId: string, nivelAc
   return { anterior: expediente.nivelAcceso, nuevo: nivelAcceso };
 }
 
-/** Presta el expediente a un funcionario — solo registra quién lo tiene y desde cuándo, no bloquea nada
- * (subir/editar/cerrar siguen gobernados solo por dependencia/rol). No deja prestar de nuevo mientras haya
- * un préstamo vigente (sin fechaDevolucionReal): primero hay que devolverlo. */
 export async function prestarExpediente(datos: {
   expedienteId: string;
   prestadoAId: string;
@@ -328,25 +279,16 @@ export type FiltrosExpedienteDocumental = {
   q?: string;
   estado?: string;
   dependenciaId?: string;
-  // Deliberadamente sin desplegable en la UI (con 237+ series era peor UX que no tenerlo, feedback
-  // directo del usuario) — solo se llega por un enlace directo desde el explorador de la TRD (MoReq 4.3:
-  // "expedientes de una serie").
   serieId?: string;
   page?: string;
   vista?: string;
 };
 
-/** Un expediente CLASIFICADA/RESERVADA (Ley 1712/2014) ni se lista ni se exporta para quien no puede
- * gestionarlo — de lo contrario el nivel de acceso sería solo una etiqueta visual y no un control real
- * (ver puedeVerNivelAccesoExpediente en permisos.ts, que aplica la misma regla al ver el detalle). */
 function restringirPorNivelAcceso(permisos: PermisosUsuario): Prisma.ExpedienteDocumentalWhereInput {
   if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return {};
   return { OR: [{ nivelAcceso: "PUBLICA" }, { dependenciaId: permisos.dependenciaId ?? "__sin_dependencia__" }] };
 }
 
-/** La búsqueda de texto cubre número, asunto y dependencia del expediente, Y TAMBIÉN el nombre de
- * cada archivo que tenga dentro — así "buscar un expediente" y "buscar un archivo perdido dentro de
- * algún expediente" son la misma caja de búsqueda, sin tener que abrir uno por uno para revisar. */
 export function construirWhereExpedienteDocumental(
   f: FiltrosExpedienteDocumental,
   permisos: PermisosUsuario
@@ -388,10 +330,6 @@ export async function listarExpedientesDocumentales(filtro: FiltrosExpedienteDoc
         subserie: { select: { codigo: true, nombre: true } },
         creadoPor: { select: { nombre: true } },
         _count: { select: { documentos: { where: { retiradoEn: null } }, comunicaciones: true } },
-        // Solo trae los documentos que coinciden con la búsqueda — para poder mostrar
-        // "coincide: archivo.pdf" en el resultado sin cargar todo el índice del expediente.
-        // Sin término de búsqueda, la condición no puede coincidir con nada (evita traer
-        // documentos de más cuando no hace falta) sin cambiar la forma del include/resultado.
         documentos: { where: q ? { nombre: { contains: q, mode: "insensitive" } } : { id: "" }, select: { nombre: true }, take: 3 },
       },
     }),

@@ -7,7 +7,6 @@ import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
-/** Historial de todo lo que el usuario ha firmado en Trámites ambientales 2.0. */
 export default async function MisFirmasTramitesPage() {
   const session = await getSession();
   if (!session) redirect("/login");

@@ -4,7 +4,6 @@ import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@
 import { crearExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/** Abre un expediente documental (Art. 4.3.2.1 Acuerdo 001/2024 AGN) para una dependencia. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/expedientes/nuevo", req.url);

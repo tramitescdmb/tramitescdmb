@@ -15,13 +15,6 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   ANULADA: "Anulada",
 };
 
-/**
- * Consulta pública de estado (sin sesión): exige radicado E identificación —
- * el radicado solo no basta, para no permitir enumerar solicitudes ajenas.
- * En las radicaciones anónimas, el "código de seguimiento" ocupa el lugar de la
- * identificación. Ante cualquier desajuste responde el mismo genérico "no
- * encontrado", sin distinguir cuál de los dos datos falló.
- */
 export async function POST(req: NextRequest) {
   const { ip, userAgent } = datosPeticion(req.headers);
   const limite = await verificarLimiteEnvio(ip, "pqrsd:consultar", { porHora: 15, porDia: 60 });
@@ -35,7 +28,6 @@ export async function POST(req: NextRequest) {
   }
 
   const c = await db.comunicacion.findFirst({
-    // Segunda variante en mayúsculas: cubre el código de seguimiento de una PQRSD anónima escrito en minúsculas.
     where: {
       radicado,
       OR: [{ terceroIdentificacion: identificacion }, { terceroIdentificacion: identificacion.toUpperCase() }],

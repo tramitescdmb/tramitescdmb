@@ -4,7 +4,6 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { ejecutarDisposicionFinalLote } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Disposición final de varias comunicaciones a la vez (MoReq 2.9). Ver ejecutarDisposicionFinalLote. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });

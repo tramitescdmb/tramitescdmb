@@ -5,11 +5,6 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { confirmarTransferenciaCentral } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/**
- * Confirma que el archivo central recibió el documento transferido y el proceso
- * concluyó (MoReq 2.17). Hasta este momento la comunicación se conserva y no
- * admite disposición final.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

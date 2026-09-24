@@ -1,11 +1,6 @@
 import { Tags } from "lucide-react";
 import { camposMetadatoPara, metadatosIniciales, ETIQUETA_TIPO_CAMPO } from "@/lib/metadatos";
 
-/**
- * Metadatos adicionales de una comunicación (MoReq 5.1/5.6): los campos que un
- * administrador de archivo definió, con sus valores actuales (o el valor por
- * defecto heredado de la serie). Editable por quien distribuye. Server component.
- */
 export async function MetadatosComunicacion({
   comunicacionId,
   serieId,

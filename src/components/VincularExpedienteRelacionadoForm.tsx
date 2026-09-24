@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link2 } from "lucide-react";
 
-/** Vincula este expediente con OTRO contrato relacionado del mismo contratista (ej. una
- * prórroga o continuación del mismo objeto en un periodo distinto) — cada contrato sigue
- * siendo su propio expediente, esto solo deja la referencia entre ellos. */
 export function VincularExpedienteRelacionadoForm({
   expedienteId,
   opciones,

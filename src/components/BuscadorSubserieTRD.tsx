@@ -22,13 +22,6 @@ type Opcion = {
   clave: string;
 };
 
-/**
- * Selector de clasificación TRD por búsqueda de texto (MoReq 4.7) — reemplaza la
- * cascada de desplegables planos (con cientos de series/subseries era inmanejable,
- * feedback directo del usuario). Se escribe código o nombre de serie/subserie o el
- * de la dependencia y se elige una subserie; la serie se deriva. Puede exponer un
- * `<input hidden name>` (formularios normales) y/o llamar a `onChange`.
- */
 export function BuscadorSubserieTRD({
   series,
   serieId,

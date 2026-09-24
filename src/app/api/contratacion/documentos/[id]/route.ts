@@ -13,16 +13,6 @@ import {
 import { deleteDocumento } from "@/lib/storage";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Editar/eliminar un documento tiene DOS caminos, según quién llame:
- * - Administrador/Jefe de Contratación: EXCEPCIÓN deliberada de este módulo (ver
- *   `puedeEditarSinTrazaDocumentoContrato`) — no deja ninguna fila en `EventoContratacion`.
- *   Confirmado explícitamente por el usuario tras advertir el riesgo de auditoría. NUNCA replicar
- *   este patrón fuera de Contratación.
- * - Supervisor/Interventor, solo en expedientes que supervisa: SÍ queda registrado en
- *   `EventoContratacion` (pedido explícito del usuario, 2026-09-18: a diferencia de Admin/Jefe,
- *   aquí no hay el mismo volumen operativo que justifique renunciar a la trazabilidad).
- */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -65,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ? await editarDocumentoContratoSinTraza(id, datos)
       : await editarDocumentoContratoConTraza(id, datos, session.userId, datosPeticion(req.headers));
     if (archivo && storagePathAnterior) {
-      await deleteDocumento(storagePathAnterior).catch(() => {}); // best-effort, ver DELETE más abajo
+      await deleteDocumento(storagePathAnterior).catch(() => {});
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -92,7 +82,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { storagePath } = sinTraza
       ? await eliminarDocumentoContratoSinTraza(id)
       : await eliminarDocumentoContratoConTraza(id, session.userId, datosPeticion(req.headers));
-    await deleteDocumento(storagePath).catch(() => {}); // best-effort: la fila ya se borró, un residuo en storage no es visible en la app
+    await deleteDocumento(storagePath).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo eliminar el documento." }, { status: 400 });

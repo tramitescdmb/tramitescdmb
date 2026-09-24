@@ -7,7 +7,6 @@ import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 
 const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-/** Estados en los que un radicado sigue "vivo" (ni respondido, ni archivado, ni anulado). */
 export const ESTADOS_ACTIVOS: EstadoComunicacion[] = [
   "RADICADA",
   "EN_REPARTO",
@@ -27,25 +26,12 @@ export const ETIQUETA_ESTADO_PANEL: Record<EstadoComunicacion, string> = {
   ANULADA: "Anulada",
 };
 
-/**
- * Primer día del mes actual + `offset`, en UTC. `date_trunc` de Postgres devuelve
- * medianoche UTC y en zona horaria Colombia `new Date(...).getMonth()` la corre al
- * mes anterior — la clave de mes y estos límites usan UTC en los dos extremos.
- */
 function inicioDeMesUTC(offset = 0): Date {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset, 1));
 }
 const claveMes = (d: Date) => d.toISOString().slice(0, 7);
 
-/* ============================================================================
- * El tablero del SGDEA (/correspondencia/panel) se divide en cuatro vistas, cada
- * una con su propia ruta y su propia consulta — así una vista pesada (desempeño
- * de archivo) no retrasa la que un funcionario abre todo el día (su trabajo
- * pendiente). El orden es: mi trabajo → correspondencia → archivo → sistema.
- * ========================================================================== */
-
-/** Vista 1 — "Mi trabajo pendiente": lo que este funcionario tiene abierto ahora. */
 export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUsuario) {
   const ahora = new Date();
   const en3DiasHabiles = new Date(ahora.getTime() + 3 * 24 * 60 * 60 * 1000);
@@ -69,14 +55,12 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
       },
       orderBy: { fechaAsignacion: "desc" },
     }),
-    // Recibidas que la ventanilla debe repartir: nunca repartidas, o devueltas (sin reparto activo).
     db.comunicacion.count({
       where: { tipo: "RECIBIDA", estado: { in: ["RADICADA", "EN_REPARTO"] }, distribuciones: { none: { activa: true } } },
     }),
     db.comunicacion.count({
       where: { tipo: "RECIBIDA", estado: "EN_REPARTO", distribuciones: { some: { devueltaEn: { not: null } } } },
     }),
-    // Oficios de salida radicados y firmados que la ventanilla de salida no ha despachado.
     db.comunicacion.count({
       where: { tipo: "ENVIADA", estado: { notIn: ["ANULADA"] }, despachadaEn: null, firmas: { some: {} } },
     }),
@@ -114,18 +98,13 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
       lista: misPendientes.slice(0, 8),
     },
     global: { vencidas: vencidasGlobal, porVencer: porVencerGlobal },
-    /** Recibidas que la ventanilla debe repartir (nunca repartidas o devueltas). */
     pendientesProceso: pendientesProcesoRecibidas,
-    /** De las anteriores, cuántas fueron devueltas por el funcionario y esperan un nuevo reparto. */
     devueltasEsperandoReparto,
-    /** Oficios de salida radicados y firmados que faltan por despachar (ventanilla de salida). */
     oficiosSinDespachar,
-    /** Flujos de trabajo en curso con el término de su paso actual vencido. */
     flujosPasoVencido,
   };
 }
 
-/** Vista 2 — "Correspondencia": el panorama de recibidas, enviadas y memorandos. */
 export async function obtenerPanelCorrespondenciaVista(permisos: PermisosUsuario) {
   const esAdmin = puedeAdministrarArchivo(permisos);
   const desde6Meses = inicioDeMesUTC(-5);
@@ -180,7 +159,6 @@ export async function obtenerPanelCorrespondenciaVista(permisos: PermisosUsuario
       : Promise.resolve([] as { dependenciaId: string | null; promedioDias: number; total: bigint }[]),
   ]);
 
-  // Nombres de dependencia para las tablas de admin.
   const idsDep = [
     ...topDependenciasRaw.map((p) => p.dependenciaDestinoId),
     ...tiempoRespuestaRaw.map((t) => t.dependenciaId),
@@ -199,7 +177,6 @@ export async function obtenerPanelCorrespondenciaVista(permisos: PermisosUsuario
     .map((t) => ({ tipo: t, value: porTipoActivoRaw.find((r) => r.tipo === t)?._count._all ?? 0 }))
     .filter((r) => r.value > 0);
 
-  // Evolución 6 meses por tipo (área apilada).
   const meses: { key: string; label: string }[] = [];
   for (let i = 0; i < 6; i++) {
     const d = inicioDeMesUTC(-5 + i);
@@ -237,7 +214,6 @@ export async function obtenerPanelCorrespondenciaVista(permisos: PermisosUsuario
   };
 }
 
-/** Vista 3 — "Expedientes y archivo": el estado del archivo de la Corporación. */
 export async function obtenerPanelArchivoVista(permisos: PermisosUsuario) {
   const esAdmin = puedeAdministrarArchivo(permisos);
 
@@ -277,7 +253,6 @@ export async function obtenerPanelArchivoVista(permisos: PermisosUsuario) {
   };
 }
 
-/** Vista 4 — "Sistema" (solo administración de archivo): incidencias de los últimos 30 días. */
 export async function obtenerPanelSistemaVista() {
   const hace30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -286,8 +261,6 @@ export async function obtenerPanelSistemaVista() {
     db.registroAuditoria.count({ where: { tipo: "LOGIN_FALLIDO", createdAt: { gte: hace30Dias } } }),
     db.auditoriaDoc.count({ where: { accion: "CARGA_FALLIDA", createdAt: { gte: hace30Dias } } }),
     db.auditoriaDoc.count({ where: { accion: "ERROR_EJECUCION", createdAt: { gte: hace30Dias } } }),
-    // MoReq 6.17: fallas críticas de las últimas 24 h — se destacan al frente para
-    // que el administrador de archivo actúe (no hay canal push, el aviso vive en el panel).
     db.auditoriaDoc.count({ where: { accion: { in: ["ERROR_EJECUCION", "CARGA_FALLIDA"] }, createdAt: { gte: hace24h } } }),
   ]);
 

@@ -2,14 +2,6 @@
 
 import { useState } from "react";
 
-/**
- * Área apilada de 2–3 series por mes (Recibidas / Enviadas / Memorandos).
- * Paleta categórica validada con la skill `dataviz` (modo claro, superficie
- * blanca): #1c7a45 / #2563eb / #d97706 — ΔE de daltonismo 8.8, sobre el piso,
- * con leyenda + etiquetas directas SIEMPRE como segundo canal de identidad.
- * Sin librería: SVG puro, misma línea que el resto de src/components/charts.
- */
-
 type Punto = { label: string; RECIBIDA: number; ENVIADA: number; INTERNA: number };
 type SerieKey = "RECIBIDA" | "ENVIADA" | "INTERNA";
 
@@ -37,7 +29,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
   const x = (i: number) => PAD.left + (i / (data.length - 1)) * innerW;
   const y = (v: number) => PAD.top + innerH - (v / maxApilado) * innerH;
 
-  // Bandas acumuladas para el apilado.
   const bandas = SERIES.map((s, si) => {
     const below = SERIES.slice(0, si);
     return data.map((d, i) => {
@@ -59,7 +50,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
 
   return (
     <div>
-      {/* Leyenda — siempre presente para ≥2 series */}
       <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600">
         {SERIES.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5">
@@ -76,7 +66,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
         aria-label="Evolución mensual de radicados activos por tipo"
         onMouseLeave={() => setHover(null)}
       >
-        {/* Grid + eje Y */}
         {Array.from({ length: ticks + 1 }, (_, t) => {
           const v = (maxApilado / ticks) * t;
           return (
@@ -89,7 +78,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
           );
         })}
 
-        {/* Áreas apiladas (2px de aire entre bandas vía stroke de superficie) */}
         {bandas.map((banda, si) => (
           <g key={SERIES[si].key}>
             <path d={areaPath(banda)} fill={SERIES[si].color} opacity={0.85} />
@@ -97,14 +85,12 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
           </g>
         ))}
 
-        {/* Eje X */}
         {data.map((d, i) => (
           <text key={d.label + i} x={x(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#898781">
             {d.label}
           </text>
         ))}
 
-        {/* Capa de hover: franja + crosshair */}
         {data.map((_, i) => (
           <rect
             key={i}
@@ -120,7 +106,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
           <line x1={x(hover)} y1={PAD.top} x2={x(hover)} y2={PAD.top + innerH} stroke="#57534e" strokeWidth={1} strokeDasharray="3 3" />
         )}
 
-        {/* Etiquetas directas del último mes, fuera del área (≤4 series → direct-labeled) */}
         {bandas.map((banda, si) => {
           const last = banda[banda.length - 1]!;
           const val = data[data.length - 1][SERIES[si].key];
@@ -149,7 +134,6 @@ export function EvolucionPorTipo({ data, emptyMessage }: { data: Punto[]; emptyM
         })}
       </svg>
 
-      {/* Tooltip HTML bajo el gráfico (evita recortes del SVG) */}
       <div className="mt-1 min-h-[1.25rem] text-center text-xs text-stone-500">
         {puntoHover ? (
           <span>

@@ -3,11 +3,6 @@ import { db } from "@/lib/db";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
-/**
- * Datos agregados para el panel de /historico (SINCA 1.0). `periodo`: `null`
- * = Total, todo el histórico (comportamiento de siempre). Con un rango, todo
- * el tablero queda acotado a `fechaResolucion` dentro de [desde, hasta).
- */
 export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
   const filtroFecha: Prisma.SincaResolucionWhereInput = periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {};
 
@@ -69,7 +64,6 @@ export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
       db.sincaSincronizacion.findFirst({ orderBy: { iniciadoEn: "desc" } }),
     ]);
 
-  // Serie por año, rellenando los años sin resoluciones para que la tendencia no salte huecos.
   const anios = porAnioRaw.map((a) => a.anioResolucion as number);
   const serieAnual: { label: string; value: number }[] = [];
   if (anios.length > 0) {
@@ -98,7 +92,6 @@ export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
   };
 }
 
-/** Último registro de sincronización (cron o manual) — para mostrar el estado en /historico/solicitudes. */
 export async function getUltimaSincronizacion() {
   return db.sincaSincronizacion.findFirst({ orderBy: { iniciadoEn: "desc" } });
 }
@@ -112,7 +105,6 @@ export type FiltrosHistorico = {
   vista?: string;
 };
 
-/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaResolucion`. */
 export function construirWhereHistorico(filtros: FiltrosHistorico, rango: RangoPeriodo = null): Prisma.SincaResolucionWhereInput {
   const where: Prisma.SincaResolucionWhereInput = {};
   const and: Prisma.SincaResolucionWhereInput[] = [];
@@ -138,7 +130,6 @@ export function construirWhereHistorico(filtros: FiltrosHistorico, rango: RangoP
   return where;
 }
 
-/** Listado paginado de /historico/solicitudes con los filtros de la barra. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
 export async function getHistoricoListado(filtros: FiltrosHistorico, rango: RangoPeriodo = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
@@ -176,7 +167,6 @@ export async function getHistoricoListado(filtros: FiltrosHistorico, rango: Rang
   };
 }
 
-/** Opciones para los desplegables de filtro (valores realmente presentes en los datos). */
 export async function getHistoricoOpcionesFiltro() {
   const [tipos, municipios, estados] = await Promise.all([
     db.sincaResolucion.groupBy({

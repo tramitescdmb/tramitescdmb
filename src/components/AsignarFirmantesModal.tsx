@@ -33,13 +33,6 @@ export type FirmanteAsignado = {
   estado: EstadoSolicitudFirma;
 };
 
-/**
- * Modal compartido SGDEA/SIGEC para designar quién debe firmar, dar visto
- * bueno, o tener acceso de solo lectura sobre un documento/comunicación —
- * reemplaza el modelo anterior de "cualquiera con el rol firma cuando
- * quiere". `endpointAsignar` decide el dominio (documento de contrato o
- * comunicación); la lógica de negocio vive en src/lib/solicitudes-firma.ts.
- */
 export function AsignarFirmantesModal({
   endpointAsignar,
   usuarios,
@@ -61,8 +54,6 @@ export function AsignarFirmantesModal({
 
   const dependencias = Array.from(new Set(usuarios.map((u) => u.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const q = filtro.trim().toLowerCase();
-  // No se muestra nadie hasta que se busque por nombre o dependencia — con la planta completa de
-  // la CDMB, listar todo de entrada vuelve el cuadro inmanejable a medida que crece el personal.
   const usuariosFiltrados =
     q || dependenciaFiltro
       ? usuarios.filter(
@@ -162,11 +153,6 @@ export function AsignarFirmantesModal({
                 ) : usuariosFiltrados.length === 0 ? (
                   <p className="mt-1.5 text-xs text-stone-400">Sin coincidencias.</p>
                 ) : (
-                  // Pastillas en vez de un <select size> nativo — con ese listbox, un clic sobre una
-                  // opción a veces actualizaba lo que se veía en pantalla pero no el estado de React
-                  // (el botón "Agregar" seguía pidiendo "Seleccione una persona" aunque se viera
-                  // marcada). Mismo patrón que ya usan Supervisión y Nuevo expediente para elegir
-                  // personas de una lista filtrada.
                   <div className="mt-1.5 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded-md border border-stone-200 p-2">
                     {usuariosFiltrados.map((u) => {
                       const activo = usuarioId === u.id;

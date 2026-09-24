@@ -19,15 +19,6 @@ const ETIQUETAS_TIPO: Record<TipoAuditoria, { icono: LucideIcon; clase: string; 
 
 const TIPOS_VALIDOS = new Set<string>(Object.values(TipoAuditoria));
 
-/**
- * Auditoría de cuentas — inicios de sesión, gestión de usuarios y cambios de configuración de TODA
- * la aplicación. Compartida: cada módulo la monta en su propia ruta (`basePath`) para no sacar al
- * usuario de su marco. `incluirTramites` añade el resumen de actividad de los expedientes de trámites
- * ambientales, que solo tiene sentido en el contexto general de la aplicación, no dentro de un módulo.
- *
- * El filtro `tipo` llega de la URL: se valida contra el enum antes de consultar (un valor cualquiera
- * hacía fallar la consulta y mostraba el error genérico de la aplicación).
- */
 export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { tipo?: string; basePath: string; incluirTramites: boolean }) {
   const filtro = tipo && TIPOS_VALIDOS.has(tipo) ? (tipo as TipoAuditoria) : undefined;
 

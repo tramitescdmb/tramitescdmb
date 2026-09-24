@@ -5,13 +5,6 @@ type ConfiguracionSitio = Awaited<ReturnType<typeof getConfiguracionSitio>>;
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-/**
- * Formulario de Seguridad (acceso, contraseñas, formatos de archivo y sello de tiempo) — compartido
- * por todos los módulos: cada uno lo monta en su propia ruta y dentro de su propio marco, y el
- * `volver` indica a qué pantalla regresar tras guardar. Es configuración de TODA la aplicación, así
- * que no menciona a ningún módulo en particular. La disponibilidad de módulos vive aparte
- * (/admin/modulos), reservada al administrador del sistema.
- */
 export function SeguridadFormulario({
   config,
   volver,
@@ -19,7 +12,6 @@ export function SeguridadFormulario({
   error,
 }: {
   config: ConfiguracionSitio;
-  /** Ruta de regreso tras guardar (debe estar en la lista blanca de la API). */
   volver: string;
   ok?: string;
   error?: string;

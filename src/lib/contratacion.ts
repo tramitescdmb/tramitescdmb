@@ -9,17 +9,7 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
 
-/** Tag de caché del catálogo de requisitos — invalidado desde las rutas de
- * src/app/api/contratacion/catalogo/** cada vez que se crea/edita/mueve/borra un requisito. */
 export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
-
-/**
- * Módulo de Contratación — manejador de expedientes digitales de contratación
- * (Manual de Contratación y de Supervisión o Interventoría A-BS-MA01).
- * Deliberadamente aislado de Trámites 2.0 y del SGDEA de Correspondencia: no
- * es un ERP de contratación (no reemplaza SECOP II, no valida cuantías ni
- * reglas jurídicas de cada modalidad de selección).
- */
 
 const SERIE_CONTRATO = "CTO";
 
@@ -53,8 +43,6 @@ export const ETIQUETA_ROL_CONTRATACION: Record<RolContratacion, string> = {
   CONTRATISTA: "Contratista",
 };
 
-/** Orden de despliegue en los formularios: Contratación directa primero por ser, con
- * amplio margen, la modalidad más usada en la CDMB (pedido explícito del usuario). */
 export const ORDEN_MODALIDADES: ModalidadSeleccion[] = [
   "CONTRATACION_DIRECTA",
   "MINIMA_CUANTIA",
@@ -73,14 +61,6 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
 }
 
-/**
- * Cédula/NIT y correo de notificación de un firmante para la ficha técnica y el sello de firma: si
- * el funcionario no tiene su propia cédula/correo capturados (`Usuario.cedulaONit`/
- * `correoNotificacion` — se editan en `/usuarios/[id]`), se usa el del Contratista vinculado a su
- * cuenta, si tiene uno. Sin esto, un contratista con identificación registrada en su propio
- * expediente (`Contratista.identificacion`) aparecía como "no registrado" solo porque ese dato vive
- * en otra tabla. Pedido explícito del usuario (2026-09-23).
- */
 export function identidadFirmante(u: {
   cedulaONit?: string | null;
   correoNotificacion?: string | null;
@@ -92,14 +72,6 @@ export function identidadFirmante(u: {
   };
 }
 
-/** Requisitos del catálogo (data/contratacion/requisitos.json, sembrado con
- * prisma/seed-contratacion.ts) que aplican a un expediente en UNA etapa: los
- * comunes a cualquier modalidad (modalidadSeleccion=null) más los propios de
- * la modalidad de ESTE expediente, en el orden del Manual. Los obligatorios
- * siempre van primero (pedido explícito del usuario, 2026-09-23) — `orden` sigue
- * siendo el criterio de desempate dentro de cada grupo, pero ya no basta por sí
- * solo: con 94 filas curadas a mano, algún opcional había quedado con un `orden`
- * menor que el de un obligatorio de la misma modalidad. */
 export const obtenerRequisitosDeEtapa = unstable_cache(
   async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion) => {
     return db.requisitoDocumentoContratacion.findMany({
@@ -137,10 +109,6 @@ export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>
     | null;
 };
 
-/** Cruza el catálogo de requisitos de una etapa con los documentos YA subidos a ese
- * expediente en esa etapa — un requisito puede tener 0 o 1 documento vinculado (si se
- * sube más de uno para el mismo requisito, se muestra el más reciente en el checklist;
- * los anteriores no se pierden, siguen en la lista general de documentos del expediente). */
 export function cruzarChecklist(
   requisitos: Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>,
   documentos: {
@@ -197,19 +165,9 @@ export function cruzarChecklist(
   });
 }
 
-/** Nombres de los requisitos OBLIGATORIOS de una etapa que todavía no tienen documento
- * subido — se usa para avisar (no bloquear, salvo la excepción del contratista) al
- * aprobar el paso de etapa. */
 export function requisitosObligatoriosFaltantes(checklist: ItemChecklist[]): string[] {
   return checklist.filter((c) => c.obligatorio && !c.documento).map((c) => c.nombre);
 }
-
-/* ============================================================================
- * Catálogo administrable de requisitos (RequisitoDocumentoContratacion) — antes
- * solo se cargaba por script (`data/contratacion/requisitos.json` + prisma/seed-
- * contratacion.ts); esto le da al Administrador una pantalla para reordenar,
- * activar/desactivar y agregar requisitos sin tocar código.
- * ==========================================================================*/
 
 export async function listarCatalogoRequisitos() {
   return db.requisitoDocumentoContratacion.findMany({
@@ -262,8 +220,6 @@ export async function actualizarRequisitoCatalogo(
   });
 }
 
-/** Intercambia el `orden` de un requisito con su vecino inmediato dentro del MISMO grupo
- * (etapa + modalidad) — no tiene efecto si ya está en el extremo del grupo. */
 export async function moverRequisitoCatalogo(id: string, direccion: "arriba" | "abajo") {
   const actual = await db.requisitoDocumentoContratacion.findUnique({ where: { id } });
   if (!actual) throw new Error("El requisito no existe.");
@@ -293,10 +249,6 @@ export async function eliminarRequisitoCatalogo(id: string) {
   await db.requisitoDocumentoContratacion.delete({ where: { id } });
 }
 
-/** Bitácora del módulo (mismo espíritu que ExpedienteEvento) — ver la EXCEPCIÓN
- * deliberada en permisos.ts (puedeEditarSinTrazaDocumentoContrato): la edición o
- * eliminación de un documento por Administrador/Jefe de Contratación NUNCA pasa
- * por esta función a propósito. Todo lo demás sí queda registrado. */
 export async function registrarEventoContratacion(
   expedienteId: string,
   tipo: string,
@@ -310,9 +262,6 @@ export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
   valor?: number | null;
-  // Número de contrato real (SECOP II / sistema de contratación) — registro manual de texto
-  // libre, distinto del consecutivo propio de SIGEC (`numero`). A menudo no se conoce todavía al
-  // abrir el expediente en Precontractual, por eso es opcional y editable después.
   numeroContrato?: string | null;
   fechaInicio?: Date | null;
   fechaFinEstimada?: Date | null;
@@ -361,8 +310,6 @@ export async function agregarDocumentoContrato(datos: {
   subidoPorId: string;
   requiereFirma?: boolean;
   firmadoEnSecop?: boolean;
-  /** Solo para requisitos que se entregan por periodos (informe de supervisión): mes "AAAA-MM"
-   * derivado de las fechas del contrato, o id de un espacio eventual creado a mano. Uno u otro. */
   periodoMes?: string | null;
   periodoEventualId?: string | null;
   ip?: string | null;
@@ -375,12 +322,6 @@ export async function agregarDocumentoContrato(datos: {
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
 
-  // Si el archivo se ata a un requisito del catálogo, el NOMBRE que queda guardado es
-  // SIEMPRE el del procedimiento (nunca el nombre de archivo que mandó el cliente) —
-  // nunca confiar solo en el cliente para algo que se usa en vistas previas, exportes y
-  // la propia auditoría del expediente. También se valida que el requisito de verdad
-  // aplique a la etapa y modalidad de ESTE expediente, para que no se pueda "colar" un
-  // documento marcado como si perteneciera a otro requisito distinto.
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;
   if (datos.requisitoId) {
@@ -389,7 +330,7 @@ export async function agregarDocumentoContrato(datos: {
       throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
     }
     nombre = requisito.nombre;
-    categoria = null; // redundante: el nombre ya identifica el documento del catálogo
+    categoria = null;
 
     if (esRequisitoPorPeriodos(requisito)) {
       const periodoMes = datos.periodoMes?.trim() || null;
@@ -444,9 +385,6 @@ export async function agregarDocumentoContrato(datos: {
     `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]})`,
     datos.subidoPorId
   );
-  // A diferencia de editar/eliminar, subir un documento NUNCA tiene excepción "sin traza" (ni
-  // siquiera para Administrador/Jefe) — siempre queda quién lo subió, también en la cadena de
-  // hash inalterable (misma bitácora que usa el SGDEA, `src/lib/auditoria-doc.ts`).
   await registrarAuditoriaDoc({
     entidad: "DocumentoContrato",
     entidadId: documento.id,
@@ -459,12 +397,6 @@ export async function agregarDocumentoContrato(datos: {
   return documento;
 }
 
-/**
- * EXCEPCIÓN deliberada (ver permisos.ts `puedeEditarSinTrazaDocumentoContrato`):
- * edita metadata de un documento SIN escribir en EventoContratacion. Exclusivo
- * de Administrador/Jefe de Contratación — el gate se aplica en la ruta de API,
- * esta función asume que ya se validó.
- */
 export async function editarDocumentoContratoSinTraza(
   documentoId: string,
   datos: {
@@ -473,10 +405,6 @@ export async function editarDocumentoContratoSinTraza(
     etapa?: EtapaContratacion;
     requiereFirma?: boolean;
     firmadoEnSecop?: boolean;
-    // Reemplazo real del archivo (no solo el nombre) — pedido explícito del usuario tras
-    // probar que "Editar" solo cambiaba el nombre. El archivo anterior se borra del storage
-    // (lo hace el caller, ver la ruta de API) y cualquier firma/solicitud previa queda
-    // invalidada: estaban sobre un contenido que ya no existe.
     archivo?: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
   }
 ): Promise<{ storagePathAnterior: string | null }> {
@@ -511,22 +439,12 @@ export async function editarDocumentoContratoSinTraza(
   if (datos.archivo) {
     await db.firmaDocumentoContrato.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoContratoId: documentoId } });
-    // Reemplazar el archivo ES la manera de "subsanar" un rechazo — el aviso ya cumplió su
-    // propósito (avisar) y el motivo sigue en la trazabilidad de abajo (EventoContratacion), así
-    // que no hace falta que la persona lo borre a mano. Pedido explícito del usuario (2026-09-23).
     await db.avisoRechazoDocumento.deleteMany({ where: { documentoContratoId: documentoId } });
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };
 }
 
-/**
- * EXCEPCIÓN deliberada, misma nota que editarDocumentoContratoSinTraza: borra
- * la fila (y el archivo del storage, best-effort) SIN dejar ninguna traza.
- * Devuelve el storagePath para que el caller (ruta de API) intente borrarlo del
- * bucket — mantener el borrado de Storage fuera de esta función de dominio para
- * no acoplarla a Supabase.
- */
 export async function eliminarDocumentoContratoSinTraza(documentoId: string): Promise<{ storagePath: string }> {
   const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } });
   if (!doc) throw new Error("El documento no existe.");
@@ -534,13 +452,6 @@ export async function eliminarDocumentoContratoSinTraza(documentoId: string): Pr
   return { storagePath: doc.storagePath };
 }
 
-/**
- * Variante CON traza de `editarDocumentoContratoSinTraza` — mismo efecto sobre el documento, pero
- * SÍ registra el cambio en `EventoContratacion`. Usada por Supervisor/Interventor sobre un
- * expediente que supervisa (ver `puedeEditarConTrazaDocumentoContrato` en permisos.ts): a
- * diferencia de la excepción de Administrador/Jefe, aquí no hay el mismo volumen de contratistas
- * que justifique renunciar a la trazabilidad — pedido explícito del usuario (2026-09-18).
- */
 export async function editarDocumentoContratoConTraza(
   documentoId: string,
   datos: Parameters<typeof editarDocumentoContratoSinTraza>[1],
@@ -564,8 +475,6 @@ export async function editarDocumentoContratoConTraza(
   return resultado;
 }
 
-/** Variante CON traza de `eliminarDocumentoContratoSinTraza` — ver el porqué en
- * `editarDocumentoContratoConTraza`. */
 export async function eliminarDocumentoContratoConTraza(
   documentoId: string,
   usuarioId: string,
@@ -575,9 +484,6 @@ export async function eliminarDocumentoContratoConTraza(
   if (!doc) throw new Error("El documento no existe.");
   const resultado = await eliminarDocumentoContratoSinTraza(documentoId);
   await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_ELIMINADO", `Eliminó "${doc.nombre}"`, usuarioId);
-  // El documento ya no existe, pero el eslabón de la cadena de hash queda igual (referencia el
-  // id, no depende de que la fila siga viva) — es justamente el punto: probar que existió y se
-  // borró, aunque ya no esté.
   await registrarAuditoriaDoc({
     entidad: "DocumentoContrato",
     entidadId: documentoId,
@@ -590,14 +496,6 @@ export async function eliminarDocumentoContratoConTraza(
   return resultado;
 }
 
-/**
- * Marca un documento del checklist como validado (ej. la hoja de vida SIGEP) — a diferencia de
- * `estadoValidacion=APROBADO` que ya se fija automáticamente al completarse una firma o al
- * aprobar el paso de etapa, esta es una validación MANUAL explícita (Administrador/Jefe/
- * Funcionario de Contratación, ver `puedeValidarDocumentoContrato`). Misma regla de traza que
- * editar/eliminar: Administrador/Jefe no dejan rastro (ni en EventoContratacion ni en la cadena
- * de hash); Funcionario de Contratación sí.
- */
 export async function validarDocumentoContrato(
   documentoId: string,
   usuarioId: string,
@@ -629,11 +527,6 @@ export async function validarDocumentoContrato(
   });
 }
 
-/** Error específico: la etapa que se quiere cerrar tiene documentos obligatorios del
- * catálogo sin subir. Bloquea la aprobación de forma DURA, sin excepción — decisión
- * explícita del usuario (2026-09-18): "impedir el cierre de cualquier etapa
- * contractual si falta alguno de los documentos marcados como obligatorios". Antes
- * era un aviso que se podía saltar con `forzar=true`; ese salto se retiró. */
 export class FaltanRequisitosError extends Error {
   constructor(public readonly faltantes: string[]) {
     super(`Faltan ${faltantes.length} documento(s) obligatorio(s) de esta etapa: ${faltantes.join("; ")}`);
@@ -641,16 +534,6 @@ export class FaltanRequisitosError extends Error {
   }
 }
 
-/** Aprueba el paso de la etapa actual a la siguiente (o cierra el expediente si ya
- * estaba en Postcontractual) — el Jefe de Contratación valida cada transición
- * (Cap. 6/7/10 del Manual), sin crear un expediente nuevo por etapa.
- *
- * Dos bloqueos DUROS, sin excepción posible:
- * 1. Nunca se pasa de Precontractual a Contractual sin conocer al contratista
- *    (persona natural o jurídica).
- * 2. Nunca se aprueba una etapa con documentos OBLIGATORIOS del catálogo sin subir
- *    (ver FaltanRequisitosError) — antes se podía saltar con `forzar=true`, ya no.
- */
 export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
@@ -687,11 +570,6 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     if (faltantes.length > 0) throw new FaltanRequisitosError(faltantes);
   }
 
-  // Cerrar/avanzar una etapa implica que todo lo suyo ya se revisó — antes solo lo aprobaba
-  // `reevaluarEstadoDocumentoContrato` (src/lib/solicitudes-firma.ts) al completarse una firma
-  // puntual, así que todo lo demás quedaba en PENDIENTE para siempre. No se toca un documento que
-  // todavía espera una firma sin resolver (rol FIRMA, estado PENDIENTE) — eso sí debe seguir
-  // pendiente aunque la etapa avance.
   const idsParaAprobar = documentosEtapa
     .filter((d) => d.estadoValidacion === "PENDIENTE" && !d.solicitudesFirma.some((s) => s.rol === "FIRMA" && s.estado === "PENDIENTE"))
     .map((d) => d.id);
@@ -736,10 +614,6 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   );
 }
 
-/** Retrocede el expediente a la etapa inmediatamente anterior — corrige un avance
- * hecho por error (pedido explícito del usuario: "si me equivoqué... no me deja
- * regresar"). Reabre la etapa anterior (limpia completadaEn/aprobadaPorId) y, si el
- * expediente ya estaba cerrado, lo reabre. Administrador o Jefe de Contratación. */
 export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
@@ -769,12 +643,6 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
   );
 }
 
-/** Elimina COMPLETAMENTE un expediente contractual (documentos, etapas, eventos y
- * firmas asociadas, por cascada) — incluso si está cerrado. Reservado al
- * Administrador de Contratación (ver puedeEliminarExpedienteContractual); decisión
- * explícita del usuario, más severa que la excepción de borrado de un solo
- * documento. Devuelve las rutas de storage de los documentos para que el caller
- * intente borrarlas del bucket (best-effort, fuera de esta función de dominio). */
 export async function eliminarExpedienteContractualCompleto(expedienteId: string): Promise<{ storagePaths: string[] }> {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
@@ -786,10 +654,6 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
   return { storagePaths };
 }
 
-/** Vincula (o crea) el Contratista asociado a un Usuario con rolContratacion=CONTRATISTA —
- * mismo patrón que el upsert de Solicitante por identificación en Trámites 2.0. Se busca
- * primero por usuarioId (ya vinculado, solo actualiza datos) y luego por identificación
- * (contratista ya existía sin cuenta, se le vincula la cuenta de dominio recién asignada). */
 export async function vincularContratistaAUsuario(
   usuarioId: string,
   datos: { identificacion: string; nombreORazonSocial?: string; tipoPersona?: "NATURAL" | "JURIDICA" }
@@ -834,29 +698,10 @@ export async function vincularContratistaAUsuario(
   });
 }
 
-/** Desvincula el Contratista de un usuario (ej. deja de tener el rol CONTRATISTA) sin
- * borrar el registro maestro — sus expedientes históricos siguen intactos. */
 export async function desvincularContratistaDeUsuario(usuarioId: string) {
   await db.contratista.updateMany({ where: { usuarioId }, data: { usuarioId: null } });
 }
 
-/**
- * Vincula este Contratista con un usuario de red (Directorio Activo CDMB) — desde la FICHA del
- * contratista, no desde Usuarios: opcional, en cualquier momento, sin esperar a que la persona
- * inicie sesión ni exigir que ya tenga cuenta. No hay forma de "listar" el directorio activo hoy
- * (el API externo solo valida credenciales, `src/lib/directorio-activo.ts`), así que no se puede
- * confirmar que el usuario de red exista de verdad: si está mal escrito, el vínculo simplemente
- * nunca "cobra vida" (nadie inicia sesión con ese usuario) hasta que se corrija.
- *
- * - Si el usuario de red ya tiene cuenta en la aplicación: se vincula tal cual. Si esa cuenta YA
- *   tenía otro rol de contratación (Jefe, Supervisor, Funcionario) o es un ADMIN, se rechaza —
- *   son casi siempre señal de una cuenta equivocada (un funcionario real, no este contratista); un
- *   administrador debe revisarlo a mano en vez de que quede vinculado por error.
- * - Si no existe todavía: se crea una cuenta "cascarón" (mismo patrón que el alta automática al
- *   iniciar sesión por AD la primera vez, `src/app/api/auth/login/route.ts`) y se le asigna
- *   rolContratacion=CONTRATISTA — cuando la persona inicie sesión de verdad con ese mismo usuario
- *   de red, entra directo a esta misma cuenta (coincide por email), sin duplicarla.
- */
 export async function vincularUsuarioDominioAContratista(contratistaId: string, usuarioRedCrudo: string, actorId: string) {
   const usuarioRed = usuarioRedCrudo.trim().toLowerCase();
   if (!usuarioRed) throw new Error("Escriba el usuario de red.");
@@ -868,7 +713,7 @@ export async function vincularUsuarioDominioAContratista(contratistaId: string, 
   const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, select: { id: true, nombre: true, rol: true, rolContratacion: true, contratista: { select: { id: true } } } });
 
   if (existente) {
-    if (existente.contratista && existente.contratista.id === contratistaId) return existente; // ya vinculado, idempotente
+    if (existente.contratista && existente.contratista.id === contratistaId) return existente;
     if (existente.contratista) throw new Error("Ese usuario de red ya está vinculado a otro contratista.");
     if (existente.rol === "ADMIN" || (existente.rolContratacion && existente.rolContratacion !== "CONTRATISTA")) {
       throw new Error(`"${usuarioRed}" ya es una cuenta con otro rol en el sistema (${existente.nombre}) — revise que el usuario de red sea el correcto.`);
@@ -904,8 +749,6 @@ export async function vincularUsuarioDominioAContratista(contratistaId: string, 
   return creado;
 }
 
-/** Quita el vínculo de usuario de dominio de un Contratista (desde su ficha) — no borra ni
- * desactiva la cuenta, solo deja de asociarla a este contratista. */
 export async function desvincularUsuarioDominioDeContratista(contratistaId: string) {
   await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: null } });
 }
@@ -920,9 +763,6 @@ export type FiltrosContratacion = {
   vista?: string;
 };
 
-/** Denegado por defecto por rol: Administrador/Jefe/Funcionario de Contratación ven todos los
- * expedientes; Jefe de dependencia/Subdirector solo los de su propia dependencia solicitante;
- * Supervisor solo los que supervisa; Contratista solo el(los) propio(s). */
 function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.ExpedienteContractualWhereInput {
   if (
     permisos.esAdmin ||
@@ -989,15 +829,6 @@ export async function listarExpedientesContractuales(filtro: FiltrosContratacion
 
   return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista };
 }
-
-/* ============================================================================
- * Dashboard de SIGEC (/contratacion/dashboard) — pedido explícito del usuario
- * (2026-09-18), "similar a los demás módulos". Tres vistas en una sola consulta
- * (el módulo es liviano, no hace falta separarlas como el panel de SGDEA):
- * tiempo por etapa, firmas pendientes vs. completadas/rechazadas, y volumen por
- * dependencia y modalidad. Respeta el mismo alcance por rol que el listado de
- * expedientes (construirWhereExpedienteContractual).
- * ========================================================================== */
 
 function promedioDias(pares: { desde: Date; hasta: Date }[]): number {
   if (pares.length === 0) return 0;
@@ -1069,18 +900,6 @@ export async function obtenerPanelContratacionVista(permisos: PermisosUsuario) {
   };
 }
 
-/**
- * Avisos de documentos rechazados visibles para este usuario: los que él mismo subió (para poder
- * corregirlos) y, si es Administrador o Jefe de Contratación, TODOS los del módulo (pedido
- * explícito del usuario, 2026-09-23 — "debe llegar ese mensaje a un buzon de quien lo subio y del
- * jefe de contratación"). Funcionario/Supervisor/Contratista solo ven los suyos propios.
- * `veTodos` lo calcula el llamador (`puedeGestionarContratistas(permisos)`) — esta función recibe
- * el booleano ya resuelto, no `PermisosUsuario`/`permisos.ts` directamente, para no arrastrar su
- * cadena de imports (`getSession` → `next/headers`) hacia este módulo: `CatalogoRequisitosAdmin.tsx`
- * (un Client Component) importa cosas de `contratacion.ts`, y cualquier import de VALOR (no de tipo)
- * de `permisos.ts` aquí rompe el build con "next/headers en un Client Component" — ya pasó una vez
- * con `directorio-activo.ts`, mismo mecanismo.
- */
 export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos: boolean) {
   const avisos = await db.avisoRechazoDocumento.findMany({
     where: { documentoContratoId: { not: null }, ...(veTodos ? {} : { subidoPorId: usuarioId }) },
@@ -1091,7 +910,5 @@ export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos:
       subidoPor: { select: { nombre: true } },
     },
   });
-  // El filtro de arriba garantiza que documentoContrato nunca es null aquí — Prisma no puede
-  // reflejar eso en el tipo por sí solo, así que se estrecha una vez y listo.
   return avisos as (typeof avisos[number] & { documentoContrato: NonNullable<(typeof avisos)[number]["documentoContrato"]> })[];
 }

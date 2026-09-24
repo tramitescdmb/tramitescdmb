@@ -4,21 +4,16 @@ import { LayoutDashboard, Briefcase, Inbox, UserSquare2, ShieldCheck } from "luc
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 
 export type PermitidoContratacion = {
-  /** Crear expedientes y gestionar contratistas: Administrador o Jefe de Contratación. */
   administrar: boolean;
   verContratistas: boolean;
-  /** Catálogo de requisitos: solo el Administrador de Contratación. */
   soloAdministrador: boolean;
-  /** Bitácora, Seguridad y Auditoría: Administrador o Jefe de Contratación. */
   gestion: boolean;
-  /** Usuarios y roles: solo el administrador del sistema. */
   administradorSistema: boolean;
 };
 
 const SOLO_ADMIN = "Solo administrador";
 const ADMIN_O_JEFE = "Solo administrador o jefe de contratación";
 
-/** Una entrada que el usuario no puede usar se muestra igual, bloqueada y con la leyenda de quién sí. */
 const entrada = (ok: boolean, leyenda: string, it: ItemMenu): ItemMenu => (ok ? it : { ...it, bloqueadoPara: leyenda });
 
 export function ContratacionTabs({
@@ -26,7 +21,6 @@ export function ContratacionTabs({
   pendientesFirma,
 }: {
   permitido: PermitidoContratacion;
-  /** Documentos que esperan la firma o el visto bueno del usuario — se muestra como insignia en «Firmas». */
   pendientesFirma: { total: number; listos: number };
 }) {
   const grupos: GrupoMenu[] = [
@@ -43,8 +37,6 @@ export function ContratacionTabs({
       ? { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas" }
       : { label: "Contratistas", icon: UserSquare2, href: "/contratacion/contratistas", bloqueadoPara: ADMIN_O_JEFE },
     {
-      // Buzón (lo pendiente de resolver) y el historial de lo ya firmado son las dos caras de lo
-      // mismo — antes vivían como dos pestañas separadas en el mismo nivel que Expedientes.
       label: "Firmas",
       icon: Inbox,
       items: [
@@ -58,8 +50,6 @@ export function ContratacionTabs({
       },
     },
     {
-      // Configuración estructural del módulo (catálogo) y control de cuentas/seguridad, en un solo
-      // menú — separados eran dos desplegables de un único ítem cada uno, que sobraba.
       label: "Administración",
       icon: ShieldCheck,
       lado: "derecha",

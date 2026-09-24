@@ -12,12 +12,6 @@ export type PoliticaPassword = {
   passwordVigenciaMinimaDias: number;
 };
 
-/**
- * Contraseñas triviales que se rechazan sin importar la configuración
- * (MoReq 6.31: "diccionario de contraseñas no válidas"). Cubre lo más común
- * en español/inglés, secuencias de teclado y variantes obvias de "CDMB" —
- * no pretende ser exhaustivo, solo bloquear lo evidente.
- */
 const DICCIONARIO_DEBILES = new Set([
   "12345678", "123456789", "1234567890", "87654321", "11111111", "00000000",
   "password", "password1", "passw0rd", "qwertyui", "qwerty123", "asdfghjk",
@@ -32,18 +26,17 @@ function normalizar(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, ""); // quita tildes/diéresis para comparar
+    .replace(/\p{Diacritic}/gu, "");
 }
 
 function esPasswordDebil(password: string): boolean {
   const norm = normalizar(password);
   if (DICCIONARIO_DEBILES.has(norm)) return true;
-  if (/^(\d)\1+$/.test(password)) return true; // "11111111", "99999999"...
-  if (/^[a-z]+$/i.test(password) && new Set(norm).size <= 2) return true; // "aaaaaaaa", "abababab"
+  if (/^(\d)\1+$/.test(password)) return true;
+  if (/^[a-z]+$/i.test(password) && new Set(norm).size <= 2) return true;
   return false;
 }
 
-/** Valida una contraseña NUEVA contra la política vigente. `null` = válida. */
 export function validarPoliticaPassword(password: string, politica: PoliticaPassword): string | null {
   if (password.length < politica.passwordLongitudMinima) {
     return `La contraseña debe tener al menos ${politica.passwordLongitudMinima} caracteres.`;
@@ -66,11 +59,6 @@ export function validarPoliticaPassword(password: string, politica: PoliticaPass
   return null;
 }
 
-/**
- * true si `nuevaPassword` coincide con la contraseña actual del usuario o con
- * alguna de sus últimas `cantidad - 1` contraseñas anteriores (MoReq 6.30).
- * `cantidad <= 0` desactiva la revisión.
- */
 export async function passwordEnHistorial(
   usuarioId: string,
   hashActual: string,
@@ -91,10 +79,6 @@ export async function passwordEnHistorial(
   return false;
 }
 
-/**
- * Registra el hash que se está reemplazando y recorta el histórico del
- * usuario a `cantidad` filas. Llamar ANTES de sobrescribir Usuario.passwordHash.
- */
 export async function registrarHistorialPassword(usuarioId: string, hashReemplazado: string, cantidad: number) {
   if (cantidad <= 0) return;
   await db.historialPassword.create({ data: { usuarioId, hash: hashReemplazado } });
@@ -109,7 +93,6 @@ export async function registrarHistorialPassword(usuarioId: string, hashReemplaz
   }
 }
 
-/** Para mostrar un aviso de vencimiento (MoReq 6.35). `vigenciaDias` null = nunca vence. */
 export function estadoVigenciaPassword(
   passwordCambiadaEn: Date | null,
   vigenciaDias: number | null
@@ -120,13 +103,6 @@ export function estadoVigenciaPassword(
   return { vencida: diasRestantes <= 0, diasRestantes };
 }
 
-/**
- * Vigencia MÍNIMA (MoReq 6.35): evita que el propio usuario cicle contraseñas
- * de un tirón para saltarse el histórico (6.30). Solo aplica al cambio que
- * hace el propio usuario sobre SU cuenta — un ADMIN que restablece la
- * contraseña de otro (p. ej. porque la olvidó) nunca debe quedar bloqueado
- * por esto. `vigenciaMinimaDias <= 0` desactiva la revisión.
- */
 export function puedeCambiarPorVigenciaMinima(
   passwordCambiadaEn: Date | null,
   vigenciaMinimaDias: number

@@ -115,13 +115,13 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula/cambia contratista y supervisores, aprueba/retrocede etapas, edita o elimina documentos sin dejar traza, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
+            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula/cambia contratista y supervisores, aprueba/retrocede etapas, edita o elimina documentos sin registro en la bitácora, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
             <td className="px-2.5 py-1.5">—</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
             <td className="px-2.5 py-1.5">Ve y edita TODA la contratación, en cualquier etapa (incluso una que el expediente aún no alcanza, o ya cerrada — no solo la etapa actual); sube documentos (queda registrado); edita los datos generales del expediente (modalidad, valor, dependencia, número de contrato, contratista); asigna quién debe firmar cada documento en cualquier expediente.</td>
-            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar sin traza, eliminar un expediente, gestionar el registro de Contratistas o los supervisores.</td>
+            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar documentos sin registro en la bitácora, eliminar un expediente, gestionar el registro de Contratistas o los supervisores.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
@@ -130,8 +130,8 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">Ver TODAS las etapas y archivos de los expedientes donde está asignado (incluida una que aún no se alcanza); subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos — CON traza — en esos mismos expedientes.</td>
-            <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar/eliminar sin dejar traza, aprobar el paso de etapa, eliminar el expediente completo.</td>
+            <td className="px-2.5 py-1.5">Ver TODAS las etapas y archivos de los expedientes donde está asignado (incluida una que aún no se alcanza); subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos en esos mismos expedientes (con registro en la bitácora).</td>
+            <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar o eliminar sin registro en la bitácora, aprobar el paso de etapa, eliminar el expediente completo.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
@@ -158,7 +158,7 @@ export default async function ContratacionAyudaPage() {
           quedan en solo lectura.
         </p>
         <p>
-          Excepción (pedido explícito del usuario, 2026-09-23): Administrador, Jefe y Funcionario de Contratación
+          Excepción: Administrador, Jefe y Funcionario de Contratación
           ven y pueden adelantar documentos en <strong>cualquier</strong> etapa de <strong>cualquier</strong> expediente,
           esté alcanzada o no, e incluso una ya completada — la etapa aparece marcada &quot;(aún no alcanzada)&quot;
           para que quede claro que el expediente formalmente sigue en la etapa anterior. El supervisor/interventor
@@ -187,8 +187,8 @@ export default async function ContratacionAyudaPage() {
           <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
           Administrador, Jefe o Funcionario de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
           alguien de Contratación ya lo revisó, aparte de la aprobación automática que ya ocurre al firmar un
-          documento o al cerrar la etapa. Administrador/Jefe validan sin dejar traza (ver más abajo); Funcionario
-          de Contratación sí queda registrado.
+          documento o al cerrar la etapa. La validación de Administrador/Jefe no se registra en la bitácora; la de Funcionario
+          de Contratación sí.
         </p>
         <p>
           Subir, editar, eliminar o validar un documento (salvo la excepción de Administrador/Jefe) deja un
@@ -221,30 +221,29 @@ export default async function ContratacionAyudaPage() {
         <p>
           <strong>Datos del expediente</strong> (modalidad, valor, dependencia solicitante, número de contrato,
           fechas de inicio/fin, contratista): editables en cualquier momento por Administrador, Jefe o Funcionario
-          de Contratación con el botón &quot;Editar datos generales&quot; del detalle del expediente — antes solo se
-          fijaban al crearlo (salvo número de contrato y fechas, que ya eran editables solo por Administrador/Jefe).
+          de Contratación con el botón &quot;Editar datos generales&quot; del detalle del expediente.
           Cambiar el contratista de uno ya vinculado pide confirmación: el anterior deja de tener acceso al
           expediente. Supervisor(es)/interventor(es) y el expediente relacionado siguen siendo exclusivos de
           Administrador/Jefe.
         </p>
       </Seccion>
 
-      <Seccion n={5} id="editar-sin-traza" icono={Scale} titulo="Editar y eliminar documentos, sin dejar traza" admin>
+      <Seccion n={5} id="editar-sin-traza" icono={Scale} titulo="Editar y eliminar documentos sin registro en la bitácora" admin>
         <p>
-          Decisión explícita e informada: Administrador y Jefe de Contratación pueden editar el nombre,
+          Administrador y Jefe de Contratación pueden editar el nombre,
           <strong> reemplazar el archivo real</strong> o eliminar un documento sin que quede ninguna fila en la
           bitácora del expediente. Motivo: alta rotación de contratistas y errores de captura frecuentes;
           exigir siempre trazabilidad sería inviable operativamente.
         </p>
         <p className="text-xs text-stone-400">
           Reemplazar el archivo borra el anterior del almacenamiento e invalida cualquier firma o solicitud de
-          firma ya registrada sobre ese documento — quedaban sobre un contenido que ya no existe.
+          firma registrada sobre ese documento, porque corresponden al archivo anterior.
         </p>
         <p>
           La misma excepción aplica a <strong>validar</strong> un documento y a la <strong>cadena de hash</strong>{" "}
           del expediente (ver la sección de Checklist): lo que hace Administrador o Jefe de Contratación no deja
           fila en ninguna de las dos. Funcionario de Contratación y Supervisor/Interventor SÍ quedan registrados
-          en ambas — es la misma regla, no una excepción aparte.
+          en ambas.
         </p>
       </Seccion>
     </>
@@ -254,7 +253,7 @@ export default async function ContratacionAyudaPage() {
     <>
       <Seccion n={6} id="firma" icono={PenLine} titulo="Firma electrónica asignada">
         <p>
-          &quot;Requiere firma&quot; ya no es solo una casilla: hay que <strong>designar explícitamente</strong>{" "}
+          Cuando un documento requiere firma, se debe <strong>designar</strong>{" "}
           quién debe firmar, dar visto bueno, o tener solo acceso de lectura sobre cada documento, con el botón
           <strong> Asignar firmantes</strong> del detalle del expediente.
         </p>
@@ -274,8 +273,7 @@ export default async function ContratacionAyudaPage() {
           muestra el documento real antes de confirmar.
         </p>
         <p>
-          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. Desde 2026-09-23 esto ya no se
-          queda solo como un estado pegado a la fila del documento: genera un <strong>aviso</strong> en el buzón de
+          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. El rechazo genera un <strong>aviso</strong> en el buzón de
           quien subió el archivo y de Administrador/Jefe de Contratación, con el motivo — se puede descartar a mano,
           o se limpia solo cuando se reemplaza el archivo rechazado por uno corregido. El historial completo de
           rechazos (aunque el aviso ya se haya limpiado) queda al final del detalle del expediente, en «Rechazos al

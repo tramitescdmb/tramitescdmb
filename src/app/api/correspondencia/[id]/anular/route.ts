@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { anularComunicacion } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Anula un radicado erróneo con motivo (Ley 594/2000). No se borra: queda marcado y trazado. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { suspenderTermino } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Detiene el trámite de una recibida en curso, con motivo (MoReq 7.18). Si es PQRSD, suspende el término (Art. 17 CPACA). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

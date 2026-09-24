@@ -15,8 +15,6 @@ export const ETIQUETA_AMBITO_CAMPO: Record<AmbitoCampoMetadato, string> = {
   AMBOS: "Ambos",
 };
 
-/* ------------------------------------------------------------- Validación (pura) */
-
 export type CampoDef = {
   clave: string;
   nombre: string;
@@ -27,7 +25,6 @@ export type CampoDef = {
   valorPorDefecto: string | null;
 };
 
-/** Convierte "" / null / undefined a null, y coacciona por tipo. Devuelve `{ valores, errores }`. */
 export function validarMetadatos(
   campos: CampoDef[],
   entrada: Record<string, unknown>,
@@ -82,7 +79,6 @@ export function validarMetadatos(
   return { valores, errores };
 }
 
-/** Valores iniciales de un formulario: el valor guardado, o el `valorPorDefecto` del campo. */
 export function metadatosIniciales(campos: CampoDef[], guardados: Record<string, unknown> | null): Record<string, string> {
   const out: Record<string, string> = {};
   for (const c of campos) {
@@ -92,9 +88,6 @@ export function metadatosIniciales(campos: CampoDef[], guardados: Record<string,
   return out;
 }
 
-/* ------------------------------------------------------------- Consultas / CRUD */
-
-/** Campos activos aplicables a un ámbito, opcionalmente restringidos a una serie. */
 export async function camposMetadatoPara(
   ambito: "COMUNICACION" | "EXPEDIENTE",
   serieId: string | null,
@@ -151,7 +144,6 @@ export async function crearCampoMetadato(datos: {
   const opciones = (datos.opciones ?? []).map((o) => o.trim()).filter(Boolean);
   if (datos.tipo === "LISTA" && opciones.length < 2) throw new Error("Un campo de lista necesita al menos dos opciones.");
 
-  // clave única: agrega un sufijo si choca
   const existentes = new Set((await db.campoMetadato.findMany({ select: { clave: true } })).map((c) => c.clave));
   if (existentes.has(clave)) {
     let i = 2;
@@ -214,12 +206,9 @@ export async function cambiarEstadoCampoMetadato(id: string, activo: boolean) {
 }
 
 export async function eliminarCampoMetadato(id: string) {
-  // No borra los valores ya guardados en las comunicaciones/expedientes — solo deja
-  // de pedir el campo. Es un cambio de esquema reversible reactivándolo.
   await db.campoMetadato.delete({ where: { id } });
 }
 
-/** Guarda los metadatos de una comunicación o expediente, validados contra los campos aplicables. */
 export async function guardarMetadatosComunicacion(comunicacionId: string, entrada: Record<string, unknown>) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { serieId: true, metadatos: true } });
   if (!c) throw new Error("La comunicación no existe.");
@@ -238,7 +227,6 @@ export async function guardarMetadatosExpediente(expedienteId: string, entrada: 
   await db.expedienteDocumental.update({ where: { id: expedienteId }, data: { metadatos: valores } });
 }
 
-/** Presenta los metadatos guardados para mostrarlos (etiqueta + valor legible). */
 export function presentarMetadatos(
   campos: { clave: string; nombre: string; tipo: TipoCampoMetadato }[],
   guardados: Record<string, unknown> | null,

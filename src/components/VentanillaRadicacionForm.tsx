@@ -74,7 +74,6 @@ export function VentanillaRadicacionForm({
     setDependenciaId(nuevoId);
   }
 
-  /** Autocarga los datos de un peticionario recurrente por su identificación (maestro de terceros). */
   async function buscarTercero() {
     const id = identificacion.trim();
     if (id.length < 4 || nombre.trim() || terceroCargado) return;
@@ -91,9 +90,7 @@ export function VentanillaRadicacionForm({
       if (tercero.municipio) setMunicipio(tercero.municipio);
       if (tercero.departamento) setDepartamento(tercero.departamento);
       setTerceroCargado(true);
-    } catch {
-      /* silencioso — es una comodidad, no bloquea el radicado */
-    }
+    } catch {}
   }
 
   function agregarArchivos(lista: FileList | null) {

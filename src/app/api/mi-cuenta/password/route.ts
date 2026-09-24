@@ -6,13 +6,6 @@ import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPasswor
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-/**
- * Cambio de contraseña por el PROPIO usuario (MoReq 6.35) — a diferencia de
- * `PATCH /api/usuarios/[id]`, que restablece la contraseña de OTRO y solo un
- * ADMIN puede usar, esto lo puede usar cualquier cuenta autenticada sobre sí
- * misma, exige la contraseña actual, y respeta la vigencia mínima (esa regla
- * no aplica al restablecimiento por un administrador).
- */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/mi-cuenta", req.url);

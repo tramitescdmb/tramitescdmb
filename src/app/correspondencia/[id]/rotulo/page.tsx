@@ -59,7 +59,6 @@ export default async function RotuloPage({ params }: { params: Promise<{ id: str
         en la primera hoja del documento físico. El QR abre la verificación pública del radicado.
       </p>
 
-      {/* Etiqueta — lo único que se imprime */}
       <div className="mx-auto w-[105mm] rounded-lg border border-stone-200 bg-white p-[5mm] text-stone-900 print:w-full print:rounded-none print:border-0 print:p-0">
         <div className="flex items-center gap-2 border-b border-stone-200 pb-1.5">
           {config.logoUrl ? (

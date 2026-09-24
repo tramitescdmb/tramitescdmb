@@ -3,7 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { crearTermino } from "@/lib/vocabulario";
 
-/** Crea un término del vocabulario controlado (MoReq 1.17). Solo administrador de archivo. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin/vocabulario", req.url);

@@ -75,7 +75,6 @@ export default async function FlujoEditorPage({
         </div>
       )}
 
-      {/* Lienzo — editor visual del flujo */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-stone-900">Diagrama del flujo (editor visual)</h3>
@@ -93,7 +92,6 @@ export default async function FlujoEditorPage({
         />
       </div>
 
-      {/* Datos del flujo */}
       <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
         <input type="hidden" name="accion" value="editar" />
         <div className="sm:col-span-2">
@@ -127,7 +125,6 @@ export default async function FlujoEditorPage({
         </div>
       </form>
 
-      {/* Quién puede operar el flujo (MoReq 7.8) */}
       <form action={accion} method="post" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <input type="hidden" name="accion" value="accesos" />
         <p className="text-sm font-semibold text-stone-900">Quién puede operar este flujo</p>
@@ -146,7 +143,6 @@ export default async function FlujoEditorPage({
         <button className="mt-3 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar acceso</button>
       </form>
 
-      {/* Pasos */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-stone-900">Pasos ({flujo.pasos.length})</h3>
         {flujo.pasos.map((paso, idx) => (
@@ -186,7 +182,6 @@ export default async function FlujoEditorPage({
 
             {paso.instrucciones && <p className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">{paso.instrucciones}</p>}
 
-            {/* Transiciones del paso */}
             <div className="mt-3 space-y-1.5">
               {paso.transiciones.length === 0 && paso.tipo !== "FIN" && (
                 <p className="text-xs text-amber-700">Sin salidas — agregue al menos una.</p>
@@ -288,7 +283,6 @@ export default async function FlujoEditorPage({
   );
 }
 
-/** Botón que envía un mini-form con un par nombre/valor (para acciones sin campos). */
 function FormBoton({
   accion,
   name,

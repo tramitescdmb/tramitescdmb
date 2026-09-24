@@ -5,12 +5,6 @@ import { parsearCsvTrd, parsearXmlTrd, importarTrd } from "@/lib/trd-import";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Importa una TRD completa desde un archivo CSV (plantilla propia del sistema).
- * "vigente" reemplaza la versión activa de cada serie que toque (sin borrar la
- * anterior); "historica" carga una TRD antigua ya cerrada, solo para poder
- * reclasificar/migrar información vieja sin tocar la TRD vigente.
- */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin", req.url);
@@ -69,9 +63,6 @@ export async function POST(req: NextRequest) {
     const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} actualizadas${resultado.errores.length ? ` · ${resultado.errores.length} aviso(s), vea abajo` : ""}.`;
     if (resultado.errores.length > 0) {
       console.warn("Errores en importación de TRD:", resultado.errores);
-      // MoReq 1.6 ("validar con alertas"): el admin que importa no tiene acceso al log del servidor —
-      // los avisos (ej. duplicados similares detectados por importarTrd) tienen que llegarle a él, no
-      // quedarse solo en la consola. Se muestran los primeros 8; con más, se recorta y se dice cuántos.
       const MOSTRAR = 8;
       const avisos = resultado.errores.slice(0, MOSTRAR).join(" | ");
       const resto = resultado.errores.length - MOSTRAR;

@@ -8,14 +8,6 @@ import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
-/**
- * Descarga de un documento de contratación PDF CON el sello de firma electrónica estampado al
- * pie (nombre, fecha, hash SHA-256 completo) y un QR de verificación en la esquina superior —
- * antes SIGEC guardaba la firma solo en base de datos, sin marcar nunca el archivo. A diferencia
- * de SGDEA, NO lleva ningún rótulo de radicación de correspondencia (un expediente contractual no
- * tiene radicado) — usa `estamparFirmaSigec`, no el `estamparRotulo` compartido. El original en
- * Storage no se modifica.
- */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

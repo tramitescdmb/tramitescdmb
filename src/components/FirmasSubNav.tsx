@@ -9,8 +9,6 @@ const ITEMS = [
   { href: "/firmas/mis-firmas", label: "Mis firmas", icon: FileSignature },
 ];
 
-/** Submenú de la sección Firmas de Trámites ambientales — buzón (lo que otros le asignaron) y el
- * historial de lo propio. */
 export function FirmasSubNav() {
   const pathname = usePathname();
   return (

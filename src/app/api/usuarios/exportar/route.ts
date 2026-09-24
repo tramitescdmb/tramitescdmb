@@ -29,7 +29,6 @@ const ETIQUETAS_SECCION: Record<string, string> = {
   SINCA_MINERIA: "SINCA 1.0: Minería de datos",
 };
 
-/** Exporta el listado de usuarios (cargos, rol, trámites y secciones con acceso) a CSV. */
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -82,9 +81,6 @@ export async function GET() {
       .join(";");
   });
 
-  // BOM al inicio (U+FEFF) para que Excel detecte UTF-8 y no dañe las tildes/eñes.
-  // Separador ";" (no ",") porque Excel en configuración regional en español
-  // usa la coma como separador decimal y espera punto y coma en el CSV.
   const BOM = String.fromCharCode(0xfeff);
   const csv = BOM + [encabezados.map(celda).join(";"), ...filas].join("\r\n");
 

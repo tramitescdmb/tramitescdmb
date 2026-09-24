@@ -30,20 +30,6 @@ const ETIQUETA_TERMINADO: Record<string, string> = {
 const EXPLICACION_TERMINADO =
   "Ya quedó firmado y radicado — es un documento definitivo, no requiere ningún paso más. Si se distribuyó a alguien después, es solo seguimiento interno opcional, no cambia este estado.";
 
-/**
- * Barra de avance de una comunicación (recibida/enviada/interna), en el mismo
- * estilo que ProgresoExpediente: una fila de segmentos, uno por etapa, para
- * que un funcionario no técnico vea de un vistazo en qué punto va sin tener
- * que interpretar el nombre técnico del estado.
- *
- * Solo una RECIBIDA tiene un ciclo real que avanzar (llega → se distribuye →
- * se atiende → se responde). Una ENVIADA o un memorando quedan firmados y
- * definitivos en el mismo momento de radicarse — si alguien los distribuye
- * después para seguimiento interno, eso NO es un paso pendiente. Mostrarles
- * la misma barra a medio llenar (ej. "Distribuida, 50%") sugiere falsamente
- * que falta algo, así que para estos dos tipos siempre se ve completa y en
- * verde, sin importar el estado interno de distribución.
- */
 export function ProgresoCorrespondencia({
   estado,
   tipo,
@@ -59,10 +45,6 @@ export function ProgresoCorrespondencia({
   const terminal = siempreTerminado || estado === "RESPONDIDA" || estado === "ARCHIVADA";
 
   const pasoActual = Math.min(PASO_POR_ESTADO[estado] ?? 1, TOTAL_PASOS);
-  // "completados" = pasos YA SUPERADOS (antes del actual) — controla qué segmentos se ven "llenos" vs.
-  // "el actual, resaltado". El porcentaje es distinto a propósito: el paso actual ya se alcanzó (por
-  // algo el segmento se ve coloreado, no gris), así que SÍ cuenta para el avance — con 1 de 4 pasos
-  // alcanzados (recién radicada) debe leerse 25%, no 0%.
   const completados = terminal || anulada ? TOTAL_PASOS : pasoActual - 1;
   const pasosAlcanzados = terminal || anulada ? TOTAL_PASOS : pasoActual;
   const pct = Math.round((pasosAlcanzados / TOTAL_PASOS) * 100);

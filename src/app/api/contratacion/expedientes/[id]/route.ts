@@ -8,12 +8,6 @@ import { deleteDocumento } from "@/lib/storage";
 
 const MODALIDADES_VALIDAS = new Set(Object.keys(ETIQUETA_MODALIDAD));
 
-/** Edita un expediente ya creado, en cualquier etapa. Cada bloque valida su propio permiso (no
- * hay un único gate al principio) porque, desde 2026-09-23, Funcionario de Contratación también
- * puede editar los datos generales (modalidad/valor/dependencia/número de contrato/contratista)
- * pero NO gestiona supervisores ni el expediente relacionado — eso sigue siendo exclusivo de
- * Administrador/Jefe (`puedeGestionarContratistas`). El contratista vinculado (si tiene cuenta de
- * acceso) es quien consulta el expediente y carga documentos desde la etapa Contractual. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -39,11 +33,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Ese ya es el contratista vinculado a este expediente." }, { status: 409 });
     }
 
-    // Antes la norma era "un contratista por expediente, nunca se reemplaza" — pedido explícito
-    // del usuario (2026-09-23): administrador/jefe/funcionario de Contratación ahora SÍ pueden
-    // cambiarlo (un error de captura al vincular ya no exige eliminar el expediente completo). La
-    // condición `contratistaId: actual.contratista?.id ?? null` en el WHERE evita que dos personas
-    // lo cambien a la vez y una pise a la otra.
     const { count } = await db.expedienteContractual.updateMany({
       where: { id, contratistaId: actual.contratista?.id ?? null },
       data: { contratistaId },
@@ -80,9 +69,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const dependencia = await db.dependencia.findUnique({ where: { id: dependenciaId }, select: { id: true } });
       if (!dependencia) return NextResponse.json({ error: "La dependencia indicada no existe." }, { status: 404 });
     }
-    // Ajuste formal a las fechas reales del Acta de Inicio, el número real del contrato (SECOP II,
-    // a menudo no se conoce aún al abrir el expediente en Precontractual) y, desde 2026-09-23, los
-    // datos generales que antes solo se fijaban al crear el expediente (modalidad/valor/dependencia).
     await db.expedienteContractual.update({
       where: { id },
       data: {
@@ -144,9 +130,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ error: "Nada que actualizar." }, { status: 400 });
 }
 
-/** Elimina COMPLETAMENTE un expediente contractual, incluso cerrado — decisión explícita
- * del usuario, más severa que la excepción de borrado de un solo documento. Reservado al
- * Administrador de Contratación. Los archivos del storage se borran best-effort. */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

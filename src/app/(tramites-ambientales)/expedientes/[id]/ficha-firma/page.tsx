@@ -8,8 +8,6 @@ import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
-/** Ficha técnica completa de las firmas de todos los documentos de un expediente de trámites —
- * misma lógica que la ficha de Contratación. */
 export default async function FichaFirmaExpedienteTramitePage({
   params,
   searchParams,

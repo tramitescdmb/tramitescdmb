@@ -33,12 +33,6 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
 const humanizar = (tipo: string) => tipo.charAt(0) + tipo.slice(1).toLowerCase().replace(/_/g, " ");
 const infoEvento = (tipo: string) => EVENTOS[tipo] ?? { icono: Circle, clase: "text-stone-400", texto: humanizar(tipo) };
 
-/**
- * Bitácora del SIGEC — todo lo que ocurre en los expedientes contractuales, en orden cronológico
- * inverso: creación, documentos, firmas, etapas, vínculos. Una excepción deliberada del módulo: la edición
- * o eliminación de un documento por el Administrador/Jefe de Contratación no deja fila aquí (ver la ayuda),
- * de modo que esta bitácora es la traza de gestión del expediente, no un registro inalterable.
- */
 export default async function BitacoraSigecPage({ searchParams }: { searchParams: Promise<{ tipo?: string; q?: string; page?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");

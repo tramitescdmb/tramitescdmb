@@ -42,8 +42,8 @@ describe("filaAModelo", () => {
     expect(m.refId).toBe("482913");
     expect(m.anio).toBe(2011);
     expect(m.asunto).toBe("Solicitud de copia");
-    expect(m.numeroEntrada).toBe("0012"); // NUMENTRADA se normaliza…
-    expect(m.campos).toBeNull(); // …y no se repite en campos
+    expect(m.numeroEntrada).toBe("0012");
+    expect(m.campos).toBeNull();
     expect(m.tieneImagen).toBe(false);
   });
   it("guarda en campos solo las columnas que no quedaron normalizadas, recortadas", () => {
@@ -68,7 +68,7 @@ describe("filaAModelo", () => {
   it("deriva la identificacion (NIT/cédula) desde NITSOL_ATC", () => {
     const m = filaAModelo("sic-pqr", { ref_id: "1", campos: { NITSOL_ATC: "1098765432" } });
     expect(m.identificacion).toBe("1098765432");
-    expect(m.campos).toBeNull(); // ya normalizada, no queda nada residual en campos
+    expect(m.campos).toBeNull();
   });
   it("deriva los campos normalizados desde las columnas crudas de la serie", () => {
     const m = filaAModelo("psdocuments", {
@@ -153,7 +153,7 @@ describe("parseDumpFondo", () => {
     expect(filas[0]!.serie_id).toBe(101);
     expect(filas[0]!.campos!.NUMENTRADA).toBe("0045");
     expect(filas[0]!.campos!.ASUNTO).toBe('Solicitud con "comillas", coma y texto que sigue en otro trozo');
-    expect(filas[0]!.campos!.OBSERVACIONES).toBeUndefined(); // campo sin valor
+    expect(filas[0]!.campos!.OBSERVACIONES).toBeUndefined();
     expect(filas[0]!.num_archivos).toBe(2);
     expect(filas[0]!.tiene_imagen).toBe(true);
     expect(filas[0]!.ruta_original).toBe("z:/Documentos/00000101/OGALVIS/00694338.pdf");

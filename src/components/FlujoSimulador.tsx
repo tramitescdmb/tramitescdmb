@@ -3,11 +3,6 @@
 import { useMemo, useState } from "react";
 import { Play, RotateCcw } from "lucide-react";
 
-/**
- * Simulador de flujo (MoReq 7.5): recorre el flujo desde el paso inicial sin
- * tocar nada. En cada paso con varias salidas se elige la opción; el resultado
- * es el camino que seguiría una comunicación real. Puro cliente.
- */
 type Paso = { id: string; orden: number; nombre: string; tipo: string };
 type Trans = { desdePasoId: string; haciaPasoId: string; etiqueta: string };
 
@@ -35,7 +30,6 @@ export function FlujoSimulador({ pasos, transiciones }: { pasos: Paso[]; transic
       const nuevo = [...c];
       nuevo[nuevo.length - 1] = { ...nuevo[nuevo.length - 1], resultado: t.etiqueta };
       nuevo.push({ paso: destino });
-      // corta ciclos infinitos: máximo 30 pasos en la simulación
       return nuevo.slice(0, 30);
     });
   }

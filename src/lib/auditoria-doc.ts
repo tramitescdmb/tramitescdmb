@@ -2,17 +2,6 @@ import crypto from "crypto";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 import { db } from "@/lib/db";
 
-/**
- * Bitácora inalterable con cadena de hash (SGDEA / MoReq — pistas de auditoría
- * inalterables). Cada eslabón encadena su `hash` con el `hashAnterior` (el hash
- * del eslabón previo). Alterar el contenido de una fila cambia su hash y rompe
- * la cadena; borrar una fila deja el `hashAnterior` de la siguiente sin
- * coincidencia. `verificarCadena()` detecta ambos casos.
- *
- * Registra también LEE y EXPORTA — lo que la auditoría de cuenta
- * (RegistroAuditoria) no hace.
- */
-
 export type DatosEslabon = {
   entidad: string;
   entidadId: string;
@@ -23,9 +12,6 @@ export type DatosEslabon = {
   detalle?: string | null;
 };
 
-// Campos que entran al hash. NO se incluye `secuencia` (la asigna la base con
-// autoincrement, no se conoce antes de insertar) ni el `id`: la cadena se apoya
-// en `hashAnterior` + el contenido + la fecha generada en la app.
 export type FilaHasheable = DatosEslabon & { createdAtIso: string; hashAnterior: string | null };
 
 export function calcularHashAuditoria(fila: FilaHasheable): string {
@@ -42,7 +28,6 @@ export function calcularHashAuditoria(fila: FilaHasheable): string {
   return crypto.createHash("sha256").update(base).digest("hex");
 }
 
-/** Verificación pura sobre una lista ya ordenada por `secuencia` asc. Testeable sin base. */
 export function verificarCadenaFilas(
   filas: Array<{
     secuencia: number;
@@ -76,11 +61,6 @@ export function verificarCadenaFilas(
   return { ok: true, totalRevisadas: filas.length };
 }
 
-// Constante arbitraria para el advisory lock transaccional de Postgres que
-// serializa a los escritores de la bitácora (evita que dos inserciones
-// concurrentes lean el mismo "último hash" y bifurquen la cadena). Es un lock
-// a nivel de transacción (`xact`), compatible con el pooler en modo transacción
-// de Supabase: se libera solo al COMMIT.
 const LOCK_CADENA = 918273645;
 
 export async function registrarAuditoriaDoc(datos: DatosEslabon): Promise<void> {
@@ -106,10 +86,6 @@ export async function registrarAuditoriaDoc(datos: DatosEslabon): Promise<void> 
         },
       });
     },
-    // Al ser un lock serializador GLOBAL (todo escritor de la bitácora espera su turno),
-    // varias escrituras casi simultáneas (p. ej. varios funcionarios consultando a la vez)
-    // pueden hacer que una quede en cola más de los 5s por defecto de Prisma bajo presión
-    // del pool (connection_limit=5) — eso tumbaba la página con P2028 en vez de solo demorarla.
     { maxWait: 10_000, timeout: 15_000 }
   );
 }
@@ -122,19 +98,12 @@ export async function verificarCadena(): Promise<{ ok: boolean; totalRevisadas: 
   return verificarCadenaFilas(filas);
 }
 
-/** Extrae IP y user-agent de las cabeceras de una petición, para la bitácora. */
 export function datosPeticion(headers: Headers): { ip: string | null; userAgent: string | null } {
   const xff = headers.get("x-forwarded-for");
   const ip = xff ? xff.split(",")[0]!.trim() : headers.get("x-real-ip");
   return { ip: ip || null, userAgent: headers.get("user-agent") };
 }
 
-/**
- * MoReq 6.9: registrar el intento cuando alguien SIN permiso de administrar el archivo entra a una
- * sección administrativa del SGDEA (TRD, disposición final, reportes, bitácora) — antes solo se registraba
- * el intento de entrar al módulo completo (`correspondencia/layout.tsx`), no el de una sección puntual ya
- * adentro. No bloquea nada por sí solo (cada página ya hace su propio `redirect`); solo deja rastro.
- */
 export async function registrarAccesoDenegadoSeccion(
   seccion: string,
   session: { userId: string; nombre: string },
@@ -152,12 +121,6 @@ export async function registrarAccesoDenegadoSeccion(
   }).catch((err) => console.error(`No se pudo registrar en la bitácora el acceso denegado a "${seccion}":`, err));
 }
 
-/**
- * MoReq 6.9: registra en la bitácora el intento de EJECUTAR una acción sensible
- * (transferir, anular, disponer, reclasificar, etiquetar…) sin el permiso
- * necesario. Antes las rutas de acción solo devolvían 403/redirect sin dejar
- * rastro; ahora todo intento de saltarse un control queda registrado.
- */
 export async function registrarAccesoDenegadoAccion(
   operacion: string,
   entidadId: string,
@@ -176,12 +139,6 @@ export async function registrarAccesoDenegadoAccion(
   }).catch((err) => console.error(`No se pudo registrar en la bitácora el intento de "${operacion}":`, err));
 }
 
-/**
- * MoReq 6.11: deja constancia en la bitácora inalterable de que una acción
- * archivística falló a mitad de camino (excepción no controlada), para poder
- * identificar el error después. No relanza — el llamador ya maneja el error
- * hacia el usuario; esto solo registra.
- */
 export async function registrarErrorEjecucion(
   entidad: string,
   entidadId: string,

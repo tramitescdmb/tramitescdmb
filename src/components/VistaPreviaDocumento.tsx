@@ -3,12 +3,6 @@
 import { useEffect, useState } from "react";
 import { Eye, X, Download } from "lucide-react";
 
-/**
- * Antes "Abrir" solo navegaba/descargaba (MoReq 4.15: previsualizar sin descargar).
- * Reutiliza la MISMA ruta de descarga como fuente del iframe/imagen — ya sirve el
- * archivo con el Content-Type original (no fuerza descarga), así que basta con
- * pedirlo dentro de un visor en vez de navegar la pestaña completa a esa URL.
- */
 export function VistaPreviaDocumento({
   url,
   nombre,
@@ -18,7 +12,6 @@ export function VistaPreviaDocumento({
   url: string;
   nombre: string;
   mimeType: string;
-  /** Muestra una miniatura de la imagen antes del botón (MoReq 4.3). */
   miniatura?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);

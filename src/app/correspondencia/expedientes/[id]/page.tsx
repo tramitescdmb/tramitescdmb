@@ -108,19 +108,12 @@ export default async function ExpedienteDetallePage({
   const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
   const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
-  // Los archivos retirados del índice (corrección en expediente abierto) se listan aparte y no cuentan
-  // para el índice, el hash, la foliación ni el FUID.
   const documentosActivos = expediente.documentos.filter((d) => !d.retiradoEn);
   const documentosRetirados = expediente.documentos.filter((d) => d.retiradoEn);
 
-  // Orden visual según el criterio configurado en la serie (MoReq 1.45/1.46) — el número de índice
-  // (ordenIndice) sigue siendo el orden real de incorporación, el que respalda el hash del índice
-  // firmado; solo cambia cómo se VE.
   const criterioOrden = expediente.serie?.criterioOrdenExpediente ?? "FECHA_DOCUMENTO";
   const documentosOrdenados = ordenarDocumentosExpediente(documentosActivos, criterioOrden);
 
-  // Foliación (MoReq 1.19/1.51): rango acumulado de folios por documento, calculado sobre el orden REAL de
-  // incorporación (ordenIndice, el que respalda el hash) — no sobre el orden visual por fecha.
   const porOrdenIndice = documentosActivos.slice().sort((a, b) => a.ordenIndice - b.ordenIndice);
   const rangoFolios = new Map<string, { desde: number; hasta: number }>();
   let folioAcumulado = 0;
@@ -131,10 +124,6 @@ export default async function ExpedienteDetallePage({
   }
   const totalFolios = folioAcumulado;
 
-  // Cotejo de integridad consolidada (MoReq 1.26): recalcula el hash del índice a partir de las filas
-  // ACTUALES de la base y lo compara contra el que quedó firmado al cerrar. Si alguien alteró el orden, el
-  // nombre o el hash de un documento después del cierre (directamente en la base, no por la aplicación),
-  // el recálculo ya no coincide y se detecta — sin tener que volver a descargar cada archivo del storage.
   const hashRecalculado = expediente.estado === "CERRADO" ? calcularHashIndice(expediente.documentos) : null;
   const indiceIntegro = hashRecalculado !== null && hashRecalculado === expediente.indiceHash;
 

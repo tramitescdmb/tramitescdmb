@@ -7,8 +7,6 @@ import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { FirmarSolicitudInline } from "@/components/FirmarSolicitudInline";
 import { TituloSeccion } from "@/components/sgdea/ui";
 
-/** Página ligera de UNA firma pendiente de un documento de trámites, enlazada desde el buzón —
- * solo carga el documento y la solicitud puntuales, sin abrir el expediente completo. */
 export default async function FirmarSolicitudTramitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

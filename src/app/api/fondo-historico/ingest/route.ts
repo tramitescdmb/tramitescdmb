@@ -10,36 +10,9 @@ import {
   type CuerpoIngesta,
 } from "@/lib/fondo-historico";
 
-/**
- * Ingesta del Fondo Documental histórico. La llama el extractor que corre
- * DENTRO de la red CDMB (scripts/fondo-historico/), porque el Oracle origen
- * no es alcanzable desde Vercel.
- *
- * Autorización: `Authorization: Bearer <FONDO_INGEST_TOKEN>`.
- *
- * Protocolo (una corrida):
- *   1. POST { fondo, disparadoPor }                       → crea la corrida, devuelve { sincronizacionId }
- *   2. POST datos (una o varias veces)                    → upsert de un bloque de documentos
- *   3. POST { fondo, sincronizacionId, finalizar: true }  → borra lo no tocado y cierra la corrida
- *
- * Paso 2 — dos formatos:
- *  a) JSON: `{ fondo, sincronizacionId, lote: FilaFondoEntrada[] }`
- *  b) "dump" de sqlplus (Oracle 10g no puede generar JSON sin romperlo): cuerpo
- *     de texto con marcas por línea, y las cabeceras `X-Fondo`, `X-Sync`,
- *     `X-Serie`, `X-Serie-Nombre` (base64). Marcas:
- *        #<ref_id>      nuevo documento
- *        @<COLUMNA>     empieza un campo
- *        =<trozo>       (0..n) contenido del campo
- *     Columnas especiales: `__NARCH__` → nº de archivos, `__RUTA__` → ruta.
- *
- * Es idempotente por documento (upsert por `id`). Si la corrida se corta antes
- * del paso 3, no se borra nada: la siguiente corrida completa el espejo.
- */
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** Sustituye por espacio los caracteres de control crudos (0x00–0x1F).
- *  Con `conservarSalto`, deja pasar `\n` (separador de líneas del dump). */
 function limpiarControl(s: string, conservarSalto = false): string {
   let out = "";
   for (let i = 0; i < s.length; i++) {
@@ -55,8 +28,6 @@ export async function POST(req: NextRequest) {
   try {
     return await manejar(req);
   } catch (e) {
-    // Nunca dejar que la función responda vacío: el extractor de la red CDMB
-    // corre con un curl viejo que no distingue un 500 sin cuerpo de un fallo de red.
     return NextResponse.json(
       { error: "Error interno.", detalle: e instanceof Error ? `${e.message}` : String(e) },
       { status: 500 },
@@ -74,7 +45,6 @@ async function manejar(req: NextRequest) {
   let cuerpo: CuerpoIngesta;
 
   if (syncHeader) {
-    // Modo "dump" de sqlplus. El nombre de serie viaja en claro (es ASCII).
     const serieId = Number(req.headers.get("x-serie")) || null;
     const serieNombre = (req.headers.get("x-serie-nombre") ?? "").trim();
     cuerpo = {
@@ -98,7 +68,6 @@ async function manejar(req: NextRequest) {
     return NextResponse.json({ error: `Fondo desconocido: ${fondo}` }, { status: 400 });
   }
 
-  // Paso 1 — abrir la corrida.
   if (!cuerpo.sincronizacionId) {
     const sync = await db.fondoSincronizacion.create({
       data: {
@@ -118,7 +87,6 @@ async function manejar(req: NextRequest) {
     return NextResponse.json({ error: "sincronizacionId no corresponde a este fondo." }, { status: 400 });
   }
 
-  // Paso 3 — cerrar: borra lo que esta corrida no tocó y marca la bitácora.
   if (cuerpo.finalizar) {
     const borrados = await db.fondoDocumento.deleteMany({
       where: { fondo, sincronizacionId: { not: sync.id } },
@@ -141,7 +109,6 @@ async function manejar(req: NextRequest) {
     });
   }
 
-  // Paso 2 — un bloque de documentos.
   const lote = Array.isArray(cuerpo.lote) ? cuerpo.lote : [];
   if (lote.length === 0) {
     return NextResponse.json({ recibidas: 0, creados: 0, actualizados: 0, saltadas: 0 });

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo, type PlantillaFlujo } from "./flujos-plantillas";
 
-/** Convierte una plantilla (claves locales) a la forma que espera validarEstructuraFlujo (ids). */
 function comoEstructura(p: PlantillaFlujo) {
   const idPorClave = new Map(p.pasos.map((paso, i) => [paso.clave, `id-${i}`]));
   return p.pasos.map((paso, i) => ({

@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permi
 import { archivarComunicacionEnExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/** Archiva una comunicación ya radicada dentro de un expediente documental (archivo general, no un trámite). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

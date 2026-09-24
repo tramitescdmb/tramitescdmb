@@ -1,13 +1,5 @@
 import type { TipoComunicacion } from "@prisma/client";
 
-/**
- * Flujos de trabajo precargados (MoReq 7.17: flujos basados en plantillas). Son
- * datos puros — no tocan la base. `cargarPlantillasFlujo()` en `flujos.ts` los
- * inserta como `FlujoTrabajo` reales que el administrador puede después editar,
- * activar o borrar como cualquier otro. Cada `clave` de paso solo sirve para
- * enlazar las transiciones dentro de la misma plantilla.
- */
-
 export type TipoPasoPlantilla = "TAREA" | "REVISION" | "DECISION" | "FIN";
 export type AsignacionPlantilla =
   | "DEPENDENCIA_COMUNICACION"
@@ -24,7 +16,6 @@ export type PasoPlantilla = {
   asignacion: AsignacionPlantilla;
   slaDiasHabiles?: number;
   instrucciones?: string;
-  /** Salidas del paso. Un paso que no sea FIN debe tener al menos una. */
   transiciones?: { etiqueta: string; hacia: string }[];
 };
 
@@ -162,7 +153,6 @@ export const PLANTILLAS_FLUJO: PlantillaFlujo[] = [
   },
 ];
 
-/** Problemas estructurales de un flujo (para avisar en la interfaz antes de activarlo). */
 export type ProblemaFlujo = { paso?: string; mensaje: string };
 
 export function validarEstructuraFlujo(pasos: {
@@ -187,7 +177,6 @@ export function validarEstructuraFlujo(pasos: {
     if (p.transiciones.length === 0) problemas.push({ paso: p.nombre, mensaje: "El paso no tiene ninguna salida (transición)." });
   }
 
-  // Alcanzabilidad del cierre desde el paso inicial.
   const porId = new Map(pasos.map((p) => [p.id, p]));
   const visto = new Set<string>();
   const cola = [inicial.id];

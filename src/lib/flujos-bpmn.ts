@@ -1,11 +1,3 @@
-/**
- * Genera un XML BPMN 2.0 a partir de un flujo de trabajo (MoReq 7.13: los flujos
- * en un formato estándar). Puro y testeable. El paso `orden` 1 es el inicio; los
- * pasos de tipo FIN son eventos de fin; el resto son tareas de usuario; las
- * transiciones son `sequenceFlow` con nombre. Incluye una sección de diagrama
- * (BPMNDI) con las posiciones guardadas del lienzo para que abra ya distribuido.
- */
-
 type PasoBpmn = {
   id: string;
   orden: number;
@@ -32,7 +24,6 @@ export function flujoABpmn(flujo: { id: string; nombre: string; pasos: PasoBpmn[
 
   const flujos: { id: string; nombre: string; source: string; target: string }[] = [];
   let fi = 0;
-  // Arranque: startEvent -> primer paso.
   const START = "Inicio_1";
   if (pasos[0]) flujos.push({ id: `Flow_${fi++}`, nombre: "", source: START, target: elemId(pasos[0]) });
   for (const p of pasos) {
@@ -67,7 +58,6 @@ export function flujoABpmn(flujo: { id: string; nombre: string; pasos: PasoBpmn[
     elementos.push(`    <bpmn:sequenceFlow id="${f.id}"${nombre} sourceRef="${f.source}" targetRef="${f.target}" />`);
   }
 
-  // Diagrama (posiciones del lienzo).
   const shapes: string[] = [];
   shapes.push(`      <bpmndi:BPMNShape id="${START}_di" bpmnElement="${START}"><dc:Bounds x="100" y="100" width="36" height="36" /></bpmndi:BPMNShape>`);
   pasos.forEach((p, i) => {

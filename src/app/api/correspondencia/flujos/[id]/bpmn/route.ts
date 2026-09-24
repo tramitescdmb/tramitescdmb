@@ -4,7 +4,6 @@ import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { obtenerFlujo, puedeAdministrarFlujos } from "@/lib/flujos";
 import { flujoABpmn } from "@/lib/flujos-bpmn";
 
-/** Descarga el flujo como BPMN 2.0 XML (MoReq 7.13). Solo administrador de archivo. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

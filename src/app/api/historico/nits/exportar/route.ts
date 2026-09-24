@@ -5,14 +5,13 @@ import { procesarFiltrosNit, filtrarYOrdenarEntidadesNit, contarVinculadas, type
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 
-const LIMITE_MAXIMO = 5000; // tope de protección si alguien pide "todos" con una base enorme
+const LIMITE_MAXIMO = 5000;
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
-/** Exporta el registro de NIT/terceros (con los mismos filtros de la pantalla) a CSV — una fila por tercero. */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -85,8 +84,6 @@ export async function GET(req: NextRequest) {
       .join(";")
   );
 
-  // Separador ";" (no ",") porque Excel en configuración regional en español
-  // usa la coma como separador decimal y espera punto y coma en el CSV.
   const BOM = String.fromCharCode(0xfeff);
   const csv = BOM + [encabezados.map(celda).join(";"), ...filasCsv].join("\r\n");
 

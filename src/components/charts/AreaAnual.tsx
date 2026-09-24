@@ -9,11 +9,6 @@ const PADT = 22;
 const PADB = 22;
 const clampX = (v: number) => Math.min(Math.max(v, 14), W - 14);
 
-/**
- * Área ("montaña") de un conteo anual. A diferencia de AreaTrendChart, deja
- * los valores visibles siempre (con anticolisión) además del hover, y rotula
- * el eje de años. Una sola serie → un solo tono secuencial.
- */
 export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage: string }) {
   const totalV = data.reduce((s, d) => s + d.valor, 0);
   if (data.length < 2 || totalV === 0) {
@@ -30,7 +25,6 @@ export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage:
   const lineaPath = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
   const areaPath = `${lineaPath} L ${pts[pts.length - 1].x.toFixed(1)} ${PADT + innerH} L ${pts[0].x.toFixed(1)} ${PADT + innerH} Z`;
 
-  // Etiquetas de valor: siempre el máximo y el último; el resto si hay espacio.
   const idxMax = pts.reduce((m, p, i) => (p.valor > pts[m].valor ? i : m), 0);
   let ultimoLabelX = -Infinity;
   const mostrarValor = pts.map((p, i) => {
@@ -56,9 +50,6 @@ export function AreaAnual({ data, emptyMessage }: { data: Punto[]; emptyMessage:
         <path d={lineaPath} fill="none" stroke={COLOR} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
         {pts.map((p, i) => (
-          // Tooltip nativo vía el atributo `title`, no un <title> hijo: React 19 trata
-          // <title> como el título del documento y lo vacía al renderizar en el servidor
-          // (children sí llegan por hidratación) — error de hidratación en cada carga.
           <g
             key={p.anio}
             tabIndex={0}

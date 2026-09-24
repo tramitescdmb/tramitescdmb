@@ -6,22 +6,10 @@ import { sincronizarResoluciones } from "@/lib/sinca-sync";
 import { sincaConfigurado } from "@/lib/sinca";
 import { refrescarSnapshotNit } from "@/lib/sinca-nit-stats";
 
-// La sincronización recorre ~6 páginas del API + un reemplazo por lotes + un
-// pequeño lote de enriquecimiento. Se pide más que los 10 s por defecto; en el
-// plan Hobby de Vercel el tope efectivo es menor y el enriquecimiento que no
-// alcance se retoma en la siguiente corrida (es idempotente).
 export const maxDuration = 300;
 
-// A qué página puede volver el botón "Sincronizar ahora" — allow-list explícita para no armar un
-// redirect abierto con lo que venga en el campo `volver` del formulario.
 const RUTAS_VOLVER = new Set(["/historico", "/historico/solicitudes"]);
 
-/**
- * GET  → lo llama el cron diario de Vercel. Se autoriza con el header
- *        `Authorization: Bearer <CRON_SECRET>` (Vercel lo agrega solo cuando
- *        existe la variable CRON_SECRET).
- * POST → botón "Sincronizar ahora" del panel /historico o de /historico/solicitudes. Solo ADMIN.
- */
 export async function GET(req: NextRequest) {
   const secreto = process.env.CRON_SECRET;
   const autorizado = secreto && req.headers.get("authorization") === `Bearer ${secreto}`;
@@ -32,16 +20,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "SINCA 1.0 no está configurado." }, { status: 503 });
   }
 
-  // No se invalida la caché de análisis aquí: el TTL de 1 h ya la mantiene
-  // fresca y así el cron diario no obliga a recalcular (lento) en la siguiente
-  // visita. El botón manual sí la invalida (ver POST).
   const resultado = await sincronizarResoluciones("cron");
 
-  // Encadenado aquí (no un cron aparte en vercel.json) para que una resolución de fondo nueva
-  // sobre un NIT ya existente quede vinculada el mismo día, justo después de traerla: el snapshot
-  // de NIT/Terceros no se entera solo de datos nuevos, hay que recalcularlo (ver sinca-nit-stats.ts).
-  // Si esto falla no se marca la sincronización de resoluciones (lo importante) como fallida — el
-  // snapshot de NIT igual se recalcula solo en la próxima visita a /historico/nits (TTL de 12 h).
   let nit: { ok: boolean; error?: string } = { ok: true };
   try {
     await refrescarSnapshotNit();

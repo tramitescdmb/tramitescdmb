@@ -26,9 +26,6 @@ export default async function ExpedientesContratacionPage({
     listarDependenciasActivas(),
   ]);
 
-  // Por defecto, quien gestiona el volumen (Administrador/Jefe de Contratación) ve la tabla densa;
-  // el resto (Contratista, Supervisor, Jefe de Dependencia, Funcionario) ve sus expedientes como
-  // carpetas, igual que ya lo hace el SGDEA — pedido explícito del usuario (2026-09-18).
   const vista = sp.vista === "tabla" || sp.vista === "carpetas" ? sp.vista : puedeGestionarContratistas(permisos) ? "tabla" : "carpetas";
   const paramsSinVista = new URLSearchParams(Object.entries(sp).filter(([k, v]) => k !== "vista" && v) as [string, string][]);
   const hrefZip = `/api/contratacion/expedientes/zip-masivo?${paramsSinVista.toString()}`;

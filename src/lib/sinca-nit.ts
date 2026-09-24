@@ -3,12 +3,6 @@ import { FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
 
 export const REGIMENES_NIT = ["Responsable de Iva", "No responsable de Iva", "Otro"] as const;
 
-/**
- * Opciones de orden que se muestran en /historico/nits — subconjunto de las columnas que el API
- * realmente admite (`SINCA_NIT_COLUMNAS` en sinca.ts), acotado a las que corresponden a algo
- * visible en la tabla agrupada por tercero (nombre, NIT, tipo). "vinculadas" no es una columna
- * del API: es un orden calculado aquí mismo, sobre la cantidad de solicitudes con detalle.
- */
 export const OPCIONES_ORDEN_NIT = [
   { value: "nombre_nit" as SincaNitColumna, label: "Nombre / razón social" },
   { value: "numero_nit" as SincaNitColumna, label: "Número de NIT" },
@@ -70,12 +64,6 @@ export function fechaNit(v: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" });
 }
 
-/**
- * SINCA 1.0 devuelve etiquetas corruptas en gran contribuyente/autorretenedor
- * ("no se D", "no lo se D"...) en vez de Sí/No — mostrar eso tal cual
- * confundiría más de lo que informa, así que solo se muestra cuando la
- * etiqueta es reconocible; si no, se omite el campo.
- */
 export function siNoLimpio(e: unknown): string | null {
   if (!e || typeof e !== "object") return null;
   const label = (e as { label?: string | null }).label?.trim().toUpperCase();
@@ -84,12 +72,6 @@ export function siNoLimpio(e: unknown): string | null {
   return null;
 }
 
-/**
- * Agrupa filas planas de `/presinca/nit` (una por vinculación NIT↔solicitud)
- * en una entidad por tercero, con todas sus vinculaciones adentro.
- * `disponibles`: nroSolicitud que sí tienen detalle en el espejo local — pasar
- * un Set vacío si esa pantalla no va a enlazar solicitudes individuales.
- */
 export function contarVinculadas(e: EntidadNit): number {
   return e.vinculaciones.filter((v) => v.tieneDetalle).length;
 }
@@ -156,27 +138,17 @@ export type FiltrosNit = {
 
 const ORDENES_VALIDOS_NIT = new Set(OPCIONES_ORDEN_NIT.map((o) => o.value as string));
 
-/**
- * Interpreta los parámetros crudos de la URL — usada tanto por /historico/nits como por su
- * exportación a CSV, para que ambas apliquen exactamente los mismos filtros sin duplicar la
- * lógica (y sin que se puedan desincronizar en un cambio futuro).
- */
 export function procesarFiltrosNit(filtros: FiltrosBrutosNit): FiltrosNit {
   const q = filtros.q?.trim() || undefined;
   const municipio = filtros.municipio?.trim() || undefined;
   const tipo = filtros.tipo === "N" || filtros.tipo === "C" ? filtros.tipo : undefined;
   const regimen = filtros.regimen && (REGIMENES_NIT as readonly string[]).includes(filtros.regimen) ? filtros.regimen : undefined;
-  // "1" = con al menos una vinculación, "0" = sin ninguna (candidatos a revisar para depurar).
   const vinculacion = filtros.vinculadas === "1" ? ("con" as const) : filtros.vinculadas === "0" ? ("sin" as const) : undefined;
-  // Si no se eligió un orden explícito y se filtró "con vinculación", el orden por defecto pasa a
-  // ser esa cantidad descendente (el que más tiene, primero) — para "sin vinculación" no aplica
-  // (ahí todos quedan en 0), así que se deja el orden normal.
   const orden = filtros.orden && ORDENES_VALIDOS_NIT.has(filtros.orden) ? filtros.orden : vinculacion === "con" ? "vinculadas" : "nombre_nit";
   const direccion: "ASC" | "DESC" = filtros.dir ? (filtros.dir === "DESC" ? "DESC" : "ASC") : orden === "vinculadas" ? "DESC" : "ASC";
   return { q, municipio, tipo, regimen, vinculacion, orden, direccion };
 }
 
-/** Aplica los filtros ya interpretados (`procesarFiltrosNit`) sobre el snapshot completo. */
 export function filtrarYOrdenarEntidadesNit(entidadesIn: EntidadNit[], f: FiltrosNit): EntidadNit[] {
   let entidades = entidadesIn;
 

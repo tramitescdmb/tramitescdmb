@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeValidarDocumentoTramite } from "@/lib/perm
 import { validarDocumentoTramite } from "@/lib/tramites-firma";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
-/** Validación manual de un documento del checklist de un expediente de trámites. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

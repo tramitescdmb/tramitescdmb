@@ -8,11 +8,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion, puedeAdministrarSigec } from "@/lib/permisos";
 
-/**
- * Módulo de Contratación — manejador de expedientes digitales (Manual de
- * Contratación y de Supervisión o Interventoría A-BS-MA01). Denegado por
- * defecto: requiere un rol de contratación asignado (o ser ADMIN de la app).
- */
 export default async function ContratacionLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");

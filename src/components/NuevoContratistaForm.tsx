@@ -25,8 +25,6 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
   const [usuarioRed, setUsuarioRed] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Si el 409 fue por identificación duplicada, el servidor manda el id del registro existente —
-  // se ofrece editarlo en vez de solo bloquear con el error.
   const [duplicadoId, setDuplicadoId] = useState<string | null>(null);
 
   const esJuridica = tipoPersona === "JURIDICA";
@@ -67,8 +65,6 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         return;
       }
       if (!res.ok) throw new Error(body.error || "No se pudo crear el contratista.");
-      // El contratista SÍ se creó aunque el usuario de red no se haya podido vincular (ej. ya
-      // existe con otro rol) — se avisa, pero no se bloquea la creación por eso.
       if (body.advertenciaUsuarioRed) {
         window.alert(`El contratista se creó, pero no se pudo vincular el usuario de red: ${body.advertenciaUsuarioRed}`);
       }

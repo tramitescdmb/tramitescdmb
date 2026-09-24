@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { guardarLienzoFlujo, puedeAdministrarFlujos, type LienzoNodo, type LienzoTransicion } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Guarda el diagrama del flujo tal como quedó en el editor visual. Body JSON. Solo administrador de archivo. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

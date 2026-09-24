@@ -51,8 +51,6 @@ export default async function ExpedientesPage({
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);
 
-  // Filtro "asignados a mí": expedientes asignados a mi usuario puntual o a mi cargo.
-  // Solo tiene efecto si hay sesión; si no, se ignora (no se puede saber "quién soy").
   const soloMios = asignados === "mi" && Boolean(session);
 
   const filtros: Prisma.ExpedienteWhereInput[] = [];
@@ -93,8 +91,6 @@ export default async function ExpedientesPage({
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const hayFiltrosExtra = Boolean(busqueda || tramite || municipio || rango);
-  // El GET conserva estado/q/tramite/municipio/desde/hasta a la vez — helper para armar los links de
-  // los pills de estado sin perder los otros filtros.
   const conFiltro = (extra: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
     const actuales = { estado, q, tramite, municipio, asignados, desde: sp.desde, hasta: sp.hasta, ...extra };
@@ -106,9 +102,6 @@ export default async function ExpedientesPage({
   };
   const hrefPagina = (p: number) => conFiltro({ page: p > 1 ? String(p) : undefined });
 
-  // Frase legible de lo que dio el filtro, siempre visible (no solo cuando hay
-  // más de una página) — ver la nota en Paginador.tsx sobre por qué ese "Mostrando
-  // X–Y de Z" antes desaparecía por completo con un resultado de una sola página.
   const clausulasFiltro: string[] = [];
   if (tramite) {
     const t = tramites.find((x) => x.id === tramite);

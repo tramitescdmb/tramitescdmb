@@ -4,11 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserCog, X } from "lucide-react";
 
-/** Edita el/los supervisor(es)/interventor(es) de un expediente ya creado — antes solo se podían
- * elegir al CREAR el expediente (NuevoExpedienteContractualForm); si no se sabía todavía, o
- * cambiaba, no había forma de corregirlo después. Lista SOLO usuarios con el rol
- * SUPERVISOR_INTERVENTOR asignado en Usuarios — si aparece vacía, hay que asignarles ese rol ahí
- * primero. */
 export function EditarSupervisoresForm({
   expedienteId,
   supervisoresDisponibles,
@@ -28,8 +23,6 @@ export function EditarSupervisoresForm({
 
   const dependencias = Array.from(new Set(supervisoresDisponibles.map((s) => s.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const q = filtro.trim().toLowerCase();
-  // Los ya elegidos siempre se ven (para poder quitarlos), pero el resto de la lista solo
-  // aparece al buscar — mismo criterio que AsignarFirmantesModal, para que no crezca sin control.
   const filtrados = supervisoresDisponibles.filter(
     (s) =>
       seleccion.has(s.id) ||

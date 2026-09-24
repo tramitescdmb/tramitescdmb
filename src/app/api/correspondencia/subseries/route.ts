@@ -9,7 +9,6 @@ import type { DisposicionFinal } from "@prisma/client";
 
 const DISPOSICIONES: DisposicionFinal[] = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
 
-/** Crea una subserie dentro de una serie, con tiempos de retención y disposición final. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin", req.url);
@@ -68,13 +67,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.redirect(volver, { status: 303 });
 }
 
-/**
- * Cambia retención y/o disposición final de VARIAS subseries a la vez, aunque
- * sean de series o dependencias distintas (MoReq 1.39: "modificar tiempos de
- * retención para un conjunto de series/expedientes"). Antes solo se podía
- * corregir una subserie repitiendo toda la TRD por CSV; esto edita en el
- * sitio. Cada campo omitido en el body se deja sin tocar.
- */
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });

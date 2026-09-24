@@ -1,11 +1,5 @@
 import type { TipoComunicacion } from "@prisma/client";
 
-/**
- * Barras horizontales por tipo de comunicación con color categórico validado
- * (dataviz skill). Cada barra lleva su valor directo + etiqueta de tipo, así el
- * color nunca es el único canal de identidad.
- */
-
 const COLOR_TIPO: Record<TipoComunicacion, string> = {
   RECIBIDA: "#1c7a45",
   ENVIADA: "#2563eb",

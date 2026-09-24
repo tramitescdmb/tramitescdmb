@@ -4,7 +4,6 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederCont
 import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
 import { PanelSigecNav } from "@/components/PanelSigecNav";
 
-/** Tablero de SIGEC: cuatro vistas unidas por un ciclo de anillos (ver `CicloVistasNav`). */
 export default async function PanelSigecLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");

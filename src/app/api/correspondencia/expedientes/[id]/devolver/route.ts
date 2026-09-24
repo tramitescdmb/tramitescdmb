@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@
 import { devolverExpediente } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/** Registra la devolución de un expediente prestado. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

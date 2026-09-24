@@ -1,10 +1,5 @@
 import Link from "next/link";
 
-/**
- * Paginador simple para listados server-rendered (searchParams?page=N). El caller arma el href de cada
- * página (para no perder los demás filtros de la URL) — este componente solo decide qué números mostrar
- * y si "Anterior"/"Siguiente" están habilitados.
- */
 export function Paginador({
   paginaActual,
   totalPaginas,
@@ -18,11 +13,6 @@ export function Paginador({
   porPagina: number;
   hrefPagina: (pagina: number) => string;
 }) {
-  // El resumen "Mostrando X–Y de Z" se muestra SIEMPRE, incluso cuando todo cabe en
-  // una sola página — antes el componente entero desaparecía en ese caso (con un
-  // filtro que reduce el resultado a menos de una página, quedaba sin ninguna pista
-  // de cuántos había en total). Lo único que se oculta con una sola página son los
-  // controles de Anterior/Siguiente, que ahí no tienen sentido.
   if (total === 0) return null;
 
   const desde = (paginaActual - 1) * porPagina + 1;

@@ -29,7 +29,6 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
-/** Punto del semáforo de la columna «Vence» + su significado. */
 function Semaforo({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5">

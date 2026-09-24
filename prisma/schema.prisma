@@ -8,75 +8,44 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ---------------------------------------------------------------------------
-// Configuración de apariencia (logos del header/footer institucional) — fila
-// única "singleton", igual patrón que el proyecto Negocios Verdes
-// (configuracion_sitio): logo propio + los 3 sellos oficiales de gov.co.
-// ---------------------------------------------------------------------------
-
 model ConfiguracionSitio {
   id               String  @id @default("singleton")
-  logoUrl          String? // logo de la CDMB, header + footer
+  logoUrl          String?
   logoPath         String?
-  logoGovcoUrl     String? // franja azul superior
+  logoGovcoUrl     String?
   logoGovcoPath    String?
-  logoColombiaUrl  String? // franja azul del footer
+  logoColombiaUrl  String?
   logoColombiaPath String?
-  logoPotenciaUrl  String? // "Colombia Potencia de la Vida", franja del footer
+  logoPotenciaUrl  String?
   logoPotenciaPath String?
 
-  // Seguridad de acceso (MoReq 6.12): antes eran constantes fijas en
-  // /api/auth/login — ahora configurables desde /admin/seguridad.
   loginMaxIntentos    Int @default(5)
   loginVentanaMinutos Int @default(15)
 
-  // "Locker" del módulo SGDEA: cuando es false, solo un ADMIN ve y entra al
-  // módulo de Correspondencia y Archivo — para desplegarlo cuando esté listo,
-  // sin que los funcionarios lo vean mientras tanto (obtenerPermisosUsuario lo
-  // trata como "sin rol de correspondencia" para todos menos ADMIN).
   sgdeaVisibleFuncionarios Boolean @default(true)
 
-  // URL de una Autoridad de Sello de Tiempo RFC-3161 (opcional). Con valor, cada
-  // firma electrónica pide un token de sello de tiempo verificable; vacío = el
-  // sello es la bitácora encadenada por hash del SGDEA. Ver src/lib/sello-tiempo.ts.
   selloTiempoTsaUrl String?
 
-  // Política de contraseñas (MoReq 6.29/6.32/6.35): antes solo se exigía un
-  // mínimo de 8 caracteres fijo en código. Solo se aplica al FIJAR una
-  // contraseña nueva (creación o restablecimiento por un ADMIN) — nunca
-  // revalida contraseñas ya existentes, eso no es posible sobre un hash.
   passwordLongitudMinima     Int     @default(8)
-  passwordLongitudMaxima     Int     @default(72) // bcrypt ignora bytes después del 72, sin importar el valor aquí
+  passwordLongitudMaxima     Int     @default(72)
   passwordRequiereMayuscula  Boolean @default(false)
   passwordRequiereNumero     Boolean @default(false)
   passwordRequiereEspecial   Boolean @default(false)
-  passwordHistorialCantidad  Int     @default(0) // 0 = no revisar contraseñas anteriores
-  passwordVigenciaDias       Int? // null = no vence
-  passwordVigenciaMinimaDias Int     @default(0) // 0 = sin mínimo; evita ciclar contraseñas para saltarse el histórico. Solo aplica al cambio por el propio usuario, no a un restablecimiento por ADMIN.
+  passwordHistorialCantidad  Int     @default(0)
+  passwordVigenciaDias       Int?
+  passwordVigenciaMinimaDias Int     @default(0)
 
-  // Formatos de captura permitidos al subir un documento (MoReq 3.1) — antes una
-  // lista fija en código (src/lib/uploads-config.ts). Vacío ([]) se trata como
-  // "usar los valores por defecto de fábrica", nunca como "no permitir nada".
   extensionesPermitidas String[] @default(["pdf", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx"])
 
-  // Jornada laboral de la entidad — alimenta el cálculo de términos de ley (días
-  // hábiles) y las métricas de tiempo del SGDEA. `jornadaDiasSemana` usa la
-  // convención de getUTCDay: 0=domingo, 1=lunes … 6=sábado.
   jornadaDiasSemana      Int[]   @default([1, 2, 3, 4, 5])
   jornadaHoraInicio      String  @default("08:00")
   jornadaHoraFin         String  @default("17:00")
-  // Jornada partida (ej. 8–12 y 2–6): si estos dos están puestos, `jornadaHoraInicio`/
-  // `jornadaHoraFin` son el bloque de la mañana y estos el de la tarde. null = jornada continua.
   jornadaHoraInicioTarde String?
   jornadaHoraFinTarde    String?
 
   updatedAt DateTime @updatedAt
 }
 
-// Días adicionales que la entidad NO labora, más allá de los festivos de ley de
-// Colombia (que se calculan solos en src/lib/dias-habiles.ts): días compensados,
-// cierres institucionales, puentes internos. Se descuentan del cálculo de
-// términos de ley y de las métricas de tiempo.
 model DiaNoLaborado {
   id        String   @id @default(cuid())
   fecha     DateTime @unique @db.Date
@@ -84,10 +53,6 @@ model DiaNoLaborado {
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
-
-// ---------------------------------------------------------------------------
-// Usuarios internos (funcionarios CDMB)
-// ---------------------------------------------------------------------------
 
 enum RolUsuario {
   ADMIN
@@ -115,61 +80,27 @@ model Usuario {
   email                   String       @unique
   nombre                  String
   passwordHash            String
-  // Cuándo se fijó la contraseña actual (creación o último restablecimiento
-  // por un ADMIN) — base para calcular la vigencia (MoReq 6.35). Null en
-  // cuentas que ya existían antes de este campo: se trata como "sin vencer".
   passwordCambiadaEn      DateTime?
   rol                     RolUsuario   @default(FUNCIONARIO)
-  // Denominación del empleo (nomenclatura de empleos públicos, Decreto 1083/2015):
-  // el cargo NOMINAL del funcionario. `denominacionEmpleo` guarda la CLAVE del
-  // catálogo (src/lib/denominacion-empleo.ts), `denominacionComplemento` el sufijo
-  // libre ("en Tecnologías de Información"), y `sexo` (M/F) decide si el sello de
-  // firma usa la forma masculina o femenina. Distinto del modelo Cargo, que es una
-  // clave funcional para el bloqueo de pasos de trámite (ver src/lib/cargos.ts).
   denominacionEmpleo      String?
   denominacionComplemento String?
-  sexo                    String? // "M" | "F"
-  // ¿Puede firmar electrónicamente oficios/memorandos? Por defecto sí (todos
-  // pueden en algún momento); un ADMIN puede retirarlo por persona.
+  sexo                    String?
   accesoFirma             Boolean      @default(true)
-  // Identidad para la firma electrónica (pedido explícito del usuario, 2026-09-19): la cédula/NIT
-  // SÍ se estampa junto al nombre en el sello de firma (le da más peso legal que solo el nombre);
-  // el correo de notificación NO se estampa nunca, solo se muestra en la ficha técnica autenticada
-  // (da más trazabilidad sin exponerlo en el documento).
   cedulaONit              String?
   correoNotificacion      String?
-  // Cuándo aceptó el aviso de tratamiento de datos del primer ingreso — null = todavía no lo vio
-  // (se le muestra bloqueante hasta que acepte), sin importar si entra por Directorio Activo o
-  // por correo/contraseña.
   terminosAceptadosEn     DateTime?
   activo                  Boolean      @default(true)
-  // Estado detallado de la cuenta (MoReq 6.36) — `activo` sigue siendo lo que
-  // efectivamente evalúa todo el control de acceso (obtenerPermisosUsuario),
-  // así que se mantiene siempre en sincronía con este campo (HABILITADA→true,
-  // cualquier otro→false) en cada sitio que lo cambia: no hace falta tocar los
-  // demás lugares que ya leen `activo`. BLOQUEADA la fija el propio login tras
-  // exceder los intentos fallidos (persiste hasta que un ADMIN la levante,
-  // MoReq 6.13); SUSPENDIDA es una marca manual de un ADMIN, distinta de
-  // DESHABILITADA para poder diferenciar "de baja" de "temporalmente fuera".
   estadoCuenta            EstadoCuenta @default(HABILITADA)
   createdAt               DateTime     @default(now())
 
-  // true = la identidad la valida el directorio activo de la CDMB (API externa,
-  // src/lib/directorio-activo.ts). Estos usuarios NO tienen contraseña propia en
-  // esta app: `passwordHash` queda con un valor centinela que nunca verifica, y
-  // el formulario normal de correo/contraseña siempre los rechaza. Se dan de
-  // alta solos la primera vez que inician sesión por directorio activo.
   directorioActivo Boolean @default(false)
 
-  // Un funcionario puede tener varios cargos a la vez (ej. cubre dos puestos
-  // en un área pequeña) — se usan TODOS para el resaltado/bloqueo por paso
-  // (ver src/lib/cargos.ts), no solo el primero.
   cargos                Cargo[]
   tramitesAcceso        UsuarioTramiteAcceso[]
   seccionesAcceso       UsuarioSeccionAcceso[]
-  expedientesCreados    Expediente[]           @relation("CreadoPor")
-  expedientesAsignados  Expediente[]           @relation("ResponsableActual")
-  expedientesAsignacion Expediente[]           @relation("ExpedienteUsuariosAsignados")
+  expedientesCreados    Expediente[]               @relation("CreadoPor")
+  expedientesAsignados  Expediente[]               @relation("ResponsableActual")
+  expedientesAsignacion Expediente[]               @relation("ExpedienteUsuariosAsignados")
   documentos            ExpedienteDocumento[]      @relation("ExpedienteDocumentoSubidoPor")
   documentosValidados   ExpedienteDocumento[]      @relation("ExpedienteDocumentoValidadoPor")
   firmasExpediente      FirmaExpedienteDocumento[] @relation("FirmaExpedienteDocumentoUsuario")
@@ -178,22 +109,10 @@ model Usuario {
   visitasTecnicas       VisitaTecnica[]
   historialPasswords    HistorialPassword[]
 
-  // --- SGDEA / Correspondencia (ver bloque al final del archivo) ---
-  // Dependencia (oficina) a la que pertenece el funcionario, y rol dentro del
-  // módulo de correspondencia (null + no ADMIN = sin acceso al módulo).
   dependenciaId                  String?
   rolCorrespondencia             RolCorrespondencia?
-  // Vigencia del rol (MoReq 6.3: quitar el rol automáticamente al vencer un período) — opcional; si se
-  // pasa la fecha, obtenerPermisosUsuario() lo trata como sin rol asignado sin que un ADMIN tenga que
-  // volver a entrar a quitárselo. El valor del campo se conserva (no se borra solo) para dejar rastro de
-  // qué rol tuvo y hasta cuándo.
   rolCorrespondenciaVigenteHasta DateTime?
 
-  // --- Contratación (ver bloque al final del archivo) ---
-  // Rol dentro del módulo de Contratación (null + no ADMIN = sin acceso).
-  // Vigencia opcional (mismo patrón que rolCorrespondenciaVigenteHasta):
-  // pensada para que el acceso de un Contratista/Supervisor venza solo al
-  // terminar su contrato, sin que un ADMIN tenga que quitárselo a mano.
   rolContratacion             RolContratacion?
   rolContratacionVigenteHasta DateTime?
 
@@ -219,7 +138,6 @@ model Usuario {
   instanciasFlujoIniciadas        InstanciaFlujo[]        @relation("InstanciaFlujoIniciadoPor")
   pasosFlujoEjecutados            PasoEjecutado[]         @relation("PasoEjecutadoResponsable")
 
-  // --- Contratación ---
   contratista                     Contratista?                      @relation("ContratistaUsuario")
   expedientesContractualesCreados ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
   supervisionesContrato           ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
@@ -231,18 +149,12 @@ model Usuario {
   avisosRechazoRecibidos          AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
   avisosRechazoGenerados          AvisoRechazoDocumento[]           @relation("AvisoRechazoRechazadoPor")
 
-  // --- Solicitud de firma/visto bueno (compartida SGDEA + SIGEC) ---
   solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
   solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
 
   @@index([dependenciaId])
 }
 
-// Contraseñas anteriores de un usuario (MoReq 6.30), para impedir que
-// restablezca a una que ya usó. Solo se consulta cuando
-// ConfiguracionSitio.passwordHistorialCantidad > 0; se recorta a esa cantidad
-// en cada cambio (ver src/lib/password-policy.ts). El passwordHash ACTUAL del
-// usuario vive en Usuario, no aquí — esta tabla solo guarda las reemplazadas.
 model HistorialPassword {
   id        String   @id @default(cuid())
   usuarioId String
@@ -253,20 +165,6 @@ model HistorialPassword {
 
   @@index([usuarioId, createdAt])
 }
-
-// ---------------------------------------------------------------------------
-// Acceso por trámite (admin-only, se configura desde /usuarios/[id]): a
-// diferencia de Cargo (el puesto real, usado para resaltar/bloquear pasos por
-// texto) y RolUsuario (Admin/Funcionario, permisos administrativos), esto
-// controla, trámite por trámite del catálogo de "Trámites ambientales 2.0",
-// si un funcionario puede solo VER o también EDITAR (crear/avanzar/subir
-// documentos). Sin ninguna fila para un trámite dado, el funcionario NO lo ve
-// (denegado por defecto) — el ADMIN siempre tiene acceso total, sin
-// excepción. Reemplazó a un primer diseño con una tabla "Rol" reutilizable
-// (nunca llegó a usarse):
-// con pocos usuarios reales, asignar directo por persona es más simple y
-// claro que crear roles intermedios. Ver src/lib/permisos.ts.
-// ---------------------------------------------------------------------------
 
 enum NivelAccesoTramite {
   VER
@@ -286,14 +184,6 @@ model UsuarioTramiteAcceso {
   @@index([tramiteTipoId])
 }
 
-// Acceso a las secciones de solo lectura VITAL y SINCA 1.0 — a diferencia de
-// UsuarioTramiteAcceso no hay nivel (todo es consulta, nadie edita nada ahí),
-// solo si puede entrar o no a cada pestaña. VITAL agrupa "Solicitudes" y
-// "Recientes" en un solo permiso base (son la misma información, dos vistas)
-// y dashboard aparte; SINCA 1.0 tiene Solicitudes (base), Dashboard y Minería
-// de datos como tres permisos independientes — Minería de datos es la más
-// sensible (pensada para directivos, no cualquier funcionario). Denegado por
-// defecto, igual que UsuarioTramiteAcceso.
 enum SeccionSoloLectura {
   VITAL_BASE
   VITAL_DASHBOARD
@@ -312,12 +202,6 @@ model UsuarioSeccionAcceso {
   @@unique([usuarioId, seccion])
 }
 
-// ---------------------------------------------------------------------------
-// Auditoría del sistema (distinta de ExpedienteEvento, que es la bitácora de
-// UN expediente) — acciones a nivel de cuenta: logins, gestión de usuarios,
-// cambios de configuración. Solo lectura desde /auditoria (solo ADMIN).
-// ---------------------------------------------------------------------------
-
 enum TipoAuditoria {
   LOGIN_EXITOSO
   LOGIN_FALLIDO
@@ -330,7 +214,6 @@ enum TipoAuditoria {
   CONTRATISTA_ELIMINADO
 }
 
-// MoReq 6.36: estados de cuenta distinguibles (antes solo había activo/inactivo).
 enum EstadoCuenta {
   HABILITADA
   DESHABILITADA
@@ -342,8 +225,8 @@ model RegistroAuditoria {
   id           String        @id @default(cuid())
   tipo         TipoAuditoria
   descripcion  String        @db.Text
-  usuarioId    String? // quién hizo la acción; null si el login fallido no correspondía a ningún usuario real
-  emailIntento String? // correo usado en un intento de login (exitoso o no), aunque no exista el usuario
+  usuarioId    String?
+  emailIntento String?
   createdAt    DateTime      @default(now())
 
   usuario Usuario? @relation(fields: [usuarioId], references: [id])
@@ -353,48 +236,37 @@ model RegistroAuditoria {
   @@index([createdAt])
 }
 
-// ---------------------------------------------------------------------------
-// SINCA 1.0 — histórico de trámites ambientales con resolución de fondo.
-// Espejo local (SOLO CONSULTA) del API externo `GET /api/presinca/resoluciones`
-// (~5.163 registros al 2026-08). NADA en la app crea, edita ni borra estos
-// datos desde la interfaz: se sincronizan desde el API con src/lib/sinca-sync.ts
-// (backfill único + refresco diario) y solo se leen. `nroSolicitud` es el
-// identificador que trae SINCA 1.0 (`nrosolicitud_sol`).
-// ---------------------------------------------------------------------------
-
 model SincaResolucion {
   nroSolicitud        Int       @id
   numeroResolucion    String?
-  fechaResolucion     DateTime? // fecha_documento: fecha de la resolución de fondo
-  anioResolucion      Int? // derivado de fechaResolucion, para agrupar sin castear en cada consulta
-  fechaRecibido       DateTime? // fecharecibido_sol
-  proyecto            String    @db.Text // proyecto_sol
-  tipoSolicitud       String? // "(CA) CONCESIONES DE AGUAS" tal cual lo entrega el API
-  tipoSolicitudCodigo String? // "CA" (derivado)
-  tipoSolicitudNombre String? // "CONCESIONES DE AGUAS" (derivado)
-  indTipoSolicitud    String? // indtiposol_sol.label — Normal / Renovación
-  estado              String? // estado_sol.label — Aprobada, Negada, Desestimiento, ...
-  origen              String? // origen_sol.label, si viene
-  expediente          String? // expediente_sol
+  fechaResolucion     DateTime?
+  anioResolucion      Int?
+  fechaRecibido       DateTime?
+  proyecto            String    @db.Text
+  tipoSolicitud       String?
+  tipoSolicitudCodigo String?
+  tipoSolicitudNombre String?
+  indTipoSolicitud    String?
+  estado              String?
+  origen              String?
+  expediente          String?
   departamento        String?
   municipio           String?
   barrio              String?
-  correo              String? // correo_sol
-  representanteLegal  String? // replegal_sol
-  idRepresentante     String? // idreplegal_sol (NIT/cédula del representante)
-  cantidadDocumentos  Int       @default(0) // cantidad_emision_documentos
-  cantidadInteresados Int       @default(0) // cantidad_interesado
+  correo              String?
+  representanteLegal  String?
+  idRepresentante     String?
+  cantidadDocumentos  Int       @default(0)
+  cantidadInteresados Int       @default(0)
   lat                 Float?
   lon                 Float?
 
-  // Campos que solo entrega el endpoint de detalle (GET /presinca/resoluciones/{n}),
-  // no el listado. Se llenan con el paso de enriquecimiento (src/lib/sinca-sync.ts).
-  diasResolucion    Int? // fechaResolucion - fechaRecibido, en días (tiempo de trámite)
-  solicitanteNit    String? // interesado[0].nit.numero_nit
-  solicitanteNombre String? // razón social o nombre del interesado
-  enriquecidoEn     DateTime? // null = falta traer el detalle
+  diasResolucion    Int?
+  solicitanteNit    String?
+  solicitanteNombre String?
+  enriquecidoEn     DateTime?
 
-  raw            Json // registro original completo del API (para la ficha de detalle)
+  raw            Json
   sincronizadoEn DateTime @default(now())
 
   @@index([anioResolucion])
@@ -418,65 +290,45 @@ model SincaSincronizacion {
   actualizados Int?
   eliminados   Int?
   mensajeError String?   @db.Text
-  disparadoPor String? // "cron", "manual:<usuario>", "script"
+  disparadoPor String?
 }
 
-/// Fila única (id fijo) con el registro completo de NIT/terceros de SINCA 1.0 ya agrupado por
-/// tercero — recalcularlo recorre las ~33 mil filas del API (~20s), así que se guarda aquí en
-/// vez de con unstable_cache: el payload agrupado pesa más de los 2MB que esa caché admite.
 model SincaNitSnapshot {
   id          String   @id @default("actual")
   datos       Json
   calculadoEn DateTime @default(now())
 }
 
-// ---------------------------------------------------------------------------
-// Fondo Documental histórico — ESPEJO DE SOLO CONSULTA de sistemas de gestión
-// documental anteriores de la CDMB (psdocuments, "SIC correspondencia"...).
-// El original vive en un Oracle 10g en la intranet (192.168.7.40, esquema `C`).
-// NADA en la app crea, edita ni borra estos datos: un job que corre DENTRO de
-// la red CDMB (scripts/fondo-historico/) lee el Oracle y hace upsert vía
-// POST /api/fondo-historico/ingest (token). Solo se guardan METADATOS —
-// las imágenes escaneadas (1,4 TB) NO se copian; se consultan en la red
-// corporativa. Ver memory/project_psdocuments_legacy.md.
-// ---------------------------------------------------------------------------
-
-/// Un documento del fondo histórico (una fila de C.PSIDEAW_<serie> de psdocuments,
-/// o un radicado de C.COR_* del SIC). `fondo` + `refId` identifican el origen.
 model FondoDocumento {
-  id          String  @id // "<fondo>:<refId>", ej. "psdocuments:482913"
-  fondo       String // "psdocuments" | "sic-recibida" | "sic-enviada" | "sic-pqr"
-  refId       String // DOC_IDDOCUM (psdocuments) o NUMERADI_REC-ANO_REC (SIC)
-  serieId     Int? // TIP_IDTIPDO (psdocuments)
-  serieNombre String? // "CORRESPONDENCIA", "CONTABILIDAD-TESORERIA", ...
-  oficina     String? // dependencia / subdirección productora
+  id          String  @id
+  fondo       String
+  refId       String
+  serieId     Int?
+  serieNombre String?
+  oficina     String?
 
-  numero        String? // número visible (radicado, comprobante, etc.)
+  numero        String?
   numeroEntrada String?
   numeroSalida  String?
-  fecha         DateTime? // fecha principal del documento (para ordenar/filtrar)
-  anio          Int? // derivado de `fecha`
+  fecha         DateTime?
+  anio          Int?
   fechaEntrada  DateTime?
   fechaSalida   DateTime?
 
   asunto         String? @db.Text
-  razonSocial    String? // remitente / tercero / razón social
+  razonSocial    String?
   destinatario   String?
   firma          String?
-  estado         String? // DOC_ESTADO / ESTADO_REC
-  ciclo          String? // DOC_CICLO ("GESTION", ...)
-  identificacion String? // NIT / cédula del solicitante o tercero (NITSOL_ATC, NIT_REC, ...)
+  estado         String?
+  ciclo          String?
+  identificacion String?
 
-  tieneImagen  Boolean @default(false) // hay fila en PSIDEA_VERSION
+  tieneImagen  Boolean @default(false)
   numArchivos  Int     @default(0)
-  rutaOriginal String? // VER_CAMINO||VER_ARCHIVO de la última versión — SOLO referencia, no es un enlace servible
+  rutaOriginal String?
 
-  /// SOLO las columnas de la tabla origen que NO quedaron ya en un campo
-  /// normalizado (para no duplicar texto — Supabase Free tiene 500 MB).
-  /// null cuando no sobra nada. Cada valor se recorta a ~120 caracteres.
   campos Json?
 
-  /// id de la corrida de sincronización que tocó esta fila por última vez.
   sincronizacionId String?
   sincronizadoEn   DateTime @default(now())
 
@@ -498,18 +350,14 @@ model FondoSincronizacion {
   actualizados Int?
   eliminados   Int?
   mensajeError String?   @db.Text
-  disparadoPor String? // "script:<host>", "manual:<usuario>"
+  disparadoPor String?
 
   @@index([fondo, iniciadoEn])
 }
 
-// ---------------------------------------------------------------------------
-// Catálogo de trámites (datos de referencia, sembrados desde data/tramites/*.json)
-// ---------------------------------------------------------------------------
-
 model TramiteTipo {
   id                       String   @id @default(cuid())
-  codigo                   String   @unique // ej. M-DA-PR05
+  codigo                   String   @unique
   version                  String
   fecha                    DateTime
   proceso                  String
@@ -518,10 +366,10 @@ model TramiteTipo {
   slug                     String   @unique
   archivoFuente            String
   objeto                   String   @db.Text
-  resumen                  String?  @db.Text // frase natural "Este trámite..." para la UI (objeto es la redacción formal del PDF)
+  resumen                  String?  @db.Text
   alcance                  String   @db.Text
   autoridadResponsabilidad String   @db.Text
-  suitNumeros              String[] @default([]) // número(s) de ficha en el SUIT (Sistema Único de Información de Trámites), si está inscrito — algunos trámites tienen más de uno (ej. concesión de aguas superficiales + subterráneas por separado)
+  suitNumeros              String[] @default([])
   activo                   Boolean  @default(true)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -539,8 +387,8 @@ model DocumentoRequeridoDefinicion {
   nombre        String
   obligatorio   Boolean          @default(true)
   notas         String?
-  aplicaA       TipoSolicitante? // null = aplica a cualquier solicitante; si no, solo es obligatorio para ese tipo (ej. "Certificado de Existencia y Representación Legal" solo para JURIDICA)
-  puedeFirmarse Boolean          @default(true) // desactivable por documento desde el catálogo; todos empiezan habilitados
+  aplicaA       TipoSolicitante?
+  puedeFirmarse Boolean          @default(true)
 
   tramiteTipo TramiteTipo           @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
   documentos  ExpedienteDocumento[]
@@ -551,12 +399,12 @@ model DocumentoRequeridoDefinicion {
 model Flujo {
   id             String  @id @default(cuid())
   tramiteTipoId  String
-  codigo         String // inicio | renovacion | ...
+  codigo         String
   nombre         String
   esFlujoInicial Boolean @default(false)
   orden          Int     @default(0)
-  suitNumero     String? // ficha del SUIT específica de ESTE flujo, cuando el SUIT registra cada modalidad por separado (ej. M-DA-PR21: "Concesión de Aguas Superficiales" y "Concesión de Aguas Subterráneas" son un solo procedimiento/PDF pero dos fichas SUIT distintas)
-  resumen        String? @db.Text // frase natural de ESTE flujo, para cuando se ve enfocado en un solo flujo (?flujo=...) y no debe mencionar la otra modalidad
+  suitNumero     String?
+  resumen        String? @db.Text
 
   tramiteTipo TramiteTipo      @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
   pasos       PasoDefinicion[]
@@ -582,10 +430,6 @@ model PasoDefinicion {
 
   @@unique([flujoId, numero])
 }
-
-// ---------------------------------------------------------------------------
-// Expedientes (instancias reales de un trámite gestionadas por la CDMB)
-// ---------------------------------------------------------------------------
 
 enum EstadoExpediente {
   RADICADO
@@ -638,11 +482,7 @@ enum ClaseSolicitud {
 model Solicitante {
   id                String             @id @default(cuid())
   tipo              TipoSolicitante
-  identificacion    String             @unique // NIT o cédula, tal como se escribe (ej. "900123456-1")
-  // Separados para poder buscar por nombre o por apellido (persona natural) — para persona
-  // jurídica normalmente solo aplica razonSocial, pero se deja nombres/apellidos libres por si
-  // hace falta guardar el nombre de un contacto/representante. Validado en la app según `tipo`,
-  // no aquí, porque cuál es obligatorio depende del tipo.
+  identificacion    String             @unique
   nombres           String?
   apellidos         String?
   razonSocial       String?
@@ -651,62 +491,49 @@ model Solicitante {
   email             String?
   telefono          String?
   direccion         String?
-  municipio         String // obligatorio — incluye "Fuera de la jurisdicción" como opción válida explícita, ver src/lib/municipios.ts
-  // Departamento — solo se diligencia cuando el municipio está fuera de la
-  // jurisdicción de la CDMB y se escribe a mano (para caracterizar el origen).
+  municipio         String
   departamento      String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
   expedientes    Expediente[]
-  comunicaciones Comunicacion[] // como remitente/destinatario en el módulo de correspondencia
+  comunicaciones Comunicacion[]
 }
 
 model Expediente {
   id            String @id @default(cuid())
-  numero        String @unique // ej. M-DA-PR05-2026-0001
+  numero        String @unique
   tramiteTipoId String
   flujoId       String
 
-  solicitanteId             String? // vínculo al registro maestro por NIT/cédula (ver Solicitante) — null en expedientes creados antes de este campo
+  solicitanteId             String?
   solicitanteTipo           TipoSolicitante @default(NATURAL)
   solicitanteNombre         String
   solicitanteIdentificacion String
   solicitanteEmail          String?
   solicitanteTelefono       String?
-  solicitanteDireccion      String? // dirección del solicitante — distinta de la del predio (ej. empresa con sede en otra ciudad)
-  predioDireccion           String? // dirección del predio o del lugar donde se desarrolla el proyecto
-  municipio                 String // uno de los 13 municipios de la jurisdicción CDMB (ver src/lib/municipios.ts)
+  solicitanteDireccion      String?
+  predioDireccion           String?
+  municipio                 String
 
-  claseSolicitud ClaseSolicitud? // Nueva / Renovación — el PDF del procedimiento no siempre lo distingue como flujo aparte
+  claseSolicitud ClaseSolicitud?
 
-  // Datos del predio que el procedimiento oficial no siempre pide como tal, pero que sí importan
-  // para la decisión real (ej. el área determina cuánta agua se puede conceder) o son identificadores
-  // legales reales del predio — no están todos los trámites, por eso opcionales.
-  predioNombre         String? // ej. "Finca La Esperanza" — un predio rural casi siempre tiene nombre propio, distinto de la dirección
-  predioCatastral      String? // número catastral (IGAC)
-  predioMatricula      String? // matrícula inmobiliaria
+  predioNombre         String?
+  predioCatastral      String?
+  predioMatricula      String?
   predioAreaM2         Float?
   predioAreaCultivosM2 Float?
   predioAreaBosqueM2   Float?
   predioViviendas      Int?
 
-  // Ubicación del predio/proyecto tomada en campo (mapa OSM) — opcional, no todo trámite la necesita.
-  // Se puede cargar desde cualquiera de las 3 representaciones (elipsoidal/plana/cartesiana);
-  // lat/lon (WGS84) es la que manda internamente, las demás se recalculan siempre en el
-  // servidor a partir de ella — ver src/lib/coordenadas.ts. Sin altura: se probó y se quitó
-  // a pedido del usuario (no la necesitan para nada de este trámite).
-  ubicacionLat         Float? // elipsoidal WGS84
-  ubicacionLon         Float? // elipsoidal WGS84
-  ubicacionPlanaX      Float? // MAGNA-SIRGAS Origen-Nacional (EPSG:9377)
+  ubicacionLat         Float?
+  ubicacionLon         Float?
+  ubicacionPlanaX      Float?
   ubicacionPlanaY      Float?
-  ubicacionCartesianaX Float? // ECEF geocéntrica (mismo elipsoide GRS80)
+  ubicacionCartesianaX Float?
   ubicacionCartesianaY Float?
   ubicacionCartesianaZ Float?
 
-  // Dirección/ubicación del SOLICITANTE — distinta de la del predio/proyecto de arriba (ej.
-  // una empresa con sede en Bucaramanga que solicita un permiso para un proyecto en Vetas).
-  // Mismo esquema, misma lógica de recálculo en el servidor.
   solicitanteUbicacionLat         Float?
   solicitanteUbicacionLon         Float?
   solicitanteUbicacionPlanaX      Float?
@@ -749,7 +576,6 @@ model Expediente {
   usuariosAsignados Usuario[] @relation("ExpedienteUsuariosAsignados")
   cargosAsignados   Cargo[]   @relation("ExpedienteCargosAsignados")
 
-  // Comunicaciones (correspondencia/memorandos) archivadas dentro de este expediente — unificación SGDEA.
   comunicaciones Comunicacion[]
 
   avisosRechazo AvisoRechazoDocumento[]
@@ -764,7 +590,7 @@ model ExpedienteDocumento {
   id           String   @id @default(cuid())
   expedienteId String
   pasoNumero   Int?
-  requisitoId  String? // a qué documento del catálogo del trámite corresponde, cuando se subió desde uno de esos espacios (null si es "otro documento" libre)
+  requisitoId  String?
   nombre       String
   descripcion  String?
   storagePath  String
@@ -799,10 +625,6 @@ enum EstadoValidacionDocumento {
   RECHAZADO
 }
 
-// Firma electrónica de un documento de Trámites ambientales — mismo esquema que
-// FirmaDocumentoContrato (hash + identidad + timestamp, Ley 527/1999), modelo propio para no
-// mezclar los dos dominios. Solo firman cuentas del dominio/correo institucional: el solicitante
-// externo de un trámite nunca aparece aquí.
 model FirmaExpedienteDocumento {
   id                String    @id @default(cuid())
   documentoId       String
@@ -879,7 +701,7 @@ model VisitaTecnica {
   cartesianaX    Float?
   cartesianaY    Float?
   cartesianaZ    Float?
-  precisionM     Float? // exactitud reportada por el GPS del dispositivo (navigator.geolocation) — informativa, no se valida
+  precisionM     Float?
   nota           String?  @db.Text
   capturadoPorId String
   createdAt      DateTime @default(now())
@@ -890,35 +712,20 @@ model VisitaTecnica {
   @@index([expedienteId])
 }
 
-// ---------------------------------------------------------------------------
-// Integración VITAL/OTIC (MinAmbiente) — espejo de solo lectura de las
-// solicitudes que el ciudadano radica en la Ventanilla Integral de Trámites
-// Ambientales en Línea (VITAL), traídas vía los servicios web expuestos por
-// X-ROAD (ver src/lib/vital.ts). Por ahora es de un solo sentido: se
-// sincroniza PARA VER, no se reporta nada de vuelta a VITAL (eso — avance de
-// actividad, asociación de radicado — quedó explícitamente fuera de alcance).
-// ---------------------------------------------------------------------------
-
 model SolicitudVital {
   id                 String    @id @default(cuid())
-  idVital            String    @unique // número VITAL de la solicitud (idVital)
-  idTramiteVital     Int // id_tramite en VITAL
-  idTramiteAutoridad Int? // idTramiteAutoridad — identificador propio de la CDMB en VITAL, si aplica
+  idVital            String    @unique
+  idTramiteVital     Int
+  idTramiteAutoridad Int?
   fechaRadicacion    DateTime?
-  nombreActividad    String? // última actividad conocida al momento de sincronizar (hu-otic-vital-io-001)
+  nombreActividad    String?
 
   solicitanteNombre         String?
   solicitanteIdentificacion String?
   solicitanteCorreo         String?
-  solicitanteRaw            Json? // respuesta completa de hu-otic-vital-io-003, tal cual (persona natural o jurídica)
-  camposTramite             Json? // respuesta completa de hu-otic-vital-io-002, tal cual (campos del formulario)
+  solicitanteRaw            Json?
+  camposTramite             Json?
 
-  // Cuántos documentos reportó wsDocumentos en la última sincronización — puede ser mayor que
-  // `documentos.length` si la descarga falló (confirmado en vivo: el servicio /descargar de VITAL
-  // devuelve 403 "sin permisos" para TODA descarga hasta ahora, aunque wsDocumentos sí lista los
-  // archivos). Null = todavía no se sincronizó con esta columna. Sirve para poder avisar en el
-  // detalle que hay un adjunto que VITAL reporta pero no se pudo traer, en vez de mostrar "sin
-  // documentos" como si el trámite realmente no tuviera ninguno.
   documentosReportados Int?
 
   documentos           SolicitudVitalDocumento[]
@@ -956,7 +763,7 @@ model SolicitudVitalDocumento {
   id          String   @id @default(cuid())
   solicitudId String
   nombre      String
-  storagePath String // ya descargado del link temporal de VITAL (expira en 1h) y re-subido a nuestro Storage
+  storagePath String
   mimeType    String
   tamanoBytes Int
   createdAt   DateTime @default(now())
@@ -966,25 +773,13 @@ model SolicitudVitalDocumento {
   @@index([solicitudId])
 }
 
-// ===========================================================================
-// SGDEA — Sistema de Gestión de Documentos Electrónicos de Archivo
-// (Correspondencia y gestión documental, conforme al marco del AGN:
-//  Ley 594/2000, Acuerdo 060/2001, Acuerdos 03/2015 y 01/2024, MoReq).
-// Fase 1: núcleo archivístico + ventanilla de correspondencia RECIBIDA.
-// Ver plan y memoria reference-oracle-legacy-cdmb (sistema COR que reemplaza).
-// ===========================================================================
-
-// Rol del funcionario DENTRO del módulo de correspondencia (independiente de
-// RolUsuario/Cargo). null + no ADMIN = sin acceso al módulo (denegado por
-// defecto, mismo criterio que UsuarioTramiteAcceso/UsuarioSeccionAcceso).
 enum RolCorrespondencia {
-  OPERADOR_VENTANILLA // radica y reparte en la ventanilla única
-  FUNCIONARIO_DEPENDENCIA // recibe y responde lo distribuido a su dependencia
-  JEFE_DEPENDENCIA // además reparte dentro de su dependencia
-  ADMIN_ARCHIVO // administra TRD/CCD, dependencias y ve todo
+  OPERADOR_VENTANILLA
+  FUNCIONARIO_DEPENDENCIA
+  JEFE_DEPENDENCIA
+  ADMIN_ARCHIVO
 }
 
-// Disposición final de una subserie documental (TRD) — Acuerdo 004/2019 AGN.
 enum DisposicionFinal {
   CONSERVACION_TOTAL
   ELIMINACION
@@ -993,40 +788,38 @@ enum DisposicionFinal {
 }
 
 enum TipoComunicacion {
-  RECIBIDA // entra a la entidad
-  ENVIADA // sale de la entidad (Fase 2)
-  INTERNA // memorando entre dependencias (Fase 2)
+  RECIBIDA
+  ENVIADA
+  INTERNA
 }
 
 enum EstadoComunicacion {
-  RADICADA // recién radicada en ventanilla
-  EN_REPARTO // pendiente de distribuir
-  ASIGNADA // distribuida a dependencia/funcionario
-  EN_TRAMITE // en gestión
-  INFORMACION_ADICIONAL_REQUERIDA // término de ley suspendido (Art. 17 CPACA) hasta que el peticionario responda
+  RADICADA
+  EN_REPARTO
+  ASIGNADA
+  EN_TRAMITE
+  INFORMACION_ADICIONAL_REQUERIDA
   RESPONDIDA
   ARCHIVADA
-  ANULADA // anulada con justificación (no se borra: queda trazada)
+  ANULADA
 }
 
 enum OrigenComunicacion {
-  VENTANILLA // radicada por un operador
-  WEB_PQRSD // formulario público (Fase 3)
-  MIGRACION_COR // importada del Oracle legado (Fase 4)
+  VENTANILLA
+  WEB_PQRSD
+  MIGRACION_COR
   CORREO_ELECTRONICO
   OTRO
 }
 
-// Clasificación PQRSD (Ley 1755/2015, que modificó el Título II del CPACA — Ley
-// 1437/2011). El término de respuesta depende del tipo, no es uniforme.
 enum TipoPQRSD {
-  PETICION_GENERAL // interés general o particular — 15 días hábiles
-  PETICION_DOCUMENTOS // copia/consulta de documentos — 10 días hábiles
-  CONSULTA // 30 días hábiles
-  QUEJA // 15 días hábiles
-  RECLAMO // 15 días hábiles
-  SUGERENCIA // 15 días hábiles
-  DENUNCIA // 15 días hábiles (puede derivar a control interno disciplinario)
+  PETICION_GENERAL
+  PETICION_DOCUMENTOS
+  CONSULTA
+  QUEJA
+  RECLAMO
+  SUGERENCIA
+  DENUNCIA
 }
 
 enum MedioComunicacion {
@@ -1039,19 +832,12 @@ enum MedioComunicacion {
   OTRO
 }
 
-// Niveles de acceso a la información (Ley 1712/2014 de Transparencia, arts. 6/18/19):
-// toda información es PÚBLICA por defecto; CLASIFICADA protege derechos particulares
-// (privacidad, datos personales); RESERVADA protege un interés público (seguridad,
-// salud pública, etc.). Clasificar/reservar exige fundamento legal por escrito — de
-// ahí el campo `fundamentoNivelAcceso`, obligatorio salvo para PUBLICA.
 enum NivelAccesoInformacion {
   PUBLICA
   CLASIFICADA
   RESERVADA
 }
 
-// Acciones registradas en la bitácora inalterable (incluye LEE y EXPORTA, que
-// la auditoría de cuenta RegistroAuditoria no captura).
 enum AccionAuditoriaDoc {
   CREA
   LEE
@@ -1063,28 +849,25 @@ enum AccionAuditoriaDoc {
   CLASIFICA
   ARCHIVA
   ANULA
-  SUSPENDE // suspende el término de ley (Art. 17 CPACA)
+  SUSPENDE
   REACTIVA
-  TRANSFIERE // pasa del archivo de gestión al archivo central
-  DISPONE // ejecuta la disposición final (conserva/elimina/selecciona/microfilma)
-  ACCESO_DENEGADO // MoReq 6.9: alguien sin permiso intentó entrar al módulo
-  APLAZA // aplaza una disposición final ya vencida (MoReq 2.11), distinto de SUSPENDE (término de ley)
-  RESPONDE // el funcionario asignado guarda/edita el borrador de respuesta de una RECIBIDA
-  DESPACHA // la ventanilla de salida registra el envío efectivo (correo/físico) del oficio de salida — cierra el ciclo
-  DEVUELVE_REPARTO // el funcionario al que se le repartió una recibida la devuelve a la ventanilla con motivo (no le corresponde)
-  RETIRA_DOCUMENTO // se retira del índice de un expediente ABIERTO un archivo subido por error, con motivo (no se borra la fila ni el archivo)
-  PRESTA // presta un expediente documental a un funcionario
-  DEVUELVE // registra la devolución de un expediente prestado
-  REABRE // reabre un expediente documental cerrado (MoReq 1.14), con motivo obligatorio
-  CARGA_FALLIDA // MoReq 4.6: un intento de agregar un documento a un expediente fue rechazado (validación), para poder reportarlo
-  ERROR_EJECUCION // MoReq 6.11: una operación falló a mitad de camino (excepción no controlada en una acción del módulo), para poder identificarla en la bitácora
-  FLUJO // MoReq cap. 7: inicio, avance o cierre de un flujo de trabajo sobre una comunicación
-  VALIDA // SIGEC: un funcionario/jefe de contratación aprueba manualmente un documento del checklist (ej. hoja de vida SIGEP)
+  TRANSFIERE
+  DISPONE
+  ACCESO_DENEGADO
+  APLAZA
+  RESPONDE
+  DESPACHA
+  DEVUELVE_REPARTO
+  RETIRA_DOCUMENTO
+  PRESTA
+  DEVUELVE
+  REABRE
+  CARGA_FALLIDA
+  ERROR_EJECUCION
+  FLUJO
+  VALIDA
 }
 
-// Organigrama de la CDMB (dependencias/oficinas). Jerárquico vía parentId.
-// Fase 1 se siembra con una estructura mínima derivada de los cargos reales,
-// editable desde el admin.
 model Dependencia {
   id                   String   @id @default(cuid())
   codigo               String   @unique
@@ -1113,8 +896,6 @@ model Dependencia {
   @@index([parentId])
 }
 
-// Serie documental (TRD/CCD). Versionada: se pueden tener la TRD anterior y la
-// nueva a la vez (vigenteDesde/Hasta) para migrar clasificaciones entre versiones.
 model SerieDocumental {
   id                      String                  @id @default(cuid())
   codigo                  String
@@ -1125,16 +906,8 @@ model SerieDocumental {
   vigenteDesde            DateTime                @default(now())
   vigenteHasta            DateTime?
   activo                  Boolean                 @default(true)
-  // MoReq 1.46: criterio de ordenación de los documentos dentro de un expediente
-  // de esta serie. El número de índice (ordenIndice) que respalda el hash firmado
-  // NO cambia — esto solo controla el orden en que se VE la lista.
   criterioOrdenExpediente CriterioOrdenExpediente @default(FECHA_DOCUMENTO)
-  // MoReq 2.6: desde cuándo cuenta la retención de lo clasificado en esta serie —
-  // desde la radicación/creación (por defecto) o desde el cierre del expediente
-  // donde quede archivado.
   retencionDesde          RetencionDesde          @default(RADICACION)
-  // MoReq 1.43: si está, un expediente de esta serie que supere esta cantidad de
-  // folios se divide en tomos (Tomo 1 de N, 2 de N…) en el FUID y el índice.
   maxFoliosPorTomo        Int?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
@@ -1145,9 +918,6 @@ model SerieDocumental {
   expedientesDocumentales ExpedienteDocumental[]
   camposMetadato          CampoMetadato[]
 
-  // El código de serie NO es único por sí solo: es una categoría universal
-  // (ej. "20 ACTAS") que CADA dependencia produce por su cuenta, con sus
-  // propias subseries y tiempos de retención — así es la TRD real de la CDMB.
   @@unique([dependenciaId, codigo, version])
   @@index([dependenciaId])
 }
@@ -1159,9 +929,6 @@ model SubserieDocumental {
   nombre                String
   retencionGestionAnios Int                @default(0)
   retencionCentralAnios Int                @default(0)
-  // Varias a la vez son el caso REAL más común en la TRD de la CDMB (ej.
-  // conservación total + microfilmación/digitalización juntas) — nunca fue un
-  // valor único en la práctica, por eso es un arreglo y no un enum solo.
   disposicionesFinal    DisposicionFinal[]
   procedimiento         String?            @db.Text
   activo                Boolean            @default(true)
@@ -1178,21 +945,21 @@ model SubserieDocumental {
 }
 
 enum CriterioOrdenExpediente {
-  FECHA_DOCUMENTO // por la fecha del trámite/documento (Acuerdo 001/2024 AGN, orden natural)
-  FECHA_INCORPORACION // por el orden real de incorporación al índice
-  NOMBRE // alfabético por nombre de archivo
+  FECHA_DOCUMENTO
+  FECHA_INCORPORACION
+  NOMBRE
 }
 
 enum RetencionDesde {
-  RADICACION // la retención cuenta desde la radicación/creación de cada documento (por defecto)
-  CIERRE_EXPEDIENTE // cuenta desde el cierre del expediente donde quede archivado
+  RADICACION
+  CIERRE_EXPEDIENTE
 }
 
 enum TipoCampoMetadato {
   TEXTO
   NUMERO
   FECHA
-  LISTA // una opción de `opciones`
+  LISTA
   BOOLEANO
 }
 
@@ -1202,22 +969,16 @@ enum AmbitoCampoMetadato {
   AMBOS
 }
 
-// Campos de metadato adicionales que un administrador de archivo define desde la
-// interfaz (MoReq 5.1/5.2): amplían la ficha de una comunicación o un expediente
-// más allá del esquema fijo. Si `serieId` está puesto, el campo solo aparece para
-// lo clasificado en esa serie y su `valorPorDefecto` se hereda (MoReq 5.3). Los
-// valores se guardan en `Comunicacion.metadatos` / `ExpedienteDocumental.metadatos`
-// (Json: { [clave]: valor }).
 model CampoMetadato {
   id              String              @id @default(cuid())
-  clave           String              @unique // slug estable, ej. "numero_predio"
-  nombre          String // etiqueta visible
+  clave           String              @unique
+  nombre          String
   ayuda           String?
   tipo            TipoCampoMetadato   @default(TEXTO)
-  opciones        String[]            @default([]) // solo para tipo LISTA
+  opciones        String[]            @default([])
   obligatorio     Boolean             @default(false)
   ambito          AmbitoCampoMetadato @default(AMBOS)
-  serieId         String? // si está: solo aplica a esa serie y hereda su valorPorDefecto
+  serieId         String?
   valorPorDefecto String?
   activo          Boolean             @default(true)
   orden           Int                 @default(0)
@@ -1228,30 +989,20 @@ model CampoMetadato {
   @@index([serieId])
 }
 
-// Plantillas de documentos (MoReq 3.30/3.31): cuerpos y asuntos preescritos que
-// un administrador de archivo crea y mantiene, y que un funcionario carga al
-// redactar un oficio, un memorando, una respuesta o la descripción de un
-// expediente. Solo texto plano — el cuerpo firmado del proyecto es texto, no hay
-// editor enriquecido. El cuerpo/asunto puede traer marcadores tipo [FECHA] o
-// [DESTINATARIO] que se rellenan solos al cargar la plantilla (ver src/lib/plantillas.ts).
 model PlantillaDocumento {
   id          String          @id @default(cuid())
   nombre      String
   descripcion String?         @db.Text
-  categoria   String? // agrupa la lista cuando hay muchas (opcional)
-  asunto      String? // plantilla del asunto, opcional (se carga junto con el cuerpo)
+  categoria   String?
+  asunto      String?
   cuerpo      String          @db.Text
   ambito      AmbitoPlantilla @default(AMBAS)
-  vecesUsada  Int             @default(0) // se incrementa cada vez que alguien la carga en un formulario
+  vecesUsada  Int             @default(0)
   activo      Boolean         @default(true)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
 
-// Vocabulario controlado (MoReq 1.17/5.5): lista normalizada de términos que un
-// administrador de archivo mantiene y con la que se etiquetan comunicaciones y
-// expedientes — la palabra clave que se guarda debe pertenecer a esta lista, no
-// es texto libre.
 model TerminoControlado {
   id        String   @id @default(cuid())
   termino   String   @unique
@@ -1264,14 +1015,10 @@ enum AmbitoPlantilla {
   ENVIADA
   INTERNA
   RESPUESTA
-  EXPEDIENTE // descripción de un expediente documental
-  AMBAS // cualquier oficio/memorando/respuesta (no aplica a EXPEDIENTE)
+  EXPEDIENTE
+  AMBAS
 }
 
-// Tercer nivel de la TRD (Serie > Subserie > Tipo documental): qué documentos
-// concretos se esperan dentro de una subserie (ej. "Acta de reunión" dentro de
-// la subserie "Actas de Comité Directivo"). Solo referencial/descriptivo por
-// ahora (MoReq 1.42) — no se exige seleccionar uno al radicar.
 model TipoDocumental {
   id                 String  @id @default(cuid())
   subserieId         String
@@ -1285,13 +1032,9 @@ model TipoDocumental {
   @@index([subserieId])
 }
 
-// Secuencia de radicación ATÓMICA e inalterable — una fila por (serie, año).
-// El consecutivo se obtiene con un UPDATE ... { increment: 1 } sobre esta fila
-// (row-lock), NO con un COUNT(*) como en src/lib/expedientes.ts (que es
-// race-prone). Ver src/lib/radicado.ts.
 model ConsecutivoRadicado {
   id           String   @id @default(cuid())
-  serie        String // "R" recibida, "E" enviada, "I" interna
+  serie        String
   anio         Int
   ultimoNumero Int      @default(0)
   updatedAt    DateTime @updatedAt
@@ -1299,11 +1042,10 @@ model ConsecutivoRadicado {
   @@unique([serie, anio])
 }
 
-// Comunicación oficial radicada. Fase 1 usa tipo RECIBIDA; ENVIADA/INTERNA en Fase 2.
 model Comunicacion {
   id              String             @id @default(cuid())
   tipo            TipoComunicacion
-  radicado        String             @unique // ej. CDMB-R-2026-000123
+  radicado        String             @unique
   anio            Int
   fechaRadicacion DateTime           @default(now())
   medio           MedioComunicacion?
@@ -1311,105 +1053,65 @@ model Comunicacion {
   estado          EstadoComunicacion @default(RADICADA)
 
   asunto            String  @db.Text
-  contenido         String? @db.Text // cuerpo del oficio/memorando (ENVIADA/INTERNA); en RECIBIDA solo se usa para la narración de una PQRSD (el resto llega como documento adjunto)
+  contenido         String? @db.Text
   folios            Int     @default(1)
   anexosDescripcion String?
 
-  // PQRSD (Fase 3, Ley 1755/2015): solo aplica a RECIBIDA. `terminoDiasHabiles`
-  // queda fijado al radicar (según el tipo) para poder recalcular el vencimiento
-  // si el término se suspende y se reactiva (Art. 17 CPACA) sin tener que volver
-  // a mirar la tabla de términos por tipo más adelante.
   tipoPqrsd              TipoPQRSD?
   terminoDiasHabiles     Int?
   fechaSuspensionTermino DateTime?
-  // MoReq 7.18: motivo por el que se detuvo el trámite. Para una PQRSD es el
-  // Art. 17 CPACA (falta información del peticionario); para cualquier otra
-  // recibida es una pausa administrativa con su justificación.
   motivoSuspension       String?    @db.Text
 
-  // Anulación (Ley 594/2000: nunca se borra un radicado, se anula con motivo y queda trazado).
   motivoAnulacion String? @db.Text
 
-  // Tercero (remitente si RECIBIDA / destinatario si ENVIADA): FK opcional al
-  // maestro Solicitante + snapshot "foto del momento" (mismo patrón que Expediente).
   terceroId                 String?
   terceroTipo               TipoSolicitante?
-  terceroTipoIdentificacion String? // CC, CE, NIT, PA, TI, ANONIMO (texto libre; no hay enum de tipo-id en el proyecto)
+  terceroTipoIdentificacion String?
   terceroIdentificacion     String?
   terceroNombre             String?
   terceroEmail              String?
   terceroTelefono           String?
   terceroDireccion          String?
   terceroMunicipio          String?
-  terceroDepartamento       String? // solo si el municipio está fuera de la jurisdicción y se escribió a mano
+  terceroDepartamento       String?
 
-  dependenciaOrigenId    String? // quién envía (ENVIADA/INTERNA) — la dependencia que redacta
-  dependenciaDestinoId   String? // a qué dependencia de la CDMB va dirigida (RECIBIDA) o destino (INTERNA)
-  serieId                String? // clasificación TRD
+  dependenciaOrigenId    String?
+  dependenciaDestinoId   String?
+  serieId                String?
   subserieId             String?
-  expedienteId           String? // archivada dentro de un expediente de Trámites 2.0 (unificación)
-  expedienteDocumentalId String? // archivada dentro de un ExpedienteDocumental (archivo general, no un trámite)
-  vitalRelacionado       String? // idVital relacionado, si aplica (columna VITAL_REC del legado)
-  respondeAId            String? // ENVIADA que responde a una comunicación RECIBIDA — enlaza el ciclo completo
+  expedienteId           String?
+  expedienteDocumentalId String?
+  vitalRelacionado       String?
+  respondeAId            String?
 
-  fechaVencimiento DateTime? // término de ley (se calcula en Fase 3 con días hábiles)
+  fechaVencimiento DateTime?
   radicadoPorId    String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  // Disposición final (Fase 4, Acuerdo 004/2019 AGN): retención contada desde
-  // fechaRadicacion usando retencionGestionAnios/retencionCentralAnios de la
-  // subserie. La eliminación/selección exige un acta (ActaEliminacion); la
-  // conservación total/microfilmación no destruyen nada en este sistema, solo
-  // marcan fechaDisposicionFinal.
-  // Palabras clave del vocabulario controlado (MoReq 5.5) — cada valor debe existir
-  // como TerminoControlado activo al momento de guardarse (se valida en el dominio).
   palabrasClave String[] @default([])
-  // MoReq 5.1/5.6: valores de los campos de metadato adicionales definidos por el
-  // administrador ({ [CampoMetadato.clave]: valor }). Validado contra CampoMetadato.
   metadatos     Json?
 
   transferidaCentralEn         DateTime?
-  // MoReq 2.17: una transferencia al archivo central se "conserva" (no se puede
-  // ejecutar disposición final sobre ella) hasta que el archivo central confirma
-  // que recibió el documento y el proceso concluyó. Sin confirmar, sigue
-  // apareciendo en el panel de transferencias pendientes de confirmar.
   transferenciaConfirmadaEn    DateTime?
   transferenciaConfirmadaPorId String?
   fechaDisposicionFinal        DateTime?
   actaEliminacionId            String?
 
-  // Aplazamiento de la disposición final ya vencida (MoReq 2.11) — con motivo
-  // auditado, ej. mientras dura un proceso judicial o disciplinario sobre lo
-  // que contiene. Mientras disposicionAplazadaHasta sea futura, no aparece
-  // como pendiente de disposición aunque ya haya cumplido su retención.
   disposicionAplazadaHasta DateTime?
   motivoAplazamiento       String?   @db.Text
 
-  // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
   nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
   fundamentoNivelAcceso String?                @db.Text
 
-  // Respuesta del funcionario asignado (RECIBIDA) — un borrador previo a que
-  // ventanilla/gestión documental la radique formalmente como ENVIADA con
-  // consecutivo y firma (respondeAId). Sin esto, solo quien puede radicar
-  // (ventanilla/admin de archivo) tenía forma de dejar constancia de una
-  // respuesta — un funcionario con acceso solo de reparto no tenía dónde
-  // escribirla, aunque la comunicación ya estuviera asignada a su cargo.
   respuestaTexto String?   @db.Text
   respuestaPorId String?
   respuestaEn    DateTime?
 
-  // Despacho efectivo del oficio de salida (ENVIADA) — la ventanilla de salida /
-  // gestión documental registra que el oficio ya radicado y firmado SE ENVIÓ de
-  // verdad al destinatario (correo, físico, mensajería). Este paso, no la mera
-  // radicación, es el que cierra el ciclo de la recibida a la que responde: un
-  // funcionario redacta el borrador, pero el envío efectivo es responsabilidad de
-  // la ventanilla (una firma + un radicado no significan "ya salió").
   despachadaEn        DateTime?
   despachadaPorId     String?
-  despachoMedio       String? // "CORREO_ELECTRONICO" | "FISICO" | "MENSAJERIA" | "PERSONAL"
-  despachoDestino     String? // correo o dirección a donde efectivamente se envió (snapshot)
+  despachoMedio       String?
+  despachoDestino     String?
   despachoObservacion String?   @db.Text
 
   tercero                    Solicitante?          @relation(fields: [terceroId], references: [id])
@@ -1446,16 +1148,11 @@ model Comunicacion {
   @@index([actaEliminacionId])
 }
 
-// Acta formal que autoriza eliminar o seleccionar (eliminación parcial) un lote de
-// comunicaciones ya vencidas en su retención (Acuerdo 004/2019 AGN). El original se
-// destruye, pero el registro del sistema (radicado, asunto, fechas) se conserva
-// como evidencia de qué existió y bajo qué autorización se dispuso — nunca se borra
-// la fila de Comunicacion en sí.
 model ActaEliminacion {
   id            String   @id @default(cuid())
   numero        Int      @unique @default(autoincrement())
   fecha         DateTime @default(now())
-  responsable   String // nombre de quien aprueba (comité de archivo), texto libre
+  responsable   String
   motivacion    String?  @db.Text
   aprobadaPorId String?
   createdAt     DateTime @default(now())
@@ -1466,8 +1163,6 @@ model ActaEliminacion {
   @@index([fecha])
 }
 
-// Adjunto de una comunicación. Igual patrón que ExpedienteDocumento + hash
-// SHA-256 del contenido (integridad/preservación, MoReq).
 model ComunicacionDocumento {
   id             String   @id @default(cuid())
   comunicacionId String
@@ -1476,13 +1171,9 @@ model ComunicacionDocumento {
   storagePath    String
   mimeType       String
   tamanoBytes    Int
-  hashSha256     String? // integridad del archivo tal como se recibió
+  hashSha256     String?
   subidoPorId    String?
   createdAt      DateTime @default(now())
-  // true = lo adjuntó el funcionario asignado como parte de su respuesta (PDF/Word ya
-  // redactado), no es un anexo de la comunicación original. Se muestra aparte en el
-  // detalle y, al radicar la respuesta como oficio de salida, se traslada también a esa
-  // nueva Comunicacion (misma ruta de Storage, sin volver a subir el archivo).
   esRespuesta    Boolean  @default(false)
 
   comunicacion Comunicacion @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
@@ -1491,25 +1182,17 @@ model ComunicacionDocumento {
   @@index([comunicacionId])
 }
 
-// Distribución/reparto de una comunicación a una dependencia y/o funcionario.
 model Distribucion {
   id               String    @id @default(cuid())
   comunicacionId   String
   dependenciaId    String?
   usuarioId        String?
   instrucciones    String?   @db.Text
-  termino          Int? // días para responder (se convierte a fechaVencimiento en Fase 3)
+  termino          Int?
   fechaAsignacion  DateTime  @default(now())
-  fechaAcuse       DateTime? // cuándo el destinatario dio acuse de recibido
+  fechaAcuse       DateTime?
   asignadoPorId    String?
-  // Reparto vigente vs. historial: un reparto se puede hacer a VARIOS funcionarios a
-  // la vez (un lote), y un reparto posterior desactiva el anterior salvo que se pida
-  // "sumar". `activa` = sigue siendo un destinatario actual de la comunicación.
   activa           Boolean   @default(true)
-  // Devolución del reparto a la ventanilla: el funcionario al que se le repartió
-  // puede devolverlo indicando por qué no le corresponde — salvo que falten 3 días
-  // hábiles o menos para el vencimiento del término de ley. Al devolver, la
-  // distribución deja de estar activa y la comunicación vuelve a EN_REPARTO.
   devueltaEn       DateTime?
   motivoDevolucion String?   @db.Text
   createdAt        DateTime  @default(now())
@@ -1524,9 +1207,6 @@ model Distribucion {
   @@index([usuarioId])
 }
 
-// Firma electrónica con hash (Ley 527/1999 + Decreto 2364/2012): identidad del
-// firmante + marca de tiempo + hash SHA-256 del contenido firmado. No es firma
-// digital con certificado de CA. Usada en Fase 2 (salientes/memorandos).
 model Firma {
   id             String   @id @default(cuid())
   usuarioId      String
@@ -1536,14 +1216,8 @@ model Firma {
   comunicacionId String?
   documentoId    String?
   ip             String?
-  // Agente de usuario (navegador/dispositivo) desde donde se firmó — dato técnico
-  // exigido en la ficha de firma, junto con `ip`. Null en firmas de antes de este campo.
   userAgent      String?
 
-  // Proveedor y formato de la firma (abstracción para enchufar una CA acreditada
-  // después — ver src/lib/firma-proveedor.ts). Estampado cronológico: `selloTiempoEn`
-  // es la fecha atestiguada, `selloTiempoFuente` de dónde viene (bitácora interna o
-  // URL de una TSA RFC-3161), `selloTiempoToken` el token verificable si hubo TSA.
   proveedor         String    @default("interno")
   formato           String    @default("hash-sha256")
   selloTiempoEn     DateTime?
@@ -1558,26 +1232,9 @@ model Firma {
   @@index([usuarioId])
 }
 
-// ---------------------------------------------------------------------------
-// Solicitud de firma/visto bueno — capa de ASIGNACIÓN sobre el mecanismo de
-// firma que ya existía (Firma en SGDEA, FirmaDocumentoContrato en SIGEC).
-// Deliberadamente COMPARTIDA entre los dos módulos (a diferencia de Firma vs
-// FirmaDocumentoContrato, que siguen separadas): "quién debe firmar/ver, en
-// qué orden, y si ya lo hizo" es un concepto de flujo de trabajo genérico, no
-// una regla de negocio propia de cada dominio — por eso un solo modelo con dos
-// FKs opcionales (exactamente una debe estar llena) en vez de duplicar toda
-// esta lógica dos veces. Antes de esto, Firma SIEMPRE nacía completada (no
-// existía el concepto de "pendiente de firmar"); esta tabla es la que sí
-// modela lo pendiente, y solo al completarse crea la fila real de
-// Firma/FirmaDocumentoContrato (que sigue siendo el evento inmutable).
-// ---------------------------------------------------------------------------
-
 enum RolFirmante {
-  FIRMA // debe firmar electrónicamente (Ley 527/1999)
-  VISTO_BUENO // solo debe revisar/confirmar que lo vio — no firma legalmente
-  // Acceso de solo lectura al documento/comunicación, sin ninguna acción pendiente:
-  // se crea ya en estado COMPLETADA (no aparece como pendiente en el buzón, solo
-  // en "compartido conmigo") — es una concesión de visibilidad, no un paso de flujo.
+  FIRMA
+  VISTO_BUENO
   LECTURA
 }
 
@@ -1595,30 +1252,19 @@ model SolicitudFirma {
 
   usuarioAsignadoId String
   rol               RolFirmante          @default(FIRMA)
-  // Orden de firma: firmantes con el MISMO número actúan en cualquier momento,
-  // sin esperarse entre sí ("no importa quién firme primero"); un firmante con
-  // un número mayor no puede actuar hasta que TODOS los de número menor (rol
-  // FIRMA, sin contar los rechazados) estén en COMPLETADA — así se decide
-  // "quién firma primero" solo con la numeración, sin un campo aparte.
   orden             Int                  @default(1)
   estado            EstadoSolicitudFirma @default(PENDIENTE)
-  comentario        String?              @db.Text // motivo si RECHAZADA
+  comentario        String?              @db.Text
 
   asignadoPorId String
   asignadoEn    DateTime  @default(now())
   completadoEn  DateTime?
-  // IP/user-agent de quien completó (firmó o dio visto bueno) — para VISTO_BUENO es el ÚNICO
-  // registro técnico que queda (no genera Firma/FirmaDocumentoContrato); para FIRMA es redundante
-  // con el mismo dato ya guardado en Firma/FirmaDocumentoContrato, pero se deja aquí también para
-  // poder mostrar la ficha técnica de un vistazo sin tener que resolver la relación.
   ip            String?
   userAgent     String?
 
-  // Vínculo al evento real ya ejecutado, cuando estado=COMPLETADA y rol=FIRMA
-  // (un VISTO_BUENO/LECTURA no genera Firma, solo se marca completada).
-  firmaId              String?
-  firmaDocContratoId   String?
-  firmaExpedienteId    String?
+  firmaId            String?
+  firmaDocContratoId String?
+  firmaExpedienteId  String?
 
   comunicacion        Comunicacion?             @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   documentoContrato   DocumentoContrato?        @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
@@ -1640,19 +1286,9 @@ enum EstadoExpedienteDocumental {
   CERRADO
 }
 
-// Expediente electrónico de archivo (Art. 4.3.2 Acuerdo 001/2024 AGN): la unidad
-// documental que agrupa TODOS los documentos de un mismo trámite, actuación o
-// procedimiento de una dependencia — a diferencia de Expediente (arriba), que es
-// específico de un trámite ambiental de Trámites 2.0, y de Comunicacion, que es
-// específica de un radicado de correspondencia. Un funcionario de CUALQUIER
-// dependencia puede abrir uno y subirle documentos directamente sin que tengan
-// que llegar por correspondencia — es el archivo de gestión del día a día de
-// cada área (contratos, actas internas, historias laborales, etc.). También se
-// le pueden archivar comunicaciones ya radicadas (mismo patrón que
-// Comunicacion.expedienteId, pero hacia este modelo).
 model ExpedienteDocumental {
   id          String                     @id @default(cuid())
-  numero      String                     @unique // ej. CDMB-X-2026-000001 (mismo consecutivo atómico que Comunicacion, serie "X")
+  numero      String                     @unique
   asunto      String                     @db.Text
   descripcion String?                    @db.Text
   estado      EstadoExpedienteDocumental @default(ABIERTO)
@@ -1665,19 +1301,12 @@ model ExpedienteDocumental {
   fechaApertura DateTime  @default(now())
   fechaCierre   DateTime?
   cerradoPorId  String?
-  // Hash del índice electrónico al cerrar (Art. 4.3.2.2-4 AGN: "firma del índice
-  // electrónico"). Firma con hash, mismo criterio que Firma/AuditoriaDoc — no
-  // digital con certificado. Cubre el orden y el hash de cada documento: si algo
-  // cambia después de cerrado, deja de coincidir.
   indiceHash    String?
 
-  // Nivel de acceso a la información (Ley 1712/2014) — ver enum NivelAccesoInformacion.
   nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
   fundamentoNivelAcceso String?                @db.Text
 
-  // Palabras clave del vocabulario controlado (MoReq 5.5).
   palabrasClave String[] @default([])
-  // MoReq 5.1/5.6: campos de metadato adicionales (ver CampoMetadato).
   metadatos     Json?
 
   createdAt DateTime @default(now())
@@ -1698,10 +1327,6 @@ model ExpedienteDocumental {
   @@index([estado])
 }
 
-// Préstamo/consulta de un expediente por un funcionario — quién lo tiene actualmente "afuera" (aunque sea
-// 100% electrónico, el archivo sigue necesitando saber quién está trabajando con qué expediente en un
-// momento dado, igual que cualquier SGDEA). No bloquea nada del expediente (subir/editar/cerrar siguen
-// gobernados solo por dependencia/rol) — es únicamente el registro de quién lo tiene y desde cuándo.
 model PrestamoExpediente {
   id                      String    @id @default(cuid())
   expedienteDocumentalId  String
@@ -1719,11 +1344,6 @@ model PrestamoExpediente {
   @@index([expedienteDocumentalId])
 }
 
-// Documento subido DIRECTAMENTE a un ExpedienteDocumental (no vía correspondencia).
-// Mismo patrón que ComunicacionDocumento/ExpedienteDocumento: hash SHA-256 +
-// storagePath en el bucket "documentos". `ordenIndice` es la posición dentro del
-// índice electrónico del expediente (Art. 4.3.2.3 AGN: debe respetar el orden
-// original y permitir reconstruir la secuencia completa).
 model DocumentoArchivo {
   id                     String    @id @default(cuid())
   expedienteDocumentalId String
@@ -1736,32 +1356,11 @@ model DocumentoArchivo {
   hashSha256             String?
   subidoPorId            String
   createdAt              DateTime  @default(now())
-  // Fecha propia del documento (de trámite) cuando es distinta de cuándo se subió — ej. un documento
-  // antiguo que se digitaliza hoy. Si no se indica, se asume que coincide con createdAt (MoReq 1.45).
   fechaDocumento         DateTime?
-  // Tipo documental (MoReq 1.42) — opcional, solo se puede elegir entre los tipos definidos en la TRD para
-  // la subserie del expediente (si el expediente no tiene subserie clasificada, no hay nada que elegir).
   tipoDocumentalId       String?
-  // Versionado (MoReq 3.9: "elegir cómo tratar un documento con varias versiones") — opcional: al subir un
-  // documento se puede indicar que reemplaza a uno ya existente EN EL MISMO expediente, formando una cadena
-  // de versiones (A reemplazado por B reemplazado por C...). Ninguna versión anterior se borra ni se oculta
-  // — el índice electrónico sigue siendo append-only; esto solo agrega la relación entre versiones.
   reemplazaId            String?
-  // Foliación (MoReq 1.19/1.51) — número de hojas/páginas que declara quien sube el documento (no se
-  // detecta automáticamente: no hay librería de conteo de páginas de PDF en el proyecto, y buena parte del
-  // archivo real no es PDF). Es la misma práctica manual de cualquier archivo físico al foliar; el índice
-  // muestra el rango acumulado (ej. "Folios 6-12") a partir de este valor por documento, en el mismo orden
-  // (ordenIndice) que respalda el hash del índice firmado. Los documentos previos a este campo quedan en 1
-  // por defecto — no se puede reconstruir retroactivamente cuántas páginas tenían en realidad.
   numeroFolios           Int       @default(1)
 
-  // Corrección en un expediente ABIERTO (Art. 4.3.2 Acuerdo 001/2024 AGN: el
-  // expediente se conforma hasta el cierre; ahí se firma el índice). Se puede
-  // corregir la metadata (nombre, tipo, folios, fecha) y RETIRAR del índice un
-  // archivo subido por error — nunca se borra la fila ni el archivo del storage:
-  // se marca con motivo y queda fuera del índice, del hash, del FUID y del PDF
-  // consolidado, pero trazado en la bitácora (mismo principio que ANULADA en una
-  // comunicación). Un expediente CERRADO ya no admite ninguna de las dos.
   retiradoEn    DateTime?
   retiradoPorId String?
   motivoRetiro  String?   @db.Text
@@ -1776,14 +1375,10 @@ model DocumentoArchivo {
   @@index([expedienteDocumentalId])
 }
 
-// Bitácora inalterable con cadena de hash. Cada fila encadena su `hash` con el
-// `hashAnterior` (hash de la fila previa por `secuencia`): alterar/borrar una
-// fila rompe la cadena y `verificarCadena()` lo detecta. Registra también LEE y
-// EXPORTA. Ver src/lib/auditoria-doc.ts.
 model AuditoriaDoc {
   id           String             @id @default(cuid())
   secuencia    Int                @unique @default(autoincrement())
-  entidad      String // "Comunicacion", "ComunicacionDocumento", ...
+  entidad      String
   entidadId    String
   accion       AccionAuditoriaDoc
   usuarioId    String?
@@ -1794,11 +1389,6 @@ model AuditoriaDoc {
   hash         String
   createdAt    DateTime           @default(now())
 
-  // onDelete Restrict a propósito (el default de Prisma en una relación opcional sería
-  // SetNull): un hard-delete de Usuario pondría usuarioId en NULL sin recalcular el hash
-  // ya almacenado de cada fila que lo referencia — verificarCadena() la reportaría como
-  // alterada (falso positivo). Restrict lo convierte en un error inmediato y explícito en
-  // vez de una corrupción silenciosa del hash-chain. Ver [[feedback_limpieza_datos_prueba_auditoria]].
   usuario Usuario? @relation("AuditoriaDocUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
 
   @@index([entidad, entidadId])
@@ -1806,11 +1396,6 @@ model AuditoriaDoc {
   @@index([createdAt])
 }
 
-// Límite de envíos públicos sin autenticación (formulario PQRSD, Fase 3). No hay
-// CAPTCHA de terceros en el proyecto (exigiría una cuenta/API key externa) — este
-// conteo por IP+ruta, combinado con honeypot y tiempo mínimo de llenado en el
-// propio formulario, es la defensa contra abuso. Persistido en base (no en
-// memoria): en Vercel cada invocación puede caer en una instancia distinta.
 model IntentoEnvioPublico {
   id        String   @id @default(cuid())
   ip        String
@@ -1820,28 +1405,20 @@ model IntentoEnvioPublico {
   @@index([ip, ruta, createdAt])
 }
 
-// ============================================================================
-// Flujos de trabajo electrónicos configurables (MoReq cap. 7). El administrador
-// funcional arma el flujo (pasos + transiciones + a quién se asigna cada paso)
-// desde la interfaz — NO están fijos en código. Un flujo es una plantilla; cada
-// vez que se aplica a una comunicación nace una InstanciaFlujo que va avanzando
-// de paso en paso, con constancia de quién hizo qué y cuándo.
-// ============================================================================
-
 enum TipoPasoFlujo {
-  TAREA // trabajo de un responsable (redactar, revisar el expediente, etc.)
-  REVISION // aprobar o devolver — normalmente tiene dos transiciones de salida
-  DECISION // bifurca el flujo según la opción que elija el responsable
-  FIN // cierra el flujo
+  TAREA
+  REVISION
+  DECISION
+  FIN
 }
 
 enum AsignacionPaso {
-  DEPENDENCIA_COMUNICACION // la dependencia de la comunicación (destino en recibidas/memorandos, origen en enviadas)
-  DEPENDENCIA_FIJA // una dependencia concreta (dependenciaId del paso)
-  CARGO // cualquier funcionario con un cargo (cargoClave del paso)
-  RADICADOR // quien radicó la comunicación
-  RESPONSABLE_PASO_ANTERIOR // quien completó el paso inmediatamente anterior
-  MANUAL // se asigna a mano cuando el flujo llega a este paso
+  DEPENDENCIA_COMUNICACION
+  DEPENDENCIA_FIJA
+  CARGO
+  RADICADOR
+  RESPONSABLE_PASO_ANTERIOR
+  MANUAL
 }
 
 enum EstadoInstanciaFlujo {
@@ -1854,11 +1431,9 @@ model FlujoTrabajo {
   id                     String            @id @default(cuid())
   nombre                 String
   descripcion            String?           @db.Text
-  aplicaA                TipoComunicacion? // null = cualquier tipo
+  aplicaA                TipoComunicacion?
   activo                 Boolean           @default(true)
-  esPlantilla            Boolean           @default(false) // se creó desde las plantillas precargadas
-  // MoReq 7.8: si tiene dependencias, solo un funcionario de una de ellas (o admin de
-  // archivo) puede iniciar/avanzar este flujo. Vacío = cualquiera con permiso de operar flujos.
+  esPlantilla            Boolean           @default(false)
   dependenciasOperadoras String[]          @default([])
   creadoPorId            String?
   createdAt              DateTime          @default(now())
@@ -1875,16 +1450,14 @@ model FlujoTrabajo {
 model PasoFlujo {
   id             String         @id @default(cuid())
   flujoId        String
-  orden          Int // 1 = paso inicial; también es el orden visual del diagrama
+  orden          Int
   nombre         String
   instrucciones  String?        @db.Text
   tipo           TipoPasoFlujo  @default(TAREA)
   asignacion     AsignacionPaso @default(DEPENDENCIA_COMUNICACION)
-  dependenciaId  String? // si asignacion = DEPENDENCIA_FIJA
-  cargoClave     String? // si asignacion = CARGO
-  slaDiasHabiles Int? // término sugerido para completar este paso
-  // Posición del nodo en el lienzo del editor visual (React Flow). null = sin colocar
-  // todavía → el lienzo lo ubica automáticamente por `orden`.
+  dependenciaId  String?
+  cargoClave     String?
+  slaDiasHabiles Int?
   posX           Float?
   posY           Float?
 
@@ -1903,7 +1476,7 @@ model TransicionPaso {
   flujoId     String
   desdePasoId String
   haciaPasoId String
-  etiqueta    String @default("Continuar") // "Aprobado", "Devolver para ajustes", etc.
+  etiqueta    String @default("Continuar")
   orden       Int    @default(0)
 
   flujo FlujoTrabajo @relation(fields: [flujoId], references: [id], onDelete: Cascade)
@@ -1920,8 +1493,6 @@ model InstanciaFlujo {
   comunicacionId  String
   estado          EstadoInstanciaFlujo @default(EN_CURSO)
   pasoActualId    String?
-  // Cuándo se entró al paso actual — base para el vencimiento del término sugerido
-  // (slaDiasHabiles) del paso. Se actualiza en cada avance.
   pasoActualDesde DateTime?
   iniciadoPorId   String?
   iniciadoEn      DateTime             @default(now())
@@ -1941,7 +1512,7 @@ model PasoEjecutado {
   id            String   @id @default(cuid())
   instanciaId   String
   pasoId        String
-  resultado     String? // etiqueta de la transición elegida al completar
+  resultado     String?
   comentario    String?  @db.Text
   responsableId String?
   completadoEn  DateTime @default(now())
@@ -1953,44 +1524,21 @@ model PasoEjecutado {
   @@index([instanciaId])
 }
 
-// ---------------------------------------------------------------------------
-// Contratación — manejador de expedientes digitales de contratación (Manual de
-// Contratación y de Supervisión o Interventoría A-BS-MA01). Deliberadamente
-// AISLADO de Trámites 2.0 y del SGDEA de Correspondencia (mismo criterio ya
-// aplicado con ExpedienteDocumental: nunca reutilizar un dominio de otro
-// módulo, ver la lección documentada sobre "Expediente"/"Comunicacion").
-// No es un ERP de contratación: no reemplaza SECOP II (plataforma
-// transaccional real de la CDMB, Cap. 14 del Manual), no valida cuantías ni
-// reglas jurídicas de cada modalidad de selección — solo gestiona el
-// expediente, el flujo documental por etapa, el acceso por rol y la firma.
-// ---------------------------------------------------------------------------
-
 enum RolContratacion {
   ADMINISTRADOR_CONTRATACION
   JEFE_CONTRATACION
-  // Ve y sube documentos (con traza normal) de TODA la contratación, y puede asignar firmantes en
-  // cualquier expediente — rol de revisión/apoyo transversal, sin poder de gestión (no aprueba
-  // etapas, no gestiona contratistas, no edita/elimina sin traza). Pedido explícito del usuario
-  // (2026-09-18): "tienen que estar revisando toda la contratación".
   FUNCIONARIO_CONTRATACION
-  // Ve los expedientes de SU PROPIA dependencia solicitante (no de toda la entidad) y puede
-  // asignar firmantes ahí — mismo concepto que JEFE_DEPENDENCIA en RolCorrespondencia (SGDEA),
-  // pero es un enum aparte porque el ámbito son expedientes contractuales, no comunicaciones.
   JEFE_DEPENDENCIA
   SUPERVISOR_INTERVENTOR
   CONTRATISTA
 }
 
-// Cap. 6/7/10 del Manual: las 3 etapas de un mismo expediente (no se crea un
-// expediente nuevo por etapa, es el mismo consecutivo de principio a fin).
 enum EtapaContratacion {
   PRECONTRACTUAL
   CONTRACTUAL
   POSTCONTRACTUAL
 }
 
-// Informativo únicamente (Cap. 6.2 del Manual) — no dispara ninguna rama de
-// lógica ni formulario distinto; solo sirve para filtrar/reportar.
 enum ModalidadSeleccion {
   LICITACION_PUBLICA
   SELECCION_ABREVIADA_MENOR_CUANTIA
@@ -2010,31 +1558,15 @@ enum EstadoValidacionDocumentoContrato {
   RECHAZADO
 }
 
-// Persona/empresa contratista. Deliberadamente separado de Solicitante (Trámites
-// ambientales): es un dominio distinto (proveedor del Estado, no solicitante de
-// un permiso ambiental) aunque ambos se identifiquen por NIT/cédula.
-// usuarioId es opcional: se llena solo cuando ese contratista tiene cuenta de
-// dominio (Directorio Activo) de la CDMB y se le da acceso al módulo — ver
-// src/lib/directorio-activo.ts, reutilizado tal cual, sin autenticación nueva.
 enum TipoPersonaContratista {
   NATURAL
   JURIDICA
 }
 
-// Registro maestro propio de Contratación — DELIBERADAMENTE separado del `Solicitante` de
-// Trámites ambientales 2.0 (mismo criterio que el resto del proyecto: dominios distintos no
-// comparten modelo, aunque ambos se identifiquen por NIT/cédula). Se alimenta/gestiona desde
-// `/contratacion/contratistas` (buscar, crear, editar) — no solo implícitamente al crear un
-// expediente. `usuarioId` sigue siendo el vínculo opcional a una cuenta de Directorio Activo,
-// que se administra desde `/usuarios/[id]` (control de acceso, no dato de contacto).
 model Contratista {
   id                 String                 @id @default(cuid())
   identificacion     String                 @unique
   tipoPersona        TipoPersonaContratista @default(NATURAL)
-  // Separados para NATURAL (paridad con Solicitante); JURIDICA sigue usando solo
-  // nombreORazonSocial. Se mantiene nombreORazonSocial siempre poblado (para no romper el
-  // resto del módulo, que lo usa como despliegue único) — se compone de nombres+apellidos
-  // al guardar cuando es NATURAL.
   nombres            String?
   apellidos          String?
   nombreORazonSocial String
@@ -2043,9 +1575,6 @@ model Contratista {
   contactoEmail      String?
   contactoTelefono   String?
   direccion          String?
-  // Texto libre (no la lista acotada de 13 municipios de la jurisdicción CDMB que usa
-  // Solicitante) — un contratista puede estar radicado en cualquier ciudad del país. Por eso
-  // van siempre juntos como texto libre, sin el selector de jurisdicción de Solicitante.
   departamento       String?
   ciudad             String?
   usuarioId          String?                @unique
@@ -2058,13 +1587,10 @@ model Contratista {
 
 model ExpedienteContractual {
   id                       String             @id @default(cuid())
-  numero                   String             @unique // CDMB-CTO-2026-000001 (generarConsecutivo, serie "CTO")
+  numero                   String             @unique
   objeto                   String             @db.Text
   modalidadSeleccion       ModalidadSeleccion
   valor                    Decimal?           @db.Decimal(18, 2)
-  // Número de contrato real (el que asigna el sistema de contratación/SECOP II) — registro
-  // manual de texto libre, distinto de `numero` (el consecutivo propio de SIGEC,
-  // CDMB-CTO-2026-000001). Indexado para poder buscarlo.
   numeroContrato           String?
   fechaInicio              DateTime?
   fechaFinEstimada         DateTime?
@@ -2077,10 +1603,6 @@ model ExpedienteContractual {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
 
-  // Un mismo contratista puede tener varios contratos en distintos periodos del
-  // año — cada uno sigue siendo SU PROPIO expediente (nunca se fusionan). Esto
-  // solo permite referenciar que un expediente es continuación/prórroga/relacionado
-  // de otro anterior, para poder verlos enlazados sin perder la separación real.
   expedienteRelacionadoId String?
 
   dependenciaSolicitante Dependencia            @relation(fields: [dependenciaSolicitanteId], references: [id])
@@ -2103,13 +1625,11 @@ model ExpedienteContractual {
   @@index([numeroContrato])
 }
 
-// Muchos-a-muchos: el Manual (Cap. 9) permite designar más de un supervisor por
-// contrato, y un mismo funcionario puede supervisar varios contratos a la vez.
 model ExpedienteContractualSupervisor {
   id           String @id @default(cuid())
   expedienteId String
   usuarioId    String
-  rol          String @default("SUPERVISOR") // "SUPERVISOR" | "INTERVENTOR" | "APOYO_SUPERVISION"
+  rol          String @default("SUPERVISOR")
 
   expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   usuario    Usuario               @relation("SupervisorDeExpediente", fields: [usuarioId], references: [id])
@@ -2118,9 +1638,6 @@ model ExpedienteContractualSupervisor {
   @@index([usuarioId])
 }
 
-// Estado de cada una de las 3 etapas DENTRO de un mismo expediente — permite
-// que el Jefe de Contratación apruebe el paso de una etapa a la siguiente con
-// su propia fecha/comentario, sin crear un expediente nuevo por etapa.
 model EtapaExpedienteContractual {
   id            String            @id @default(cuid())
   expedienteId  String
@@ -2136,38 +1653,17 @@ model EtapaExpedienteContractual {
   @@unique([expedienteId, etapa])
 }
 
-// Documento del expediente contractual. A DIFERENCIA de DocumentoArchivo
-// (SGDEA) — que nunca se borra, solo se "retira" con motivo trazado — ESTE
-// modelo sí admite UPDATE/DELETE reales por Administrador de Contratación y
-// Jefe de Contratación, sin dejar ninguna fila en EventoContratacion. Es una
-// decisión explícita e informada del usuario, exclusiva de este módulo
-// (~1000 contratistas rotando, errores de captura frecuentes) — NUNCA
-// replicar este comportamiento en DocumentoArchivo ni en ningún otro dominio
-// del proyecto sin la misma conversación explícita.
-// Catálogo de documentos exigidos por el Manual A-BS-MA01 y sus 33 procedimientos
-// (A-BS-PR25 a A-BS-PR57), sembrado una sola vez (prisma/seed-contratacion.ts) desde
-// data/contratacion/requisitos.json — extraído de las tablas ACTIVIDAD/RESPONSABLE/
-// DOCUMENTOS de cada procedimiento real (mismo método que los 30 procedimientos de
-// Trámites ambientales 2.0). `modalidadSeleccion=null` = aplica a CUALQUIER
-// modalidad (documentos comunes de planeación en Precontractual, o de ejecución/
-// cierre en Contractual/Postcontractual, que no dependen de cómo se seleccionó al
-// contratista). `fuente` cita el procedimiento exacto para que quede trazable de
-// dónde salió cada exigencia (o "SECOP II" / "Sistema financiero CDMB" cuando el
-// documento no lo expide esta plataforma).
 model RequisitoDocumentoContratacion {
   id                 String              @id @default(cuid())
   modalidadSeleccion ModalidadSeleccion?
   etapa              EtapaContratacion
   orden              Int                 @default(0)
   nombre             String
-  codigoFormato      String? // A-BS-FOxx, si el Manual define una plantilla
+  codigoFormato      String?
   obligatorio        Boolean             @default(true)
-  // El documento se tramita/genera fuera de esta plataforma (SECOP II, o el
-  // sistema financiero de la CDMB para CDP/modificación del PAA) — igual se
-  // habilita el espacio para subir la evidencia, nunca se bloquea la carga.
   gestionadoEnSecop  Boolean             @default(false)
   notaOrigenExterno  String?             @db.Text
-  fuente             String? // "Manual A-BS-MA01, Procedimiento A-BS-PR29" o "SECOP II"
+  fuente             String?
   activo             Boolean             @default(true)
 
   documentos         DocumentoContrato[]
@@ -2181,10 +1677,7 @@ model DocumentoContrato {
   id           String            @id @default(cuid())
   expedienteId String
   etapa        EtapaContratacion
-  categoria    String? // texto libre, con sugerencias tomadas de Formatos/* (src/lib/contratacion-categorias.ts)
-  // Vínculo opcional al requisito del catálogo que este archivo satisface — null
-  // = documento libre, no anticipado por el catálogo (el módulo sigue permitiendo
-  // subir cualquier cosa, el catálogo es una guía, no una camisa de fuerza).
+  categoria    String?
   requisitoId  String?
   nombre       String
   storagePath  String
@@ -2195,16 +1688,8 @@ model DocumentoContrato {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
-  // Firma electrónica selectiva (punto 4 del pedido): no todo documento la
-  // necesita. Alternativa a firmar dentro de la app: el documento ya viene
-  // firmado/publicado en SECOP II, que actúa como su propio mecanismo de
-  // firma — en ese caso no hace falta volver a firmarlo aquí.
   requiereFirma        Boolean                           @default(false)
   firmadoEnSecop       Boolean                           @default(false)
-  // Informe por periodos (ver src/lib/periodos-informe.ts): un documento de un requisito que se
-  // entrega mes a mes cuelga de UN periodo — o bien de un mes calendario derivado de las fechas del
-  // contrato (`periodoMes`, "AAAA-MM"), o bien de un espacio eventual creado a mano
-  // (`periodoEventualId`). Ambos null = documento normal, sin periodo.
   periodoMes           String?
   periodoEventualId    String?
   estadoValidacion     EstadoValidacionDocumentoContrato @default(PENDIENTE)
@@ -2227,12 +1712,6 @@ model DocumentoContrato {
   @@index([periodoEventualId])
 }
 
-// Aviso de que un documento fue rechazado al firmar/revisar — pedido explícito del usuario
-// (2026-09-23): quien lo subió y el Jefe de Contratación deben enterarse en un buzón propio, no
-// solo ver el estado "rechazada" de la SolicitudFirma (que además ya no se muestra pegado al
-// documento, ver la página del expediente — queda solo en la trazabilidad de abajo). Se borra
-// manualmente (quien lo ve puede descartarlo) o automáticamente cuando se reemplaza el archivo
-// del documento rechazado (ver editarDocumentoContratoSinTraza) — "una vez subsanado".
 model AvisoRechazoDocumento {
   id                    String   @id @default(cuid())
   expedienteId          String?
@@ -2257,35 +1736,22 @@ model AvisoRechazoDocumento {
   @@index([documentoExpedienteId])
 }
 
-// Espacio de entrega ADICIONAL a los periodos mensuales derivados de las fechas del contrato (ej. un
-// informe extraordinario por una eventualidad), creado a mano y con nombre descriptivo.
 model PeriodoInformeEventual {
   id           String   @id @default(cuid())
   expedienteId String
-  // A qué requisito del catálogo pertenece este espacio — necesario desde que más de un requisito
-  // se entrega "por periodos" en el mismo expediente (Informe de supervisión, Formato único de
-  // informe de cumplimiento, Acta de recibo — pago parcial): sin esto, un espacio eventual creado
-  // para uno aparecía también como opción de carga en los otros.
   requisitoId  String
   nombre       String
   creadoPorId  String?
   createdAt    DateTime @default(now())
 
-  expediente ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  requisito  RequisitoDocumentoContratacion  @relation(fields: [requisitoId], references: [id], onDelete: Cascade)
+  expediente ExpedienteContractual          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  requisito  RequisitoDocumentoContratacion @relation(fields: [requisitoId], references: [id], onDelete: Cascade)
   documentos DocumentoContrato[]
 
   @@index([expedienteId])
   @@index([requisitoId])
 }
 
-// Evento de firma electrónica de UN documento de contratación — modelo propio
-// (no se reutiliza Firma, del SGDEA de Correspondencia, para no arriesgar ese
-// modelo compartido con datos de otro dominio); mismo criterio de
-// hash+identidad+timestamp ya validado en Correspondencia (Ley 527/1999 +
-// Decreto 1074/2015). Ya NO es único por documento (`documentoId` sin
-// `@unique`): un documento puede requerir varios firmantes (co-firmas), igual
-// que `Firma` en el SGDEA.
 model FirmaDocumentoContrato {
   id                String    @id @default(cuid())
   documentoId       String
@@ -2308,14 +1774,10 @@ model FirmaDocumentoContrato {
   @@index([usuarioId])
 }
 
-// Bitácora del módulo (mismo espíritu que ExpedienteEvento de Trámites 2.0) —
-// registra TODO lo que ocurre en un expediente contractual, EXCEPTO la
-// excepción explícita de arriba (edición/eliminación de DocumentoContrato por
-// Administrador/Jefe de Contratación no escribe aquí).
 model EventoContratacion {
   id           String   @id @default(cuid())
   expedienteId String
-  tipo         String // CREACION | DOCUMENTO_SUBIDO | ETAPA_APROBADA | DOCUMENTO_FIRMADO | DOCUMENTO_RECHAZADO | ...
+  tipo         String
   detalle      String?  @db.Text
   usuarioId    String?
   createdAt    DateTime @default(now())

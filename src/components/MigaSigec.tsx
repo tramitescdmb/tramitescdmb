@@ -5,12 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
-/**
- * Ruta de migas de SIGEC — mismo patrón que `MigaSgdea` (`src/components/sgdea/Miga.tsx`).
- * Reemplaza el panel de accesos rápidos: 4 de sus 5 botones duplicaban destinos ya cubiertos
- * por `ContratacionTabs`, y el quinto (Ayuda) ya está en el encabezado del módulo.
- */
-
 const INICIO_GRUPO: Record<string, string> = {
   Panel: "/contratacion/panel",
   Expedientes: "/contratacion/expedientes",

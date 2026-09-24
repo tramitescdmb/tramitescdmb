@@ -18,9 +18,6 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode })
   );
 }
 
-/** Ficha imprimible del expediente documental — MoReq 4.8 ("formas flexibles de imprimir documentos y sus
- * metadatos"): la constancia de una comunicación ya cubre el radicado individual; esta cubre el expediente
- * completo (metadatos + índice de documentos), que antes solo se podía exportar como CSV/XML de datos. */
 export default async function FichaExpedientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

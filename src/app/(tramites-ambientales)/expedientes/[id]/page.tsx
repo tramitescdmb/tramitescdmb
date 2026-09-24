@@ -161,9 +161,6 @@ export default async function ExpedienteDetallePage({
     ? expediente.visitasTecnicas.filter((v) => v.pasoNumero === pasoActual.numero)
     : [];
 
-  // Agrupa los documentos por paso (null = subidos en la radicación) para mostrarlos en
-  // tarjetas separadas — con todo junto en una sola lista no se distinguía a qué etapa
-  // pertenecía cada archivo.
   const gruposDocumentos: Array<[number | null, typeof expediente.documentos]> = [];
   for (const doc of expediente.documentos) {
     let grupo = gruposDocumentos.find(([num]) => num === doc.pasoNumero);
@@ -343,7 +340,6 @@ export default async function ExpedienteDetallePage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* Datos del solicitante */}
           <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
@@ -430,7 +426,6 @@ export default async function ExpedienteDetallePage({
             />
           </section>
 
-          {/* Paso actual */}
           {pasoActual ? (
             <section className="rounded-xl border border-cdmb-300 bg-white p-5">
               <div className="mb-1 flex items-center justify-between">
@@ -479,7 +474,6 @@ export default async function ExpedienteDetallePage({
                 )}
               </dl>
 
-              {/* Subir documento de este paso */}
               {puedeEditar && (
                 <div className="mt-4 border-t border-stone-100 pt-4">
                   <SubirDocumentoPasoForm
@@ -504,9 +498,6 @@ export default async function ExpedienteDetallePage({
                 </div>
               )}
 
-              {/* Geoposición de la visita técnica — disponible en cualquier paso, no todos los
-                  trámites lo requieren pero la mayoría sí tiene un paso de "visita técnica" que
-                  pide geo-referenciar el predio (ver data/tramites/*.json). */}
               <div className="mt-4 border-t border-stone-100 pt-4">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
                   Geoposición de la visita técnica (opcional)
@@ -531,7 +522,6 @@ export default async function ExpedienteDetallePage({
                 {puedeEditar && <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />}
               </div>
 
-              {/* Acciones para avanzar */}
               <div className="mt-4 border-t border-stone-100 pt-4">
                 {!puedeEditar ? (
                   <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
@@ -612,7 +602,6 @@ export default async function ExpedienteDetallePage({
             <SectionHelp>Este expediente no tiene un paso activo (el flujo no tiene pasos definidos).</SectionHelp>
           )}
 
-          {/* Lista completa de pasos (referencia) */}
           <section>
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
               Todos los pasos del flujo
@@ -656,8 +645,6 @@ export default async function ExpedienteDetallePage({
             </ol>
           </section>
 
-          {/* Cambio de estado manual — salida de emergencia que salta el flujo de pasos, por eso
-              queda reservada al administrador (ver /api/expedientes/[id]/estado/route.ts). */}
           <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
             <p className="mb-3 text-xs text-stone-500">
@@ -702,7 +689,6 @@ export default async function ExpedienteDetallePage({
             )}
           </section>
 
-          {/* Correspondencia asociada (SGDEA) — unificación con Trámites 2.0 */}
           {expediente.comunicaciones.length > 0 && (
             <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
               <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
@@ -723,7 +709,6 @@ export default async function ExpedienteDetallePage({
             </section>
           )}
 
-          {/* Historia del expediente — línea de tiempo */}
           <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
             <p className="mb-3 text-xs text-stone-500">
@@ -773,7 +758,6 @@ export default async function ExpedienteDetallePage({
           </section>
         </div>
 
-        {/* Documentos */}
         <div className="space-y-4">
           <div className="space-y-3">
             <div className="px-1">
@@ -833,7 +817,6 @@ export default async function ExpedienteDetallePage({
             </div>
           )}
 
-          {/* Asignación del expediente */}
           <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
             <h3 className="text-sm font-semibold text-stone-900">Asignado a</h3>
             <p className="mb-2 text-xs text-stone-500">
@@ -979,7 +962,6 @@ export default async function ExpedienteDetallePage({
   );
 }
 
-/** Solo se muestra si el expediente tiene al menos un dato de este bloque — la mayoría son opcionales. */
 function BloqueDatosPredio({
   claseSolicitud,
   nombre,
@@ -1060,11 +1042,6 @@ function BloqueDatosPredio({
   );
 }
 
-/**
- * Colapsado por defecto — mostrar el mapa y las 3 coordenadas siempre expandidas
- * (aún más si hay dos: predio y solicitante) sumaba mucho texto/mapa a la página.
- * Un resumen de una línea y el detalle solo si el usuario lo pide.
- */
 function BloqueUbicacion({
   titulo,
   lat,

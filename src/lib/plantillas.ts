@@ -14,7 +14,6 @@ export const ETIQUETA_AMBITO: Record<AmbitoPlantilla, string> = {
 
 export const AMBITOS: AmbitoPlantilla[] = ["ENVIADA", "INTERNA", "RESPUESTA", "EXPEDIENTE", "AMBAS"];
 
-/** Ámbitos donde una plantilla marcada AMBAS también aparece. */
 const AMBITOS_COMUNICACION: AmbitoPlantilla[] = ["ENVIADA", "INTERNA", "RESPUESTA"];
 
 export function esAmbitoValido(v: string | undefined | null): v is AmbitoPlantilla {
@@ -31,10 +30,6 @@ type PlantillaOpcion = {
   ambito: AmbitoPlantilla;
 };
 
-/**
- * Plantillas activas aplicables a un ámbito concreto (una de ámbito AMBAS
- * aparece en los tres de comunicación, no en EXPEDIENTE). MoReq 3.30.
- */
 export async function listarPlantillas(ambito: AmbitoPlantilla): Promise<PlantillaOpcion[]> {
   const ambitos = AMBITOS_COMUNICACION.includes(ambito) ? [ambito, "AMBAS" as const] : [ambito];
   return db.plantillaDocumento.findMany({
@@ -44,12 +39,10 @@ export async function listarPlantillas(ambito: AmbitoPlantilla): Promise<Plantil
   });
 }
 
-/** Todas, incluidas las inactivas — para la pantalla de Plantillas. */
 export async function listarPlantillasAdmin() {
   return db.plantillaDocumento.findMany({ orderBy: [{ activo: "desc" }, { categoria: "asc" }, { nombre: "asc" }] });
 }
 
-/** Categorías ya usadas, para sugerir en el formulario. */
 export async function listarCategoriasPlantilla(): Promise<string[]> {
   const filas = await db.plantillaDocumento.findMany({
     where: { categoria: { not: null } },
@@ -117,7 +110,6 @@ export async function duplicarPlantilla(id: string) {
   });
 }
 
-/** Suma 1 al contador de uso (best-effort — se llama al cargar la plantilla en un formulario). */
 export async function incrementarUso(id: string) {
   await db.plantillaDocumento.update({ where: { id }, data: { vecesUsada: { increment: 1 } } }).catch(() => {});
 }

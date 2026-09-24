@@ -4,10 +4,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/**
- * Config de retención/tomos de una serie: desde cuándo cuenta la retención
- * (MoReq 2.6) y el máximo de folios por tomo (MoReq 1.43).
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

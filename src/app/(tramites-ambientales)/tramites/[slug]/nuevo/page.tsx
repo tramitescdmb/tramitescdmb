@@ -27,8 +27,6 @@ export default async function NuevoExpedientePage({
     if (!puedeEditarTramite(permisos, tramite.id)) notFound();
   }
 
-  // Si se llega desde una tarjeta de un flujo específico (ej. "Concesión de Aguas Superficiales"),
-  // ese flujo ya quedó decidido — no hace falta volver a preguntar "Tipo de solicitud".
   const flujoEnfocado = flujoCodigoFoco ? tramite.flujos.find((f) => f.codigo === flujoCodigoFoco) : undefined;
   const flujosParaElegir = flujoEnfocado ? [flujoEnfocado] : tramite.flujos;
 

@@ -20,19 +20,11 @@ const cargar = unstable_cache(
   { tags: [CALENDARIO_LABORAL_TAG] }
 );
 
-/**
- * Calendario laboral vigente de la entidad: días compensados / cierres
- * institucionales (además de los festivos de ley, que se calculan solos) y qué
- * días de la semana se laboran. Alimenta el cálculo de términos de ley y las
- * métricas de tiempo del SGDEA. Cacheado; se invalida al editar la jornada o los
- * días no laborados (revalidateTag(CALENDARIO_LABORAL_TAG)).
- */
 export async function getCalendarioLaboral(): Promise<CalendarioLaboral> {
   const { diasNoLaborables, diasSemana } = await cargar();
   return { diasNoLaborables: new Set(diasNoLaborables), diasSemana };
 }
 
-/** Todos los días no laborados configurados (para la pantalla de administración), próximos primero. */
 export async function listarDiasNoLaborados() {
   return db.diaNoLaborado.findMany({ orderBy: { fecha: "desc" } });
 }
@@ -61,7 +53,6 @@ export async function actualizarJornada(datos: {
   diasSemana: number[];
   horaInicio: string;
   horaFin: string;
-  /** Jornada partida: bloque de la tarde. Vacío = jornada continua. */
   horaInicioTarde?: string;
   horaFinTarde?: string;
 }) {

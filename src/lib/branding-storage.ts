@@ -18,7 +18,6 @@ export function buildBrandingPath(campo: string, fileName: string) {
   return `${campo}/${Date.now()}-${safeName}`;
 }
 
-/** Bucket público (a diferencia de "documentos") — el logo debe verse hasta en /login, sin sesión. */
 export async function crearUrlSubidaFirmadaBranding(path: string) {
   const supabase = getAdminClient();
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);

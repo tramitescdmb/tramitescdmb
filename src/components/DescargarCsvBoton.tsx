@@ -1,6 +1,5 @@
 import { Download } from "lucide-react";
 
-/** Único botón "Descargar CSV" — se ubica arriba a la derecha de la pantalla, junto al título. */
 export function DescargarCsvBoton({ href, label = "Descargar CSV" }: { href: string; label?: string }) {
   return (
     <a

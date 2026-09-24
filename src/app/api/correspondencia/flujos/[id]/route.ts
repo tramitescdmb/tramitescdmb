@@ -30,11 +30,6 @@ const ASIGNACIONES: AsignacionPaso[] = [
   "MANUAL",
 ];
 
-/**
- * Todas las operaciones sobre un flujo, sus pasos y sus transiciones, por `accion`:
- * editar | activar | desactivar | eliminar | agregar-paso | editar-paso | eliminar-paso
- * | mover-paso | agregar-transicion | eliminar-transicion. Solo administrador de archivo.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

@@ -17,8 +17,6 @@ const ETIQUETA_PIEZA: Record<string, string> = {
 };
 const DESCARGABLE = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
-/** Expediente consolidado en un solo PDF (portada + índice + cada documento foliado). El original de cada
- * archivo no se toca — es una vista armada al vuelo, como el «con rótulo» de un adjunto. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -69,7 +67,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   };
 
-  // Enviadas (respuestas) primero, luego recibidas, luego memorandos.
   const orden = { ENVIADA: 0, RECIBIDA: 1, INTERNA: 2 } as const;
   const comunicaciones = exp.comunicaciones.slice().sort((a, b) => {
     const d = (orden[a.tipo as keyof typeof orden] ?? 3) - (orden[b.tipo as keyof typeof orden] ?? 3);

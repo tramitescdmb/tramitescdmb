@@ -7,9 +7,6 @@ import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
-/** Descarga de un documento de un expediente de trámites PDF CON el sello de firma electrónica
- * estampado al pie (nombre, cédula/NIT, fecha, hash SHA-256 completo) y un QR de verificación en
- * la esquina superior — el original en Storage no se modifica. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

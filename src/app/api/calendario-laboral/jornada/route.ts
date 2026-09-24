@@ -3,7 +3,6 @@ import { revalidateTag } from "next/cache";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { actualizarJornada, CALENDARIO_LABORAL_TAG } from "@/lib/calendario-laboral";
 
-/** Actualiza la jornada laboral de la entidad. Solo ADMIN. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/calendario-laboral", req.url);

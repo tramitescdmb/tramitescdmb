@@ -4,14 +4,6 @@ import { hashContenidoFirma } from "@/lib/firma";
 import type { RolFirmante, EstadoSolicitudFirma } from "@prisma/client";
 import crypto from "crypto";
 
-/**
- * Capa de ASIGNACIÓN de firma/visto bueno/lectura, compartida entre SGDEA (Comunicacion), el
- * módulo de Contratación (DocumentoContrato) y Trámites ambientales 2.0 (ExpedienteDocumento) —
- * ver el modelo `SolicitudFirma` en prisma/schema.prisma. "Requiere firma" no es solo una
- * bandera: firmar pasa siempre por completar una solicitud asignada a una persona concreta, nunca
- * "cualquiera con el rol correcto cuando quiera".
- */
-
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
   | { tipo: "documentoContrato"; id: string }
@@ -23,8 +15,6 @@ function whereObjetivo(objetivo: ObjetivoSolicitud) {
   return { documentoExpedienteId: objetivo.id };
 }
 
-/** Tope de firmantes (rol FIRMA) por documento/comunicación: más de 4 personas firmando el mismo
- * archivo no es realista operativamente. VISTO_BUENO y LECTURA no cuentan para este límite. */
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
 
 export async function asignarFirmantes(
@@ -75,12 +65,6 @@ export async function asignarFirmantes(
   await db.solicitudFirma.createMany({ data });
 }
 
-/**
- * Regla de orden (ver el comentario del campo `orden` en el schema): firmantes con el MISMO
- * número actúan en cualquier momento; uno con número mayor debe esperar a que TODOS los de
- * número menor con rol FIRMA (sin contar los rechazados) estén COMPLETADA. VISTO_BUENO/LECTURA
- * nunca bloquean a nadie.
- */
 export function puedeActuarSolicitud(
   todas: { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma }[],
   solicitud: { rol: RolFirmante; orden: number }
@@ -134,10 +118,6 @@ function hashContenidoFirmaDocumento(datos: { documentoId: string; nombre: strin
   return crypto.createHash("sha256").update(base, "utf8").digest("hex");
 }
 
-/**
- * Completa (firma o da visto bueno) una solicitud asignada al usuario que la está resolviendo —
- * captura IP y user-agent reales de la petición para la ficha de firma.
- */
 export async function completarSolicitudFirma(
   solicitudId: string,
   usuarioId: string,
@@ -169,7 +149,6 @@ export async function completarSolicitudFirma(
     return;
   }
 
-  // rol === "FIRMA"
   if (solicitud.documentoContrato) {
     const doc = solicitud.documentoContrato;
     const firmasPrevias = await db.firmaDocumentoContrato.findMany({ where: { documentoId: doc.id }, select: { usuarioId: true } });
@@ -268,14 +247,6 @@ export async function completarSolicitudFirma(
   }
 }
 
-/**
- * Rechaza una solicitud asignada (el firmante/revisor decide NO firmar/dar visto bueno). Además
- * de quedar en la trazabilidad del expediente correspondiente, genera un aviso en el buzón de
- * quien subió el documento y de quien administra ese módulo — el estado "rechazada" por sí solo,
- * pegado a la fila del documento, no era suficiente para que alguien se enterara sin entrar al
- * expediente. El aviso se descarta a mano o se limpia solo al reemplazar el archivo rechazado por
- * uno corregido.
- */
 export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: string, comentario: string) {
   if (!comentario.trim()) throw new Error("Indique el motivo del rechazo.");
   const solicitud = await db.solicitudFirma.findUnique({
@@ -347,16 +318,12 @@ export type SolicitudBuzon = {
   asignadoPor: { nombre: string };
 };
 
-/** Cuántos documentos de contratación esperan la firma o el visto bueno de este usuario — para la
- * insignia del buzón y el aviso del panel. `listos` = los que ya puede actuar (no esperan el
- * turno de otro). */
 export async function contarPendientesBuzonContratacion(usuarioId: string): Promise<{ total: number; listos: number }> {
   const solicitudes = await listarBuzon(usuarioId, "documentoContrato");
   const accionables = solicitudes.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
   return { total: accionables.length, listos: accionables.filter((s) => s.puedeActuar).length };
 }
 
-/** Mismo cálculo que `contarPendientesBuzonContratacion`, para el buzón de Trámites ambientales. */
 export async function contarPendientesBuzonTramite(usuarioId: string): Promise<{ total: number; listos: number }> {
   const solicitudes = await listarBuzon(usuarioId, "documentoExpediente");
   const accionables = solicitudes.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
@@ -400,7 +367,6 @@ export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "doc
     orderBy: { asignadoEn: "asc" },
   });
 
-  // Para calcular `puedeActuar` se necesitan las hermanas de cada objetivo.
   const idsObjetivo = solicitudes.map((s) => s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId!);
   const hermanasPorObjetivo = new Map<string, { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma }[]>();
   if (idsObjetivo.length > 0) {

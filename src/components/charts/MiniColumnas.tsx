@@ -2,11 +2,6 @@ type Item = { label: string; valor: number };
 
 const COLOR = "#2a78d6";
 
-/**
- * Mini gráfico de columnas compacto (una fila), pensado para 8–14 categorías
- * ordinales cortas. Marca opcional de línea de referencia (p. ej. el promedio
- * = 1,0 en un índice estacional).
- */
 export function MiniColumnas({
   data,
   referencia,
@@ -20,7 +15,7 @@ export function MiniColumnas({
   const max = Math.max(...data.map((d) => d.valor), referencia ?? 0) * 1.05;
   const refPct = referencia ? (referencia / max) * 100 : null;
 
-  const ALTO_BARRAS = 64; // px, sin contar la etiqueta del mes
+  const ALTO_BARRAS = 64;
 
   return (
     <div className="relative flex items-stretch gap-1.5">

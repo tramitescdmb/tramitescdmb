@@ -1,13 +1,3 @@
-/**
- * Backfill único: `aprobarEtapaContratacion` nunca actualizaba `estadoValidacion` de los
- * documentos de la etapa que se cerraba, así que en producción quedaron en PENDIENTE todos los
- * documentos de etapas ya aprobadas/cerradas, salvo el que alguien firmó puntualmente (ver el
- * fix en src/lib/contratacion.ts). Este script aplica el mismo criterio a lo que ya existe:
- * para cada etapa con `completadaEn` (ya aprobada), aprueba sus documentos PENDIENTE que no
- * estén esperando todavía una firma sin resolver.
- *
- * Ejecutar UNA sola vez: npx tsx scripts/backfill-aprobar-documentos-etapa-cerrada.ts
- */
 import { db } from "../src/lib/db";
 
 async function main() {

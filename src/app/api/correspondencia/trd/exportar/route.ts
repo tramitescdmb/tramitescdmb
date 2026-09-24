@@ -18,7 +18,6 @@ const MARCA: Record<DisposicionFinal, "disposicion_ct" | "disposicion_e" | "disp
   SELECCION: "disposicion_s",
 };
 
-/** Exporta la TRD completa en el MISMO formato que el importador (MoReq 1.7: "formato abierto y editable"). */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -63,8 +62,6 @@ export async function GET(req: NextRequest) {
 
   const formato = req.nextUrl.searchParams.get("formato") === "xml" ? "xml" : "csv";
 
-  // No debe impedir la descarga si la bitácora tiene un hipo transitorio de conexión
-  // (ya pasó en pruebas: un P2028 aquí no debería convertir un export ya armado en un 500).
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({
     entidad: "SerieDocumental",

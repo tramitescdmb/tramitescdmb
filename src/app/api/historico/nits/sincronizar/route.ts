@@ -4,16 +4,8 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { refrescarSnapshotNit } from "@/lib/sinca-nit-stats";
 import { sincaConfigurado } from "@/lib/sinca";
 
-// Recorre TODO /presinca/nit (33k+ filas, per_page=-1) y lo reagrupa — ver sinca-nit-stats.ts.
 export const maxDuration = 300;
 
-/**
- * GET  → cron diario de Vercel (Authorization: Bearer <CRON_SECRET>). Es la única forma en que
- *        un NIT o una vinculación nueva en SINCA 1.0 (ej. una resolución de fondo nueva sobre un
- *        NIT ya existente) queda reflejada aquí: el snapshot no "se entera" solo, hay que
- *        recalcularlo — por eso hace falta este cron y no basta con que el dato ya exista en SINCA 1.0.
- * POST → botón "Sincronizar" del panel /historico/nits. Solo ADMIN.
- */
 export async function GET(req: NextRequest) {
   const secreto = process.env.CRON_SECRET;
   if (!secreto || req.headers.get("authorization") !== `Bearer ${secreto}`) {

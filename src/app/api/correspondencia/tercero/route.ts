@@ -3,12 +3,6 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 
-/**
- * Busca en el maestro de terceros (Solicitante) por identificación, para
- * autocompletar los datos de un peticionario recurrente al radicar — así no hay
- * que volver a digitar todo. Si es la primera vez, no devuelve nada y los datos
- * quedan guardados al radicar (resolverOCrearTercero).
- */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });

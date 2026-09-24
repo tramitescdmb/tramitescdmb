@@ -1,6 +1,5 @@
 "use client";
 
-/** Borde arrastrable de una columna — para ensancharla o angostarla, como en Excel. Doble clic restablece su ancho. */
 export function ManijaRedimension({
   anchoActual,
   onCambiar,

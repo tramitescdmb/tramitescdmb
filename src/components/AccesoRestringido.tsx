@@ -1,20 +1,13 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 
-/**
- * Pantalla para una sección que existe pero el usuario no puede usar. Sustituye a la redirección
- * silenciosa: quien llega hasta aquí (por el menú o por un enlace) sabe qué es y a quién le
- * corresponde, en lugar de terminar en otra pantalla sin explicación.
- */
 export function AccesoRestringido({
   titulo,
   quien = "administrador",
   volverHref,
   volverLabel = "Volver",
 }: {
-  /** Nombre de la sección (ej. «Seguridad»). */
   titulo: string;
-  /** Quién puede usarla, en minúscula (ej. «administrador», «administrador o jefe de contratación»). */
   quien?: string;
   volverHref?: string;
   volverLabel?: string;

@@ -5,10 +5,6 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { esCriterioOrdenValido } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/**
- * Cambia el criterio de ordenación de los documentos de los expedientes de una
- * serie (MoReq 1.46). No toca el índice firmado — solo el orden visual.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

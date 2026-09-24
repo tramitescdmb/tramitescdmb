@@ -7,15 +7,6 @@ import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
-/**
- * Ficha técnica COMPLETA de las firmas de una comunicación — a diferencia de la página
- * pública /verificar/[radicado] (que deliberadamente NO expone datos personales/técnicos
- * por Ley 1712/2014 de transparencia), esta ruta exige sesión iniciada en el sistema: aquí
- * sí se muestran cédula/nombre completo, IP, user-agent y hash — datos de identificación
- * personal (Ley 1581/2012, habeas data) que no deben quedar abiertos a cualquiera con un
- * enlace. El QR del rótulo enlaza a /verificar/[radicado], que a su vez enlaza aquí con el
- * aviso de que se requiere inicio de sesión.
- */
 export default async function FichaFirmaComunicacionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

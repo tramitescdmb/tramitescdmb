@@ -4,18 +4,12 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { reiniciarDatosPruebaSgdea } from "@/lib/mantenimiento-pruebas";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Herramienta TEMPORAL de mantenimiento — ver src/lib/mantenimiento-pruebas.ts.
- * Borrar este archivo (y el botón en /correspondencia/admin) antes de lanzar.
- */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  // Mismo permiso que abre /correspondencia/admin (ADMIN global o ADMIN_ARCHIVO del SGDEA) — no ADMIN a
-  // secas: en la práctica quien administra el archivo/correspondencia es ADMIN_ARCHIVO.
   if (!puedeAdministrarArchivo(permisos)) {
     volver.searchParams.set("error", "Solo quien administra el archivo puede reiniciar los datos de prueba.");
     return NextResponse.redirect(volver, { status: 303 });
@@ -27,8 +21,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  // Se deja constancia ANTES de ejecutar: después de esto los propios radicados
-  // ya no existirán para poder referenciarlos en la bitácora.
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({
     entidad: "MantenimientoPruebas",

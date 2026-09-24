@@ -5,7 +5,6 @@ import { listarBuzon } from "@/lib/solicitudes-firma";
 import { CODIGOS_FORMATO_POR_PERIODOS, calcularPeriodosInforme, etiquetaRangoPeriodo, periodosPorRadicar } from "@/lib/periodos-informe";
 import { fechaArchivoColombia } from "@/lib/fecha";
 
-/** Día calendario de hoy en Colombia, como medianoche UTC (así se comparan las fechas-sin-hora del contrato). */
 export function hoyColombia(): Date {
   return new Date(`${fechaArchivoColombia()}T00:00:00Z`);
 }
@@ -20,11 +19,6 @@ export type InformePorRadicar = {
   diasDeRetraso: number;
 };
 
-/**
- * Lo que espera al usuario en SIGEC: documentos por firmar y los informes de supervisión que ya se
- * podían radicar (el periodo cerró) y siguen sin cargarse, dentro de los expedientes que el usuario
- * puede ver (el propio contratista ve los suyos; el supervisor, los que supervisa).
- */
 export async function obtenerTrabajoPendienteContratacion(userId: string, permisos: PermisosUsuario, verSinContratista: boolean) {
   const where = construirWhereExpedienteContractual({}, permisos);
   const hoy = hoyColombia();
@@ -81,7 +75,6 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
   };
 }
 
-/** Resumen técnico del módulo para el administrador: volumen, pendientes de revisión y actividad reciente. */
 export async function obtenerResumenSistemaContratacion() {
   const [expedientes, contratistas, documentosPorValidar, usuariosConRol, eventos] = await Promise.all([
     db.expedienteContractual.count(),

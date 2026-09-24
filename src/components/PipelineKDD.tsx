@@ -8,11 +8,6 @@ const ETAPAS = [
   { n: 5, titulo: "Interpretación", icon: LineChart, desc: "Los hallazgos de esta página." },
 ];
 
-/**
- * Flujo del proceso KDD (Knowledge Discovery in Databases) como diagrama
- * horizontal con conectores — para que se lea como un proceso y no como una
- * tabla de datos sueltos.
- */
 export function PipelineKDD() {
   return (
     <ol className="flex flex-col md:flex-row md:items-stretch">

@@ -38,8 +38,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
   const esPsdocuments = FONDO === "psdocuments";
   const info = FONDOS[FONDO];
 
-  // Agrupa los fondos por `grupo` (psdocuments queda solo; sic-pqr/sic-salida
-  // comparten el grupo "SIC correspondencia" con un segundo nivel de pestañas).
   const grupos: { grupo: string; label: string; miembros: (typeof FONDOS)[FondoId][] }[] = [];
   for (const f of Object.values(FONDOS)) {
     let g = grupos.find((x) => x.grupo === f.grupo);
@@ -73,7 +71,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-5">
-      {/* Selector de fondo — nivel 1: grupo (psdocuments / SIC correspondencia) */}
       <div className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1">
         {grupos.map((g) => {
           const activo = g.grupo === grupoActivo.grupo;
@@ -107,7 +104,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         <p className="max-w-3xl text-sm text-stone-500">{info.descripcion}</p>
       </header>
 
-      {/* Resumen */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tarjeta etiqueta="Documentos" valor={total.toLocaleString("es-CO")} />
         {esPsdocuments ? (
@@ -137,7 +133,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         </p>
       )}
 
-      {/* Filtros */}
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {grupoActivo.miembros.length > 1 ? (
           <label className="text-sm">
@@ -221,7 +216,6 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         )}
       </form>
 
-      {/* Resultados */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[52rem] text-sm">

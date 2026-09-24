@@ -1,12 +1,3 @@
-/**
- * Enriquecimiento completo del espejo SINCA 1.0: recorre TODAS las resoluciones
- * sin detalle y les completa fechaRecibido / diasResolucion / solicitante.
- *
- * Uso:  npx tsx scripts/sinca-enrich.ts
- *
- * Es lento (una llamada de detalle por registro, ~4 en paralelo). Correr una vez
- * tras el primer backfill; luego el cron diario mantiene al día lo nuevo.
- */
 import { enriquecerResoluciones } from "../src/lib/sinca-sync";
 
 async function main() {

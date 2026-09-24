@@ -3,18 +3,6 @@
 import { useRef } from "react";
 import { formatearMilesCO, limpiarNumero } from "@/lib/moneda";
 
-/**
- * Input de valor monetario: muestra separador de miles mientras se escribe
- * (es-CO) y expone hacia afuera el valor numérico crudo, sin formato — el
- * formulario nunca envía el texto con puntos, solo dígitos.
- *
- * Reposiciona el cursor manualmente tras cada tecla: al ser un input controlado
- * que se REFORMATEA en cada cambio (se insertan/quitan puntos de miles), el
- * navegador por defecto deja el cursor al final del valor formateado — para
- * contratos cuantiosos (muchos dígitos) eso hacía que, al seguir escribiendo,
- * los dígitos nuevos no quedaran donde se esperaba y diera la sensación de que
- * el campo "no dejaba escribir más" pasado cierto punto.
- */
 export function CampoMoneda({
   value,
   onChange,
@@ -35,8 +23,6 @@ export function CampoMoneda({
 
     onChange(limpiarNumero(input.value));
 
-    // El valor formateado que se ve en pantalla depende del `value` que llega por props
-    // (lo recalcula el padre) — se reubica el cursor después del próximo pintado.
     requestAnimationFrame(() => {
       const el = inputRef.current;
       if (!el) return;

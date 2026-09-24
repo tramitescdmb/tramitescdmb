@@ -5,12 +5,6 @@ import { despacharComunicacion } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { ETIQUETA_MEDIO_DESPACHO, type MedioDespacho } from "@/lib/correspondencia";
 
-/**
- * Registra el despacho efectivo de un oficio de salida (ya radicado y firmado):
- * la ventanilla de salida confirma que se envió al destinatario. Cierra el ciclo
- * de la recibida a la que responde. Opcionalmente archiva la recibida + la
- * respuesta en un expediente documental de la subserie.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

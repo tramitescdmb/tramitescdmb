@@ -39,7 +39,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
   const [archivos, setArchivos] = useState<File[]>([]);
-  const [sitioWeb, setSitioWeb] = useState(""); // honeypot — un ciudadano real nunca llena esto
+  const [sitioWeb, setSitioWeb] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -188,7 +188,6 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
             pueda consultar el estado de su solicitud con su radicado.
           </SectionHelp>
         )}
-        {/* Honeypot: invisible para una persona, pero presente en el DOM para un bot que llena todos los campos. */}
         <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
           <label>
             Sitio web

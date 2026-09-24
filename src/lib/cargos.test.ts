@@ -28,11 +28,8 @@ describe("cargoParaSexo", () => {
   });
 });
 
-// "Coordinador de Evaluación para la Sostenibilidad" tal como aparece literal en el catálogo
-// (CARGOS_CDMB) — usarlo tal cual, no una paráfrasis, es justo lo que hace que la comparación
-// coincida por palabra clave.
 const RESPONSABLES_RECONOCIDOS = ["Coordinador de Evaluación para la Sostenibilidad", "Subdirector SEYCA"];
-const RESPONSABLES_NO_RECONOCIDOS = ["El usuario radica su solicitud de forma presencial o virtual"]; // sin cargo identificable
+const RESPONSABLES_NO_RECONOCIDOS = ["El usuario radica su solicitud de forma presencial o virtual"];
 
 describe("puedeGestionarPaso", () => {
   it("el ADMIN siempre puede, sin importar su cargo", () => {
@@ -69,9 +66,6 @@ describe("puedeGestionarPaso", () => {
     expect(puedeGestionarPaso(session, RESPONSABLES_RECONOCIDOS)).toBe(true);
   });
 
-  // Regresión: la palabra clave genérica "coordinador" (sin calificar) daba acceso real
-  // cruzado entre los dos coordinadores. Un paso que solo menciona al Coordinador de
-  // Seguimiento no puede quedar habilitado para el Coordinador de Evaluación.
   it("un coordinador no puede avanzar el paso del OTRO coordinador", () => {
     const pasoDeSeguimiento = ["Servidor responsable de la Coordinación de Seguimiento para la Sostenibilidad"];
     const evaluacion = { rol: "FUNCIONARIO" as const, cargos: ["Coordinador(a) de Evaluación para la Sostenibilidad"] };
@@ -80,8 +74,6 @@ describe("puedeGestionarPaso", () => {
     expect(puedeGestionarPaso(seguimiento, pasoDeSeguimiento)).toBe(true);
   });
 
-  // Regresión: con la palabra clave "notificaci" se perdían los pasos redactados con el
-  // verbo ("Servidor responsable de notificar"); ahora la clave es "notific".
   it("reconoce al Servidor de Notificaciones cuando el paso usa el verbo 'notificar'", () => {
     const paso = ["Servidor responsable de notificar"];
     const notificaciones = { rol: "FUNCIONARIO" as const, cargos: ["Servidor(a) de Notificaciones"] };
@@ -92,7 +84,7 @@ describe("puedeGestionarPaso", () => {
 });
 
 describe("cargosEnTexto — precisión del reconocimiento por palabra clave", () => {
-  it("'Asesor de la Dirección General' reconoce al Asesor (antes solo caía en Director General)", () => {
+  it("'Asesor de la Dirección General' reconoce al Asesor", () => {
     expect(cargosEnTexto("Asesor de la Dirección General")).toContain("Asesor(a) de Dirección General");
   });
 
@@ -101,7 +93,6 @@ describe("cargosEnTexto — precisión del reconocimiento por palabra clave", ()
     expect(cargosEnTexto("Profesional idóneo adscrito a SEYCA")).not.toContain(
       "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)"
     );
-    // pero "Subdirector ... de SEYCA" sí
     expect(cargosEnTexto("Subdirector de SEYCA")).toContain("Subdirector(a) de Evaluación y Control Ambiental (SEYCA)");
   });
 

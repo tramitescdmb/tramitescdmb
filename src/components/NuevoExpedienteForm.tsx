@@ -152,19 +152,14 @@ export function NuevoExpedienteForm({
     setArchivosExtra((prev) => prev.filter((_, i) => i !== index));
   }
 
-  /** ¿Este documento aplica al tipo de solicitante actual? (aplicaA null = aplica a cualquiera) */
   function aplicaAlTipoSolicitante(doc: DocumentoRequerido) {
     return doc.aplicaA === null || (doc.aplicaA === "JURIDICA") === esJuridica;
   }
 
-  /** ¿Es obligatorio para el tipo de solicitante actual? (ya asume que aplica a ese tipo) */
   function documentoRequerido(doc: DocumentoRequerido) {
     return doc.obligatorio && aplicaAlTipoSolicitante(doc);
   }
 
-  // Solo se muestran los documentos que aplican al tipo de solicitante elegido — un documento
-  // exclusivo de persona jurídica (ej. Certificado de Existencia y Representación Legal) no debe
-  // aparecer como campo para cargar si se está radicando a nombre de una persona natural, y viceversa.
   const documentosAplicables = documentosRequeridos.filter(aplicaAlTipoSolicitante);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

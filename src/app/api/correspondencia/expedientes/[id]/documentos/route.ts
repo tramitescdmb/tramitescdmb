@@ -9,7 +9,6 @@ import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
 type DocumentoSubido = { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
 
-/** Registra en el índice electrónico uno o más documentos ya subidos al storage. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -54,8 +53,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   } catch (err) {
     const mensaje = err instanceof Error ? err.message : "No se pudieron agregar los documentos.";
-    // MoReq 4.6 ("informes sobre cargues fallidos"): antes este rechazo solo llegaba al usuario en el
-    // momento, sin dejar ningún rastro reportable — se audita para poder verlo agregado en el Panel (sección Sistema).
     const { ip, userAgent } = datosPeticion(req.headers);
     await registrarAuditoriaDoc({
       entidad: "ExpedienteDocumental",

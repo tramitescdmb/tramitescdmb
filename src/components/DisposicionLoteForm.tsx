@@ -23,12 +23,6 @@ type Agrupacion = "ninguna" | "serie" | "subserie";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
 
-/**
- * Antes cada comunicación pendiente tenía su propio formulario y botón —
- * disponer 30 a la vez exigía 30 envíos. Ahora se seleccionan varias y
- * comparten una sola acta si la disposición lo exige (MoReq 2.9: "individual
- * o por lotes"). Seleccionar solo una sigue funcionando igual que antes.
- */
 export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente[] }) {
   const router = useRouter();
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
@@ -40,8 +34,6 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
   const [agrupacion, setAgrupacion] = useState<Agrupacion>("ninguna");
 
   const seleccionables = items.filter((i) => !i.sinDisposicionDefinida);
-  // MoReq 2.8: "agrupables por CCD/versión/fecha" — acá por serie o subserie del CCD. Se agrupa en el
-  // cliente porque los datos ya están todos cargados (no hace falta volver a consultar la base).
   const grupos: { etiqueta: string; items: ItemDisposicionPendiente[] }[] =
     agrupacion === "ninguna"
       ? [{ etiqueta: "", items }]

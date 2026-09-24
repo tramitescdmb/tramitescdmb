@@ -29,8 +29,8 @@ describe("clasificarPendientes", () => {
       [
         expediente({ id: "a", usuariosAsignadosIds: ["u1"] }),
         expediente({ id: "b", cargosAsignadosNombres: [COORD_EVAL] }),
-        expediente({ id: "c" }), // sin asignar
-        expediente({ id: "d", estado: "APROBADO", usuariosAsignadosIds: ["u1"] }), // terminal, no cuenta
+        expediente({ id: "c" }),
+        expediente({ id: "d", estado: "APROBADO", usuariosAsignadosIds: ["u1"] }),
       ],
       funcionario
     );
@@ -103,7 +103,6 @@ describe("clasificarPendientes", () => {
     expect(r.esAdmin).toBe(true);
     expect(r.decisiones).toHaveLength(1);
     expect(r.informacionAdicional).toHaveLength(1);
-    // pasos normales sin asignar NO se le listan al admin
     expect(r.gestionPaso).toHaveLength(0);
   });
 

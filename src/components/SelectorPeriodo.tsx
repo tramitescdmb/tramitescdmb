@@ -4,13 +4,6 @@ import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { CalendarRange, X } from "lucide-react";
 
-/**
- * Selector de período de un dashboard: por defecto Total (todo el
- * histórico); con las dos fechas + Aplicar se acota a ese rango con
- * calendario (mínimo un mes, se ajusta solo). Cambia la URL
- * (?desde=&hasta=), así que la página vuelve a renderizar en el servidor
- * con los datos ya filtrados — no hay estado que sincronizar aparte.
- */
 export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: string; hastaActual?: string }) {
   const router = useRouter();
   const pathname = usePathname();

@@ -2,19 +2,6 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
-/**
- * Expediente consolidado en UN solo PDF (opción de descarga, no de almacenamiento):
- * portada + índice electrónico y luego, en orden, cada documento del expediente. Las
- * comunicaciones enviadas (respuestas) van primero con su rótulo y su sello de
- * firma; después las recibidas (solicitudes) con sus adjuntos; al final los
- * documentos cargados directo. Los archivos que no son PDF ni imagen quedan como
- * una hoja de referencia (no se convierten — esa es la brecha conocida de PDF/A).
- *
- * El origen de verdad sigue siendo cada documento por separado, con su hash y su
- * lugar en el índice firmado; esto es una vista armada al vuelo, como el «con
- * rótulo» de un adjunto.
- */
-
 const VERDE = rgb(0.11, 0.478, 0.271);
 const GRIS = rgb(0.33, 0.33, 0.33);
 const GRIS_CLARO = rgb(0.5, 0.5, 0.5);
@@ -22,11 +9,11 @@ const MARGEN = 48;
 
 export type PiezaExpediente = {
   clase: "ENVIADA" | "RECIBIDA" | "INTERNA" | "DOCUMENTO";
-  titulo: string; // ej. "CDMB-E-2026-000001 · Oficio de salida"
-  subtitulo?: string | null; // asunto
+  titulo: string;
+  subtitulo?: string | null;
   fecha?: string | null;
-  radicado?: string | null; // para el rótulo (código de barras + QR)
-  contenido?: string | null; // cuerpo del oficio/memorando, si aplica
+  radicado?: string | null;
+  contenido?: string | null;
   folios?: number | null;
   firmas?: {
     nombre: string;
@@ -89,7 +76,6 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   let folio = 0;
 
-  // --- Portada + índice ---
   const portada = pdf.addPage();
   const { width, height } = portada.getSize();
   const anchoUtil = width - MARGEN * 2;
@@ -123,7 +109,7 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
   portada.drawText("ÍNDICE", { x: MARGEN, y, size: 9, font: fontBold, color: VERDE });
   y -= 16;
   piezas.forEach((p, i) => {
-    if (y < MARGEN + 40) return; // el índice ocupa una página; el detalle sigue igual
+    if (y < MARGEN + 40) return;
     portada.drawText(`${String(i + 1).padStart(2, "0")}.`, { x: MARGEN, y, size: 9, font, color: GRIS_CLARO });
     portada.drawText(p.titulo.slice(0, 70), { x: MARGEN + 24, y, size: 9, font, color: GRIS });
     if (p.subtitulo) {
@@ -137,9 +123,7 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
   });
   pieDePagina(portada, font, `${datos.numero} · Expediente consolidado · generado ${new Date().toLocaleString("es-CO")}`);
 
-  // --- Cada pieza ---
   for (const pieza of piezas) {
-    // Separador / carátula de la pieza
     const sep = pdf.addPage();
     const sw = sep.getSize().width;
     let sy = sep.getSize().height - MARGEN;
@@ -158,7 +142,6 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
       sy -= 16;
     }
 
-    // Rótulo (código de barras + QR) si tiene radicado
     if (pieza.radicado) {
       try {
         const [bar, qr] = await Promise.all([
@@ -171,12 +154,9 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
         sep.drawImage(barImg, { x: MARGEN, y: sy - 26, width: 180, height: 26 });
         sep.drawImage(qrImg, { x: MARGEN + 200, y: sy - 44, width: 44, height: 44 });
         sy -= 52;
-      } catch {
-        /* si bwip falla, la pieza sigue sin rótulo */
-      }
+      } catch {}
     }
 
-    // Cuerpo del oficio/memorando (si aplica y no viene como PDF)
     const soloTexto = pieza.contenido && !pieza.adjuntos.some((a) => a.mimeType === "application/pdf" && a.bytes);
     if (soloTexto && pieza.contenido) {
       sy -= 10;
@@ -187,7 +167,6 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
       }
     }
 
-    // Sello de firma
     if (pieza.firmas && pieza.firmas.length > 0) {
       sy = Math.min(sy, MARGEN + 20 + pieza.firmas.length * 30);
       sep.drawLine({ start: { x: MARGEN, y: sy }, end: { x: sw - MARGEN, y: sy }, thickness: 0.5, color: VERDE });
@@ -207,7 +186,6 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
     folio += 1;
     pieDePagina(sep, font, `${datos.numero} · ${pieza.titulo} · folio ${folio}`);
 
-    // Adjuntos
     for (const adj of pieza.adjuntos) {
       if (!adj.bytes) continue;
       if (adj.mimeType === "application/pdf") {
@@ -235,9 +213,7 @@ export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: Pi
           pg.drawImage(img, { x: (pw - img.width * esc) / 2, y: (ph - img.height * esc) / 2, width: img.width * esc, height: img.height * esc });
           folio += 1;
           pieDePagina(pg, font, `${datos.numero} · ${adj.nombre} · folio ${folio}`);
-        } catch {
-          /* imagen ilegible — se omite */
-        }
+        } catch {}
       } else {
         const pg = pdf.addPage();
         pg.drawText(`Documento: ${adj.nombre}`, { x: MARGEN, y: pg.getSize().height - MARGEN - 20, size: 12, font: fontBold, color: rgb(0.1, 0.1, 0.1) });

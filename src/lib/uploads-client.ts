@@ -17,23 +17,16 @@ export type ArchivoSubido = {
 
 export type DocumentoSubido = ArchivoSubido & { hashSha256: string | null };
 
-/** Hash SHA-256 del archivo tal como se sube, para comprobar su integridad después. */
 export async function sha256Hex(file: File): Promise<string | null> {
   try {
     const buf = await file.arrayBuffer();
     const hash = await crypto.subtle.digest("SHA-256", buf);
     return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
   } catch {
-    return null; // crypto.subtle no disponible (contexto no seguro) — se guarda sin hash
+    return null;
   }
 }
 
-/**
- * Sube un archivo directo desde el navegador a Supabase Storage (sin pasar por
- * el servidor de Next.js), usando una URL de subida firmada de un solo uso.
- * Así no aplica el límite de tamaño de solicitud de Vercel (~4.5MB) — sirve
- * para los planos, estudios técnicos, etc. que piden algunos trámites.
- */
 export async function subirArchivoDirecto(
   expedienteId: string,
   file: File,
@@ -65,13 +58,6 @@ export async function subirArchivoDirecto(
   };
 }
 
-/**
- * Sube varios archivos EN ORDEN, reportando progreso real (no animado): el
- * porcentaje avanza cuando cada archivo termina de subirse, no antes. Usado
- * por los formularios de radicación para mostrar `BarraProgresoEnvio`. El
- * "+1" en el total de unidades es el paso final de generar el radicado y
- * guardar (y firmar, cuando aplica), que ocurre después de subir todo.
- */
 export async function subirDocumentosConProgreso(
   archivos: File[],
   subir: (folder: string, file: File) => Promise<ArchivoSubido>,
@@ -92,12 +78,6 @@ export async function subirDocumentosConProgreso(
   return documentos;
 }
 
-/**
- * Igual que subirArchivoDirecto, pero para subir un documento DIRECTO a un
- * expediente documental (archivo general, no correspondencia): pega a
- * /api/correspondencia/expedientes/[id]/upload-sign, que valida contra
- * ExpedienteDocumental (no contra Expediente de trámites).
- */
 export async function subirArchivoExpediente(expedienteId: string, file: File): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
@@ -125,11 +105,6 @@ export async function subirArchivoExpediente(expedienteId: string, file: File): 
   };
 }
 
-/**
- * Igual que subirArchivoDirecto, pero para el formulario público de PQRSD (sin
- * sesión): pega a /api/pqrsd/upload-sign, una ruta de firma separada con su
- * propio límite de envíos por IP.
- */
 export async function subirArchivoPublico(folder: string, file: File): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
@@ -157,14 +132,6 @@ export async function subirArchivoPublico(folder: string, file: File): Promise<A
   };
 }
 
-/**
- * Sube un archivo DIRECTO a un expediente contractual (módulo de Contratación):
- * pega a /api/contratacion/expedientes/[id]/upload-sign. Tope propio de 2MB —
- * el llamador debe pasar el archivo YA comprimido (ver
- * src/lib/compresion-cliente.ts); esto vuelve a validar el tamaño final, el
- * servidor lo valida una tercera vez al confirmar (nunca confiar solo en el
- * cliente).
- */
 export async function subirArchivoContrato(expedienteId: string, file: File): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (file.size > TAMANO_MAXIMO_CONTRATACION_BYTES) throw new Error(mensajeArchivoDemasiadoGrandeContratacion(file.name));

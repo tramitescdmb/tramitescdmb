@@ -11,11 +11,6 @@ type FlujoConPasos = Flujo & { pasos: PasoDefinicion[] };
 type TramiteConFlujos = TramiteTipo & { flujos: FlujoConPasos[] };
 type Conteo = { activos: number; aprobados: number; negados: number };
 
-/**
- * Un componente de ícono (función) no se puede pasar como prop de un Server
- * Component a este Client Component — solo datos planos y elementos ya
- * renderizados. `page.tsx` resuelve `<cat.Icono .../>` a JSX ANTES de pasarlo aquí.
- */
 type CategoriaParaCliente = {
   id: string;
   etiqueta: string;
@@ -24,7 +19,6 @@ type CategoriaParaCliente = {
   iconoChico: ReactNode;
 };
 
-/** Una tarjeta del catálogo — normalmente un trámite completo, salvo el caso "PR21" (ver tramites/page.tsx). */
 export type EntradaCatalogo = {
   key: string;
   tramite: TramiteConFlujos;
@@ -35,15 +29,6 @@ export type EntradaCatalogo = {
   flujoCodigoFoco?: string;
 };
 
-/**
- * Catálogo interactivo: las píldoras de categoría son filtros reales (no
- * anclas a una lista que repetía lo mismo debajo) — al hacer clic se queda
- * viendo solo esa categoría. Antes había una fila de píldoras Y, justo
- * debajo, una lista de encabezados con el mismo ícono/nombre/cantidad
- * repetido para cada categoría — se sentía duplicado. Ahora, sin filtro
- * activo, las categorías se separan con un rótulo de texto simple (sin
- * caja, sin ícono repetido) en vez de otra fila de insignias.
- */
 function coincideBusqueda(entrada: EntradaCatalogo, termino: string) {
   const t = termino.toLowerCase();
   return (
@@ -81,15 +66,6 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
         />
       </div>
 
-      {/*
-        Píldoras de categoría — mismo lenguaje que las insignias de estado
-        (EstadoBadge): fondo e ícono en el tinte suave de la categoría
-        (`cat.clases.badge`), nunca la píldora sólida de antes (bloque de
-        ícono con capa negra encima, muy distinta al resto de la app). El
-        color sigue distinguiendo cada categoría — solo cambia cómo se
-        presenta — y la seleccionada se marca con borde de 2px en el mismo
-        matiz (`cat.clases.borde`), no con un contorno negro genérico.
-      */}
       <nav
         className="flex flex-wrap gap-2"
         aria-label="Filtrar por categoría"
@@ -265,7 +241,6 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   );
 }
 
-/** Mismo lenguaje que EstadoBadge: tinte suave + anillo + punto — nunca solo relleno sólido. */
 function CountPill({ value, label, color }: { value: number; label: string; color: "amber" | "emerald" | "red" }) {
   const estilo = {
     amber: { chip: "bg-amber-50 text-amber-700 ring-amber-600/20", punto: "bg-amber-500" },

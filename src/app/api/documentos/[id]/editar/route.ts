@@ -6,11 +6,6 @@ import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/doc
 import { editarDocumentoTramite } from "@/lib/tramites-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/** Edita un documento ya subido: nombre, descripción, si requiere firma, o reemplazo real del
- * archivo. Misma regla de acceso que eliminar un documento (ver /api/documentos/[id]/eliminar):
- * dentro de la etapa abierta puede quien lo subió o un administrador; una vez cerrada, solo un
- * administrador y con el oficio de solicitud del Subdirector. Reemplazar el archivo invalida
- * cualquier firma o solicitud de firma que ya tuviera. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

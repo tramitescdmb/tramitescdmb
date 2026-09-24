@@ -5,11 +5,6 @@ import { Search, X, Loader2 } from "lucide-react";
 
 type Item = { id: string; label: string };
 
-/**
- * Buscador con autocompletado para elegir una RECIBIDA pendiente de responder — reemplaza un
- * <select> que precargaba hasta 100 opciones (inservible con cientos o miles de radicados: no se
- * podía encontrar uno en particular sin ir desplazando toda la lista).
- */
 export function BuscadorRecibidaPendiente({
   valorInicial,
   onChange,

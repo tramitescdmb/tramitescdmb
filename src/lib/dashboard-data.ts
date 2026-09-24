@@ -17,28 +17,13 @@ const MESES_CORTOS = [
   "dic",
 ];
 
-const MAX_MESES_SERIE = 120; // tope defensivo (10 años) para un rango personalizado inusualmente largo
+const MAX_MESES_SERIE = 120;
 
-/**
- * `tramiteIds`: `null` = sin restricción (ADMIN); un arreglo (incluso vacío)
- * = un FUNCIONARIO, solo cuenta/lista expedientes de esos trámites — antes
- * el panel mostraba totales y actividad de TODA la CDMB sin importar el
- * acceso real del usuario, lo que contradice el modelo "denegado por
- * defecto" de los trámites (ver [[project-acceso-por-tramite]]).
- *
- * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
- * Con un rango, TODA la información del panel queda acotada a
- * `fechaRadicacion` dentro de [desde, hasta) — KPIs, listados por
- * municipio/trámite y la serie mensual (que además pasa a recorrer
- * exactamente ese rango, no un trailing fijo de 12 meses).
- */
 export async function getDashboardData(tramiteIds: string[] | null, periodo: RangoPeriodo = null) {
   const filtroTramite: Prisma.ExpedienteWhereInput = tramiteIds ? { tramiteTipoId: { in: tramiteIds } } : {};
   const filtroFecha: Prisma.ExpedienteWhereInput = periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {};
   const filtroCombinado: Prisma.ExpedienteWhereInput = { AND: [filtroTramite, filtroFecha] };
 
-  // `false` cuando tramiteIds es un arreglo vacío (funcionario sin ningún trámite asignado) hace que
-  // el WHERE no devuelva ninguna fila — SQL válido, evita un IN () vacío (que sería un error de sintaxis).
   const condicionesSql: Prisma.Sql[] = [
     periodo
       ? Prisma.sql`"fechaRadicacion" >= ${periodo.desde} AND "fechaRadicacion" < ${periodo.hasta}`
@@ -107,17 +92,12 @@ export async function getDashboardData(tramiteIds: string[] | null, periodo: Ran
     .map((p) => ({ label: nombreTramite[p.tramiteTipoId] ?? "—", value: p._count._all }))
     .sort((a, b) => b.value - a.value);
 
-  // Recorre exactamente el rango elegido (o el trailing de 12 meses de siempre si es "Total"),
-  // completando con 0 los meses sin radicaciones para que la tendencia no tenga huecos.
   const hastaSerie = periodo ? new Date(periodo.hasta.getTime() - 1) : new Date();
   const desdeSerie = periodo ? periodo.desde : new Date(hastaSerie.getFullYear(), hastaSerie.getMonth() - 11, 1);
   const totalMeses = Math.min(
     MAX_MESES_SERIE,
     Math.max(1, (hastaSerie.getFullYear() - desdeSerie.getFullYear()) * 12 + (hastaSerie.getMonth() - desdeSerie.getMonth()) + 1)
   );
-  // Meses comparados por clave UTC: date_trunc de Postgres devuelve medianoche UTC
-  // y con el servidor en zona Colombia new Date(...).getMonth() la corría al mes
-  // anterior (la última columna salía siempre en 0).
   const claveMesUTC = (x: Date) => `${x.getUTCFullYear()}-${x.getUTCMonth()}`;
   const serieMensual: { label: string; value: number }[] = [];
   for (let i = 0; i < totalMeses; i++) {

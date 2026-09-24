@@ -5,8 +5,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
 import { construirZipExpediente } from "@/lib/zip-contratacion";
 
-/** Descarga en un solo ZIP todos los documentos de un expediente, en carpetas por etapa —
- * pedido explícito del usuario para poder entregarle un expediente completo a un peticionario. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

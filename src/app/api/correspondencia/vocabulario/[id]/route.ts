@@ -3,7 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { editarTermino } from "@/lib/vocabulario";
 
-/** Edita o activa/desactiva un término. `accion` = "editar" | "toggle". Solo administrador de archivo. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

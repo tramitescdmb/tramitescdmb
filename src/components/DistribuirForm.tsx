@@ -6,12 +6,6 @@ import { Field } from "@/components/Field";
 
 type Opcion = { id: string; nombre: string };
 
-/**
- * Formulario de reparto de una comunicación. Permite asignarla a UNA dependencia
- * y a VARIOS funcionarios a la vez (lista con filtro de texto + casillas). Por
- * defecto reemplaza el reparto vigente; "sumar" lo mantiene y añade destinatarios.
- * Es un POST normal (las casillas `usuarioId` se envían nativamente).
- */
 export function DistribuirForm({
   comunicacionId,
   dependencias,
@@ -22,8 +16,6 @@ export function DistribuirForm({
   comunicacionId: string;
   dependencias: Opcion[];
   usuarios: Opcion[];
-  /** Cuando se pasa, la dependencia queda fija (no editable) — uso del jefe de dependencia
-   * redistribuyendo dentro de su propia oficina, nunca hacia otra dependencia. */
   dependenciaFija?: Opcion;
   tituloLista?: string;
 }) {

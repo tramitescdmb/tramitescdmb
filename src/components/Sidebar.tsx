@@ -7,13 +7,6 @@ import { SidebarNav } from "@/components/SidebarNav";
 
 const CLAVE_COLAPSADO = "sidebar-colapsado";
 
-/**
- * Sidebar de escritorio con colapso manual a una franja de solo íconos —
- * comodidad de cada quien (localStorage, como en useAnchosColumna), no se
- * sincroniza entre dispositivos ni usuarios. Vive en el layout raíz, que no
- * se remonta entre rutas, así que el estado ya sobrevive la navegación por
- * sí solo; localStorage es solo para que sobreviva un recargo de página.
- */
 export function Sidebar({
   logoUrl,
   esAdmin,
@@ -40,9 +33,7 @@ export function Sidebar({
   useEffect(() => {
     try {
       if (window.localStorage.getItem(CLAVE_COLAPSADO) === "1") setColapsado(true);
-    } catch {
-      // localStorage puede fallar (modo privado, cuota agotada) — se queda expandido.
-    }
+    } catch {}
   }, []);
 
   function alternar() {
@@ -50,9 +41,7 @@ export function Sidebar({
       const next = !actual;
       try {
         window.localStorage.setItem(CLAVE_COLAPSADO, next ? "1" : "0");
-      } catch {
-        // idem
-      }
+      } catch {}
       return next;
     });
   }

@@ -14,15 +14,6 @@ function celda(valor: string | number | null | undefined): string {
 
 const fecha = (d: Date) => d.toISOString().slice(0, 10);
 
-/**
- * Inventario Único Documental (FUID, AGN Acuerdo 042/2002 Anexo 3) de los expedientes documentales —
- * adaptado a un archivo 100% electrónico: "Soporte" siempre Electrónico, sin caja/carpeta/tomo físicos.
- * "Folios" suma el número de folios que declaró quien subió cada documento (MoReq 1.19/1.51) — dato real
- * declarado, no un conteo automático de páginas de PDF (no hay esa librería en el proyecto); documentos
- * cargados antes de que existiera este campo cuentan como 1 folio por defecto.
- * "Frecuencia de consulta" es un dato real, no un relleno: cuenta las veces que AuditoriaDoc registró un
- * LEE sobre ese expediente (se consulta en el propio detalle cada vez que alguien lo abre).
- */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -38,8 +29,6 @@ export async function GET(req: NextRequest) {
   const dependenciaId = sp.get("dependenciaId") || undefined;
   const serieId = sp.get("serieId") || undefined;
 
-  // Mismo where que el listado (incluida la restricción por nivel de acceso, Ley 1712/2014):
-  // un expediente clasificada/reservada tampoco debe poder exportarse por quien no puede verlo.
   const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId, serieId }, permisos);
 
   const expedientes = await db.expedienteDocumental.findMany({

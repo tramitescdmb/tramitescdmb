@@ -11,12 +11,6 @@ function celda(valor: string | number | null | undefined): string {
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
-/**
- * Exporta TODO lo clasificado bajo una serie (sus comunicaciones y expedientes documentales, de cualquiera
- * de sus subseries) — MoReq 1.12: "exportar el directorio completo de una serie y su contenido". Es
- * distinto del export de la TRD (que exporta la ESTRUCTURA serie/subserie); esto exporta el CONTENIDO
- * clasificado dentro de una serie puntual.
- */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

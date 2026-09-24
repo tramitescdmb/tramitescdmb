@@ -8,9 +8,6 @@ import {
   esCartesianaValida,
 } from "./coordenadas";
 
-// Bucaramanga (centro de la jurisdicción CDMB), como punto de referencia real para las tres pruebas
-// de ida y vuelta — si alguna vez se transcribe mal el string PLANAS/CARTESIANAS (ver el comentario en
-// coordenadas.ts sobre el factor de escala 0.9992), estas pruebas deberían dejar de cuadrar.
 const BUCARAMANGA = { lat: 7.119349, lon: -73.1227416 };
 
 describe("desdeLatLon", () => {

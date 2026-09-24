@@ -4,8 +4,6 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-/** Disponibilidad de módulos para los funcionarios — reservada al administrador del SISTEMA (no a los
- * administradores de un módulo), porque decide qué módulos existen para el resto de la organización. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/admin/modulos", req.url);

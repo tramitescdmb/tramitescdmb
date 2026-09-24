@@ -17,16 +17,6 @@ type RequisitoJson = {
 
 const requisitos = requisitosJson as RequisitoJson[];
 
-/**
- * Siembra el catálogo de documentos exigidos por el Manual de Contratación
- * (A-BS-MA01) y sus 33 procedimientos — ver data/contratacion/requisitos.json,
- * extraído de las tablas ACTIVIDAD/RESPONSABLE/DOCUMENTOS de cada procedimiento
- * real cruzadas con los 76 formatos oficiales (mismo método usado para los 30
- * procedimientos de Trámites ambientales 2.0). Reemplaza el catálogo completo
- * en cada corrida (no hay expedientes reales seed-dependientes; los
- * DocumentoContrato ya subidos conservan su fila aunque cambie el catálogo,
- * porque DocumentoContrato.requisitoId usa onDelete: SetNull).
- */
 async function main() {
   await db.requisitoDocumentoContratacion.deleteMany({});
   await db.requisitoDocumentoContratacion.createMany({

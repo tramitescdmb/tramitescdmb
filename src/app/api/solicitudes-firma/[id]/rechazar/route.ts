@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { rechazarSolicitudFirma } from "@/lib/solicitudes-firma";
 
-/** Rechaza una solicitud de un documento de trámites asignada al usuario que llama esta ruta. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

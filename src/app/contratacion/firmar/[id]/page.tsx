@@ -7,9 +7,6 @@ import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { FirmarSolicitudInline } from "@/components/FirmarSolicitudInline";
 import { TituloSeccion } from "@/components/sgdea/ui";
 
-/** Página ligera de UNA firma pendiente, enlazada desde el buzón — antes "Ir al documento" abría
- * la página completa del expediente (todos sus documentos, etapas, historial), solo para llegar a
- * un botón. Aquí solo se cargan el documento y la solicitud puntuales. */
 export default async function FirmarSolicitudPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

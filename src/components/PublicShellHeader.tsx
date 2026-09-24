@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
-/**
- * Encabezado de la ventanilla pública (PQRSD) — sin la navegación interna de la
- * aplicación. Solo la marca institucional y los dos accesos que un ciudadano
- * necesita: radicar una solicitud y consultar su estado.
- */
 export async function PublicShellHeader() {
   const config = await getConfiguracionSitio();
 

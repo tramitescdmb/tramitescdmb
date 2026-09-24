@@ -11,17 +11,6 @@ const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUER
 type Tramite = Awaited<ReturnType<typeof getCatalogoTramites>>[number];
 type Conteo = { activos: number; aprobados: number; negados: number };
 
-/**
- * Si el SUIT registra cada flujo de un trámite como una ficha separada (ej.
- * M-DA-PR21: un solo procedimiento/PDF, pero "Concesión de Aguas
- * Superficiales" y "Concesión de Aguas Subterráneas" son dos servicios
- * distintos en el SUIT), el catálogo debe mostrar una tarjeta por flujo, no
- * una tarjeta con dos insignias SUIT pegadas — así el usuario reconoce cada
- * servicio del SUIT como su propia tarjeta, igual que en cdmb.gov.co.
- * Si no aplica (caso normal: todo el trámite es un solo registro, o los
- * flujos son etapas del mismo servicio como "inicio"/"renovación"), se
- * muestra la tarjeta única de siempre.
- */
 function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPorFlujo: Map<string, Conteo>): EntradaCatalogo[] {
   const seSepaporFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
   if (seSepaporFlujo) {
@@ -80,9 +69,6 @@ export default async function CatalogoTramitesPage() {
     lista.push(entrada);
     porCategoria.set(cat.id, lista);
   }
-  // Un componente (función) no se puede pasar como prop de un Server Component a un
-  // Client Component — solo datos planos y elementos ya renderizados. Por eso el ícono
-  // se resuelve aquí (en JSX, server-side) en vez de mandar `cat.Icono` tal cual.
   const secciones = CATEGORIAS_ORDEN.map((cat) => ({
     cat: {
       id: cat.id,

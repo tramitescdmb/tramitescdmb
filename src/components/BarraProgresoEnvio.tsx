@@ -1,9 +1,3 @@
-/**
- * Progreso de un envío en curso (subir documentos + radicar/guardar). El
- * porcentaje es real, no animado: sube cuando cada documento termina de
- * subirse y al completar el guardado final — no es una barra "de mentira"
- * que avanza sola mientras se espera.
- */
 export function BarraProgresoEnvio({ pct, texto }: { pct: number; texto: string }) {
   return (
     <div className="rounded-lg border border-cdmb-200 bg-cdmb-50/60 px-3 py-2.5" role="status" aria-live="polite">

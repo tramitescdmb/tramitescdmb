@@ -26,7 +26,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
   }
 
-  // Borra el archivo anterior de ese mismo campo, si había uno, para no acumular basura en el bucket.
   const actual = await db.configuracionSitio.findUnique({ where: { id: "singleton" } });
   const pathAnterior = actual?.[config.path as keyof typeof actual] as string | null | undefined;
 

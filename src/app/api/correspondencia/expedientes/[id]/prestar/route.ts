@@ -6,7 +6,6 @@ import { prestarExpediente } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
-/** Presta un expediente documental a un funcionario — solo deja rastro de quién lo tiene, no bloquea nada. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

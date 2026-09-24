@@ -115,13 +115,6 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
   FLUJO: "Se aplicó un flujo de trabajo a una comunicación, se completó un paso o se canceló el flujo.",
 };
 
-/**
- * Documento de referencia técnica del módulo (MoReq 8.13: ayuda contextual). Fichas técnicas por función —
- * estado, acción disponible y rol requerido — trazables 1:1 contra los enums de dominio
- * (prisma/schema.prisma) y las funciones de permisos (src/lib/permisos.ts), para que el contenido no
- * pueda quedar desactualizado en silencio frente al código. Agrupado en pestañas (AyudaTabs) para lectura;
- * al imprimir se expande completo.
- */
 export default async function CorrespondenciaAyudaPage() {
   const session = await getSession();
   if (!session) redirect("/login");

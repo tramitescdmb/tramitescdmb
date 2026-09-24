@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
-/** Elimina un contratista del registro maestro. Solo se ofrece cuando no pertenece a ningún
- * expediente (el servidor lo vuelve a verificar). Pide confirmación explícita porque el registro
- * — contacto, régimen tributario — no se puede recuperar. */
 export function EliminarContratistaBoton({ contratistaId, nombre, tieneCuenta }: { contratistaId: string; nombre: string; tieneCuenta: boolean }) {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);

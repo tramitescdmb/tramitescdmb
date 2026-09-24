@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeCerrarExpediente } from "@/lib/permisos";
 import { cerrarExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Cierra el expediente y firma su índice electrónico (Art. 4.3.2.4 Acuerdo 001/2024 AGN). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

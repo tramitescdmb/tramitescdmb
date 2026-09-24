@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { reactivarTermino } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Reanuda un trámite detenido (MoReq 7.18); si había término de ley, se reanuda por lo que faltaba (Art. 17 CPACA). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

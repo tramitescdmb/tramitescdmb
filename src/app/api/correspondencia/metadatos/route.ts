@@ -9,7 +9,6 @@ import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 const TIPOS: TipoCampoMetadato[] = ["TEXTO", "NUMERO", "FECHA", "LISTA", "BOOLEANO"];
 const AMBITOS: AmbitoCampoMetadato[] = ["COMUNICACION", "EXPEDIENTE", "AMBOS"];
 
-/** Crea un campo de metadato adicional. Solo administrador de archivo. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin/metadatos", req.url);

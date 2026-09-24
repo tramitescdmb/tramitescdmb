@@ -67,8 +67,6 @@ export async function POST(req: NextRequest) {
     usuarioId: session.userId,
   });
 
-  // Directo a su página de edición — ahí falta configurar los trámites y el
-  // acceso a VITAL/SINCA 1.0, así no hay que crear y luego ir a buscarlo aparte.
   const urlEditar = new URL(`/usuarios/${nuevo.id}`, req.url);
   urlEditar.searchParams.set("ok", "Usuario creado. Configure sus trámites y accesos abajo.");
   return NextResponse.redirect(urlEditar, { status: 303 });

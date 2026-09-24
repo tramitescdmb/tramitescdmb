@@ -7,9 +7,6 @@ import { crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contrataci
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
 
-/** Crea un expediente contractual — lo abre la Oficina de Contratación (Administrador o Jefe de
- * Contratación; antes exigía Administrador exclusivamente, dejando al Jefe sin poder crear
- * expedientes pese a tener el mismo nivel operativo en el resto del módulo). */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

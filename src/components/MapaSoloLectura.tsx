@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 
-/** Mapa de solo consulta: un pin fijo en lat/lon, sin controles de edición ni búsqueda. */
 export function MapaSoloLectura({ lat, lon }: { lat: number; lon: number }) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);

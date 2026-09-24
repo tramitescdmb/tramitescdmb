@@ -3,20 +3,11 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
-// La sincronización recorre páginas de VITAL + descarga documentos; puede pasar
-// del límite por defecto. En el plan Hobby el tope efectivo es menor y lo que no
-// alcance se retoma en la siguiente corrida (los upserts son idempotentes).
 export const maxDuration = 300;
 
 const haceDias = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
-// VITAL rechaza fecha_fin >= hoy ("no puede ser mayor a la fecha de consumo del servicio").
 const ayer = () => haceDias(1);
 
-/**
- * GET  → cron diario de Vercel. Autoriza con `Authorization: Bearer <CRON_SECRET>`.
- *        Sincroniza los trámites de VITAL_TRAMITES en una ventana móvil reciente.
- * POST → botón "Sincronizar" del panel /vital. Solo ADMIN, con rango de fechas.
- */
 export async function GET(req: NextRequest) {
   const secreto = process.env.CRON_SECRET;
   if (!secreto || req.headers.get("authorization") !== `Bearer ${secreto}`) {
@@ -26,26 +17,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "VITAL no está configurado." }, { status: 503 });
   }
 
-  // Ventana móvil por defecto; se puede ampliar con ?desde=&hasta= para un backfill.
   const fecha = /^\d{4}-\d{2}-\d{2}$/;
   const qDesde = req.nextUrl.searchParams.get("desde");
   const qHasta = req.nextUrl.searchParams.get("hasta");
   const desde = qDesde && fecha.test(qDesde) ? qDesde : haceDias(45);
   const hasta = qHasta && fecha.test(qHasta) ? qHasta : ayer();
 
-  // ?tramites=1,2,4,5,41 permite forzar un conjunto (backfill / descubrir cuáles existen).
   const qTramites = req.nextUrl.searchParams.get("tramites");
   const tramites = qTramites
     ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
     : await tramitesASincronizar();
 
-  // ?probe=1 → solo consulta la primera página de cada trámite (rápido, para
-  // descubrir cuáles existen), sin traer detalle ni documentos.
   const probe = req.nextUrl.searchParams.get("probe") === "1";
 
-  // Sin filtros manuales, el cron explora ids nuevos: si el ciudadano radica en
-  // una categoría de VITAL que aún no conocemos, se detecta y se empieza a traer.
-  // ?descubrir=full → barre TODO el catálogo pendiente de una vez (barrido inicial).
   const descubrirFull = req.nextUrl.searchParams.get("descubrir") === "full";
   let descubiertos: number[] = [];
   if ((!qTramites && !probe) || descubrirFull) {
@@ -57,9 +41,7 @@ export async function GET(req: NextRequest) {
           descripcion: `VITAL: trámite nuevo detectado y agregado a la sincronización — ${nombreTramiteVital(id)}.`,
         });
       }
-    } catch {
-      /* la exploración no debe tumbar la sincronización */
-    }
+    } catch {}
   }
 
   const resultados: Record<string, unknown> = {};

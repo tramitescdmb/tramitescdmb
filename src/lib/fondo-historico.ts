@@ -1,21 +1,3 @@
-/**
- * Fondo Documental histórico — ESPEJO DE SOLO CONSULTA.
- *
- * La CDMB tuvo antes de este SGDEA un sistema de gestión documental llamado
- * «psdocuments» (Tomcat/JSP, 2006-2023) y un sistema de radicación «SIC
- * correspondencia», los dos sobre un Oracle 10g en la intranet
- * (192.168.7.40, esquema `C`). Ese Oracle NO es alcanzable desde Vercel.
- *
- * En vez de migrar nada, se mantiene un espejo de **solo metadatos** en la
- * base del SGDEA: un job dentro de la red CDMB (scripts/fondo-historico/)
- * lee el Oracle y hace upsert vía `POST /api/fondo-historico/ingest`. Las
- * imágenes escaneadas (1,4 TB) NO se copian — se consultan en la red
- * corporativa. Ver memory/project_psdocuments_legacy.md.
- *
- * Este módulo: identidad de los fondos, tipos del payload de ingesta y
- * helpers de normalización. No toca la red ni el navegador.
- */
-
 export const FONDOS = {
   psdocuments: {
     id: "psdocuments",
@@ -52,18 +34,10 @@ export function esFondoValido(id: string): id is FondoId {
   return Object.prototype.hasOwnProperty.call(FONDOS, id);
 }
 
-/**
- * El módulo aparece en la navegación solo si hay un token de ingesta
- * configurado (lo comparte el job de la red CDMB y la ruta /ingest).
- */
 export function fondoHistoricoConfigurado() {
   return !!process.env.FONDO_INGEST_TOKEN?.trim();
 }
 
-// --- Payload de ingesta ------------------------------------------------------
-
-/** Una fila tal como la envía el extractor. Campos en snake para que el
- *  script Oracle los mapee 1:1 sin ceremonia. */
 export interface FilaFondoEntrada {
   ref_id: string;
   serie_id?: number | null;
@@ -72,7 +46,7 @@ export interface FilaFondoEntrada {
   numero?: string | null;
   numero_entrada?: string | null;
   numero_salida?: string | null;
-  fecha?: string | null; // ISO o "YYYY-MM-DD"
+  fecha?: string | null;
   fecha_entrada?: string | null;
   fecha_salida?: string | null;
   asunto?: string | null;
@@ -90,22 +64,17 @@ export interface FilaFondoEntrada {
 
 export interface CuerpoIngesta {
   fondo: string;
-  /** id de la corrida; la primera llamada lo omite y recibe uno nuevo. */
   sincronizacionId?: string;
   disparadoPor?: string;
   totalOrigen?: number;
   lote?: FilaFondoEntrada[];
-  /** true en la última llamada: borra las filas del fondo no tocadas en esta corrida. */
   finalizar?: boolean;
 }
-
-// --- Normalización ----------------------------------------------------------
 
 export function parseFechaFondo(v: string | null | undefined): Date | null {
   if (!v) return null;
   const s = String(v).trim();
   if (!s) return null;
-  // "YYYY-MM-DD" o ISO. Oracle a veces entrega "DD/MM/YYYY".
   let d: Date | null = null;
   const dmy = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (dmy) d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
@@ -115,7 +84,6 @@ export function parseFechaFondo(v: string | null | undefined): Date | null {
   }
   if (!d || Number.isNaN(d.getTime())) return null;
   const anio = d.getFullYear();
-  // psdocuments va de 2006 a 2023; se descartan años imposibles (typos de captura).
   if (anio < 1980 || anio > new Date().getFullYear() + 1) return null;
   return d;
 }
@@ -126,12 +94,6 @@ function limpiar(v: unknown): string | null {
   return s === "" ? null : s;
 }
 
-/**
- * Nombres de columna de C.PSIDEAW_<serie> / C.COR_* que alimentan cada campo
- * normalizado. Se resuelve contra `campos` (que el extractor envía tal cual),
- * así los dos extractores —Node y sqlplus— solo mandan las columnas crudas y
- * el mapeo vive en un único lugar. El primero que exista y no esté vacío gana.
- */
 const MAPA_COLUMNAS: Record<string, string[]> = {
   numero: ["NUMERO", "NUMENTRADA", "NUMERADI_REC", "NUMERO_ATC", "NUMRADIC_CEN", "NRO", "NUMERODOC", "CONSECUTIVO"],
   numeroEntrada: ["NUMENTRADA", "NUMERADI_REC", "RADENT_ATC"],
@@ -157,14 +119,10 @@ function elegir(campos: Record<string, unknown>, nombres: string[]): string | nu
   return null;
 }
 
-/** Columnas que ya alimentan un campo normalizado — no vale la pena repetirlas
- *  en `campos` (Supabase Free tiene 500 MB). */
 const COLUMNAS_MAPEADAS = new Set(Object.values(MAPA_COLUMNAS).flat());
 const MAX_VALOR_CAMPO = 120;
 const MAX_ASUNTO = 300;
 
-/** Deja en `campos` solo lo que NO quedó en un campo normalizado, con cada
- *  valor recortado. Devuelve null si no sobra nada. */
 function camposResiduales(campos: Record<string, unknown>): Record<string, string> | null {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(campos)) {
@@ -176,9 +134,6 @@ function camposResiduales(campos: Record<string, unknown>): Record<string, strin
   return Object.keys(out).length ? out : null;
 }
 
-/** Convierte una fila del extractor en el shape de la tabla FondoDocumento.
- *  Los campos normalizados se toman del propio `fila.*` si vienen, o se
- *  derivan de `campos` con MAPA_COLUMNAS. `campos` se guarda recortado. */
 export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
   const campos = (fila.campos ?? {}) as Record<string, unknown>;
   const de = (k: keyof typeof MAPA_COLUMNAS, explicito: string | null | undefined) =>
@@ -214,14 +169,6 @@ export function filaAModelo(fondo: string, fila: FilaFondoEntrada) {
   };
 }
 
-/**
- * Parsea el "dump" de sqlplus (Oracle 10g no puede generar JSON sin romperlo)
- * a filas. Marcas por línea:
- *   #<ref_id>    nuevo documento
- *   @<COLUMNA>   empieza un campo
- *   =<trozo>     (0..n) contenido del campo, en trozos de ≤200 chars
- * Columnas especiales: `__NARCH__` → num_archivos, `__RUTA__` → ruta_original.
- */
 export function parseDumpFondo(
   texto: string,
   serieId: number | null,
@@ -274,29 +221,12 @@ export function parseDumpFondo(
 export const AVISO_IMAGEN =
   "El documento escaneado no se copia a este sistema (son ~1,4 TB). El enlace de abajo abre el archivo original en el servidor de Gestión Documental y solo funciona desde la red corporativa de la CDMB.";
 
-/**
- * Base HTTP de los escaneados de psdocuments en la intranet. La app original
- * (psdocuments/WEB-INF/web.xml) mapea la unidad `z:` a `rutaWeb` =
- * http://192.168.7.70:80/gestion (Apache en patevaca). Solo resuelve dentro
- * de la red CDMB. Sobreescribible por si cambia el servidor.
- */
 export const PSDOCUMENTS_BASE_INTRANET =
   process.env.FONDO_PSDOCUMENTS_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.70/gestion";
 
-/**
- * Conversor TIFF→PDF instalado en patevaca (scripts/fondo-historico/verdoc.cgi).
- * Si está configurado, el Fondo histórico abre los escaneados como PDF en el
- * navegador; si no, enlaza al archivo `.001` crudo (que el navegador descarga).
- * Ej.: `http://192.168.7.70/cgi-bin/verdoc`.
- */
 export const PSDOCUMENTS_VISOR =
   process.env.FONDO_PSDOCUMENTS_VISOR?.trim().replace(/\/+$/, "") || null;
 
-/**
- * Ruta relativa del archivo a partir de `VER_CAMINO||VER_ARCHIVO`
- * (`z:\Documentos\00000262\OGALVIS\00694338.pdf` → `Documentos/00000262/OGALVIS/00694338.pdf`).
- * Réplica de lo que hace verImagen.jsp: `\`→`/`, quitar la unidad, colapsar `//`.
- */
 function rutaRelativaPsdocuments(rutaOriginal: string | null | undefined): string | null {
   if (!rutaOriginal) return null;
   const m = rutaOriginal.trim().replace(/\\/g, "/").match(/^[a-zA-Z]:\/*(.+)$/);
@@ -304,8 +234,6 @@ function rutaRelativaPsdocuments(rutaOriginal: string | null | undefined): strin
   return m[1]!.replace(/\/{2,}/g, "/").replace(/^\/+/, "");
 }
 
-/** URL para abrir/descargar el escaneado desde la red corporativa. Usa el
- *  conversor si está configurado; si no, el archivo crudo. */
 export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined): string | null {
   const rel = rutaRelativaPsdocuments(rutaOriginal);
   if (!rel) return null;
@@ -313,20 +241,10 @@ export function urlIntranetPsdocuments(rutaOriginal: string | null | undefined):
   return `${PSDOCUMENTS_BASE_INTRANET}/${rel}`;
 }
 
-/** true cuando el enlace pasa por el conversor (abre como PDF en el navegador). */
 export function tieneVisorPsdocuments(): boolean {
   return PSDOCUMENTS_VISOR !== null;
 }
 
-/**
- * Repositorio de escaneos del SIC correspondencia — un FreeNAS aparte de
- * psdocuments, sin columna en Oracle: la ruta se arma por CONVENCIÓN a partir
- * del número y año del radicado. Confirmado a mano con ejemplos reales:
- *   entrada: http://192.168.7.53/ui/ADMINISTRADOR/in/<año>/Rad<número>-<año>.pdf
- *   salida:  http://<host>/ui/ADMINISTRADOR/out/ESCANEO_CORRESPONDENCIA_ENVIADA/<año>/<mes de 2 dígitos>/<número>.pdf
- * En ningún caso hay forma de confirmar por Oracle si el escaneo existe para
- * un radicado puntual: el enlace se ofrece igual, puede dar 404.
- */
 export const SIC_BASE_INTRANET =
   process.env.FONDO_SIC_BASE?.trim().replace(/\/+$/, "") || "http://192.168.7.53";
 
@@ -340,8 +258,6 @@ export function urlIntranetSicEntrada(
   return `${SIC_BASE_INTRANET}/ui/ADMINISTRADOR/in/${a}/Rad${n}-${a}.pdf`;
 }
 
-/** Escaneo de una comunicación de SALIDA (COR_ENVIADA): mismo repositorio,
- *  ruta con carpeta de mes y sin prefijo "Rad" ni sufijo de año en el nombre. */
 export function urlIntranetSicSalida(
   numeroRadicado: string | null | undefined,
   fecha: Date | null | undefined,

@@ -1,11 +1,5 @@
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
-/**
- * Pie de página institucional — mismo patrón que Negocios Verdes: cuerpo
- * blanco (logo CDMB + nombre) y, solo si ya se subieron los sellos desde
- * /admin/apariencia, la franja azul GOV.CO con los sellos oficiales. Si no
- * hay sellos, esa franja no aparece (nunca una franja azul vacía).
- */
 export async function Footer() {
   const config = await getConfiguracionSitio();
   const sellos = [

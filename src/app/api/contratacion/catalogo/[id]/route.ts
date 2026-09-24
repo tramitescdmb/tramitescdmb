@@ -5,8 +5,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
 import { actualizarRequisitoCatalogo, moverRequisitoCatalogo, eliminarRequisitoCatalogo, TAG_CATALOGO_REQUISITOS } from "@/lib/contratacion";
 
-/** Actualiza un requisito del catálogo (nombre/código/fuente/obligatorio/activo) o lo reordena
- * (`{ "direccion": "arriba" | "abajo" }`) dentro de su grupo (misma etapa y modalidad). */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

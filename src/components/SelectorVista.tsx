@@ -11,12 +11,6 @@ const ETIQUETAS: Record<OpcionVista, string> = {
   todos: "Todos los registros",
 };
 
-/**
- * "Ver: [50 registros ▾]" — desplegable junto al paginador, al pie de la
- * tabla. Client Component: arma el destino leyendo la URL actual con los
- * hooks de navegación (no puede recibir una función como prop desde el
- * Server Component que lo llama — las funciones no cruzan esa frontera).
- */
 export function SelectorVista({ vistaActual }: { vistaActual: OpcionVista }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -25,7 +19,7 @@ export function SelectorVista({ vistaActual }: { vistaActual: OpcionVista }) {
   function cambiarVista(v: OpcionVista) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("vista", v);
-    params.delete("page"); // el tamaño cambió: vuelve a la página 1
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 

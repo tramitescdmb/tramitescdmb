@@ -2,18 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { parsePorPagina } from "@/lib/vista-lista";
 
-/**
- * Lecturas del Fondo Documental histórico (SOLO CONSULTA). Toda la escritura
- * pasa por /api/fondo-historico/ingest; aquí solo se lee.
- */
-
 export interface FiltrosFondo {
   q?: string;
   serie?: string;
   anio?: string;
-  desde?: string; // "YYYY-MM-DD"
-  hasta?: string; // "YYYY-MM-DD"
-  imagen?: string; // "si" | "no"
+  desde?: string;
+  hasta?: string;
+  imagen?: string;
   page?: string;
   vista?: string;
 }
@@ -35,14 +30,13 @@ function whereDe(fondo: string, f: FiltrosFondo): Prisma.FondoDocumentoWhereInpu
       { numero: { contains: q, mode: "insensitive" } },
       { numeroEntrada: { contains: q, mode: "insensitive" } },
       { numeroSalida: { contains: q, mode: "insensitive" } },
-      { identificacion: { contains: q } }, // NIT / cédula — sin insensitive, son solo dígitos
+      { identificacion: { contains: q } },
       { refId: q },
     ];
   }
   const serie = Number(f.serie);
   if (Number.isFinite(serie) && f.serie) w.serieId = serie;
 
-  // Rango de fechas (sobre `fecha`). `anio` se mantiene por compatibilidad de enlaces.
   const desde = fechaValida(f.desde);
   const hasta = fechaValida(f.hasta);
   if (desde || hasta) {
@@ -50,7 +44,7 @@ function whereDe(fondo: string, f: FiltrosFondo): Prisma.FondoDocumentoWhereInpu
     if (desde) w.fecha.gte = desde;
     if (hasta) {
       const fin = new Date(hasta);
-      fin.setDate(fin.getDate() + 1); // inclusivo hasta el final del día
+      fin.setDate(fin.getDate() + 1);
       w.fecha.lt = fin;
     }
   } else {

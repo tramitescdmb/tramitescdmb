@@ -9,7 +9,6 @@ function celda(valor: string | number | null | undefined): string {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
-/** Exporta el registro de contratistas a CSV — mismo patrón que /api/solicitantes/exportar. */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
-/** Botón de descarga de ZIP que muestra el mensaje de error del backend (ej. el tope de
- * expedientes de la descarga masiva) en vez de volcar el JSON de error como si fuera el archivo —
- * lo que pasaría con un `<a href>` simple cuando la respuesta no es un ZIP. */
 export function BotonDescargarZip({ href, nombreArchivo, etiqueta, titulo }: { href: string; nombreArchivo: string; etiqueta: string; titulo?: string }) {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);

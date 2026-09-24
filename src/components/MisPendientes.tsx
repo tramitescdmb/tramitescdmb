@@ -2,14 +2,6 @@ import Link from "next/link";
 import { CheckCircle2, FolderOpen, Scale, ClipboardList, Paperclip, AlertTriangle } from "lucide-react";
 import type { ItemPendiente, ResumenPendientes } from "@/lib/pendientes";
 
-/**
- * Tarjeta de "Sus pendientes" en el panel de inicio. Le dice al funcionario,
- * apenas entra, qué requiere su atención — según su cargo y las asignaciones
- * a su nombre (ver `src/lib/pendientes.ts`). Si no tiene nada, muestra un
- * mensaje de "al día" en vez de esconderse, para que quede claro que la
- * revisión se hizo y no que falló.
- */
-
 const TOPE_LISTA = 5;
 
 export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }) {

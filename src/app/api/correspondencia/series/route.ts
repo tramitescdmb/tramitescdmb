@@ -6,7 +6,6 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 
-/** Crea una serie documental (TRD). Versión "1" por defecto. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin", req.url);

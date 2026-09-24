@@ -6,15 +6,8 @@ import { conExtension } from "@/lib/uploads-config";
 import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
-/** Tope de expedientes por descarga masiva — evita agotar tiempo/memoria del runtime
- * serverless de Vercel si el filtro trae demasiados. Pedido explícito del usuario (2026-09-18). */
 export const MAX_EXPEDIENTES_ZIP_MASIVO = 50;
 
-/** JSZip (como casi cualquier lector de zip) trata "/" y "\" como separador de carpeta dentro de
- * un nombre de archivo — varios nombres del catálogo los llevan literalmente (ej. "Estudio del
- * sector / estudio de mercado", con la barra como parte del nombre, no como jerarquía) y eso creaba
- * subcarpetas por accidente con un archivo roto adentro. Se reemplazan por un guión visualmente
- * parecido antes de escribir al zip — el nombre real en la base de datos no se toca. */
 function sanearNombreZip(nombre: string): string {
   return nombre.replace(/[\\/]+/g, " - ").trim();
 }
@@ -37,16 +30,6 @@ function nombreUnico(usados: Set<string>, nombre: string): string {
   return candidato;
 }
 
-/** Agrega al ZIP los documentos de UN expediente, en carpetas por etapa (solo esas 3 — nunca una
- * subcarpeta por documento). Única excepción: cuando un mismo requisito del catálogo tiene VARIOS
- * documentos (ej. el Informe de supervisión, uno por periodo/mes), esos quedan juntos en una
- * subcarpeta con el nombre del requisito — evita una fila larga de archivos casi idénticos sueltos
- * en la carpeta de la etapa. `carpetaBase` es el folder de JSZip donde colgar las subcarpetas de
- * etapa (la raíz del zip, o la carpeta del expediente cuando se arma un ZIP masivo de varios).
- * Un PDF que ya tiene al menos una firma se agrega ESTAMPADO (sello + QR de verificación, la misma
- * versión que sirve `/api/contratacion-documentos/[id]/rotulado` y que ya se ve en "Mis firmas") en
- * vez del original sin firma — pedido explícito del usuario (2026-09-23): antes el ZIP siempre
- * bajaba el archivo crudo, incluso para uno ya firmado. */
 async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: string, numeroExpediente: string, baseUrl: string) {
   const documentos = await db.documentoContrato.findMany({
     where: { expedienteId },
@@ -78,9 +61,6 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
     },
   });
 
-  // Nombre del REQUISITO (no el del documento, que para los que se entregan por periodos ya lleva
-  // el número/rango pegado, ej. "Informe de supervisión 3 (…)") — se usa como nombre de la
-  // subcarpeta cuando aplica.
   const idsRequisito = [...new Set(documentos.map((d) => d.requisitoId).filter((id): id is string => Boolean(id)))];
   const requisitos = idsRequisito.length
     ? await db.requisitoDocumentoContratacion.findMany({ where: { id: { in: idsRequisito } }, select: { id: true, nombre: true } })
@@ -130,20 +110,12 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
   return documentos.length;
 }
 
-/** ZIP de un solo expediente contractual, con una carpeta por etapa (Precontractual/Contractual/
- * Postcontractual) — pedido explícito del usuario para poder entregarle todo un expediente a un
- * peticionario de una sola vez. `baseUrl` es el origen (protocolo+host) de la petición que pidió el
- * ZIP — lo necesita el QR de verificación de cada PDF ya firmado que se estampe. */
 export async function construirZipExpediente(expedienteId: string, numeroExpediente: string, baseUrl: string): Promise<Buffer> {
   const zip = new JSZip();
   await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl);
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }
 
-/** ZIP de varios expedientes a la vez — una carpeta de nivel superior por expediente (nombrada por
- * su número de contrato real si existe, o el consecutivo de SIGEC), con las mismas subcarpetas por
- * etapa adentro. El llamador es responsable de aplicar `MAX_EXPEDIENTES_ZIP_MASIVO` antes de
- * invocar esta función (aquí solo arma el archivo). */
 export async function construirZipMasivo(expedientes: { id: string; numero: string; numeroContrato: string | null }[], baseUrl: string): Promise<Buffer> {
   const zip = new JSZip();
   const usados = new Set<string>();

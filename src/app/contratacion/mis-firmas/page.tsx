@@ -6,8 +6,6 @@ import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
-/** Historial de TODOS los documentos que el usuario ha firmado en SIGEC — antes solo se podía ver
- * una firma propia entrando al expediente correspondiente y buscándola; no había un lugar único. */
 export default async function MisFirmasContratacionPage() {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -42,8 +40,6 @@ export default async function MisFirmasContratacionPage() {
                   {formatearFechaHoraLarga(f.fechaHora)} · SHA-256 {f.hashContenido.slice(0, 16)}…
                 </p>
               </div>
-              {/* Siempre se puede abrir lo que uno firmó: el PDF con el sello estampado (o el archivo
-                  original si no es PDF) y la ficha técnica de ESTE documento, sin pasar por el expediente. */}
               <a
                 href={`/api/contratacion-documentos/${f.documento.id}${f.documento.mimeType === "application/pdf" ? "/rotulado" : ""}`}
                 target="_blank"

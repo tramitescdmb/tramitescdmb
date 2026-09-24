@@ -2,12 +2,6 @@
 
 import { useState, type ReactNode } from "react";
 
-/**
- * Agrupa el documento de referencia del SGDEA en pestañas para que no sea un
- * scroll interminable. En pantalla se ve un grupo a la vez; al imprimir se
- * expanden todos (cada panel es `hidden print:block` cuando no está activo), así
- * el documento impreso sigue completo.
- */
 export function AyudaTabs({
   grupos,
 }: {

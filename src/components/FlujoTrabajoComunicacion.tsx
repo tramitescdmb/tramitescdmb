@@ -12,13 +12,6 @@ import { Flujograma } from "@/components/Flujograma";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
 
-/**
- * Flujo de trabajo de una comunicación (MoReq cap. 7). Muestra la instancia en
- * curso con su paso actual (responsable resuelto + término del paso), las
- * opciones para avanzar, el historial de pasos completados, y — si no hay
- * ninguno en curso — el selector para aplicar un flujo activo. Server component;
- * las acciones van por /api/correspondencia/[id]/flujo.
- */
 export async function FlujoTrabajoComunicacion({
   comunicacionId,
   tipo,
@@ -70,7 +63,6 @@ export async function FlujoTrabajoComunicacion({
             )}
           />
 
-          {/* Estado del paso actual */}
           {enCurso.pasoActual && (
             <div className="rounded-md border border-stone-200 bg-stone-50/70 px-3 py-2 text-xs">
               <p className="flex flex-wrap items-center gap-1.5">
@@ -104,7 +96,6 @@ export async function FlujoTrabajoComunicacion({
             <p className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">{enCurso.pasoActual.instrucciones}</p>
           )}
 
-          {/* Línea de tiempo */}
           {enCurso.ejecuciones.length > 0 && (
             <ol className="space-y-1.5 border-t border-stone-100 pt-3">
               {enCurso.ejecuciones.map((e) => (

@@ -2,15 +2,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
-/**
- * Estampa sobre la primera página de un PDF el rótulo de radicación (número +
- * Code 128 + QR de verificación) y, si la comunicación está firmada, el sello de
- * firma electrónica al pie. El PDF original en Storage NO se toca (Ley 594/2000:
- * el documento se conserva como se recibió); esto genera una copia derivada para
- * descargar. `pdf-lib` y `bwip-js` son JS puro — corren en el runtime de Vercel.
- */
-
-const VERDE = rgb(0.11, 0.478, 0.271); // ~ #1c7a45
+const VERDE = rgb(0.11, 0.478, 0.271);
 const GRIS = rgb(0.35, 0.35, 0.35);
 const GRIS_CLARO = rgb(0.5, 0.5, 0.5);
 
@@ -62,7 +54,6 @@ export async function estamparRotulo(
   const bar = await pdf.embedPng(barPngBytes);
   const qr = await pdf.embedPng(qrPngBytes);
 
-  // --- Rótulo, esquina superior derecha ---
   const boxW = 250;
   const boxH = 118;
   const x = Math.max(12, width - boxW - 20);
@@ -75,11 +66,9 @@ export async function estamparRotulo(
   page.drawText(datos.radicado, { x: x + 8, y: y + boxH - 30, size: 12, font: fontBold, color: VERDE });
   page.drawText(datos.fechaRadicacion, { x: x + 8, y: y + boxH - 41, size: 7, font, color: GRIS });
 
-  // QR arriba a la derecha — sin solaparse con el código de barras de abajo.
   const qrSize = 44;
   page.drawImage(qr, { x: x + boxW - qrSize - 8, y: y + boxH - qrSize - 10, width: qrSize, height: qrSize });
 
-  // Código de barras: franja completa bajo el texto.
   const barW = boxW - 16;
   page.drawImage(bar, { x: x + 8, y: y + 20, width: barW, height: 26 });
 
@@ -90,7 +79,6 @@ export async function estamparRotulo(
   ].filter(Boolean).join("  ·  ");
   page.drawText(pie.slice(0, 66), { x: x + 8, y: y + 8, size: 5.5, font, color: GRIS_CLARO });
 
-  // --- Sello de firma electrónica, al pie (por líneas: nombre / cargo / oficina / fecha·hash) ---
   if (firmas.length > 0) {
     const lh = 7.4;
     const altoBloque = 4 * lh + 3;
@@ -119,12 +107,6 @@ export type DatosFirmaSigec = {
   baseUrl: string;
 };
 
-/**
- * Variante para el módulo de Contratación: SIN el rótulo de radicación de correspondencia (un
- * expediente contractual no tiene radicado) — solo un código QR de verificación en la esquina
- * superior derecha y el sello de firma al pie, con el hash SHA-256 completo (sin truncar). No
- * dibuja nada si el documento todavía no tiene ninguna firma.
- */
 export async function estamparFirmaSigec(
   pdfBytes: Buffer | Uint8Array,
   datos: DatosFirmaSigec,
@@ -142,15 +124,12 @@ export async function estamparFirmaSigec(
   const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
   const qr = await pdf.embedPng(qrPngBytes);
 
-  // QR únicamente, esquina superior derecha — sin caja de radicado ni código de barras.
   const qrSize = 49;
   const qx = Math.max(12, width - qrSize - 20);
   const qy = Math.max(12, height - qrSize - 20);
   page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
   page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
 
-  // Sello de firma al pie — mismo criterio que estamparRotulo, pero con el hash COMPLETO. La
-  // cédula/NIT va en su propia línea debajo del nombre, por eso el bloque reserva una línea más.
   const lh = 7.4;
   const altoBloque = 6 * lh + 3;
   let cy = 18 + 12 + firmas.length * altoBloque + 8;
@@ -189,12 +168,6 @@ export type DatosFirmaTramite = {
   baseUrl: string;
 };
 
-/**
- * Variante para Trámites ambientales 2.0: mismo criterio que estamparFirmaSigec (QR de
- * verificación arriba a la derecha, sello de firma al pie con el hash completo, sin rótulo de
- * radicación de correspondencia) — el número de expediente aquí es el del trámite
- * (ej. "M-DA-PR05-2026-0001"), no un radicado de correspondencia ni un contrato.
- */
 export async function estamparFirmaTramite(
   pdfBytes: Buffer | Uint8Array,
   datos: DatosFirmaTramite,

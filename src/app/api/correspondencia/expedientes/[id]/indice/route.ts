@@ -15,7 +15,6 @@ function escaparXml(valor: string | number | null | undefined): string {
   return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-/** Exporta el índice electrónico de un expediente documental a CSV o XML (MoReq 1.23/1.47/1.51). */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -36,13 +35,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
 
-  // MoReq 2.14: hash de verificación de integridad calculado sobre el estado ACTUAL del índice
-  // (orden + nombre + huella de cada documento). Siempre presente en la exportación — no solo cuando
-  // el expediente está cerrado — para que el sistema que reciba el archivo pueda cotejarlo.
   const hashVerificacion = calcularHashIndice(expediente.documentos);
 
-  // Rango de folios acumulado (MoReq 1.19/1.51) sobre el orden real del índice (ordenIndice, ya viene
-  // ordenado así por la consulta), a partir del número de folios que declaró quien subió cada documento.
   let folioAcumulado = 0;
   const folios = expediente.documentos.map((d) => {
     const desde = folioAcumulado + 1;

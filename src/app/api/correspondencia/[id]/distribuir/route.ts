@@ -16,12 +16,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const form = await req.formData();
   const dependenciaId = String(form.get("dependenciaId") || "") || null;
-  // Puede repartirse a VARIOS funcionarios a la vez (<select multiple>).
   const usuarioIds = [...new Set(form.getAll("usuarioId").map((v) => String(v)).filter(Boolean))];
   const instrucciones = String(form.get("instrucciones") || "").trim() || null;
   const terminoRaw = Number(form.get("termino"));
   const termino = Number.isFinite(terminoRaw) && terminoRaw > 0 ? Math.floor(terminoRaw) : null;
-  // Por defecto un reparto nuevo reemplaza al anterior; "sumar" lo mantiene y añade destinatarios.
   const sumar = form.get("sumar") === "on";
 
   const comunicacion = await db.comunicacion.findUnique({
@@ -39,9 +37,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  // Dos formas de llegar aquí: el reparto centralizado (ventanilla/archivo/admin, a CUALQUIER
-  // dependencia) o la sub-distribución de un jefe de dependencia dentro de SU PROPIA oficina, una
-  // vez la comunicación ya le llegó (ver puedeSubdistribuirInternamente en permisos.ts).
   const esReparoCentralizado = puedeDistribuir(permisos);
   const esSubdistribucion =
     !esReparoCentralizado && puedeSubdistribuirInternamente(permisos, session.userId, comunicacion, comunicacion.distribuciones);

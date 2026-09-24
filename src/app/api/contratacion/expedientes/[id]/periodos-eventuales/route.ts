@@ -4,11 +4,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarPeriodosInforme } from "@/lib/permisos";
 import { registrarEventoContratacion } from "@/lib/contratacion";
 
-/** Crea un espacio ADICIONAL de entrega de un requisito "por periodos" (Informe de supervisión,
- * Formato único de informe de cumplimiento, Acta de recibo — pago parcial), con nombre
- * descriptivo, para una eventualidad que no cabe en los periodos mensuales derivados de las
- * fechas del contrato. Va atado a UN requisito (`requisitoId`) — con más de un requisito "por
- * periodos" en el mismo expediente, un espacio de uno no debe aparecer como opción en los otros. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

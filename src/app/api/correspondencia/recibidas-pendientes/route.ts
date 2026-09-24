@@ -3,11 +3,6 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 
-/**
- * Buscador (no un desplegable con todo cargado) de RECIBIDAs pendientes de responder, para el
- * selector "¿Responde a...?" de RadicarEnviadaForm — con cientos o miles de radicados, precargar
- * un <select> con los primeros 100 por fecha deja de servir para encontrar uno en particular.
- */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });

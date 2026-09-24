@@ -9,16 +9,6 @@ import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContrata
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
-/**
- * Sube UN archivo atado a un requisito puntual del catálogo (checklist) — a
- * diferencia de SubirDocumentosContratoForm (multi-archivo libre, para lo que
- * no está en el catálogo), acá ya se sabe qué documento es.
- *
- * El nombre que queda guardado (`DocumentoContrato.nombre`) es el del
- * PROCEDIMIENTO, no el del archivo que subió el usuario (ej. "IMG_2384.pdf")
- * — así se ve/exporta/previsualiza siempre con el nombre real del documento
- * exigido por el Manual, sin depender de cómo llamó el archivo quien lo subió.
- */
 export function SubirDocumentoRequisitoForm({
   expedienteId,
   etapa,
@@ -33,8 +23,6 @@ export function SubirDocumentoRequisitoForm({
   requisitoId: string;
   requisitoNombre: string;
   firmadoEnSecopSugerido: boolean;
-  /** Requisito que se entrega por periodos (informe de supervisión): a qué periodo corresponde
-   * este archivo — un mes "AAAA-MM" o un espacio eventual. El servidor arma el nombre final. */
   periodoMes?: string;
   periodoEventualId?: string;
 }) {

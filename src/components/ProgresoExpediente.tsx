@@ -1,20 +1,6 @@
 const ESTADOS_TERMINALES = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
 const ESTADOS_EN_PAUSA = ["SUSPENDIDO", "INFORMACION_ADICIONAL_REQUERIDA"];
 
-/**
- * Barra de avance del expediente: cuánto del procedimiento ya se recorrió,
- * como una fila de segmentos (uno por paso del flujo) — así se "ve" en qué
- * punto va sin leer un número. No mide probabilidad de aprobación, mide
- * avance del proceso.
- *
- * Tres situaciones, cada una con su color, para que el estado no quede
- * escondido detrás de "un % que sube":
- *  - En trámite   → segmentos recorridos en verde CDMB, el paso actual resaltado.
- *  - En pausa     → SUSPENDIDO o INFORMACIÓN ADICIONAL REQUERIDA: ámbar/naranja;
- *                   el trámite no está avanzando y eso debe notarse.
- *  - Concluido    → todos los segmentos llenos, del color del desenlace
- *                   (aprobado = verde, negado = rojo, archivado/desistido = gris).
- */
 export function ProgresoExpediente({
   pasoActualNumero,
   totalPasos,
@@ -32,9 +18,6 @@ export function ProgresoExpediente({
   const enPausa = ESTADOS_EN_PAUSA.includes(estado);
 
   const pasoActual = Math.min(Math.max(pasoActualNumero, 1), totalPasos);
-  // "completados" = pasos YA SUPERADOS (antes del actual) — controla qué segmentos se ven "llenos" vs.
-  // "el actual, resaltado". El porcentaje es distinto a propósito: el paso actual ya se alcanzó (por
-  // algo el segmento se ve coloreado, no gris), así que SÍ cuenta para el avance.
   const completados = terminal ? totalPasos : pasoActual - 1;
   const pasosAlcanzados = terminal ? totalPasos : pasoActual;
   const pct = Math.round((pasosAlcanzados / totalPasos) * 100);

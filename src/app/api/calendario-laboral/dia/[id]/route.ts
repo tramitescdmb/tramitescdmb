@@ -3,7 +3,6 @@ import { revalidateTag } from "next/cache";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { cambiarEstadoDiaNoLaborado, eliminarDiaNoLaborado, CALENDARIO_LABORAL_TAG } from "@/lib/calendario-laboral";
 
-/** `accion` = "toggle" | "eliminar" sobre un día no laborado. Solo ADMIN. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

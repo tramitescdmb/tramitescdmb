@@ -18,7 +18,6 @@ async function cargar(id: string, periodoId: string, userId: string) {
   return { periodo };
 }
 
-/** Renombra un espacio eventual. Los documentos ya cargados conservan el nombre con el que se guardaron. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string; periodoId: string }> }) {
   const { id, periodoId } = await params;
   const session = await getSession();
@@ -36,7 +35,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ ok: true });
 }
 
-/** Quita un espacio eventual — solo si está vacío, para no dejar documentos sin periodo. */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string; periodoId: string }> }) {
   const { id, periodoId } = await params;
   const session = await getSession();

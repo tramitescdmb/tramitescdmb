@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import { calcularHashAuditoria, verificarCadenaFilas, type FilaHasheable } from "./auditoria-doc";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 
-// Construye una cadena de N eslabones en memoria, igual que lo haría
-// registrarAuditoriaDoc(), para probar la verificación sin tocar la base.
 type Fila = {
   secuencia: number;
   entidad: string;
@@ -59,7 +57,7 @@ describe("cadena de hash de auditoría inalterable", () => {
 
   it("detecta la alteración del contenido de una fila (cambia el detalle)", () => {
     const filas = construirCadena(5);
-    filas[2] = { ...filas[2], detalle: "MANIPULADO" }; // se altera sin recalcular el hash
+    filas[2] = { ...filas[2], detalle: "MANIPULADO" };
     const r = verificarCadenaFilas(filas);
     expect(r.ok).toBe(false);
     expect(r.secuenciaRota).toBe(3);
@@ -67,10 +65,9 @@ describe("cadena de hash de auditoría inalterable", () => {
 
   it("detecta la eliminación de una fila intermedia (rompe el encadenamiento)", () => {
     const filas = construirCadena(5);
-    filas.splice(2, 1); // se borra la fila de secuencia 3
+    filas.splice(2, 1);
     const r = verificarCadenaFilas(filas);
     expect(r.ok).toBe(false);
-    // la siguiente fila (secuencia 4) queda con un hashAnterior que ya no coincide
     expect(r.secuenciaRota).toBe(4);
   });
 

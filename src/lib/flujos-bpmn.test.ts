@@ -24,7 +24,7 @@ describe("flujoABpmn", () => {
     expect(xml).toContain('<bpmn:userTask id="Paso_1" name="Proyección">');
     expect(xml).toContain('<bpmn:endEvent id="End_3" name="Cierre">');
     expect(xml).toMatch(/<bpmn:sequenceFlow id="Flow_\d+" name="Aprobar" sourceRef="Paso_2" targetRef="End_3" \/>/);
-    expect(xml).toMatch(/name="Devolver" sourceRef="Paso_2" targetRef="Paso_1"/); // ciclo
+    expect(xml).toMatch(/name="Devolver" sourceRef="Paso_2" targetRef="Paso_1"/);
   });
 
   it("escapa comillas y ampersand en los nombres", () => {

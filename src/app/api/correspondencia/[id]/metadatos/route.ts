@@ -6,7 +6,6 @@ import { camposMetadatoPara, guardarMetadatosComunicacion } from "@/lib/metadato
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { db } from "@/lib/db";
 
-/** Guarda los metadatos adicionales de una comunicación. Gateado por puedeDistribuir. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

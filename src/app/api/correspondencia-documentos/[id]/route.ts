@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permi
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
-/** Descarga (URL firmada) de un documento de correspondencia — con auditoría de LECTURA. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

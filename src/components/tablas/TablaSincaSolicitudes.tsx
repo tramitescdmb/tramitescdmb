@@ -20,7 +20,6 @@ export type FilaSinca = {
   nit: string | null;
 };
 
-/** Tabla de solicitudes de SINCA 1.0 con columnas redimensionables (ancho recordado por navegador). */
 export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: FilaSinca[]; sinResultadosTexto: string }) {
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("sinca-solicitudes", ANCHOS_DEFECTO);
 

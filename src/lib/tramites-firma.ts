@@ -1,13 +1,6 @@
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 
-/**
- * Acciones de dominio sobre un ExpedienteDocumento que tocan su firma electrónica — editar
- * (reemplazar el archivo) invalida cualquier firma o solicitud ya registrada, porque quedarían
- * sobre un contenido que ya no existe. La regla de QUIÉN puede editar/eliminar un documento de
- * Trámites es la de siempre (ver src/lib/documentos.ts, puedeIntentarEliminarDocumento); esto solo
- * cubre lo que pasa con la firma cuando esa edición sí ocurre.
- */
 export async function editarDocumentoTramite(
   documentoId: string,
   datos: {
@@ -52,8 +45,6 @@ export async function editarDocumentoTramite(
   return { storagePathAnterior: anterior?.storagePath ?? null };
 }
 
-/** Marca un documento del expediente como validado manualmente — confirma que alguien ya lo
- * revisó, aparte de la aprobación automática que ocurre al completarse una firma. */
 export async function validarDocumentoTramite(
   documentoId: string,
   usuarioId: string,
@@ -91,8 +82,6 @@ export async function validarDocumentoTramite(
   });
 }
 
-/** Avisos de documentos rechazados visibles para este usuario: los que él mismo subió (para
- * poder corregirlos) y, si administra el módulo, todos los del sistema. */
 export async function listarAvisosRechazoTramiteParaUsuario(usuarioId: string, veTodos: boolean) {
   const avisos = await db.avisoRechazoDocumento.findMany({
     where: { documentoExpedienteId: { not: null }, ...(veTodos ? {} : { subidoPorId: usuarioId }) },

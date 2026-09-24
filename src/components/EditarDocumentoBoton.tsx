@@ -5,14 +5,6 @@ import { useRouter } from "next/navigation";
 import { Pencil, Upload, X } from "lucide-react";
 import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
 
-/**
- * Editar un documento de un expediente de trámites: nombre, si requiere firma, o reemplazar el
- * archivo real. Misma regla de acceso que eliminar (`puedeEditar`, calculado por el caller con
- * `puedeIntentarEliminarDocumento`): dentro de la etapa abierta puede quien lo subió o un
- * administrador; con la etapa ya cerrada, solo un administrador y con el oficio de solicitud del
- * Subdirector. Reemplazar el archivo invalida cualquier firma o solicitud de firma ya registrada
- * sobre él — quedarían sobre un contenido que ya no existe.
- */
 export function EditarDocumentoBoton({
   documentoId,
   expedienteId,

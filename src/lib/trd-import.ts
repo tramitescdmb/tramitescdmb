@@ -2,18 +2,6 @@ import Papa from "papaparse";
 import { db } from "@/lib/db";
 import type { DisposicionFinal } from "@prisma/client";
 
-/**
- * Importación de TRD desde CSV (Acuerdo 004/2019 AGN — el SGDEA debe permitir
- * cargar/versionar la TRD desde archivos planos, MoReq req. 1.1/1.7). El mismo
- * formato sirve para dos casos:
- *  - TRD VIGENTE: pasa a ser la versión activa de cada serie que toque; la
- *    versión anterior de esa serie (si existía) se cierra (vigenteHasta=ahora),
- *    NUNCA se borra — así queda disponible para lo que ya se clasificó con ella.
- *  - TRD HISTÓRICA: se carga ya cerrada desde el principio (vigenteHasta=ahora
- *    de una vez), solo para poder reclasificar/migrar información antigua sin
- *    afectar en nada la TRD vigente actual.
- */
-
 export type FilaTrdCsv = {
   dependencia_codigo: string;
   dependencia_nombre: string;
@@ -52,12 +40,6 @@ export const COLUMNAS_TRD_CSV = [
 
 const COLUMNAS_OBLIGATORIAS = ["dependencia_codigo", "serie_codigo", "subserie_codigo"];
 
-/**
- * Normaliza un encabezado (minúsculas, sin tildes, espacios/guiones → "_") y lo
- * mapea a la columna canónica si es una variante conocida. Así el archivo del
- * usuario no tiene que traer los nombres exactos: "Código Dependencia",
- * "codigo_dependencia" o "cod dependencia" llegan todos a "dependencia_codigo".
- */
 const ALIAS_COLUMNAS: Record<string, (typeof COLUMNAS_TRD_CSV)[number]> = {
   codigo_dependencia: "dependencia_codigo",
   cod_dependencia: "dependencia_codigo",
@@ -103,8 +85,6 @@ function normalizarEncabezado(h: string): string {
 export function parsearCsvTrd(contenido: string): { filas: FilaTrdCsv[]; errores: string[] } {
   const resultado = Papa.parse<FilaTrdCsv>(contenido.trim(), {
     header: true,
-    // Detecta automáticamente el separador — Excel exporta un CSV con ";" en
-    // configuración regional española y con "," en inglesa.
     delimitersToGuess: [";", ",", "\t", "|"],
     skipEmptyLines: true,
     transformHeader: normalizarEncabezado,
@@ -123,12 +103,6 @@ export function parsearCsvTrd(contenido: string): { filas: FilaTrdCsv[]; errores
   return { filas: resultado.data, errores };
 }
 
-/**
- * XML como formato alterno de intercambio de la TRD (MoReq 1.24), MISMAS columnas que el CSV — un
- * `<Fila>` plano por fila, sin atributos ni anidamiento, para poder leerlo con un parser mínimo propio sin
- * agregar una dependencia de XML de propósito general solo para este formato que controlamos por completo
- * en los dos extremos (lo que se exporta es exactamente lo único que el importador acepta).
- */
 function escaparXml(v: string): string {
   return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -202,18 +176,9 @@ export async function importarTrd(
   };
   const version = opciones.version.trim() || `import-${new Date().toISOString().slice(0, 10)}`;
 
-  // Sin transacción envolvente a propósito: son cientos de filas, cada una
-  // idempotente por sí sola (busca-o-crea) — envolverlas todas en una sola
-  // transacción larga agota el límite de tiempo de la conexión con Supabase.
-  // Si la importación se corta a la mitad, repetirla es seguro: retoma donde
-  // quedó sin duplicar nada.
   await (async (tx: typeof db) => {
       const dependenciaPorCodigo = new Map<string, string>();
-      const seriePorClave = new Map<string, string>(); // `${depId}:${serieCodigo}` -> serieId
-      // Detecta duplicados similares DENTRO del propio archivo (MoReq 1.6): el mismo código de serie o
-      // subserie apareciendo con un nombre distinto en otra fila casi siempre es un error de digitación,
-      // no una intención real — se avisa (no bloquea) para que quien importa lo revise; se procesa con el
-      // último nombre visto, igual que ya hacía antes de esta validación.
+      const seriePorClave = new Map<string, string>();
       const nombreSeriePorClave = new Map<string, string>();
       const nombreSubseriePorClave = new Map<string, string>();
 
@@ -272,7 +237,6 @@ export async function importarTrd(
             });
           } else {
             if (opciones.modo === "vigente") {
-              // Cierra la version anterior de ESTA serie en ESTA dependencia (nunca la borra).
               await tx.serieDocumental.updateMany({
                 where: { dependenciaId, codigo: serieCodigo, vigenteHasta: null },
                 data: { vigenteHasta: new Date() },

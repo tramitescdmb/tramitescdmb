@@ -5,40 +5,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ExternalLink, Lock, type LucideIcon } from "lucide-react";
 
-/**
- * Barra de menú de un módulo (SGDEA, SIGEC…): grupos con o sin desplegable, insignia opcional y
- * entradas BLOQUEADAS. Una entrada bloqueada se muestra a todos —así el sistema se ve completo y el
- * usuario sabe que existe— pero atenuada, con candado y la leyenda de quién sí puede usarla; no navega.
- * El control real de acceso sigue estando en cada página y en cada ruta de API: esto solo es la
- * vitrina, nunca la puerta.
- *
- * Los grupos se reparten en DOS bloques independientes (navegación a la izquierda, gestión a la
- * derecha) que envuelven cada uno por su cuenta — a diferencia de un solo `flex-wrap` con "empujar a
- * la derecha", que se rompe apenas hay más grupos de los que caben en una línea (el que debía quedar
- * al borde derecho termina flotando a la izquierda de su propia fila).
- */
-
 export type ItemMenu = {
   href: string;
   label: string;
   prefijo?: boolean;
   externo?: boolean;
-  /** Línea divisoria ANTES de esta entrada, para separar dentro de un mismo desplegable (ej.
-   * configuración estructural arriba, cuentas y seguridad abajo). */
   separador?: boolean;
-  /** Leyenda de quién puede usarla (ej. «Solo administrador»). Presente = entrada bloqueada. */
   bloqueadoPara?: string;
 };
 
 export type GrupoMenu = {
   label: string;
   icon: LucideIcon;
-  /** Enlace directo (sin desplegable). */
   href?: string;
   items?: ItemMenu[];
-  /** "izquierda" (navegación del módulo) o "derecha" (configuración/gestión). Por defecto "izquierda". */
   lado?: "izquierda" | "derecha";
-  /** Presente = todo el grupo está bloqueado para este usuario. */
   bloqueadoPara?: string;
   insignia?: { valor: number; alerta: boolean; titulo: string };
 };
@@ -50,7 +31,6 @@ export function BarraModulo({
 }: {
   grupos: GrupoMenu[];
   ariaLabel: string;
-  /** Regla propia de cada módulo para marcar una entrada como activa (por defecto, coincidencia de ruta). */
   esItemActivo?: (item: ItemMenu, pathname: string) => boolean;
 }) {
   const pathname = usePathname();
@@ -58,7 +38,7 @@ export function BarraModulo({
 
   const itemActivo = (it: ItemMenu) => {
     if (it.bloqueadoPara) return false;
-    if (it.href.includes("?")) return false; // atajos con filtros no son «una página»
+    if (it.href.includes("?")) return false;
     if (esItemActivo) return esItemActivo(it, pathname);
     const ruta = rutaDe(it.href);
     return it.prefijo ? pathname === ruta || pathname.startsWith(ruta + "/") : pathname === ruta;

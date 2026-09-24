@@ -19,10 +19,7 @@ const ANCHOS_DEFECTO = [28, 100, 180, 55, 90, 80, 32, 32];
 
 export type FilaNit = EntidadNit & { numero: number };
 
-/** Tabla del registro de terceros de SINCA 1.0, una fila por NIT/cédula distinto — columnas redimensionables (ancho recordado por navegador), igual patrón que Solicitudes y VITAL, filas compactas para que quepan más sin desplazar tanto. */
 export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sinResultadosTexto: string }) {
-  // Clave nueva (antes "sinca-nits"): si alguien ya había arrastrado una columna, ese ancho
-  // guardado en su navegador seguía pisando cualquier ajuste a los valores por defecto.
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("sinca-nits-v2", ANCHOS_DEFECTO);
 
   return (

@@ -5,12 +5,6 @@ import { Search, X } from "lucide-react";
 
 type Serie = { id: string; codigo: string; nombre: string; dependencia: { nombre: string } | null };
 
-/**
- * Filtro de serie documental por búsqueda de texto (MoReq 4.7) — reemplaza el desplegable plano que se
- * quitó a pedido del usuario (con 235+ series era peor UX que no tenerlo). Recibe TODAS las series ya
- * cargadas por el propio server component (sin consulta ni API nueva) y filtra en el cliente por código,
- * nombre o dependencia; solo cuando el usuario escribe se calcula y muestra la lista de coincidencias.
- */
 export function SelectorSerieBusqueda({ series, valorInicial }: { series: Serie[]; valorInicial?: string }) {
   const inicial = series.find((s) => s.id === valorInicial) ?? null;
   const [seleccionada, setSeleccionada] = useState<Serie | null>(inicial);

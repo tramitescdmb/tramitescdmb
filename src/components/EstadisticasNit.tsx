@@ -49,14 +49,6 @@ function Kpi({
   );
 }
 
-/**
- * Estadísticas sobre el registro COMPLETO de NIT/terceros (no solo lo que muestra el
- * filtro actual) — pensadas para evaluar más adelante si conviene depurar los terceros
- * que nunca han quedado vinculados a una solicitud con detalle disponible. Se calculan
- * aparte (ruta /api/historico/nits/estadisticas, con caché de varias horas porque
- * recorrer las ~33 mil filas del API toma cerca de 20 segundos) para no demorar la
- * carga del listado principal.
- */
 export function EstadisticasNit() {
   const [datos, setDatos] = useState<Estadisticas | null>(null);
   const [error, setError] = useState(false);

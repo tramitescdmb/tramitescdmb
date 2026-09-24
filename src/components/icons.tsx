@@ -1,13 +1,5 @@
 import type { SVGProps } from "react";
 
-/**
- * Set mínimo de íconos de línea (estilo consistente: trazo 1.75, sin relleno)
- * para acompañar los campos de los formularios — nunca solo el ícono, siempre
- * junto a su label (ver memoria de feedback del proyecto: todo se explica).
- * A propósito simples (círculos/rectángulos/trazos), no paths complejos, para
- * que sean fáciles de verificar visualmente y no queden rotos.
- */
-
 type IconProps = SVGProps<SVGSVGElement>;
 
 const base = {

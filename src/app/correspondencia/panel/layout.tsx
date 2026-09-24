@@ -5,12 +5,6 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeAdministrarAr
 import { SectionHelp } from "@/components/Field";
 import { PanelCicloNav } from "@/components/PanelCicloNav";
 
-/**
- * Tablero del SGDEA. El módulo se recorre como un ciclo de cuatro vistas —
- * mi trabajo → correspondencia → archivo → sistema — cada una en su propia
- * ruta. La navegación circular es común a todas; el contenido lo pone cada
- * vista.
- */
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");

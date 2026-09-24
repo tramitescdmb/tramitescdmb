@@ -6,11 +6,6 @@ import { Link2 } from "lucide-react";
 
 export type ExpedienteVinculable = { id: string; numero: string; objeto: string; etapa: string };
 
-/** Vincula un expediente ya existente a ESTE contratista, desde su ficha — sin importar la etapa en
- * la que esté el expediente. Vincular no es solo para firmas: el contratista con cuenta de acceso
- * consulta su expediente (incluidas las etapas Contractual y Postcontractual) y carga en él sus
- * documentos. Solo se ofrecen expedientes sin contratista: la norma general es UN contratista por
- * expediente. El vínculo queda en la bitácora del expediente. */
 export function VincularExpedienteAContratistaForm({
   contratistaId,
   tieneCuenta,

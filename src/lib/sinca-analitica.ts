@@ -3,20 +3,8 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
-/**
- * Analítica del histórico SINCA 1.0 — inferencia estadística y minería de datos
- * sobre la tabla espejo `SincaResolucion`. El grueso del cálculo se hace en
- * Postgres (percentiles, regresión lineal, correlación) y aquí solo se arma la
- * inferencia final (intervalos de confianza, banda de predicción).
- *
- * Todo va cacheado 1 h porque los datos solo cambian con la sincronización diaria.
- */
-
 const n = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0));
 
-// --- Inferencia -------------------------------------------------------------
-
-/** Intervalo de Wilson al 95 % para una proporción (más honesto que el normal con n chico). */
 function wilson(exitos: number, total: number): { p: number; lo: number; hi: number } {
   if (total === 0) return { p: 0, lo: 0, hi: 0 };
   const z = 1.96;
@@ -29,16 +17,6 @@ function wilson(exitos: number, total: number): { p: number; lo: number; hi: num
 
 export type Analitica = Awaited<ReturnType<typeof calcularAnalitica>>;
 
-/**
- * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
- * Con un rango, acota TODO a `fechaResolucion` dentro de [desde, hasta) —
- * KPIs, tiempo de resolución, fricción, concentración territorial,
- * recurrentes, minería de texto, pronóstico, estacionalidad y "volumen
- * últimos 12 meses" (ese último se interpreta relativo al FIN del período,
- * no a hoy, cuando hay uno activo). Con un período corto el pronóstico
- * puede quedar sin suficientes años completos — ya se apaga solo en ese
- * caso (`pronostico` queda `null`, la tarjeta se oculta).
- */
 export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const anioActual = new Date().getUTCFullYear();
   const condPeriodo = periodo
@@ -82,7 +60,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
       WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
 
-    // Regresión lineal de resoluciones/año (años completos, dentro del período elegido).
     db.$queryRaw<
       { slope: number; intercept: number; r2: number; avgx: number; sxx: number; syy: number; cnt: bigint }[]
     >`
@@ -95,7 +72,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
         GROUP BY 1
       ) t`,
 
-    // Estacionalidad y "volumen últimos 12 meses", dentro del período elegido.
     db.$queryRaw<{ anio: number; mes: number; c: bigint }[]>`
       SELECT EXTRACT(YEAR FROM "fechaResolucion")::int anio,
              EXTRACT(MONTH FROM "fechaResolucion")::int mes, COUNT(*) c
@@ -158,26 +134,20 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   ]);
   const totalGeneral = totalGeneralRaw;
 
-  // KPI tiempo de resolución
   const diasP50 = kpiRaw[0]?.p50 != null ? Math.round(kpiRaw[0].p50) : null;
   const diasP90 = kpiRaw[0]?.p90 != null ? Math.round(kpiRaw[0].p90) : null;
   const total = n(kpiRaw[0]?.total);
   const coberturaDias = total ? n(kpiRaw[0]?.con_dias) / total : 0;
   const coberturaNit = total ? n(coberturaRaw[0]?.con_nit) / total : 0;
 
-  // Tasa de aprobación con IC de Wilson
   const aprob = wilson(n(aprobacionRaw[0]?.aprobadas), n(aprobacionRaw[0]?.total));
 
-  // Concentración geográfica (HHI normalizado 0..1) + share top 5
   const totMun = concentracionRaw.reduce((a, r) => a + n(r.c), 0);
   const hhi = concentracionRaw.reduce((a, r) => a + Math.pow(n(r.c) / totMun, 2), 0);
   const kMun = concentracionRaw.length;
   const hhiNorm = kMun > 1 ? (hhi - 1 / kMun) / (1 - 1 / kMun) : 0;
   const top5Mun = totMun > 0 ? concentracionRaw.slice(0, 5).reduce((a, r) => a + n(r.c), 0) / totMun : 0;
 
-  // Volumen últimos 12 meses vs 12 previos — relativo al FIN del período elegido
-  // (o a hoy, en Total). Con un período más corto de 24 meses, "prev12" queda en 0
-  // (nada de eso entró en la consulta filtrada) y cambio12 se apaga solo (null → "—").
   const mesesOrden = serieMensualRaw
     .map((r) => ({ ym: r.anio * 12 + (r.mes - 1), c: n(r.c) }))
     .sort((a, b) => a.ym - b.ym);
@@ -189,7 +159,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const prev12 = ventana(hoyYm - 24, hoyYm - 12);
   const cambio12 = prev12 > 0 ? (ult12 - prev12) / prev12 : null;
 
-  // --- Pronóstico (regresión lineal + banda de predicción ~95%) ---
   const g = regresionRaw[0];
   let pronostico: {
     historico: { anio: number; valor: number }[];
@@ -199,7 +168,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   } | null = null;
   if (g && g.slope != null && n(g.cnt) >= 4) {
     const cnt = n(g.cnt);
-    const sErr = Math.sqrt((g.syy * (1 - g.r2)) / Math.max(1, cnt - 2)); // desv. residual
+    const sErr = Math.sqrt((g.syy * (1 - g.r2)) / Math.max(1, cnt - 2));
     const historico = (
       await db.$queryRaw<{ anio: number; c: bigint }[]>`
         SELECT "anioResolucion" anio, COUNT(*) c FROM "SincaResolucion"
@@ -214,7 +183,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
     pronostico = { historico, proyeccion, pendiente: g.slope, r2: g.r2 };
   }
 
-  // Estacionalidad: matriz año×mes + índice estacional por mes
   const aniosMatriz = [...new Set(serieMensualRaw.map((r) => r.anio))].sort();
   const heatmap = aniosMatriz.map((anio) => ({
     anio,
@@ -227,13 +195,11 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   const promGlobal = promMes.reduce((a, b) => a + b, 0) / 12 || 1;
   const indiceEstacional = promMes.map((v, m) => ({ mes: m + 1, indice: v / promGlobal }));
 
-  // Histograma de días
   const ordenBuckets = ["0-3 meses", "3-6 meses", "6-12 meses", "1-2 años", "2-4 años", "más de 4 años"];
   const histogramaDias = ordenBuckets
     .map((b) => ({ label: b, value: n(histogramaDiasRaw.find((r) => r.bucket === b)?.c) }))
     .filter((x) => x.value > 0);
 
-  // Fricción por tipo (% no aprobada, con IC Wilson)
   const friccionPorTipo = friccionPorTipoRaw
     .map((r) => {
       const w = wilson(n(r.no_aprobadas), n(r.total));
@@ -241,7 +207,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
     })
     .sort((a, b) => b.pct - a.pct);
 
-  // Pareto municipios
   let acum = 0;
   const paretoTotal = paretoMunicipioRaw.reduce((a, r) => a + n(r.c), 0);
   const pareto = paretoMunicipioRaw.map((r) => {
@@ -250,7 +215,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
   });
   const municipios80 = pareto.findIndex((p) => p.acumPct >= 0.8) + 1;
 
-  // Minería de texto sobre `proyecto`
   const textos = proyectos.map((p) => p.proyecto).filter(Boolean);
   const mineriaTexto = minarTexto(textos);
 
@@ -284,8 +248,6 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
     mineriaTexto,
   };
 }
-
-// --- Minería de texto ------------------------------------------------------
 
 const STOPWORDS = new Set(
   ("de la el en y a los las del un una para por con no se su lo como mas pero sus le ya o este si porque " +

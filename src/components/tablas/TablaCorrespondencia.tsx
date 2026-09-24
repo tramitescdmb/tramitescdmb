@@ -27,12 +27,9 @@ export type FilaCorrespondencia = {
   vencimiento: { texto: string; clase: string } | null;
   docs: number;
   documentosCoincidentes?: string[];
-  /** Vínculo entrada↔salida: `entrante` = el radicado enlazado es la recibida a la que responde;
-   * si no, es el oficio de salida que la responde. `despachada` = ese oficio ya se envió. */
   relacion?: { id: string; radicado: string; entrante: boolean; despachada: boolean } | null;
 };
 
-/** Tabla de correspondencia (recibida/enviada/interna) — columnas redimensionables (ancho recordado por navegador). */
 export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: FilaCorrespondencia[]; sinResultadosTexto: string }) {
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v5", ANCHOS_DEFECTO);
 

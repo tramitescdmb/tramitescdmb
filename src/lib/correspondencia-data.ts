@@ -9,14 +9,13 @@ export type FiltrosCorrespondencia = {
   estado?: string;
   dependencia?: string;
   serieId?: string;
-  vencimiento?: string; // "vencidas" | "por_vencer" (MoReq 7.19)
-  despacho?: string; // "sin_despachar" | "despachadas" (oficios de salida)
+  vencimiento?: string;
+  despacho?: string;
   orden?: string;
   page?: string;
   vista?: string;
 };
 
-/** Estados en los que una comunicación con término de ley todavía "corre" (no cerrada). */
 const ESTADOS_ABIERTOS_TERMINO: EstadoComunicacion[] = [
   "RADICADA",
   "EN_REPARTO",
@@ -64,30 +63,19 @@ export function esTipoValido(v: string | undefined): v is TipoComunicacion {
   return !!v && (TIPOS_VALIDOS as string[]).includes(v);
 }
 
-/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. Sin
- * filtro de tipo, la bandeja muestra las tres clases de comunicación (recibida/enviada/interna). */
-/** Campos (y relaciones) sobre los que se busca un término de texto libre. */
 function camposBusqueda(texto: string): Prisma.ComunicacionWhereInput[] {
   return [
     { radicado: { contains: texto, mode: "insensitive" } },
     { asunto: { contains: texto, mode: "insensitive" } },
     { terceroNombre: { contains: texto, mode: "insensitive" } },
     { terceroIdentificacion: { contains: texto } },
-    // El nombre de un adjunto — un oficio se recuerda por el archivo que se subió.
     { documentos: { some: { nombre: { contains: texto, mode: "insensitive" } } } },
-    // El CONTENIDO real (MoReq 4.11): cuerpo firmado de una enviada/memorando y borrador de respuesta.
     { contenido: { contains: texto, mode: "insensitive" } },
     { respuestaTexto: { contains: texto, mode: "insensitive" } },
-    // Palabra clave del vocabulario controlado (MoReq 5.5) — coincidencia exacta del término.
     { palabrasClave: { has: texto } },
   ];
 }
 
-/**
- * Excluye (MoReq 4.2, `-término`): ningún campo buscable contiene el texto. En
- * Postgres `NOT (col LIKE x)` es NULL cuando la columna es NULL (y NULL descarta
- * la fila), así que en los campos opcionales se admite explícitamente el NULL.
- */
 function clausulaExcluirBusqueda(texto: string): Prisma.ComunicacionWhereInput {
   const noContiene = (contains: Prisma.ComunicacionWhereInput): Prisma.ComunicacionWhereInput => ({ NOT: contains });
   const noContieneOpcional = (
@@ -110,11 +98,6 @@ function clausulaExcluirBusqueda(texto: string): Prisma.ComunicacionWhereInput {
   };
 }
 
-/**
- * Parte la consulta en términos (MoReq 4.2): respeta "frases entre comillas",
- * `-` al inicio de un término lo marca como exclusión, y `*` se trata como
- * separador (el match ya es por subcadena, así que actúa de comodín implícito).
- */
 export function parseConsultaBusqueda(q: string): { texto: string; excluir: boolean }[] {
   const terminos: { texto: string; excluir: boolean }[] = [];
   const re = /(-?)"([^"]+)"|(\S+)/g;
@@ -143,9 +126,6 @@ export function construirWhereCorrespondencia(
   const and: Prisma.ComunicacionWhereInput[] = [];
   if (esTipoValido(f.tipo)) and.push({ tipo: f.tipo });
   if (f.q?.trim()) {
-    // MoReq 4.2: operadores. "frase exacta" entre comillas; -palabra excluye; varios
-    // términos se combinan con Y (todos deben aparecer, en cualquier campo buscable);
-    // el * es comodín — como el match ya es por subcadena, se trata como separador.
     for (const { texto, excluir } of parseConsultaBusqueda(f.q)) {
       and.push(excluir ? clausulaExcluirBusqueda(texto) : { OR: camposBusqueda(texto) });
     }
@@ -167,29 +147,18 @@ export function construirWhereCorrespondencia(
   return and.length ? { AND: and } : {};
 }
 
-/**
- * Cuenta de comunicaciones con el término de ley vencido y aún sin cerrar
- * (MoReq 7.19: notificación de incumplimiento — sin correo, es un aviso visible
- * en la bandeja para quien tramita).
- */
 export async function contarComunicacionesVencidas(): Promise<number> {
   return db.comunicacion.count({
     where: { estado: { in: ESTADOS_ABIERTOS_TERMINO }, fechaVencimiento: { lt: new Date() } },
   });
 }
 
-/** Oficios de salida radicados y firmados que la ventanilla de salida no ha despachado. */
 export async function contarOficiosSinDespachar(): Promise<number> {
   return db.comunicacion.count({
     where: { tipo: "ENVIADA", estado: { not: "ANULADA" }, despachadaEn: null, firmas: { some: {} } },
   });
 }
 
-/**
- * Comunicaciones sin clasificación TRD completa (sin serie o sin subserie),
- * excluidas las anuladas (MoReq 1.34: garantizar que todo documento quede
- * asociado a una TRD — el aviso hace visible lo que falta reclasificar).
- */
 export async function getComunicacionesSinClasificar(limite = 100) {
   const where = { estado: { not: "ANULADA" as EstadoComunicacion }, OR: [{ serieId: null }, { subserieId: null }] };
   const [total, filas] = await Promise.all([
@@ -223,13 +192,8 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
         dependenciaDestino: { select: { nombre: true } },
         dependenciaOrigen: { select: { nombre: true } },
         _count: { select: { documentos: true } },
-        // Relación entrada ↔ salida: una RECIBIDA muestra su oficio de respuesta (y si ya se despachó);
-        // una ENVIADA muestra a qué recibida responde.
         respondeA: { select: { id: true, radicado: true } },
         respuestas: { select: { id: true, radicado: true, despachadaEn: true }, orderBy: { fechaRadicacion: "desc" }, take: 1 },
-        // Solo trae los documentos que coinciden con la búsqueda, para mostrar "Coincide: archivo.pdf"
-        // en el resultado. Sin término de búsqueda, `id` nunca es "" así que no trae ninguno — mismo
-        // patrón que listarExpedientesDocumentales, para no alternar la forma del include/resultado.
         documentos: { where: q ? { nombre: { contains: q, mode: "insensitive" } } : { id: "" }, select: { nombre: true }, take: 3 },
       },
     }),
@@ -245,8 +209,6 @@ export async function getCorrespondenciaOpcionesFiltro() {
       orderBy: [{ nivel: "asc" }, { orden: "asc" }, { nombre: "asc" }],
       select: { id: true, nombre: true },
     }),
-    // Vigentes de cualquier dependencia — el filtro de serie es independiente del de dependencia
-    // (se puede filtrar por serie sin haber elegido antes una dependencia).
     db.serieDocumental.findMany({
       where: { activo: true, vigenteHasta: null },
       orderBy: { codigo: "asc" },

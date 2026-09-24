@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 
-/** Descarta un aviso de documento de trámites rechazado. Lo puede borrar quien subió el
- * documento (a quien le llegó el aviso) o un administrador. También se limpia solo al
- * reemplazar el archivo rechazado (ver editarDocumentoTramite) — esta ruta es para cuando la
- * persona simplemente quiere quitarlo del buzón sin tocar el documento. */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

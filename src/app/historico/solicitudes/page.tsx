@@ -59,10 +59,6 @@ export default async function HistoricoSolicitudesPage({
 
   const hayFiltros = Boolean(filtros.q || rango || filtros.tipo || filtros.municipio || filtros.estado);
 
-  // Frase legible de lo que dio el filtro — antes solo se veía el "Mostrando
-  // X–Y de Z" del paginador, y ese se ocultaba por completo si el resultado
-  // cabía en una sola página, dejando sin ninguna pista de cuántos había en
-  // total para decidir si convenía cambiar la Vista a 100/150/200/Todos.
   const clausulasFiltro: string[] = [];
   if (filtros.tipo) {
     const tipo = opciones.tipos.find((t) => t.codigo === filtros.tipo);

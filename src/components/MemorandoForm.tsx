@@ -27,8 +27,6 @@ export function MemorandoForm({
 }: {
   dependencias: Dependencia[];
   series: Serie[];
-  /** Funcionarios activos con acceso al módulo, para asignar el memorando a una persona puntual de
-   * la dependencia destino (casi siempre su jefe) — ver el selector "Asignar a" más abajo. */
   usuarios?: UsuarioDestino[];
   dependenciaOrigenSugerida: string | null;
   plantillas?: PlantillaOpcion[];
@@ -58,8 +56,6 @@ export function MemorandoForm({
 
   function cambiarDependenciaDestino(nuevoId: string) {
     setDependenciaDestinoId(nuevoId);
-    // El jefe de esa oficina es casi siempre a quien corresponde asignarlo — se preselecciona,
-    // pero se puede cambiar o dejar sin asignar (queda para repartir después, como antes).
     const jefe = usuarios.find((u) => u.dependenciaId === nuevoId && u.rolCorrespondencia === "JEFE_DEPENDENCIA");
     setUsuarioDestinoId(jefe?.id ?? "");
   }

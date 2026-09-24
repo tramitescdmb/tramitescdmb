@@ -4,10 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 
-/** Bloqueo DURO: si faltan documentos obligatorios del catálogo, el servidor responde 409 con la
- * lista y aquí NO se ofrece forma de saltarlo — decisión explícita del usuario (2026-09-18):
- * "impedir el cierre de cualquier etapa contractual si falta alguno de los documentos marcados
- * como obligatorios". Antes existía un `forzar=true` para aprobar de todas formas; se retiró. */
 export function AprobarEtapaContratoBoton({ expedienteId, etiquetaSiguiente }: { expedienteId: string; etiquetaSiguiente: string }) {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);

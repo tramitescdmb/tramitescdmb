@@ -23,15 +23,6 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Plus, Save, Trash2, RotateCcw } from "lucide-react";
 
-/**
- * Editor visual del flujo (React Flow, MIT). Se arrastran los pasos para
- * colocarlos y se tira desde el borde de un paso hasta otro para crear una
- * transición. Un panel lateral edita el paso o la conexión seleccionada.
- * "Guardar diagrama" manda todo a /api/correspondencia/flujos/[id]/lienzo.
- * Las propiedades finas del paso (instrucciones, término, responsable) siguen
- * en la lista de abajo.
- */
-
 type Tipo = "TAREA" | "REVISION" | "DECISION" | "FIN";
 const ETIQUETA_TIPO: Record<Tipo, string> = { TAREA: "Tarea", REVISION: "Revisión", DECISION: "Decisión", FIN: "Fin" };
 const BORDE_TIPO: Record<Tipo, string> = {
@@ -300,8 +291,6 @@ function Editor({
 }
 
 export function FlujoLienzo(props: { flujoId: string; pasos: PasoLienzo[]; transiciones: TransLienzo[] }) {
-  // key estable por contenido: al guardar, router.refresh() cambia estas props y el editor
-  // se re-monta con el estado fresco (sin ids temporales colgando).
   const clave = useMemo(
     () =>
       props.pasos.map((p) => `${p.id}:${p.nombre}:${p.tipo}:${p.posX}:${p.posY}:${p.orden}`).join("|") +

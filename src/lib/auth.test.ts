@@ -22,7 +22,7 @@ describe("calcularVentanaSesion", () => {
 
   it("al acercarse al tope absoluto de 7 días, la ventana se recorta para no pasarlo", () => {
     const loginAt = 1000;
-    const ahora = loginAt + TOPE_ABSOLUTO_SEGUNDOS - 10; // faltan 10s para el tope
+    const ahora = loginAt + TOPE_ABSOLUTO_SEGUNDOS - 10;
     const r = calcularVentanaSesion(loginAt, ahora);
     expect(r.valida).toBe(true);
     expect(r.maxAge).toBe(10);

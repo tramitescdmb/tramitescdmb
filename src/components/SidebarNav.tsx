@@ -37,11 +37,6 @@ const ITEMS_ADMIN: Item[] = [
   { href: "/admin/modulos", label: "Módulos", icon: LayoutGrid },
 ];
 
-/**
- * Lista de navegación compartida entre el sidebar de escritorio y el menú
- * (drawer) de pantallas chicas — el resaltado del enlace activo (que
- * necesita usePathname, por eso "use client") vive en un solo lugar.
- */
 export function SidebarNav({
   esAdmin,
   mostrarVital = false,
@@ -51,15 +46,10 @@ export function SidebarNav({
   colapsado = false,
 }: {
   esAdmin: boolean;
-  /** VITAL tiene al menos una pestaña permitida para este usuario. */
   mostrarVital?: boolean;
-  /** SINCA 1.0 está configurado en este despliegue Y tiene al menos una pestaña permitida. */
   mostrarSinca?: boolean;
-  /** El usuario tiene acceso al módulo de correspondencia (SGDEA). */
   mostrarCorrespondencia?: boolean;
-  /** El usuario tiene acceso al módulo de Contratación. */
   mostrarContratacion?: boolean;
-  /** Sidebar de escritorio reducido a una franja de íconos (ver Sidebar.tsx) — el menú móvil nunca pasa esto en true. */
   colapsado?: boolean;
 }) {
   const pathname = usePathname();

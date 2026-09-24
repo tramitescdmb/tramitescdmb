@@ -4,8 +4,6 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SeguridadFormulario } from "@/components/admin/SeguridadFormulario";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 
-/** Seguridad de toda la aplicación. El mismo formulario se monta también dentro de cada módulo
- * (ej. /contratacion/seguridad) para que sus administradores lo usen sin salir de él. */
 export default async function SeguridadPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");

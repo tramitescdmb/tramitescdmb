@@ -2,18 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { listarResoluciones, obtenerResolucionDetalle, type SincaResolucionApi } from "@/lib/sinca";
 
-/**
- * Sincroniza la tabla espejo `SincaResolucion` con el API de SINCA 1.0.
- *
- * El endpoint solo tiene ~5.163 registros y admite páginas grandes, así que
- * cada corrida trae TODO (unas 6 peticiones, segundos) y hace upsert. Es más
- * simple y más robusto que un incremental: los históricos casi no cambian,
- * pero a veces les agregan/ajustan la resolución, y así siempre quedan al día.
- *
- * Las filas que ya no aparecen en el API se eliminan (es un espejo, no una
- * fuente propia).
- */
-
 const POR_PAGINA = 500;
 
 function parseTipo(tipo: string | null) {
@@ -25,12 +13,9 @@ function parseTipo(tipo: string | null) {
 
 function parseFecha(valor: string | null): Date | null {
   if (!valor) return null;
-  // "2026-07-03 00:00:00" o "2026-07-03"
   const iso = valor.includes(" ") ? valor.replace(" ", "T") : valor;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  // SINCA 1.0 tiene fechas con typos ("0201-...", "2502-...", "10-..."). Se
-  // descartan las de años imposibles para que no ensucien el dashboard.
   const anio = d.getUTCFullYear();
   if (anio < 1980 || anio > new Date().getUTCFullYear() + 1) return null;
   return d;
@@ -45,7 +30,7 @@ function parseEntero(valor: string | number | null | undefined): number {
 function coordenadas(row: SincaResolucionApi): { lat: number | null; lon: number | null } {
   const c = row.geojson_GMS?.coordinates;
   if (Array.isArray(c) && c.length === 2 && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
-    return { lon: c[0], lat: c[1] }; // GeoJSON: [lon, lat]
+    return { lon: c[0], lat: c[1] };
   }
   return { lat: null, lon: null };
 }
@@ -100,12 +85,6 @@ function diffDias(desde: Date | null, hasta: Date | null): number | null {
   return d >= 0 && d <= 4000 ? d : null;
 }
 
-/**
- * Trae el detalle (`GET /presinca/resoluciones/{n}`) de las filas sin enriquecer
- * y completa `fechaRecibido`, `diasResolucion` y los datos del solicitante.
- * `limite` acota cuántas por corrida (el cron va completando de a poco);
- * sin límite recorre todas (script `sinca:enrich`).
- */
 export async function enriquecerResoluciones(opts: { limite?: number; concurrencia?: number } = {}): Promise<number> {
   const concurrencia = opts.concurrencia ?? 4;
   const pendientes = await db.sincaResolucion.findMany({
@@ -141,9 +120,7 @@ export async function enriquecerResoluciones(opts: { limite?: number; concurrenc
             },
           });
           hechos++;
-        } catch {
-          /* se reintenta en la próxima corrida */
-        }
+        } catch {}
       })
     );
   }
@@ -155,8 +132,6 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
   const registro = await db.sincaSincronizacion.create({ data: { disparadoPor } });
 
   try {
-    // Enriquecimiento existente (fechaRecibido, días, solicitante) — solo lo entrega
-    // el endpoint de detalle, así que hay que conservarlo al reconstruir el espejo.
     const previos = await db.sincaResolucion.findMany({
       select: {
         nroSolicitud: true,
@@ -170,7 +145,6 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
     const idsExistentes = new Set(previos.map((r) => r.nroSolicitud));
     const enriquecimientoPrevio = new Map(previos.map((r) => [r.nroSolicitud, r]));
 
-    // 1. Traer TODAS las páginas del API.
     const filasPorId = new Map<number, Prisma.SincaResolucionCreateManyInput>();
     let page = 1;
     let totalApi = 0;
@@ -201,7 +175,6 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
       throw new Error("El API no devolvió ningún registro; se aborta para no vaciar el espejo.");
     }
 
-    // 2. Reemplazo atómico (es un espejo): borrar todo y volver a insertar por lotes.
     const LOTE = 1000;
     const lotes: Prisma.SincaResolucionCreateManyInput[][] = [];
     for (let i = 0; i < filas.length; i += LOTE) lotes.push(filas.slice(i, i + LOTE));
@@ -215,10 +188,6 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
     const eliminados = [...idsExistentes].filter((id) => !filasPorId.has(id)).length;
     const actualizados = filas.length - creados;
 
-    // 3. Enriquecer (detalle) un lote pequeño de las que aún no lo están — para
-    //    mantener al día lo nuevo sin arriesgar el límite de tiempo de la función
-    //    serverless. El backfill completo (5.000+) se hace una sola vez con
-    //    `npm run sinca:enrich` desde una máquina, no aquí.
     const enriquecidos = await enriquecerResoluciones({ limite: 150 });
 
     const resultado: ResultadoSincronizacion = {

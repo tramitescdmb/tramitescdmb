@@ -5,8 +5,6 @@ import { Search, X } from "lucide-react";
 
 type Dependencia = { id: string; nombre: string };
 
-/** Selector de dependencia por búsqueda de texto — con 29 dependencias reales de la CDMB,
- * un <select> plano obliga a desplazarse; se escribe una palabra del nombre y se elige. */
 export function BuscadorDependencia({
   dependencias,
   value,

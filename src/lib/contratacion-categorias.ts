@@ -1,14 +1,5 @@
 import type { EtapaContratacion } from "@prisma/client";
 
-/**
- * Sugerencias de categoría/nombre de documento por etapa, tomadas de los
- * nombres de archivo reales de `Modelo/Contratacion/Formatos/FORMATOS/**`
- * (119 formatos oficiales A-BS-FOxx). A propósito NO son un catálogo cerrado
- * ni generan un formulario por formato — son solo sugerencias de un
- * `<datalist>` sobre un campo de texto libre (`DocumentoContrato.categoria`),
- * para no convertir este módulo en un ERP con un formulario por cada uno de
- * los 119 formatos.
- */
 export const CATEGORIAS_SUGERIDAS: Record<EtapaContratacion, string[]> = {
   PRECONTRACTUAL: [
     "Aceptación de oferta / invitación pública",

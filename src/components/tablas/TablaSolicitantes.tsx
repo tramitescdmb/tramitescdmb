@@ -19,7 +19,6 @@ export type FilaSolicitante = {
   totalExpedientes: number;
 };
 
-/** Tabla de solicitantes con columnas redimensionables (ancho recordado por navegador). */
 export function TablaSolicitantes({ filas, sinResultadosTexto }: { filas: FilaSolicitante[]; sinResultadosTexto: string }) {
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("solicitantes", ANCHOS_DEFECTO);
 

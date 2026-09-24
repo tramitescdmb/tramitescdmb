@@ -16,8 +16,6 @@ export async function GET() {
   return NextResponse.json({ requisitos });
 }
 
-/** Agrega un requisito nuevo al catálogo — solo el Administrador de Contratación, es
- * configuración estructural del módulo (mismo nivel que /correspondencia/admin en SGDEA). */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

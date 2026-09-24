@@ -8,7 +8,6 @@ import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const AMBITOS: AmbitoCampoMetadato[] = ["COMUNICACION", "EXPEDIENTE", "AMBOS"];
 
-/** Edita / activa / borra un campo de metadato. `accion` = "editar" | "toggle" | "eliminar". */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

@@ -6,7 +6,6 @@ import { editarDocumentoArchivo, retirarDocumentoArchivo } from "@/lib/expedient
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-/** Corrige (metadata) o retira del índice un archivo de un expediente ABIERTO. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; docId: string }> }) {
   const { id, docId } = await params;
   const session = await getSession();

@@ -10,7 +10,6 @@ const MAX_MESES_SERIE = 120;
 
 export type FiltrosVital = { q?: string; tramite?: string; page?: string; vista?: string };
 
-/** `rango`: mismo período seleccionable de los dashboards, acotando por `fechaRadicacion`. */
 export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
   if (f.q?.trim()) {
@@ -29,7 +28,6 @@ export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null)
   return and.length ? { AND: and } : {};
 }
 
-/** Listado paginado de /vital con la barra de filtros. `filtros.vista` elige cuántos por página (50/100/150/200/todos). */
 export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
@@ -60,7 +58,6 @@ export async function getVitalOpcionesFiltro() {
   };
 }
 
-/** Las 10 solicitudes más recientes por fecha de radicación (o de sincronización si no hay fecha). */
 export async function getVitalUltimasRadicadas(n = 10) {
   return db.solicitudVital.findMany({
     orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
@@ -79,13 +76,6 @@ export async function getVitalUltimasRadicadas(n = 10) {
   });
 }
 
-/** Datos agregados para /vital/dashboard. */
-/**
- * `periodo`: `null` = Total, todo el histórico (comportamiento de siempre).
- * Con un rango, todo el tablero queda acotado a `fechaRadicacion` dentro de
- * [desde, hasta) — incluida la serie mensual, que pasa a recorrer
- * exactamente ese rango en vez de un trailing fijo de 24 meses.
- */
 export async function getVitalDashboard(periodo: RangoPeriodo = null) {
   const filtroFecha: Prisma.SolicitudVitalWhereInput = periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {};
   const condicionMensualSql = periodo
@@ -125,7 +115,6 @@ export async function getVitalDashboard(periodo: RangoPeriodo = null) {
       db.solicitudVital.aggregate({ _max: { ultimaSincronizacion: true } }),
     ]);
 
-  // serie mensual: recorre exactamente el rango elegido (o el trailing de 24 meses de siempre si es "Total").
   const hastaSerie = periodo ? new Date(periodo.hasta.getTime() - 1) : new Date();
   const desdeSerie = periodo ? periodo.desde : new Date(hastaSerie.getFullYear(), hastaSerie.getMonth() - 23, 1);
   const totalMeses = Math.min(

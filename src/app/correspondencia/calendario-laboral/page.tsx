@@ -13,7 +13,6 @@ const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm fo
 export default async function CalendarioLaboralPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
-  // Config de toda la Corporación (afecta términos de ley entidad-wide): ADMIN, igual que sus rutas de API.
   if (session.rol !== "ADMIN") redirect("/correspondencia");
 
   const sp = await searchParams;
@@ -45,7 +44,6 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      {/* Jornada */}
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarDays className="h-4 w-4 text-cdmb-600" aria-hidden /> Jornada laboral
@@ -91,7 +89,6 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         </form>
       </section>
 
-      {/* Días no laborados */}
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarOff className="h-4 w-4 text-cdmb-600" aria-hidden /> Días no laborados de la Corporación
@@ -153,7 +150,6 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         )}
       </section>
 
-      {/* Festivos de ley (referencia) */}
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="text-sm font-semibold text-stone-900">Festivos de ley {anio} (referencia)</h3>
         <SectionHelp>Se calculan solos (Ley 51/1983 — Ley Emiliani) y no se editan aquí.</SectionHelp>

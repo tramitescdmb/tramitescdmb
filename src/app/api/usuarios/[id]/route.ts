@@ -25,12 +25,6 @@ const ROLES_CONTRATACION_VALIDOS: RolContratacion[] = [
 ];
 const ESTADOS_CUENTA_VALIDOS: EstadoCuenta[] = ["HABILITADA", "DESHABILITADA", "BLOQUEADA", "SUSPENDIDA"];
 
-/**
- * Editar cargo(s)/rol/acceso por trámite y por sección de un usuario YA
- * EXISTENTE — antes no existía (solo se podía crear o activar/desactivar),
- * lo que dejaba sin forma de configurar a un funcionario que ya entró por
- * Directorio Activo.
- */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -80,8 +74,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? body.estadoCuenta
     : undefined;
 
-  // SGDEA / Correspondencia — el campo del body es `undefined` cuando no se envió (no tocar) y
-  // `null`/cadena vacía cuando se envió para quitarlo, así que se distinguen con "in body".
   const dependenciaId: string | null | undefined = "dependenciaId" in body
     ? (typeof body.dependenciaId === "string" && body.dependenciaId ? body.dependenciaId : null)
     : undefined;
@@ -92,7 +84,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? (typeof body.rolCorrespondenciaVigenteHasta === "string" && body.rolCorrespondenciaVigenteHasta ? new Date(body.rolCorrespondenciaVigenteHasta) : null)
     : undefined;
 
-  // Contratación — mismo criterio de "in body" para distinguir "no tocar" de "quitar".
   const rolContratacion: RolContratacion | null | undefined = "rolContratacion" in body
     ? (ROLES_CONTRATACION_VALIDOS.includes(body.rolContratacion) ? body.rolContratacion : null)
     : undefined;
@@ -139,7 +130,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const passwordHash = password ? await hashPassword(password) : undefined;
   if (passwordHash) {
-    // Guarda el hash SALIENTE en el histórico antes de sobrescribirlo.
     await registrarHistorialPassword(usuario.id, usuario.passwordHash, config.passwordHistorialCantidad);
   }
 
@@ -190,8 +180,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       tipoPersona: contratistaTipoPersona,
     });
   } else if (rolContratacion !== undefined) {
-    // Cambió a otro rol (o se le quitó el acceso): se desvincula el registro de Contratista de
-    // este usuario, sin borrarlo — sus expedientes históricos como contratista siguen intactos.
     await desvincularContratistaDeUsuario(id);
   }
 

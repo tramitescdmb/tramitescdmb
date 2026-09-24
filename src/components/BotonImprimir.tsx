@@ -7,10 +7,6 @@ const ESTILOS = {
   secundario: { boton: "border border-stone-200 bg-white px-3 py-2 text-stone-700 hover:bg-stone-50", icono: "h-3.5 w-3.5" },
 };
 
-/** Único botón "Imprimir" del proyecto — llama a window.print() y se oculta a sí mismo al imprimir. Junto
- * a un formulario de una sola pantalla (constancia) usa el estilo "primario" (por defecto); junto a otras
- * acciones secundarias como Descargar CSV (bandeja, expedientes) usa "secundario" para no competir
- * visualmente con la acción principal de la pantalla. */
 export function BotonImprimir({ children = "Imprimir", variante = "primario" }: { children?: React.ReactNode; variante?: "primario" | "secundario" }) {
   return (
     <button

@@ -3,8 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarEtapasContratacion } from "@/lib/permisos";
 import { retrocederEtapaContratacion } from "@/lib/contratacion";
 
-/** Retrocede el expediente a la etapa inmediatamente anterior (corrige un avance hecho por
- * error) — Administrador o Jefe de Contratación, exige motivo. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

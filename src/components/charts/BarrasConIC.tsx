@@ -2,11 +2,6 @@ type Item = { label: string; valor: number; lo: number; hi: number; nota?: strin
 
 const COLOR = "#2a78d6";
 
-/**
- * Barras horizontales de una proporción (0–1) con su intervalo de confianza
- * del 95 % dibujado como bigote. Para comparar tasas entre categorías sin
- * confundir ruido con señal (categorías con pocos casos tienen IC ancho).
- */
 export function BarrasConIC({
   data,
   emptyMessage,
@@ -35,7 +30,6 @@ export function BarrasConIC({
             <div className="relative h-2.5">
               <div className="absolute inset-y-0 left-0 rounded-full bg-stone-100" style={{ width: "100%" }} />
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: w(item.valor), backgroundColor: COLOR }} />
-              {/* intervalo de confianza */}
               <div
                 className="absolute top-1/2 h-[6px] -translate-y-1/2 rounded-full border-x-2 border-stone-500/70"
                 style={{ left: w(item.lo), width: `calc(${w(item.hi)} - ${w(item.lo)})` }}

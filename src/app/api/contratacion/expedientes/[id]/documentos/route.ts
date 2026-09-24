@@ -7,12 +7,6 @@ import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
-/**
- * Confirma un documento YA SUBIDO al storage (solo metadatos en este POST, no
- * el archivo — ver src/lib/uploads-client.ts `subirArchivoContrato`). Vuelve a
- * validar el tamaño en el servidor: nunca confiar solo en la compresión/tope
- * del cliente.
- */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

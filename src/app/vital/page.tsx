@@ -51,10 +51,6 @@ export default async function VitalSolicitudesPage({
   const hayFiltros = Boolean(sp.q || sp.tramite || rango);
   const CAMPOS_FILTRO = ["q", "tramite", "desde", "hasta"] as const;
 
-  // Frase legible de lo que dio el filtro — el "Mostrando X–Y de Z" del
-  // paginador se ocultaba por completo si el resultado cabía en una sola
-  // página, dejando sin ninguna pista de cuántos había en total para decidir
-  // si convenía cambiar la Vista a 100/150/200/Todos.
   const clausulasFiltro: string[] = [];
   if (sp.tramite) {
     const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
@@ -90,7 +86,6 @@ export default async function VitalSolicitudesPage({
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
-      {/* Filtros estilo SINCA 1.0 */}
       <form method="get" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}

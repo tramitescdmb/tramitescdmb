@@ -98,11 +98,6 @@ async function seedTramites() {
       },
     });
 
-    // documentosRequeridos no tiene FK desde Expediente (a diferencia de Flujo/PasoDefinicion, que
-    // sí referencia Expediente.flujoId) — así que borrarlo y re-sembrarlo es siempre seguro, tenga
-    // o no expedientes reales el trámite. Esto debe ir ANTES del guard de abajo: si el trámite ya
-    // tiene expedientes y hacemos `continue`, un `createMany` posterior a ese guard nunca se
-    // ejecutaría y el trámite se quedaría sin su lista de "documentos para radicar".
     await db.documentoRequeridoDefinicion.deleteMany({ where: { tramiteTipoId: tramite.id } });
     if (t.documentosRequeridos?.length) {
       await db.documentoRequeridoDefinicion.createMany({
@@ -117,10 +112,6 @@ async function seedTramites() {
       });
     }
 
-    // Reset de flujos/pasos para poder re-sembrar de forma idempotente — pero si ya hay expedientes
-    // reales que apuntan a un flujo de este trámite, borrarlo rompe la referencia (FK). En ese
-    // caso se deja el flujo/pasos existentes tal cual (no se puede re-sembrar ese trámite sin
-    // antes migrar sus expedientes a los flujos nuevos) y se sigue con los demás.
     const expedientesExistentes = await db.expediente.count({ where: { tramiteTipoId: tramite.id } });
     if (expedientesExistentes > 0) {
       console.log(
@@ -213,10 +204,6 @@ async function seedConfiguracionSitio() {
   console.log("Configuración del sitio (fila singleton) lista.");
 }
 
-// SGDEA — organigrama REAL de la CDMB (códigos y nombres oficiales tal como
-// aparecen en la TRD/CCD vigentes: A-GD-F013 v5 y A-GD-FO31 v2) + una serie
-// "sin clasificar" para no bloquear la radicación mientras se cargan TRD
-// adicionales desde el admin. Todo es upsert idempotente por código.
 async function seedCorrespondencia() {
   const dependencias: { codigo: string; nombre: string; parent?: string; nivel: number; orden: number }[] = [
     { codigo: "100", nombre: "Dirección General", nivel: 0, orden: 0 },
@@ -260,9 +247,6 @@ async function seedCorrespondencia() {
     idPorCodigo.set(d.codigo, fila.id);
   }
 
-  // Serie/subserie por defecto para poder radicar sin TRD cargada aún. Prisma
-  // no admite `null` dentro de una clave compuesta como filtro de upsert, así
-  // que se busca primero y se crea solo si falta.
   const serie =
     (await db.serieDocumental.findFirst({ where: { codigo: "SIN-CLASIF", version: "1", dependenciaId: null } })) ??
     (await db.serieDocumental.create({ data: { codigo: "SIN-CLASIF", nombre: "Sin clasificar (pendiente TRD)", version: "1" } }));

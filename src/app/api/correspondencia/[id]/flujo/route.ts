@@ -6,7 +6,6 @@ import { iniciarInstancia, avanzarInstancia, cancelarInstancia, puedeOperarFlujo
 import { registrarAccesoDenegadoAccion, datosPeticion } from "@/lib/auditoria-doc";
 import { db } from "@/lib/db";
 
-/** Inicia, avanza o cancela un flujo sobre una comunicación. `accion` = "iniciar" | "avanzar" | "cancelar". */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

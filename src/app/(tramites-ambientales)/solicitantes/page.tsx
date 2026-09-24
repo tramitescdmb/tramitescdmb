@@ -68,7 +68,6 @@ export default async function SolicitantesPage({
     return qs ? `/solicitantes?${qs}` : "/solicitantes";
   };
 
-  // Frase legible de lo que dio el filtro, siempre visible.
   const clausulasFiltro: string[] = [];
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);

@@ -6,7 +6,6 @@ import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
 import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
-/** Firma de subida para un archivo que va DIRECTO a un expediente documental (no vía correspondencia). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

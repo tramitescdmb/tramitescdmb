@@ -26,7 +26,7 @@ export function EliminarDocumentoBoton({
       const respuesta = prompt(
         `"${nombre}" quedó en una etapa que ya se cerró. Para eliminarlo, debe indicarse el número o referencia del oficio de solicitud del Subdirector (obligatorio):`
       );
-      if (respuesta === null) return; // canceló el diálogo
+      if (respuesta === null) return;
       oficio = respuesta.trim();
       if (!oficio) {
         alert("Se requiere el oficio de solicitud del Subdirector para eliminar un documento de una etapa ya cerrada.");

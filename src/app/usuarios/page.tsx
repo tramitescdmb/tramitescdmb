@@ -42,14 +42,6 @@ const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
   SINCA_MINERIA: "SINCA: Minería",
 };
 
-/**
- * Resumen legible del acceso de un usuario: si cubre completo una o varias
- * categorías del catálogo (ej. "Recurso Hídrico"), se muestra el nombre de
- * la categoría en vez de un conteo — más claro que "5 editar · 0 ver" para
- * alguien que piensa en "le di todo lo de Recurso Hídrico", que es como lo
- * describe el jefe de oficina. Si el acceso es parcial o mixto, cae al
- * conteo simple.
- */
 function resumenAcceso(
   accesos: AccesoTramite[],
   categoriaDeId: Map<string, string>,
@@ -112,9 +104,6 @@ export default async function UsuariosPage({
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
     getConfiguracionSitio(),
-    // MoReq 6.13 ("bloquear con alerta"): esto es la alerta — sin proveedor de correo/SMS, la forma
-    // honesta de "avisar automáticamente" es que un administrador la vea apenas entra a gestionar
-    // usuarios, no como una insignia que hay que saber buscar fila por fila.
     db.usuario.findMany({ where: { estadoCuenta: "BLOQUEADA" }, select: { id: true, nombre: true, email: true }, orderBy: { nombre: "asc" } }),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));

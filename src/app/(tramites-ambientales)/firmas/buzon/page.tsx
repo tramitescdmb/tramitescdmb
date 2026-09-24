@@ -13,9 +13,6 @@ import { formatearFechaHora } from "@/lib/fecha";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
-/** Documentos de Trámites ambientales pendientes de la firma o el visto bueno del usuario, y
- * avisos de documentos que alguien rechazó al firmar/revisar. Buzón propio del módulo — no
- * comparte lista con el de Contratación ni con el de Correspondencia. */
 export default async function BuzonFirmasTramitesPage() {
   const session = await getSession();
   if (!session) redirect("/login");

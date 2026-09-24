@@ -14,23 +14,14 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   ARCHIVADA: "Archivada", ANULADA: "Anulada",
 };
 
-// Página pública (sin autenticación) — habilitada por prefijo en src/middleware.ts.
-// Destino del QR del rótulo de radicación: confirma que un número de radicado
-// impreso en un documento físico corresponde a un registro real del SGDEA. No
-// expone el asunto ni los datos del tercero — solo lo necesario para verificar.
 export default async function VerificarRadicadoPage({ params }: { params: Promise<{ radicado: string }> }) {
   const { radicado } = await params;
   const num = decodeURIComponent(radicado).trim().toUpperCase();
 
-  // Prefijo "CDMB-CTO-" = expediente contractual del módulo de Contratación, no un
-  // radicado de correspondencia — mismo destino de QR (rotulo.ts es genérico por número).
   if (num.startsWith("CDMB-CTO-")) {
     return <VerificarExpedienteContractual numero={num} />;
   }
 
-  // Todo radicado real de correspondencia empieza por "CDMB-" (ver formatearRadicado en
-  // radicado.ts); un número de expediente de Trámites ambientales nunca lo hace (empieza por el
-  // código del trámite, ej. "M-DA-PR05-2026-0001").
   if (!num.startsWith("CDMB-")) {
     return <VerificarExpedienteTramite numero={num} />;
   }
@@ -106,9 +97,6 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
   );
 }
 
-/** Mismo destino de verificación pública, para un número de expediente del módulo de Contratación
- * (prefijo "CDMB-CTO-") — no expone el objeto del contrato ni datos del contratista, solo confirma
- * existencia/etapa/estado, igual que la verificación de un radicado de correspondencia. */
 async function VerificarExpedienteContractual({ numero }: { numero: string }) {
   const e = await db.expedienteContractual.findUnique({
     where: { numero },
@@ -174,9 +162,6 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
   );
 }
 
-/** Mismo destino de verificación pública, para un número de expediente de Trámites ambientales
- * (ej. "M-DA-PR05-2026-0001") — no expone datos del solicitante ni del predio, solo confirma
- * existencia/estado, igual que las otras dos ramas de esta página. */
 async function VerificarExpedienteTramite({ numero }: { numero: string }) {
   const e = await db.expediente.findUnique({
     where: { numero },

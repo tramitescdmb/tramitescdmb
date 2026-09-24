@@ -1,10 +1,3 @@
-/**
- * Genera la definición Mermaid (`flowchart`) de un flujo de trabajo a partir de
- * sus pasos y transiciones. Puro y testeable — el componente `Flujograma` solo
- * se encarga de pintarlo. Un paso puede marcarse como "actual" (verde) o "hecho"
- * (verde claro) para el diagrama de una instancia en curso.
- */
-
 export type PasoDiagrama = {
   id: string;
   orden: number;
@@ -18,7 +11,6 @@ export type TransicionDiagrama = {
   etiqueta: string;
 };
 
-/** Deja el texto seguro para un nodo/etiqueta de Mermaid entre comillas. */
 function limpiar(texto: string, max = 42): string {
   const t = texto.replace(/["\r\n]+/g, " ").replace(/\s+/g, " ").trim();
   return (t.length > max ? t.slice(0, max - 1) + "…" : t) || " ";

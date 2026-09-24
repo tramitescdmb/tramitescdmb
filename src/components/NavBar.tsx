@@ -13,15 +13,6 @@ function iniciales(nombre: string) {
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
 }
 
-/**
- * Navegación de la app: un sidebar fijo a la izquierda desde `lg:` para
- * arriba (pensado para un funcionario que trabaja 8 horas seguidas frente al
- * panel — la navegación siempre visible ahorra scroll e ir/volver), y en
- * pantallas más chicas una barra superior mínima (marca + botón de menú) que
- * abre el mismo menú como un panel lateral (`MobileNav`) — antes era una fila
- * horizontal con toda la navegación, que se cortaba con nombres largos como
- * "Correspondencia y Archivo (SGDEA)".
- */
 export async function NavBar() {
   const session = await getSession();
   if (!session) return null;
@@ -58,7 +49,6 @@ export async function NavBar() {
     <>
       <AvisoTratamientoDatos abierto={!usuarioTerminos?.terminosAceptadosEn} />
 
-      {/* Escritorio: sidebar fijo, se estira a lo alto de la ventana (colapsable, ver Sidebar.tsx). */}
       <Sidebar
         logoUrl={config.logoUrl}
         esAdmin={esAdmin}
@@ -71,7 +61,6 @@ export async function NavBar() {
         iniciales={iniciales(session.nombre)}
       />
 
-      {/* Pantallas chicas: solo la marca y el botón de menú — el resto vive en el panel que abre. */}
       <header className="border-b border-graphite-100 bg-white lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}

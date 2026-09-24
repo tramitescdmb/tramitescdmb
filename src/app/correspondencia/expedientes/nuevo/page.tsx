@@ -19,8 +19,6 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
     listarPlantillas("EXPEDIENTE"),
   ]);
 
-  // Un funcionario sin rol de administrador de archivo solo puede abrir
-  // expedientes para SU PROPIA dependencia (ver puedeGestionarExpedienteDeDependencia).
   const puedeCualquiera = permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
   const dependenciasDisponibles = puedeCualquiera
     ? todasDependencias

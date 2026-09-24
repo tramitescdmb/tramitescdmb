@@ -5,13 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
-/**
- * Ruta de migas del SGDEA — "usted está aquí". Se calcula del pathname contra
- * una tabla ordenada (primer patrón que coincide gana). El primer nivel siempre
- * es el módulo; el segundo, el menú al que pertenece la pantalla, enlaza a su
- * inicio.
- */
-
 const INICIO_GRUPO: Record<string, string> = {
   Panel: "/correspondencia/panel",
   Correspondencia: "/correspondencia",

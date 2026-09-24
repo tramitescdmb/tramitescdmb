@@ -26,14 +26,10 @@ type SupervisorOpcion = { id: string; nombre: string; dependenciaNombre?: string
 type ModalidadOpcion = { valor: string; etiqueta: string };
 type TipoPersona = "NATURAL" | "JURIDICA";
 
-// Mismo lenguaje visual del inicio de sesión (rounded-xl, halo de foco en vez de un borde seco) —
-// consistente en toda la app, en un formulario que un funcionario va a llenar muchas veces.
 const campoCls =
   "w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
   "transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15";
 
-/** Encabezado de una sección del formulario: número, icono en una insignia de color y un título —
- * divide el formulario en pasos legibles en vez de una sola pared continua de campos. */
 function SeccionFormulario({
   n,
   icon: Icon,
@@ -102,9 +98,6 @@ export function NuevoExpedienteContractualForm({
 
   const dependenciasSupervisor = Array.from(new Set(supervisores.map((s) => s.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const qSupervisor = filtroSupervisor.trim().toLowerCase();
-  // Igual que en los otros selectores de personas: solo se muestran pastillas una vez que se
-  // busca por nombre o dependencia (además de las ya elegidas), para que la lista no crezca sin
-  // control a medida que aumente el número de supervisores.
   const supervisoresFiltrados = supervisores.filter(
     (s) =>
       supervisorUsuarioIds.has(s.id) ||
@@ -161,9 +154,6 @@ export function NuevoExpedienteContractualForm({
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 409 && body.id) {
-        // Alguien más lo creó justo entre la búsqueda y este clic (poco común, pero posible): ya
-        // existe con esa identificación — se usa el registro real (su nombre puede no ser el que se
-        // acaba de escribir aquí) en vez de bloquear con un error.
         await buscarContratista();
         return;
       }

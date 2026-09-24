@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 
-/** Genera un número de expediente legible: {CODIGO}-{AÑO}-{consecutivo de 4 dígitos}. */
 export async function generarNumeroExpediente(tramiteCodigo: string, tramiteTipoId: string) {
   const anio = new Date().getFullYear();
   const inicioAnio = new Date(`${anio}-01-01T00:00:00.000Z`);

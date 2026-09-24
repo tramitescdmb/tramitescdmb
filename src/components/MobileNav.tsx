@@ -6,14 +6,6 @@ import { usePathname } from "next/navigation";
 import { Menu, X, LogOut } from "lucide-react";
 import { SidebarNav } from "@/components/SidebarNav";
 
-/**
- * Menú de pantallas chicas: antes era una barra horizontal con toda la
- * navegación en una fila, que en un celular normal se corta a los dos o tres
- * ítems (ej. "Correspondencia y...") y obliga a deslizar para ver el resto.
- * Ahora es un botón hamburguesa que abre el MISMO menú vertical del sidebar
- * de escritorio como un panel lateral (izquierda), dejando la barra superior
- * con solo la marca y este botón — el patrón de apps como X/Twitter.
- */
 export function MobileNav({
   esAdmin,
   mostrarVital,
@@ -36,8 +28,6 @@ export function MobileNav({
   const [abierto, setAbierto] = useState(false);
   const pathname = usePathname();
 
-  // Navegar a un enlace del menú debe cerrarlo — el layout persiste entre
-  // rutas (no se desmonta), así que sin esto el panel quedaría abierto.
   useEffect(() => {
     setAbierto(false);
   }, [pathname]);

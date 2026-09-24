@@ -1,33 +1,3 @@
-/**
- * Extractor del Fondo Documental histórico — psdocuments.
- *
- * CORRE DENTRO DE LA RED CDMB (el Oracle 192.168.7.40 no es alcanzable desde
- * Vercel). Lee el catálogo de psdocuments del Oracle 10g (esquema `C`) y lo
- * sube por lotes a la app vía POST /api/fondo-historico/ingest.
- *
- * SOLO LECTURA sobre Oracle. SOLO METADATOS (no toca las imágenes de 1,4 TB).
- *
- * Requisitos: Node 18+ y el paquete `oracledb` (ya está en package.json;
- * node-oracledb v7 usa modo Thin, no necesita Oracle Instant Client).
- *
- * Uso:
- *   FONDO_INGEST_TOKEN=xxxxx \
- *   FONDO_INGEST_URL=https://tramitescdmb.vercel.app/api/fondo-historico/ingest \
- *   node scripts/fondo-historico/extraer-psdocuments.mjs
- *
- * Variables (con sus valores por defecto):
- *   FONDO_ORACLE_HOST      192.168.7.40
- *   FONDO_ORACLE_PORT      1521
- *   FONDO_ORACLE_SID       P
- *   FONDO_ORACLE_USER      psidea1
- *   FONDO_ORACLE_PASSWORD  psidea1
- *   FONDO_ORACLE_SCHEMA    C
- *   FONDO_INGEST_URL       (requerida)
- *   FONDO_INGEST_TOKEN     (requerida)
- *   FONDO_LOTE             500      (filas por POST)
- *   FONDO_SERIES           (opcional) lista de ids de serie separada por comas, para un piloto
- */
-
 import oracledb from "oracledb";
 
 const cfg = {
@@ -54,9 +24,6 @@ if (!cfg.ingestUrl || !cfg.ingestToken) {
 const FONDO = "psdocuments";
 const connectString = `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${cfg.host})(PORT=${cfg.port}))(CONNECT_DATA=(SID=${cfg.sid})))`;
 
-// El extractor manda las columnas crudas en `campos`; el servidor
-// (src/lib/fondo-historico.ts) deriva fecha/número/asunto/etc. Solo se
-// excluyen columnas internas del gestor que no aportan a la ficha.
 const COLS_OMITIR = new Set(["DOC_IDFORMA", "DOC_ESTADOC", "N_ARCH", "RUTA"]);
 
 function iso(v) {
@@ -83,7 +50,6 @@ async function main() {
   const S = cfg.schema;
   console.log(`Conectado a ${cfg.host}:${cfg.port}/${cfg.sid} como ${cfg.user}. Esquema ${S}.`);
 
-  // 1. Catálogo de series.
   const cat = await conn.execute(
     `SELECT TIP_IDTIPDO, TIP_NOMBRE FROM ${S}.PSIDEA_TIPODOC ORDER BY TIP_IDTIPDO`,
     [],
@@ -91,13 +57,11 @@ async function main() {
   );
   let series = cat.rows.map((r) => ({ id: Number(r.TIP_IDTIPDO), nombre: String(r.TIP_NOMBRE || "").trim() }));
   if (cfg.seriesFiltro.length) series = series.filter((s) => cfg.seriesFiltro.includes(s.id));
-  // La serie 221 "PRUEBA" no entra al espejo.
   series = series.filter((s) => !/^PRUEBA$/i.test(s.nombre));
   console.log(`Series a extraer: ${series.length}`);
 
-  // 2. Mapa de imágenes: una pasada por PSIDEA_VERSION.
   console.log("Cargando índice de PSIDEA_VERSION…");
-  const versiones = new Map(); // DOC_IDDOCUM -> { n, ruta }
+  const versiones = new Map();
   {
     const rs = (
       await conn.execute(
@@ -124,7 +88,6 @@ async function main() {
   }
   console.log(`  ${versiones.size} documentos con imagen.`);
 
-  // 3. Abrir la corrida.
   const { sincronizacionId } = await ingest({
     fondo: FONDO,
     disparadoPor: `script:${process.env.HOSTNAME || process.env.COMPUTERNAME || "cdmb"}`,

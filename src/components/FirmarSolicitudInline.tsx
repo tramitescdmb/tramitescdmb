@@ -4,10 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PenLine, XCircle } from "lucide-react";
 
-/** Igual que `ConfirmarFirmaModal`, pero embebido directamente en una página (sin modal ni botón
- * disparador) — usado desde el buzón para ir a firmar UN documento sin cargar el expediente
- * completo (antes "Ir al documento" llevaba a toda la página del expediente). Al completar o
- * rechazar, vuelve al buzón. */
 export function FirmarSolicitudInline({
   rol,
   endpointCompletar,

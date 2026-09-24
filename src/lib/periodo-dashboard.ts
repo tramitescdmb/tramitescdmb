@@ -1,18 +1,10 @@
-/**
- * Período seleccionable en los dashboards (Trámites ambientales 2.0, VITAL,
- * SINCA 1.0 y Minería de datos): por defecto Total (todo el histórico, sin
- * filtro) o un rango con calendario (?desde=&hasta=). Mínimo un mes — un
- * rango más corto se estira automáticamente para cumplirlo.
- */
-export type RangoPeriodo = { desde: Date; hasta: Date } | null; // null = Total
+export type RangoPeriodo = { desde: Date; hasta: Date } | null;
 
 export type FiltrosPeriodo = { desde?: string; hasta?: string };
 
 const DIA_MS = 86_400_000;
-const MIN_DIAS_PERSONALIZADO = 28; // "el mínimo período debe ser de un mes"
+const MIN_DIAS_PERSONALIZADO = 28;
 
-/** Exportada aparte de `resolverPeriodo`: cualquier filtro que reciba una fecha por query string
- * (no solo los dashboards) la necesita para no pasarle un `new Date("Invalid Date")` a Prisma. */
 export function parsearFechaLocal(valor: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
   if (!m) return null;
@@ -29,7 +21,6 @@ export function resolverPeriodo(sp: FiltrosPeriodo): { rango: RangoPeriodo; etiq
   const hastaRaw = sp.hasta ? parsearFechaLocal(sp.hasta) : null;
 
   if (desdeRaw && hastaRaw && desdeRaw < hastaRaw) {
-    // "hasta" es el último día INCLUIDO por el usuario — se corre un día para que el filtro (< hasta) lo cubra completo.
     let hasta = new Date(hastaRaw.getTime() + DIA_MS);
     if (hasta.getTime() - desdeRaw.getTime() < MIN_DIAS_PERSONALIZADO * DIA_MS) {
       hasta = new Date(desdeRaw.getTime() + MIN_DIAS_PERSONALIZADO * DIA_MS);

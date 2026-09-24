@@ -22,9 +22,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const etapaAbierta = documentoEtapaAbierta(documento.pasoNumero, documento.expediente.pasoActualNumero);
   const esAdmin = session.rol === "ADMIN";
 
-  // Regla de acceso: dentro de la etapa abierta, quien subió el documento o un admin. Una vez
-  // la etapa se cierra, NINGÚN usuario puede eliminarlo por su cuenta — ni siquiera quien lo
-  // subió — solo un administrador, y ni él sin el oficio de autorización (verificado abajo).
   if (!puedeIntentarEliminarDocumento({ esAdmin, esQuienLoSubio: session.userId === documento.subidoPorId, etapaAbierta })) {
     return NextResponse.json(
       etapaAbierta
@@ -35,17 +32,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (!etapaAbierta && !oficio) {
-    // Etapa ya cerrada: ni siquiera un admin puede eliminar sin el oficio de solicitud del Subdirector.
     return NextResponse.json(
       { error: "La etapa ya se cerró: se necesita el oficio de solicitud del Subdirector para eliminar este documento." },
       { status: 400 }
     );
   }
 
-  await deleteDocumento(documento.storagePath).catch(() => {
-    // Si ya no existe en el storage (o falla el borrado remoto), igual se quita el registro:
-    // lo importante es que deje de aparecer como documento del expediente.
-  });
+  await deleteDocumento(documento.storagePath).catch(() => {});
 
   await db.expedienteDocumento.delete({ where: { id } });
 

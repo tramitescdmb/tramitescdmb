@@ -64,7 +64,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     <div className="space-y-4">
       {selector}
 
-      {/* Encabezado + proceso KDD */}
       <div>
         <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
           <Sparkles className="h-4 w-4 text-cdmb-600" aria-hidden />
@@ -91,7 +90,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         )}
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <Kpi icon={Scale} label="Tasa de aprobación" valor={pct(a.aprobacion.p)} sub={`IC 95 %: ${pct(a.aprobacion.lo)}–${pct(a.aprobacion.hi)}`} />
         <Kpi icon={Timer} label="Tiempo de resolución (mediana)" valor={a.diasP50 != null ? `${a.diasP50} d` : "—"} sub={a.diasP90 != null ? `p90 ≤ ${a.diasP90} d` : "en cálculo…"} />
@@ -104,7 +102,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         <Kpi icon={MapPinned} label="Concentración (top 5 municipios)" valor={pct(a.concentracion.top5)} sub={`HHI ${a.concentracion.hhi.toFixed(2)}`} />
       </div>
 
-      {/* Pronóstico */}
       {g && (
         <Card
           icon={TrendingUp}
@@ -122,7 +119,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
 
-      {/* Punto de quiebre */}
       {m.quiebre && (
         <Card icon={GitBranch} titulo="Cambio de régimen en la actividad" sub={`Regresión de dos segmentos: el año que mejor parte la serie en dos tendencias distintas.`}>
           <p className="text-sm text-stone-700">
@@ -135,7 +131,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
 
-      {/* Estacionalidad */}
       <Card
         icon={Sparkles}
         titulo="Estacionalidad — resoluciones por mes y año"
@@ -150,7 +145,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         />
       </Card>
 
-      {/* ML: segmentación de municipios */}
       <Card
         icon={Boxes}
         titulo="Segmentación de municipios (k-means)"
@@ -177,7 +171,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </div>
       </Card>
 
-      {/* ML: Naive Bayes aprobación */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card icon={Brain} titulo="Qué sube la probabilidad de aprobación" sub={`Naive Bayes · razón de verosimilitud (lift) frente a la tasa base de ${pct(m.aprobacion.base)}.`}>
           <BarrasLift data={m.aprobacion.suben.map((f) => ({ label: `${f.valor} · ${f.factor}`, lift: f.lift, casos: f.casos }))} emptyMessage="—" />
@@ -187,7 +180,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       </div>
 
-      {/* ML: anomalías */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card
           icon={AlertTriangle}
@@ -235,7 +227,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       </div>
 
-      {/* Tiempo de resolución */}
       {a.histogramaDias.length > 0 && (
         <Card icon={Timer} titulo="¿Cuánto tarda un trámite en tener resolución de fondo?" sub={`De la radicación a la resolución. Sobre ${a.enriquecidas.toLocaleString("es-CO")} resoluciones.`}>
           <BarChartHorizontal data={a.histogramaDias} emptyMessage="—" />
@@ -252,7 +243,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
 
-      {/* Fricción + Pareto */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card icon={AlertTriangle} titulo="Fricción por tipo de trámite" sub="% de resoluciones que NO terminaron aprobadas. El bigote es el IC 95 %: ancho = pocos casos.">
           <BarrasConIC
@@ -269,7 +259,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       </div>
 
-      {/* Recurrentes */}
       {a.recurrentes.length > 0 && (
         <Card icon={Boxes} titulo="Solicitantes recurrentes" sub={`Quiénes tramitan más ante la CDMB (por NIT/cédula, sobre ${pct(a.coberturaNit)} de los registros).`}>
           <div className="overflow-x-auto">
@@ -299,7 +288,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         </Card>
       )}
 
-      {/* Minería de texto */}
       <Card icon={Brain} titulo="Minería de texto de las descripciones de proyecto" sub={`Términos y frases más frecuentes en el campo libre "proyecto", quitando palabras vacías.`}>
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div>

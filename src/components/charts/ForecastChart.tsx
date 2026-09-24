@@ -1,7 +1,7 @@
 type Punto = { anio: number; valor: number };
 type Proy = { anio: number; valor: number; lo: number; hi: number };
 
-const COLOR = "#2a78d6"; // azul secuencial validado — una sola serie
+const COLOR = "#2a78d6";
 
 const W = 640;
 const H = 240;
@@ -10,10 +10,6 @@ const PADR = 12;
 const PADT = 14;
 const PADB = 26;
 
-/**
- * Serie histórica (línea sólida) + proyección por regresión lineal (línea
- * punteada) con banda de predicción ~95 % (área sombreada). Un solo eje.
- */
 export function ForecastChart({
   historico,
   proyeccion,
@@ -80,9 +76,6 @@ export function ForecastChart({
           <circle key={p.anio} cx={x(p.anio)} cy={y(p.valor)} r={2.5} fill={COLOR} />
         ))}
         {proyeccion.map((p) => (
-          // Tooltip nativo vía el atributo `title`, no un <title> hijo: React 19 trata
-          // <title> como el título del documento y lo vacía al renderizar en el servidor
-          // (children sí llegan por hidratación) — error de hidratación en cada carga.
           <g
             key={p.anio}
             tabIndex={0}

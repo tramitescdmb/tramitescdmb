@@ -3,7 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { crearPlantilla, esAmbitoValido } from "@/lib/plantillas";
 
-/** Crea una plantilla de documento (MoReq 3.30/3.31). Solo administrador de archivo. */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/plantillas", req.url);

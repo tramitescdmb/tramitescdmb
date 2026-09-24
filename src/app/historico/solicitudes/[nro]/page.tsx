@@ -101,7 +101,6 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         Volver al listado
       </Link>
 
-      {/* Cabecera compacta */}
       <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-stone-900">Resolución {base.numeroResolucion ?? "—"}</h2>
@@ -161,7 +160,6 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         </Tarjeta>
       </div>
 
-      {/* Documentos */}
       <Tarjeta icon={FileText} titulo="Documentos de la resolución">
         {errorDetalle ? (
           <p className="text-sm text-stone-500">No fue posible consultar los documentos en SINCA 1.0 en este momento.</p>
@@ -214,7 +212,6 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         )}
       </Tarjeta>
 
-      {/* Interesado */}
       {nombreInt && (
         <Tarjeta icon={Building2} titulo="Interesado">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -240,7 +237,6 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         </Tarjeta>
       )}
 
-      {/* Descripción / observación */}
       {(txt(d?.descripsitio_sol) || txt(d?.observacion_sol)) && (
         <Tarjeta icon={ScrollText} titulo="Descripción y observaciones">
           {txt(d?.descripsitio_sol) && (

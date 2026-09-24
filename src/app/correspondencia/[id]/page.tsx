@@ -56,18 +56,10 @@ const ETIQUETA_ACCION: Record<string, string> = {
   DEVUELVE_REPARTO: "Devolución del reparto",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Comunicación recibida", ENVIADA: "Comunicación enviada", INTERNA: "Memorando interno" };
-// Estados que cierran el ciclo de esta comunicación — distribuirla de nuevo después de esto pisaría el
-// cierre (ej. una RECIBIDA ya respondida volvía a "Asignada" si alguien la distribuía otra vez).
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
 
 type ProximoPaso = { texto: string; accionHref?: string; accionTexto?: string; cerrado?: boolean };
 
-/**
- * Explica en una frase qué significa el estado actual y qué falta (o no falta nada) — MoReq 8.14, y sobre
- * todo porque un usuario real (autoasignándose una comunicación) no entendió qué hacer ni cómo se "cierra"
- * el ciclo. Clave del malentendido real: una ENVIADA/INTERNA firmada y radicada YA ES definitiva — si se
- * distribuye después es solo seguimiento interno opcional, no un paso pendiente ni algo que "cierre" nada.
- */
 function proximoPaso(c: {
   tipo: string;
   estado: string;
@@ -94,7 +86,6 @@ function proximoPaso(c: {
     }
     return { texto: "El oficio ya está firmado y radicado. Falta que la ventanilla de salida registre el despacho efectivo al destinatario." };
   }
-  // A partir de acá, tipo === "RECIBIDA".
   if (c.estado === "ANULADA") return { texto: "Quedó anulada — no requiere ninguna acción más.", cerrado: true };
   if (c.estado === "ARCHIVADA") return { texto: "Quedó archivada — el ciclo de esta comunicación está cerrado.", cerrado: true };
   if (c.estado === "RESPONDIDA") {
@@ -113,7 +104,6 @@ function proximoPaso(c: {
       ? { texto: `${devueltaTxt}${c.devuelta ? "Repártala de nuevo" : "Todavía no se ha repartido. Siguiente paso: asígnela"} a la dependencia o funcionario(s) que deben atenderla.`, accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
       : { texto: `${devueltaTxt}La ventanilla ${c.devuelta ? "debe repartirla de nuevo" : "aún no la ha repartido"}.` };
   }
-  // ASIGNADA o EN_TRAMITE: ya está repartida, falta el borrador de respuesta.
   if (!c.respuestaTexto) {
     return permisos.puedeResponder
       ? { texto: "Ya está asignada a usted. Siguiente paso: escriba su respuesta más abajo, en «Respuesta del funcionario». Es un borrador; la ventanilla de salida la radica y la despacha.", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
@@ -191,7 +181,6 @@ export default async function CorrespondenciaDetallePage({
   });
   if (!c) notFound();
 
-  // Auditoría de LECTURA (requisito MoReq: registrar consultas).
   const { ip, userAgent } = datosPeticion(await headers());
 
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
@@ -206,18 +195,11 @@ export default async function CorrespondenciaDetallePage({
   const puedoActuarMiSolicitud = miSolicitudFirma && puedeActuarSolicitud(c.solicitudesFirma, miSolicitudFirma);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
-  // Sub-distribución interna del jefe de dependencia (distinta de puedeDistribuirUsuario, que es el
-  // reparto centralizado de ventanilla/archivo): una vez la comunicación ya llegó a SU dependencia
-  // (por reparto de ventanilla si es RECIBIDA, o directo si es INTERNA), el jefe la reparte entre
-  // sus propios colaboradores. Nunca puede redirigirla a otra dependencia.
   const puedeSubdistribuirUsuario = puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes);
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const devolucionesPrevias = c.distribuciones.filter((d) => d.devueltaEn);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
-  // La tarjeta de respuesta NO se muestra apenas se radica (antes de repartir): le
-  // corresponde al funcionario asignado. La ve además la ventanilla/archivo cuando ya
-  // hay algo que radicar o la comunicación ya está en trámite.
   const mostrarRespuesta =
     c.tipo === "RECIBIDA" &&
     (puedeResponder ||
@@ -225,8 +207,6 @@ export default async function CorrespondenciaDetallePage({
       documentosRespuesta.length > 0 ||
       (puedeRadicarUsuario && ["ASIGNADA", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "RESPONDIDA"].includes(c.estado)));
 
-  // Todas las consultas de aquí para abajo son independientes entre sí (cada una solo depende de
-  // banderas de permiso ya calculadas arriba, en JS puro) — antes se hacían una tras otra.
   const [
     ,
     bitacora,
@@ -265,8 +245,6 @@ export default async function CorrespondenciaDetallePage({
     puedeDistribuirUsuario
       ? Promise.all([
           listarDependenciasActivas(),
-          // Solo quien realmente puede entrar al módulo — repartir a alguien sin rol de
-          // correspondencia (y que no sea ADMIN) lo dejaría "asignado" a una comunicación que nunca podrá ver.
           db.usuario.findMany({
             where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
             orderBy: { nombre: "asc" },

@@ -2,8 +2,6 @@
 
 import dynamic from "next/dynamic";
 
-/** Carga diferida del editor visual (React Flow pesa ~60 kB) — solo llega al
- * navegador de quien abre un flujo, no al bundle de todo el módulo. */
 export const FlujoLienzo = dynamic(() => import("./FlujoLienzo").then((m) => m.FlujoLienzo), {
   ssr: false,
   loading: () => (

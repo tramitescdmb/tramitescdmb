@@ -9,8 +9,6 @@ import { NuevoContratistaForm } from "@/components/NuevoContratistaForm";
 export default async function NuevoContratistaPage({
   searchParams,
 }: {
-  // Prellenado desde "Crear contratista" en Nuevo expediente — evita retipear el NIT/cédula ya
-  // escrito ahí.
   searchParams: Promise<{ identificacion?: string }>;
 }) {
   const session = await getSession();

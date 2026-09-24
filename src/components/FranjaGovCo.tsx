@@ -1,6 +1,5 @@
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
-/** Franja institucional azul GOV.CO — solo aparece si ya se subió el sello desde /admin/apariencia. */
 export async function FranjaGovCo() {
   const config = await getConfiguracionSitio();
   if (!config.logoGovcoUrl) return null;

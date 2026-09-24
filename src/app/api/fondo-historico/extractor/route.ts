@@ -3,16 +3,6 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
 
-/**
- * Sirve el script de extracción del Fondo histórico para que un equipo de la
- * red CDMB lo baje con `curl` (no hay git ni pscp cómodo hacia el servidor
- * Oracle). El script no contiene secretos — el token y la URL se pasan por
- * variables de entorno al correrlo.
- *
- *   curl -H "Authorization: Bearer $FONDO_INGEST_TOKEN" \
- *        https://tramitescdmb.vercel.app/api/fondo-historico/extractor?f=psdocuments \
- *        -o extraer-psdocuments.sh
- */
 export const runtime = "nodejs";
 
 const ARCHIVOS: Record<string, string> = {

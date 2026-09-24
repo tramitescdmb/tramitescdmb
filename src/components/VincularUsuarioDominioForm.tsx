@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserCog, Link2, X } from "lucide-react";
 
-/**
- * Vincula (o pre-crea) el usuario de red de Directorio Activo de este contratista, desde su
- * ficha — opcional, en cualquier momento, sin esperar a que la persona inicie sesión. No hay
- * forma de "listar" o sincronizar el directorio activo completo (el API externo de la CDMB solo
- * valida credenciales una por una, no expone un directorio consultable) — por eso esto es un
- * campo de texto, no un buscador: si el usuario de red no existe todavía como cuenta, se crea un
- * "cascarón" que cobra vida el día que esa persona inicie sesión de verdad con ese mismo usuario.
- */
 export function VincularUsuarioDominioForm({
   contratistaId,
   usuarioActual,

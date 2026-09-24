@@ -10,7 +10,6 @@ function celda(v: string) {
   return `"${v.replace(/"/g, '""')}"`;
 }
 
-/** Vocabulario controlado en CSV o XML (MoReq 3.27 / 1.17). */
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

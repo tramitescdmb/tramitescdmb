@@ -3,10 +3,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { vincularUsuarioDominioAContratista, desvincularUsuarioDominioDeContratista } from "@/lib/contratacion";
 
-/** Vincula (o pre-crea) el usuario de dominio de un contratista, desde su ficha — ver el
- * comentario de `vincularUsuarioDominioAContratista` en contratacion.ts para el porqué y las
- * validaciones. Administrador o Jefe de Contratación, igual que el resto de la gestión de
- * contratistas. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -27,7 +23,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 }
 
-/** Quita el vínculo de usuario de dominio — no borra ni desactiva la cuenta. */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();

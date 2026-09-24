@@ -11,15 +11,6 @@ import {
 } from "@/lib/directorio-activo";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 
-/**
- * Único punto de entrada del inicio de sesión. El formulario de /login manda
- * `modo`:
- *   - "institucional"    → contraseña administrada en esta app (tabla Usuario).
- *   - "directorio-activo" → credenciales de la red de la CDMB (API externa,
- *                           ver src/lib/directorio-activo.ts).
- * En ambos casos, si el ingreso es correcto se emite LA MISMA cookie de sesión
- * propia, así el resto de la app no necesita saber cómo entró el funcionario.
- */
 export async function POST(req: NextRequest) {
   const form = await req.formData();
   const identidad = String(form.get("email") || "").trim().toLowerCase();
@@ -45,10 +36,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Protección contra fuerza bruta: se apoya en RegistroAuditoria (ya se registraba cada fallo, solo
-  // faltaba frenar en base a eso) en vez de un contador en memoria, porque en Vercel cada solicitud
-  // puede caer en una instancia distinta — un contador en memoria no serviría de nada ahí.
-  // Límite y ventana configurables desde /admin/seguridad (antes eran constantes fijas).
   const configSeguridad = await getConfiguracionSitio();
   const ventanaMinutos = configSeguridad.loginVentanaMinutos;
   const maxIntentosFallidos = configSeguridad.loginMaxIntentos;
@@ -69,7 +56,6 @@ export async function POST(req: NextRequest) {
     return ingresarPorDirectorioActivo(req, identidad, password, redirectTo, fail);
   }
 
-  // --- Ingreso institucional (contraseña de esta app) -------------------------
   const usuario = await db.usuario.findUnique({ where: { email: identidad }, include: { cargos: true } });
 
   if (usuario && usuario.directorioActivo) {
@@ -96,8 +82,6 @@ export async function POST(req: NextRequest) {
       usuarioId: usuario?.id,
       emailIntento: identidad,
     });
-    // Mismo mensaje genérico sin importar el motivo: no revelar a quien no ha entrado
-    // si la cuenta existe, está bloqueada o solo inactiva.
     return fail("Credenciales inválidas.");
   }
 
@@ -109,8 +93,6 @@ export async function POST(req: NextRequest) {
       usuarioId: usuario.id,
       emailIntento: identidad,
     });
-    // MoReq 6.13: bloqueo persistente (no solo la ventana de tiempo) al llegar al
-    // límite — el intento que se acaba de registrar arriba ya cuenta para este total.
     if (intentosFallidosRecientes + 1 >= maxIntentosFallidos) {
       await db.usuario.update({ where: { id: usuario.id }, data: { activo: false, estadoCuenta: "BLOQUEADA" } });
       await registrarAuditoria({
@@ -141,11 +123,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.redirect(new URL(redirectTo, req.url), { status: 303 });
 }
 
-/**
- * Ingreso validando contra el directorio activo de la CDMB. Da de alta al
- * funcionario en la tabla `Usuario` la primera vez (rol FUNCIONARIO, sin cargo;
- * un ADMIN lo ajusta luego en /usuarios).
- */
 async function ingresarPorDirectorioActivo(
   req: NextRequest,
   usuarioRed: string,
@@ -187,7 +164,6 @@ async function ingresarPorDirectorioActivo(
       data: {
         email: usuarioRed,
         nombre: nombreInicial,
-        // Sin contraseña propia: valor centinela que nunca verifica con bcrypt.
         passwordHash: "directorio-activo:sin-contrasena-local",
         rol: "FUNCIONARIO",
         directorioActivo: true,
@@ -202,8 +178,6 @@ async function ingresarPorDirectorioActivo(
       emailIntento: usuarioRed,
     });
   }
-  // Si el funcionario ya existía (misma persona con cuenta propia) se le deja
-  // entrar sin tocar su rol, su cargo ni su marca `directorioActivo`.
 
   await createSessionCookie({
     userId: usuario.id,

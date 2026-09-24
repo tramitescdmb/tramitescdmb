@@ -5,7 +5,6 @@ import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permis
 import { esRegimenTributario } from "@/lib/regimen-tributario";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-/** Edita el registro maestro de un Contratista — Administrador o Jefe de Contratación. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -49,10 +48,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(actualizado);
 }
 
-/** Elimina un contratista del registro maestro — Administrador o Jefe de Contratación. Solo si no
- * pertenece a ningún expediente: uno con expedientes es parte del expediente contractual y borrarlo
- * dejaría esos expedientes sin contratista. Si tiene una cuenta de acceso vinculada, la cuenta NO se
- * borra (solo se suelta el vínculo con este registro). */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -74,8 +69,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     );
   }
 
-  // deleteMany con la condición de "sin expedientes" evita la carrera con un expediente creado entre la
-  // verificación y el borrado (la FK lo impediría igual, pero así el error es claro y no un 500).
   const { count } = await db.contratista.deleteMany({ where: { id, expedientes: { none: {} } } });
   if (count === 0) return NextResponse.json({ error: "El contratista acaba de quedar asociado a un expediente; no se eliminó." }, { status: 409 });
 
