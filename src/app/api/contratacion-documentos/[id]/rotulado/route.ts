@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         select: {
           fechaHora: true,
           hashContenido: true,
+          calidad: true,
           usuario: {
             select: {
               nombre: true,
@@ -78,6 +79,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         dependencia: f.usuario.dependencia?.nombre ?? null,
         fechaHora: formatearFechaHoraLarga(f.fechaHora),
         hash: f.hashContenido,
+        calidad: f.calidad,
       })),
     );
   } catch (err) {

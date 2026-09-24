@@ -10,6 +10,7 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { AvisoRechazoAcciones } from "@/components/AvisoRechazoAcciones";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
 import { formatearFechaHora } from "@/lib/fecha";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
@@ -29,7 +30,7 @@ export default async function BuzonFirmasTramitesPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
-      <FirmasSubNav />
+      <FirmasSubNav pendientes={{ total: solicitudes.length, listos: solicitudes.filter((s) => s.puedeActuar).length }} />
 
       {avisosRechazo.length > 0 && (
         <div className="space-y-2">
@@ -96,7 +97,8 @@ export default async function BuzonFirmasTramitesPage() {
                   · Asignado por {s.asignadoPor.nombre}
                 </p>
               </div>
-              <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}</span>
+              <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}
+                {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}</span>
               {s.puedeActuar ? (
                 <Link
                   href={`/firmas/firmar/${s.id}`}

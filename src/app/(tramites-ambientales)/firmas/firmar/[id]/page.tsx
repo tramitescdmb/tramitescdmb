@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { FirmarSolicitudInline } from "@/components/FirmarSolicitudInline";
 import { TituloSeccion } from "@/components/sgdea/ui";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 export default async function FirmarSolicitudTramitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,6 +18,7 @@ export default async function FirmarSolicitudTramitePage({ params }: { params: P
     select: {
       id: true,
       rol: true,
+      calidad: true,
       orden: true,
       estado: true,
       usuarioAsignadoId: true,
@@ -44,7 +46,7 @@ export default async function FirmarSolicitudTramitePage({ params }: { params: P
         Volver al buzón
       </Link>
 
-      <TituloSeccion icon={FileCheck2}>{solicitud.rol === "FIRMA" ? "Firmar documento" : "Dar visto bueno"}</TituloSeccion>
+      <TituloSeccion icon={FileCheck2}>{solicitud.rol === "FIRMA" ? `Firmar documento${rotuloCalidadFirma(solicitud.calidad) ? ` · ${rotuloCalidadFirma(solicitud.calidad)}` : ""}` : "Dar visto bueno"}</TituloSeccion>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <p className="font-medium text-stone-800">{doc.nombre}</p>

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { resolverFirma } from "@/lib/firma-proveedor";
 import { hashContenidoFirma } from "@/lib/firma";
-import type { RolFirmante, EstadoSolicitudFirma } from "@prisma/client";
+import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 
@@ -33,7 +33,7 @@ async function usuariosQueYaFirmaron(objetivo: ObjetivoSolicitud, usuarioIds: st
 export async function asignarFirmantes(
   objetivo: ObjetivoSolicitud,
   asignadoPorId: string,
-  firmantes: { usuarioId: string; rol: RolFirmante; orden?: number }[]
+  firmantes: { usuarioId: string; rol: RolFirmante; orden?: number; calidad?: CalidadFirma | null }[]
 ) {
   if (firmantes.length === 0) throw new Error("Debe indicar al menos una persona.");
 
@@ -94,6 +94,7 @@ export async function asignarFirmantes(
     usuarioAsignadoId: f.usuarioId,
     rol: f.rol,
     orden: f.orden ?? 1,
+    calidad: f.rol === "FIRMA" && objetivo.tipo !== "comunicacion" ? (f.calidad ?? "PRINCIPAL") : null,
     asignadoPorId,
     estado: (f.rol === "LECTURA" ? "COMPLETADA" : "PENDIENTE") as EstadoSolicitudFirma,
     completadoEn: f.rol === "LECTURA" ? new Date() : null,
@@ -195,6 +196,7 @@ export async function completarSolicitudFirma(
         documentoId: doc.id,
         usuarioId,
         hashContenido,
+        calidad: solicitud.calidad,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,
@@ -229,6 +231,7 @@ export async function completarSolicitudFirma(
         documentoId: doc.id,
         usuarioId,
         hashContenido,
+        calidad: solicitud.calidad,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,

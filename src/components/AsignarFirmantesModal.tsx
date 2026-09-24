@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X } from "lucide-react";
+import { CALIDADES_FIRMA, ETIQUETA_CALIDAD_FIRMA, rotuloCalidadFirma, type CalidadFirmaValor } from "@/lib/calidad-firma";
 
 type RolFirmante = "FIRMA" | "VISTO_BUENO" | "LECTURA";
 type EstadoSolicitudFirma = "PENDIENTE" | "COMPLETADA" | "RECHAZADA";
@@ -28,6 +29,7 @@ const CLASE_ESTADO: Record<EstadoSolicitudFirma, string> = {
 export type FirmanteAsignado = {
   id: string;
   usuarioAsignadoId?: string;
+  calidad?: string | null;
   usuarioAsignadoNombre: string;
   rol: RolFirmante;
   orden: number;
@@ -38,8 +40,10 @@ export function AsignarFirmantesModal({
   endpointAsignar,
   usuarios,
   firmantesActuales,
+  conCalidad = false,
 }: {
   endpointAsignar: string;
+  conCalidad?: boolean;
   usuarios: { id: string; nombre: string; dependenciaNombre?: string | null }[];
   firmantesActuales: FirmanteAsignado[];
 }) {
@@ -50,6 +54,7 @@ export function AsignarFirmantesModal({
   const [dependenciaFiltro, setDependenciaFiltro] = useState("");
   const [rol, setRol] = useState<RolFirmante>("FIRMA");
   const [orden, setOrden] = useState(1);
+  const [calidad, setCalidad] = useState<CalidadFirmaValor>("PRINCIPAL");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,11 +81,12 @@ export function AsignarFirmantesModal({
       const res = await fetch(endpointAsignar, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firmantes: [{ usuarioId, rol, orden }] }),
+        body: JSON.stringify({ firmantes: [{ usuarioId, rol, orden, ...(conCalidad && rol === "FIRMA" ? { calidad } : {}) }] }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo asignar.");
       setUsuarioId("");
+      setCalidad("PRINCIPAL");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
@@ -121,7 +127,11 @@ export function AsignarFirmantesModal({
                 {firmantesActuales.map((f) => (
                   <li key={f.id} className="flex items-center justify-between gap-2 p-2">
                     <span className="text-stone-700">
-                      {f.usuarioAsignadoNombre} <span className="text-stone-400">— {ETIQUETA_ROL[f.rol]} (turno {f.orden})</span>
+                      {f.usuarioAsignadoNombre}{" "}
+                      <span className="text-stone-400">
+                        — {ETIQUETA_ROL[f.rol]}
+                        {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""} (turno {f.orden})
+                      </span>
                     </span>
                     <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
                   </li>
@@ -191,6 +201,25 @@ export function AsignarFirmantesModal({
                   <option value="LECTURA">Solo lectura</option>
                 </select>
               </label>
+              {conCalidad && rol === "FIRMA" && (
+                <label className="block text-xs font-medium text-stone-600">
+                  Calidad de la firma
+                  <select
+                    value={calidad}
+                    onChange={(e) => setCalidad(e.target.value as CalidadFirmaValor)}
+                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  >
+                    {CALIDADES_FIRMA.map((c) => (
+                      <option key={c} value={c}>
+                        {ETIQUETA_CALIDAD_FIRMA[c]}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-[11px] font-normal text-stone-400">
+                    En el sello, el firmante principal aparece primero y sin rótulo; luego quien proyectó y después quien revisó.
+                  </span>
+                </label>
+              )}
               {rol !== "LECTURA" && (
                 <label className="block text-xs font-medium text-stone-600">
                   Turno (firmantes con el mismo número actúan en cualquier orden entre sí)

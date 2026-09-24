@@ -5,12 +5,15 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
+import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 export default async function MisFirmasTramitesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
+  const pendientes = await contarPendientesBuzonTramite(session.userId);
   const firmas = await db.firmaExpedienteDocumento.findMany({
     where: { usuarioId: session.userId },
     orderBy: { fechaHora: "desc" },
@@ -18,6 +21,7 @@ export default async function MisFirmasTramitesPage() {
       id: true,
       fechaHora: true,
       hashContenido: true,
+      calidad: true,
       documento: {
         select: {
           id: true,
@@ -33,7 +37,7 @@ export default async function MisFirmasTramitesPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
-      <FirmasSubNav />
+      <FirmasSubNav pendientes={pendientes} />
 
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en Trámites ambientales.</EstadoVacio>
@@ -42,7 +46,12 @@ export default async function MisFirmasTramitesPage() {
           {firmas.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-stone-800">{f.documento.nombre}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-medium text-stone-800">
+                  {f.documento.nombre}
+                  {rotuloCalidadFirma(f.calidad) && (
+                    <span className="flex-none rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
+                  )}
+                </p>
                 <p className="truncate text-xs text-stone-400">
                   Expediente {f.documento.expediente.numero} · {f.documento.expediente.tramiteTipo.nombre}
                 </p>

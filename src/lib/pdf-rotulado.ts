@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { ordenarPorCalidad, rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 const VERDE = rgb(0.11, 0.478, 0.271);
 const GRIS = rgb(0.35, 0.35, 0.35);
@@ -33,6 +34,7 @@ export type FirmaRotuloPdf = {
   dependencia: string | null;
   fechaHora: string;
   hash: string;
+  calidad?: string | null;
 };
 
 export async function estamparRotulo(
@@ -107,13 +109,16 @@ export type DatosFirmaSigec = {
   baseUrl: string;
 };
 
-export async function estamparFirmaSigec(
+export type DatosFirmaTramite = DatosFirmaSigec;
+
+async function estamparFirmasExpediente(
   pdfBytes: Buffer | Uint8Array,
   datos: DatosFirmaSigec,
-  firmas: FirmaRotuloPdf[],
+  firmasSinOrden: FirmaRotuloPdf[],
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-  if (firmas.length === 0) return pdf.save();
+  if (firmasSinOrden.length === 0) return pdf.save();
+  const firmas = ordenarPorCalidad(firmasSinOrden, (f) => f.calidad);
 
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -139,7 +144,14 @@ export async function estamparFirmaSigec(
   cy -= 11;
   for (const f of firmas) {
     const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-    page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+    const rotulo = rotuloCalidadFirma(f.calidad);
+    if (rotulo) {
+      const etiqueta = `${rotulo}: `;
+      page.drawText(etiqueta, { x: 24, y: cy, size: 6.5, font: fontBold, color: VERDE });
+      page.drawText(f.nombre.slice(0, 90), { x: 24 + fontBold.widthOfTextAtSize(etiqueta, 6.5), y: cy, size: 6.5, font: fontBold, color: GRIS });
+    } else {
+      page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
+    }
     cy -= lh;
     if (f.cedulaONit) {
       page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: 6, font, color: GRIS });
@@ -163,63 +175,10 @@ export async function estamparFirmaSigec(
   return pdf.save();
 }
 
-export type DatosFirmaTramite = {
-  numeroExpediente: string;
-  baseUrl: string;
-};
+export function estamparFirmaSigec(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaSigec, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
+  return estamparFirmasExpediente(pdfBytes, datos, firmas);
+}
 
-export async function estamparFirmaTramite(
-  pdfBytes: Buffer | Uint8Array,
-  datos: DatosFirmaTramite,
-  firmas: FirmaRotuloPdf[],
-): Promise<Uint8Array> {
-  const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-  if (firmas.length === 0) return pdf.save();
-
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const page = pdf.getPages()[0];
-  if (!page) return pdf.save();
-  const { width, height } = page.getSize();
-
-  const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
-  const qr = await pdf.embedPng(qrPngBytes);
-
-  const qrSize = 49;
-  const qx = Math.max(12, width - qrSize - 20);
-  const qy = Math.max(12, height - qrSize - 20);
-  page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
-  page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
-
-  const lh = 7.4;
-  const altoBloque = 6 * lh + 3;
-  let cy = 18 + 12 + firmas.length * altoBloque + 8;
-  page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
-  cy -= 9;
-  page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
-  cy -= 11;
-  for (const f of firmas) {
-    const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-    page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS });
-    cy -= lh;
-    if (f.cedulaONit) {
-      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
-    }
-    if (cargo) {
-      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
-    }
-    if (f.dependencia) {
-      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS });
-      cy -= lh;
-    }
-    page.drawText(f.fechaHora, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
-    cy -= lh;
-    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
-    cy -= lh + 3;
-  }
-  page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
-
-  return pdf.save();
+export function estamparFirmaTramite(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaTramite, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
+  return estamparFirmasExpediente(pdfBytes, datos, firmas);
 }

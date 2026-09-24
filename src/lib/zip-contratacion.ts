@@ -45,6 +45,7 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
         select: {
           fechaHora: true,
           hashContenido: true,
+          calidad: true,
           usuario: {
             select: {
               nombre: true,
@@ -102,6 +103,7 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
               dependencia: f.usuario.dependencia?.nombre ?? null,
               fechaHora: formatearFechaHoraLarga(f.fechaHora),
               hash: f.hashContenido,
+        calidad: f.calidad,
             }))
           )
         : original;

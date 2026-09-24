@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoContrato } from "@/lib/permisos";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
-import type { RolFirmante } from "@prisma/client";
+import type { RolFirmante, CalidadFirma } from "@prisma/client";
+import { esCalidadFirma } from "@/lib/calidad-firma";
 
 const ROLES_VALIDOS: RolFirmante[] = ["FIRMA", "VISTO_BUENO", "LECTURA"];
 
@@ -27,12 +28,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!firmantesBody || firmantesBody.length === 0) {
     return NextResponse.json({ error: "Debe indicar al menos una persona." }, { status: 400 });
   }
-  const firmantes: { usuarioId: string; rol: RolFirmante; orden: number }[] = [];
+  const firmantes: { usuarioId: string; rol: RolFirmante; orden: number; calidad: CalidadFirma | null }[] = [];
   for (const f of firmantesBody) {
     if (typeof f?.usuarioId !== "string" || !ROLES_VALIDOS.includes(f?.rol)) {
       return NextResponse.json({ error: "Datos de firmante inválidos." }, { status: 400 });
     }
-    firmantes.push({ usuarioId: f.usuarioId, rol: f.rol, orden: Number.isFinite(f?.orden) ? Number(f.orden) : 1 });
+    if (f.calidad != null && !esCalidadFirma(f.calidad)) {
+      return NextResponse.json({ error: "Calidad de firma inválida." }, { status: 400 });
+    }
+    firmantes.push({
+      usuarioId: f.usuarioId,
+      rol: f.rol,
+      orden: Number.isFinite(f?.orden) ? Number(f.orden) : 1,
+      calidad: f.rol === "FIRMA" && esCalidadFirma(f.calidad) ? f.calidad : null,
+    });
   }
 
   try {

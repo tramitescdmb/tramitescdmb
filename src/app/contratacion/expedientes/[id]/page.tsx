@@ -30,6 +30,7 @@ import {
   type ItemChecklist,
 } from "@/lib/contratacion";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, etiquetaRangoPeriodo } from "@/lib/periodos-informe";
 import { CATEGORIAS_SUGERIDAS } from "@/lib/contratacion-categorias";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
@@ -74,6 +75,11 @@ const ETIQUETA_ROL_FIRMANTE: Record<string, string> = {
   VISTO_BUENO: "visto bueno",
   LECTURA: "lectura",
 };
+
+function etiquetaFirmante(s: { rol: string; calidad?: string | null }): string {
+  const rotulo = s.rol === "FIRMA" ? rotuloCalidadFirma(s.calidad) : null;
+  return rotulo ? rotulo.toLowerCase() : ETIQUETA_ROL_FIRMANTE[s.rol] ?? s.rol;
+}
 const ETIQUETA_ESTADO_SOLICITUD: Record<string, string> = {
   PENDIENTE: "pendiente",
   COMPLETADA: "completada",
@@ -213,6 +219,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
       usuarioAsignadoNombre: s.usuarioAsignado.nombre,
       rol: s.rol,
       orden: s.orden,
+      calidad: s.calidad,
       estado: s.estado,
     }));
     const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
@@ -255,7 +262,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           />
         )}
         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-          <AsignarFirmantesModal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
+          <AsignarFirmantesModal conCalidad endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
         )}
         {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
           <EditarEliminarDocumentoContrato
@@ -660,7 +667,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           .filter((s) => s.estado !== "RECHAZADA")
                           .map((s) => (
                             <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                              {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                              {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
                             </span>
                           ))}
                       </div>
@@ -713,7 +720,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         ) : null;
                       })()}
                       {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                        <AsignarFirmantesModal
+                        <AsignarFirmantesModal conCalidad
                           endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
                           usuarios={usuariosOpciones}
                           firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
@@ -722,6 +729,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             usuarioAsignadoNombre: s.usuarioAsignadoNombre,
                             rol: s.rol,
                             orden: s.orden,
+                            calidad: s.calidad,
                             estado: s.estado,
                           }))}
                         />
@@ -764,6 +772,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                       usuarioAsignadoNombre: s.usuarioAsignado.nombre,
                       rol: s.rol,
                       orden: s.orden,
+                      calidad: s.calidad,
                       estado: s.estado,
                     }));
                     const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
@@ -791,7 +800,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                               .filter((s) => s.estado !== "RECHAZADA")
                               .map((s) => (
                                 <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                                  {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]}
+                                  {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)}
                                 </span>
                               ))}
                           </div>
@@ -825,7 +834,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           />
                         )}
                         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                          <AsignarFirmantesModal
+                          <AsignarFirmantesModal conCalidad
                             endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
                             usuarios={usuariosOpciones}
                             firmantesActuales={solicitudes}

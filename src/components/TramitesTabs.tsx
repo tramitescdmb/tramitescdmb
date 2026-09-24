@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine } from "lucide-react";
+import { GloboPendientes } from "@/components/GloboPendientes";
 
 const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
@@ -12,7 +13,15 @@ const TABS = [
   { href: "/firmas/buzon", label: "Firmas", icon: PenLine, prefijo: "/firmas", requiereFirmas: true },
 ];
 
-export function TramitesTabs({ mostrarSolicitantes = true, mostrarFirmas = true }: { mostrarSolicitantes?: boolean; mostrarFirmas?: boolean }) {
+export function TramitesTabs({
+  mostrarSolicitantes = true,
+  mostrarFirmas = true,
+  pendientesFirma = { total: 0, listos: 0 },
+}: {
+  mostrarSolicitantes?: boolean;
+  mostrarFirmas?: boolean;
+  pendientesFirma?: { total: number; listos: number };
+}) {
   const pathname = usePathname();
   const tabs = TABS.filter((t) => (!t.requiereTramite || mostrarSolicitantes) && (!t.requiereFirmas || mostrarFirmas));
   return (
@@ -34,6 +43,7 @@ export function TramitesTabs({ mostrarSolicitantes = true, mostrarFirmas = true 
           >
             <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
             {t.label}
+            {t.requiereFirmas && pendientesFirma.total > 0 && <GloboPendientes pendientes={pendientesFirma} />}
           </Link>
         );
       })}

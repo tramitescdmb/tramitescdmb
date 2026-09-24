@@ -19,6 +19,7 @@ import {
   puedeValidarDocumentoTramite,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { AsignacionExpedienteForm } from "@/components/AsignacionExpedienteForm";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
@@ -42,6 +43,11 @@ const CLASE_ESTADO_VALIDACION: Record<string, string> = {
   RECHAZADO: "bg-red-50 text-red-700",
 };
 const ETIQUETA_ROL_FIRMANTE: Record<string, string> = { FIRMA: "firma", VISTO_BUENO: "visto bueno", LECTURA: "lectura" };
+
+function etiquetaFirmante(s: { rol: string; calidad?: string | null }): string {
+  const rotulo = s.rol === "FIRMA" ? rotuloCalidadFirma(s.calidad) : null;
+  return rotulo ? rotulo.toLowerCase() : ETIQUETA_ROL_FIRMANTE[s.rol] ?? s.rol;
+}
 const ETIQUETA_ESTADO_SOLICITUD: Record<string, string> = { PENDIENTE: "pendiente", COMPLETADA: "completada", RECHAZADA: "rechazada" };
 const CLASE_ESTADO_SOLICITUD: Record<string, string> = {
   PENDIENTE: "bg-amber-50 text-amber-700",
@@ -190,6 +196,7 @@ export default async function ExpedienteDetallePage({
       usuarioAsignadoNombre: s.usuarioAsignado.nombre,
       rol: s.rol,
       orden: s.orden,
+      calidad: s.calidad,
       estado: s.estado,
     }));
     const miSolicitud = session
@@ -219,7 +226,7 @@ export default async function ExpedienteDetallePage({
                 .filter((s) => s.estado !== "RECHAZADA")
                 .map((s) => (
                   <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                    {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                    {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
                   </span>
                 ))}
             </div>
@@ -269,7 +276,7 @@ export default async function ExpedienteDetallePage({
             />
           )}
           {puedeAsignarFirmantes && (
-            <AsignarFirmantesModal
+            <AsignarFirmantesModal conCalidad
               endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
               usuarios={usuariosOpciones}
               firmantesActuales={solicitudes}

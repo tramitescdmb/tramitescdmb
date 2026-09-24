@@ -7,6 +7,7 @@ import Link from "next/link";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { ordenarPorCalidad, rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
 export default async function FichaFirmaExpedienteContractualPage({
@@ -127,7 +128,7 @@ export default async function FichaFirmaExpedienteContractualPage({
               <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4">
                 <p className="mb-1.5 text-sm font-semibold text-stone-800">{doc.nombre}</p>
                 <ul className="space-y-3">
-                  {doc.firmas.map((f) => {
+                  {ordenarPorCalidad(doc.firmas, (f) => f.calidad).map((f) => {
                     const identidad = identidadFirmante(f.usuario);
                     return (
                     <li key={f.id} className="rounded-lg border border-stone-100 bg-stone-50/60 p-3 text-sm">
@@ -135,6 +136,9 @@ export default async function FichaFirmaExpedienteContractualPage({
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
                         {f.usuario.nombre}
                         {f.usuario.denominacionEmpleo && <span className="font-normal text-stone-500"> — {f.usuario.denominacionEmpleo}</span>}
+                        {rotuloCalidadFirma(f.calidad) && (
+                          <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
+                        )}
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                         <Dato k="Cédula o NIT" v={identidad.cedulaONit ?? "no registrada"} mono />

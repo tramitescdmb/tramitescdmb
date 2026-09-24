@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Inbox, FileSignature } from "lucide-react";
+import { GloboPendientes } from "@/components/GloboPendientes";
 
 const ITEMS = [
   { href: "/firmas/buzon", label: "Buzón de firmas", icon: Inbox },
   { href: "/firmas/mis-firmas", label: "Mis firmas", icon: FileSignature },
 ];
 
-export function FirmasSubNav() {
+export function FirmasSubNav({ pendientes = { total: 0, listos: 0 } }: { pendientes?: { total: number; listos: number } }) {
   const pathname = usePathname();
   return (
     <nav className="flex items-center gap-1.5" aria-label="Firmas">
@@ -27,6 +28,7 @@ export function FirmasSubNav() {
           >
             <Icon className="h-3.5 w-3.5" aria-hidden />
             {item.label}
+            {item.href === "/firmas/buzon" && pendientes.total > 0 && <GloboPendientes pendientes={pendientes} />}
           </Link>
         );
       })}

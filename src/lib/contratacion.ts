@@ -7,7 +7,7 @@ import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, Prisma } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 
 export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
@@ -104,6 +104,7 @@ export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>
           estado: EstadoSolicitudFirma;
           usuarioAsignadoId: string;
           usuarioAsignadoNombre: string;
+          calidad: CalidadFirma | null;
         }[];
       }
     | null;
@@ -128,6 +129,7 @@ export function cruzarChecklist(
       orden: number;
       estado: EstadoSolicitudFirma;
       usuarioAsignadoId: string;
+      calidad?: CalidadFirma | null;
       usuarioAsignado: { nombre: string };
     }[];
   }[]
@@ -158,6 +160,7 @@ export function cruzarChecklist(
               estado: s.estado,
               usuarioAsignadoId: s.usuarioAsignadoId,
               usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+              calidad: s.calidad ?? null,
             })),
           }
         : null,

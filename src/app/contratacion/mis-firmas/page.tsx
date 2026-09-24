@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 export default async function MisFirmasContratacionPage() {
   const session = await getSession();
@@ -17,6 +18,7 @@ export default async function MisFirmasContratacionPage() {
       id: true,
       fechaHora: true,
       hashContenido: true,
+      calidad: true,
       documento: { select: { id: true, nombre: true, mimeType: true, expedienteId: true, expediente: { select: { numero: true, objeto: true } } } },
     },
   });
@@ -32,7 +34,12 @@ export default async function MisFirmasContratacionPage() {
           {firmas.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-stone-800">{f.documento.nombre}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-medium text-stone-800">
+                  {f.documento.nombre}
+                  {rotuloCalidadFirma(f.calidad) && (
+                    <span className="flex-none rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
+                  )}
+                </p>
                 <p className="truncate text-xs text-stone-400">
                   Expediente {f.documento.expediente.numero} · {f.documento.expediente.objeto}
                 </p>

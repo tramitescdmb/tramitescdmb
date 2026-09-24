@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { Leaf } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
+import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite } from "@/lib/permisos";
 
@@ -11,6 +12,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   const permisos = await obtenerPermisosUsuario(session.userId);
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
+  const pendientesFirma = mostrarFirmas ? await contarPendientesBuzonTramite(session.userId) : { total: 0, listos: 0 };
 
   return (
     <div className="space-y-4">
@@ -21,7 +23,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
         <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
       </div>
 
-      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} />
+      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} />
 
       {children}
     </div>

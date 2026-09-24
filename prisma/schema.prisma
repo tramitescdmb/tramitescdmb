@@ -626,15 +626,16 @@ enum EstadoValidacionDocumento {
 }
 
 model FirmaExpedienteDocumento {
-  id                String    @id @default(cuid())
+  id                String        @id @default(cuid())
   documentoId       String
   usuarioId         String
-  fechaHora         DateTime  @default(now())
+  fechaHora         DateTime      @default(now())
   hashContenido     String
+  calidad           CalidadFirma?
   ip                String?
   userAgent         String?
-  proveedor         String    @default("interno")
-  formato           String    @default("hash-sha256")
+  proveedor         String        @default("interno")
+  formato           String        @default("hash-sha256")
   selloTiempoEn     DateTime?
   selloTiempoFuente String?
   selloTiempoToken  String?
@@ -1238,6 +1239,12 @@ enum RolFirmante {
   LECTURA
 }
 
+enum CalidadFirma {
+  PRINCIPAL
+  PROYECTO
+  REVISO
+}
+
 enum EstadoSolicitudFirma {
   PENDIENTE
   COMPLETADA
@@ -1252,6 +1259,7 @@ model SolicitudFirma {
 
   usuarioAsignadoId String
   rol               RolFirmante          @default(FIRMA)
+  calidad           CalidadFirma?
   orden             Int                  @default(1)
   estado            EstadoSolicitudFirma @default(PENDIENTE)
   comentario        String?              @db.Text
@@ -1753,15 +1761,16 @@ model PeriodoInformeEventual {
 }
 
 model FirmaDocumentoContrato {
-  id                String    @id @default(cuid())
+  id                String        @id @default(cuid())
   documentoId       String
   usuarioId         String
-  fechaHora         DateTime  @default(now())
+  fechaHora         DateTime      @default(now())
   hashContenido     String
+  calidad           CalidadFirma?
   ip                String?
   userAgent         String?
-  proveedor         String    @default("interno")
-  formato           String    @default("hash-sha256")
+  proveedor         String        @default("interno")
+  formato           String        @default("hash-sha256")
   selloTiempoEn     DateTime?
   selloTiempoFuente String?
   selloTiempoToken  String?
