@@ -20,6 +20,7 @@ import {
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
+import { AsignacionExpedienteForm } from "@/components/AsignacionExpedienteForm";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -431,7 +432,7 @@ export default async function ExpedienteDetallePage({
             puede seguir documentando (por ejemplo, el seguimiento posterior), pero ya no está activo.
           </div>
         )}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-start">
           <div className="rounded-xl md:col-span-1 border border-stone-200 bg-white shadow-soft p-4 text-xs text-stone-500">
             <p>
               <span className="font-medium text-stone-700">Radicado:</span>{" "}
@@ -476,49 +477,13 @@ export default async function ExpedienteDetallePage({
                 <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
                   Editar asignación
                 </summary>
-                <form action={`/api/expedientes/${expediente.id}/asignar`} method="post" className="mt-2 space-y-3 border-t border-stone-100 pt-3">
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-stone-700">Usuarios puntuales</p>
-                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-2">
-                      {usuariosActivos.map((u) => (
-                        <label key={u.id} className="flex items-center gap-2 text-sm text-stone-700">
-                          <input
-                            type="checkbox"
-                            name="usuarioIds"
-                            value={u.id}
-                            defaultChecked={expediente.usuariosAsignados.some((a) => a.id === u.id)}
-                          />
-                          {u.nombre}
-                          {u.cargos.length > 0 && (
-                            <span className="text-xs text-stone-400"> — {u.cargos.map((c) => c.nombre).join(", ")}</span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-stone-700">Cargos completos</p>
-                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-2">
-                      {cargos.map((c) => (
-                        <label key={c.id} className="flex items-center gap-2 text-sm text-stone-700">
-                          <input
-                            type="checkbox"
-                            name="cargoIds"
-                            value={c.id}
-                            defaultChecked={expediente.cargosAsignados.some((a) => a.id === c.id)}
-                          />
-                          {c.nombre}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700"
-                  >
-                    Guardar asignación
-                  </button>
-                </form>
+                <AsignacionExpedienteForm
+                  expedienteId={expediente.id}
+                  usuarios={usuariosActivos.map((u) => ({ id: u.id, nombre: u.nombre, detalle: u.cargos.map((c) => c.nombre).join(", ") || null }))}
+                  cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
+                  usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}
+                  cargosIniciales={expediente.cargosAsignados.map((c) => c.id)}
+                />
               </details>
             )}
           </div>
