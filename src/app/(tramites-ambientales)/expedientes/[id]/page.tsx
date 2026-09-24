@@ -175,6 +175,122 @@ export default async function ExpedienteDetallePage({
   }
   gruposDocumentos.sort(([a], [b]) => (a ?? -1) - (b ?? -1));
 
+  const documentosPasoActual = pasoActual ? expediente.documentos.filter((d) => d.pasoNumero === pasoActual.numero) : [];
+
+  const filaDocumento = (doc:(typeof expediente.documentos)[number]) => {
+    const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
+    const puede =
+      puedeEditar &&
+      puedeIntentarEliminarDocumento({
+        esAdmin: session?.rol === "ADMIN",
+        esQuienLoSubio: session?.userId === doc.subidoPorId,
+        etapaAbierta: abierta,
+      });
+    const solicitudes = doc.solicitudesFirma.map((s) => ({
+      id: s.id,
+      usuarioAsignadoId: s.usuarioAsignadoId,
+      usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+      rol: s.rol,
+      orden: s.orden,
+      estado: s.estado,
+    }));
+    const miSolicitud = session
+      ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
+      : undefined;
+    const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+    const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
+    return (
+      <li key={doc.id} className="px-4 py-2.5 text-sm">
+        <div className="min-w-0">
+          <a
+            href={`/api/documentos/${doc.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline"
+          >
+            <FileText className="h-3.5 w-3.5 flex-none" aria-hidden />
+            {doc.nombre}
+          </a>
+          {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
+          <p className="text-xs text-stone-400">
+            {doc.subidoPor.nombre} · {formatearFecha(doc.createdAt)}
+          </p>
+          {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {solicitudes
+                .filter((s) => s.estado !== "RECHAZADA")
+                .map((s) => (
+                  <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                    {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
+            {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
+          </span>
+          {doc.requiereFirma && (
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
+              }`}
+            >
+              {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+            </span>
+          )}
+          <VistaPreviaDocumento
+            url={`/api/documentos/${doc.id}${firmado ? "/rotulado" : ""}`}
+            nombre={doc.nombre}
+            mimeType={doc.mimeType}
+          />
+          {puedeValidar && doc.estadoValidacion !== "APROBADO" && (
+            <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} endpoint={`/api/documentos/${doc.id}/validar`} />
+          )}
+          {firmado && (
+            <a
+              href={`/api/documentos/${doc.id}/rotulado`}
+              target="_blank"
+              rel="noreferrer"
+              title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden />
+              Con firma
+            </a>
+          )}
+          {miSolicitud && puedeActuarYo && (
+            <ConfirmarFirmaModal
+              rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+              endpointCompletar={`/api/solicitudes-firma/${miSolicitud.id}/completar`}
+              endpointRechazar={`/api/solicitudes-firma/${miSolicitud.id}/rechazar`}
+              documentoUrl={`/api/documentos/${doc.id}`}
+              documentoNombre={doc.nombre}
+              documentoMimeType={doc.mimeType}
+            />
+          )}
+          {puedeAsignarFirmantes && (
+            <AsignarFirmantesModal
+              endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
+              usuarios={usuariosOpciones}
+              firmantesActuales={solicitudes}
+            />
+          )}
+          <EditarDocumentoBoton
+            documentoId={doc.id}
+            expedienteId={expediente.id}
+            nombreActual={doc.nombre}
+            requiereFirmaActual={doc.requiereFirma}
+            etapaAbierta={abierta}
+            puedeEditar={puede}
+          />
+          <EliminarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} etapaAbierta={abierta} puedeEliminar={puede} />
+        </div>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -371,6 +487,20 @@ export default async function ExpedienteDetallePage({
                     pasoNumero={pasoActual.numero}
                     documentosDelPaso={pasoActual.documentos}
                   />
+                </div>
+              )}
+
+              {documentosPasoActual.length > 0 && (
+                <div className="mt-4 border-t border-stone-100 pt-4">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Documentos cargados en este paso ({documentosPasoActual.length})
+                  </h3>
+                  <p className="mb-2 text-xs text-stone-500">
+                    Desde aquí se asignan firmantes, se firma, se da visto bueno o se valida cada archivo.
+                  </p>
+                  <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100">
+                    {documentosPasoActual.map((doc) => filaDocumento(doc))}
+                  </ul>
                 </div>
               )}
 
@@ -673,119 +803,7 @@ export default async function ExpedienteDetallePage({
                       </p>
                     </div>
                     <ul className="divide-y divide-stone-100">
-                      {docs.map((doc) => {
-                        const abierta = documentoEtapaAbierta(doc.pasoNumero, expediente.pasoActualNumero);
-                        const puede =
-                          puedeEditar &&
-                          puedeIntentarEliminarDocumento({
-                            esAdmin: session?.rol === "ADMIN",
-                            esQuienLoSubio: session?.userId === doc.subidoPorId,
-                            etapaAbierta: abierta,
-                          });
-                        const solicitudes = doc.solicitudesFirma.map((s) => ({
-                          id: s.id,
-                          usuarioAsignadoId: s.usuarioAsignadoId,
-                          usuarioAsignadoNombre: s.usuarioAsignado.nombre,
-                          rol: s.rol,
-                          orden: s.orden,
-                          estado: s.estado,
-                        }));
-                        const miSolicitud = session
-                          ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
-                          : undefined;
-                        const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
-                        const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
-                        return (
-                          <li key={doc.id} className="flex flex-wrap items-start gap-2 px-4 py-2.5 text-sm">
-                            <div className="min-w-0 flex-1">
-                              <a
-                                href={`/api/documentos/${doc.id}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline"
-                              >
-                                <FileText className="h-3.5 w-3.5 flex-none" aria-hidden />
-                                {doc.nombre}
-                              </a>
-                              {doc.descripcion && <p className="text-xs text-stone-500">{doc.descripcion}</p>}
-                              <p className="text-xs text-stone-400">
-                                {doc.subidoPor.nombre} · {formatearFecha(doc.createdAt)}
-                              </p>
-                              {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {solicitudes
-                                    .filter((s) => s.estado !== "RECHAZADA")
-                                    .map((s) => (
-                                      <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                                        {s.usuarioAsignadoNombre} · {ETIQUETA_ROL_FIRMANTE[s.rol]} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
-                                      </span>
-                                    ))}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
-                                {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
-                              </span>
-                              {doc.requiereFirma && (
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                    solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
-                                  }`}
-                                >
-                                  {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
-                                </span>
-                              )}
-                              <VistaPreviaDocumento
-                                url={`/api/documentos/${doc.id}${firmado ? "/rotulado" : ""}`}
-                                nombre={doc.nombre}
-                                mimeType={doc.mimeType}
-                              />
-                              {puedeValidar && doc.estadoValidacion !== "APROBADO" && (
-                                <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} endpoint={`/api/documentos/${doc.id}/validar`} />
-                              )}
-                              {firmado && (
-                                <a
-                                  href={`/api/documentos/${doc.id}/rotulado`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title="PDF con el sello de firma electrónica y el QR de verificación estampados"
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-                                >
-                                  <Printer className="h-3.5 w-3.5" aria-hidden />
-                                  Con firma
-                                </a>
-                              )}
-                              {miSolicitud && puedeActuarYo && (
-                                <ConfirmarFirmaModal
-                                  rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
-                                  endpointCompletar={`/api/solicitudes-firma/${miSolicitud.id}/completar`}
-                                  endpointRechazar={`/api/solicitudes-firma/${miSolicitud.id}/rechazar`}
-                                  documentoUrl={`/api/documentos/${doc.id}`}
-                                  documentoNombre={doc.nombre}
-                                  documentoMimeType={doc.mimeType}
-                                />
-                              )}
-                              {puedeAsignarFirmantes && (
-                                <AsignarFirmantesModal
-                                  endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
-                                  usuarios={usuariosOpciones}
-                                  firmantesActuales={solicitudes}
-                                />
-                              )}
-                              <EditarDocumentoBoton
-                                documentoId={doc.id}
-                                expedienteId={expediente.id}
-                                nombreActual={doc.nombre}
-                                requiereFirmaActual={doc.requiereFirma}
-                                etapaAbierta={abierta}
-                                puedeEditar={puede}
-                              />
-                              <EliminarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} etapaAbierta={abierta} puedeEliminar={puede} />
-                            </div>
-                          </li>
-                        );
-                      })}
+                      {docs.map((doc) => filaDocumento(doc))}
                     </ul>
                   </div>
                 );
