@@ -666,49 +666,6 @@ export default async function ExpedienteDetallePage({
           <SectionHelp>Este expediente no tiene un paso activo (el flujo no tiene pasos definidos).</SectionHelp>
         )}
 
-        <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
-            Todos los pasos del flujo
-          </h2>
-          <ol className="space-y-1.5">
-            {pasos.map((p) => {
-              const estadoPaso =
-                p.numero < expediente.pasoActualNumero
-                  ? "completado"
-                  : p.numero === expediente.pasoActualNumero
-                    ? "actual"
-                    : "pendiente";
-              return (
-                <li
-                  key={p.id}
-                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm ${
-                    estadoPaso === "actual"
-                      ? "bg-cdmb-50 text-cdmb-900"
-                      : estadoPaso === "completado"
-                        ? "text-stone-400"
-                        : "text-stone-400"
-                  }`}
-                >
-                  <span
-                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
-                      estadoPaso === "completado"
-                        ? "bg-green-100 text-green-700"
-                        : estadoPaso === "actual"
-                          ? "bg-cdmb-600 text-white"
-                          : "bg-stone-100 text-stone-400"
-                    }`}
-                  >
-                    {estadoPaso === "completado" ? <Check className="h-3 w-3" aria-hidden /> : p.numero}
-                  </span>
-                  <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
-                    {p.titulo}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-
         <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -759,6 +716,49 @@ export default async function ExpedienteDetallePage({
               })}
             </div>
           )}
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+            Todos los pasos del flujo
+          </h2>
+          <ol className="space-y-1.5">
+            {pasos.map((p) => {
+              const estadoPaso =
+                p.numero < expediente.pasoActualNumero
+                  ? "completado"
+                  : p.numero === expediente.pasoActualNumero
+                    ? "actual"
+                    : "pendiente";
+              return (
+                <li
+                  key={p.id}
+                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm ${
+                    estadoPaso === "actual"
+                      ? "bg-cdmb-50 text-cdmb-900"
+                      : estadoPaso === "completado"
+                        ? "text-stone-400"
+                        : "text-stone-400"
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
+                      estadoPaso === "completado"
+                        ? "bg-green-100 text-green-700"
+                        : estadoPaso === "actual"
+                          ? "bg-cdmb-600 text-white"
+                          : "bg-stone-100 text-stone-400"
+                    }`}
+                  >
+                    {estadoPaso === "completado" ? <Check className="h-3 w-3" aria-hidden /> : p.numero}
+                  </span>
+                  <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
+                    {p.titulo}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
         </section>
 
         <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
