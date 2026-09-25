@@ -256,7 +256,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
             endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
             endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
-            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+            documentoUrl={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`}
             documentoNombre={doc.nombre}
             documentoMimeType={doc.mimeType}
           />
@@ -713,7 +713,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
                             endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
                             endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
-                            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+                            documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.totalFirmas > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
                             documentoNombre={doc.nombre}
                             documentoMimeType={doc.mimeType}
                           />
@@ -828,7 +828,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
                             endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/completar`}
                             endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/rechazar`}
-                            documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+                            documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
                             documentoNombre={doc.nombre}
                             documentoMimeType={doc.mimeType}
                           />

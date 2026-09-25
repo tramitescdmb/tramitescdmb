@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello } from "@/lib/calidad-firma";
+import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 
 const VERDE = rgb(0.11, 0.478, 0.271);
 const GRIS = rgb(0.35, 0.35, 0.35);
@@ -28,6 +29,7 @@ export type DatosRotuloPdf = {
 export type FirmaRotuloPdf = {
   nombre: string;
   cedulaONit: string | null;
+  tipoIdentificacion?: string | null;
   denominacionEmpleo: string | null;
   denominacionComplemento: string | null;
   sexo: string | null;
@@ -91,7 +93,8 @@ export async function estamparRotulo(
     cy -= 11;
     for (const f of firmas) {
       const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-      const nombreLinea = f.cedulaONit ? `${f.nombre} — C.C./NIT ${f.cedulaONit}` : f.nombre;
+      const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
+      const nombreLinea = identificacion ? `${f.nombre} — ${identificacion}` : f.nombre;
       page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
       if (cargo) { page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       if (f.dependencia) { page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
@@ -164,7 +167,7 @@ async function estamparFirmasExpediente(
     const rotulo = rotuloCalidadFirma(f.calidad);
 
     if (nivel === "visto") {
-      const resto = [f.nombre, f.cedulaONit ? `C.C./NIT ${f.cedulaONit}` : null, cargo, f.dependencia, f.fechaHora].filter(Boolean).join("  ·  ");
+      const resto = [f.nombre, textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion), cargo, f.dependencia, f.fechaHora].filter(Boolean).join("  ·  ");
       conRotulo(rotulo ?? "Visto bueno", resto, VISTO.texto, font);
       cy -= VISTO.lh + 1.5;
       continue;
@@ -172,7 +175,8 @@ async function estamparFirmasExpediente(
 
     if (nivel === "secundaria") {
       const s = SECUNDARIA;
-      const identidad = f.cedulaONit ? `${f.nombre}  ·  C.C./NIT ${f.cedulaONit}` : f.nombre;
+      const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
+      const identidad = identificacion ? `${f.nombre}  ·  ${identificacion}` : f.nombre;
       conRotulo(rotulo ?? "", identidad, s.nombre);
       cy -= s.lh;
       const detalle = [cargo, f.dependencia].filter(Boolean).join("  ·  ");
@@ -186,8 +190,9 @@ async function estamparFirmasExpediente(
     const p = PRINCIPAL;
     page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: p.nombre, font: fontBold, color: GRIS });
     cy -= p.lh;
-    if (f.cedulaONit) {
-      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: p.linea, font, color: GRIS });
+    const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
+    if (identificacion) {
+      page.drawText(identificacion, { x: 24, y: cy, size: p.linea, font, color: GRIS });
       cy -= p.lh;
     }
     if (cargo) {

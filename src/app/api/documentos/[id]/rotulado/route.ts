@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
@@ -26,21 +27,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           hashContenido: true,
           calidad: true,
           usuario: {
-            select: { nombre: true, cedulaONit: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } },
+            select: { nombre: true, cedulaONit: true, tipoIdentificacionFirma: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } },
           },
         },
       },
       solicitudesFirma: {
         where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
         orderBy: { completadoEn: "asc" },
-        select: { completadoEn: true, usuarioAsignado: { select: { nombre: true, cedulaONit: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
+        select: { completadoEn: true, usuarioAsignado: { select: { nombre: true, cedulaONit: true, tipoIdentificacionFirma: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
       },
     },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, doc.expediente.tramiteTipoId)) {
+  if (!puedeAccederTramite(permisos, doc.expediente.tramiteTipoId) && !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
   }
   if (doc.mimeType !== "application/pdf") {
@@ -60,6 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         ...doc.firmas.map((f) => ({
           nombre: f.usuario.nombre,
           cedulaONit: f.usuario.cedulaONit,
+          tipoIdentificacion: f.usuario.tipoIdentificacionFirma,
           denominacionEmpleo: f.usuario.denominacionEmpleo,
           denominacionComplemento: f.usuario.denominacionComplemento,
           sexo: f.usuario.sexo,
@@ -71,6 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         ...doc.solicitudesFirma.map((s) => ({
           nombre: s.usuarioAsignado.nombre,
           cedulaONit: s.usuarioAsignado.cedulaONit,
+          tipoIdentificacion: s.usuarioAsignado.tipoIdentificacionFirma,
           denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
           denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
           sexo: s.usuarioAsignado.sexo,

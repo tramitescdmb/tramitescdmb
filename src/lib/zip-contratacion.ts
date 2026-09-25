@@ -50,11 +50,12 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
             select: {
               nombre: true,
               cedulaONit: true,
+              tipoIdentificacionFirma: true,
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
               dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
           },
         },
@@ -68,11 +69,12 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
             select: {
               nombre: true,
               cedulaONit: true,
+              tipoIdentificacionFirma: true,
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
               dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
           },
         },
@@ -116,6 +118,7 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
             ...doc.firmas.map((f) => ({
               nombre: f.usuario.nombre,
               cedulaONit: identidadFirmante(f.usuario).cedulaONit,
+              tipoIdentificacion: identidadFirmante(f.usuario).tipoIdentificacion,
               denominacionEmpleo: f.usuario.denominacionEmpleo,
               denominacionComplemento: f.usuario.denominacionComplemento,
               sexo: f.usuario.sexo,
@@ -127,6 +130,7 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
             ...doc.solicitudesFirma.map((s) => ({
               nombre: s.usuarioAsignado.nombre,
               cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
+              tipoIdentificacion: identidadFirmante(s.usuarioAsignado).tipoIdentificacion,
               denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
               denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
               sexo: s.usuarioAsignado.sexo,

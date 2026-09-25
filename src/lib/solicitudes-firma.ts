@@ -391,6 +391,7 @@ export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "doc
           expedienteId: true,
           expediente: { select: { numero: true } },
           firmas: { select: { id: true } },
+          solicitudesFirma: { where: { rol: "VISTO_BUENO", estado: "COMPLETADA" }, select: { id: true } },
         },
       },
       documentoExpediente: {
@@ -401,6 +402,7 @@ export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "doc
           expedienteId: true,
           expediente: { select: { numero: true } },
           firmas: { select: { id: true } },
+          solicitudesFirma: { where: { rol: "VISTO_BUENO", estado: "COMPLETADA" }, select: { id: true } },
         },
       },
     },

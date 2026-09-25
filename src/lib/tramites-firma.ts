@@ -94,3 +94,11 @@ export async function listarAvisosRechazoTramiteParaUsuario(usuarioId: string, v
   });
   return avisos as (typeof avisos[number] & { documentoExpediente: NonNullable<(typeof avisos)[number]["documentoExpediente"]> })[];
 }
+
+export async function tieneFirmaOSolicitudEnDocumentoTramite(usuarioId: string, documentoId: string): Promise<boolean> {
+  const [solicitudes, firmas] = await Promise.all([
+    db.solicitudFirma.count({ where: { documentoExpedienteId: documentoId, usuarioAsignadoId: usuarioId } }),
+    db.firmaExpedienteDocumento.count({ where: { documentoId, usuarioId } }),
+  ]);
+  return solicitudes + firmas > 0;
+}

@@ -38,11 +38,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             select: {
               nombre: true,
               cedulaONit: true,
+              tipoIdentificacionFirma: true,
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
               dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
           },
         },
@@ -56,11 +57,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             select: {
               nombre: true,
               cedulaONit: true,
+              tipoIdentificacionFirma: true,
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
               dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
           },
         },
@@ -92,6 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       ...doc.firmas.map((f) => ({
         nombre: f.usuario.nombre,
         cedulaONit: identidadFirmante(f.usuario).cedulaONit,
+        tipoIdentificacion: identidadFirmante(f.usuario).tipoIdentificacion,
         denominacionEmpleo: f.usuario.denominacionEmpleo,
         denominacionComplemento: f.usuario.denominacionComplemento,
         sexo: f.usuario.sexo,
@@ -103,6 +106,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       ...doc.solicitudesFirma.map((s) => ({
         nombre: s.usuarioAsignado.nombre,
         cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
+        tipoIdentificacion: identidadFirmante(s.usuarioAsignado).tipoIdentificacion,
         denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
         denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
         sexo: s.usuarioAsignado.sexo,

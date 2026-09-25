@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, documento.expediente.tramiteTipoId)) {
+  if (!puedeAccederTramite(permisos, documento.expediente.tramiteTipoId) && !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
   }
 

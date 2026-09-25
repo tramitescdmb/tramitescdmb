@@ -1,3 +1,4 @@
+import { esTipoIdentificacionFirma, type TipoIdentificacionFirmaValor } from "@/lib/identificacion-firma";
 import { NextRequest, NextResponse } from "next/server";
 import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -53,6 +54,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     : undefined;
   const accesoFirma: boolean | undefined = "accesoFirma" in body ? Boolean(body.accesoFirma) : undefined;
   const cedulaONit: string | null | undefined = "cedulaONit" in body ? (String(body.cedulaONit || "").trim() || null) : undefined;
+  const tipoIdentificacionFirma: TipoIdentificacionFirmaValor | null | undefined = "tipoIdentificacionFirma" in body
+    ? (esTipoIdentificacionFirma(body.tipoIdentificacionFirma) ? body.tipoIdentificacionFirma : null)
+    : undefined;
   const correoNotificacion: string | null | undefined = "correoNotificacion" in body ? (String(body.correoNotificacion || "").trim() || null) : undefined;
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
@@ -144,6 +148,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(sexo !== undefined ? { sexo } : {}),
         ...(accesoFirma !== undefined ? { accesoFirma } : {}),
         ...(cedulaONit !== undefined ? { cedulaONit } : {}),
+        ...(tipoIdentificacionFirma !== undefined ? { tipoIdentificacionFirma } : {}),
         ...(correoNotificacion !== undefined ? { correoNotificacion } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),

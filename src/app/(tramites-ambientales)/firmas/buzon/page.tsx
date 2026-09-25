@@ -115,7 +115,7 @@ export default async function BuzonFirmasTramitesPage() {
               )}
               {s.documentoExpediente && (
                 <VistaPreviaDocumento
-                  url={`/api/documentos/${s.documentoExpediente.id}${s.documentoExpediente.firmas.length > 0 ? "/rotulado" : ""}`}
+                  url={`/api/documentos/${s.documentoExpediente.id}${s.documentoExpediente.mimeType === "application/pdf" && (s.documentoExpediente.firmas.length > 0 || s.documentoExpediente.solicitudesFirma.length > 0) ? "/rotulado" : ""}`}
                   nombre={s.documentoExpediente.nombre}
                   mimeType={s.documentoExpediente.mimeType}
                 />

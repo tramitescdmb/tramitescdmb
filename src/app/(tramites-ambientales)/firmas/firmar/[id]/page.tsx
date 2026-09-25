@@ -24,7 +24,15 @@ export default async function FirmarSolicitudTramitePage({ params }: { params: P
       usuarioAsignadoId: true,
       documentoExpedienteId: true,
       documentoExpediente: {
-        select: { id: true, nombre: true, mimeType: true, expedienteId: true, expediente: { select: { numero: true } } },
+        select: {
+          id: true,
+          nombre: true,
+          mimeType: true,
+          expedienteId: true,
+          expediente: { select: { numero: true } },
+          firmas: { select: { id: true } },
+          solicitudesFirma: { where: { rol: "VISTO_BUENO", estado: "COMPLETADA" }, select: { id: true } },
+        },
       },
     },
   });
@@ -33,6 +41,7 @@ export default async function FirmarSolicitudTramitePage({ params }: { params: P
   if (solicitud.rol === "LECTURA") redirect(`/expedientes/${solicitud.documentoExpediente.expedienteId}`);
 
   const doc = solicitud.documentoExpediente;
+  const conSello = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0);
   const hermanas = await db.solicitudFirma.findMany({
     where: { documentoExpedienteId: solicitud.documentoExpedienteId! },
     select: { rol: true, orden: true, estado: true },
@@ -68,7 +77,7 @@ export default async function FirmarSolicitudTramitePage({ params }: { params: P
           rol={solicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
           endpointCompletar={`/api/solicitudes-firma/${solicitud.id}/completar`}
           endpointRechazar={`/api/solicitudes-firma/${solicitud.id}/rechazar`}
-          documentoUrl={`/api/documentos/${doc.id}`}
+          documentoUrl={`/api/documentos/${doc.id}${conSello ? "/rotulado" : ""}`}
           documentoNombre={doc.nombre}
           documentoMimeType={doc.mimeType}
           volverHref="/firmas/buzon"

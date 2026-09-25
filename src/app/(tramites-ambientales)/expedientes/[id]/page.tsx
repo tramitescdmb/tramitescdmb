@@ -270,7 +270,7 @@ export default async function ExpedienteDetallePage({
               rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
               endpointCompletar={`/api/solicitudes-firma/${miSolicitud.id}/completar`}
               endpointRechazar={`/api/solicitudes-firma/${miSolicitud.id}/rechazar`}
-              documentoUrl={`/api/documentos/${doc.id}`}
+              documentoUrl={`/api/documentos/${doc.id}${firmado ? "/rotulado" : ""}`}
               documentoNombre={doc.nombre}
               documentoMimeType={doc.mimeType}
             />

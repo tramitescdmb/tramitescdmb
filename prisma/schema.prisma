@@ -76,22 +76,23 @@ model Cargo {
 }
 
 model Usuario {
-  id                      String       @id @default(cuid())
-  email                   String       @unique
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
   nombre                  String
   passwordHash            String
   passwordCambiadaEn      DateTime?
-  rol                     RolUsuario   @default(FUNCIONARIO)
+  rol                     RolUsuario               @default(FUNCIONARIO)
   denominacionEmpleo      String?
   denominacionComplemento String?
   sexo                    String?
-  accesoFirma             Boolean      @default(true)
+  accesoFirma             Boolean                  @default(true)
   cedulaONit              String?
+  tipoIdentificacionFirma TipoIdentificacionFirma?
   correoNotificacion      String?
   terminosAceptadosEn     DateTime?
-  activo                  Boolean      @default(true)
-  estadoCuenta            EstadoCuenta @default(HABILITADA)
-  createdAt               DateTime     @default(now())
+  activo                  Boolean                  @default(true)
+  estadoCuenta            EstadoCuenta             @default(HABILITADA)
+  createdAt               DateTime                 @default(now())
 
   directorioActivo Boolean @default(false)
 
@@ -1243,6 +1244,11 @@ enum CalidadFirma {
   PRINCIPAL
   PROYECTO
   REVISO
+}
+
+enum TipoIdentificacionFirma {
+  CC
+  NIT
 }
 
 enum EstadoSolicitudFirma {

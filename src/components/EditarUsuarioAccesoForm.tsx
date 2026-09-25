@@ -1,5 +1,6 @@
 "use client";
 
+import { TIPOS_IDENTIFICACION_FIRMA, ETIQUETA_TIPO_IDENTIFICACION, textoIdentificacionFirma } from "@/lib/identificacion-firma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine, Search } from "lucide-react";
@@ -145,6 +146,7 @@ export function EditarUsuarioAccesoForm({
   denominacionComplementoActual,
   accesoFirmaActual,
   cedulaONitActual,
+  tipoIdentificacionFirmaActual = null,
   correoNotificacionActual,
   rolContratacionActual,
   rolContratacionVigenteHastaActual,
@@ -158,6 +160,7 @@ export function EditarUsuarioAccesoForm({
   denominacionComplementoActual: string | null;
   accesoFirmaActual: boolean;
   cedulaONitActual: string | null;
+  tipoIdentificacionFirmaActual?: string | null;
   correoNotificacionActual: string | null;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
@@ -183,6 +186,7 @@ export function EditarUsuarioAccesoForm({
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
   const [cedulaONit, setCedulaONit] = useState(cedulaONitActual ?? "");
+  const [tipoIdentificacionFirma, setTipoIdentificacionFirma] = useState<string>(tipoIdentificacionFirmaActual ?? "CC");
   const [correoNotificacion, setCorreoNotificacion] = useState(correoNotificacionActual ?? "");
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
@@ -291,6 +295,7 @@ export function EditarUsuarioAccesoForm({
           nombre: nombre.trim(),
           sexo: sexo || null,
           cedulaONit: cedulaONit.trim() || null,
+          tipoIdentificacionFirma,
           correoNotificacion: correoNotificacion.trim() || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
@@ -365,15 +370,31 @@ export function EditarUsuarioAccesoForm({
           ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado."
         />
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-medium text-stone-600">
-            Cédula o NIT
-            <input
-              value={cedulaONit}
-              onChange={(e) => setCedulaONit(e.target.value)}
-              placeholder="Ej. 91234567"
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
-            />
-          </label>
+          <div className="text-xs font-medium text-stone-600">
+            Documento de identificación
+            <div className="mt-1 flex gap-2">
+              <select
+                value={tipoIdentificacionFirma}
+                onChange={(e) => setTipoIdentificacionFirma(e.target.value)}
+                aria-label="Tipo de documento"
+                className="flex-none rounded-lg border border-stone-200 px-2 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              >
+                {TIPOS_IDENTIFICACION_FIRMA.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {ETIQUETA_TIPO_IDENTIFICACION[tipo]}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={cedulaONit}
+                onChange={(e) => setCedulaONit(e.target.value)}
+                aria-label="Número de documento"
+                placeholder={tipoIdentificacionFirma === "NIT" ? "Ej. 900123456-1" : "Ej. 91234567"}
+                className="block w-full min-w-0 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              />
+            </div>
+            <span className="mt-1 block font-normal text-stone-400">En la firma solo se imprime el tipo elegido.</span>
+          </div>
           <label className="text-xs font-medium text-stone-600">
             Correo de notificación <span className="font-normal text-stone-400">(no se estampa)</span>
             <input
@@ -444,7 +465,7 @@ export function EditarUsuarioAccesoForm({
             {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
               ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
               : null}
-            {cedulaONit.trim() ? `, C.C./NIT ${cedulaONit.trim()}` : null}
+            {textoIdentificacionFirma(cedulaONit, tipoIdentificacionFirma) ? `, ${textoIdentificacionFirma(cedulaONit, tipoIdentificacionFirma)}` : null}
           </span>
         </p>
       </section>

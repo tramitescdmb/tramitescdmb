@@ -109,7 +109,7 @@ export default async function BuzonContratacionPage() {
               )}
               {s.documentoContrato && (
                 <VistaPreviaDocumento
-                  url={`/api/contratacion-documentos/${s.documentoContrato.id}${s.documentoContrato.firmas.length > 0 ? "/rotulado" : ""}`}
+                  url={`/api/contratacion-documentos/${s.documentoContrato.id}${s.documentoContrato.mimeType === "application/pdf" && (s.documentoContrato.firmas.length > 0 || s.documentoContrato.solicitudesFirma.length > 0) ? "/rotulado" : ""}`}
                   nombre={s.documentoContrato.nombre}
                   mimeType={s.documentoContrato.mimeType}
                 />

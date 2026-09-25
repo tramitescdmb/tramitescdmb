@@ -1,3 +1,4 @@
+import { etiquetaDatoIdentificacion } from "@/lib/identificacion-firma";
 import { notFound, redirect } from "next/navigation";
 import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
@@ -48,9 +49,10 @@ export default async function FichaFirmaExpedienteContractualPage({
                 select: {
                   nombre: true,
                   cedulaONit: true,
+                  tipoIdentificacionFirma: true,
                   correoNotificacion: true,
                   denominacionEmpleo: true,
-                  contratista: { select: { identificacion: true, contactoEmail: true } },
+                  contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
                 },
               },
             },
@@ -63,9 +65,10 @@ export default async function FichaFirmaExpedienteContractualPage({
                 select: {
                   nombre: true,
                   cedulaONit: true,
+                  tipoIdentificacionFirma: true,
                   correoNotificacion: true,
                   denominacionEmpleo: true,
-                  contratista: { select: { identificacion: true, contactoEmail: true } },
+                  contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
                 },
               },
             },
@@ -142,7 +145,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                         <Dato k="Calidad de la firma" v={etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad })} />
-                        <Dato k="Cédula o NIT" v={identidad.cedulaONit ?? "no registrada"} mono />
+                        <Dato k={etiquetaDatoIdentificacion(identidad.tipoIdentificacion)} v={identidad.cedulaONit ?? "no registrada"} mono />
                         <Dato k="Correo de notificación" v={identidad.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
                         <Dato k="Algoritmo / formato" v={etiquetaFormatoFirma(f.formato)} />
@@ -169,7 +172,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                         <Dato k="Calidad de la firma" v="Visto bueno" />
-                        <Dato k="Cédula o NIT" v={identidadVb.cedulaONit ?? "no registrada"} mono />
+                        <Dato k={etiquetaDatoIdentificacion(identidadVb.tipoIdentificacion)} v={identidadVb.cedulaONit ?? "no registrada"} mono />
                         <Dato k="Correo de notificación" v={identidadVb.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />
                         <Dato k="Dirección IP" v={s.ip ?? "no disponible"} mono />

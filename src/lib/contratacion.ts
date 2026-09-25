@@ -63,11 +63,14 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
 
 export function identidadFirmante(u: {
   cedulaONit?: string | null;
+  tipoIdentificacionFirma?: string | null;
   correoNotificacion?: string | null;
-  contratista?: { identificacion: string; contactoEmail: string | null } | null;
-}): { cedulaONit: string | null; correoNotificacion: string | null } {
+  contratista?: { identificacion: string; contactoEmail: string | null; tipoPersona?: string | null } | null;
+}): { cedulaONit: string | null; tipoIdentificacion: string | null; correoNotificacion: string | null } {
+  const tipoContratista = u.contratista?.tipoPersona === "JURIDICA" ? "NIT" : u.contratista?.tipoPersona === "NATURAL" ? "CC" : null;
   return {
     cedulaONit: u.cedulaONit ?? u.contratista?.identificacion ?? null,
+    tipoIdentificacion: u.cedulaONit ? (u.tipoIdentificacionFirma ?? null) : u.contratista ? tipoContratista : null,
     correoNotificacion: u.correoNotificacion ?? u.contratista?.contactoEmail ?? null,
   };
 }

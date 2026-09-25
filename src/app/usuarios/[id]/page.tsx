@@ -99,6 +99,7 @@ export default async function EditarUsuarioPage({
         denominacionComplementoActual={usuario.denominacionComplemento}
         accesoFirmaActual={usuario.accesoFirma}
         cedulaONitActual={usuario.cedulaONit}
+        tipoIdentificacionFirmaActual={usuario.tipoIdentificacionFirma}
         correoNotificacionActual={usuario.correoNotificacion}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={

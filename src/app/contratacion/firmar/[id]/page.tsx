@@ -24,7 +24,15 @@ export default async function FirmarSolicitudPage({ params }: { params: Promise<
       usuarioAsignadoId: true,
       documentoContratoId: true,
       documentoContrato: {
-        select: { id: true, nombre: true, mimeType: true, expedienteId: true, expediente: { select: { numero: true } } },
+        select: {
+          id: true,
+          nombre: true,
+          mimeType: true,
+          expedienteId: true,
+          expediente: { select: { numero: true } },
+          firmas: { select: { id: true } },
+          solicitudesFirma: { where: { rol: "VISTO_BUENO", estado: "COMPLETADA" }, select: { id: true } },
+        },
       },
     },
   });
@@ -33,6 +41,7 @@ export default async function FirmarSolicitudPage({ params }: { params: Promise<
   if (solicitud.rol === "LECTURA") redirect(`/contratacion/expedientes/${solicitud.documentoContrato.expedienteId}`);
 
   const doc = solicitud.documentoContrato;
+  const conSello = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0);
   const hermanas = await db.solicitudFirma.findMany({
     where: { documentoContratoId: solicitud.documentoContratoId! },
     select: { rol: true, orden: true, estado: true },
@@ -68,7 +77,7 @@ export default async function FirmarSolicitudPage({ params }: { params: Promise<
           rol={solicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
           endpointCompletar={`/api/contratacion/solicitudes-firma/${solicitud.id}/completar`}
           endpointRechazar={`/api/contratacion/solicitudes-firma/${solicitud.id}/rechazar`}
-          documentoUrl={`/api/contratacion-documentos/${doc.id}`}
+          documentoUrl={`/api/contratacion-documentos/${doc.id}${conSello ? "/rotulado" : ""}`}
           documentoNombre={doc.nombre}
           documentoMimeType={doc.mimeType}
           volverHref="/contratacion/buzon"
