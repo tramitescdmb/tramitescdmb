@@ -59,6 +59,24 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
           },
         },
       },
+      solicitudesFirma: {
+        where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
+        orderBy: { completadoEn: "asc" },
+        select: {
+          completadoEn: true,
+          usuarioAsignado: {
+            select: {
+              nombre: true,
+              cedulaONit: true,
+              denominacionEmpleo: true,
+              denominacionComplemento: true,
+              sexo: true,
+              dependencia: { select: { nombre: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -90,11 +108,12 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
     const nombre = nombreUnico(usadosPorCarpeta.get(claveCarpeta)!, sanearNombreZip(conExtension(doc.nombre, doc.mimeType)));
     const original = await descargarDocumento(doc.storagePath);
     const contenido =
-      doc.mimeType === "application/pdf" && doc.firmas.length > 0
+      doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0)
         ? await estamparFirmaSigec(
             original,
             { numeroExpediente, baseUrl },
-            doc.firmas.map((f) => ({
+            [
+            ...doc.firmas.map((f) => ({
               nombre: f.usuario.nombre,
               cedulaONit: identidadFirmante(f.usuario).cedulaONit,
               denominacionEmpleo: f.usuario.denominacionEmpleo,
@@ -104,7 +123,19 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
               fechaHora: formatearFechaHoraLarga(f.fechaHora),
               hash: f.hashContenido,
         calidad: f.calidad,
-            }))
+            })),
+            ...doc.solicitudesFirma.map((s) => ({
+              nombre: s.usuarioAsignado.nombre,
+              cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
+              denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
+              denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
+              sexo: s.usuarioAsignado.sexo,
+              dependencia: s.usuarioAsignado.dependencia?.nombre ?? null,
+              fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
+              hash: "",
+              calidad: "VISTO_BUENO",
+            })),
+            ]
           )
         : original;
     carpetaDestino.file(nombre, contenido);

@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
-import { ordenarPorCalidad, rotuloCalidadFirma } from "@/lib/calidad-firma";
+import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello } from "@/lib/calidad-firma";
 
 const VERDE = rgb(0.11, 0.478, 0.271);
 const GRIS = rgb(0.35, 0.35, 0.35);
@@ -135,42 +135,73 @@ async function estamparFirmasExpediente(
   page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
   page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
 
-  const tamanos = (f: FirmaRotuloPdf) =>
-    rotuloCalidadFirma(f.calidad) ? { nombre: 5.6, linea: 5.2, meta: 4.8, lh: 6.4 } : { nombre: 6.5, linea: 6, meta: 5.5, lh: 7.4 };
-  const altoTotal = firmas.reduce((acc, f) => acc + 6 * tamanos(f).lh + 3, 0);
+  const PRINCIPAL = { nombre: 6.5, linea: 6, meta: 5.5, lh: 7.4 };
+  const SECUNDARIA = { nombre: 5.4, linea: 4.8, meta: 4.4, lh: 6.6 };
+  const VISTO = { texto: 4.2, lh: 7.5 };
+  const altoDe = (f: FirmaRotuloPdf) => {
+    const nivel = nivelSello(f.calidad);
+    if (nivel === "visto") return VISTO.lh + 1.5;
+    if (nivel === "secundaria") return 3 * SECUNDARIA.lh + 3;
+    return 6 * PRINCIPAL.lh + 3;
+  };
+  const soloVistoBueno = firmas.every((f) => nivelSello(f.calidad) === "visto");
+  const altoTotal = firmas.reduce((acc, f) => acc + altoDe(f), 0);
   let cy = 18 + 12 + altoTotal + 8;
   page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
   cy -= 9;
-  page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
+  page.drawText(soloVistoBueno ? "VISTO BUENO ELECTRÓNICO" : "DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
   cy -= 11;
+
+  const conRotulo = (rotulo: string, resto: string, size: number, fuenteResto = fontBold) => {
+    const etiqueta = `${rotulo}: `;
+    page.drawText(etiqueta, { x: 24, y: cy, size, font: fontBold, color: VERDE });
+    page.drawText(resto.slice(0, 160), { x: 24 + fontBold.widthOfTextAtSize(etiqueta, size), y: cy, size, font: fuenteResto, color: GRIS });
+  };
+
   for (const f of firmas) {
-    const t = tamanos(f);
+    const nivel = nivelSello(f.calidad);
     const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
     const rotulo = rotuloCalidadFirma(f.calidad);
-    if (rotulo) {
-      const etiqueta = `${rotulo}: `;
-      page.drawText(etiqueta, { x: 24, y: cy, size: t.nombre, font: fontBold, color: VERDE });
-      page.drawText(f.nombre.slice(0, 90), { x: 24 + fontBold.widthOfTextAtSize(etiqueta, t.nombre), y: cy, size: t.nombre, font: fontBold, color: GRIS });
-    } else {
-      page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: t.nombre, font: fontBold, color: GRIS });
+
+    if (nivel === "visto") {
+      const resto = [f.nombre, f.cedulaONit ? `C.C./NIT ${f.cedulaONit}` : null, cargo, f.dependencia, f.fechaHora].filter(Boolean).join("  ·  ");
+      conRotulo(rotulo ?? "Visto bueno", resto, VISTO.texto, font);
+      cy -= VISTO.lh + 1.5;
+      continue;
     }
-    cy -= t.lh;
+
+    if (nivel === "secundaria") {
+      const s = SECUNDARIA;
+      const identidad = f.cedulaONit ? `${f.nombre}  ·  C.C./NIT ${f.cedulaONit}` : f.nombre;
+      conRotulo(rotulo ?? "", identidad, s.nombre);
+      cy -= s.lh;
+      const detalle = [cargo, f.dependencia].filter(Boolean).join("  ·  ");
+      if (detalle) page.drawText(detalle.slice(0, 160), { x: 24, y: cy, size: s.linea, font, color: GRIS });
+      cy -= s.lh;
+      page.drawText(`${f.fechaHora}  ·  SHA-256: ${f.hash}`, { x: 24, y: cy, size: s.meta, font, color: GRIS_CLARO });
+      cy -= s.lh + 3;
+      continue;
+    }
+
+    const p = PRINCIPAL;
+    page.drawText(f.nombre.slice(0, 100), { x: 24, y: cy, size: p.nombre, font: fontBold, color: GRIS });
+    cy -= p.lh;
     if (f.cedulaONit) {
-      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: t.linea, font, color: GRIS });
-      cy -= t.lh;
+      page.drawText(`C.C./NIT ${f.cedulaONit}`, { x: 24, y: cy, size: p.linea, font, color: GRIS });
+      cy -= p.lh;
     }
     if (cargo) {
-      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: t.linea, font, color: GRIS });
-      cy -= t.lh;
+      page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: p.linea, font, color: GRIS });
+      cy -= p.lh;
     }
     if (f.dependencia) {
-      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: t.linea, font, color: GRIS });
-      cy -= t.lh;
+      page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: p.linea, font, color: GRIS });
+      cy -= p.lh;
     }
-    page.drawText(f.fechaHora, { x: 24, y: cy, size: t.meta, font, color: GRIS_CLARO });
-    cy -= t.lh;
-    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: t.meta, font, color: GRIS_CLARO });
-    cy -= t.lh + 3;
+    page.drawText(f.fechaHora, { x: 24, y: cy, size: p.meta, font, color: GRIS_CLARO });
+    cy -= p.lh;
+    page.drawText(`SHA-256: ${f.hash}`, { x: 24, y: cy, size: p.meta, font, color: GRIS_CLARO });
+    cy -= p.lh + 3;
   }
   page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
 

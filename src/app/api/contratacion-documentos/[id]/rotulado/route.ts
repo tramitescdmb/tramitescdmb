@@ -47,6 +47,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           },
         },
       },
+      solicitudesFirma: {
+        where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
+        orderBy: { completadoEn: "asc" },
+        select: {
+          completadoEn: true,
+          usuarioAsignado: {
+            select: {
+              nombre: true,
+              cedulaONit: true,
+              denominacionEmpleo: true,
+              denominacionComplemento: true,
+              sexo: true,
+              dependencia: { select: { nombre: true } },
+              contratista: { select: { identificacion: true, contactoEmail: true } },
+            },
+          },
+        },
+      },
     },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
@@ -70,7 +88,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     salida = await estamparFirmaSigec(
       original,
       { numeroExpediente: doc.expediente.numero, baseUrl: base },
-      doc.firmas.map((f) => ({
+      [
+      ...doc.firmas.map((f) => ({
         nombre: f.usuario.nombre,
         cedulaONit: identidadFirmante(f.usuario).cedulaONit,
         denominacionEmpleo: f.usuario.denominacionEmpleo,
@@ -81,6 +100,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         hash: f.hashContenido,
         calidad: f.calidad,
       })),
+      ...doc.solicitudesFirma.map((s) => ({
+        nombre: s.usuarioAsignado.nombre,
+        cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
+        denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
+        denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
+        sexo: s.usuarioAsignado.sexo,
+        dependencia: s.usuarioAsignado.dependencia?.nombre ?? null,
+        fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
+        hash: "",
+        calidad: "VISTO_BUENO",
+      })),
+      ],
     );
   } catch (err) {
     return NextResponse.json(

@@ -6,7 +6,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
-import { ordenarPorCalidad, rotuloCalidadFirma } from "@/lib/calidad-firma";
+import { ordenarPorCalidad, rotuloCalidadFirma, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
 export default async function FichaFirmaExpedienteTramitePage({
@@ -111,6 +111,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                           )}
                         </p>
                         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                          <Dato k="Calidad de la firma" v={etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad })} />
                           <Dato k="Cédula o NIT" v={f.usuario.cedulaONit ?? "no registrada"} mono />
                           <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
                           <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
@@ -126,7 +127,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                       </li>
                     ))}
                     {doc.solicitudesFirma.map((s) => (
-                      <li key={s.id} className="rounded-lg border border-sky-100 bg-sky-50/50 p-3 text-sm">
+                      <li key={s.id} className="rounded-lg border border-sky-100 bg-sky-50/50 p-2 text-xs">
                         <p className="flex items-center gap-1.5 font-medium text-stone-900">
                           <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
                           {s.usuarioAsignado.nombre}
@@ -134,6 +135,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                           <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                         </p>
                         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                          <Dato k="Calidad de la firma" v="Visto bueno" />
                           <Dato k="Cédula o NIT" v={s.usuarioAsignado.cedulaONit ?? "no registrada"} mono />
                           <Dato k="Correo de notificación" v={s.usuarioAsignado.correoNotificacion ?? "no registrado"} />
                           <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />

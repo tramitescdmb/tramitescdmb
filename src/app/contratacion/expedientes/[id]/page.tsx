@@ -224,7 +224,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     }));
     const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
     const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
-    const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
+    const firmado = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA"));
     return (
       <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[doc.estadoValidacion]}>
@@ -683,14 +683,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
                       </span>
                       <VistaPreviaDocumento
-                        url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 ? "/rotulado" : ""}`}
+                        url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
                         nombre={item.documento.nombre}
                         mimeType={item.documento.mimeType}
                       />
                       {puedeValidar && item.documento.estadoValidacion !== "APROBADO" && (
                         <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
                       )}
-                      {item.documento.mimeType === "application/pdf" && item.documento.totalFirmas > 0 && (
+                      {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                         <a
                           href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
                           target="_blank"
@@ -806,12 +806,12 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           </div>
                         )}
                         <VistaPreviaDocumento
-                          url={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                          url={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
                           nombre={doc.nombre}
                           mimeType={doc.mimeType}
                         />
                         {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
-                        {doc.mimeType === "application/pdf" && doc.firmas.length > 0 && (
+                        {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                           <a
                             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
                             target="_blank"

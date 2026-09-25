@@ -203,7 +203,7 @@ export default async function ExpedienteDetallePage({
       ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
       : undefined;
     const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
-    const firmado = doc.mimeType === "application/pdf" && doc.firmas.length > 0;
+    const firmado = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA"));
     return (
       <li key={doc.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 lg:flex-1">

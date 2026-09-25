@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X } from "lucide-react";
-import { CALIDADES_FIRMA, ETIQUETA_CALIDAD_FIRMA, rotuloCalidadFirma, type CalidadFirmaValor } from "@/lib/calidad-firma";
+import { OPCIONES_CALIDAD_ASIGNACION, ETIQUETA_CALIDAD_FIRMA, rotuloCalidadFirma, type CalidadPresentacion } from "@/lib/calidad-firma";
 
 type RolFirmante = "FIRMA" | "VISTO_BUENO" | "LECTURA";
 type EstadoSolicitudFirma = "PENDIENTE" | "COMPLETADA" | "RECHAZADA";
@@ -54,7 +54,7 @@ export function AsignarFirmantesModal({
   const [dependenciaFiltro, setDependenciaFiltro] = useState("");
   const [rol, setRol] = useState<RolFirmante>("FIRMA");
   const [orden, setOrden] = useState(1);
-  const [calidad, setCalidad] = useState<CalidadFirmaValor>("PRINCIPAL");
+  const [calidad, setCalidad] = useState<CalidadPresentacion>("PRINCIPAL");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +62,7 @@ export function AsignarFirmantesModal({
   const yaAsignados = new Set(
     firmantesActuales.filter((f) => f.rol !== "LECTURA" && f.estado !== "RECHAZADA" && f.usuarioAsignadoId).map((f) => f.usuarioAsignadoId!)
   );
+  const rolEfectivo: RolFirmante = conCalidad && rol === "FIRMA" && calidad === "VISTO_BUENO" ? "VISTO_BUENO" : rol;
   const q = filtro.trim().toLowerCase();
   const usuariosFiltrados =
     q || dependenciaFiltro
@@ -81,7 +82,9 @@ export function AsignarFirmantesModal({
       const res = await fetch(endpointAsignar, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firmantes: [{ usuarioId, rol, orden, ...(conCalidad && rol === "FIRMA" ? { calidad } : {}) }] }),
+        body: JSON.stringify({
+          firmantes: [{ usuarioId, rol: rolEfectivo, orden, ...(conCalidad && rolEfectivo === "FIRMA" ? { calidad } : {}) }],
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo asignar.");
@@ -197,7 +200,7 @@ export function AsignarFirmantesModal({
                   className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
                 >
                   <option value="FIRMA">Debe firmar</option>
-                  <option value="VISTO_BUENO">Debe dar visto bueno</option>
+                  {!conCalidad && <option value="VISTO_BUENO">Debe dar visto bueno</option>}
                   <option value="LECTURA">Solo lectura</option>
                 </select>
               </label>
@@ -206,17 +209,17 @@ export function AsignarFirmantesModal({
                   Calidad de la firma
                   <select
                     value={calidad}
-                    onChange={(e) => setCalidad(e.target.value as CalidadFirmaValor)}
+                    onChange={(e) => setCalidad(e.target.value as CalidadPresentacion)}
                     className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
                   >
-                    {CALIDADES_FIRMA.map((c) => (
+                    {OPCIONES_CALIDAD_ASIGNACION.map((c) => (
                       <option key={c} value={c}>
                         {ETIQUETA_CALIDAD_FIRMA[c]}
                       </option>
                     ))}
                   </select>
                   <span className="mt-1 block text-[11px] font-normal text-stone-400">
-                    En el sello, el firmante principal aparece primero y sin rótulo; luego quien proyectó y después quien revisó.
+                    Orden en el sello: firmante principal (sin rótulo), luego Proyectó, Revisó y al final el visto bueno, cada uno en menor tamaño.
                   </span>
                 </label>
               )}

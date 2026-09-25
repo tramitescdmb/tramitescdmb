@@ -1,28 +1,50 @@
 export type CalidadFirmaValor = "PRINCIPAL" | "PROYECTO" | "REVISO";
+export type CalidadPresentacion = CalidadFirmaValor | "VISTO_BUENO";
 
 export const CALIDADES_FIRMA: CalidadFirmaValor[] = ["PRINCIPAL", "PROYECTO", "REVISO"];
+export const OPCIONES_CALIDAD_ASIGNACION: CalidadPresentacion[] = ["PRINCIPAL", "PROYECTO", "REVISO", "VISTO_BUENO"];
 
-export const ETIQUETA_CALIDAD_FIRMA: Record<CalidadFirmaValor, string> = {
+export const ETIQUETA_CALIDAD_FIRMA: Record<CalidadPresentacion, string> = {
   PRINCIPAL: "Firmante principal",
   PROYECTO: "Proyectó",
   REVISO: "Revisó",
+  VISTO_BUENO: "Visto bueno",
 };
 
-const ORDEN: Record<CalidadFirmaValor, number> = { PRINCIPAL: 0, PROYECTO: 1, REVISO: 2 };
+const ORDEN: Record<CalidadPresentacion, number> = { PRINCIPAL: 0, PROYECTO: 1, REVISO: 2, VISTO_BUENO: 3 };
 
 export function esCalidadFirma(valor: unknown): valor is CalidadFirmaValor {
   return typeof valor === "string" && (CALIDADES_FIRMA as string[]).includes(valor);
 }
 
+function esCalidadPresentacion(valor: unknown): valor is CalidadPresentacion {
+  return typeof valor === "string" && (OPCIONES_CALIDAD_ASIGNACION as string[]).includes(valor);
+}
+
 export function rotuloCalidadFirma(calidad: string | null | undefined): string | null {
-  if (calidad === "PROYECTO" || calidad === "REVISO") return ETIQUETA_CALIDAD_FIRMA[calidad];
+  if (calidad === "PROYECTO" || calidad === "REVISO" || calidad === "VISTO_BUENO") return ETIQUETA_CALIDAD_FIRMA[calidad];
   return null;
+}
+
+export function calidadDeSolicitud(s: { rol: string; calidad?: string | null }): CalidadPresentacion {
+  if (s.rol === "VISTO_BUENO") return "VISTO_BUENO";
+  return esCalidadFirma(s.calidad) ? s.calidad : "PRINCIPAL";
+}
+
+export function etiquetaCalidadCompleta(s: { rol: string; calidad?: string | null }): string {
+  return ETIQUETA_CALIDAD_FIRMA[calidadDeSolicitud(s)];
+}
+
+export function nivelSello(calidad: string | null | undefined): "principal" | "secundaria" | "visto" {
+  if (calidad === "VISTO_BUENO") return "visto";
+  if (calidad === "PROYECTO" || calidad === "REVISO") return "secundaria";
+  return "principal";
 }
 
 export function ordenarPorCalidad<T>(items: T[], calidad: (item: T) => string | null | undefined): T[] {
   const peso = (item: T) => {
     const c = calidad(item);
-    return esCalidadFirma(c) ? ORDEN[c] : ORDEN.PRINCIPAL;
+    return esCalidadPresentacion(c) ? ORDEN[c] : ORDEN.PRINCIPAL;
   };
   return items
     .map((item, i) => ({ item, i }))
