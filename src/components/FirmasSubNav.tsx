@@ -6,13 +6,20 @@ import { Inbox, FileSignature } from "lucide-react";
 import { GloboPendientes } from "@/components/GloboPendientes";
 import { SIN_PENDIENTES_FIRMA, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
-const ITEMS = [
-  { href: "/firmas/buzon", label: "Buzón de firmas", icon: Inbox },
-  { href: "/firmas/mis-firmas", label: "Mis firmas", icon: FileSignature },
-];
+const RUTAS_TRAMITES = { buzon: "/firmas/buzon", misFirmas: "/firmas/mis-firmas" };
 
-export function FirmasSubNav({ pendientes = SIN_PENDIENTES_FIRMA }: { pendientes?: ResumenPendientesFirma }) {
+export function FirmasSubNav({
+  pendientes = SIN_PENDIENTES_FIRMA,
+  rutas = RUTAS_TRAMITES,
+}: {
+  pendientes?: ResumenPendientesFirma;
+  rutas?: { buzon: string; misFirmas: string };
+}) {
   const pathname = usePathname();
+  const ITEMS = [
+    { href: rutas.buzon, label: "Buzón de firmas", icon: Inbox },
+    { href: rutas.misFirmas, label: "Mis firmas", icon: FileSignature },
+  ];
   return (
     <nav className="flex items-center gap-1.5" aria-label="Firmas">
       {ITEMS.map((item) => {
@@ -29,7 +36,7 @@ export function FirmasSubNav({ pendientes = SIN_PENDIENTES_FIRMA }: { pendientes
           >
             <Icon className="h-3.5 w-3.5" aria-hidden />
             {item.label}
-            {item.href === "/firmas/buzon" && pendientes.total > 0 && <GloboPendientes pendientes={pendientes} />}
+            {item.href === rutas.buzon && pendientes.total > 0 && <GloboPendientes pendientes={pendientes} />}
           </Link>
         );
       })}

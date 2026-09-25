@@ -12,6 +12,7 @@ export type ItemMenu = {
   externo?: boolean;
   separador?: boolean;
   bloqueadoPara?: string;
+  insignia?: { valor: number; alerta: boolean; titulo: string };
 };
 
 export type GrupoMenu = {
@@ -206,6 +207,7 @@ function MenuGrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: bo
                   }`}
                 >
                   {it.label}
+                  {it.insignia && it.insignia.valor > 0 && <Insignia insignia={it.insignia} />}
                   {it.externo && <ExternalLink className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />}
                 </Link>
               </div>

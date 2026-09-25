@@ -24,6 +24,11 @@ export function ContratacionTabs({
   permitido: PermitidoContratacion;
   pendientesFirma: ResumenPendientesFirma;
 }) {
+  const insigniaFirmas = {
+    valor: pendientesFirma.total,
+    alerta: pendientesFirma.listos > 0,
+    titulo: textoPendientesFirma(pendientesFirma),
+  };
   const grupos: GrupoMenu[] = [
     { label: "Panel", icon: LayoutDashboard, href: "/contratacion/panel" },
     {
@@ -41,14 +46,10 @@ export function ContratacionTabs({
       label: "Firmas",
       icon: Inbox,
       items: [
-        { href: "/contratacion/buzon", label: "Buzón de firmas" },
+        { href: "/contratacion/buzon", label: "Buzón de firmas", insignia: insigniaFirmas },
         { href: "/contratacion/mis-firmas", label: "Mis firmas" },
       ],
-      insignia: {
-        valor: pendientesFirma.total,
-        alerta: pendientesFirma.listos > 0,
-        titulo: textoPendientesFirma(pendientesFirma),
-      },
+      insignia: insigniaFirmas,
     },
     {
       label: "Administración",
