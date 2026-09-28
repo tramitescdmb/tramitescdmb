@@ -39,6 +39,7 @@ const ITEMS_ADMIN: Item[] = [
 
 export function SidebarNav({
   esAdmin,
+  mostrarTramites = true,
   mostrarVital = false,
   mostrarSinca = false,
   mostrarCorrespondencia = false,
@@ -46,6 +47,7 @@ export function SidebarNav({
   colapsado = false,
 }: {
   esAdmin: boolean;
+  mostrarTramites?: boolean;
   mostrarVital?: boolean;
   mostrarSinca?: boolean;
   mostrarCorrespondencia?: boolean;
@@ -63,7 +65,7 @@ export function SidebarNav({
   };
 
   const principal = [
-    ITEM_TRAMITES,
+    ...(mostrarTramites ? [ITEM_TRAMITES] : []),
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
     ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),
     ...(mostrarVital ? [ITEM_VITAL] : []),

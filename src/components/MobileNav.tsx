@@ -8,6 +8,7 @@ import { SidebarNav } from "@/components/SidebarNav";
 
 export function MobileNav({
   esAdmin,
+  mostrarTramites,
   mostrarVital,
   mostrarSinca,
   mostrarCorrespondencia,
@@ -17,6 +18,7 @@ export function MobileNav({
   iniciales,
 }: {
   esAdmin: boolean;
+  mostrarTramites: boolean;
   mostrarVital: boolean;
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
@@ -67,6 +69,7 @@ export function MobileNav({
 
             <SidebarNav
               esAdmin={esAdmin}
+              mostrarTramites={mostrarTramites}
               mostrarVital={mostrarVital}
               mostrarSinca={mostrarSinca}
               mostrarCorrespondencia={mostrarCorrespondencia}

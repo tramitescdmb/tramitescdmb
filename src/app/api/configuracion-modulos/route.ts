@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { MODULOS_CONFIGURABLES, type CampoVisibilidadModulo } from "@/lib/modulos-visibles";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -13,17 +14,20 @@ export async function POST(req: NextRequest) {
   }
 
   const form = await req.formData();
-  const sgdeaVisibleFuncionarios = form.get("sgdeaVisibleFuncionarios") === "on";
+  const valores = Object.fromEntries(
+    MODULOS_CONFIGURABLES.map((m) => [m.campo, form.get(m.campo) === "on"])
+  ) as Record<CampoVisibilidadModulo, boolean>;
 
   await db.configuracionSitio.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", sgdeaVisibleFuncionarios },
-    update: { sgdeaVisibleFuncionarios },
+    create: { id: "singleton", ...valores },
+    update: valores,
   });
 
+  const resumen = MODULOS_CONFIGURABLES.map((m) => `${m.nombre}: ${valores[m.campo] ? "visible" : "oculto"}`).join("; ");
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
-    descripcion: `${session.nombre} actualizó la disponibilidad de módulos: SGDEA ${sgdeaVisibleFuncionarios ? "visible para los funcionarios" : "oculto (solo administradores)"}.`,
+    descripcion: `${session.nombre} actualizó la disponibilidad de módulos para los funcionarios — ${resumen}.`,
     usuarioId: session.userId,
   });
 

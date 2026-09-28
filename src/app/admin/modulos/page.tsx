@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
+import { MODULOS_CONFIGURABLES as MODULOS } from "@/lib/modulos-visibles";
 
 export default async function ModulosPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -32,16 +33,17 @@ export default async function ModulosPage({ searchParams }: { searchParams: Prom
             Mientras un módulo esté oculto, solo un administrador lo ve y puede entrar — sirve para tenerlo en marcha sin que los funcionarios lo
             usen hasta que esté listo.
           </SectionHelp>
-          <label className="flex items-start gap-2 text-sm text-stone-700">
-            <input type="checkbox" name="sgdeaVisibleFuncionarios" defaultChecked={config.sgdeaVisibleFuncionarios} className="mt-0.5 rounded border-stone-200" />
-            <span>
-              <strong>SGDEA — Correspondencia y Archivo</strong> visible para los funcionarios
-              <span className="mt-0.5 block text-xs text-stone-400">
-                Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores, incluidos quienes ya tienen un
-                rol de correspondencia asignado.
-              </span>
-            </span>
-          </label>
+          <div className="space-y-4">
+            {MODULOS.map((m) => (
+              <label key={m.campo} className="flex items-start gap-2 text-sm text-stone-700">
+                <input type="checkbox" name={m.campo} defaultChecked={config[m.campo]} className="mt-0.5 rounded border-stone-200" />
+                <span>
+                  <strong>{m.nombre}</strong> visible para los funcionarios
+                  <span className="mt-0.5 block text-xs text-stone-400">{m.efecto}</span>
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">

@@ -76,11 +76,17 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   const tramites = new Map<string, NivelAccesoTramite>();
   const secciones = new Set<SeccionSoloLectura>();
   if (usuario?.activo && !esAdmin) {
-    for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
-    for (const s of usuario.seccionesAcceso) secciones.add(s.seccion);
+    if (config.tramitesVisibleFuncionarios) {
+      for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
+    }
+    for (const s of usuario.seccionesAcceso) {
+      const esVital = s.seccion.startsWith("VITAL_");
+      if (esVital ? config.vitalVisibleFuncionarios : config.sincaVisibleFuncionarios) secciones.add(s.seccion);
+    }
   }
   const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
   const sgdeaOculto = !config.sgdeaVisibleFuncionarios && !esAdmin;
+  const sigecOculto = !config.sigecVisibleFuncionarios && !esAdmin;
   const rolContratacionVencido = Boolean(
     usuario?.rolContratacionVigenteHasta && usuario.rolContratacionVigenteHasta < new Date()
   );
@@ -91,9 +97,9 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     correspondencia: usuario?.activo && !rolVencido && !sgdeaOculto ? usuario.rolCorrespondencia : null,
     dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
     puedeFirmar: esAdmin || Boolean(usuario?.activo && usuario.accesoFirma),
-    contratacion: usuario?.activo && !rolContratacionVencido ? usuario.rolContratacion : null,
-    contratistaId: usuario?.activo ? usuario.contratistaId : null,
-    supervisaExpedientes: new Set(usuario?.activo ? usuario.supervisaExpedientes : []),
+    contratacion: usuario?.activo && !rolContratacionVencido && !sigecOculto ? usuario.rolContratacion : null,
+    contratistaId: usuario?.activo && !sigecOculto ? usuario.contratistaId : null,
+    supervisaExpedientes: new Set(usuario?.activo && !sigecOculto ? usuario.supervisaExpedientes : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
   };
 });

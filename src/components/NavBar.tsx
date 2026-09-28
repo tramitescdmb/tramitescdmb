@@ -20,6 +20,7 @@ export async function NavBar() {
   const config = await getConfiguracionSitio();
   const esAdmin = session.rol === "ADMIN";
   const permisos = await obtenerPermisosUsuario(session.userId);
+  const mostrarTramites = esAdmin || config.tramitesVisibleFuncionarios;
   const mostrarVital = puedeAccederSeccion(permisos, "VITAL_BASE") || puedeAccederSeccion(permisos, "VITAL_DASHBOARD");
   const mostrarSinca =
     sincaConfigurado() &&
@@ -52,6 +53,7 @@ export async function NavBar() {
       <Sidebar
         logoUrl={config.logoUrl}
         esAdmin={esAdmin}
+        mostrarTramites={mostrarTramites}
         mostrarVital={mostrarVital}
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
@@ -66,6 +68,7 @@ export async function NavBar() {
           {marca}
           <MobileNav
             esAdmin={esAdmin}
+            mostrarTramites={mostrarTramites}
             mostrarVital={mostrarVital}
             mostrarSinca={mostrarSinca}
             mostrarCorrespondencia={mostrarCorrespondencia}

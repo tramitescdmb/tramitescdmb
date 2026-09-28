@@ -22,7 +22,11 @@ model ConfiguracionSitio {
   loginMaxIntentos    Int @default(5)
   loginVentanaMinutos Int @default(15)
 
-  sgdeaVisibleFuncionarios Boolean @default(true)
+  sgdeaVisibleFuncionarios    Boolean @default(true)
+  tramitesVisibleFuncionarios Boolean @default(true)
+  sigecVisibleFuncionarios    Boolean @default(true)
+  vitalVisibleFuncionarios    Boolean @default(true)
+  sincaVisibleFuncionarios    Boolean @default(true)
 
   selloTiempoTsaUrl String?
 

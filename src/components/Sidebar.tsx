@@ -10,6 +10,7 @@ const CLAVE_COLAPSADO = "sidebar-colapsado";
 export function Sidebar({
   logoUrl,
   esAdmin,
+  mostrarTramites,
   mostrarVital,
   mostrarSinca,
   mostrarCorrespondencia,
@@ -20,6 +21,7 @@ export function Sidebar({
 }: {
   logoUrl: string | null;
   esAdmin: boolean;
+  mostrarTramites: boolean;
   mostrarVital: boolean;
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
@@ -97,6 +99,7 @@ export function Sidebar({
 
       <SidebarNav
         esAdmin={esAdmin}
+        mostrarTramites={mostrarTramites}
         mostrarVital={mostrarVital}
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
