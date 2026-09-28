@@ -1,8 +1,7 @@
-import { type ModalidadSeleccion, type EtapaContratacion, type Prisma } from "@prisma/client";
-import { crearPrismaClient } from "../src/lib/db";
+import { PrismaClient, type ModalidadSeleccion, type EtapaContratacion, type Prisma } from "@prisma/client";
 import requisitosJson from "../data/contratacion/requisitos.json";
 
-const db = crearPrismaClient();
+const db = new PrismaClient();
 
 type RequisitoJson = {
   modalidadSeleccion: ModalidadSeleccion | null;

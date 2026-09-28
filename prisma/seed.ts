@@ -1,10 +1,10 @@
-import { crearPrismaClient } from "../src/lib/db";
+import { PrismaClient } from "@prisma/client";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 
-const db = crearPrismaClient();
+const db = new PrismaClient();
 
 type PasoJson = {
   numero: number;

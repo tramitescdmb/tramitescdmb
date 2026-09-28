@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { LayoutGrid, Clock, Landmark } from "lucide-react";
-import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-formato";
+import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-data";
 import type { Categoria } from "@/lib/tramite-categoria";
 import type { TramiteTipo, Flujo, PasoDefinicion } from "@prisma/client";
 
