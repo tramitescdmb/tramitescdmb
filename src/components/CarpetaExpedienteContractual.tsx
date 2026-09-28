@@ -18,7 +18,7 @@ export type CarpetaContractualData = {
 
 export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData }) {
   return (
-    <Link
+    <Link prefetch={false}
       href={`/contratacion/expedientes/${c.id}`}
       className={`group relative mt-3 block rounded-lg rounded-tl-none border pb-3 pl-3.5 pr-3.5 pt-3 transition ${
         c.cerrado

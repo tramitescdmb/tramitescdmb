@@ -7,6 +7,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -84,51 +85,47 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const h = await headers();
   const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
 
-  let salida: Uint8Array;
+  const datos = { numeroExpediente: doc.expediente.numero, baseUrl: base };
+  const firmantes = [
+    ...doc.firmas.map((f) => ({
+      nombre: f.usuario.nombre,
+      cedulaONit: identidadFirmante(f.usuario).cedulaONit,
+      tipoIdentificacion: identidadFirmante(f.usuario).tipoIdentificacion,
+      denominacionEmpleo: f.usuario.denominacionEmpleo,
+      denominacionComplemento: f.usuario.denominacionComplemento,
+      sexo: f.usuario.sexo,
+      dependencia: f.usuario.dependencia?.nombre ?? null,
+      fechaHora: formatearFechaHoraLarga(f.fechaHora),
+      hash: f.hashContenido,
+      calidad: f.calidad,
+    })),
+    ...doc.solicitudesFirma.map((s) => ({
+      nombre: s.usuarioAsignado.nombre,
+      cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
+      tipoIdentificacion: identidadFirmante(s.usuarioAsignado).tipoIdentificacion,
+      denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
+      denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
+      sexo: s.usuarioAsignado.sexo,
+      dependencia: s.usuarioAsignado.dependencia?.nombre ?? null,
+      fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
+      hash: "",
+      calidad: "VISTO_BUENO",
+    })),
+  ];
+
+  const slug = doc.nombre.replace(/[^A-Za-z0-9-]/g, "_").slice(0, 60);
   try {
-    const original = await descargarDocumento(doc.storagePath);
-    salida = await estamparFirmaSigec(
-      original,
-      { numeroExpediente: doc.expediente.numero, baseUrl: base },
-      [
-      ...doc.firmas.map((f) => ({
-        nombre: f.usuario.nombre,
-        cedulaONit: identidadFirmante(f.usuario).cedulaONit,
-        tipoIdentificacion: identidadFirmante(f.usuario).tipoIdentificacion,
-        denominacionEmpleo: f.usuario.denominacionEmpleo,
-        denominacionComplemento: f.usuario.denominacionComplemento,
-        sexo: f.usuario.sexo,
-        dependencia: f.usuario.dependencia?.nombre ?? null,
-        fechaHora: formatearFechaHoraLarga(f.fechaHora),
-        hash: f.hashContenido,
-        calidad: f.calidad,
-      })),
-      ...doc.solicitudesFirma.map((s) => ({
-        nombre: s.usuarioAsignado.nombre,
-        cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
-        tipoIdentificacion: identidadFirmante(s.usuarioAsignado).tipoIdentificacion,
-        denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
-        denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
-        sexo: s.usuarioAsignado.sexo,
-        dependencia: s.usuarioAsignado.dependencia?.nombre ?? null,
-        fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
-        hash: "",
-        calidad: "VISTO_BUENO",
-      })),
-      ],
-    );
+    return await servirDerivado({
+      carpeta: `sigec/${id}`,
+      huella: huellaDerivado(doc.storagePath, datos, firmantes),
+      nombreArchivo: `${slug}-firmado.pdf`,
+      contentType: "application/pdf",
+      generar: async () => estamparFirmaSigec(await descargarDocumento(doc.storagePath), datos, firmantes),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "No se pudo generar el PDF con rótulo." },
       { status: 500 },
     );
   }
-
-  const slug = doc.nombre.replace(/[^A-Za-z0-9-]/g, "_").slice(0, 60);
-  return new NextResponse(Buffer.from(salida), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${slug}-firmado.pdf"`,
-    },
-  });
 }

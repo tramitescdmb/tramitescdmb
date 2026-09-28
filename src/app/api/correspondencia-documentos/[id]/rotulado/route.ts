@@ -7,6 +7,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { estamparRotulo } from "@/lib/pdf-rotulado";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
@@ -67,32 +68,38 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
   const dependencia = c.tipo === "RECIBIDA" ? c.dependenciaDestino?.nombre : c.dependenciaOrigen?.nombre;
 
-  let salida: Uint8Array;
+  const datos = {
+    radicado: c.radicado,
+    tipoEtiqueta: ETIQUETA_TIPO[c.tipo] ?? c.tipo,
+    fechaRadicacion: formatearFechaHoraLarga(c.fechaRadicacion),
+    dependencia: dependencia ?? null,
+    folios: c.folios,
+    serieCodigo: c.serie?.codigo ?? null,
+    baseUrl: base,
+  };
+  const firmantes = c.firmas.map((f) => ({
+    nombre: f.usuario.nombre,
+    cedulaONit: f.usuario.cedulaONit,
+    tipoIdentificacion: f.usuario.tipoIdentificacionFirma,
+    denominacionEmpleo: f.usuario.denominacionEmpleo,
+    denominacionComplemento: f.usuario.denominacionComplemento,
+    sexo: f.usuario.sexo,
+    dependencia: f.usuario.dependencia?.nombre ?? null,
+    fechaHora: formatearFechaHoraLarga(f.fechaHora),
+    hash: f.hashContenido,
+  }));
+
+  const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");
+  let respuesta: NextResponse;
   try {
-    const original = await descargarDocumento(doc.storagePath);
-    salida = await estamparRotulo(
-      original,
-      {
-        radicado: c.radicado,
-        tipoEtiqueta: ETIQUETA_TIPO[c.tipo] ?? c.tipo,
-        fechaRadicacion: formatearFechaHoraLarga(c.fechaRadicacion),
-        dependencia: dependencia ?? null,
-        folios: c.folios,
-        serieCodigo: c.serie?.codigo ?? null,
-        baseUrl: base,
-      },
-      c.firmas.map((f) => ({
-        nombre: f.usuario.nombre,
-        cedulaONit: f.usuario.cedulaONit,
-        tipoIdentificacion: f.usuario.tipoIdentificacionFirma,
-        denominacionEmpleo: f.usuario.denominacionEmpleo,
-        denominacionComplemento: f.usuario.denominacionComplemento,
-        sexo: f.usuario.sexo,
-        dependencia: f.usuario.dependencia?.nombre ?? null,
-        fechaHora: formatearFechaHoraLarga(f.fechaHora),
-        hash: f.hashContenido,
-      })),
-    );
+    respuesta = await servirDerivado({
+      carpeta: `sgdea/${id}`,
+      huella: huellaDerivado(doc.storagePath, datos, firmantes),
+      nombreArchivo: `${slug}-rotulado.pdf`,
+      contentType: "application/pdf",
+      descargar: true,
+      generar: async () => estamparRotulo(await descargarDocumento(doc.storagePath), datos, firmantes),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "No se pudo generar el PDF con rótulo." },
@@ -111,11 +118,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     detalle: `Descargó "${doc.nombre}" con rótulo de radicación (${c.radicado})`,
   }).catch((e) => console.error("registrarAuditoriaDoc (rotulado) falló:", e));
 
-  const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");
-  return new NextResponse(Buffer.from(salida), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${slug}-rotulado.pdf"`,
-    },
-  });
+  return respuesta;
 }

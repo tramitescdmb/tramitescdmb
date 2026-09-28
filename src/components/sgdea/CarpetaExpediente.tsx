@@ -20,7 +20,7 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
   const cerrada = c.estado === "CERRADO";
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/correspondencia/expedientes/${c.id}`}
       className={`group relative mt-3 block rounded-lg rounded-tl-none border pb-3 pl-3.5 pr-3.5 pt-3 transition ${
         cerrada

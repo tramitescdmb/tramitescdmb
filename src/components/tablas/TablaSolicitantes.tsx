@@ -46,7 +46,7 @@ export function TablaSolicitantes({ filas, sinResultadosTexto }: { filas: FilaSo
             <tr key={f.id} className="transition-colors hover:bg-stone-50">
               <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
               <td className="truncate px-2.5 py-2">
-                <Link href={`/solicitantes/${f.id}`} className="font-medium text-cdmb-700 hover:underline">
+                <Link prefetch={false} href={`/solicitantes/${f.id}`} className="font-medium text-cdmb-700 hover:underline">
                   {f.identificacion}
                 </Link>
                 <span className="block truncate text-xs text-stone-400">{f.tipoPersonaTexto}</span>

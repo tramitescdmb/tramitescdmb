@@ -48,7 +48,7 @@ export default async function VitalRecientesPage() {
         <ul className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft divide-y divide-stone-100">
           {recientes.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-stone-50">
-              <Link href={`/vital/${s.id}`} className="min-w-0 flex-1">
+              <Link prefetch={false} href={`/vital/${s.id}`} className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
                   <span className="font-medium text-cdmb-700">{s.idVital}</span>
                   <span className="text-stone-500">{nombreTramiteVital(s.idTramiteVital)}</span>
@@ -68,7 +68,7 @@ export default async function VitalRecientesPage() {
               >
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden />
               </a>
-              <Link href={`/vital/${s.id}`} className="flex-none text-right">
+              <Link prefetch={false} href={`/vital/${s.id}`} className="flex-none text-right">
                 <p className="text-sm font-medium text-stone-800">{fecha(s.fechaRadicacion)}</p>
                 <p className="text-xs text-cdmb-700">{cuandoLlego(s.fechaRadicacion)}</p>
               </Link>
@@ -78,7 +78,7 @@ export default async function VitalRecientesPage() {
       )}
 
       <p className="text-xs text-stone-400">
-        <Link href="/vital" className="text-cdmb-700 hover:underline">Ver todas las solicitudes →</Link>
+        <Link prefetch={false} href="/vital" className="text-cdmb-700 hover:underline">Ver todas las solicitudes →</Link>
       </p>
     </div>
   );

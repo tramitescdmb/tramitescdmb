@@ -49,7 +49,7 @@ export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sin
                 <td className="truncate px-2.5 py-1 text-stone-400">{f.numero}</td>
                 <td className="truncate px-2.5 py-1">
                   {f.numeroNit != null ? (
-                    <Link href={`/historico/nits/${f.numeroNit}`} className="font-medium text-cdmb-700 hover:underline">
+                    <Link prefetch={false} href={`/historico/nits/${f.numeroNit}`} className="font-medium text-cdmb-700 hover:underline">
                       {f.identificacion}
                     </Link>
                   ) : (

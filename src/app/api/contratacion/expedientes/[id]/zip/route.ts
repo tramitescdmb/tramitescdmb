@@ -4,8 +4,9 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
 import { construirZipExpediente } from "@/lib/zip-contratacion";
+import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -23,12 +24,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const h = await headers();
     const baseUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
-    const zip = await construirZipExpediente(id, expediente.numero, baseUrl);
-    return new NextResponse(new Uint8Array(zip), {
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${expediente.numero}.zip"`,
-      },
+    return await servirDerivado({
+      carpeta: `zip/${session.userId}`,
+      huella: huellaDerivado(id, Date.now()),
+      nombreArchivo: `${expediente.numero}.zip`,
+      contentType: "application/zip",
+      descargar: true,
+      comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
+      generar: async () => new Uint8Array(await construirZipExpediente(id, expediente.numero, baseUrl)),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });

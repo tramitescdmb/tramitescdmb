@@ -11,18 +11,23 @@ export function BotonDescargarZip({ href, nombreArchivo, etiqueta, titulo }: { h
     setCargando(true);
     setError(null);
     try {
-      const res = await fetch(href);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "No se pudo generar el ZIP.");
+      const res = await fetch(href, { headers: { Accept: "application/json" } });
+      const esJson = res.headers.get("content-type")?.includes("application/json");
+      if (res.ok && !esJson) {
+        const url = URL.createObjectURL(await res.blob());
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = nombreArchivo;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.url) throw new Error(body.error || "No se pudo generar el ZIP.");
       const a = document.createElement("a");
-      a.href = url;
+      a.href = body.url;
       a.download = nombreArchivo;
       a.click();
-      URL.revokeObjectURL(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
     } finally {

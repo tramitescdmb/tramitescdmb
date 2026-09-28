@@ -36,7 +36,7 @@ export default async function SolicitanteDetallePage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/solicitantes" className="text-sm text-cdmb-700 hover:underline">
+        <Link prefetch={false} href="/solicitantes" className="text-sm text-cdmb-700 hover:underline">
           ← Solicitantes
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
@@ -137,7 +137,7 @@ export default async function SolicitanteDetallePage({
                 {solicitante.expedientes.map((exp) => (
                   <tr key={exp.id} className="hover:bg-stone-50">
                     <td className="px-4 py-2.5">
-                      <Link href={`/expedientes/${exp.id}`} className="font-medium text-cdmb-700 hover:underline">
+                      <Link prefetch={false} href={`/expedientes/${exp.id}`} className="font-medium text-cdmb-700 hover:underline">
                         {exp.numero}
                       </Link>
                     </td>

@@ -43,7 +43,7 @@ export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
           <tr key={f.id} className="hover:bg-stone-50">
             <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
             <td className="truncate px-2.5 py-2">
-              <Link href={`/expedientes/${f.id}`} className="font-medium text-cdmb-700 hover:underline">
+              <Link prefetch={false} href={`/expedientes/${f.id}`} className="font-medium text-cdmb-700 hover:underline">
                 {f.numeroExpediente}
               </Link>
             </td>

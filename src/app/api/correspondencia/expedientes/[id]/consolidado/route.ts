@@ -9,6 +9,7 @@ import { ordenarDocumentosExpediente } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
+import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
 const ETIQUETA_PIEZA: Record<string, string> = {
   ENVIADA: "Oficio de salida",
@@ -157,10 +158,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     detalle: `Descargó ${exp.numero} como PDF consolidado (${piezas.length} documento(s))`,
   }).catch((e) => console.error("registrarAuditoriaDoc (consolidado) falló:", e));
 
-  return new NextResponse(Buffer.from(salida), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${exp.numero}-consolidado.pdf"`,
-    },
-  });
+  try {
+    return await servirDerivado({
+      carpeta: `consolidado/${session.userId}`,
+      huella: huellaDerivado(id, Date.now()),
+      nombreArchivo: `${exp.numero}-consolidado.pdf`,
+      contentType: "application/pdf",
+      descargar: true,
+      generar: async () => salida,
+    });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo entregar el PDF consolidado." }, { status: 500 });
+  }
 }

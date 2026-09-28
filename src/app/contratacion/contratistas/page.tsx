@@ -64,7 +64,7 @@ export default async function ContratistasPage({
         contador={total}
         accion={
           puedeGestionarContratistas(permisos) ? (
-            <Link
+            <Link prefetch={false}
               href="/contratacion/contratistas/nuevo"
               className="flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-cdmb-700"
             >
@@ -92,7 +92,7 @@ export default async function ContratistasPage({
           Buscar
         </button>
         {busqueda && (
-          <Link href="/contratacion/contratistas" className="text-sm text-stone-500 hover:text-stone-700">
+          <Link prefetch={false} href="/contratacion/contratistas" className="text-sm text-stone-500 hover:text-stone-700">
             Quitar filtro
           </Link>
         )}
@@ -125,7 +125,7 @@ export default async function ContratistasPage({
               {contratistas.map((c) => (
                 <tr key={c.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
                   <td className="px-3 py-2 font-mono text-xs">
-                    <Link href={`/contratacion/contratistas/${c.id}`} className="text-cdmb-700 hover:underline">
+                    <Link prefetch={false} href={`/contratacion/contratistas/${c.id}`} className="text-cdmb-700 hover:underline">
                       {c.identificacion}
                     </Link>
                   </td>

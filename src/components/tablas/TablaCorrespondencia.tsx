@@ -62,11 +62,11 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tipo.clase}`}>{tipo.texto}</span>
                 </td>
                 <td className="px-2.5 py-2">
-                  <Link href={`/correspondencia/${f.id}`} className="block truncate font-medium text-cdmb-700 hover:underline" title={f.radicado}>
+                  <Link prefetch={false} href={`/correspondencia/${f.id}`} className="block truncate font-medium text-cdmb-700 hover:underline" title={f.radicado}>
                     {f.radicado}
                   </Link>
                   {f.relacion && (
-                    <Link
+                    <Link prefetch={false}
                       href={`/correspondencia/${f.relacion.id}`}
                       className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-stone-400 hover:text-stone-600"
                       title={

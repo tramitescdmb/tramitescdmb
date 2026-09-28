@@ -49,7 +49,7 @@ export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; 
               <td className="truncate px-2.5 py-2 text-stone-400">{f.numero}</td>
               <td className="truncate px-2.5 py-2">
                 <span className="inline-flex items-center gap-1">
-                  <Link href={`/vital/${f.id}`} className="text-xs font-medium text-cdmb-700 hover:underline" title={f.idVital}>
+                  <Link prefetch={false} href={`/vital/${f.id}`} className="text-xs font-medium text-cdmb-700 hover:underline" title={f.idVital}>
                     {f.idVital}
                   </Link>
                   <a

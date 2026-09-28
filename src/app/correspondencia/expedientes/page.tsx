@@ -128,7 +128,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         </select>
         <button type="submit" className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
         {hayFiltros && (
-          <Link href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
+          <Link prefetch={false} href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
         )}
       </form>
 
@@ -136,7 +136,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         <ResumenResultados total={total} detalle={detalleFiltro} />
         <div className="flex flex-wrap items-center gap-1.5 print:hidden">
           <div className="mr-1 inline-flex overflow-hidden rounded-md border border-stone-200">
-            <Link
+            <Link prefetch={false}
               href={hrefModo("carpetas")}
               aria-current={modo === "carpetas" ? "true" : undefined}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium ${modo === "carpetas" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
@@ -144,7 +144,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
               Carpetas
             </Link>
-            <Link
+            <Link prefetch={false}
               href={hrefModo("tabla")}
               aria-current={modo === "tabla" ? "true" : undefined}
               className={`flex items-center gap-1 border-l border-stone-200 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
@@ -155,7 +155,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
           </div>
           <BotonImprimir variante="secundario" />
           <DescargarCsvBoton href={hrefFuid()} label="FUID (CSV)" />
-          <Link
+          <Link prefetch={false}
             href="/correspondencia/expedientes/nuevo"
             className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700"
           >
@@ -219,7 +219,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                 {expedientes.map((e) => (
                   <tr key={e.id} className="hover:bg-stone-50">
                     <td className="px-4 py-2">
-                      <Link href={`/correspondencia/expedientes/${e.id}`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
+                      <Link prefetch={false} href={`/correspondencia/expedientes/${e.id}`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
                         {e.numero}
                       </Link>
                     </td>

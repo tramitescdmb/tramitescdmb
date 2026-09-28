@@ -53,7 +53,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
 
   return (
     <div className="space-y-4">
-      <Link href="/historico/nits" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+      <Link prefetch={false} href="/historico/nits" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Volver al listado
       </Link>
@@ -114,7 +114,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
                   <li key={`${v.nroSolicitud}-${i}`} className="flex items-center justify-between gap-3 px-2.5 py-2 text-sm">
                     <span className="flex items-center gap-2">
                       {v.nroSolicitud && v.tieneDetalle ? (
-                        <Link
+                        <Link prefetch={false}
                           href={`/historico/solicitudes/${v.nroSolicitud}`}
                           className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100"
                         >

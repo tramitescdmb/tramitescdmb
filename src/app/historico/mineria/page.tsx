@@ -213,7 +213,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
             <ul className="divide-y divide-stone-100 text-sm">
               {m.tiemposAtipicos.casos.map((c) => (
                 <li key={c.nroSolicitud} className="py-1.5">
-                  <Link href={`/historico/solicitudes/${c.nroSolicitud}`} className="flex items-baseline justify-between hover:underline">
+                  <Link prefetch={false} href={`/historico/solicitudes/${c.nroSolicitud}`} className="flex items-baseline justify-between hover:underline">
                     <span className="truncate text-stone-700">
                       Res. {c.numeroResolucion ?? "—"} <span className="text-stone-400">· {c.municipio ?? "—"} · {c.anio ?? "—"}</span>
                     </span>

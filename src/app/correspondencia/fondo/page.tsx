@@ -76,7 +76,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
           const activo = g.grupo === grupoActivo.grupo;
           const primero = g.miembros[0]!;
           return (
-            <Link
+            <Link prefetch={false}
               key={g.grupo}
               href={`/correspondencia/fondo?fondo=${primero.id}`}
               aria-current={activo ? "page" : undefined}
@@ -210,7 +210,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
           Filtrar
         </button>
         {hayFiltros && (
-          <Link href={`/correspondencia/fondo?fondo=${FONDO}`} className="text-sm text-stone-500 underline hover:text-stone-800">
+          <Link prefetch={false} href={`/correspondencia/fondo?fondo=${FONDO}`} className="text-sm text-stone-500 underline hover:text-stone-800">
             Limpiar
           </Link>
         )}
@@ -233,7 +233,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
               {filas.map((d) => (
                 <tr key={d.id} className="hover:bg-stone-50/70">
                   <td className="px-4 py-2.5 align-top">
-                    <Link href={hrefFicha(d.refId)} className="font-medium text-cdmb-700 hover:underline">
+                    <Link prefetch={false} href={hrefFicha(d.refId)} className="font-medium text-cdmb-700 hover:underline">
                       {d.numero || d.numeroEntrada || d.numeroSalida || `#${d.refId}`}
                     </Link>
                     <div className="text-xs text-stone-400">id {d.refId}</div>

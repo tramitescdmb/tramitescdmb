@@ -47,7 +47,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
             <tr key={f.nroSolicitud} className="transition-colors hover:bg-graphite-50/60">
               <td className="truncate px-2.5 py-2 text-graphite-400">{f.numero}</td>
               <td className="truncate px-2.5 py-2">
-                <Link href={`/historico/solicitudes/${f.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
+                <Link prefetch={false} href={`/historico/solicitudes/${f.nroSolicitud}`} className="font-medium text-cdmb-700 hover:underline">
                   {f.nroSolicitud}
                 </Link>
                 {f.expediente && <span className="block truncate text-xs text-graphite-400">Exp. {f.expediente}</span>}
@@ -64,7 +64,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
               </td>
               <td className="truncate px-2.5 py-2">
                 {f.nit ? (
-                  <Link href={`/historico/nits/${f.nit}`} className="text-cdmb-700 hover:underline">
+                  <Link prefetch={false} href={`/historico/nits/${f.nit}`} className="text-cdmb-700 hover:underline">
                     {f.nit}
                   </Link>
                 ) : (

@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, type FiltrosContratacion } from "@/lib/contratacion";
 import { construirZipMasivo, MAX_EXPEDIENTES_ZIP_MASIVO } from "@/lib/zip-contratacion";
+import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -41,12 +42,14 @@ export async function GET(req: NextRequest) {
   try {
     const h = await headers();
     const baseUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
-    const zip = await construirZipMasivo(expedientes, baseUrl);
-    return new NextResponse(new Uint8Array(zip), {
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="expedientes-sigec.zip"`,
-      },
+    return await servirDerivado({
+      carpeta: `zip/${session.userId}`,
+      huella: huellaDerivado("masivo", Date.now()),
+      nombreArchivo: "expedientes-sigec.zip",
+      contentType: "application/zip",
+      descargar: true,
+      comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
+      generar: async () => new Uint8Array(await construirZipMasivo(expedientes, baseUrl)),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });
