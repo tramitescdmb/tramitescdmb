@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowDown, Pencil, Trash2, Plus, X } from "lucide-react";
 import type { EtapaContratacion, ModalidadSeleccion } from "@prisma/client";
-import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
+import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion-etiquetas";
 
 export type RequisitoCatalogo = {
   id: string;
