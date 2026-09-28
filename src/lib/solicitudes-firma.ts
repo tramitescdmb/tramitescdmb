@@ -378,7 +378,18 @@ export async function listarHistorialRechazosFirma(
   };
   const filtroDocumento =
     tipo === "documentoContrato"
-      ? { documentoContratoId: { not: null }, ...(veTodos ? {} : { OR: [{ usuarioAsignadoId: usuarioId }, { documentoContrato: { subidoPorId: usuarioId } }] }) }
+      ? {
+          documentoContratoId: { not: null },
+          ...(veTodos
+            ? {}
+            : {
+                OR: [
+                  { usuarioAsignadoId: usuarioId },
+                  { documentoContrato: { subidoPorId: usuarioId } },
+                  { documentoContrato: { expediente: { supervisores: { some: { usuarioId } } } } },
+                ],
+              }),
+        }
       : { documentoExpedienteId: { not: null }, ...(veTodos ? {} : { OR: [{ usuarioAsignadoId: usuarioId }, { documentoExpediente: { subidoPorId: usuarioId } }] }) };
   const solicitudes = await db.solicitudFirma.findMany({
     where: { estado: "RECHAZADA", ...filtroDocumento },

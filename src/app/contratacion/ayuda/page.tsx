@@ -277,7 +277,8 @@ export default async function ContratacionAyudaPage() {
           quien subió el archivo y de Administrador/Jefe de Contratación, con el motivo — se puede descartar a mano,
           o se limpia solo cuando se reemplaza el archivo rechazado por uno corregido. Los avisos activos y el
           historial completo de rechazos (aunque el aviso ya se haya limpiado) se consultan en el mismo buzón, en la
-          sección «Rechazos al firmar».
+          sección «Rechazos al firmar». El historial incluye además los rechazos de los contratos donde la persona
+          figura como supervisor o interventor.
         </p>
         <p>
           La cantidad de documentos pendientes se indica con una <strong>insignia en la pestaña «Buzón»</strong> y con un
