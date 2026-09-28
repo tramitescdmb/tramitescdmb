@@ -352,6 +352,19 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
   }
 }
 
+export async function contarRechazosPorAtender(
+  usuarioId: string,
+  veTodos: boolean,
+  tipo: "documentoContrato" | "documentoExpediente",
+): Promise<number> {
+  return db.avisoRechazoDocumento.count({
+    where: {
+      ...(tipo === "documentoContrato" ? { documentoContratoId: { not: null } } : { documentoExpedienteId: { not: null } }),
+      ...(veTodos ? {} : { subidoPorId: usuarioId }),
+    },
+  });
+}
+
 export type RechazoFirmaHistorial = {
   id: string;
   documentoNombre: string;

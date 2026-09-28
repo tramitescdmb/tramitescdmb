@@ -273,11 +273,11 @@ export default async function ContratacionAyudaPage() {
           muestra el documento real antes de confirmar.
         </p>
         <p>
-          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. El rechazo genera un <strong>aviso</strong> en el buzón de
+          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. El rechazo genera un <strong>aviso</strong> para
           quien subió el archivo y de Administrador/Jefe de Contratación, con el motivo — se puede descartar a mano,
           o se limpia solo cuando se reemplaza el archivo rechazado por uno corregido. Los avisos activos y el
-          historial completo de rechazos (aunque el aviso ya se haya limpiado) se consultan en el mismo buzón, en la
-          sección «Rechazos al firmar». El historial incluye además los rechazos de los contratos donde la persona
+          historial completo de rechazos (aunque el aviso ya se haya limpiado) se consultan en el menú Firmas, opción
+          «Rechazos al firmar». El historial incluye además los rechazos de los contratos donde la persona
           figura como supervisor o interventor.
         </p>
         <p>

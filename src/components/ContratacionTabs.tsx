@@ -48,6 +48,7 @@ export function ContratacionTabs({
       items: [
         { href: "/contratacion/buzon", label: "Buzón de firmas", insignia: insigniaFirmas },
         { href: "/contratacion/mis-firmas", label: "Mis firmas" },
+        { href: "/contratacion/rechazos-firma", label: "Rechazos al firmar" },
       ],
       insignia: insigniaFirmas,
     },

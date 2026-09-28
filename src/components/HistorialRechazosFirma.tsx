@@ -6,13 +6,15 @@ import type { RechazoFirmaHistorial } from "@/lib/solicitudes-firma";
 export function HistorialRechazosFirma({
   rechazos,
   hrefExpediente,
+  abierto = false,
 }: {
   rechazos: RechazoFirmaHistorial[];
   hrefExpediente: (expedienteId: string) => string;
+  abierto?: boolean;
 }) {
   if (rechazos.length === 0) return null;
   return (
-    <details className="group rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+    <details open={abierto} className="group rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
         <span className="text-xs font-medium text-stone-700">Historial de rechazos</span>
         <span className="flex items-center gap-1.5 text-xs text-stone-400">

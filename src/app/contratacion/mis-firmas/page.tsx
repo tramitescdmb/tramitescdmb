@@ -1,19 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FileSignature, Eye, FileText } from "lucide-react";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
-import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
+import { contarPendientesBuzonContratacion, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
+import { RUTAS_FIRMAS_SIGEC } from "@/lib/rutas-firmas";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 export default async function MisFirmasContratacionPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const pendientes = await contarPendientesBuzonContratacion(session.userId);
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const [pendientes, rechazosPorAtender] = await Promise.all([
+    contarPendientesBuzonContratacion(session.userId),
+    contarRechazosPorAtender(session.userId, puedeGestionarContratistas(permisos), "documentoContrato"),
+  ]);
   const firmas = await db.firmaDocumentoContrato.findMany({
     where: { usuarioId: session.userId },
     orderBy: { fechaHora: "desc" },
@@ -29,7 +34,7 @@ export default async function MisFirmasContratacionPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
-      <FirmasSubNav pendientes={pendientes} rutas={{ buzon: "/contratacion/buzon", misFirmas: "/contratacion/mis-firmas" }} />
+      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_SIGEC} />
 
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en SIGEC.</EstadoVacio>

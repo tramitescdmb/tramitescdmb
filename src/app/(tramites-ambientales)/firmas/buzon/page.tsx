@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox, PenLine, Lock, AlertTriangle } from "lucide-react";
+import { Inbox, PenLine, Lock } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederFirmasTramite } from "@/lib/permisos";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
-import { listarBuzon, listarHistorialRechazosFirma } from "@/lib/solicitudes-firma";
-import { HistorialRechazosFirma } from "@/components/HistorialRechazosFirma";
-import { listarAvisosRechazoTramiteParaUsuario } from "@/lib/tramites-firma";
+import { listarBuzon, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
-import { AvisoRechazoAcciones } from "@/components/AvisoRechazoAcciones";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
-import { formatearFechaHora } from "@/lib/fecha";
 import { rotuloCalidadFirma, resumirPendientesFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
@@ -23,60 +19,15 @@ export default async function BuzonFirmasTramitesPage() {
     return <AccesoRestringido titulo="Firmas" quien="con acceso a algún trámite" volverHref="/tramites" volverLabel="Volver a Trámites" />;
   }
 
-  const veTodos = session.rol === "ADMIN";
-  const [solicitudes, avisosRechazo, historialRechazos] = await Promise.all([
+  const [solicitudes, rechazosPorAtender] = await Promise.all([
     listarBuzon(session.userId, "documentoExpediente"),
-    listarAvisosRechazoTramiteParaUsuario(session.userId, veTodos),
-    listarHistorialRechazosFirma(session.userId, veTodos, "documentoExpediente"),
+    contarRechazosPorAtender(session.userId, session.rol === "ADMIN", "documentoExpediente"),
   ]);
 
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
-      <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} />
-
-      {(avisosRechazo.length > 0 || historialRechazos.length > 0) && (
-        <div className="space-y-2">
-          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-            <AlertTriangle className="h-4 w-4 flex-none text-red-500" aria-hidden />
-            Rechazos al firmar
-            {avisosRechazo.length > 0 && (
-              <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
-                {avisosRechazo.length} por atender
-              </span>
-            )}
-          </h3>
-          {avisosRechazo.length > 0 && (
-          <ul className="divide-y divide-red-100 rounded-xl border border-red-200 bg-red-50/40 shadow-sm">
-            {avisosRechazo.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-start gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-stone-800">{a.documentoExpediente.nombre}</p>
-                  <p className="text-xs text-stone-500">
-                    Expediente{" "}
-                    <Link href={`/expedientes/${a.documentoExpediente.expedienteId}`} className="text-cdmb-700 hover:underline">
-                      {a.documentoExpediente.expediente.numero}
-                    </Link>{" "}
-                    · Subido por {a.subidoPor.nombre} · Rechazado por {a.rechazadoPor?.nombre ?? "—"} el {formatearFechaHora(a.createdAt)}
-                  </p>
-                  <p className="mt-1 text-xs text-stone-700">Motivo: {a.mensaje}</p>
-                  <p className="mt-1 text-[11px] text-stone-400">
-                    Este aviso se borra solo al reemplazar el archivo con uno corregido, o puede descartarlo ahora si ya lo resolvió de otra forma.
-                  </p>
-                </div>
-                <VistaPreviaDocumento
-                  url={`/api/documentos/${a.documentoExpediente.id}${a.documentoExpediente.firmas.length > 0 ? "/rotulado" : ""}`}
-                  nombre={a.documentoExpediente.nombre}
-                  mimeType={a.documentoExpediente.mimeType}
-                />
-                <AvisoRechazoAcciones avisoId={a.id} endpoint="/api/avisos-rechazo" />
-              </li>
-            ))}
-          </ul>
-          )}
-          <HistorialRechazosFirma rechazos={historialRechazos} hrefExpediente={(eid) => `/expedientes/${eid}`} />
-        </div>
-      )}
+      <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} />
 
       {solicitudes.length > 0 && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">

@@ -5,7 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
-import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
+import { contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
@@ -13,7 +13,10 @@ export default async function MisFirmasTramitesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const pendientes = await contarPendientesBuzonTramite(session.userId);
+  const [pendientes, rechazosPorAtender] = await Promise.all([
+    contarPendientesBuzonTramite(session.userId),
+    contarRechazosPorAtender(session.userId, session.rol === "ADMIN", "documentoExpediente"),
+  ]);
   const firmas = await db.firmaExpedienteDocumento.findMany({
     where: { usuarioId: session.userId },
     orderBy: { fechaHora: "desc" },
@@ -37,7 +40,7 @@ export default async function MisFirmasTramitesPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
-      <FirmasSubNav pendientes={pendientes} />
+      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} />
 
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en Trámites ambientales.</EstadoVacio>
