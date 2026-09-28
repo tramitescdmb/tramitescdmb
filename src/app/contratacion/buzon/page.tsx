@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Inbox, PenLine, Lock, AlertTriangle } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
-import { listarBuzon } from "@/lib/solicitudes-firma";
+import { listarBuzon, listarHistorialRechazosFirma } from "@/lib/solicitudes-firma";
+import { HistorialRechazosFirma } from "@/components/HistorialRechazosFirma";
 import { listarAvisosRechazoParaUsuario } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -18,9 +19,11 @@ export default async function BuzonContratacionPage() {
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const [solicitudes, avisosRechazo] = await Promise.all([
+  const veTodos = puedeGestionarContratistas(permisos);
+  const [solicitudes, avisosRechazo, historialRechazos] = await Promise.all([
     listarBuzon(session.userId, "documentoContrato"),
-    listarAvisosRechazoParaUsuario(session.userId, puedeGestionarContratistas(permisos)),
+    listarAvisosRechazoParaUsuario(session.userId, veTodos),
+    listarHistorialRechazosFirma(session.userId, veTodos, "documentoContrato"),
   ]);
 
   return (
@@ -28,12 +31,18 @@ export default async function BuzonContratacionPage() {
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
       <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rutas={{ buzon: "/contratacion/buzon", misFirmas: "/contratacion/mis-firmas" }} />
 
-      {avisosRechazo.length > 0 && (
+      {(avisosRechazo.length > 0 || historialRechazos.length > 0) && (
         <div className="space-y-2">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-red-800">
-            <AlertTriangle className="h-4 w-4 flex-none" aria-hidden />
-            {avisosRechazo.length} documento{avisosRechazo.length === 1 ? "" : "s"} rechazado{avisosRechazo.length === 1 ? "" : "s"} al firmar/revisar
-          </p>
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+            <AlertTriangle className="h-4 w-4 flex-none text-red-500" aria-hidden />
+            Rechazos al firmar
+            {avisosRechazo.length > 0 && (
+              <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                {avisosRechazo.length} por atender
+              </span>
+            )}
+          </h3>
+          {avisosRechazo.length > 0 && (
           <ul className="divide-y divide-red-100 rounded-xl border border-red-200 bg-red-50/40 shadow-sm">
             {avisosRechazo.map((a) => (
               <li key={a.id} className="flex flex-wrap items-start gap-3 p-4">
@@ -60,6 +69,8 @@ export default async function BuzonContratacionPage() {
               </li>
             ))}
           </ul>
+          )}
+          <HistorialRechazosFirma rechazos={historialRechazos} hrefExpediente={(eid) => `/contratacion/expedientes/${eid}`} />
         </div>
       )}
 

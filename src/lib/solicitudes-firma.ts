@@ -352,6 +352,60 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
   }
 }
 
+export type RechazoFirmaHistorial = {
+  id: string;
+  documentoNombre: string;
+  expedienteId: string;
+  expedienteNumero: string;
+  motivo: string;
+  rechazadoPor: string;
+  subidoPor: string;
+  fecha: Date;
+};
+
+export async function listarHistorialRechazosFirma(
+  usuarioId: string,
+  veTodos: boolean,
+  tipo: "documentoContrato" | "documentoExpediente",
+): Promise<RechazoFirmaHistorial[]> {
+  const docSelect = {
+    select: {
+      nombre: true,
+      expedienteId: true,
+      expediente: { select: { numero: true } },
+      subidoPor: { select: { nombre: true } },
+    },
+  };
+  const filtroDocumento =
+    tipo === "documentoContrato"
+      ? { documentoContratoId: { not: null }, ...(veTodos ? {} : { OR: [{ usuarioAsignadoId: usuarioId }, { documentoContrato: { subidoPorId: usuarioId } }] }) }
+      : { documentoExpedienteId: { not: null }, ...(veTodos ? {} : { OR: [{ usuarioAsignadoId: usuarioId }, { documentoExpediente: { subidoPorId: usuarioId } }] }) };
+  const solicitudes = await db.solicitudFirma.findMany({
+    where: { estado: "RECHAZADA", ...filtroDocumento },
+    orderBy: { completadoEn: "desc" },
+    take: 100,
+    include: {
+      usuarioAsignado: { select: { nombre: true } },
+      documentoContrato: docSelect,
+      documentoExpediente: docSelect,
+    },
+  });
+  return solicitudes.flatMap((s) => {
+    const doc = tipo === "documentoContrato" ? s.documentoContrato : s.documentoExpediente;
+    if (!doc) return [];
+    return [{
+      id: s.id,
+      documentoNombre: doc.nombre,
+      expedienteId: doc.expedienteId,
+      expedienteNumero: doc.expediente.numero,
+      motivo: s.comentario ?? "",
+      rechazadoPor: s.usuarioAsignado.nombre,
+      subidoPor: doc.subidoPor.nombre,
+      fecha: s.completadoEn ?? s.asignadoEn,
+    }];
+  });
+}
+
 export type SolicitudBuzon = {
   id: string;
   rol: RolFirmante;

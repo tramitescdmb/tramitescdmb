@@ -141,20 +141,14 @@ export default async function ExpedienteDetallePage({
   }
 
   const idsDocumentos = expediente.documentos.map((d) => d.id);
-  const [rechazos, trazabilidad] = await Promise.all([
-    db.expedienteEvento.findMany({
-      where: { expedienteId: id, tipo: "DOCUMENTO_RECHAZADO" },
-      orderBy: { createdAt: "desc" },
-      include: { usuario: { select: { nombre: true } } },
-    }),
+  const trazabilidad =
     idsDocumentos.length > 0
-      ? db.auditoriaDoc.findMany({
+      ? await db.auditoriaDoc.findMany({
           where: { entidad: "ExpedienteDocumento", entidadId: { in: idsDocumentos } },
           orderBy: { secuencia: "asc" },
           include: { usuario: { select: { nombre: true } } },
         })
-      : Promise.resolve([]),
-  ]);
+      : [];
   const usuariosOpciones = usuariosActivos.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const pasos = expediente.flujo.pasos;
   const currentIndex = pasos.findIndex((p) => p.numero === expediente.pasoActualNumero);
@@ -880,35 +874,6 @@ export default async function ExpedienteDetallePage({
           </ol>
         </section>
       </div>
-
-      {rechazos.length > 0 && (
-        <details className="group rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
-          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-              <AlertTriangle className="h-4 w-4 text-red-500" aria-hidden />
-              Rechazos al firmar/revisar
-            </h3>
-            <span className="flex items-center gap-1.5 text-xs text-stone-400">
-              {rechazos.length} rechazo{rechazos.length === 1 ? "" : "s"}
-              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
-            </span>
-          </summary>
-          <p className="mb-3 text-xs text-stone-500">
-            Mientras está activo, un rechazo aparece como aviso en el buzón de firmas de quien subió el
-            documento; aquí queda para siempre, aunque el aviso ya se haya descartado o se haya limpiado
-            solo al corregir el archivo.
-          </p>
-          <ul className="divide-y divide-stone-100 text-xs">
-            {rechazos.map((ev) => (
-              <li key={ev.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                <span className="min-w-0 flex-1 text-stone-700">{ev.descripcion}</span>
-                <span className="flex-none text-stone-400">{ev.usuario.nombre}</span>
-                <span className="flex-none text-stone-400">{formatearFechaHora(ev.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
 
       {trazabilidad.length > 0 && (
         <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
