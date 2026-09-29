@@ -28,7 +28,7 @@ export function FirmasSubNav({
         const activo = pathname === item.href;
         const Icon = item.icon;
         return (
-          <Link
+          <Link prefetch={false}
             key={item.href}
             href={item.href}
             aria-current={activo ? "page" : undefined}

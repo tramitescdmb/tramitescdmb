@@ -33,7 +33,7 @@ export async function NavBar() {
   const usuarioTerminos = await db.usuario.findUnique({ where: { id: session.userId }, select: { terminosAceptadosEn: true } });
 
   const marca = (
-    <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-graphite-900">
+    <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-graphite-900">
       {config.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={config.logoUrl} alt="CDMB" className="h-8 w-auto flex-none" />

@@ -3,12 +3,8 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { LayoutGrid, Clock, Landmark } from "lucide-react";
-import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-formato";
 import type { Categoria } from "@/lib/tramite-categoria";
-import type { TramiteTipo, Flujo, PasoDefinicion } from "@prisma/client";
 
-type FlujoConPasos = Flujo & { pasos: PasoDefinicion[] };
-type TramiteConFlujos = TramiteTipo & { flujos: FlujoConPasos[] };
 type Conteo = { activos: number; aprobados: number; negados: number };
 
 type CategoriaParaCliente = {
@@ -21,19 +17,21 @@ type CategoriaParaCliente = {
 
 export type EntradaCatalogo = {
   key: string;
-  tramite: TramiteConFlujos;
+  href: string;
+  codigo: string;
+  version: string;
   nombre: string;
   suits: string[];
-  flujoParaTiempo: FlujoConPasos | undefined;
+  descripcion: string;
+  diasEstimados: number | null;
   conteo: Conteo | undefined;
-  flujoCodigoFoco?: string;
 };
 
 function coincideBusqueda(entrada: EntradaCatalogo, termino: string) {
   const t = termino.toLowerCase();
   return (
     entrada.nombre.toLowerCase().includes(t) ||
-    entrada.tramite.codigo.toLowerCase().includes(t) ||
+    entrada.codigo.toLowerCase().includes(t) ||
     entrada.suits.some((s) => s.toLowerCase().includes(t))
   );
 }
@@ -164,14 +162,10 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
 }
 
 function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; categoria: CategoriaParaCliente }) {
-  const { tramite: t, nombre, suits, flujoParaTiempo, conteo, flujoCodigoFoco } = entrada;
-  const tiempo = flujoParaTiempo ? tiempoEstimadoDias(flujoParaTiempo.pasos) : null;
-  const href = flujoCodigoFoco ? `/tramites/${t.slug}?flujo=${flujoCodigoFoco}` : `/tramites/${t.slug}`;
-  const resumenBase = flujoParaTiempo?.resumen ?? t.resumen ?? t.objeto;
-  const descripcion = resumenSinPrefijo(resumenBase);
+  const { href, codigo, version, nombre, suits, descripcion, diasEstimados, conteo } = entrada;
 
   return (
-    <Link
+    <Link prefetch={false}
       href={href}
       className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-soft-lg active:translate-y-0 active:scale-[0.98] active:shadow-soft"
     >
@@ -179,13 +173,13 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
 
       <div className="mb-3 flex items-center justify-between">
         <span className="rounded-md bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
-          {t.codigo} · v{t.version}
+          {codigo} · v{version}
         </span>
-        {tiempo &&
-          (tiempo.total > 0 ? (
+        {diasEstimados !== null &&
+          (diasEstimados > 0 ? (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
               <Clock className="h-3 w-3" aria-hidden />
-              ~{tiempo.total} días
+              ~{diasEstimados} días
             </span>
           ) : (
             <span

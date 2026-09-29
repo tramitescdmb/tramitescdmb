@@ -34,7 +34,7 @@ export function TramitesTabs({
         const activo = t.prefijo ? pathname.startsWith(t.prefijo) : t.exacto ? pathname === t.href : pathname === t.href || pathname.startsWith(t.href + "/");
         const Icon = t.icon;
         return (
-          <Link
+          <Link prefetch={false}
             key={t.href}
             href={t.href}
             aria-current={activo ? "page" : undefined}

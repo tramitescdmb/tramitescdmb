@@ -77,7 +77,7 @@ export function MobileNav({
             />
 
             <div className="border-t border-graphite-100 p-3">
-              <Link href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-graphite-50">
+              <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-graphite-50">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
                   {iniciales}
                 </span>

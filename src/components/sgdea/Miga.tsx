@@ -49,7 +49,7 @@ export function MigaSgdea() {
 
   return (
     <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-stone-400">
-      <Link href="/correspondencia/panel" className="flex items-center gap-1 hover:text-cdmb-700">
+      <Link prefetch={false} href="/correspondencia/panel" className="flex items-center gap-1 hover:text-cdmb-700">
         <Home className="h-3.5 w-3.5" aria-hidden />
         SGDEA
       </Link>
@@ -64,7 +64,7 @@ export function MigaSgdea() {
                 {paso}
               </span>
             ) : href ? (
-              <Link href={href} className="hover:text-cdmb-700">
+              <Link prefetch={false} href={href} className="hover:text-cdmb-700">
                 {paso}
               </Link>
             ) : (

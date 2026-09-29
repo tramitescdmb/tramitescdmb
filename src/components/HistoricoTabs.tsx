@@ -22,7 +22,7 @@ export function HistoricoTabs({ permitido }: { permitido: { base: boolean; dashb
         const activo = t.exacto ? pathname === t.href : pathname.startsWith(t.href);
         const Icon = t.icon;
         return (
-          <Link
+          <Link prefetch={false}
             key={t.href}
             href={t.href}
             aria-current={activo ? "page" : undefined}

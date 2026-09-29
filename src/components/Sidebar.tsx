@@ -55,7 +55,7 @@ export function Sidebar({
       }`}
     >
       <div className={`flex items-center border-b border-graphite-100 py-4 ${colapsado ? "justify-center px-2" : "justify-between px-4"}`}>
-        <Link
+        <Link prefetch={false}
           href="/"
           className="flex min-w-0 items-center gap-2.5 font-semibold text-graphite-900"
           title={colapsado ? "Trámites CDMB" : undefined}
@@ -108,7 +108,7 @@ export function Sidebar({
       />
 
       <div className="border-t border-graphite-100 p-3">
-        <Link
+        <Link prefetch={false}
           href="/mi-cuenta"
           title={colapsado ? nombre : undefined}
           className={

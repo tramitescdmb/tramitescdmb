@@ -108,7 +108,7 @@ function EnlaceSimple({ grupo, activo }: { grupo: GrupoMenu; activo: boolean }) 
     );
   }
   return (
-    <Link href={grupo.href!} aria-current={activo ? "page" : undefined} className={claseTab(activo)}>
+    <Link prefetch={false} href={grupo.href!} aria-current={activo ? "page" : undefined} className={claseTab(activo)}>
       <Icon className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
       {grupo.label}
       {grupo.insignia && grupo.insignia.valor > 0 && <Insignia insignia={grupo.insignia} />}
@@ -198,7 +198,7 @@ function MenuGrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: bo
             return (
               <div key={it.href}>
                 {divisor}
-                <Link
+                <Link prefetch={false}
                   href={it.href}
                   role="menuitem"
                   aria-current={act ? "page" : undefined}

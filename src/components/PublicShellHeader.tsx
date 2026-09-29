@@ -7,7 +7,7 @@ export async function PublicShellHeader() {
   return (
     <header className="border-b border-stone-200 bg-white">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link href="/pqrsd" className="flex min-w-0 items-center gap-2.5">
+        <Link prefetch={false} href="/pqrsd" className="flex min-w-0 items-center gap-2.5">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={config.logoUrl} alt="CDMB" className="h-9 w-auto flex-none" />
@@ -22,10 +22,10 @@ export async function PublicShellHeader() {
           </span>
         </Link>
         <nav className="flex flex-none items-center gap-1 text-sm">
-          <Link href="/pqrsd" className="rounded-md px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50 hover:text-cdmb-800">
+          <Link prefetch={false} href="/pqrsd" className="rounded-md px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50 hover:text-cdmb-800">
             Radicar PQRSD
           </Link>
-          <Link href="/pqrsd/consultar" className="rounded-md px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50 hover:text-cdmb-800">
+          <Link prefetch={false} href="/pqrsd/consultar" className="rounded-md px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50 hover:text-cdmb-800">
             Consultar estado
           </Link>
         </nav>

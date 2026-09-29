@@ -100,7 +100,7 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
 function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; colapsado: boolean }) {
   const Icon = item.icon;
   return (
-    <Link
+    <Link prefetch={false}
       href={item.href}
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}

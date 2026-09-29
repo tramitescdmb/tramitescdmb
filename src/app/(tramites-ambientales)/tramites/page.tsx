@@ -3,6 +3,7 @@ import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN } from "@/lib/tramite-categoria";
 import { CatalogoTramites, type EntradaCatalogo } from "@/components/CatalogoTramites";
+import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-formato";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 
@@ -11,30 +12,29 @@ const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUER
 type Tramite = Awaited<ReturnType<typeof getCatalogoTramites>>[number];
 type Conteo = { activos: number; aprobados: number; negados: number };
 
+type Flujo = Tramite["flujos"][number];
+
+function entradaDe(t: Tramite, key: string, nombre: string, suits: string[], flujo: Flujo | undefined, conteo: Conteo | undefined, flujoCodigoFoco?: string): EntradaCatalogo {
+  return {
+    key,
+    href: flujoCodigoFoco ? `/tramites/${t.slug}?flujo=${flujoCodigoFoco}` : `/tramites/${t.slug}`,
+    codigo: t.codigo,
+    version: t.version,
+    nombre,
+    suits,
+    descripcion: resumenSinPrefijo(flujo?.resumen ?? t.resumen ?? t.objeto),
+    diasEstimados: flujo ? tiempoEstimadoDias(flujo.pasos).total : null,
+    conteo,
+  };
+}
+
 function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPorFlujo: Map<string, Conteo>): EntradaCatalogo[] {
   const seSepaporFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
   if (seSepaporFlujo) {
-    return t.flujos.map((f) => ({
-      key: f.id,
-      tramite: t,
-      nombre: f.nombre,
-      suits: f.suitNumero ? [f.suitNumero] : [],
-      flujoParaTiempo: f,
-      conteo: conteoPorFlujo.get(f.id),
-      flujoCodigoFoco: f.codigo,
-    }));
+    return t.flujos.map((f) => entradaDe(t, f.id, f.nombre, f.suitNumero ? [f.suitNumero] : [], f, conteoPorFlujo.get(f.id), f.codigo));
   }
   const flujoPrincipal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
-  return [
-    {
-      key: t.id,
-      tramite: t,
-      nombre: t.nombre,
-      suits: todosLosSuitNumeros(t),
-      flujoParaTiempo: flujoPrincipal,
-      conteo: conteoPorTramite.get(t.id),
-    },
-  ];
+  return [entradaDe(t, t.id, t.nombre, todosLosSuitNumeros(t), flujoPrincipal, conteoPorTramite.get(t.id))];
 }
 
 export default async function CatalogoTramitesPage() {
@@ -60,13 +60,11 @@ export default async function CatalogoTramitesPage() {
     sumar(conteoPorFlujo, row.flujoId);
   }
 
-  const entradas = tramites.flatMap((t) => entradasDe(t, conteoPorTramite, conteoPorFlujo));
-
   const porCategoria = new Map<string, EntradaCatalogo[]>();
-  for (const entrada of entradas) {
-    const cat = categoriaTramite(entrada.tramite.nombre, entrada.tramite.codigo, todosLosSuitNumeros(entrada.tramite));
+  for (const t of tramites) {
+    const cat = categoriaTramite(t.nombre, t.codigo, todosLosSuitNumeros(t));
     const lista = porCategoria.get(cat.id) ?? [];
-    lista.push(entrada);
+    lista.push(...entradasDe(t, conteoPorTramite, conteoPorFlujo));
     porCategoria.set(cat.id, lista);
   }
   const secciones = CATEGORIAS_ORDEN.map((cat) => ({

@@ -22,7 +22,7 @@ export function CicloVistasNav({ nodos, rutaRaiz, ariaLabel }: { nodos: NodoCicl
               <Fragment key={nodo.href}>
                 {i > 0 && <li aria-hidden className="mt-6 h-0 min-w-8 flex-1 border-t-2 border-dashed border-stone-200" />}
                 <li className="flex w-32 flex-none flex-col items-center text-center sm:w-36">
-                  <Link href={nodo.href} aria-current={activo ? "page" : undefined} className="group flex flex-col items-center outline-none">
+                  <Link prefetch={false} href={nodo.href} aria-current={activo ? "page" : undefined} className="group flex flex-col items-center outline-none">
                     <span className="relative">
                       <span
                         className={`flex h-12 w-12 flex-none items-center justify-center rounded-full transition ${
