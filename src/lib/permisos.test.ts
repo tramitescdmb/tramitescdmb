@@ -9,10 +9,15 @@ import {
   puedeRadicar,
   puedeResponderComoAsignado,
   puedeDevolverReparto,
+  puedeVerExpedienteContractual,
+  puedeVerDocumentoContrato,
+  puedeSubirDocumentoContrato,
+  puedeGestionarExpedienteCompleto,
+  puedeValidarDocumentoContrato,
   type PermisosUsuario,
 } from "./permisos";
 
-const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>(), cargos: new Set<string>() } as const;
+const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>(), asignadoExpedientes: new Set<string>(), cargos: new Set<string>() } as const;
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
 const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false, ...BASE_CONTRATACION };
@@ -175,5 +180,87 @@ describe("puedeResponderComoAsignado — solo el/los funcionario(s) del reparto 
 
   it("sin repartos vigentes, nadie salvo el admin responde", () => {
     expect(puedeResponderComoAsignado(perm("FUNCIONARIO_DEPENDENCIA"), "u1", [])).toBe(false);
+  });
+});
+
+const permContrat = (contratacion: PermisosUsuario["contratacion"], extra: Partial<PermisosUsuario> = {}): PermisosUsuario => ({
+  esAdmin: false,
+  tramites: new Map(),
+  secciones: new Set(),
+  correspondencia: null,
+  dependenciaId: null,
+  puedeFirmar: false,
+  contratacion,
+  contratistaId: null,
+  supervisaExpedientes: new Set<string>(),
+  asignadoExpedientes: new Set<string>(),
+  cargos: new Set<string>(),
+  ...extra,
+});
+
+describe("Acceso a expedientes contractuales (GECON) por etapa y asignación — criterios de aceptación", () => {
+  const expA = { id: "expA", contratistaId: "contXYZ", dependenciaSolicitanteId: "depA" };
+  const expedientePrecontractual = { ...expA, etapaActual: "PRECONTRACTUAL" as const };
+  const expedienteContractual = { ...expA, etapaActual: "CONTRACTUAL" as const };
+
+  describe("(a) un CONTRATISTA (usuario final) nunca entra a la etapa Precontractual", () => {
+    it("no ve el expediente mientras está en Precontractual, aunque sea su propio contrato", () => {
+      const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
+      expect(puedeVerExpedienteContractual(contratista, expedientePrecontractual)).toBe(false);
+    });
+
+    it("sí ve el expediente una vez pasó a Contractual", () => {
+      const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
+      expect(puedeVerExpedienteContractual(contratista, expedienteContractual)).toBe(true);
+    });
+
+    it("no puede subir documentos de la etapa Precontractual ni siquiera cuando el expediente ya avanzó", () => {
+      const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
+      expect(puedeSubirDocumentoContrato(contratista, expedienteContractual, "PRECONTRACTUAL")).toBe(false);
+      expect(puedeSubirDocumentoContrato(contratista, expedienteContractual, "CONTRACTUAL")).toBe(true);
+    });
+
+    it("no puede ver/descargar un documento puntual de la etapa Precontractual, aunque el expediente ya esté en Contractual", () => {
+      const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
+      expect(puedeVerDocumentoContrato(contratista, expedienteContractual, "PRECONTRACTUAL")).toBe(false);
+      expect(puedeVerDocumentoContrato(contratista, expedienteContractual, "CONTRACTUAL")).toBe(true);
+    });
+
+    it("un contratista de OTRO contrato no ve el expediente en ninguna etapa", () => {
+      const otroContratista = permContrat("CONTRATISTA", { contratistaId: "otroContratista" });
+      expect(puedeVerExpedienteContractual(otroContratista, expedientePrecontractual)).toBe(false);
+      expect(puedeVerExpedienteContractual(otroContratista, expedienteContractual)).toBe(false);
+    });
+  });
+
+  describe("(b) Personal de Contratación (FUNCIONARIO_CONTRATACION) solo entra a lo que el Jefe le asignó", () => {
+    it("no abre un expediente ajeno ni cambiando el ID en la URL", () => {
+      const personal = permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expAsignado"]) });
+      expect(puedeVerExpedienteContractual(personal, { ...expedienteContractual, id: "expAsignado" })).toBe(true);
+      expect(puedeVerExpedienteContractual(personal, { ...expedienteContractual, id: "expOtroDistinto" })).toBe(false);
+    });
+
+    it("tampoco puede editar los datos generales ni validar documentos de un expediente no asignado", () => {
+      const personal = permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expAsignado"]) });
+      expect(puedeGestionarExpedienteCompleto(personal, { id: "expOtroDistinto" })).toBe(false);
+      expect(puedeGestionarExpedienteCompleto(personal, { id: "expAsignado" })).toBe(true);
+      expect(puedeValidarDocumentoContrato(personal, { id: "expOtroDistinto" })).toBe(false);
+      expect(puedeValidarDocumentoContrato(personal, { id: "expAsignado" })).toBe(true);
+    });
+
+    it("sin ninguna asignación, no ve ningún expediente (denegado por defecto)", () => {
+      const personalSinAsignar = permContrat("FUNCIONARIO_CONTRATACION");
+      expect(puedeVerExpedienteContractual(personalSinAsignar, expedienteContractual)).toBe(false);
+    });
+  });
+
+  it("el Jefe y el Administrador de Contratación ven y gestionan cualquier expediente, en cualquier etapa", () => {
+    const jefe = permContrat("JEFE_CONTRATACION");
+    const admin = permContrat("ADMINISTRADOR_CONTRATACION");
+    for (const p of [jefe, admin]) {
+      expect(puedeVerExpedienteContractual(p, expedientePrecontractual)).toBe(true);
+      expect(puedeVerExpedienteContractual(p, expedienteContractual)).toBe(true);
+      expect(puedeGestionarExpedienteCompleto(p, { id: "cualquiera" })).toBe(true);
+    }
   });
 });

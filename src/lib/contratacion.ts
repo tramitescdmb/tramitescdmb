@@ -730,13 +730,11 @@ export type FiltrosContratacion = {
 };
 
 function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.ExpedienteContractualWhereInput {
-  if (
-    permisos.esAdmin ||
-    permisos.contratacion === "ADMINISTRADOR_CONTRATACION" ||
-    permisos.contratacion === "JEFE_CONTRATACION" ||
-    permisos.contratacion === "FUNCIONARIO_CONTRATACION"
-  ) {
+  if (permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION" || permisos.contratacion === "JEFE_CONTRATACION") {
     return {};
+  }
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") {
+    return { id: { in: Array.from(permisos.asignadoExpedientes) } };
   }
   if (permisos.contratacion === "JEFE_DEPENDENCIA") {
     return { dependenciaSolicitanteId: permisos.dependenciaId ?? "__sin_dependencia__" };
@@ -745,7 +743,7 @@ function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.Expedie
     return { id: { in: Array.from(permisos.supervisaExpedientes) } };
   }
   if (permisos.contratacion === "CONTRATISTA") {
-    return { contratistaId: permisos.contratistaId ?? "__sin_contratista__" };
+    return { contratistaId: permisos.contratistaId ?? "__sin_contratista__", etapaActual: { not: "PRECONTRACTUAL" } };
   }
   return { id: "__sin_acceso__" };
 }

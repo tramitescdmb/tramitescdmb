@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerDocumentoContrato, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
@@ -21,12 +22,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       storagePath: true,
       nombre: true,
       mimeType: true,
+      etapa: true,
       expediente: {
         select: {
           id: true,
           numero: true,
           contratistaId: true,
           dependenciaSolicitanteId: true,
+          etapaActual: true,
         },
       },
       firmas: {
@@ -72,10 +75,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (
-    !puedeVerExpedienteContractual(permisos, doc.expediente) &&
+    !puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) &&
     !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
     !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id))
   ) {
+    await registrarAccesoDenegadoAccion("descargar el rótulo firmado de un documento de contratación", id, session, req.headers);
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }
   if (doc.mimeType !== "application/pdf") {

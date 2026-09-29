@@ -25,6 +25,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   EXPEDIENTE_CERRADO: { icono: Lock, clase: "text-stone-700", texto: "Expediente cerrado" },
   CONTRATISTA_VINCULADO: { icono: UserSquare2, clase: "text-cdmb-600", texto: "Contratista vinculado" },
   SUPERVISORES_ACTUALIZADOS: { icono: Users, clase: "text-stone-500", texto: "Supervisores actualizados" },
+  PERSONAL_ASIGNADO_ACTUALIZADO: { icono: Users, clase: "text-stone-500", texto: "Personal de contratación asignado" },
   DATOS_CONTRATO_ACTUALIZADOS: { icono: CalendarClock, clase: "text-stone-500", texto: "Datos del contrato actualizados" },
   EXPEDIENTE_RELACIONADO: { icono: Link2, clase: "text-stone-500", texto: "Expediente relacionado" },
   PERIODO_INFORME_CREADO: { icono: CalendarClock, clase: "text-cdmb-600", texto: "Espacio de informe creado" },

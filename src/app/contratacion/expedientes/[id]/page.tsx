@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight } from "lucide-react";
+import { headers } from "next/headers";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -17,9 +18,11 @@ import {
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
   puedeGestionarExpedienteCompleto,
+  puedeAsignarPersonalContrato,
   puedeGestionarPeriodosInforme,
   puedeValidarDocumentoContrato,
 } from "@/lib/permisos";
+import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import {
   ETAPAS_ORDEN,
   ETIQUETA_ETAPA,
@@ -50,6 +53,7 @@ import { BotonDescargarZip } from "@/components/BotonDescargarZip";
 import { VincularContratistaForm } from "@/components/VincularContratistaForm";
 import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
 import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
+import { EditarPersonalAsignadoForm } from "@/components/EditarPersonalAsignadoForm";
 import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
 import { NuevoEspacioInformeForm, EspacioEventualAcciones } from "@/components/EspaciosInformeAcciones";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
@@ -120,6 +124,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
       expedienteRelacionado: { select: { numero: true } },
       expedientesQueLoReferencian: { select: { id: true, numero: true } },
       supervisores: { include: { usuario: { select: { nombre: true } } } },
+      asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
       documentos: {
         orderBy: { createdAt: "asc" },
@@ -136,17 +141,27 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     !puedeVerExpedienteContractual(permisos, expediente) &&
     !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, id))
   ) {
+    await registrarAccesoDenegadoAccion("ver el detalle de un expediente de contratación", id, session, await headers());
     redirect("/contratacion");
   }
 
   const puedeGestionar = puedeGestionarContratistas(permisos);
-  const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos);
+  const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos, expediente);
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
-  const idsDocumentos = expediente.documentos.map((d) => d.id);
-  const [supervisoresDisponibles, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
+  const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
+  const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
+  const [supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+          orderBy: { nombre: "asc" },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+        })
+      : Promise.resolve([]),
+    puedeAsignarPersonal
+      ? db.usuario.findMany({
+          where: { rolContratacion: "FUNCIONARIO_CONTRATACION", activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })
@@ -178,6 +193,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
+  const personalOpciones = personalDisponible.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const hoy = new Date();
@@ -185,7 +201,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
-  const puedeValidar = puedeValidarDocumentoContrato(permisos);
+  const puedeValidar = puedeValidarDocumentoContrato(permisos, expediente);
   const puedeRetroceder = puedeGestionarEtapasContratacion(permisos) && (idxActual > 0 || expediente.cerrado);
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
@@ -458,6 +474,18 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
               />
             )}
           </div>
+          <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
+            <UserCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <dt className="text-stone-500">Personal asignado:</dt>
+            <dd className="font-medium text-stone-800">{expediente.asignados.length ? expediente.asignados.map((a) => a.usuario.nombre).join(", ") : "—"}</dd>
+            {puedeAsignarPersonal && (
+              <EditarPersonalAsignadoForm
+                expedienteId={id}
+                personalDisponible={personalOpciones}
+                asignadosActualesIds={expediente.asignados.map((a) => a.usuarioId)}
+              />
+            )}
+          </div>
         </dl>
 
         {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0)) && (
@@ -551,13 +579,25 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
       {ETAPAS_ORDEN.map((etapa, i) => {
         const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
-        const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos);
+        const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos, expediente);
+        const ocultaPorRol = etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi;
         const puedeVerEtapaCompleta =
-          estado !== "bloqueada" ||
-          puedeGestionarPrivilegiado ||
-          (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
+          !ocultaPorRol &&
+          (estado !== "bloqueada" ||
+            puedeGestionarPrivilegiado ||
+            (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
 
-        if (estado === "bloqueada" && !puedeVerEtapaCompleta) {
+        if (!puedeVerEtapaCompleta) {
+          if (ocultaPorRol) {
+            return (
+              <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
+                <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-500">
+                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                  {ETIQUETA_ETAPA[etapa]} — no disponible para el contratista
+                </h3>
+              </div>
+            );
+          }
           const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
           return (
             <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">

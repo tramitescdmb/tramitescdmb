@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeGestionarExpedienteCompleto, puedeEliminarExpedienteContractual } from "@/lib/permisos";
+import {
+  obtenerPermisosUsuario,
+  puedeGestionarContratistas,
+  puedeGestionarExpedienteCompleto,
+  puedeAsignarPersonalContrato,
+  puedeEliminarExpedienteContractual,
+} from "@/lib/permisos";
 import { eliminarExpedienteContractualCompleto, registrarEventoContratacion, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { deleteDocumento } from "@/lib/storage";
 
 const MODALIDADES_VALIDAS = new Set(Object.keys(ETIQUETA_MODALIDAD));
@@ -18,7 +25,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   if ("contratistaId" in body) {
-    if (!puedeGestionarExpedienteCompleto(permisos)) {
+    if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
+      await registrarAccesoDenegadoAccion("vincular el contratista de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para vincular el contratista de este expediente." }, { status: 403 });
     }
     const contratistaId = String(body.contratistaId || "").trim();
@@ -57,7 +65,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "valor" in body ||
     "dependenciaSolicitanteId" in body
   ) {
-    if (!puedeGestionarExpedienteCompleto(permisos)) {
+    if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
+      await registrarAccesoDenegadoAccion("editar los datos generales de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para editar los datos generales de este expediente." }, { status: 403 });
     }
     if ("modalidadSeleccion" in body && !MODALIDADES_VALIDAS.has(String(body.modalidadSeleccion))) {
@@ -86,6 +95,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if ("supervisorUsuarioIds" in body) {
     if (!puedeGestionarContratistas(permisos)) {
+      await registrarAccesoDenegadoAccion("editar los supervisores de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para editar los supervisores de este expediente." }, { status: 403 });
     }
     const idsBody: unknown = body.supervisorUsuarioIds;
@@ -106,8 +116,44 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true });
   }
 
+  if ("personalAsignadoIds" in body) {
+    if (!puedeAsignarPersonalContrato(permisos)) {
+      await registrarAccesoDenegadoAccion("asignar personal de contratación a un expediente", id, session, req.headers);
+      return NextResponse.json({ error: "No tiene permiso para asignar personal de contratación a este expediente." }, { status: 403 });
+    }
+    const idsBody: unknown = body.personalAsignadoIds;
+    const personalAsignadoIds = Array.isArray(idsBody) ? [...new Set(idsBody.filter((v): v is string => typeof v === "string" && v.trim() !== ""))] : [];
+    if (personalAsignadoIds.length > 0) {
+      const usuarios = await db.usuario.findMany({
+        where: { id: { in: personalAsignadoIds }, activo: true, rolContratacion: "FUNCIONARIO_CONTRATACION" },
+        select: { id: true },
+      });
+      if (usuarios.length !== personalAsignadoIds.length) {
+        return NextResponse.json({ error: "Alguno de los usuarios elegidos no existe, está inactivo o no tiene el rol Personal de Contratación." }, { status: 400 });
+      }
+    }
+    await db.$transaction([
+      db.expedienteContractualAsignado.deleteMany({ where: { expedienteId: id } }),
+      ...(personalAsignadoIds.length > 0
+        ? [
+            db.expedienteContractualAsignado.createMany({
+              data: personalAsignadoIds.map((usuarioId) => ({ expedienteId: id, usuarioId, asignadoPorId: session.userId })),
+            }),
+          ]
+        : []),
+    ]);
+    await registrarEventoContratacion(
+      id,
+      "PERSONAL_ASIGNADO_ACTUALIZADO",
+      `Se actualizó el personal de contratación asignado (${personalAsignadoIds.length}).`,
+      session.userId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   if ("expedienteRelacionadoId" in body) {
     if (!puedeGestionarContratistas(permisos)) {
+      await registrarAccesoDenegadoAccion("relacionar un expediente con otro", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para relacionar este expediente con otro." }, { status: 403 });
     }
     const expedienteRelacionadoId = body.expedienteRelacionadoId ? String(body.expedienteRelacionadoId).trim() : null;
@@ -130,12 +176,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ error: "Nada que actualizar." }, { status: 400 });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeEliminarExpedienteContractual(permisos)) {
+    await registrarAccesoDenegadoAccion("eliminar un expediente", id, session, req.headers);
     return NextResponse.json({ error: "Solo el Administrador de Contratación puede eliminar un expediente." }, { status: 403 });
   }
 

@@ -147,6 +147,8 @@ model Usuario {
   contratista                     Contratista?                      @relation("ContratistaUsuario")
   expedientesContractualesCreados ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
   supervisionesContrato           ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
+  asignacionesContrato            ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
+  asignacionesContratoHechas      ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
   etapasContratacionAprobadas     EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
   documentosContratoSubidos       DocumentoContrato[]               @relation("DocContratoSubidoPor")
   documentosContratoValidados     DocumentoContrato[]               @relation("DocContratoValidadoPor")
@@ -1649,6 +1651,7 @@ model ExpedienteContractual {
   expedienteRelacionado  ExpedienteContractual? @relation("ExpedienteContractualRelacionado", fields: [expedienteRelacionadoId], references: [id])
 
   supervisores                ExpedienteContractualSupervisor[]
+  asignados                   ExpedienteContractualAsignado[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
   periodosEventuales          PeriodoInformeEventual[]
@@ -1671,6 +1674,23 @@ model ExpedienteContractualSupervisor {
 
   expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   usuario    Usuario               @relation("SupervisorDeExpediente", fields: [usuarioId], references: [id])
+
+  @@unique([expedienteId, usuarioId])
+  @@index([usuarioId])
+}
+
+// Personal de Contratación asignado a un expediente puntual: a diferencia del Jefe (ve todos) y del
+// Administrador, el Personal de Contratación solo gestiona los expedientes que el Jefe le asignó aquí.
+model ExpedienteContractualAsignado {
+  id            String   @id @default(cuid())
+  expedienteId  String
+  usuarioId     String
+  asignadoPorId String
+  asignadoEn    DateTime @default(now())
+
+  expediente  ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  usuario     Usuario               @relation("AsignadoDeExpediente", fields: [usuarioId], references: [id])
+  asignadoPor Usuario               @relation("AsignadoDeExpedientePor", fields: [asignadoPorId], references: [id])
 
   @@unique([expedienteId, usuarioId])
   @@index([usuarioId])

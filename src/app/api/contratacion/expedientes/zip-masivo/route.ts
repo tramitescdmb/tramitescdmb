@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       contentType: "application/zip",
       descargar: true,
       comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
-      generar: async () => new Uint8Array(await construirZipMasivo(expedientes, baseUrl)),
+      generar: async () => new Uint8Array(await construirZipMasivo(expedientes, baseUrl, permisos.contratacion === "CONTRATISTA")),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });

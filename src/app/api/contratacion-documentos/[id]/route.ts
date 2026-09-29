@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerDocumentoContrato, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { getSignedDownloadUrl } from "@/lib/storage";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -12,14 +13,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
-    select: { storagePath: true, expediente: { select: { id: true, contratistaId: true, dependenciaSolicitanteId: true } } },
+    select: { storagePath: true, etapa: true, expediente: { select: { id: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true } } },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (
-    !puedeVerExpedienteContractual(permisos, doc.expediente) &&
+    !puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) &&
     !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
     !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id))
   ) {
+    await registrarAccesoDenegadoAccion("descargar un documento de contratación", id, session, req.headers);
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }
 

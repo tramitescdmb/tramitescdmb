@@ -10,12 +10,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeValidarDocumentoContrato(permisos)) {
+
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { id: true, expedienteId: true } });
+  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (!puedeValidarDocumentoContrato(permisos, { id: doc.expedienteId })) {
     return NextResponse.json({ error: "No tiene permiso para validar documentos." }, { status: 403 });
   }
-
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { id: true } });
-  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
 
   try {
     await validarDocumentoContrato(id, session.userId, {

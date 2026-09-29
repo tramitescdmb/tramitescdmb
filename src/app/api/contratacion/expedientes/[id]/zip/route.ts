@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
-    select: { numero: true, contratistaId: true, dependenciaSolicitanteId: true },
+    select: { numero: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
   if (!puedeVerExpedienteContractual(permisos, { id, ...expediente })) {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       contentType: "application/zip",
       descargar: true,
       comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
-      generar: async () => new Uint8Array(await construirZipExpediente(id, expediente.numero, baseUrl)),
+      generar: async () => new Uint8Array(await construirZipExpediente(id, expediente.numero, baseUrl, permisos.contratacion === "CONTRATISTA")),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });

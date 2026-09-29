@@ -14,6 +14,7 @@ export type PermisosUsuario = {
   contratacion: RolContratacion | null;
   contratistaId: string | null;
   supervisaExpedientes: Set<string>;
+  asignadoExpedientes: Set<string>;
   cargos: Set<string>;
 };
 
@@ -31,6 +32,7 @@ type UsuarioFresco = {
   rolContratacionVigenteHasta: Date | null;
   contratistaId: string | null;
   supervisaExpedientes: string[];
+  asignadoExpedientes: string[];
 } | null;
 
 const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco> => {
@@ -50,6 +52,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       rolContratacionVigenteHasta: true,
       contratista: { select: { id: true } },
       supervisionesContrato: { select: { expedienteId: true } },
+      asignacionesContrato: { select: { expedienteId: true } },
     },
   });
   if (!usuario) return null;
@@ -67,6 +70,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     rolContratacionVigenteHasta: usuario.rolContratacionVigenteHasta,
     contratistaId: usuario.contratista?.id ?? null,
     supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
+    asignadoExpedientes: usuario.asignacionesContrato.map((a) => a.expedienteId),
   };
 });
 
@@ -100,6 +104,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     contratacion: usuario?.activo && !rolContratacionVencido && !geconOculto ? usuario.rolContratacion : null,
     contratistaId: usuario?.activo && !geconOculto ? usuario.contratistaId : null,
     supervisaExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.supervisaExpedientes : []),
+    asignadoExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.asignadoExpedientes : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
   };
 });
@@ -244,7 +249,7 @@ export function puedeSubirDocumentoContrato(
   etapa: EtapaContratacion
 ): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
-  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
   if (permisos.contratacion === "CONTRATISTA") {
     return etapa !== "PRECONTRACTUAL" && permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
@@ -265,7 +270,7 @@ export function puedeAsignarFirmantesDocumentoContrato(
   expediente: { id: string; dependenciaSolicitanteId: string }
 ): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
-  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);
   if (permisos.contratacion === "JEFE_DEPENDENCIA") return permisos.dependenciaId === expediente.dependenciaSolicitanteId;
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
   return false;
@@ -280,8 +285,9 @@ export function puedeEditarConTrazaDocumentoContrato(
   return permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id);
 }
 
-export function puedeValidarDocumentoContrato(permisos: PermisosUsuario): boolean {
-  return puedeEditarSinTrazaDocumentoContrato(permisos) || permisos.contratacion === "FUNCIONARIO_CONTRATACION";
+export function puedeValidarDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (puedeEditarSinTrazaDocumentoContrato(permisos)) return true;
+  return permisos.contratacion === "FUNCIONARIO_CONTRATACION" && permisos.asignadoExpedientes.has(expediente.id);
 }
 
 export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean {
@@ -298,8 +304,13 @@ export function puedeGestionarContratistas(permisos: PermisosUsuario): boolean {
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
-export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario): boolean {
-  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || permisos.contratacion === "FUNCIONARIO_CONTRATACION";
+export function puedeAsignarPersonalContrato(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
+export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  return permisos.contratacion === "FUNCIONARIO_CONTRATACION" && permisos.asignadoExpedientes.has(expediente.id);
 }
 
 export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {
@@ -312,14 +323,26 @@ export function puedeEliminarExpedienteContractual(permisos: PermisosUsuario): b
 
 export function puedeVerExpedienteContractual(
   permisos: PermisosUsuario,
-  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string }
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion }
 ): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
-  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return true;
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);
   if (permisos.contratacion === "JEFE_DEPENDENCIA") return permisos.dependenciaId === expediente.dependenciaSolicitanteId;
   if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
-  if (permisos.contratacion === "CONTRATISTA") return permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  if (permisos.contratacion === "CONTRATISTA") {
+    return expediente.etapaActual !== "PRECONTRACTUAL" && permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  }
   return false;
+}
+
+export function puedeVerDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion },
+  documentoEtapa: EtapaContratacion
+): boolean {
+  if (!puedeVerExpedienteContractual(permisos, expediente)) return false;
+  if (permisos.contratacion === "CONTRATISTA" && documentoEtapa === "PRECONTRACTUAL") return false;
+  return true;
 }
 
 export async function tieneSolicitudFirmaEnExpedienteContractual(usuarioId: string, expedienteId: string): Promise<boolean> {

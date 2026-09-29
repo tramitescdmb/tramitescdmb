@@ -30,9 +30,15 @@ function nombreUnico(usados: Set<string>, nombre: string): string {
   return candidato;
 }
 
-async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: string, numeroExpediente: string, baseUrl: string) {
+async function agregarDocumentosExpediente(
+  carpetaBase: JSZip,
+  expedienteId: string,
+  numeroExpediente: string,
+  baseUrl: string,
+  ocultarPrecontractual: boolean
+) {
   const documentos = await db.documentoContrato.findMany({
-    where: { expedienteId },
+    where: { expedienteId, ...(ocultarPrecontractual ? { etapa: { not: "PRECONTRACTUAL" } } : {}) },
     orderBy: { createdAt: "asc" },
     select: {
       nombre: true,
@@ -147,19 +153,28 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
   return documentos.length;
 }
 
-export async function construirZipExpediente(expedienteId: string, numeroExpediente: string, baseUrl: string): Promise<Buffer> {
+export async function construirZipExpediente(
+  expedienteId: string,
+  numeroExpediente: string,
+  baseUrl: string,
+  ocultarPrecontractual: boolean
+): Promise<Buffer> {
   const zip = new JSZip();
-  await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl);
+  await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl, ocultarPrecontractual);
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }
 
-export async function construirZipMasivo(expedientes: { id: string; numero: string; numeroContrato: string | null }[], baseUrl: string): Promise<Buffer> {
+export async function construirZipMasivo(
+  expedientes: { id: string; numero: string; numeroContrato: string | null }[],
+  baseUrl: string,
+  ocultarPrecontractual: boolean
+): Promise<Buffer> {
   const zip = new JSZip();
   const usados = new Set<string>();
   for (const e of expedientes) {
     const nombreCarpeta = nombreUnico(usados, sanearNombreZip((e.numeroContrato ?? e.numero)));
     const carpeta = zip.folder(nombreCarpeta)!;
-    await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl);
+    await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl, ocultarPrecontractual);
   }
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

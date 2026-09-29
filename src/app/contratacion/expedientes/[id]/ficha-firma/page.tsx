@@ -31,11 +31,13 @@ export default async function FichaFirmaExpedienteContractualPage({
       objeto: true,
       contratistaId: true,
       dependenciaSolicitanteId: true,
+      etapaActual: true,
       documentos: {
         where: {
           AND: [
             { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
             ...(documentoId ? [{ id: documentoId }] : []),
+            ...(permisos.contratacion === "CONTRATISTA" && !documentoId ? [{ etapa: { not: "PRECONTRACTUAL" as const } }] : []),
           ],
         },
         orderBy: { createdAt: "asc" },
@@ -78,7 +80,12 @@ export default async function FichaFirmaExpedienteContractualPage({
     },
   });
   if (!expediente) notFound();
-  const veExpediente = puedeVerExpedienteContractual(permisos, { id, contratistaId: expediente.contratistaId, dependenciaSolicitanteId: expediente.dependenciaSolicitanteId });
+  const veExpediente = puedeVerExpedienteContractual(permisos, {
+    id,
+    contratistaId: expediente.contratistaId,
+    dependenciaSolicitanteId: expediente.dependenciaSolicitanteId,
+    etapaActual: expediente.etapaActual,
+  });
   if (!veExpediente && !(documentoId && expediente.documentos.length > 0 && (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, documentoId)))) {
     redirect("/contratacion");
   }
