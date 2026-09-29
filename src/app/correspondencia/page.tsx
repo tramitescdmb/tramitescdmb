@@ -55,7 +55,7 @@ export default async function CorrespondenciaBandejaPage({
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
   const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
-    getCorrespondenciaOpcionesFiltro(),
+    getCorrespondenciaOpcionesFiltro(sp.serieId || undefined),
     contarComunicacionesVencidas(),
     puedeDespacharUsuario ? contarOficiosSinDespachar() : Promise.resolve(0),
     getCalendarioLaboral(),
@@ -73,7 +73,7 @@ export default async function CorrespondenciaBandejaPage({
     if (dep) clausulas.push(`relacionadas con ${dep.nombre}`);
   }
   if (sp.serieId) {
-    const serie = opciones.series.find((s) => s.id === sp.serieId);
+    const serie = opciones.serieSeleccionada;
     if (serie) clausulas.push(`clasificadas en "${serie.codigo} — ${serie.nombre}"`);
   }
   if (sp.despacho === "sin_despachar") clausulas.push("sin despachar");
@@ -210,7 +210,7 @@ export default async function CorrespondenciaBandejaPage({
             </select>
           </label>
 
-          <SelectorSerieBusqueda series={opciones.series} valorInicial={sp.serieId} />
+          <SelectorSerieBusqueda inicial={opciones.serieSeleccionada} />
 
           <label>
             <span className="mb-1 block text-xs font-medium text-stone-600">Término de ley</span>

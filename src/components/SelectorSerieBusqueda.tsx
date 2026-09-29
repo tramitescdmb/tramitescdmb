@@ -5,9 +5,18 @@ import { Search, X } from "lucide-react";
 
 type Serie = { id: string; codigo: string; nombre: string; dependencia: { nombre: string } | null };
 
-export function SelectorSerieBusqueda({ series, valorInicial }: { series: Serie[]; valorInicial?: string }) {
-  const inicial = series.find((s) => s.id === valorInicial) ?? null;
+export function SelectorSerieBusqueda({
+  series,
+  valorInicial,
+  inicial: inicialRemota,
+}: {
+  series?: Serie[];
+  valorInicial?: string;
+  inicial?: Serie | null;
+}) {
+  const inicial = series ? (series.find((s) => s.id === valorInicial) ?? null) : (inicialRemota ?? null);
   const [seleccionada, setSeleccionada] = useState<Serie | null>(inicial);
+  const [remotas, setRemotas] = useState<Serie[] | null>(null);
   const [texto, setTexto] = useState(inicial ? `${inicial.codigo} — ${inicial.nombre}` : "");
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -20,13 +29,32 @@ export function SelectorSerieBusqueda({ series, valorInicial }: { series: Serie[
     return () => document.removeEventListener("mousedown", fuera);
   }, []);
 
+  useEffect(() => {
+    if (series) return;
+    const q = texto.trim();
+    setRemotas(null);
+    if (!q || seleccionada) return;
+    const control = new AbortController();
+    const espera = setTimeout(() => {
+      fetch(`/api/correspondencia/series?q=${encodeURIComponent(q)}`, { signal: control.signal })
+        .then((r) => (r.ok ? r.json() : { series: [] }))
+        .then((d: { series: Serie[] }) => setRemotas(d.series))
+        .catch(() => {});
+    }, 250);
+    return () => {
+      clearTimeout(espera);
+      control.abort();
+    };
+  }, [texto, series, seleccionada]);
+
   const sugerencias = useMemo(() => {
     const q = texto.trim().toLowerCase();
     if (!q || seleccionada) return [];
+    if (!series) return remotas ?? [];
     return series
       .filter((s) => s.codigo.toLowerCase().includes(q) || s.nombre.toLowerCase().includes(q) || (s.dependencia?.nombre.toLowerCase() ?? "").includes(q))
       .slice(0, 8);
-  }, [texto, series, seleccionada]);
+  }, [texto, series, seleccionada, remotas]);
 
   return (
     <div ref={ref} className="relative min-w-[220px] flex-1">
@@ -81,7 +109,7 @@ export function SelectorSerieBusqueda({ series, valorInicial }: { series: Serie[
           ))}
         </ul>
       )}
-      {abierto && texto.trim() && !seleccionada && sugerencias.length === 0 && (
+      {abierto && texto.trim() && !seleccionada && sugerencias.length === 0 && (series || remotas !== null) && (
         <div className="absolute z-10 mt-1 w-full min-w-[280px] rounded-md border border-stone-200 bg-white px-3 py-2 text-xs text-stone-400 shadow-lg">
           Sin coincidencias.
         </div>

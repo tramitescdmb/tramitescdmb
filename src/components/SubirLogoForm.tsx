@@ -32,12 +32,9 @@ export function SubirLogoForm({
       const signData = await signRes.json();
       if (!signRes.ok) throw new Error(signData.error || "No se pudo preparar la subida.");
 
-      const { getSupabaseBrowserClient } = await import("@/lib/supabase-browser");
-      const supabase = getSupabaseBrowserClient();
-      const { error: uploadError } = await supabase.storage
-        .from("branding")
-        .uploadToSignedUrl(signData.path, signData.token, file);
-      if (uploadError) throw uploadError;
+      const { subirAUrlFirmada } = await import("@/lib/supabase-browser");
+      const { error: uploadError } = await subirAUrlFirmada("branding", signData.path, signData.token, file);
+      if (uploadError) throw new Error(uploadError.message);
 
       const confirmRes = await fetch("/api/branding", {
         method: "POST",

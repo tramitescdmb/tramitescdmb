@@ -1,4 +1,4 @@
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { subirAUrlFirmada } from "@/lib/supabase-browser";
 import {
   extensionPermitida,
   mensajeArchivoDemasiadoGrande,
@@ -46,8 +46,7 @@ export async function subirArchivoDirecto(
   }
   const { path, token } = await signRes.json();
 
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
   if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
 
   return {
@@ -93,8 +92,7 @@ export async function subirArchivoExpediente(expedienteId: string, file: File): 
   }
   const { path, token } = await signRes.json();
 
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
   if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
 
   return {
@@ -120,8 +118,7 @@ export async function subirArchivoPublico(folder: string, file: File): Promise<A
   }
   const { path, token } = await signRes.json();
 
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
   if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
 
   return {
@@ -147,8 +144,7 @@ export async function subirArchivoContrato(expedienteId: string, file: File): Pr
   }
   const { path, token } = await signRes.json();
 
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(path, token, file);
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
   if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
 
   return {

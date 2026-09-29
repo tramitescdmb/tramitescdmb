@@ -202,18 +202,19 @@ export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia,
   return { filas, total, page, totalPaginas: Math.max(1, Math.ceil(total / porPagina)), porPagina, vista, orden };
 }
 
-export async function getCorrespondenciaOpcionesFiltro() {
-  const [dependencias, series] = await Promise.all([
+export async function getCorrespondenciaOpcionesFiltro(serieId?: string) {
+  const [dependencias, serieSeleccionada] = await Promise.all([
     db.dependencia.findMany({
       where: { activo: true },
       orderBy: [{ nivel: "asc" }, { orden: "asc" }, { nombre: "asc" }],
       select: { id: true, nombre: true },
     }),
-    db.serieDocumental.findMany({
-      where: { activo: true, vigenteHasta: null },
-      orderBy: { codigo: "asc" },
-      select: { id: true, codigo: true, nombre: true, dependencia: { select: { id: true, nombre: true } } },
-    }),
+    serieId
+      ? db.serieDocumental.findUnique({
+          where: { id: serieId },
+          select: { id: true, codigo: true, nombre: true, dependencia: { select: { nombre: true } } },
+        })
+      : null,
   ]);
-  return { dependencias, series, estados: ESTADOS_VALIDOS, tipos: TIPOS_VALIDOS };
+  return { dependencias, serieSeleccionada, estados: ESTADOS_VALIDOS, tipos: TIPOS_VALIDOS };
 }

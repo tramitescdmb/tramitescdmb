@@ -6,6 +6,28 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 
+export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
+  if (!q) return NextResponse.json({ series: [] });
+  const series = await db.serieDocumental.findMany({
+    where: {
+      activo: true,
+      vigenteHasta: null,
+      OR: [
+        { codigo: { contains: q, mode: "insensitive" } },
+        { nombre: { contains: q, mode: "insensitive" } },
+        { dependencia: { nombre: { contains: q, mode: "insensitive" } } },
+      ],
+    },
+    orderBy: { codigo: "asc" },
+    take: 8,
+    select: { id: true, codigo: true, nombre: true, dependencia: { select: { nombre: true } } },
+  });
+  return NextResponse.json({ series });
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const volver = new URL("/correspondencia/admin", req.url);

@@ -1,4 +1,3 @@
-import { PDFDocument } from "pdf-lib";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES } from "@/lib/uploads-config";
 
 async function comprimirImagen(file: File): Promise<File> {
@@ -20,6 +19,7 @@ async function comprimirImagen(file: File): Promise<File> {
 async function intentarComprimirPdf(file: File): Promise<File> {
   try {
     const bytes = await file.arrayBuffer();
+    const { PDFDocument } = await import("pdf-lib");
     const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
     const recomprimido = await doc.save({ useObjectStreams: true });
     if (recomprimido.byteLength >= file.size) return file;
