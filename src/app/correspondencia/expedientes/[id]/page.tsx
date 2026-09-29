@@ -13,6 +13,13 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { Paginador } from "@/components/Paginador";
 import { formatearFecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
+import { puedeFirmar } from "@/lib/permisos";
+import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { construirFilasFirmantes } from "@/lib/panel-firmas";
+import { PanelFirmas } from "@/components/PanelFirmas";
+import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
+import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 
 const ETIQUETA_ACCION: Record<string, string> = {
   CREA: "Creación", LEE: "Consulta", MODIFICA: "Modificación", EXPORTA: "Exportación",
@@ -54,6 +61,8 @@ export default async function ExpedienteDetallePage({
           tipoDocumental: { select: { nombre: true } },
           reemplaza: { select: { nombre: true, ordenIndice: true } },
           reemplazadoPor: { select: { nombre: true, ordenIndice: true } },
+          firmas: { orderBy: { fechaHora: "asc" }, select: { id: true, calidad: true, fechaHora: true, usuario: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true } } } },
+          solicitudesFirma: { orderBy: { orden: "asc" }, include: { usuarioAsignado: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true } } } },
         },
       },
       comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, radicado: true, asunto: true } },
@@ -80,7 +89,7 @@ export default async function ExpedienteDetallePage({
   await registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` });
 
   const bitacoraPage = Math.max(1, parseInt(sp.bp ?? "1", 10) || 1);
-  const [totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar] = await Promise.all([
+  const [totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar, usuariosFirmantes] = await Promise.all([
     db.auditoriaDoc.count({ where: { entidad: "ExpedienteDocumental", entidadId: id } }),
     db.auditoriaDoc.findMany({
       where: { entidad: "ExpedienteDocumental", entidadId: id },
@@ -104,7 +113,12 @@ export default async function ExpedienteDetallePage({
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true },
     }),
+    expediente.estado === "ABIERTO" && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)
+      ? db.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, dependencia: { select: { nombre: true } } } })
+      : Promise.resolve([]),
   ]);
+  const opcionesFirmantes = usuariosFirmantes.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
+  const puedeFirmarUsuario = puedeFirmar(permisos);
   const totalPaginasBitacora = Math.max(1, Math.ceil(totalBitacora / BITACORA_POR_PAGINA));
   const hrefBitacoraPagina = (p: number) => `/correspondencia/expedientes/${id}${p > 1 ? `?bp=${p}` : ""}`;
 
@@ -446,9 +460,9 @@ export default async function ExpedienteDetallePage({
                   </span>
                 </span>
                 <span className="flex flex-none items-center gap-1.5">
-                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
+                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
                   <a
-                    href={`/api/documentos-archivo/${doc.id}`}
+                    href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
@@ -458,6 +472,61 @@ export default async function ExpedienteDetallePage({
                   </a>
                 </span>
                </div>
+
+               {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0 || (abierto && puedeEditar)) && (() => {
+                const miSolicitud = doc.solicitudesFirma.find((x) => x.usuarioAsignadoId === session.userId && x.estado === "PENDIENTE" && x.rol !== "LECTURA");
+                const miTurno = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
+                const yaFirme = doc.firmas.some((f) => f.usuario.id === session.userId);
+                const pendientes = doc.solicitudesFirma.filter((x) => x.estado === "PENDIENTE" && x.rol !== "LECTURA").length;
+                return (
+                  <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs" open={Boolean(miTurno)}>
+                    <summary className="cursor-pointer text-stone-500 hover:text-stone-800">
+                      Firmas electrónicas
+                      {doc.firmas.length > 0 && <span className="ml-1 text-emerald-700">· {doc.firmas.length} firmada{doc.firmas.length === 1 ? "" : "s"}</span>}
+                      {pendientes > 0 && <span className="ml-1 text-amber-700">· {pendientes} pendiente{pendientes === 1 ? "" : "s"}</span>}
+                    </summary>
+                    <div className="mt-2">
+                      <PanelFirmas
+                        filas={construirFilasFirmantes(doc.solicitudesFirma, doc.firmas, "SGDEA")}
+                        vacio="Este documento todavía no está firmado."
+                        acciones={
+                          <>
+                            {miTurno && (
+                              <ConfirmarFirmaModal
+                                rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                                endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/completar`}
+                                endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/rechazar`}
+                                documentoNombre={doc.nombre}
+                                documentoUrl={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                                documentoMimeType={doc.mimeType}
+                              />
+                            )}
+                            {abierto && puedeEditar && puedeFirmarUsuario && !miSolicitud && !yaFirme && (
+                              <BotonFirmarDirecto endpoint={`/api/documentos-archivo/${doc.id}/firmar`} descripcion={`Va a firmar "${doc.nombre}" del expediente ${expediente.numero}.`} />
+                            )}
+                            {abierto && puedeEditar && (
+                              <AsignarFirmantesModal
+                                endpointAsignar={`/api/documentos-archivo/${doc.id}/solicitudes-firma`}
+                                usuarios={opcionesFirmantes}
+                                conCalidad
+                                firmantesActuales={doc.solicitudesFirma.map((x) => ({
+                                  id: x.id,
+                                  usuarioAsignadoId: x.usuarioAsignadoId,
+                                  usuarioAsignadoNombre: x.usuarioAsignado.nombre,
+                                  calidad: x.calidad,
+                                  rol: x.rol,
+                                  orden: x.orden,
+                                  estado: x.estado,
+                                }))}
+                              />
+                            )}
+                          </>
+                        }
+                      />
+                    </div>
+                  </details>
+                );
+              })()}
 
                {puedeEditar && (
                 <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs">

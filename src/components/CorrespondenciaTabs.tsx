@@ -2,6 +2,7 @@
 
 import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, Archive, PenLine } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
+import { textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
 type Permitido = {
   bandeja: boolean;
@@ -13,7 +14,10 @@ type Permitido = {
   fondoHistorico: boolean;
 };
 
-const NO_BANDEJA = ["nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes", "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon"];
+const NO_BANDEJA = [
+  "nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes",
+  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos",
+];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
   (p.startsWith("/correspondencia/") && !NO_BANDEJA.some((s) => p.startsWith(`/correspondencia/${s}`)));
@@ -23,7 +27,12 @@ const SOLO_ADMIN = "Solo administrador";
 const paraAdmin = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.admin ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 const paraAdminSistema = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.administradorSistema ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 
-export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
+export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido: Permitido; pendientesFirma: ResumenPendientesFirma }) {
+  const insigniaFirmas = {
+    valor: pendientesFirma.total,
+    alerta: pendientesFirma.listos > 0,
+    titulo: textoPendientesFirma(pendientesFirma),
+  };
   const grupos: (GrupoMenu | null)[] = [
     { label: "Panel", icon: LayoutDashboard, href: "/correspondencia/panel" },
     {
@@ -52,7 +61,16 @@ export function CorrespondenciaTabs({ permitido }: { permitido: Permitido }) {
           ],
         }
       : null,
-    { label: "Buzón de firmas", icon: PenLine, href: "/correspondencia/buzon" },
+    {
+      label: "Firmas",
+      icon: PenLine,
+      items: [
+        { href: "/correspondencia/buzon", label: "Buzón de firmas", insignia: insigniaFirmas },
+        { href: "/correspondencia/mis-firmas", label: "Mis firmas" },
+        { href: "/correspondencia/rechazos", label: "Rechazos al firmar" },
+      ],
+      insignia: insigniaFirmas,
+    },
     { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
     permitido.fondoHistorico ? { label: "Fondo histórico", icon: Archive, href: "/correspondencia/fondo" } : null,
     {

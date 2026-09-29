@@ -1141,6 +1141,7 @@ model Comunicacion {
   firmas           Firma[]
   instanciasFlujo  InstanciaFlujo[]
   solicitudesFirma SolicitudFirma[]
+  avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([tipo])
   @@index([anio])
@@ -1231,11 +1232,16 @@ model Firma {
   selloTiempoFuente String?
   selloTiempoToken  String?
 
-  usuario          Usuario          @relation("FirmaUsuario", fields: [usuarioId], references: [id])
-  comunicacion     Comunicacion?    @relation(fields: [comunicacionId], references: [id])
-  solicitudesFirma SolicitudFirma[] @relation("SolicitudFirmaEvento")
+  calidad            CalidadFirma?
+  documentoArchivoId String?
+
+  usuario          Usuario           @relation("FirmaUsuario", fields: [usuarioId], references: [id])
+  comunicacion     Comunicacion?     @relation(fields: [comunicacionId], references: [id])
+  documentoArchivo DocumentoArchivo? @relation(fields: [documentoArchivoId], references: [id], onDelete: Cascade)
+  solicitudesFirma SolicitudFirma[]  @relation("SolicitudFirmaEvento")
 
   @@index([comunicacionId])
+  @@index([documentoArchivoId])
   @@index([usuarioId])
 }
 
@@ -1267,6 +1273,7 @@ model SolicitudFirma {
   comunicacionId        String?
   documentoContratoId   String?
   documentoExpedienteId String?
+  documentoArchivoId    String?
 
   usuarioAsignadoId String
   rol               RolFirmante          @default(FIRMA)
@@ -1288,6 +1295,7 @@ model SolicitudFirma {
   comunicacion        Comunicacion?             @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   documentoContrato   DocumentoContrato?        @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
   documentoExpediente ExpedienteDocumento?      @relation(fields: [documentoExpedienteId], references: [id], onDelete: Cascade)
+  documentoArchivo    DocumentoArchivo?         @relation(fields: [documentoArchivoId], references: [id], onDelete: Cascade)
   usuarioAsignado     Usuario                   @relation("SolicitudFirmaAsignado", fields: [usuarioAsignadoId], references: [id])
   asignadoPor         Usuario                   @relation("SolicitudFirmaAsignadoPor", fields: [asignadoPorId], references: [id])
   firma               Firma?                    @relation("SolicitudFirmaEvento", fields: [firmaId], references: [id])
@@ -1297,6 +1305,7 @@ model SolicitudFirma {
   @@index([comunicacionId])
   @@index([documentoContratoId])
   @@index([documentoExpedienteId])
+  @@index([documentoArchivoId])
   @@index([usuarioAsignadoId, estado])
 }
 
@@ -1384,12 +1393,15 @@ model DocumentoArchivo {
   retiradoPorId String?
   motivoRetiro  String?   @db.Text
 
-  expediente     ExpedienteDocumental @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
-  subidoPor      Usuario              @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
-  retiradoPor    Usuario?             @relation("DocumentoArchivoRetiradoPor", fields: [retiradoPorId], references: [id])
-  tipoDocumental TipoDocumental?      @relation(fields: [tipoDocumentalId], references: [id])
-  reemplaza      DocumentoArchivo?    @relation("DocumentoArchivoVersion", fields: [reemplazaId], references: [id], onDelete: SetNull)
-  reemplazadoPor DocumentoArchivo[]   @relation("DocumentoArchivoVersion")
+  expediente       ExpedienteDocumental    @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  subidoPor        Usuario                 @relation("DocumentoArchivoSubidoPor", fields: [subidoPorId], references: [id])
+  retiradoPor      Usuario?                @relation("DocumentoArchivoRetiradoPor", fields: [retiradoPorId], references: [id])
+  tipoDocumental   TipoDocumental?         @relation(fields: [tipoDocumentalId], references: [id])
+  reemplaza        DocumentoArchivo?       @relation("DocumentoArchivoVersion", fields: [reemplazaId], references: [id], onDelete: SetNull)
+  reemplazadoPor   DocumentoArchivo[]      @relation("DocumentoArchivoVersion")
+  firmas           Firma[]
+  solicitudesFirma SolicitudFirma[]
+  avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([expedienteDocumentalId])
 }
@@ -1737,6 +1749,8 @@ model AvisoRechazoDocumento {
   expedienteTramiteId   String?
   documentoContratoId   String?
   documentoExpedienteId String?
+  comunicacionId        String?
+  documentoArchivoId    String?
   mensaje               String   @db.Text
   rechazadoPorId        String?
   subidoPorId           String
@@ -1746,6 +1760,8 @@ model AvisoRechazoDocumento {
   expedienteTramite   Expediente?            @relation(fields: [expedienteTramiteId], references: [id], onDelete: Cascade)
   documentoContrato   DocumentoContrato?     @relation(fields: [documentoContratoId], references: [id], onDelete: Cascade)
   documentoExpediente ExpedienteDocumento?   @relation(fields: [documentoExpedienteId], references: [id], onDelete: Cascade)
+  comunicacion        Comunicacion?          @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  documentoArchivo    DocumentoArchivo?      @relation(fields: [documentoArchivoId], references: [id], onDelete: Cascade)
   rechazadoPor        Usuario?               @relation("AvisoRechazoRechazadoPor", fields: [rechazadoPorId], references: [id])
   subidoPor           Usuario                @relation("AvisoRechazoSubidoPor", fields: [subidoPorId], references: [id])
 
@@ -1753,6 +1769,8 @@ model AvisoRechazoDocumento {
   @@index([expedienteTramiteId])
   @@index([documentoContratoId])
   @@index([documentoExpedienteId])
+  @@index([comunicacionId])
+  @@index([documentoArchivoId])
 }
 
 model PeriodoInformeEventual {

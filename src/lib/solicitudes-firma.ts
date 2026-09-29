@@ -5,16 +5,31 @@ import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/cl
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
+import { nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
   | { tipo: "documentoContrato"; id: string }
-  | { tipo: "documentoExpediente"; id: string };
+  | { tipo: "documentoExpediente"; id: string }
+  | { tipo: "documentoArchivo"; id: string };
+
+export type TipoObjetivo = ObjetivoSolicitud["tipo"];
 
 function whereObjetivo(objetivo: ObjetivoSolicitud) {
   if (objetivo.tipo === "comunicacion") return { comunicacionId: objetivo.id };
   if (objetivo.tipo === "documentoContrato") return { documentoContratoId: objetivo.id };
+  if (objetivo.tipo === "documentoArchivo") return { documentoArchivoId: objetivo.id };
   return { documentoExpedienteId: objetivo.id };
+}
+
+function claveObjetivo(s: { comunicacionId: string | null; documentoContratoId: string | null; documentoExpedienteId: string | null; documentoArchivoId: string | null }) {
+  return s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId ?? s.documentoArchivoId!;
+}
+
+export function moduloDeObjetivo(tipo: TipoObjetivo): ModuloFirma {
+  if (tipo === "documentoContrato") return "GECON";
+  if (tipo === "documentoExpediente") return "TRAMITES";
+  return "SGDEA";
 }
 
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
@@ -27,7 +42,9 @@ async function usuariosQueYaFirmaron(objetivo: ObjetivoSolicitud, usuarioIds: st
       ? await db.firmaExpedienteDocumento.findMany({ where: { ...where, documentoId: objetivo.id }, select })
       : objetivo.tipo === "documentoContrato"
         ? await db.firmaDocumentoContrato.findMany({ where: { ...where, documentoId: objetivo.id }, select })
-        : await db.firma.findMany({ where: { ...where, comunicacionId: objetivo.id }, select });
+        : objetivo.tipo === "documentoArchivo"
+          ? await db.firma.findMany({ where: { ...where, documentoArchivoId: objetivo.id }, select })
+          : await db.firma.findMany({ where: { ...where, comunicacionId: objetivo.id }, select });
   return filas.map((f) => f.usuario.nombre);
 }
 
@@ -37,6 +54,24 @@ export async function asignarFirmantes(
   firmantes: { usuarioId: string; rol: RolFirmante; orden?: number; calidad?: CalidadFirma | null }[]
 ) {
   if (firmantes.length === 0) throw new Error("Debe indicar al menos una persona.");
+
+  const modulo = moduloDeObjetivo(objetivo.tipo);
+  const selectPersona = { id: true, nombre: true, activo: true, denominacionEmpleo: true, rolContratacion: true } as const;
+  const asignador = await db.usuario.findUnique({ where: { id: asignadoPorId }, select: selectPersona });
+  if (!asignador) throw new Error("El usuario que asigna no existe.");
+  if (!puedeSolicitarFirmas(asignador) && firmantes.some((f) => f.usuarioId !== asignadoPorId)) {
+    throw new Error("Un contratista no puede solicitar a otra persona que firme o dé visto bueno.");
+  }
+  const personas = new Map(
+    (await db.usuario.findMany({ where: { id: { in: firmantes.map((f) => f.usuarioId) } }, select: selectPersona })).map((u) => [u.id, u])
+  );
+  for (const f of firmantes) {
+    const persona = personas.get(f.usuarioId);
+    if (!persona || !persona.activo) throw new Error("Una de las personas seleccionadas no existe o está inactiva.");
+    if (f.rol === "FIRMA" && (f.calidad ?? "PRINCIPAL") === "PRINCIPAL" && !puedeSerFirmantePrincipal(persona, modulo)) {
+      throw new Error(`${persona.nombre} es contratista: solo puede firmar como Proyectó o Revisó, no como firmante principal.`);
+    }
+  }
 
   const conAccion = firmantes.filter((f) => f.rol !== "LECTURA");
   if (new Set(conAccion.map((f) => f.usuarioId)).size !== conAccion.length) {
@@ -74,6 +109,8 @@ export async function asignarFirmantes(
       const doc = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { requiereFirma: true } });
       if (!doc) throw new Error("El documento no existe.");
       if (!doc.requiereFirma) throw new Error("Este documento no está marcado como que requiere firma electrónica.");
+    } else if (objetivo.tipo === "documentoArchivo") {
+      await validarDocumentoArchivoFirmable(objetivo.id);
     } else {
       const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: { tipo: true, estado: true } });
       if (!c) throw new Error("La comunicación no existe.");
@@ -94,8 +131,8 @@ export async function asignarFirmantes(
     ...whereObjetivo(objetivo),
     usuarioAsignadoId: f.usuarioId,
     rol: f.rol,
-    orden: f.orden ?? 1,
-    calidad: f.rol === "FIRMA" && objetivo.tipo !== "comunicacion" ? (f.calidad ?? "PRINCIPAL") : null,
+    orden: nivelFirma(personas.get(f.usuarioId)!),
+    calidad: f.rol === "FIRMA" ? (f.calidad ?? "PRINCIPAL") : null,
     asignadoPorId,
     estado: (f.rol === "LECTURA" ? "COMPLETADA" : "PENDIENTE") as EstadoSolicitudFirma,
     completadoEn: f.rol === "LECTURA" ? new Date() : null,
@@ -106,6 +143,17 @@ export async function asignarFirmantes(
     if (objetivo.tipo === "documentoContrato") await reevaluarEstadoDocumentoContrato(objetivo.id, asignadoPorId);
     else if (objetivo.tipo === "documentoExpediente") await reevaluarEstadoDocumentoExpediente(objetivo.id, asignadoPorId);
   }
+}
+
+export async function validarDocumentoArchivoFirmable(documentoArchivoId: string) {
+  const doc = await db.documentoArchivo.findUnique({
+    where: { id: documentoArchivoId },
+    select: { retiradoEn: true, mimeType: true, expediente: { select: { estado: true } } },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.retiradoEn) throw new Error("Este documento fue retirado del expediente: no se puede firmar.");
+  if (doc.mimeType !== "application/pdf") throw new Error("Solo se pueden firmar documentos PDF.");
+  if (doc.expediente.estado !== "ABIERTO") throw new Error("El expediente está cerrado: sus documentos ya no se pueden firmar.");
 }
 
 export function puedeActuarSolicitud(
@@ -157,7 +205,7 @@ export async function completarSolicitudFirma(
 ) {
   const solicitud = await db.solicitudFirma.findUnique({
     where: { id: solicitudId },
-    include: { documentoContrato: true, documentoExpediente: true, comunicacion: true },
+    include: { documentoContrato: true, documentoExpediente: true, comunicacion: true, documentoArchivo: true },
   });
   if (!solicitud) throw new Error("La solicitud no existe.");
   if (solicitud.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
@@ -169,7 +217,9 @@ export async function completarSolicitudFirma(
       ? { comunicacionId: solicitud.comunicacionId }
       : solicitud.documentoContratoId
         ? { documentoContratoId: solicitud.documentoContratoId }
-        : { documentoExpedienteId: solicitud.documentoExpedienteId! },
+        : solicitud.documentoArchivoId
+          ? { documentoArchivoId: solicitud.documentoArchivoId }
+          : { documentoExpedienteId: solicitud.documentoExpedienteId! },
   });
   if (!puedeActuarSolicitud(hermanas, solicitud)) {
     throw new Error("Debe(n) resolver primero quien(es) tiene(n) un turno anterior.");
@@ -265,11 +315,19 @@ export async function completarSolicitudFirma(
       return;
     }
 
+    const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId: c.id }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
     const fechaHora = new Date();
-    const hashContenido = hashContenidoFirma({ radicado: c.radicado, asunto: c.asunto, contenido: c.contenido, fechaIso: fechaHora.toISOString() });
+    const hashContenido = hashContenidoFirma({
+      radicado: c.radicado,
+      asunto: c.asunto,
+      contenido: c.contenido,
+      fechaIso: fechaHora.toISOString(),
+      hashesDocumentos: documentos.map((d) => d.hashSha256),
+    });
     const resuelto = await resolverFirma(hashContenido);
     const firma = await db.firma.create({
       data: {
+        calidad: solicitud.calidad,
         usuarioId,
         comunicacionId: c.id,
         fechaHora,
@@ -288,7 +346,73 @@ export async function completarSolicitudFirma(
       where: { id: solicitudId },
       data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id, ip, userAgent },
     });
+  } else if (solicitud.documentoArchivo) {
+    const doc = solicitud.documentoArchivo;
+    await validarDocumentoArchivoFirmable(doc.id);
+    const previa = await db.firma.findFirst({ where: { documentoArchivoId: doc.id, usuarioId }, select: { id: true } });
+    if (previa) {
+      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: previa.id, ip, userAgent } });
+      return;
+    }
+    const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, ip, userAgent);
+    await db.solicitudFirma.update({
+      where: { id: solicitudId },
+      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id, ip, userAgent },
+    });
   }
+}
+
+async function crearFirmaDocumentoArchivo(
+  doc: { id: string; nombre: string; hashSha256: string | null },
+  usuarioId: string,
+  calidad: CalidadFirma | null,
+  ip: string | null,
+  userAgent: string | null,
+) {
+  const fechaHora = new Date();
+  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso: fechaHora.toISOString() });
+  const resuelto = await resolverFirma(hashContenido);
+  return db.firma.create({
+    data: {
+      usuarioId,
+      documentoArchivoId: doc.id,
+      calidad,
+      fechaHora,
+      hashContenido,
+      tipo: "ELECTRONICA_HASH",
+      ip,
+      userAgent,
+      proveedor: resuelto.proveedor,
+      formato: resuelto.formato,
+      selloTiempoEn: resuelto.selloTiempoEn,
+      selloTiempoFuente: resuelto.selloTiempoFuente,
+      selloTiempoToken: resuelto.selloTiempoToken,
+    },
+  });
+}
+
+export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, usuarioId: string, ip: string | null, userAgent: string | null) {
+  await validarDocumentoArchivoFirmable(documentoArchivoId);
+  const doc = await db.documentoArchivo.findUnique({ where: { id: documentoArchivoId }, select: { id: true, nombre: true, hashSha256: true } });
+  if (!doc) throw new Error("El documento no existe.");
+  if (await db.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) {
+    throw new Error("Usted ya firmó este documento.");
+  }
+  const solicitudes = await db.solicitudFirma.findMany({
+    where: { documentoArchivoId, rol: { not: "LECTURA" } },
+    select: { id: true, usuarioAsignadoId: true, rol: true, orden: true, estado: true },
+  });
+  const propia = solicitudes.find((x) => x.usuarioAsignadoId === usuarioId && x.estado === "PENDIENTE" && x.rol === "FIRMA");
+  if (propia) {
+    await completarSolicitudFirma(propia.id, usuarioId, ip, userAgent);
+    return;
+  }
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  if (!usuario) throw new Error("El usuario no existe.");
+  if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
+    throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
+  }
+  await crearFirmaDocumentoArchivo(doc, usuarioId, puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO", ip, userAgent);
 }
 
 export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: string, comentario: string) {
@@ -298,6 +422,8 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
     include: {
       documentoContrato: { select: { id: true, nombre: true, expedienteId: true, subidoPorId: true } },
       documentoExpediente: { select: { id: true, nombre: true, expedienteId: true, pasoNumero: true, subidoPorId: true } },
+      comunicacion: { select: { id: true, radicado: true, radicadoPorId: true } },
+      documentoArchivo: { select: { id: true, nombre: true, subidoPorId: true } },
     },
   });
   if (!solicitud) throw new Error("La solicitud no existe.");
@@ -348,6 +474,18 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
         rechazadoPorId: usuarioId,
         subidoPorId: doc.subidoPorId,
       },
+    });
+  } else if (solicitud.comunicacion) {
+    const c = solicitud.comunicacion;
+    if (c.radicadoPorId) {
+      await db.avisoRechazoDocumento.create({
+        data: { comunicacionId: c.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: c.radicadoPorId },
+      });
+    }
+  } else if (solicitud.documentoArchivo) {
+    const doc = solicitud.documentoArchivo;
+    await db.avisoRechazoDocumento.create({
+      data: { documentoArchivoId: doc.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: doc.subidoPorId },
     });
   }
 }
@@ -448,19 +586,30 @@ export async function contarPendientesBuzonTramite(usuarioId: string): Promise<R
   return resumirPendientesFirma(await listarBuzon(usuarioId, "documentoExpediente"));
 }
 
-export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "documentoContrato" | "documentoExpediente") {
+export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
   const filtroTipo =
     tipo === "comunicacion"
       ? { comunicacionId: { not: null } }
       : tipo === "documentoContrato"
         ? { documentoContratoId: { not: null } }
-        : { documentoExpedienteId: { not: null } };
+        : tipo === "documentoArchivo"
+          ? { documentoArchivoId: { not: null } }
+          : { documentoExpedienteId: { not: null } };
 
   const solicitudes = await db.solicitudFirma.findMany({
     where: { usuarioAsignadoId: usuarioId, estado: "PENDIENTE", ...filtroTipo },
     include: {
       asignadoPor: { select: { nombre: true } },
-      comunicacion: { select: { id: true, radicado: true, asunto: true } },
+      comunicacion: { select: { id: true, radicado: true, asunto: true, tipo: true, documentos: { select: { id: true, nombre: true, mimeType: true }, orderBy: { createdAt: "asc" } } } },
+      documentoArchivo: {
+        select: {
+          id: true,
+          nombre: true,
+          mimeType: true,
+          expedienteDocumentalId: true,
+          expediente: { select: { numero: true, asunto: true } },
+        },
+      },
       documentoContrato: {
         select: {
           id: true,
@@ -487,26 +636,29 @@ export async function listarBuzon(usuarioId: string, tipo: "comunicacion" | "doc
     orderBy: { asignadoEn: "asc" },
   });
 
-  const idsObjetivo = solicitudes.map((s) => s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId!);
+  const idsObjetivo = solicitudes.map(claveObjetivo);
   const hermanasPorObjetivo = new Map<string, { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma }[]>();
   if (idsObjetivo.length > 0) {
     const hermanas = await db.solicitudFirma.findMany({
-      where: filtroTipo.comunicacionId
-        ? { comunicacionId: { in: idsObjetivo } }
-        : filtroTipo.documentoContratoId
-          ? { documentoContratoId: { in: idsObjetivo } }
-          : { documentoExpedienteId: { in: idsObjetivo } },
-      select: { comunicacionId: true, documentoContratoId: true, documentoExpedienteId: true, rol: true, orden: true, estado: true },
+      where:
+        tipo === "comunicacion"
+          ? { comunicacionId: { in: idsObjetivo } }
+          : tipo === "documentoContrato"
+            ? { documentoContratoId: { in: idsObjetivo } }
+            : tipo === "documentoArchivo"
+              ? { documentoArchivoId: { in: idsObjetivo } }
+              : { documentoExpedienteId: { in: idsObjetivo } },
+      select: { comunicacionId: true, documentoContratoId: true, documentoExpedienteId: true, documentoArchivoId: true, rol: true, orden: true, estado: true },
     });
     for (const h of hermanas) {
-      const clave = h.comunicacionId ?? h.documentoContratoId ?? h.documentoExpedienteId!;
+      const clave = claveObjetivo(h);
       if (!hermanasPorObjetivo.has(clave)) hermanasPorObjetivo.set(clave, []);
       hermanasPorObjetivo.get(clave)!.push(h);
     }
   }
 
   return solicitudes.map((s) => {
-    const clave = s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId!;
+    const clave = claveObjetivo(s);
     return {
       ...s,
       puedeActuar: puedeActuarSolicitud(hermanasPorObjetivo.get(clave) ?? [], s),

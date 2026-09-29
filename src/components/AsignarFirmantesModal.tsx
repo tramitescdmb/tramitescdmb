@@ -41,9 +41,11 @@ export function AsignarFirmantesModal({
   usuarios,
   firmantesActuales,
   conCalidad = false,
+  contratistaPrincipal = false,
 }: {
   endpointAsignar: string;
   conCalidad?: boolean;
+  contratistaPrincipal?: boolean;
   usuarios: { id: string; nombre: string; dependenciaNombre?: string | null }[];
   firmantesActuales: FirmanteAsignado[];
 }) {
@@ -53,7 +55,6 @@ export function AsignarFirmantesModal({
   const [filtro, setFiltro] = useState("");
   const [dependenciaFiltro, setDependenciaFiltro] = useState("");
   const [rol, setRol] = useState<RolFirmante>("FIRMA");
-  const [orden, setOrden] = useState(1);
   const [calidad, setCalidad] = useState<CalidadPresentacion>("PRINCIPAL");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export function AsignarFirmantesModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firmantes: [{ usuarioId, rol: rolEfectivo, orden, ...(conCalidad && rolEfectivo === "FIRMA" ? { calidad } : {}) }],
+          firmantes: [{ usuarioId, rol: rolEfectivo, ...(conCalidad && rolEfectivo === "FIRMA" ? { calidad } : {}) }],
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -133,7 +134,7 @@ export function AsignarFirmantesModal({
                       {f.usuarioAsignadoNombre}{" "}
                       <span className="text-stone-400">
                         — {ETIQUETA_ROL[f.rol]}
-                        {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""} (turno {f.orden})
+                        {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""}
                       </span>
                     </span>
                     <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
@@ -224,16 +225,10 @@ export function AsignarFirmantesModal({
                 </label>
               )}
               {rol !== "LECTURA" && (
-                <label className="block text-xs font-medium text-stone-600">
-                  Turno (firmantes con el mismo número actúan en cualquier orden entre sí)
-                  <input
-                    type="number"
-                    min={1}
-                    value={orden}
-                    onChange={(e) => setOrden(Math.max(1, Number(e.target.value) || 1))}
-                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                  />
-                </label>
+                <p className="rounded-md bg-stone-50 px-2 py-1.5 text-[11px] text-stone-500">
+                  El turno se asigna por cargo: Dirección General, Secretaría General, Subdirección o Jefatura de Oficina, Funcionario o
+                  Supervisor y, al final, Contratista.{contratistaPrincipal ? "" : " Un contratista solo puede firmar como Proyectó o Revisó."}
+                </p>
               )}
               {error && <p className="text-xs text-red-700">{error}</p>}
               <button

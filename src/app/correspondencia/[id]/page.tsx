@@ -33,7 +33,9 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
 import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
 import { MetadatosComunicacion } from "@/components/MetadatosComunicacion";
-import { SelloFirmaElectronica } from "@/components/SelloFirmaElectronica";
+import { PanelFirmas } from "@/components/PanelFirmas";
+import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
+import { construirFilasFirmantes } from "@/lib/panel-firmas";
 import { DistribuirForm } from "@/components/DistribuirForm";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { ETIQUETA_MEDIO_DESPACHO } from "@/lib/correspondencia";
@@ -161,17 +163,17 @@ export default async function CorrespondenciaDetallePage({
       radicadoPor: { select: { nombre: true } },
       expediente: { select: { id: true, numero: true } },
       expedienteDocumental: { select: { id: true, numero: true } },
-      respondeA: { select: { id: true, radicado: true, asunto: true } },
+      respondeA: { select: { id: true, radicado: true, asunto: true, distribuciones: { where: { activa: true }, select: { usuarioId: true } } } },
       respuestas: { select: { id: true, radicado: true, asunto: true, despachadaEn: true } },
       respuestaPor: { select: { nombre: true } },
       despachadaPor: { select: { nombre: true } },
       firmas: {
         orderBy: { fechaHora: "asc" },
-        include: { usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
+        include: { usuario: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true, dependencia: { select: { nombre: true } } } } },
       },
       solicitudesFirma: {
         orderBy: { orden: "asc" },
-        include: { usuarioAsignado: { select: { nombre: true } }, asignadoPor: { select: { nombre: true } } },
+        include: { usuarioAsignado: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true } }, asignadoPor: { select: { nombre: true } } },
       },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },
@@ -188,7 +190,14 @@ export default async function CorrespondenciaDetallePage({
   const puedeRadicarUsuario = puedeRadicar(permisos);
   const puedeDespacharUsuario = puedeDespachar(permisos);
   const puedeFirmarUsuario = puedeFirmar(permisos);
-  const puedeAsignarFirmantesUsuario = puedeAsignarFirmantesComunicacion(permisos, c);
+  const puedeAsignarFirmantesUsuario =
+    c.estado !== "ANULADA" &&
+    !c.despachadaEn &&
+    puedeAsignarFirmantesComunicacion(permisos, c, session.userId, [
+      ...c.distribuciones.filter((d) => d.activa).map((d) => d.usuarioId),
+      ...(c.respondeA?.distribuciones.map((d) => d.usuarioId) ?? []),
+    ]);
+  const filasFirmantes = construirFilasFirmantes(c.solicitudesFirma, c.firmas, "SGDEA");
   const miSolicitudFirma = c.solicitudesFirma.find(
     (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
   );
@@ -199,6 +208,7 @@ export default async function CorrespondenciaDetallePage({
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const devolucionesPrevias = c.distribuciones.filter((d) => d.devueltaEn);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
+  const pdfPrincipal = documentosOriginales.find((d) => d.mimeType === "application/pdf") ?? null;
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
   const mostrarRespuesta =
     c.tipo === "RECIBIDA" &&
@@ -427,7 +437,7 @@ export default async function CorrespondenciaDetallePage({
         </Tarjeta>
       )}
 
-      {(c.firmas.length > 0 || c.solicitudesFirma.length > 0 || puedeAsignarFirmantesUsuario) && (
+      {c.tipo !== "RECIBIDA" && (
         <Tarjeta
           titulo="Firma electrónica"
           extra={
@@ -438,63 +448,57 @@ export default async function CorrespondenciaDetallePage({
             ) : undefined
           }
         >
-          {c.firmas.length > 0 && <SelloFirmaElectronica firmas={c.firmas} />}
-          {puedeFirmarUsuario && c.tipo !== "RECIBIDA" && c.estado !== "ANULADA" && !c.firmas.some((f) => f.usuarioId === session.userId) && (
-            <form action={`/api/correspondencia/${id}/firmar`} method="post" className="mt-3">
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">
-                <PenTool className="h-3.5 w-3.5" aria-hidden />
-                Agregar mi firma
-              </button>
-            </form>
+          {c.tipo === "ENVIADA" && !c.despachadaEn && (
+            <SectionHelp>
+              El oficio se firma antes de enviarlo: la firma sella el contenido y los PDF adjuntos. Para despacharlo debe tener la firma del
+              firmante principal y ninguna firma o visto bueno pendiente.
+            </SectionHelp>
           )}
-
-          {(c.solicitudesFirma.length > 0 || puedeAsignarFirmantesUsuario) && (
-            <div className="mt-3 border-t border-stone-100 pt-3">
-              <p className="mb-1.5 text-xs font-medium text-stone-500">Firmantes / lectores designados</p>
-              {c.solicitudesFirma.length > 0 ? (
-                <div className="mb-2 flex flex-wrap gap-1">
-                  {c.solicitudesFirma.map((s) => (
-                    <span
-                      key={s.id}
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                        s.estado === "COMPLETADA" ? "bg-emerald-50 text-emerald-700" : s.estado === "RECHAZADA" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {s.usuarioAsignado.nombre} · {s.rol === "FIRMA" ? "firma" : s.rol === "VISTO_BUENO" ? "visto bueno" : "lectura"} ·{" "}
-                      {s.estado === "COMPLETADA" ? "completada" : s.estado === "RECHAZADA" ? "rechazada" : "pendiente"}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mb-2 text-xs text-stone-400">Todavía no hay nadie designado.</p>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
+          <PanelFirmas
+            filas={filasFirmantes}
+            vacio={c.tipo === "ENVIADA" ? "El oficio todavía no está firmado." : undefined}
+            acciones={
+              <>
                 {puedoActuarMiSolicitud && (
                   <ConfirmarFirmaModal
                     rol={miSolicitudFirma!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
                     endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/completar`}
                     endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/rechazar`}
                     documentoNombre={c.asunto}
-                    contenidoTexto={c.contenido ?? ""}
+                    documentoUrl={pdfPrincipal ? `/api/correspondencia-documentos/${pdfPrincipal.id}/rotulado` : undefined}
+                    documentoMimeType={pdfPrincipal ? "application/pdf" : undefined}
+                    contenidoTexto={pdfPrincipal ? undefined : (c.contenido ?? "")}
                   />
                 )}
+                {!miSolicitudFirma &&
+                  puedeFirmarUsuario &&
+                  c.estado !== "ANULADA" &&
+                  !c.despachadaEn &&
+                  !c.firmas.some((f) => f.usuarioId === session.userId) && (
+                    <BotonFirmarDirecto
+                      endpoint={`/api/correspondencia/${id}/firmar`}
+                      descripcion={`Va a firmar ${c.radicado} — ${c.asunto}${documentosOriginales.length > 0 ? ` y sus ${documentosOriginales.length} documento(s) adjunto(s)` : ""}.`}
+                    />
+                  )}
                 {puedeAsignarFirmantesUsuario && (
                   <AsignarFirmantesModal
                     endpointAsignar={`/api/correspondencia/${id}/solicitudes-firma`}
                     usuarios={usuariosOpciones}
+                    conCalidad
                     firmantesActuales={c.solicitudesFirma.map((s) => ({
                       id: s.id,
                       usuarioAsignadoId: s.usuarioAsignadoId,
                       usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+                      calidad: s.calidad,
                       rol: s.rol,
                       orden: s.orden,
                       estado: s.estado,
                     }))}
                   />
                 )}
-              </div>
-            </div>
-          )}
+              </>
+            }
+          />
         </Tarjeta>
       )}
 

@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
-import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion } from "@prisma/client";
+import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion, CalidadFirma } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";
+import { completarSolicitudFirma, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { nivelFirma, puedeSerFirmantePrincipal } from "@/lib/jerarquia-firma";
 import { solicitarSelloTiempo } from "@/lib/sello-tiempo";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { TERMINO_DIAS_HABILES, calcularVencimiento, calcularVencimientoTrasReactivar, devolucionDeReparoPermitida } from "@/lib/pqrsd";
@@ -159,14 +161,27 @@ async function crearDocumentos(
 
 const SELLO_INTERNO = "Bitácora encadenada del SGDEA (SHA-256)";
 
+async function calidadFirmaPropia(usuarioId: string, cliente: Pick<Prisma.TransactionClient, "usuario"> = db): Promise<CalidadFirma> {
+  const u = await cliente.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  return u && puedeSerFirmantePrincipal(u, "SGDEA") ? "PRINCIPAL" : "PROYECTO";
+}
+
 async function firmarEnTransaccion(
   tx: Prisma.TransactionClient,
   datos: { comunicacionId: string; usuarioId: string; radicado: string; asunto: string; contenido: string | null }
 ) {
   const fechaHora = new Date();
-  const hashContenido = hashContenidoFirma({ radicado: datos.radicado, asunto: datos.asunto, contenido: datos.contenido, fechaIso: fechaHora.toISOString() });
+  const documentos = await tx.comunicacionDocumento.findMany({ where: { comunicacionId: datos.comunicacionId }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
+  const hashContenido = hashContenidoFirma({
+    radicado: datos.radicado,
+    asunto: datos.asunto,
+    contenido: datos.contenido,
+    fechaIso: fechaHora.toISOString(),
+    hashesDocumentos: documentos.map((d) => d.hashSha256),
+  });
   await tx.firma.create({
     data: {
+      calidad: await calidadFirmaPropia(datos.usuarioId, tx),
       usuarioId: datos.usuarioId,
       comunicacionId: datos.comunicacionId,
       fechaHora,
@@ -208,11 +223,35 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
   if (c.tipo === "RECIBIDA") throw new Error("Una comunicación recibida no se firma: no tiene un contenido redactado por la Corporación.");
   if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
   if (c.firmas.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó esta comunicación.");
+
+  const solicitudes = await db.solicitudFirma.findMany({
+    where: { comunicacionId, rol: { not: "LECTURA" } },
+    select: { id: true, usuarioAsignadoId: true, rol: true, orden: true, estado: true },
+  });
+  const propia = solicitudes.find((s) => s.usuarioAsignadoId === usuarioId && s.estado === "PENDIENTE" && s.rol === "FIRMA");
+  if (propia) {
+    await completarSolicitudFirma(propia.id, usuarioId, ip, userAgent);
+    return db.firma.findFirst({ where: { comunicacionId, usuarioId } });
+  }
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  if (!usuario) throw new Error("El usuario no existe.");
+  if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
+    throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
+  }
+
+  const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
   const fechaHora = new Date();
-  const hashContenido = hashContenidoFirma({ radicado: c.radicado, asunto: c.asunto, contenido: c.contenido, fechaIso: fechaHora.toISOString() });
+  const hashContenido = hashContenidoFirma({
+    radicado: c.radicado,
+    asunto: c.asunto,
+    contenido: c.contenido,
+    fechaIso: fechaHora.toISOString(),
+    hashesDocumentos: documentos.map((d) => d.hashSha256),
+  });
   const datos = await resolverFirma(hashContenido);
   return db.firma.create({
     data: {
+      calidad: puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
       usuarioId,
       comunicacionId,
       fechaHora,
@@ -333,7 +372,6 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     });
 
     await crearDocumentos(tx, comunicacion.id, [...(entrada.documentos ?? []), ...documentosRespuestaFuncionario], entrada.radicadoPorId);
-    await firmarEnTransaccion(tx, { comunicacionId: comunicacion.id, usuarioId: entrada.radicadoPorId, radicado, asunto: entrada.asunto, contenido: entrada.contenido });
 
     if (entrada.respondeAId) {
       await tx.comunicacion.update({ where: { id: entrada.respondeAId }, data: { estado: "RESPONDIDA" } });
@@ -637,6 +675,16 @@ export type ResultadoDespacho = {
   avisoExpediente: string | null;
 };
 
+export function motivoBloqueoDespacho(firmas: { calidad: string | null }[], pendientes: string[]): string | null {
+  if (!firmas.some((f) => f.calidad === null || f.calidad === "PRINCIPAL")) {
+    return "El oficio debe tener la firma del firmante principal antes de despacharlo.";
+  }
+  if (pendientes.length > 0) {
+    return `Faltan firmas o vistos buenos por resolver (${pendientes.join(", ")}): el oficio no se puede despachar todavía.`;
+  }
+  return null;
+}
+
 export async function despacharComunicacion(entrada: EntradaDespacho): Promise<ResultadoDespacho> {
   const c = await db.comunicacion.findUnique({
     where: { id: entrada.comunicacionId },
@@ -645,14 +693,16 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
       serieId: true, subserieId: true, dependenciaOrigenId: true, expedienteDocumentalId: true,
       respondeAId: true,
       respondeA: { select: { id: true, asunto: true, dependenciaDestinoId: true, expedienteDocumentalId: true } },
-      _count: { select: { firmas: true } },
+      firmas: { select: { calidad: true } },
+      solicitudesFirma: { where: { estado: "PENDIENTE", rol: { not: "LECTURA" } }, select: { usuarioAsignado: { select: { nombre: true } } } },
     },
   });
   if (!c) throw new Error("La comunicación no existe.");
   if (c.tipo !== "ENVIADA") throw new Error("Solo se despacha un oficio de salida (comunicación enviada).");
   if (c.estado === "ANULADA") throw new Error("No se puede despachar una comunicación anulada.");
   if (c.despachadaEn) throw new Error("Este oficio ya fue despachado.");
-  if (c._count.firmas === 0) throw new Error("El oficio debe estar firmado antes de despacharlo.");
+  const bloqueo = motivoBloqueoDespacho(c.firmas, c.solicitudesFirma.map((x) => x.usuarioAsignado.nombre));
+  if (bloqueo) throw new Error(bloqueo);
   if (!(MEDIOS_DESPACHO as readonly string[]).includes(entrada.medio)) throw new Error("El medio de despacho no es válido.");
 
   const idsAArchivar = [c.id, ...(c.respondeAId ? [c.respondeAId] : [])];

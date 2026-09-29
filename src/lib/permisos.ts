@@ -337,12 +337,23 @@ export async function tieneFirmaOSolicitudEnDocumentoContrato(usuarioId: string,
 
 export function puedeAsignarFirmantesComunicacion(
   permisos: PermisosUsuario,
-  comunicacion: { dependenciaDestinoId: string | null; dependenciaOrigenId: string | null }
+  comunicacion: {
+    tipo: string;
+    dependenciaDestinoId: string | null;
+    dependenciaOrigenId: string | null;
+    radicadoPorId: string | null;
+    respuestaPorId?: string | null;
+  },
+  usuarioId: string,
+  usuariosDistribucion: (string | null)[] = [],
 ): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
+  if (comunicacion.tipo === "RECIBIDA") return false;
   if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return true;
+  if (comunicacion.radicadoPorId === usuarioId || comunicacion.respuestaPorId === usuarioId) return true;
+  if (usuariosDistribucion.includes(usuarioId)) return true;
   if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
-  const dependenciaComunicacion = comunicacion.dependenciaDestinoId ?? comunicacion.dependenciaOrigenId;
+  const dependenciaComunicacion = comunicacion.dependenciaOrigenId ?? comunicacion.dependenciaDestinoId;
   return dependenciaComunicacion !== null && dependenciaComunicacion === permisos.dependenciaId;
 }
 

@@ -9,26 +9,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await getSession();
   const volver = new URL(`/correspondencia/${id}`, req.url);
-  if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
+  const json = req.headers.get("accept")?.includes("application/json") ?? false;
+  const responder = (ok: boolean, mensaje: string, status = 400) => {
+    if (json) return NextResponse.json(ok ? { ok: true } : { error: mensaje }, { status: ok ? 200 : status });
+    volver.searchParams.set(ok ? "ok" : "error", mensaje);
+    return NextResponse.redirect(volver, { status: 303 });
+  };
+  if (!session) return json ? NextResponse.json({ error: "No autenticado" }, { status: 401 }) : NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeFirmar(permisos)) {
     await registrarAccesoDenegadoAccion("firmar la comunicación", id, session, req.headers);
-    volver.searchParams.set("error", "No tiene permiso para firmar comunicaciones.");
-    return NextResponse.redirect(volver, { status: 303 });
+    return responder(false, "No tiene permiso para firmar comunicaciones.", 403);
   }
 
   const { ip, userAgent } = datosPeticion(req.headers);
   const comunicacion = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
-  if (!comunicacion) {
-    volver.searchParams.set("error", "La comunicación no existe.");
-    return NextResponse.redirect(volver, { status: 303 });
-  }
+  if (!comunicacion) return responder(false, "La comunicación no existe.", 404);
 
   try {
     await agregarCofirma(id, session.userId, ip, userAgent);
   } catch (err) {
-    volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo registrar la firma.");
-    return NextResponse.redirect(volver, { status: 303 });
+    return responder(false, err instanceof Error ? err.message : "No se pudo registrar la firma.");
   }
 
   await registrarAuditoriaDoc({
@@ -38,9 +39,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `Firmó ${comunicacion.radicado} (firma adicional)`,
+    detalle: `Firmó ${comunicacion.radicado}`,
   }).catch((err) => console.error("registrarAuditoriaDoc (firmar) falló:", err));
 
-  volver.searchParams.set("ok", "Su firma quedó registrada.");
-  return NextResponse.redirect(volver, { status: 303 });
+  return responder(true, "Su firma quedó registrada.");
 }

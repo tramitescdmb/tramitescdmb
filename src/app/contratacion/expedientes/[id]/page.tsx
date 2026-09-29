@@ -257,7 +257,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           />
         )}
         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-          <AsignarFirmantesModal conCalidad endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
+          <AsignarFirmantesModal conCalidad contratistaPrincipal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
         )}
         {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
           <EditarEliminarDocumentoContrato
@@ -715,7 +715,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                         ) : null;
                       })()}
                       {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                        <AsignarFirmantesModal conCalidad
+                        <AsignarFirmantesModal conCalidad contratistaPrincipal
                           endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
                           usuarios={usuariosOpciones}
                           firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
@@ -829,7 +829,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                           />
                         )}
                         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                          <AsignarFirmantesModal conCalidad
+                          <AsignarFirmantesModal conCalidad contratistaPrincipal
                             endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
                             usuarios={usuariosOpciones}
                             firmantesActuales={solicitudes}

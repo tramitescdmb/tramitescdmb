@@ -37,6 +37,7 @@ export type FirmaRotuloPdf = {
   fechaHora: string;
   hash: string;
   calidad?: string | null;
+  cargo?: string | null;
 };
 
 export async function estamparRotulo(
@@ -91,10 +92,11 @@ export async function estamparRotulo(
     cy -= 9;
     page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
     cy -= 11;
-    for (const f of firmas) {
-      const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
+    for (const f of ordenarPorCalidad(firmas, (x) => x.calidad)) {
+      const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
       const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
-      const nombreLinea = identificacion ? `${f.nombre} — ${identificacion}` : f.nombre;
+      const rotulo = rotuloCalidadFirma(f.calidad);
+      const nombreLinea = `${rotulo ? `${rotulo}: ` : ""}${identificacion ? `${f.nombre} — ${identificacion}` : f.nombre}`;
       page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
       if (cargo) { page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       if (f.dependencia) { page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
@@ -163,7 +165,7 @@ async function estamparFirmasExpediente(
 
   for (const f of firmas) {
     const nivel = nivelSello(f.calidad);
-    const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
+    const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
     const rotulo = rotuloCalidadFirma(f.calidad);
 
     if (nivel === "visto") {
@@ -218,5 +220,11 @@ export function estamparFirmaSigec(pdfBytes: Buffer | Uint8Array, datos: DatosFi
 }
 
 export function estamparFirmaTramite(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaTramite, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
+  return estamparFirmasExpediente(pdfBytes, datos, firmas);
+}
+
+export type DatosFirmaSgdea = DatosFirmaSigec;
+
+export function estamparFirmaSgdea(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaSgdea, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
   return estamparFirmasExpediente(pdfBytes, datos, firmas);
 }

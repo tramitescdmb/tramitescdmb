@@ -11,3 +11,9 @@ export const RUTAS_FIRMAS_SIGEC: RutasFirmas = {
   misFirmas: "/contratacion/mis-firmas",
   rechazos: "/contratacion/rechazos-firma",
 };
+
+export const RUTAS_FIRMAS_SGDEA: RutasFirmas = {
+  buzon: "/correspondencia/buzon",
+  misFirmas: "/correspondencia/mis-firmas",
+  rechazos: "/correspondencia/rechazos",
+};

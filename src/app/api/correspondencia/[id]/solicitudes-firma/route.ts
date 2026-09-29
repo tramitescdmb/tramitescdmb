@@ -3,9 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesComunicacion } from "@/lib/permisos";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
-import type { RolFirmante } from "@prisma/client";
-
-const ROLES_VALIDOS: RolFirmante[] = ["FIRMA", "VISTO_BUENO", "LECTURA"];
+import { leerFirmantesSolicitud } from "@/lib/firmantes-solicitud";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,27 +11,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const c = await db.comunicacion.findUnique({ where: { id }, select: { dependenciaDestinoId: true, dependenciaOrigenId: true } });
+  const c = await db.comunicacion.findUnique({
+    where: { id },
+    select: {
+      tipo: true,
+      dependenciaDestinoId: true,
+      dependenciaOrigenId: true,
+      radicadoPorId: true,
+      respuestaPorId: true,
+      distribuciones: { where: { activa: true }, select: { usuarioId: true } },
+      respondeA: { select: { distribuciones: { where: { activa: true }, select: { usuarioId: true } } } },
+    },
+  });
   if (!c) return NextResponse.json({ error: "La comunicación no existe." }, { status: 404 });
-  if (!puedeAsignarFirmantesComunicacion(permisos, c)) {
-    return NextResponse.json({ error: "No tiene permiso para asignar firmantes en esta comunicación." }, { status: 403 });
+  const usuariosDistribucion = [...c.distribuciones, ...(c.respondeA?.distribuciones ?? [])].map((d) => d.usuarioId);
+  if (!puedeAsignarFirmantesComunicacion(permisos, c, session.userId, usuariosDistribucion)) {
+    return NextResponse.json({ error: "No tiene permiso para solicitar firmas en esta comunicación." }, { status: 403 });
   }
 
-  const body = await req.json().catch(() => null);
-  const firmantesBody = Array.isArray(body?.firmantes) ? body.firmantes : null;
-  if (!firmantesBody || firmantesBody.length === 0) {
-    return NextResponse.json({ error: "Debe indicar al menos una persona." }, { status: 400 });
-  }
-  const firmantes: { usuarioId: string; rol: RolFirmante; orden: number }[] = [];
-  for (const f of firmantesBody) {
-    if (typeof f?.usuarioId !== "string" || !ROLES_VALIDOS.includes(f?.rol)) {
-      return NextResponse.json({ error: "Datos de firmante inválidos." }, { status: 400 });
-    }
-    firmantes.push({ usuarioId: f.usuarioId, rol: f.rol, orden: Number.isFinite(f?.orden) ? Number(f.orden) : 1 });
-  }
+  const leido = leerFirmantesSolicitud(await req.json().catch(() => null));
+  if ("error" in leido) return NextResponse.json({ error: leido.error }, { status: 400 });
 
   try {
-    await asignarFirmantes({ tipo: "comunicacion", id }, session.userId, firmantes);
+    await asignarFirmantes({ tipo: "comunicacion", id }, session.userId, leido.firmantes);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo asignar." }, { status: 400 });
