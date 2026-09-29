@@ -56,7 +56,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       hashSha256: body.hashSha256 ? String(body.hashSha256) : null,
       subidoPorId: session.userId,
       requiereFirma: Boolean(body.requiereFirma),
-      firmadoEnSecop: Boolean(body.firmadoEnSecop),
       periodoMes: body.periodoMes ? String(body.periodoMes) : null,
       periodoEventualId: body.periodoEventualId ? String(body.periodoEventualId) : null,
       ip,

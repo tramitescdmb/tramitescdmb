@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, Send, ThumbsUp, type LucideIcon } from "lucide-react";
+import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, Send, ThumbsUp, ClipboardCheck, UploadCloud, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarGecon } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -19,6 +19,8 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   VISTO_BUENO_DADO: { icono: ThumbsUp, clase: "text-emerald-600", texto: "Visto bueno dado" },
   DOCUMENTO_EDITADO: { icono: FilePen, clase: "text-stone-500", texto: "Documento editado" },
   DOCUMENTO_VALIDADO: { icono: CheckCircle2, clase: "text-emerald-600", texto: "Documento validado" },
+  VERIFICACION_RECEPCION: { icono: ClipboardCheck, clase: "text-cdmb-600", texto: "Verificación de recepción" },
+  CARGADO_EN_SECOP: { icono: UploadCloud, clase: "text-emerald-600", texto: "Cargado en SECOP" },
   DOCUMENTO_ELIMINADO: { icono: Trash2, clase: "text-stone-500", texto: "Documento eliminado" },
   ETAPA_APROBADA: { icono: ArrowRightCircle, clase: "text-emerald-600", texto: "Etapa aprobada" },
   ETAPA_RETROCEDIDA: { icono: Undo2, clase: "text-amber-600", texto: "Etapa retrocedida" },

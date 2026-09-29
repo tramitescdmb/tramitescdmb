@@ -22,7 +22,6 @@ export function SubirDocumentosContratoForm({
   const datalistId = useId();
   const [categoria, setCategoria] = useState("");
   const [requiereFirma, setRequiereFirma] = useState(false);
-  const [firmadoEnSecop, setFirmadoEnSecop] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +54,6 @@ export function SubirDocumentosContratoForm({
             tamanoBytes: subido.tamanoBytes,
             hashSha256,
             requiereFirma,
-            firmadoEnSecop,
           }),
         });
         if (!res.ok) {
@@ -65,7 +63,6 @@ export function SubirDocumentosContratoForm({
       }
       setCategoria("");
       setRequiereFirma(false);
-      setFirmadoEnSecop(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
@@ -93,19 +90,8 @@ export function SubirDocumentosContratoForm({
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-stone-600">
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} disabled={firmadoEnSecop} />
+          <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} />
           Requiere firma electrónica
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={firmadoEnSecop}
-            onChange={(e) => {
-              setFirmadoEnSecop(e.target.checked);
-              if (e.target.checked) setRequiereFirma(false);
-            }}
-          />
-          Ya viene firmado/publicado en SECOP II
         </label>
       </div>
       <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50">

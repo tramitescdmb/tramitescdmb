@@ -85,7 +85,11 @@ export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>
         mimeType: string;
         estadoValidacion: string;
         requiereFirma: boolean;
-        firmadoEnSecop: boolean;
+        verificacionRecepcionEn: Date | null;
+        verificacionRecepcionPorNombre: string | null;
+        verificacionRecepcionObservaciones: string | null;
+        cargadoEnSecop: boolean;
+        cargadoEnSecopEn: Date | null;
         createdAt: Date;
         subidoPorNombre: string;
         firmaFechaHora: Date | null;
@@ -113,7 +117,11 @@ export function cruzarChecklist(
     mimeType: string;
     estadoValidacion: string;
     requiereFirma: boolean;
-    firmadoEnSecop: boolean;
+    verificacionRecepcionEn: Date | null;
+    verificacionRecepcionPor: { nombre: string } | null;
+    verificacionRecepcionObservaciones: string | null;
+    cargadoEnSecop: boolean;
+    cargadoEnSecopEn: Date | null;
     createdAt: Date;
     subidoPor: { nombre: string };
     firmas: { fechaHora: Date; formato: string }[];
@@ -141,7 +149,11 @@ export function cruzarChecklist(
             mimeType: ultimo.mimeType,
             estadoValidacion: ultimo.estadoValidacion,
             requiereFirma: ultimo.requiereFirma,
-            firmadoEnSecop: ultimo.firmadoEnSecop,
+            verificacionRecepcionEn: ultimo.verificacionRecepcionEn,
+            verificacionRecepcionPorNombre: ultimo.verificacionRecepcionPor?.nombre ?? null,
+            verificacionRecepcionObservaciones: ultimo.verificacionRecepcionObservaciones,
+            cargadoEnSecop: ultimo.cargadoEnSecop,
+            cargadoEnSecopEn: ultimo.cargadoEnSecopEn,
             createdAt: ultimo.createdAt,
             subidoPorNombre: ultimo.subidoPor.nombre,
             firmaFechaHora: ultimaFirma?.fechaHora ?? null,
@@ -314,7 +326,6 @@ export async function agregarDocumentoContrato(datos: {
   hashSha256?: string | null;
   subidoPorId: string;
   requiereFirma?: boolean;
-  firmadoEnSecop?: boolean;
   periodoMes?: string | null;
   periodoEventualId?: string | null;
   ip?: string | null;
@@ -378,7 +389,6 @@ export async function agregarDocumentoContrato(datos: {
       hashSha256: datos.hashSha256 || null,
       subidoPorId: datos.subidoPorId,
       requiereFirma: Boolean(datos.requiereFirma),
-      firmadoEnSecop: Boolean(datos.firmadoEnSecop),
       periodoMes: datos.periodoMes?.trim() || null,
       periodoEventualId: datos.periodoEventualId?.trim() || null,
     },
@@ -409,7 +419,6 @@ export async function editarDocumentoContratoSinTraza(
     categoria?: string | null;
     etapa?: EtapaContratacion;
     requiereFirma?: boolean;
-    firmadoEnSecop?: boolean;
     archivo?: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
   }
 ): Promise<{ storagePathAnterior: string | null }> {
@@ -426,7 +435,6 @@ export async function editarDocumentoContratoSinTraza(
       ...(datos.categoria !== undefined ? { categoria: datos.categoria?.trim() || null } : {}),
       ...(datos.etapa ? { etapa: datos.etapa } : {}),
       ...(datos.requiereFirma !== undefined ? { requiereFirma: datos.requiereFirma } : {}),
-      ...(datos.firmadoEnSecop !== undefined ? { firmadoEnSecop: datos.firmadoEnSecop } : {}),
       ...(datos.archivo
         ? {
             storagePath: datos.archivo.storagePath,
@@ -501,6 +509,45 @@ export async function eliminarDocumentoContratoConTraza(
   return resultado;
 }
 
+export async function verificarRecepcionDocumentoContrato(documentoId: string, usuarioId: string, observaciones: string | null): Promise<void> {
+  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { expedienteId: true, etapa: true, nombre: true } });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.etapa !== "PRECONTRACTUAL") throw new Error("La verificación de recepción solo aplica a documentos de la etapa Precontractual.");
+  const obs = observaciones?.trim() || null;
+  await db.documentoContrato.update({
+    where: { id: documentoId },
+    data: { verificacionRecepcionEn: new Date(), verificacionRecepcionPorId: usuarioId, verificacionRecepcionObservaciones: obs },
+  });
+  await registrarEventoContratacion(
+    doc.expedienteId,
+    "VERIFICACION_RECEPCION",
+    `Se verificó la recepción de "${doc.nombre}".${obs ? ` Observaciones: ${obs}` : ""}`,
+    usuarioId
+  );
+}
+
+export async function marcarCargadoEnSecop(documentoId: string, usuarioId: string, cargado: boolean): Promise<void> {
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: { expedienteId: true, etapa: true, nombre: true, verificacionRecepcionEn: true },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.etapa !== "PRECONTRACTUAL") throw new Error('El estado "cargado en SECOP" solo aplica a documentos de la etapa Precontractual.');
+  if (cargado && !doc.verificacionRecepcionEn) {
+    throw new Error("Debe completar la verificación de recepción antes de marcarlo como cargado en SECOP.");
+  }
+  await db.documentoContrato.update({
+    where: { id: documentoId },
+    data: { cargadoEnSecop: cargado, cargadoEnSecopEn: cargado ? new Date() : null },
+  });
+  await registrarEventoContratacion(
+    doc.expedienteId,
+    "CARGADO_EN_SECOP",
+    cargado ? `Se marcó "${doc.nombre}" como cargado en SECOP.` : `Se desmarcó "${doc.nombre}" como cargado en SECOP.`,
+    usuarioId
+  );
+}
+
 export async function validarDocumentoContrato(
   documentoId: string,
   usuarioId: string,
@@ -562,7 +609,11 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
       mimeType: true,
       estadoValidacion: true,
       requiereFirma: true,
-      firmadoEnSecop: true,
+      verificacionRecepcionEn: true,
+      verificacionRecepcionPor: { select: { nombre: true } },
+      verificacionRecepcionObservaciones: true,
+      cargadoEnSecop: true,
+      cargadoEnSecopEn: true,
       createdAt: true,
       subidoPor: { select: { nombre: true } },
       firmas: { select: { fechaHora: true, formato: true } },

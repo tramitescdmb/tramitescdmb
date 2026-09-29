@@ -46,7 +46,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     categoria: "categoria" in body ? (body.categoria ? String(body.categoria) : null) : undefined,
     etapa,
     requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
-    firmadoEnSecop: "firmadoEnSecop" in body ? Boolean(body.firmadoEnSecop) : undefined,
     archivo,
   };
 

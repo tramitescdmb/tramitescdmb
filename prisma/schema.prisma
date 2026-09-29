@@ -153,6 +153,7 @@ model Usuario {
   etapasContratacionAprobadas        EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
   documentosContratoSubidos          DocumentoContrato[]               @relation("DocContratoSubidoPor")
   documentosContratoValidados        DocumentoContrato[]               @relation("DocContratoValidadoPor")
+  documentosContratoVerificados      DocumentoContrato[]               @relation("DocContratoVerificacionRecepcion")
   firmasDocumentoContrato            FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
   eventosContratacion                EventoContratacion[]              @relation("EventoContratacionUsuario")
   avisosRechazoRecibidos             AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
@@ -1765,14 +1766,21 @@ model DocumentoContrato {
   validadoEn           DateTime?
   comentarioValidacion String?                           @db.Text
 
-  expediente       ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  subidoPor        Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
-  validadoPor      Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
-  requisito        RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
-  periodoEventual  PeriodoInformeEventual?         @relation(fields: [periodoEventualId], references: [id], onDelete: SetNull)
-  firmas           FirmaDocumentoContrato[]
-  solicitudesFirma SolicitudFirma[]
-  avisosRechazo    AvisoRechazoDocumento[]
+  verificacionRecepcionEn            DateTime?
+  verificacionRecepcionPorId         String?
+  verificacionRecepcionObservaciones String?   @db.Text
+  cargadoEnSecop                     Boolean   @default(false)
+  cargadoEnSecopEn                   DateTime?
+
+  expediente               ExpedienteContractual           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  subidoPor                Usuario                         @relation("DocContratoSubidoPor", fields: [subidoPorId], references: [id])
+  validadoPor              Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
+  verificacionRecepcionPor Usuario?                        @relation("DocContratoVerificacionRecepcion", fields: [verificacionRecepcionPorId], references: [id])
+  requisito                RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  periodoEventual          PeriodoInformeEventual?         @relation(fields: [periodoEventualId], references: [id], onDelete: SetNull)
+  firmas                   FirmaDocumentoContrato[]
+  solicitudesFirma         SolicitudFirma[]
+  avisosRechazo            AvisoRechazoDocumento[]
 
   @@index([expedienteId])
   @@index([etapa])

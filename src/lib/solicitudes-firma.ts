@@ -109,11 +109,11 @@ export async function asignarFirmantes(
     if (objetivo.tipo === "documentoContrato") {
       const doc = await db.documentoContrato.findUnique({
         where: { id: objetivo.id },
-        select: { requiereFirma: true, firmadoEnSecop: true },
+        select: { requiereFirma: true, cargadoEnSecop: true },
       });
       if (!doc) throw new Error("El documento no existe.");
       if (!doc.requiereFirma) throw new Error("Este documento no está marcado como que requiere firma electrónica.");
-      if (doc.firmadoEnSecop) throw new Error("Este documento ya viene firmado/publicado en SECOP II — no requiere firma interna.");
+      if (doc.cargadoEnSecop) throw new Error("Este documento ya fue cargado en SECOP II — no requiere firma interna.");
     } else if (objetivo.tipo === "documentoExpediente") {
       const doc = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { requiereFirma: true } });
       if (!doc) throw new Error("El documento no existe.");

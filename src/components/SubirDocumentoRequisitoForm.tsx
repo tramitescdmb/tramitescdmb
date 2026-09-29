@@ -14,7 +14,6 @@ export function SubirDocumentoRequisitoForm({
   etapa,
   requisitoId,
   requisitoNombre,
-  firmadoEnSecopSugerido,
   periodoMes,
   periodoEventualId,
 }: {
@@ -22,13 +21,11 @@ export function SubirDocumentoRequisitoForm({
   etapa: EtapaContratacion;
   requisitoId: string;
   requisitoNombre: string;
-  firmadoEnSecopSugerido: boolean;
   periodoMes?: string;
   periodoEventualId?: string;
 }) {
   const router = useRouter();
   const [requiereFirma, setRequiereFirma] = useState(false);
-  const [firmadoEnSecop, setFirmadoEnSecop] = useState(firmadoEnSecopSugerido);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +53,6 @@ export function SubirDocumentoRequisitoForm({
           tamanoBytes: subido.tamanoBytes,
           hashSha256,
           requiereFirma,
-          firmadoEnSecop,
           periodoMes,
           periodoEventualId,
         }),
@@ -77,19 +73,8 @@ export function SubirDocumentoRequisitoForm({
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center gap-2 text-[10px] text-stone-500">
         <label className="flex items-center gap-1" title="El Jefe de Contratación o el Supervisor asignado podrá revisarlo y estamparle la firma electrónica">
-          <input type="checkbox" checked={requiereFirma} disabled={firmadoEnSecop} onChange={(e) => setRequiereFirma(e.target.checked)} />
+          <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} />
           Requiere firma
-        </label>
-        <label className="flex items-center gap-1" title="Ya viene firmado o publicado en SECOP II — no hace falta volver a firmarlo aquí">
-          <input
-            type="checkbox"
-            checked={firmadoEnSecop}
-            onChange={(e) => {
-              setFirmadoEnSecop(e.target.checked);
-              if (e.target.checked) setRequiereFirma(false);
-            }}
-          />
-          Firmado en SECOP II
         </label>
       </div>
       <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-cdmb-200 bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-100">
