@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { rechazarSolicitudFirma } from "@/lib/solicitudes-firma";
+import { datosPeticion } from "@/lib/auditoria-doc";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -11,7 +12,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const comentario = typeof body?.comentario === "string" ? body.comentario : "";
 
   try {
-    await rechazarSolicitudFirma(id, session.userId, comentario);
+    const { ip, userAgent } = datosPeticion(req.headers);
+    await rechazarSolicitudFirma(id, session.userId, comentario, ip, userAgent);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo rechazar." }, { status: 400 });

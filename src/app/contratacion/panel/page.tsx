@@ -9,7 +9,7 @@ import { rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
 
-export default async function PanelMiTrabajoSigecPage() {
+export default async function PanelMiTrabajoGeconPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);

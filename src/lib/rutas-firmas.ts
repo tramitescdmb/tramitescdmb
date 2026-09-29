@@ -1,4 +1,4 @@
-export type RutasFirmas = { buzon: string; misFirmas: string; rechazos: string };
+﻿export type RutasFirmas = { buzon: string; misFirmas: string; rechazos: string };
 
 export const RUTAS_FIRMAS_TRAMITES: RutasFirmas = {
   buzon: "/firmas/buzon",
@@ -6,7 +6,7 @@ export const RUTAS_FIRMAS_TRAMITES: RutasFirmas = {
   rechazos: "/firmas/rechazos",
 };
 
-export const RUTAS_FIRMAS_SIGEC: RutasFirmas = {
+export const RUTAS_FIRMAS_GECON: RutasFirmas = {
   buzon: "/contratacion/buzon",
   misFirmas: "/contratacion/mis-firmas",
   rechazos: "/contratacion/rechazos-firma",

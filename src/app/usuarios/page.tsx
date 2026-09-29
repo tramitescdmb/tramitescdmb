@@ -228,7 +228,7 @@ export default async function UsuariosPage({
                     {u.rolContratacion && (
                       <span
                         className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
-                        title="Rol dentro del módulo de Contratación (SIGEC)"
+                        title="Rol dentro del módulo de Contratación (GECON)"
                       >
                         {ETIQUETA_ROL_CONTRATACION[u.rolContratacion] ?? u.rolContratacion}
                       </span>
@@ -461,7 +461,7 @@ export default async function UsuariosPage({
           <Field
             label="Cargo(s) para Trámites Ambientales 2.0"
             icon={<Briefcase className={iconSm} />}
-            help="Solo aplica a Trámites ambientales 2.0: su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.) se usan ahí para resaltarle qué pasos de un trámite le corresponden. No tiene efecto en SGDEA ni en SIGEC — esos módulos usan sus propios roles (Correspondencia / Contratación, abajo). Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
+            help="Solo aplica a Trámites ambientales 2.0: su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.) se usan ahí para resaltarle qué pasos de un trámite le corresponden. No tiene efecto en SGDEA ni en GECON — esos módulos usan sus propios roles (Correspondencia / Contratación, abajo). Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
           >
             <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
               {cargos.map((c) => (

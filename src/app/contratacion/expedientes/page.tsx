@@ -106,7 +106,7 @@ export default async function ExpedientesContratacionPage({
         {total > 0 && (
           <BotonDescargarZip
             href={hrefZip}
-            nombreArchivo="expedientes-sigec.zip"
+            nombreArchivo="expedientes-gecon.zip"
             etiqueta="Descargar ZIP de estos resultados"
             titulo="Descarga en un ZIP los documentos de los expedientes que coinciden con el filtro (máximo 50)"
           />

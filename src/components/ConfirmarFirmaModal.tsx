@@ -25,6 +25,8 @@ export function ConfirmarFirmaModal({
   const [abierto, setAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rechazando, setRechazando] = useState(false);
+  const [motivo, setMotivo] = useState("");
 
   const esImagen = documentoMimeType?.startsWith("image/") ?? false;
   const esPdf = documentoMimeType === "application/pdf";
@@ -45,17 +47,15 @@ export function ConfirmarFirmaModal({
     }
   }
 
-  async function rechazar() {
-    const comentario = window.prompt("Motivo del rechazo:");
-    if (comentario === null) return;
-    if (!comentario.trim()) return setError("Debe indicar un motivo.");
+  async function confirmarRechazo() {
+    if (!motivo.trim()) return setError("Debe indicar un motivo.");
     setCargando(true);
     setError(null);
     try {
       const res = await fetch(endpointRechazar, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comentario }),
+        body: JSON.stringify({ comentario: motivo }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo rechazar.");
@@ -120,29 +120,67 @@ export function ConfirmarFirmaModal({
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-stone-200 px-4 py-2.5">
-              {error ? <p className="text-xs text-red-700">{error}</p> : <span />}
-              <div className="flex flex-none items-center gap-2">
-                <button
-                  type="button"
-                  onClick={rechazar}
-                  disabled={cargando}
-                  className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
-                >
-                  <XCircle className="h-3.5 w-3.5" aria-hidden />
-                  Rechazar
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmar}
-                  disabled={cargando}
-                  className="inline-flex items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
-                >
-                  <PenLine className="h-3.5 w-3.5" aria-hidden />
-                  {cargando ? "Guardando…" : rol === "FIRMA" ? "Confirmar firma" : "Confirmar visto bueno"}
-                </button>
+            {rechazando ? (
+              <div className="border-t border-stone-200 px-4 py-2.5">
+                <label className="block text-xs font-medium text-stone-600">
+                  Motivo del rechazo
+                  <textarea
+                    autoFocus
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                    placeholder="Explique por qué se rechaza este documento…"
+                  />
+                </label>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  {error ? <p className="text-xs text-red-700">{error}</p> : <span />}
+                  <div className="flex flex-none items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setRechazando(false); setMotivo(""); setError(null); }}
+                      disabled={cargando}
+                      className="rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmarRechazo}
+                      disabled={cargando}
+                      className="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      <XCircle className="h-3.5 w-3.5" aria-hidden />
+                      {cargando ? "Guardando…" : "Confirmar rechazo"}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3 border-t border-stone-200 px-4 py-2.5">
+                {error ? <p className="text-xs text-red-700">{error}</p> : <span />}
+                <div className="flex flex-none items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRechazando(true)}
+                    disabled={cargando}
+                    className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    <XCircle className="h-3.5 w-3.5" aria-hidden />
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmar}
+                    disabled={cargando}
+                    className="inline-flex items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+                  >
+                    <PenLine className="h-3.5 w-3.5" aria-hidden />
+                    {cargando ? "Guardando…" : rol === "FIRMA" ? "Confirmar firma" : "Confirmar visto bueno"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesComunicacion } from "@/lib/permisos";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
 import { leerFirmantesSolicitud } from "@/lib/firmantes-solicitud";
+import { datosPeticion } from "@/lib/auditoria-doc";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if ("error" in leido) return NextResponse.json({ error: leido.error }, { status: 400 });
 
   try {
-    await asignarFirmantes({ tipo: "comunicacion", id }, session.userId, leido.firmantes);
+    const { ip, userAgent } = datosPeticion(req.headers);
+    await asignarFirmantes({ tipo: "comunicacion", id }, session.userId, leido.firmantes, ip, userAgent);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo asignar." }, { status: 400 });

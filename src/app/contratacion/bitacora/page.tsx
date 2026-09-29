@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, type LucideIcon } from "lucide-react";
+import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, UserSquare2, Users, CalendarClock, Link2, Circle, Send, ThumbsUp, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarGecon } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Paginador } from "@/components/Paginador";
@@ -15,6 +15,8 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   DOCUMENTO_SUBIDO: { icono: FileUp, clase: "text-cdmb-600", texto: "Documento subido" },
   DOCUMENTO_FIRMADO: { icono: FileSignature, clase: "text-emerald-600", texto: "Documento firmado" },
   DOCUMENTO_RECHAZADO: { icono: FileX2, clase: "text-red-600", texto: "Documento rechazado" },
+  FIRMA_SOLICITADA: { icono: Send, clase: "text-cdmb-600", texto: "Firma o visto bueno solicitado" },
+  VISTO_BUENO_DADO: { icono: ThumbsUp, clase: "text-emerald-600", texto: "Visto bueno dado" },
   DOCUMENTO_EDITADO: { icono: FilePen, clase: "text-stone-500", texto: "Documento editado" },
   DOCUMENTO_VALIDADO: { icono: CheckCircle2, clase: "text-emerald-600", texto: "Documento validado" },
   DOCUMENTO_ELIMINADO: { icono: Trash2, clase: "text-stone-500", texto: "Documento eliminado" },
@@ -33,12 +35,12 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
 const humanizar = (tipo: string) => tipo.charAt(0) + tipo.slice(1).toLowerCase().replace(/_/g, " ");
 const infoEvento = (tipo: string) => EVENTOS[tipo] ?? { icono: Circle, clase: "text-stone-400", texto: humanizar(tipo) };
 
-export default async function BitacoraSigecPage({ searchParams }: { searchParams: Promise<{ tipo?: string; q?: string; page?: string }> }) {
+export default async function BitacoraGeconPage({ searchParams }: { searchParams: Promise<{ tipo?: string; q?: string; page?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarSigec(permisos)) {
-    return <AccesoRestringido titulo="Bitácora del SIGEC" quien="administrador o jefe de contratación" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
+  if (!puedeAdministrarGecon(permisos)) {
+    return <AccesoRestringido titulo="Bitácora del GECON" quien="administrador o jefe de contratación" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
 
   const { tipo, q, page: pageParam } = await searchParams;
@@ -76,7 +78,7 @@ export default async function BitacoraSigecPage({ searchParams }: { searchParams
   return (
     <section className="space-y-4">
       <TituloSeccion icon={ScrollText} contador={total}>
-        Bitácora del SIGEC
+        Bitácora del GECON
       </TituloSeccion>
       <p className="-mt-2 text-sm text-stone-500">
         Registro cronológico de la gestión de los expedientes contractuales: creación, documentos, firmas, cambios de etapa y vínculos.
@@ -87,7 +89,7 @@ export default async function BitacoraSigecPage({ searchParams }: { searchParams
         <input
           name="q"
           defaultValue={busqueda ?? ""}
-          placeholder="Buscar por número de expediente (ej. CDMB-CTO-2026-000001)…"
+          placeholder="Buscar por número de expediente (ej. CDMB-CTO-2026-000001)⬦"
           className="min-w-[260px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
         />
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">

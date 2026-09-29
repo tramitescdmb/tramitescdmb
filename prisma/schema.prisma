@@ -25,7 +25,7 @@ model ConfiguracionSitio {
 
   sgdeaVisibleFuncionarios    Boolean @default(true)
   tramitesVisibleFuncionarios Boolean @default(true)
-  sigecVisibleFuncionarios    Boolean @default(true)
+  geconVisibleFuncionarios    Boolean @default(true)
   vitalVisibleFuncionarios    Boolean @default(true)
   sincaVisibleFuncionarios    Boolean @default(true)
 
@@ -667,6 +667,8 @@ enum TipoEvento {
   COMENTARIO
   ASIGNACION_CAMBIADA
   VISITA_REGISTRADA
+  FIRMA_SOLICITADA
+  VISTO_BUENO_DADO
 }
 
 model ExpedienteEvento {
@@ -873,6 +875,9 @@ enum AccionAuditoriaDoc {
   ERROR_EJECUCION
   FLUJO
   VALIDA
+  SOLICITA_FIRMA
+  RECHAZA_FIRMA
+  VISTO_BUENO
 }
 
 model Dependencia {

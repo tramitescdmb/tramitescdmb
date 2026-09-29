@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     return await servirDerivado({
       carpeta: `zip/${session.userId}`,
       huella: huellaDerivado("masivo", Date.now()),
-      nombreArchivo: "expedientes-sigec.zip",
+      nombreArchivo: "expedientes-gecon.zip",
       contentType: "application/zip",
       descargar: true,
       comoJson: req.headers.get("accept")?.includes("application/json") ?? false,

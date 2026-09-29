@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldAlert, Briefcase, UserSquare2, FileSearch, UserCog, ScrollText, Lock, ShieldCheck } from "lucide-react";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarSigec } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarGecon } from "@/lib/permisos";
 import { obtenerResumenSistemaContratacion } from "@/lib/contratacion-panel";
 import { TituloSeccion, TarjetaKpi, Panel, Sub } from "@/components/sgdea/ui";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { formatearFechaHora } from "@/lib/fecha";
 
-export default async function PanelSistemaSigecPage() {
+export default async function PanelSistemaGeconPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
-  if (!puedeAdministrarSigec(permisos)) {
+  if (!puedeAdministrarGecon(permisos)) {
     return <AccesoRestringido titulo="Sistema" quien="administrador o jefe de contratación" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
 
@@ -61,7 +61,7 @@ export default async function PanelSistemaSigecPage() {
           <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link href="/contratacion/bitacora" className="flex items-center gap-2 text-stone-700 hover:text-cdmb-700">
-                <ScrollText className="h-4 w-4 text-stone-400" aria-hidden /> Bitácora del SIGEC
+                <ScrollText className="h-4 w-4 text-stone-400" aria-hidden /> Bitácora del GECON
               </Link>
             </li>
             <li>

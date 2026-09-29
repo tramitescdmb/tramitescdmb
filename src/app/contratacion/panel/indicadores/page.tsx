@@ -5,7 +5,7 @@ import { obtenerPanelContratacionVista } from "@/lib/contratacion";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { TituloSeccion, Panel, Sub } from "@/components/sgdea/ui";
 
-export default async function PanelIndicadoresSigecPage() {
+export default async function PanelIndicadoresGeconPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);

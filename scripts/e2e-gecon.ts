@@ -7,7 +7,7 @@ import { hashPassword } from "../src/lib/password";
 import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos } from "../src/lib/periodos-informe";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3100";
-const PASSWORD = "E2e-Sigec-2026!";
+const PASSWORD = "E2e-Gecon-2026!";
 const SUFIJO = Date.now().toString(36);
 const ETAPAS = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"] as const;
 
@@ -81,7 +81,7 @@ class Cliente {
 
 async function pdfPrueba(titulo: string): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  pdf.addPage([595, 842]).drawText(`E2E SIGEC — ${titulo}`, { x: 50, y: 780, size: 14 });
+  pdf.addPage([595, 842]).drawText(`E2E GECON — ${titulo}`, { x: 50, y: 780, size: 14 });
   return pdf.save();
 }
 
@@ -129,7 +129,7 @@ async function capturar(etiqueta: string, cliente: Cliente, ruta: string, opcion
 }
 
 async function main() {
-  console.log(`\nE2E SIGEC contra ${BASE}\n`);
+  console.log(`\nE2E GECON contra ${BASE}\n`);
   const dependencia = await db.dependencia.findFirst({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } });
   esperar(dependencia, "No hay dependencias activas en la base.");
 
@@ -150,11 +150,11 @@ async function main() {
     await paso("Crea usuarios de prueba (uno por rol)", async () => {
       const hash = await hashPassword(PASSWORD);
       for (const [clave, u] of Object.entries(USUARIOS)) {
-        const email = `e2e-sigec-${clave}-${SUFIJO}@prueba.invalid`;
+        const email = `e2e-gecon-${clave}-${SUFIJO}@prueba.invalid`;
         const usuario = await db.usuario.create({
           data: {
             email,
-            nombre: `E2E SIGEC ${clave} ${SUFIJO}`,
+            nombre: `E2E GECON ${clave} ${SUFIJO}`,
             passwordHash: hash,
             rol: "FUNCIONARIO",
             activo: true,
@@ -200,7 +200,7 @@ async function main() {
     });
     await paso("Administración: cada sección muestra su contenido a quien puede y «Acceso restringido» a quien no", async () => {
       const casos: { ruta: string; ok: string; puede: (keyof typeof c)[]; noPuede: (keyof typeof c)[] }[] = [
-        { ruta: "/contratacion/bitacora", ok: "Bitácora del SIGEC", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
+        { ruta: "/contratacion/bitacora", ok: "Bitácora del GECON", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
         { ruta: "/contratacion/seguridad", ok: "Política de contraseñas", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo", "contratista"] },
         { ruta: "/contratacion/auditoria", ok: "Auditoría de cuentas", puede: ["jefe", "admin"], noPuede: ["sup", "apoyo"] },
         { ruta: "/contratacion/catalogo", ok: "Catálogo de requisitos documentales", puede: ["admin"], noPuede: ["jefe", "sup", "apoyo"] },
@@ -293,7 +293,7 @@ async function main() {
     console.log("\n4. Expediente");
     await paso("Jefe crea expediente con supervisor y contratista", async () => {
       const r = await c.jefe!.json("/api/contratacion/expedientes", "POST", {
-        objeto: `E2E SIGEC ${SUFIJO} — expediente de prueba automatizada`,
+        objeto: `E2E GECON ${SUFIJO} — expediente de prueba automatizada`,
         modalidadSeleccion: "CONTRATACION_DIRECTA",
         valor: 1500000,
         numeroContrato: `E2E-${SUFIJO}`,
@@ -333,7 +333,7 @@ async function main() {
     });
     await paso("Detalle del expediente muestra número y objeto", async () => {
       const r = await c.jefe!.pagina(`/contratacion/expedientes/${exp}`);
-      esperar(r.html.includes(`E2E SIGEC ${SUFIJO}`), "no aparece el objeto");
+      esperar(r.html.includes(`E2E GECON ${SUFIJO}`), "no aparece el objeto");
       esperar(r.html.includes("Precontractual"), "no aparece la etapa");
     });
     await paso("Aviso de datos personales: aparece al primer ingreso y deja de aparecer al aceptar", async () => {
@@ -488,7 +488,7 @@ async function main() {
     });
     await paso("Un supervisor ajeno no ve el expediente", async () => {
       const otro = await db.usuario.create({
-        data: { email: `e2e-sigec-ajeno-${SUFIJO}@prueba.invalid`, nombre: `E2E SIGEC ajeno ${SUFIJO}`, passwordHash: await hashPassword(PASSWORD), rol: "FUNCIONARIO", activo: true, rolContratacion: "SUPERVISOR_INTERVENTOR", terminosAceptadosEn: new Date() },
+        data: { email: `e2e-gecon-ajeno-${SUFIJO}@prueba.invalid`, nombre: `E2E GECON ajeno ${SUFIJO}`, passwordHash: await hashPassword(PASSWORD), rol: "FUNCIONARIO", activo: true, rolContratacion: "SUPERVISOR_INTERVENTOR", terminosAceptadosEn: new Date() },
       });
       ids.ajeno = otro.id;
       const cli = new Cliente(otro.email);
@@ -499,7 +499,7 @@ async function main() {
     });
     await paso("Firmante sin rol sobre el expediente: ve SU documento y su ficha, no la ficha del expediente", async () => {
       esperar(docFirmaId, "sin documento de firma");
-      const cli = new Cliente(`e2e-sigec-ajeno-${SUFIJO}@prueba.invalid`);
+      const cli = new Cliente(`e2e-gecon-ajeno-${SUFIJO}@prueba.invalid`);
       await cli.login(cli.nombre);
       const asigna = await c.jefe!.json(`/api/contratacion/documentos/${docFirmaId}/solicitudes-firma`, "POST", { firmantes: [{ usuarioId: ids.ajeno, rol: "FIRMA", orden: 2 }] });
       esperar(asigna.status === 200, `asignar → ${asigna.status}: ${JSON.stringify(asigna.data)}`);
@@ -578,7 +578,7 @@ async function main() {
       esperar(sigue?.contratistaId === ctx.contratistaId, "el contratista original fue reemplazado");
 
       const e2 = await c.jefe!.json("/api/contratacion/expedientes", "POST", {
-        objeto: `E2E SIGEC ${SUFIJO} — expediente sin contratista`,
+        objeto: `E2E GECON ${SUFIJO} — expediente sin contratista`,
         modalidadSeleccion: "CONTRATACION_DIRECTA",
         dependenciaSolicitanteId: dependencia.id,
       });
@@ -613,7 +613,7 @@ async function main() {
       await db.contratista.deleteMany({ where: { OR: [{ id: ctx.contratistaId ?? "-" }, { identificacion: { startsWith: identificacion } }] } });
     });
     await paso("Desactiva los usuarios de prueba (no se borran: quedan en la bitácora de auditoría)", async () => {
-      const r = await db.usuario.updateMany({ where: { email: { startsWith: "e2e-sigec-", endsWith: `-${SUFIJO}@prueba.invalid` } }, data: { activo: false, rolContratacion: null } });
+      const r = await db.usuario.updateMany({ where: { email: { startsWith: "e2e-gecon-", endsWith: `-${SUFIJO}@prueba.invalid` } }, data: { activo: false, rolContratacion: null } });
       return `${r.count} usuarios`;
     });
     await navegador?.close();
@@ -714,7 +714,7 @@ async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoI
     const cont = await c.contratista!.pagina("/contratacion/panel");
     esperar(cont.html.includes("Informe de supervisión 2"), "el contratista no ve su informe pendiente");
     const bit = await c.jefe!.pagina("/contratacion/bitacora?tipo=PERIODO_INFORME_CREADO");
-    esperar(bit.html.includes("Informe extraordinario por suspensión"), "la bitácora del SIGEC no lista la creación del espacio eventual");
+    esperar(bit.html.includes("Informe extraordinario por suspensión"), "la bitácora del GECON no lista la creación del espacio eventual");
   });
 }
 

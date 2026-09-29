@@ -7,7 +7,7 @@ import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
 import { contarPendientesBuzonContratacion, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
-import { RUTAS_FIRMAS_SIGEC } from "@/lib/rutas-firmas";
+import { RUTAS_FIRMAS_GECON } from "@/lib/rutas-firmas";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 export default async function MisFirmasContratacionPage() {
@@ -34,10 +34,10 @@ export default async function MisFirmasContratacionPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
-      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_SIGEC} />
+      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_GECON} />
 
       {firmas.length === 0 ? (
-        <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en SIGEC.</EstadoVacio>
+        <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en GECON.</EstadoVacio>
       ) : (
         <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
           {firmas.map((f) => (
@@ -53,7 +53,7 @@ export default async function MisFirmasContratacionPage() {
                   Expediente {f.documento.expediente.numero} · {f.documento.expediente.objeto}
                 </p>
                 <p className="mt-0.5 font-mono text-[11px] text-stone-400">
-                  {formatearFechaHoraLarga(f.fechaHora)} · SHA-256 {f.hashContenido.slice(0, 16)}…
+                  {formatearFechaHoraLarga(f.fechaHora)} · SHA-256 {f.hashContenido.slice(0, 16)}⬦
                 </p>
               </div>
               <a

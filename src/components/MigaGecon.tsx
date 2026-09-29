@@ -31,13 +31,13 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
   { re: /^\/contratacion\/contratistas\/[^/]+/, trail: ["Contratistas", "Contratista"] },
   { re: /^\/contratacion\/contratistas$/, trail: ["Contratistas"] },
   { re: /^\/contratacion\/catalogo/, trail: ["Configuración", "Catálogo de requisitos"] },
-  { re: /^\/contratacion\/bitacora/, trail: ["Administración", "Bitácora del SIGEC"] },
+  { re: /^\/contratacion\/bitacora/, trail: ["Administración", "Bitácora del GECON"] },
   { re: /^\/contratacion\/auditoria/, trail: ["Administración", "Auditoría de cuentas"] },
   { re: /^\/contratacion\/seguridad/, trail: ["Administración", "Seguridad"] },
   { re: /^\/contratacion\/ayuda/, trail: ["Ayuda"] },
 ];
 
-export function MigaSigec() {
+export function MigaGecon() {
   const pathname = usePathname();
   const match = RUTAS.find((r) => r.re.test(pathname));
   const trail = match?.trail ?? [];
@@ -46,7 +46,7 @@ export function MigaSigec() {
     <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-stone-400">
       <Link prefetch={false} href="/contratacion/panel" className="flex items-center gap-1 hover:text-cdmb-700">
         <Home className="h-3.5 w-3.5" aria-hidden />
-        SIGEC
+        GECON
       </Link>
       {trail.map((paso, i) => {
         const ultimo = i === trail.length - 1;

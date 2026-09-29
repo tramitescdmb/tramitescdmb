@@ -559,7 +559,7 @@ export function EditarUsuarioAccesoForm({
         <EncabezadoSeccion
           icono={Building2}
           titulo="Dependencia"
-          ayuda="A qué oficina pertenece — la usan SGDEA y Contratación (SIGEC) por igual, no es exclusiva de un módulo."
+          ayuda="A qué oficina pertenece — la usan SGDEA y Contratación (GECON) por igual, no es exclusiva de un módulo."
         />
         <select
           value={dependenciaId}
@@ -599,7 +599,7 @@ export function EditarUsuarioAccesoForm({
       </section>
 
       <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni SIGEC." />
+        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
         <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
           {cargos.map((c) => {

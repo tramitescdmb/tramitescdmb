@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
+﻿import { redirect } from "next/navigation";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarGecon } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SeguridadFormulario } from "@/components/admin/SeguridadFormulario";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
@@ -8,7 +8,7 @@ export default async function SeguridadPage({ searchParams }: { searchParams: Pr
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarSigec(permisos)) return <AccesoRestringido titulo="Seguridad" volverHref="/" volverLabel="Ir al inicio" />;
+  if (!puedeAdministrarGecon(permisos)) return <AccesoRestringido titulo="Seguridad" volverHref="/" volverLabel="Ir al inicio" />;
 
   const sp = await searchParams;
   const config = await getConfiguracionSitio();

@@ -58,7 +58,7 @@ export function ContratacionTabs({
       lado: "derecha",
       items: [
         entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true }),
-        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del SIGEC", prefijo: true, separador: true }),
+        entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del GECON", prefijo: true, separador: true }),
         entrada(permitido.administradorSistema, SOLO_ADMIN, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/auditoria", label: "Auditoría de cuentas", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true }),
@@ -66,5 +66,5 @@ export function ContratacionTabs({
     },
   ];
 
-  return <BarraModulo grupos={grupos} ariaLabel="Secciones de SIGEC" />;
+  return <BarraModulo grupos={grupos} ariaLabel="Secciones de GECON" />;
 }

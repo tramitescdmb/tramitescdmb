@@ -7,7 +7,7 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { rotuloCalidadFirma, resumirPendientesFirma } from "@/lib/calidad-firma";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
-import { RUTAS_FIRMAS_SIGEC } from "@/lib/rutas-firmas";
+import { RUTAS_FIRMAS_GECON } from "@/lib/rutas-firmas";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Debe dar visto bueno" };
 
@@ -24,7 +24,7 @@ export default async function BuzonContratacionPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
-      <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_SIGEC} />
+      <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_GECON} />
 
       {solicitudes.length > 0 && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarSigec } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarGecon } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const RUTAS_DE_RETORNO = ["/admin/seguridad", "/contratacion/seguridad"];
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const destino = String(form.get("volver") || "");
   const volver = new URL(RUTAS_DE_RETORNO.includes(destino) ? destino : "/admin/seguridad", req.url);
-  const permitido = session ? puedeAdministrarSigec(await obtenerPermisosUsuario(session.userId)) : false;
+  const permitido = session ? puedeAdministrarGecon(await obtenerPermisosUsuario(session.userId)) : false;
   if (!session || !permitido) {
     volver.searchParams.set("error", "Solo un administrador puede cambiar esto.");
     return NextResponse.redirect(volver, { status: 303 });

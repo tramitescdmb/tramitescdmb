@@ -10,7 +10,7 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { AvisoRechazoAcciones } from "@/components/AvisoRechazoAcciones";
 import { FirmasSubNav } from "@/components/FirmasSubNav";
 import { formatearFechaHora } from "@/lib/fecha";
-import { RUTAS_FIRMAS_SIGEC } from "@/lib/rutas-firmas";
+import { RUTAS_FIRMAS_GECON } from "@/lib/rutas-firmas";
 
 export default async function RechazosFirmaContratacionPage() {
   const session = await getSession();
@@ -27,7 +27,7 @@ export default async function RechazosFirmaContratacionPage() {
   return (
     <section className="space-y-4">
       <TituloSeccion icon={FileX2}>Rechazos al firmar</TituloSeccion>
-      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={avisosRechazo.length} rutas={RUTAS_FIRMAS_SIGEC} />
+      <FirmasSubNav pendientes={pendientes} rechazosPorAtender={avisosRechazo.length} rutas={RUTAS_FIRMAS_GECON} />
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-stone-900">Por atender</h3>

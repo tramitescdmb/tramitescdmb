@@ -86,7 +86,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   }
   const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
   const sgdeaOculto = !config.sgdeaVisibleFuncionarios && !esAdmin;
-  const sigecOculto = !config.sigecVisibleFuncionarios && !esAdmin;
+  const geconOculto = !config.geconVisibleFuncionarios && !esAdmin;
   const rolContratacionVencido = Boolean(
     usuario?.rolContratacionVigenteHasta && usuario.rolContratacionVigenteHasta < new Date()
   );
@@ -97,9 +97,9 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     correspondencia: usuario?.activo && !rolVencido && !sgdeaOculto ? usuario.rolCorrespondencia : null,
     dependenciaId: usuario?.activo ? usuario.dependenciaId : null,
     puedeFirmar: esAdmin || Boolean(usuario?.activo && usuario.accesoFirma),
-    contratacion: usuario?.activo && !rolContratacionVencido && !sigecOculto ? usuario.rolContratacion : null,
-    contratistaId: usuario?.activo && !sigecOculto ? usuario.contratistaId : null,
-    supervisaExpedientes: new Set(usuario?.activo && !sigecOculto ? usuario.supervisaExpedientes : []),
+    contratacion: usuario?.activo && !rolContratacionVencido && !geconOculto ? usuario.rolContratacion : null,
+    contratistaId: usuario?.activo && !geconOculto ? usuario.contratistaId : null,
+    supervisaExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.supervisaExpedientes : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
   };
 });
@@ -252,7 +252,7 @@ export function puedeSubirDocumentoContrato(
   return false;
 }
 
-export function puedeAdministrarSigec(permisos: PermisosUsuario): boolean {
+export function puedeAdministrarGecon(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { descargarDocumento } from "@/lib/storage";
-import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
+import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
@@ -116,11 +116,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const slug = doc.nombre.replace(/[^A-Za-z0-9-]/g, "_").slice(0, 60);
   try {
     return await servirDerivado({
-      carpeta: `sigec/${id}`,
+      carpeta: `gecon/${id}`,
       huella: huellaDerivado(doc.storagePath, datos, firmantes),
       nombreArchivo: `${slug}-firmado.pdf`,
       contentType: "application/pdf",
-      generar: async () => estamparFirmaSigec(await descargarDocumento(doc.storagePath), datos, firmantes),
+      generar: async () => estamparFirmaGecon(await descargarDocumento(doc.storagePath), datos, firmantes),
     });
   } catch (err) {
     return NextResponse.json(

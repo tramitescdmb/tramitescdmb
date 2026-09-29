@@ -1,9 +1,9 @@
-import JSZip from "jszip";
+﻿import JSZip from "jszip";
 import { db } from "@/lib/db";
 import { descargarDocumento } from "@/lib/storage";
 import { ETIQUETA_ETAPA, identidadFirmante } from "@/lib/contratacion";
 import { conExtension } from "@/lib/uploads-config";
-import { estamparFirmaSigec } from "@/lib/pdf-rotulado";
+import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 
 export const MAX_EXPEDIENTES_ZIP_MASIVO = 50;
@@ -111,7 +111,7 @@ async function agregarDocumentosExpediente(carpetaBase: JSZip, expedienteId: str
     const original = await descargarDocumento(doc.storagePath);
     const contenido =
       doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0)
-        ? await estamparFirmaSigec(
+        ? await estamparFirmaGecon(
             original,
             { numeroExpediente, baseUrl },
             [

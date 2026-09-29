@@ -109,16 +109,16 @@ export async function estamparRotulo(
   return pdf.save();
 }
 
-export type DatosFirmaSigec = {
+export type DatosFirmaGecon = {
   numeroExpediente: string;
   baseUrl: string;
 };
 
-export type DatosFirmaTramite = DatosFirmaSigec;
+export type DatosFirmaTramite = DatosFirmaGecon;
 
 async function estamparFirmasExpediente(
   pdfBytes: Buffer | Uint8Array,
-  datos: DatosFirmaSigec,
+  datos: DatosFirmaGecon,
   firmasSinOrden: FirmaRotuloPdf[],
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
@@ -215,7 +215,7 @@ async function estamparFirmasExpediente(
   return pdf.save();
 }
 
-export function estamparFirmaSigec(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaSigec, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
+export function estamparFirmaGecon(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaGecon, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
   return estamparFirmasExpediente(pdfBytes, datos, firmas);
 }
 
@@ -223,7 +223,7 @@ export function estamparFirmaTramite(pdfBytes: Buffer | Uint8Array, datos: Datos
   return estamparFirmasExpediente(pdfBytes, datos, firmas);
 }
 
-export type DatosFirmaSgdea = DatosFirmaSigec;
+export type DatosFirmaSgdea = DatosFirmaGecon;
 
 export function estamparFirmaSgdea(pdfBytes: Buffer | Uint8Array, datos: DatosFirmaSgdea, firmas: FirmaRotuloPdf[]): Promise<Uint8Array> {
   return estamparFirmasExpediente(pdfBytes, datos, firmas);

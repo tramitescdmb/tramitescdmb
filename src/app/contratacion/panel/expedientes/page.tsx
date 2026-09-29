@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { TituloSeccion, TarjetaKpi, EstadoVacio } from "@/components/sgdea/ui";
 import { formatearFecha } from "@/lib/fecha";
 
-export default async function PanelExpedientesSigecPage() {
+export default async function PanelExpedientesGeconPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);

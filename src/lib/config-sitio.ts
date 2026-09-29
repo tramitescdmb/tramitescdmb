@@ -15,7 +15,7 @@ const VACIA = {
   loginVentanaMinutos: 15,
   sgdeaVisibleFuncionarios: true,
   tramitesVisibleFuncionarios: true,
-  sigecVisibleFuncionarios: true,
+  geconVisibleFuncionarios: true,
   vitalVisibleFuncionarios: true,
   sincaVisibleFuncionarios: true,
   selloTiempoTsaUrl: null,

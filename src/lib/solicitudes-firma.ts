@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 import { nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
+import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
@@ -14,6 +15,12 @@ export type ObjetivoSolicitud =
   | { tipo: "documentoArchivo"; id: string };
 
 export type TipoObjetivo = ObjetivoSolicitud["tipo"];
+
+function entidadSgdea(objetivo: ObjetivoSolicitud): { entidad: "Comunicacion" | "DocumentoArchivo"; entidadId: string } | null {
+  if (objetivo.tipo === "comunicacion") return { entidad: "Comunicacion", entidadId: objetivo.id };
+  if (objetivo.tipo === "documentoArchivo") return { entidad: "DocumentoArchivo", entidadId: objetivo.id };
+  return null;
+}
 
 function whereObjetivo(objetivo: ObjetivoSolicitud) {
   if (objetivo.tipo === "comunicacion") return { comunicacionId: objetivo.id };
@@ -51,7 +58,9 @@ async function usuariosQueYaFirmaron(objetivo: ObjetivoSolicitud, usuarioIds: st
 export async function asignarFirmantes(
   objetivo: ObjetivoSolicitud,
   asignadoPorId: string,
-  firmantes: { usuarioId: string; rol: RolFirmante; orden?: number; calidad?: CalidadFirma | null }[]
+  firmantes: { usuarioId: string; rol: RolFirmante; orden?: number; calidad?: CalidadFirma | null }[],
+  ip: string | null = null,
+  userAgent: string | null = null
 ) {
   if (firmantes.length === 0) throw new Error("Debe indicar al menos una persona.");
 
@@ -143,6 +152,37 @@ export async function asignarFirmantes(
     if (objetivo.tipo === "documentoContrato") await reevaluarEstadoDocumentoContrato(objetivo.id, asignadoPorId);
     else if (objetivo.tipo === "documentoExpediente") await reevaluarEstadoDocumentoExpediente(objetivo.id, asignadoPorId);
   }
+
+  const nombres = firmantes.map((f) => personas.get(f.usuarioId)!.nombre);
+  const ETIQUETA_ROL: Record<RolFirmante, string> = { FIRMA: "firmar", VISTO_BUENO: "dar visto bueno", LECTURA: "lectura" };
+  const detalleAsignacion = `Asignó a ${nombres.join(", ")} (${[...new Set(firmantes.map((f) => ETIQUETA_ROL[f.rol]))].join(" / ")})`;
+
+  const sgdea = entidadSgdea(objetivo);
+  if (sgdea) {
+    await registrarAuditoriaDoc({
+      entidad: sgdea.entidad,
+      entidadId: sgdea.entidadId,
+      accion: "SOLICITA_FIRMA",
+      usuarioId: asignadoPorId,
+      ip,
+      userAgent,
+      detalle: detalleAsignacion,
+    }).catch((e) => console.error("registrarAuditoriaDoc (asignarFirmantes) falló:", e));
+  } else if (objetivo.tipo === "documentoContrato") {
+    const doc = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true } });
+    if (doc) {
+      await db.eventoContratacion.create({
+        data: { expedienteId: doc.expedienteId, tipo: "FIRMA_SOLICITADA", detalle: detalleAsignacion, usuarioId: asignadoPorId },
+      });
+    }
+  } else if (objetivo.tipo === "documentoExpediente") {
+    const doc = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true, pasoNumero: true } });
+    if (doc) {
+      await db.expedienteEvento.create({
+        data: { expedienteId: doc.expedienteId, tipo: "FIRMA_SOLICITADA", descripcion: detalleAsignacion, pasoNumero: doc.pasoNumero, usuarioId: asignadoPorId },
+      });
+    }
+  }
 }
 
 export async function validarDocumentoArchivoFirmable(documentoArchivoId: string) {
@@ -227,6 +267,32 @@ export async function completarSolicitudFirma(
 
   if (solicitud.rol === "VISTO_BUENO") {
     await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), ip, userAgent } });
+    const sgdea = solicitud.comunicacion
+      ? { entidad: "Comunicacion" as const, entidadId: solicitud.comunicacion.id, ref: solicitud.comunicacion.radicado }
+      : solicitud.documentoArchivo
+        ? { entidad: "DocumentoArchivo" as const, entidadId: solicitud.documentoArchivo.id, ref: solicitud.documentoArchivo.nombre }
+        : null;
+    if (sgdea) {
+      await registrarAuditoriaDoc({
+        entidad: sgdea.entidad,
+        entidadId: sgdea.entidadId,
+        accion: "VISTO_BUENO",
+        usuarioId,
+        ip,
+        userAgent,
+        detalle: `Dio visto bueno sobre "${sgdea.ref}"`,
+      }).catch((e) => console.error("registrarAuditoriaDoc (completarSolicitudFirma visto bueno) falló:", e));
+    } else if (solicitud.documentoContrato) {
+      const doc = solicitud.documentoContrato;
+      await db.eventoContratacion.create({
+        data: { expedienteId: doc.expedienteId, tipo: "VISTO_BUENO_DADO", detalle: `Dio visto bueno sobre "${doc.nombre}"`, usuarioId },
+      });
+    } else if (solicitud.documentoExpediente) {
+      const doc = solicitud.documentoExpediente;
+      await db.expedienteEvento.create({
+        data: { expedienteId: doc.expedienteId, tipo: "VISTO_BUENO_DADO", descripcion: `Dio visto bueno sobre "${doc.nombre}".`, pasoNumero: doc.pasoNumero, usuarioId },
+      });
+    }
     return;
   }
 
@@ -309,56 +375,77 @@ export async function completarSolicitudFirma(
   } else if (solicitud.comunicacion) {
     const c = solicitud.comunicacion;
     if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+    let firmaId: string;
     const previa = await db.firma.findFirst({ where: { comunicacionId: c.id, usuarioId }, select: { id: true } });
     if (previa) {
-      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: previa.id, ip, userAgent } });
-      return;
+      firmaId = previa.id;
+    } else {
+      const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId: c.id }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
+      const fechaHora = new Date();
+      const hashContenido = hashContenidoFirma({
+        radicado: c.radicado,
+        asunto: c.asunto,
+        contenido: c.contenido,
+        fechaIso: fechaHora.toISOString(),
+        hashesDocumentos: documentos.map((d) => d.hashSha256),
+      });
+      const resuelto = await resolverFirma(hashContenido);
+      const firma = await db.firma.create({
+        data: {
+          calidad: solicitud.calidad,
+          usuarioId,
+          comunicacionId: c.id,
+          fechaHora,
+          hashContenido,
+          tipo: "ELECTRONICA_HASH",
+          ip,
+          userAgent,
+          proveedor: resuelto.proveedor,
+          formato: resuelto.formato,
+          selloTiempoEn: resuelto.selloTiempoEn,
+          selloTiempoFuente: resuelto.selloTiempoFuente,
+          selloTiempoToken: resuelto.selloTiempoToken,
+        },
+      });
+      firmaId = firma.id;
     }
-
-    const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId: c.id }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
-    const fechaHora = new Date();
-    const hashContenido = hashContenidoFirma({
-      radicado: c.radicado,
-      asunto: c.asunto,
-      contenido: c.contenido,
-      fechaIso: fechaHora.toISOString(),
-      hashesDocumentos: documentos.map((d) => d.hashSha256),
-    });
-    const resuelto = await resolverFirma(hashContenido);
-    const firma = await db.firma.create({
-      data: {
-        calidad: solicitud.calidad,
-        usuarioId,
-        comunicacionId: c.id,
-        fechaHora,
-        hashContenido,
-        tipo: "ELECTRONICA_HASH",
-        ip,
-        userAgent,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    });
     await db.solicitudFirma.update({
       where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id, ip, userAgent },
+      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId, ip, userAgent },
     });
+    await registrarAuditoriaDoc({
+      entidad: "Comunicacion",
+      entidadId: c.id,
+      accion: "FIRMA",
+      usuarioId,
+      ip,
+      userAgent,
+      detalle: `Firmó "${c.radicado}" (solicitud asignada)`,
+    }).catch((e) => console.error("registrarAuditoriaDoc (completarSolicitudFirma comunicacion) falló:", e));
   } else if (solicitud.documentoArchivo) {
     const doc = solicitud.documentoArchivo;
     await validarDocumentoArchivoFirmable(doc.id);
+    let firmaId: string;
     const previa = await db.firma.findFirst({ where: { documentoArchivoId: doc.id, usuarioId }, select: { id: true } });
     if (previa) {
-      await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: previa.id, ip, userAgent } });
-      return;
+      firmaId = previa.id;
+    } else {
+      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, ip, userAgent);
+      firmaId = firma.id;
     }
-    const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, ip, userAgent);
     await db.solicitudFirma.update({
       where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId: firma.id, ip, userAgent },
+      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId, ip, userAgent },
     });
+    await registrarAuditoriaDoc({
+      entidad: "DocumentoArchivo",
+      entidadId: doc.id,
+      accion: "FIRMA",
+      usuarioId,
+      ip,
+      userAgent,
+      detalle: `Firmó "${doc.nombre}" (solicitud asignada)`,
+    }).catch((e) => console.error("registrarAuditoriaDoc (completarSolicitudFirma documentoArchivo) falló:", e));
   }
 }
 
@@ -415,7 +502,13 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
   await crearFirmaDocumentoArchivo(doc, usuarioId, puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO", ip, userAgent);
 }
 
-export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: string, comentario: string) {
+export async function rechazarSolicitudFirma(
+  solicitudId: string,
+  usuarioId: string,
+  comentario: string,
+  ip: string | null = null,
+  userAgent: string | null = null
+) {
   if (!comentario.trim()) throw new Error("Indique el motivo del rechazo.");
   const solicitud = await db.solicitudFirma.findUnique({
     where: { id: solicitudId },
@@ -482,11 +575,29 @@ export async function rechazarSolicitudFirma(solicitudId: string, usuarioId: str
         data: { comunicacionId: c.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: c.radicadoPorId },
       });
     }
+    await registrarAuditoriaDoc({
+      entidad: "Comunicacion",
+      entidadId: c.id,
+      accion: "RECHAZA_FIRMA",
+      usuarioId,
+      ip,
+      userAgent,
+      detalle: `Rechazó ${solicitud.rol === "VISTO_BUENO" ? "el visto bueno" : "la firma"} de "${c.radicado}": ${comentario.trim()}`,
+    }).catch((e) => console.error("registrarAuditoriaDoc (rechazarSolicitudFirma comunicacion) falló:", e));
   } else if (solicitud.documentoArchivo) {
     const doc = solicitud.documentoArchivo;
     await db.avisoRechazoDocumento.create({
       data: { documentoArchivoId: doc.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: doc.subidoPorId },
     });
+    await registrarAuditoriaDoc({
+      entidad: "DocumentoArchivo",
+      entidadId: doc.id,
+      accion: "RECHAZA_FIRMA",
+      usuarioId,
+      ip,
+      userAgent,
+      detalle: `Rechazó ${solicitud.rol === "VISTO_BUENO" ? "el visto bueno" : "la firma"} de "${doc.nombre}": ${comentario.trim()}`,
+    }).catch((e) => console.error("registrarAuditoriaDoc (rechazarSolicitudFirma documentoArchivo) falló:", e));
   }
 }
 

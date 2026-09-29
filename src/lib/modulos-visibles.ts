@@ -1,7 +1,7 @@
 export type CampoVisibilidadModulo =
   | "tramitesVisibleFuncionarios"
   | "sgdeaVisibleFuncionarios"
-  | "sigecVisibleFuncionarios"
+  | "geconVisibleFuncionarios"
   | "vitalVisibleFuncionarios"
   | "sincaVisibleFuncionarios";
 
@@ -19,8 +19,8 @@ export const MODULOS_CONFIGURABLES: { campo: CampoVisibilidadModulo; nombre: str
       "Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores, incluidos quienes ya tienen un rol de correspondencia asignado.",
   },
   {
-    campo: "sigecVisibleFuncionarios",
-    nombre: "SIGEC — Contratación",
+    campo: "geconVisibleFuncionarios",
+    nombre: "GECON — Contratación",
     efecto:
       "Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores, incluidos quienes tienen rol de contratación, contratistas y supervisores.",
   },

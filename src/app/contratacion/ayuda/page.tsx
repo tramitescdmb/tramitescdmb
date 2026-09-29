@@ -91,9 +91,9 @@ export default async function ContratacionAyudaPage() {
 
   const grupoGeneral = (
     <>
-      <Seccion n={1} id="alcance" icono={Briefcase} titulo="Qué es SIGEC y qué no es">
+      <Seccion n={1} id="alcance" icono={Briefcase} titulo="Qué es GECON y qué no es">
         <p>
-          SIGEC (Sistema Integrado de Gestión de Expedientes de Contratación) es un <strong>manejador de
+          GECON (Gestión de Expedientes de Contratación) es un <strong>manejador de
           expedientes digitales</strong> para el ciclo de un contrato, conforme al Manual de Contratación y de
           Supervisión o Interventoría A-BS-MA01 de la CDMB. Organiza documentos, etapas, firmas y contratistas
           en un solo expediente por contrato.
@@ -384,7 +384,7 @@ export default async function ContratacionAyudaPage() {
         <Tabla encabezados={["Opción", "Quién la usa", "Para qué"]}>
           <tr><td className="px-2.5 py-1.5"><strong>Expedientes → Nuevo expediente</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Abrir un expediente contractual.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Configuración → Catálogo de requisitos</strong></td><td className="px-2.5 py-1.5">Administrador de Contratación</td><td className="px-2.5 py-1.5">Agregar, ordenar, activar o desactivar los documentos exigidos por etapa y modalidad.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del SIGEC</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de todos los expedientes, con filtros.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del GECON</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de todos los expedientes, con filtros.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Usuarios y roles</strong></td><td className="px-2.5 py-1.5">Administrador del sistema</td><td className="px-2.5 py-1.5">Asignar el rol de contratación, cargos y accesos de cada persona.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Auditoría de cuentas</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Inicios de sesión, gestión de usuarios y cambios de configuración.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Seguridad</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Intentos de acceso, política de contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</td></tr>
@@ -424,7 +424,7 @@ export default async function ContratacionAyudaPage() {
           )}
           <div>
             <p className="text-sm font-semibold text-stone-900">Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga</p>
-            <p className="text-xs text-stone-500">SIGEC — Sistema Integrado de Gestión de Expedientes de Contratación — Guía de referencia</p>
+            <p className="text-xs text-stone-500">GECON — Gestión de Expedientes de Contratación — Guía de referencia</p>
           </div>
         </div>
 
