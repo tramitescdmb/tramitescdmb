@@ -8,53 +8,13 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
+import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
+
+export * from "@/lib/contratacion-etiquetas";
 
 export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
 const SERIE_CONTRATO = "CTO";
-
-export const ETAPAS_ORDEN: EtapaContratacion[] = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"];
-
-export const ETIQUETA_ETAPA: Record<EtapaContratacion, string> = {
-  PRECONTRACTUAL: "Precontractual",
-  CONTRACTUAL: "Contractual",
-  POSTCONTRACTUAL: "Postcontractual",
-};
-
-export const ETIQUETA_MODALIDAD: Record<ModalidadSeleccion, string> = {
-  LICITACION_PUBLICA: "Licitación pública",
-  SELECCION_ABREVIADA_MENOR_CUANTIA: "Selección abreviada — menor cuantía",
-  SELECCION_ABREVIADA_SUBASTA_INVERSA: "Selección abreviada — subasta inversa",
-  SELECCION_ABREVIADA_ENAJENACION_BIENES: "Selección abreviada — enajenación de bienes",
-  CONCURSO_MERITOS: "Concurso de méritos",
-  CONTRATACION_DIRECTA: "Contratación directa",
-  MINIMA_CUANTIA: "Mínima cuantía",
-  CONVENIO_ASOCIACION: "Convenio de asociación (ESAL)",
-  ARRENDAMIENTO: "Arrendamiento de inmuebles",
-  OTRA: "Otra modalidad",
-};
-
-export const ETIQUETA_ROL_CONTRATACION: Record<RolContratacion, string> = {
-  ADMINISTRADOR_CONTRATACION: "Administrador de Contratación",
-  JEFE_CONTRATACION: "Jefe de Contratación",
-  FUNCIONARIO_CONTRATACION: "Funcionario de Contratación",
-  JEFE_DEPENDENCIA: "Jefe de dependencia / Subdirector",
-  SUPERVISOR_INTERVENTOR: "Supervisor / Interventor",
-  CONTRATISTA: "Contratista",
-};
-
-export const ORDEN_MODALIDADES: ModalidadSeleccion[] = [
-  "CONTRATACION_DIRECTA",
-  "MINIMA_CUANTIA",
-  "SELECCION_ABREVIADA_MENOR_CUANTIA",
-  "SELECCION_ABREVIADA_SUBASTA_INVERSA",
-  "SELECCION_ABREVIADA_ENAJENACION_BIENES",
-  "CONCURSO_MERITOS",
-  "LICITACION_PUBLICA",
-  "CONVENIO_ASOCIACION",
-  "ARRENDAMIENTO",
-  "OTRA",
-];
 
 export async function generarNumeroExpedienteContractual(anio: number = new Date().getFullYear()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_CONTRATO, anio);
