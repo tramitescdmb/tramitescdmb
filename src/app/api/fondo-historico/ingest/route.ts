@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
+  dentroDeVentana,
   esFondoValido,
   fondoHistoricoConfigurado,
   filaAModelo,
@@ -119,8 +120,9 @@ async function manejar(req: NextRequest) {
 
   const filas = lote
     .filter((f) => f && f.ref_id != null && String(f.ref_id) !== "")
-    .map((f) => {
-      const m = filaAModelo(fondo, f);
+    .map((f) => filaAModelo(fondo, f))
+    .filter((m) => dentroDeVentana(fondo, m.anio))
+    .map((m) => {
       return {
         ...m,
         campos: (m.campos ?? Prisma.DbNull) as Prisma.InputJsonValue,
@@ -128,6 +130,9 @@ async function manejar(req: NextRequest) {
         sincronizadoEn: new Date(),
       };
     });
+  if (filas.length === 0) {
+    return NextResponse.json({ recibidas: 0, creados: 0, actualizados: 0, saltadas: lote.length });
+  }
   const ids = filas.map((f) => f.id);
   const existentes = await db.fondoDocumento.count({ where: { id: { in: ids } } });
 

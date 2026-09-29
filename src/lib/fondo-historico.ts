@@ -6,7 +6,7 @@ export const FONDOS = {
     nombre: "psdocuments",
     titulo: "Fondo psdocuments",
     descripcion:
-      "Documentos escaneados del sistema de gestión documental anterior de la CDMB (2006–2010, ventana de 5 años).",
+      "Muestra de documentos escaneados del sistema de gestión documental anterior de la CDMB (2009–2010).",
   },
   "sic-pqr": {
     id: "sic-pqr",
@@ -15,7 +15,7 @@ export const FONDOS = {
     nombre: "Entrada",
     titulo: "SIC correspondencia — Entrada (PQR)",
     descripcion:
-      "Peticiones, quejas y reclamos de entrada del sistema de correspondencia SIC (COR_ATCREG), aún en uso — últimos 5 años, sincronizado a diario.",
+      "Peticiones, quejas y reclamos de entrada del sistema de correspondencia SIC (COR_ATCREG), aún en uso — muestra del año en curso y el anterior.",
   },
   "sic-salida": {
     id: "sic-salida",
@@ -24,11 +24,23 @@ export const FONDOS = {
     nombre: "Salida",
     titulo: "SIC correspondencia — Salida",
     descripcion:
-      "Comunicaciones de salida del sistema de correspondencia SIC (COR_ENVIADA), aún en uso — últimos 5 años, sincronizado a diario.",
+      "Comunicaciones de salida del sistema de correspondencia SIC (COR_ENVIADA), aún en uso — muestra del año en curso y el anterior.",
   },
 } as const;
 
 export type FondoId = keyof typeof FONDOS;
+
+export function ventanaAnios(fondo: FondoId, ahora: Date = new Date()): { desde: number; hasta: number } {
+  if (fondo === "psdocuments") return { desde: 2009, hasta: 2010 };
+  const actual = ahora.getFullYear();
+  return { desde: actual - 1, hasta: actual };
+}
+
+export function dentroDeVentana(fondo: FondoId, anio: number | null | undefined, ahora: Date = new Date()): boolean {
+  if (anio == null) return false;
+  const { desde, hasta } = ventanaAnios(fondo, ahora);
+  return anio >= desde && anio <= hasta;
+}
 
 export function esFondoValido(id: string): id is FondoId {
   return Object.prototype.hasOwnProperty.call(FONDOS, id);

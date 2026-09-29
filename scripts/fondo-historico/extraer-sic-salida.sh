@@ -3,8 +3,8 @@
 # (C.COR_ENVIADA) — vía sqlplus. Hermano de extraer-sic.sh (entrada/PQR).
 #
 # Corre en el propio servidor Oracle (host `martin`, Oracle 10g). SOLO LECTURA.
-# El SIC sigue vivo: ventana móvil de FONDO_MESES meses (60 = 5 años por
-# defecto) calculada con SYSDATE — cada corrida se autoajusta.
+# El SIC sigue vivo: ventana móvil de dos años calendario (el año en curso y el
+# anterior) calculada con SYSDATE — cada corrida se autoajusta.
 #
 # C.COR_ENVIADA no tiene clave primaria de una sola columna: es compuesta
 # (NUMRADIC_CEN, ANO_CEN) porque el radicado se reinicia cada año. La
@@ -37,7 +37,7 @@ ORA_PORT="${FONDO_ORACLE_PORT:-1521}"
 ORA_SID="${FONDO_ORACLE_SID:-P}"
 SCHEMA="${FONDO_ORACLE_SCHEMA:-C}"
 CHUNK="${FONDO_CHUNK:-200}"
-MESES="${FONDO_MESES:-60}"       # ventana móvil: 60 = 5 años, 48 = 4 años
+# Ventana: año en curso y el anterior (desde el 1 de enero del año pasado).
 FONDO="sic-salida"
 
 CONN="${ORA_USER}/${ORA_PASS}@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${ORA_HOST})(PORT=${ORA_PORT}))(CONNECT_DATA=(SID=${ORA_SID})))"
@@ -89,7 +89,7 @@ json_val() { sed -n 's/.*"'"$1"'":\s*"\{0,1\}\([^",}]*\).*/\1/p'; }
 
 echo "sqlplus: $SQLPLUS"
 echo "Oracle:  ${ORA_USER}@${ORA_HOST}:${ORA_PORT}/${ORA_SID}  esquema ${SCHEMA}"
-echo "Ventana: últimos ${MESES} meses de COR_ENVIADA"
+echo "Ventana: año en curso y el anterior de COR_ENVIADA"
 
 HOSTN="$(hostname 2>/dev/null || echo cdmb)"
 SYNC="$(ingest "{\"fondo\":\"$FONDO\",\"disparadoPor\":\"script.sh:$HOSTN\"}" | json_val sincronizacionId)"
@@ -119,7 +119,7 @@ begin
   cur := dbms_sql.open_cursor;
   dbms_sql.parse(cur,
     'select * from (select * from ${SCHEMA}.cor_enviada '||
-    ' where fechaenv_cen >= add_months(sysdate,-${MESES}) '||
+    ' where fechaenv_cen >= trunc(add_months(sysdate,-12),''YYYY'') '||
     ' and (numradic_cen > ${1} or (numradic_cen = ${1} and ano_cen > ${2})) '||
     ' order by numradic_cen, ano_cen) where rownum <= ${3}',
     dbms_sql.native);

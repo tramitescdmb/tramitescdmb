@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  dentroDeVentana,
+  ventanaAnios,
   parseFechaFondo,
   filaAModelo,
   esFondoValido,
@@ -189,5 +191,30 @@ describe("urlIntranetPsdocuments", () => {
     expect(urlIntranetPsdocuments(null)).toBeNull();
     expect(urlIntranetPsdocuments("")).toBeNull();
     expect(urlIntranetPsdocuments("/gestion/algo.pdf")).toBeNull();
+  });
+});
+
+describe("ventana de años del fondo", () => {
+  const ahora = new Date(2026, 8, 28);
+
+  it("SIC conserva el año en curso y el anterior", () => {
+    expect(ventanaAnios("sic-pqr", ahora)).toEqual({ desde: 2025, hasta: 2026 });
+    expect(dentroDeVentana("sic-salida", 2025, ahora)).toBe(true);
+    expect(dentroDeVentana("sic-salida", 2024, ahora)).toBe(false);
+  });
+
+  it("la ventana de SIC avanza con el año", () => {
+    expect(dentroDeVentana("sic-pqr", 2025, new Date(2027, 0, 2))).toBe(false);
+    expect(dentroDeVentana("sic-pqr", 2027, new Date(2027, 0, 2))).toBe(true);
+  });
+
+  it("psdocuments queda fijo en 2009-2010", () => {
+    expect(dentroDeVentana("psdocuments", 2010, ahora)).toBe(true);
+    expect(dentroDeVentana("psdocuments", 2008, ahora)).toBe(false);
+    expect(dentroDeVentana("psdocuments", 2023, ahora)).toBe(false);
+  });
+
+  it("una fila sin año queda fuera", () => {
+    expect(dentroDeVentana("sic-pqr", null, ahora)).toBe(false);
   });
 });

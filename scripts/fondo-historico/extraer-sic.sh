@@ -4,7 +4,7 @@
 # Corre en el propio servidor Oracle (host `martin`, Oracle 10g). SOLO LECTURA.
 # A diferencia de psdocuments, el SIC SIGUE VIVO (COR_ATCREG recibe PQR a
 # diario) — este extractor filtra por una VENTANA MÓVIL de los últimos
-# FONDO_MESES meses (60 = 5 años por defecto), calculada en el propio Oracle
+# dos años calendario (el año en curso y el anterior), calculada en el propio Oracle
 # con SYSDATE, así cada corrida se autoajusta: entra lo nuevo y se cae solo lo
 # que ya envejeció fuera de la ventana (el `finalizar` del protocolo de
 # ingesta borra lo que la corrida no volvió a tocar).
@@ -20,7 +20,6 @@
 # Uso (como root — el script fija ORACLE_HOME solo):
 #   export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
 #   export FONDO_INGEST_TOKEN="…"
-#   # export FONDO_MESES="48"   # opcional, 4 años en vez de 5
 #   bash extraer-sic.sh
 #
 # Para dejarlo en cron diario (sincroniza lo nuevo, cae lo que envejece):
@@ -37,7 +36,7 @@ ORA_PORT="${FONDO_ORACLE_PORT:-1521}"
 ORA_SID="${FONDO_ORACLE_SID:-P}"
 SCHEMA="${FONDO_ORACLE_SCHEMA:-C}"
 CHUNK="${FONDO_CHUNK:-200}"       # PQR por bloque PL/SQL (tope buffer DBMS_OUTPUT 1 MB)
-MESES="${FONDO_MESES:-60}"       # ventana móvil: 60 = 5 años, 48 = 4 años
+# Ventana: año en curso y el anterior (desde el 1 de enero del año pasado).
 FONDO="sic-pqr"
 
 CONN="${ORA_USER}/${ORA_PASS}@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${ORA_HOST})(PORT=${ORA_PORT}))(CONNECT_DATA=(SID=${ORA_SID})))"
@@ -90,7 +89,7 @@ json_val() { sed -n 's/.*"'"$1"'":\s*"\{0,1\}\([^",}]*\).*/\1/p'; }
 
 echo "sqlplus: $SQLPLUS"
 echo "Oracle:  ${ORA_USER}@${ORA_HOST}:${ORA_PORT}/${ORA_SID}  esquema ${SCHEMA}"
-echo "Ventana: últimos ${MESES} meses de COR_ATCREG"
+echo "Ventana: año en curso y el anterior de COR_ATCREG"
 
 # --- 1. abrir la corrida ---
 HOSTN="$(hostname 2>/dev/null || echo cdmb)"
@@ -120,7 +119,7 @@ begin
   cur := dbms_sql.open_cursor;
   dbms_sql.parse(cur,
     'select * from (select * from ${SCHEMA}.cor_atcreg '||
-    ' where numero_atc > ${1} and fecing_atc >= add_months(sysdate,-${MESES}) '||
+    ' where numero_atc > ${1} and fecing_atc >= trunc(add_months(sysdate,-12),''YYYY'') '||
     ' order by numero_atc) where rownum <= ${2}',
     dbms_sql.native);
   dbms_sql.describe_columns(cur, nc, cd);
