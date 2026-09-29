@@ -4,6 +4,8 @@ import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
+import { descargarDocumento } from "@/lib/storage";
+import { extraerTextoPdf } from "@/lib/texto-pdf";
 
 const SERIE_EXPEDIENTE = "X";
 
@@ -75,7 +77,7 @@ export async function agregarDocumentoArchivo(datos: {
     orderBy: { ordenIndice: "desc" },
     select: { ordenIndice: true },
   });
-  return db.documentoArchivo.create({
+  const documento = await db.documentoArchivo.create({
     data: {
       expedienteDocumentalId: datos.expedienteDocumentalId,
       nombre: datos.nombre,
@@ -92,6 +94,18 @@ export async function agregarDocumentoArchivo(datos: {
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
+  if (documento.mimeType === "application/pdf") {
+    await extraerTextoDocumentoArchivo(documento.id, documento.storagePath).catch((e) =>
+      console.error(`extraerTextoDocumentoArchivo falló para ${documento.id}:`, e)
+    );
+  }
+  return documento;
+}
+
+export async function extraerTextoDocumentoArchivo(documentoId: string, storagePath: string) {
+  const bytes = await descargarDocumento(storagePath);
+  const texto = await extraerTextoPdf(bytes);
+  if (texto) await db.documentoArchivo.update({ where: { id: documentoId }, data: { contenidoTexto: texto } });
 }
 
 export async function editarDocumentoArchivo(
@@ -305,6 +319,7 @@ export function construirWhereExpedienteDocumental(
         { asunto: { contains: q, mode: "insensitive" } },
         { dependencia: { nombre: { contains: q, mode: "insensitive" } } },
         { documentos: { some: { nombre: { contains: q, mode: "insensitive" } } } },
+        { documentos: { some: { contenidoTexto: { contains: q, mode: "insensitive" } } } },
       ],
     });
   }

@@ -7,7 +7,7 @@ import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolContratacion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
 
 export * from "@/lib/contratacion-etiquetas";

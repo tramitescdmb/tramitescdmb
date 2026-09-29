@@ -1180,6 +1180,7 @@ model ComunicacionDocumento {
   mimeType       String
   tamanoBytes    Int
   hashSha256     String?
+  contenidoTexto String?  @db.Text
   subidoPorId    String?
   createdAt      DateTime @default(now())
   esRespuesta    Boolean  @default(false)
@@ -1382,6 +1383,7 @@ model DocumentoArchivo {
   mimeType               String
   tamanoBytes            Int
   hashSha256             String?
+  contenidoTexto         String?   @db.Text
   subidoPorId            String
   createdAt              DateTime  @default(now())
   fechaDocumento         DateTime?

@@ -12,6 +12,8 @@ import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { validarPalabrasClave } from "@/lib/vocabulario";
 import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
+import { descargarDocumento } from "@/lib/storage";
+import { extraerTextoPdf } from "@/lib/texto-pdf";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -133,6 +135,9 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
     await crearDocumentos(tx, comunicacion.id, entrada.documentos, entrada.radicadoPorId);
 
     return comunicacion;
+  }).then(async (comunicacion) => {
+    await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
+    return comunicacion;
   });
 }
 
@@ -193,6 +198,22 @@ async function firmarEnTransaccion(
       selloTiempoFuente: SELLO_INTERNO,
     },
   });
+}
+
+export async function extraerTextoAdjuntosPdf(comunicacionId: string) {
+  const documentos = await db.comunicacionDocumento.findMany({
+    where: { comunicacionId, mimeType: "application/pdf", contenidoTexto: null },
+    select: { id: true, storagePath: true },
+  });
+  for (const doc of documentos) {
+    try {
+      const bytes = await descargarDocumento(doc.storagePath);
+      const texto = await extraerTextoPdf(bytes);
+      if (texto) await db.comunicacionDocumento.update({ where: { id: doc.id }, data: { contenidoTexto: texto } });
+    } catch (e) {
+      console.error(`extraerTextoAdjuntosPdf falló para ${doc.id}:`, e);
+    }
+  }
 }
 
 export async function sellarFirmasConTsa(comunicacionId: string) {
@@ -380,6 +401,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     return comunicacion;
   });
 }
@@ -437,6 +459,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     return comunicacion;
   });
 }
@@ -513,6 +536,9 @@ export async function registrarRespuestaFuncionario(
       },
     });
     await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
+    return actualizada;
+  }).then(async (actualizada) => {
+    await extraerTextoAdjuntosPdf(comunicacionId).catch(() => {});
     return actualizada;
   });
 }

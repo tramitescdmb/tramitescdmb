@@ -70,6 +70,7 @@ function camposBusqueda(texto: string): Prisma.ComunicacionWhereInput[] {
     { terceroNombre: { contains: texto, mode: "insensitive" } },
     { terceroIdentificacion: { contains: texto } },
     { documentos: { some: { nombre: { contains: texto, mode: "insensitive" } } } },
+    { documentos: { some: { contenidoTexto: { contains: texto, mode: "insensitive" } } } },
     { contenido: { contains: texto, mode: "insensitive" } },
     { respuestaTexto: { contains: texto, mode: "insensitive" } },
     { palabrasClave: { has: texto } },
@@ -93,6 +94,7 @@ function clausulaExcluirBusqueda(texto: string): Prisma.ComunicacionWhereInput {
       noContieneOpcional("contenido", "insensitive"),
       noContieneOpcional("respuestaTexto", "insensitive"),
       { documentos: { none: { nombre: { contains: texto, mode: "insensitive" } } } },
+      { documentos: { none: { contenidoTexto: { contains: texto, mode: "insensitive" } } } },
       { NOT: { palabrasClave: { has: texto } } },
     ],
   };
