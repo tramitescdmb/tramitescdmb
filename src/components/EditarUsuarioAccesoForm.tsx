@@ -39,7 +39,7 @@ const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayud
 const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: string }[] = [
   { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "El encargado de sistemas — permisos totales sobre el módulo. Mismo nivel que Jefe de Contratación." },
   { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Ve y gestiona TODOS los expedientes de la entidad: crea, aprueba etapas, edita/elimina documentos, elimina expedientes completos." },
-  { valor: "FUNCIONARIO_CONTRATACION", etiqueta: "Funcionario de Contratación", ayuda: "Ve toda la contratación y sube documentos (con traza), y puede asignar quién firma cada documento — sin poder de gestión (no aprueba etapas ni elimina nada)." },
+  { valor: "FUNCIONARIO_CONTRATACION", etiqueta: "Personal de Contratación", ayuda: "Ve toda la contratación y sube documentos (con traza), y puede asignar quién firma cada documento — sin poder de gestión (no aprueba etapas ni elimina nada)." },
   { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia / Subdirector", ayuda: "Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante, no de toda la entidad." },
   { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Ve, sube, firma y puede editar/eliminar (con traza) documentos solo de los expedientes que supervisa." },
   { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes y firma solo en Contractual/Postcontractual de su propio expediente. Nunca puede asignar firmantes." },

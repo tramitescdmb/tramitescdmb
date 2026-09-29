@@ -24,7 +24,7 @@ export const ETIQUETA_MODALIDAD: Record<ModalidadSeleccion, string> = {
 export const ETIQUETA_ROL_CONTRATACION: Record<RolContratacion, string> = {
   ADMINISTRADOR_CONTRATACION: "Administrador de Contratación",
   JEFE_CONTRATACION: "Jefe de Contratación",
-  FUNCIONARIO_CONTRATACION: "Funcionario de Contratación",
+  FUNCIONARIO_CONTRATACION: "Personal de Contratación",
   JEFE_DEPENDENCIA: "Jefe de dependencia / Subdirector",
   SUPERVISOR_INTERVENTOR: "Supervisor / Interventor",
   CONTRATISTA: "Contratista",

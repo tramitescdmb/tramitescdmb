@@ -21,7 +21,7 @@ export default async function ContratistasPage({
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
   if (!puedeVerRegistroContratistas(permisos)) {
-    return <AccesoRestringido titulo="Contratistas" quien="administrador, jefe o funcionario de contratación, o supervisor" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
+    return <AccesoRestringido titulo="Contratistas" quien="administrador, jefe o personal de contratación, o supervisor" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
 
   const { q, page: pageParam } = await searchParams;

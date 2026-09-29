@@ -158,7 +158,7 @@ export default async function ContratacionAyudaPage() {
           quedan en solo lectura.
         </p>
         <p>
-          Excepción: Administrador, Jefe y Funcionario de Contratación
+          Excepción: Administrador, Jefe y Personal de Contratación
           ven y pueden adelantar documentos en <strong>cualquier</strong> etapa de <strong>cualquier</strong> expediente,
           esté alcanzada o no, e incluso una ya completada — la etapa aparece marcada &quot;(aún no alcanzada)&quot;
           para que quede claro que el expediente formalmente sigue en la etapa anterior. El supervisor/interventor
@@ -185,7 +185,7 @@ export default async function ContratacionAyudaPage() {
           Pública, no en esta plataforma — aquí solo se sube la evidencia) — se resalta con una flecha en el
           checklist para que no pase desapercibida. Cualquier documento del checklist puede además{" "}
           <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
-          Administrador, Jefe o Funcionario de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
+          Administrador, Jefe o Personal de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
           alguien de Contratación ya lo revisó, aparte de la aprobación automática que ya ocurre al firmar un
           documento o al cerrar la etapa. La validación de Administrador/Jefe no se registra en la bitácora; la de Funcionario
           de Contratación sí.
@@ -214,7 +214,7 @@ export default async function ContratacionAyudaPage() {
           Además de los periodos mensuales se pueden crear <strong>espacios eventuales</strong> con un nombre propio (por
           ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes — cada uno
           de los cuatro requisitos por periodos tiene los suyos propios, no se comparten entre sí. Los crea
-          quien lleva el expediente (Administrador, Jefe, Funcionario de Contratación o el Supervisor asignado); el
+          quien lleva el expediente (Administrador, Jefe, Personal de Contratación o el Supervisor asignado); el
           contratista solo carga su documento en ellos. Un espacio con documento no se puede quitar hasta eliminar el
           documento.
         </p>
@@ -242,7 +242,7 @@ export default async function ContratacionAyudaPage() {
         <p>
           La misma excepción aplica a <strong>validar</strong> un documento y a la <strong>cadena de hash</strong>{" "}
           del expediente (ver la sección de Checklist): lo que hace Administrador o Jefe de Contratación no deja
-          fila en ninguna de las dos. Funcionario de Contratación y Supervisor/Interventor SÍ quedan registrados
+          fila en ninguna de las dos. Personal de Contratación y Supervisor/Interventor SÍ quedan registrados
           en ambas.
         </p>
       </Seccion>
