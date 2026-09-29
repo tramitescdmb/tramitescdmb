@@ -21,6 +21,37 @@ export async function generarNumeroExpedienteContractual(anio: number = new Date
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
 }
 
+export function vigenciaDeExpediente(fechaInicio: Date | null | undefined, createdAt: Date): number {
+  return (fechaInicio ?? createdAt).getFullYear();
+}
+
+const FORMATO_SECOP = /^[A-Za-z0-9.\-/]{3,40}$/;
+
+export function validarFormatoSecop(numeroProcesoSecop: string): void {
+  if (!FORMATO_SECOP.test(numeroProcesoSecop)) {
+    throw new Error(
+      'El número de proceso SECOP no tiene un formato válido (entre 3 y 40 caracteres: letras, números, puntos, guiones o "/").'
+    );
+  }
+}
+
+export async function verificarUnicidadSecopPorVigencia(numeroProcesoSecop: string, vigencia: number, excluirId?: string): Promise<void> {
+  const candidatos = await db.expedienteContractual.findMany({
+    where: {
+      eliminado: false,
+      numeroProcesoSecop: { equals: numeroProcesoSecop, mode: "insensitive" },
+      ...(excluirId ? { id: { not: excluirId } } : {}),
+    },
+    select: { numero: true, fechaInicio: true, createdAt: true },
+  });
+  const conflicto = candidatos.find((c) => vigenciaDeExpediente(c.fechaInicio, c.createdAt) === vigencia);
+  if (conflicto) {
+    throw new Error(
+      `El número de proceso SECOP "${numeroProcesoSecop}" ya está usado por el expediente ${conflicto.numero} en la vigencia ${vigencia}.`
+    );
+  }
+}
+
 export function identidadFirmante(u: {
   cedulaONit?: string | null;
   tipoIdentificacionFirma?: string | null;
@@ -229,6 +260,7 @@ export async function crearExpedienteContractual(datos: {
   modalidadSeleccion: ModalidadSeleccion;
   valor?: number | null;
   numeroContrato?: string | null;
+  numeroProcesoSecop?: string | null;
   fechaInicio?: Date | null;
   fechaFinEstimada?: Date | null;
   dependenciaSolicitanteId: string;
@@ -239,6 +271,12 @@ export async function crearExpedienteContractual(datos: {
   if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
 
+  const numeroProcesoSecop = datos.numeroProcesoSecop?.trim() || null;
+  if (numeroProcesoSecop) {
+    validarFormatoSecop(numeroProcesoSecop);
+    await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(datos.fechaInicio ?? null, new Date()));
+  }
+
   const numero = await generarNumeroExpedienteContractual();
   const expediente = await db.expedienteContractual.create({
     data: {
@@ -247,6 +285,7 @@ export async function crearExpedienteContractual(datos: {
       modalidadSeleccion: datos.modalidadSeleccion,
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
+      numeroProcesoSecop,
       fechaInicio: datos.fechaInicio ?? null,
       fechaFinEstimada: datos.fechaFinEstimada ?? null,
       dependenciaSolicitanteId: datos.dependenciaSolicitanteId,
@@ -609,15 +648,15 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
   );
 }
 
-export async function eliminarExpedienteContractualCompleto(expedienteId: string): Promise<{ storagePaths: string[] }> {
-  const expediente = await db.expedienteContractual.findUnique({
-    where: { id: expedienteId },
-    select: { documentos: { select: { storagePath: true } } },
-  });
+export async function eliminarExpedienteContractualCompleto(expedienteId: string, usuarioId: string, motivo: string): Promise<void> {
+  const expediente = await db.expedienteContractual.findUnique({ where: { id: expedienteId }, select: { eliminado: true, numero: true } });
   if (!expediente) throw new Error("El expediente no existe.");
-  const storagePaths = expediente.documentos.map((d) => d.storagePath);
-  await db.expedienteContractual.delete({ where: { id: expedienteId } });
-  return { storagePaths };
+  if (expediente.eliminado) throw new Error("Este expediente ya fue eliminado.");
+  await db.expedienteContractual.update({
+    where: { id: expedienteId },
+    data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
+  });
+  await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
 }
 
 export async function vincularContratistaAUsuario(
@@ -752,7 +791,7 @@ export function construirWhereExpedienteContractual(
   f: FiltrosContratacion,
   permisos: PermisosUsuario
 ): Prisma.ExpedienteContractualWhereInput {
-  const and: Prisma.ExpedienteContractualWhereInput[] = [restringirPorRolContratacion(permisos)];
+  const and: Prisma.ExpedienteContractualWhereInput[] = [{ eliminado: false }, restringirPorRolContratacion(permisos)];
   if (f.etapa && (ETAPAS_ORDEN as string[]).includes(f.etapa)) and.push({ etapaActual: f.etapa as EtapaContratacion });
   if (f.modalidad) and.push({ modalidadSeleccion: f.modalidad as ModalidadSeleccion });
   if (f.dependenciaId) and.push({ dependenciaSolicitanteId: f.dependenciaId });
@@ -763,6 +802,7 @@ export function construirWhereExpedienteContractual(
       OR: [
         { numero: { contains: q, mode: "insensitive" } },
         { numeroContrato: { contains: q, mode: "insensitive" } },
+        { numeroProcesoSecop: { contains: q, mode: "insensitive" } },
         { objeto: { contains: q, mode: "insensitive" } },
         { contratista: { nombreORazonSocial: { contains: q, mode: "insensitive" } } },
       ],

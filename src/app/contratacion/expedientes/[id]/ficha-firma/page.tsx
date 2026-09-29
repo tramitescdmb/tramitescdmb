@@ -32,6 +32,7 @@ export default async function FichaFirmaExpedienteContractualPage({
       contratistaId: true,
       dependenciaSolicitanteId: true,
       etapaActual: true,
+      eliminado: true,
       documentos: {
         where: {
           AND: [
@@ -80,11 +81,13 @@ export default async function FichaFirmaExpedienteContractualPage({
     },
   });
   if (!expediente) notFound();
+  if (expediente.eliminado) notFound();
   const veExpediente = puedeVerExpedienteContractual(permisos, {
     id,
     contratistaId: expediente.contratistaId,
     dependenciaSolicitanteId: expediente.dependenciaSolicitanteId,
     etapaActual: expediente.etapaActual,
+    eliminado: expediente.eliminado,
   });
   if (!veExpediente && !(documentoId && expediente.documentos.length > 0 && (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, documentoId)))) {
     redirect("/contratacion");

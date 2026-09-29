@@ -17,6 +17,7 @@ export function EditarDatosContratoForm({
   dependenciaActualId,
   dependencias,
   numeroContratoActual,
+  numeroProcesoSecopActual,
   fechaInicioActual,
   fechaFinEstimadaActual,
 }: {
@@ -27,6 +28,7 @@ export function EditarDatosContratoForm({
   dependenciaActualId: string;
   dependencias: Dependencia[];
   numeroContratoActual: string | null;
+  numeroProcesoSecopActual: string | null;
   fechaInicioActual: string | null;
   fechaFinEstimadaActual: string | null;
 }) {
@@ -36,6 +38,7 @@ export function EditarDatosContratoForm({
   const [valor, setValor] = useState(valorActual ?? "");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState(dependenciaActualId);
   const [numeroContrato, setNumeroContrato] = useState(numeroContratoActual ?? "");
+  const [numeroProcesoSecop, setNumeroProcesoSecop] = useState(numeroProcesoSecopActual ?? "");
   const [fechaInicio, setFechaInicio] = useState(fechaInicioActual ?? "");
   const [fechaFinEstimada, setFechaFinEstimada] = useState(fechaFinEstimadaActual ?? "");
   const [guardando, setGuardando] = useState(false);
@@ -54,6 +57,7 @@ export function EditarDatosContratoForm({
           valor: valor.trim() || null,
           dependenciaSolicitanteId,
           numeroContrato: numeroContrato.trim() || null,
+          numeroProcesoSecop: numeroProcesoSecop.trim() || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
         }),
@@ -117,6 +121,15 @@ export function EditarDatosContratoForm({
                 <CampoMoneda value={valor} onChange={setValor} className="mt-1" />
               </label>
 
+              <label className="block text-xs font-medium text-stone-600">
+                Número de proceso SECOP
+                <input
+                  value={numeroProcesoSecop}
+                  onChange={(e) => setNumeroProcesoSecop(e.target.value)}
+                  placeholder="Ej. IPS-045-2026"
+                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                />
+              </label>
               <label className="block text-xs font-medium text-stone-600">
                 Número de contrato
                 <input

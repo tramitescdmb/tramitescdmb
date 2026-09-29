@@ -9,9 +9,15 @@ import {
   puedeAsignarPersonalContrato,
   puedeEliminarExpedienteContractual,
 } from "@/lib/permisos";
-import { eliminarExpedienteContractualCompleto, registrarEventoContratacion, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import {
+  eliminarExpedienteContractualCompleto,
+  registrarEventoContratacion,
+  ETIQUETA_MODALIDAD,
+  validarFormatoSecop,
+  verificarUnicidadSecopPorVigencia,
+  vigenciaDeExpediente,
+} from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
-import { deleteDocumento } from "@/lib/storage";
 
 const MODALIDADES_VALIDAS = new Set(Object.keys(ETIQUETA_MODALIDAD));
 
@@ -59,6 +65,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (
     "numeroContrato" in body ||
+    "numeroProcesoSecop" in body ||
     "fechaInicio" in body ||
     "fechaFinEstimada" in body ||
     "modalidadSeleccion" in body ||
@@ -78,10 +85,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const dependencia = await db.dependencia.findUnique({ where: { id: dependenciaId }, select: { id: true } });
       if (!dependencia) return NextResponse.json({ error: "La dependencia indicada no existe." }, { status: 404 });
     }
+    const numeroProcesoSecop = "numeroProcesoSecop" in body && body.numeroProcesoSecop ? String(body.numeroProcesoSecop).trim() : null;
+    if (numeroProcesoSecop) {
+      try {
+        validarFormatoSecop(numeroProcesoSecop);
+        const actual = await db.expedienteContractual.findUnique({ where: { id }, select: { fechaInicio: true, createdAt: true } });
+        if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+        const fechaInicioEfectiva = "fechaInicio" in body ? (body.fechaInicio ? new Date(body.fechaInicio) : null) : actual.fechaInicio;
+        await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(fechaInicioEfectiva, actual.createdAt), id);
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "El número de proceso SECOP no es válido." }, { status: 409 });
+      }
+    }
     await db.expedienteContractual.update({
       where: { id },
       data: {
         ...("numeroContrato" in body ? { numeroContrato: body.numeroContrato ? String(body.numeroContrato).trim() : null } : {}),
+        ...("numeroProcesoSecop" in body ? { numeroProcesoSecop } : {}),
         ...("fechaInicio" in body ? { fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null } : {}),
         ...("fechaFinEstimada" in body ? { fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null } : {}),
         ...("modalidadSeleccion" in body ? { modalidadSeleccion: body.modalidadSeleccion as ModalidadSeleccion } : {}),
@@ -183,12 +203,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeEliminarExpedienteContractual(permisos)) {
     await registrarAccesoDenegadoAccion("eliminar un expediente", id, session, req.headers);
-    return NextResponse.json({ error: "Solo el Administrador de Contratación puede eliminar un expediente." }, { status: 403 });
+    return NextResponse.json({ error: "Solo el Jefe de Contratación puede eliminar un expediente." }, { status: 403 });
   }
+  const body = await req.json().catch(() => null);
+  const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
+  if (!motivo) return NextResponse.json({ error: "Debe indicar el motivo de la eliminación." }, { status: 400 });
 
   try {
-    const { storagePaths } = await eliminarExpedienteContractualCompleto(id);
-    await Promise.all(storagePaths.map((p) => deleteDocumento(p).catch(() => {})));
+    await eliminarExpedienteContractualCompleto(id, session.userId, motivo);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo eliminar el expediente." }, { status: 400 });

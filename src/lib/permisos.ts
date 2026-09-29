@@ -310,7 +310,9 @@ export function puedeAsignarPersonalContrato(permisos: PermisosUsuario): boolean
 
 export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario, expediente: { id: string }): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
-  return permisos.contratacion === "FUNCIONARIO_CONTRATACION" && permisos.asignadoExpedientes.has(expediente.id);
+  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);
+  if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") return permisos.supervisaExpedientes.has(expediente.id);
+  return false;
 }
 
 export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {
@@ -318,13 +320,14 @@ export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boo
 }
 
 export function puedeEliminarExpedienteContractual(permisos: PermisosUsuario): boolean {
-  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+  return permisos.esAdmin || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeVerExpedienteContractual(
   permisos: PermisosUsuario,
-  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion }
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion; eliminado: boolean }
 ): boolean {
+  if (expediente.eliminado) return false;
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);
   if (permisos.contratacion === "JEFE_DEPENDENCIA") return permisos.dependenciaId === expediente.dependenciaSolicitanteId;
@@ -337,7 +340,7 @@ export function puedeVerExpedienteContractual(
 
 export function puedeVerDocumentoContrato(
   permisos: PermisosUsuario,
-  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion },
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion; eliminado: boolean },
   documentoEtapa: EtapaContratacion
 ): boolean {
   if (!puedeVerExpedienteContractual(permisos, expediente)) return false;

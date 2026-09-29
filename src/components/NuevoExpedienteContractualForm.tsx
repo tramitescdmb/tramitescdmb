@@ -77,6 +77,7 @@ export function NuevoExpedienteContractualForm({
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidades[0]?.valor ?? "");
   const [valor, setValor] = useState("");
   const [numeroContrato, setNumeroContrato] = useState("");
+  const [numeroProcesoSecop, setNumeroProcesoSecop] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinEstimada, setFechaFinEstimada] = useState("");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState("");
@@ -182,6 +183,7 @@ export function NuevoExpedienteContractualForm({
           modalidadSeleccion,
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
+          numeroProcesoSecop: numeroProcesoSecop.trim() || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
           dependenciaSolicitanteId,
@@ -246,6 +248,14 @@ export function NuevoExpedienteContractualForm({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Valor del contrato" icon={<CircleDollarSign className="h-4 w-4" />} help="En pesos colombianos.">
                 <CampoMoneda value={valor} onChange={setValor} className="rounded-xl" />
+              </Field>
+              <Field label="N.º de proceso SECOP" icon={<Hash className="h-4 w-4" />} help="El de la etapa precontractual, antes de que exista contrato.">
+                <input
+                  value={numeroProcesoSecop}
+                  onChange={(e) => setNumeroProcesoSecop(e.target.value)}
+                  placeholder="Ej. IPS-045-2026"
+                  className={campoCls}
+                />
               </Field>
               <Field label="N.º de contrato SECOP II" icon={<Hash className="h-4 w-4" />}>
                 <input

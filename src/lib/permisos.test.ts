@@ -14,6 +14,7 @@ import {
   puedeSubirDocumentoContrato,
   puedeGestionarExpedienteCompleto,
   puedeValidarDocumentoContrato,
+  puedeEliminarExpedienteContractual,
   type PermisosUsuario,
 } from "./permisos";
 
@@ -199,7 +200,7 @@ const permContrat = (contratacion: PermisosUsuario["contratacion"], extra: Parti
 });
 
 describe("Acceso a expedientes contractuales (GECON) por etapa y asignación — criterios de aceptación", () => {
-  const expA = { id: "expA", contratistaId: "contXYZ", dependenciaSolicitanteId: "depA" };
+  const expA = { id: "expA", contratistaId: "contXYZ", dependenciaSolicitanteId: "depA", eliminado: false };
   const expedientePrecontractual = { ...expA, etapaActual: "PRECONTRACTUAL" as const };
   const expedienteContractual = { ...expA, etapaActual: "CONTRACTUAL" as const };
 
@@ -262,5 +263,56 @@ describe("Acceso a expedientes contractuales (GECON) por etapa y asignación —
       expect(puedeVerExpedienteContractual(p, expedienteContractual)).toBe(true);
       expect(puedeGestionarExpedienteCompleto(p, { id: "cualquiera" })).toBe(true);
     }
+  });
+});
+
+describe("Editar y eliminar expedientes (ítem 4) — por rol, y visibilidad de un expediente eliminado", () => {
+  const exp = { id: "expA", contratistaId: "contXYZ", dependenciaSolicitanteId: "depA", etapaActual: "CONTRACTUAL" as const };
+
+  describe("editar el contrato o expediente: Jefe, Personal asignado y Supervisor (del expediente) — nadie más", () => {
+    it("el Jefe y el Administrador de Contratación siempre pueden", () => {
+      expect(puedeGestionarExpedienteCompleto(permContrat("JEFE_CONTRATACION"), exp)).toBe(true);
+      expect(puedeGestionarExpedienteCompleto(permContrat("ADMINISTRADOR_CONTRATACION"), exp)).toBe(true);
+    });
+
+    it("el Personal de contratación solo si está asignado a ESE expediente", () => {
+      expect(puedeGestionarExpedienteCompleto(permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expA"]) }), exp)).toBe(true);
+      expect(puedeGestionarExpedienteCompleto(permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["otro"]) }), exp)).toBe(false);
+    });
+
+    it("el Supervisor solo si supervisa ESE expediente", () => {
+      expect(puedeGestionarExpedienteCompleto(permContrat("SUPERVISOR_INTERVENTOR", { supervisaExpedientes: new Set(["expA"]) }), exp)).toBe(true);
+      expect(puedeGestionarExpedienteCompleto(permContrat("SUPERVISOR_INTERVENTOR", { supervisaExpedientes: new Set(["otro"]) }), exp)).toBe(false);
+    });
+
+    it("un Contratista o un Jefe de dependencia no pueden editar", () => {
+      expect(puedeGestionarExpedienteCompleto(permContrat("CONTRATISTA", { contratistaId: "contXYZ" }), exp)).toBe(false);
+      expect(puedeGestionarExpedienteCompleto(permContrat("JEFE_DEPENDENCIA", { dependenciaId: "depA" }), exp)).toBe(false);
+    });
+  });
+
+  describe("eliminar un expediente: solo el Jefe de contratación (o el admin de la plataforma)", () => {
+    it("el Jefe de contratación puede eliminar", () => {
+      expect(puedeEliminarExpedienteContractual(permContrat("JEFE_CONTRATACION"))).toBe(true);
+    });
+
+    it("el admin de la plataforma puede eliminar", () => {
+      expect(puedeEliminarExpedienteContractual({ ...permContrat(null), esAdmin: true })).toBe(true);
+    });
+
+    it("ni el Administrador de Contratación (rol del módulo), ni Personal, ni Supervisor, ni Contratista pueden eliminar", () => {
+      expect(puedeEliminarExpedienteContractual(permContrat("ADMINISTRADOR_CONTRATACION"))).toBe(false);
+      expect(puedeEliminarExpedienteContractual(permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expA"]) }))).toBe(false);
+      expect(puedeEliminarExpedienteContractual(permContrat("SUPERVISOR_INTERVENTOR", { supervisaExpedientes: new Set(["expA"]) }))).toBe(false);
+      expect(puedeEliminarExpedienteContractual(permContrat("CONTRATISTA"))).toBe(false);
+    });
+  });
+
+  it("un expediente eliminado no lo ve nadie por esta vía, ni siquiera el Jefe o el Administrador", () => {
+    const expEliminado = { ...exp, eliminado: true };
+    expect(puedeVerExpedienteContractual(permContrat("JEFE_CONTRATACION"), expEliminado)).toBe(false);
+    expect(puedeVerExpedienteContractual(permContrat("ADMINISTRADOR_CONTRATACION"), expEliminado)).toBe(false);
+    expect(puedeVerExpedienteContractual(permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expA"]) }), expEliminado)).toBe(false);
+    expect(puedeVerExpedienteContractual(permContrat("JEFE_CONTRATACION"), { ...exp, eliminado: false })).toBe(true);
   });
 });

@@ -137,6 +137,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     },
   });
   if (!expediente) notFound();
+  if (expediente.eliminado) notFound();
   if (
     !puedeVerExpedienteContractual(permisos, expediente) &&
     !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, id))
@@ -443,11 +444,14 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 dependenciaActualId={expediente.dependenciaSolicitanteId}
                 dependencias={dependencias}
                 numeroContratoActual={expediente.numeroContrato}
+                numeroProcesoSecopActual={expediente.numeroProcesoSecop}
                 fechaInicioActual={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
                 fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
               />
             )}
-            {puedeEliminarExpedienteContractual(permisos) && <EliminarExpedienteBoton expedienteId={id} numero={expediente.numero} />}
+            {puedeEliminarExpedienteContractual(permisos) && (
+              <EliminarExpedienteBoton expedienteId={id} numero={expediente.numero} numeroContrato={expediente.numeroContrato} />
+            )}
           </div>
         </div>
 
@@ -455,6 +459,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           <div className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Dependencia:</dt><dd className="font-medium text-stone-800">{expediente.dependenciaSolicitante.nombre}</dd></div>
           <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Modalidad:</dt><dd className="font-medium text-stone-800">{ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}</dd></div>
           <div className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Valor:</dt><dd className="font-medium text-stone-800">{formatearPesosCO(expediente.valor?.toString())}</dd></div>
+          <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º proceso SECOP:</dt><dd className="font-medium text-stone-800">{expediente.numeroProcesoSecop ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º contrato:</dt><dd className="font-medium text-stone-800">{expediente.numeroContrato ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
+import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { construirZipExpediente } from "@/lib/zip-contratacion";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
@@ -14,10 +15,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
-    select: { numero: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true },
+    select: { numero: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true, eliminado: true },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
   if (!puedeVerExpedienteContractual(permisos, { id, ...expediente })) {
+    await registrarAccesoDenegadoAccion("descargar el ZIP de un expediente", id, session, req.headers);
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }
 

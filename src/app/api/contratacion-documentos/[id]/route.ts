@@ -13,13 +13,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
-    select: { storagePath: true, etapa: true, expediente: { select: { id: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true } } },
+    select: {
+      storagePath: true,
+      etapa: true,
+      expediente: { select: { id: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true, eliminado: true } },
+    },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (
-    !puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) &&
-    !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
-    !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id))
+    doc.expediente.eliminado ||
+    (!puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) &&
+      !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
+      !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id)))
   ) {
     await registrarAccesoDenegadoAccion("descargar un documento de contratación", id, session, req.headers);
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });

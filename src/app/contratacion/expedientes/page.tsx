@@ -54,7 +54,7 @@ export default async function ExpedientesContratacionPage({
         <input
           name="q"
           defaultValue={sp.q ?? ""}
-          placeholder="Buscar por número, N.º de contrato, objeto o contratista…"
+          placeholder="Buscar por número, N.º de proceso SECOP, N.º de contrato, objeto o contratista…"
           className="min-w-[220px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
         />
         <select
@@ -124,6 +124,7 @@ export default async function ExpedientesContratacionPage({
                 id: e.id,
                 numero: e.numero,
                 numeroContrato: e.numeroContrato,
+                numeroProcesoSecop: e.numeroProcesoSecop,
                 objeto: e.objeto,
                 modalidadSeleccion: e.modalidadSeleccion,
                 etapaActual: e.etapaActual,
@@ -141,6 +142,7 @@ export default async function ExpedientesContratacionPage({
             <thead>
               <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
                 <th className="px-3 py-2">Número</th>
+                <th className="px-3 py-2">N.º proceso SECOP</th>
                 <th className="px-3 py-2">N.º contrato</th>
                 <th className="px-3 py-2">Objeto</th>
                 <th className="px-3 py-2">Modalidad</th>
@@ -159,6 +161,7 @@ export default async function ExpedientesContratacionPage({
                       {e.numero}
                     </Link>
                   </td>
+                  <td className="px-3 py-2 font-mono text-xs text-stone-500">{e.numeroProcesoSecop ?? "—"}</td>
                   <td className="px-3 py-2 font-mono text-xs text-stone-500">{e.numeroContrato ?? "—"}</td>
                   <td className="max-w-xs truncate px-3 py-2" title={e.objeto}>{e.objeto}</td>
                   <td className="px-3 py-2 text-xs text-stone-500">{ETIQUETA_MODALIDAD[e.modalidadSeleccion]}</td>

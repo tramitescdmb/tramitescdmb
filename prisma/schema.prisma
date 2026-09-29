@@ -144,18 +144,19 @@ model Usuario {
   instanciasFlujoIniciadas        InstanciaFlujo[]        @relation("InstanciaFlujoIniciadoPor")
   pasosFlujoEjecutados            PasoEjecutado[]         @relation("PasoEjecutadoResponsable")
 
-  contratista                     Contratista?                      @relation("ContratistaUsuario")
-  expedientesContractualesCreados ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
-  supervisionesContrato           ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
-  asignacionesContrato            ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
-  asignacionesContratoHechas      ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
-  etapasContratacionAprobadas     EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
-  documentosContratoSubidos       DocumentoContrato[]               @relation("DocContratoSubidoPor")
-  documentosContratoValidados     DocumentoContrato[]               @relation("DocContratoValidadoPor")
-  firmasDocumentoContrato         FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
-  eventosContratacion             EventoContratacion[]              @relation("EventoContratacionUsuario")
-  avisosRechazoRecibidos          AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
-  avisosRechazoGenerados          AvisoRechazoDocumento[]           @relation("AvisoRechazoRechazadoPor")
+  contratista                        Contratista?                      @relation("ContratistaUsuario")
+  expedientesContractualesCreados    ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
+  expedientesContractualesEliminados ExpedienteContractual[]           @relation("ExpContractualEliminadoPor")
+  supervisionesContrato              ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
+  asignacionesContrato               ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
+  asignacionesContratoHechas         ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
+  etapasContratacionAprobadas        EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
+  documentosContratoSubidos          DocumentoContrato[]               @relation("DocContratoSubidoPor")
+  documentosContratoValidados        DocumentoContrato[]               @relation("DocContratoValidadoPor")
+  firmasDocumentoContrato            FirmaDocumentoContrato[]          @relation("FirmaDocContratoUsuario")
+  eventosContratacion                EventoContratacion[]              @relation("EventoContratacionUsuario")
+  avisosRechazoRecibidos             AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
+  avisosRechazoGenerados             AvisoRechazoDocumento[]           @relation("AvisoRechazoRechazadoPor")
 
   solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
   solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
@@ -1632,6 +1633,7 @@ model ExpedienteContractual {
   modalidadSeleccion       ModalidadSeleccion
   valor                    Decimal?           @db.Decimal(18, 2)
   numeroContrato           String?
+  numeroProcesoSecop       String?
   fechaInicio              DateTime?
   fechaFinEstimada         DateTime?
   dependenciaSolicitanteId String
@@ -1645,10 +1647,16 @@ model ExpedienteContractual {
 
   expedienteRelacionadoId String?
 
+  eliminado         Boolean   @default(false)
+  eliminadoEn       DateTime?
+  eliminadoPorId    String?
+  motivoEliminacion String?   @db.Text
+
   dependenciaSolicitante Dependencia            @relation(fields: [dependenciaSolicitanteId], references: [id])
   contratista            Contratista?           @relation(fields: [contratistaId], references: [id])
   creadoPor              Usuario                @relation("ExpContractualCreadoPor", fields: [creadoPorId], references: [id])
   expedienteRelacionado  ExpedienteContractual? @relation("ExpedienteContractualRelacionado", fields: [expedienteRelacionadoId], references: [id])
+  eliminadoPor           Usuario?               @relation("ExpContractualEliminadoPor", fields: [eliminadoPorId], references: [id])
 
   supervisores                ExpedienteContractualSupervisor[]
   asignados                   ExpedienteContractualAsignado[]
@@ -1664,6 +1672,8 @@ model ExpedienteContractual {
   @@index([contratistaId])
   @@index([expedienteRelacionadoId])
   @@index([numeroContrato])
+  @@index([numeroProcesoSecop])
+  @@index([eliminado])
 }
 
 model ExpedienteContractualSupervisor {

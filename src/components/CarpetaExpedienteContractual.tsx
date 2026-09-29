@@ -7,6 +7,7 @@ export type CarpetaContractualData = {
   id: string;
   numero: string;
   numeroContrato: string | null;
+  numeroProcesoSecop: string | null;
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
   etapaActual: EtapaContratacion;
@@ -48,6 +49,7 @@ export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData 
       </div>
 
       {c.numeroContrato && <p className="mt-0.5 font-mono text-xs text-stone-500">Contrato {c.numeroContrato}</p>}
+      {c.numeroProcesoSecop && <p className="mt-0.5 font-mono text-xs text-stone-500">SECOP {c.numeroProcesoSecop}</p>}
       <p className="mt-1 line-clamp-2 text-sm text-stone-700">{c.objeto}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/5 pt-2 text-[11px] text-stone-500">

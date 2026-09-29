@@ -23,6 +23,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   ETAPA_APROBADA: { icono: ArrowRightCircle, clase: "text-emerald-600", texto: "Etapa aprobada" },
   ETAPA_RETROCEDIDA: { icono: Undo2, clase: "text-amber-600", texto: "Etapa retrocedida" },
   EXPEDIENTE_CERRADO: { icono: Lock, clase: "text-stone-700", texto: "Expediente cerrado" },
+  EXPEDIENTE_ELIMINADO: { icono: Trash2, clase: "text-red-600", texto: "Expediente eliminado" },
   CONTRATISTA_VINCULADO: { icono: UserSquare2, clase: "text-cdmb-600", texto: "Contratista vinculado" },
   SUPERVISORES_ACTUALIZADOS: { icono: Users, clase: "text-stone-500", texto: "Supervisores actualizados" },
   PERSONAL_ASIGNADO_ACTUALIZADO: { icono: Users, clase: "text-stone-500", texto: "Personal de contratación asignado" },
