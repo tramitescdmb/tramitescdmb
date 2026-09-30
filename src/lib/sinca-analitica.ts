@@ -17,11 +17,12 @@ function wilson(exitos: number, total: number): { p: number; lo: number; hi: num
 
 export type Analitica = Awaited<ReturnType<typeof calcularAnalitica>>;
 
-export async function calcularAnalitica(periodo: RangoPeriodo = null) {
+export async function calcularAnalitica(periodo: RangoPeriodo = null, tipos?: string[]) {
   const anioActual = new Date().getUTCFullYear();
   const condPeriodo = periodo
     ? Prisma.sql`AND "fechaResolucion" >= ${periodo.desde} AND "fechaResolucion" < ${periodo.hasta}`
     : Prisma.empty;
+  const condTipo = tipos && tipos.length > 0 ? Prisma.sql`AND "tipoSolicitudCodigo" IN (${Prisma.join(tipos)})` : Prisma.empty;
 
   const [
     totalGeneralRaw,
@@ -46,19 +47,19 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
              COUNT("diasResolucion") con_dias,
              percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
              percentile_cont(0.9) WITHIN GROUP (ORDER BY "diasResolucion") p90
-      FROM "SincaResolucion" WHERE true ${condPeriodo}`,
+      FROM "SincaResolucion" WHERE true ${condPeriodo} ${condTipo}`,
 
     db.$queryRaw<{ enriquecidas: bigint; con_nit: bigint }[]>`
       SELECT COUNT("enriquecidoEn") enriquecidas, COUNT("solicitanteNit") con_nit
-      FROM "SincaResolucion" WHERE true ${condPeriodo}`,
+      FROM "SincaResolucion" WHERE true ${condPeriodo} ${condTipo}`,
 
     db.$queryRaw<{ total: bigint; aprobadas: bigint }[]>`
       SELECT COUNT(*) total, COUNT(*) FILTER (WHERE estado = 'Aprobada') aprobadas
-      FROM "SincaResolucion" WHERE estado IS NOT NULL ${condPeriodo}`,
+      FROM "SincaResolucion" WHERE estado IS NOT NULL ${condPeriodo} ${condTipo}`,
 
     db.$queryRaw<{ municipio: string; c: bigint }[]>`
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
-      WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
+      WHERE municipio IS NOT NULL ${condPeriodo} ${condTipo} GROUP BY 1 ORDER BY 2 DESC`,
 
     db.$queryRaw<
       { slope: number; intercept: number; r2: number; avgx: number; sxx: number; syy: number; cnt: bigint }[]
@@ -68,14 +69,14 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
       FROM (
         SELECT "anioResolucion" y, COUNT(*)::float c
         FROM "SincaResolucion"
-        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo}
+        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo} ${condTipo}
         GROUP BY 1
       ) t`,
 
     db.$queryRaw<{ anio: number; mes: number; c: bigint }[]>`
       SELECT EXTRACT(YEAR FROM "fechaResolucion")::int anio,
              EXTRACT(MONTH FROM "fechaResolucion")::int mes, COUNT(*) c
-      FROM "SincaResolucion" WHERE "fechaResolucion" IS NOT NULL ${condPeriodo}
+      FROM "SincaResolucion" WHERE "fechaResolucion" IS NOT NULL ${condPeriodo} ${condTipo}
       GROUP BY 1, 2`,
 
     db.$queryRaw<{ bucket: string; c: bigint }[]>`
@@ -87,7 +88,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
         WHEN "diasResolucion" <= 1460 THEN '2-4 años'
         ELSE 'más de 4 años' END bucket,
         COUNT(*) c
-      FROM "SincaResolucion" WHERE "diasResolucion" IS NOT NULL ${condPeriodo} GROUP BY 1`,
+      FROM "SincaResolucion" WHERE "diasResolucion" IS NOT NULL ${condPeriodo} ${condTipo} GROUP BY 1`,
 
     db.$queryRaw<{ anio: number; p50: number; p90: number; c: bigint }[]>`
       SELECT "anioResolucion" anio,
@@ -95,7 +96,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
              percentile_cont(0.9) WITHIN GROUP (ORDER BY "diasResolucion") p90,
              COUNT(*) c
       FROM "SincaResolucion"
-      WHERE "diasResolucion" IS NOT NULL AND "anioResolucion" IS NOT NULL ${condPeriodo}
+      WHERE "diasResolucion" IS NOT NULL AND "anioResolucion" IS NOT NULL ${condPeriodo} ${condTipo}
       GROUP BY 1 ORDER BY 1`,
 
     db.$queryRaw<{ tipo: string; p50: number; c: bigint }[]>`
@@ -103,19 +104,19 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
              percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
              COUNT(*) c
       FROM "SincaResolucion"
-      WHERE "diasResolucion" IS NOT NULL AND "tipoSolicitudNombre" IS NOT NULL ${condPeriodo}
+      WHERE "diasResolucion" IS NOT NULL AND "tipoSolicitudNombre" IS NOT NULL ${condPeriodo} ${condTipo}
       GROUP BY 1 HAVING COUNT(*) >= 15 ORDER BY 2 DESC LIMIT 12`,
 
     db.$queryRaw<{ tipo: string; total: bigint; no_aprobadas: bigint }[]>`
       SELECT "tipoSolicitudNombre" tipo, COUNT(*) total,
              COUNT(*) FILTER (WHERE estado <> 'Aprobada') no_aprobadas
       FROM "SincaResolucion"
-      WHERE "tipoSolicitudNombre" IS NOT NULL AND estado IS NOT NULL ${condPeriodo}
+      WHERE "tipoSolicitudNombre" IS NOT NULL AND estado IS NOT NULL ${condPeriodo} ${condTipo}
       GROUP BY 1 HAVING COUNT(*) >= 20 ORDER BY 2 DESC LIMIT 12`,
 
     db.$queryRaw<{ municipio: string; c: bigint }[]>`
       SELECT municipio, COUNT(*) c FROM "SincaResolucion"
-      WHERE municipio IS NOT NULL ${condPeriodo} GROUP BY 1 ORDER BY 2 DESC`,
+      WHERE municipio IS NOT NULL ${condPeriodo} ${condTipo} GROUP BY 1 ORDER BY 2 DESC`,
 
     db.$queryRaw<{ nit: string; nombre: string | null; c: bigint; anios: bigint; tipos: bigint }[]>`
       SELECT "solicitanteNit" nit, MAX("solicitanteNombre") nombre, COUNT(*) c,
@@ -124,11 +125,14 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
       WHERE "solicitanteNit" IS NOT NULL
         AND length("solicitanteNit") >= 5
         AND "solicitanteNit" NOT IN ('9999999999', '99999999', '999999999', '0000000000', '00000000', '1111111111', '12345678', '123456789')
-        ${condPeriodo}
+        ${condPeriodo} ${condTipo}
       GROUP BY 1 ORDER BY 3 DESC LIMIT 15`,
 
     db.sincaResolucion.findMany({
-      where: periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : undefined,
+      where: {
+        ...(periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {}),
+        ...(tipos && tipos.length > 0 ? { tipoSolicitudCodigo: { in: tipos } } : {}),
+      },
       select: { proyecto: true },
     }),
   ]);
@@ -172,7 +176,7 @@ export async function calcularAnalitica(periodo: RangoPeriodo = null) {
     const historico = (
       await db.$queryRaw<{ anio: number; c: bigint }[]>`
         SELECT "anioResolucion" anio, COUNT(*) c FROM "SincaResolucion"
-        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo}
+        WHERE "anioResolucion" IS NOT NULL AND "anioResolucion" < ${anioActual} ${condPeriodo} ${condTipo}
         GROUP BY 1 ORDER BY 1`
     ).map((r) => ({ anio: r.anio, valor: n(r.c) }));
     const proyeccion = [anioActual, anioActual + 1, anioActual + 2].map((y) => {

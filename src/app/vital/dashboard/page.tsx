@@ -4,18 +4,19 @@ import { Inbox, FileStack, Layers, CalendarClock } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
-import { getVitalDashboard } from "@/lib/vital-data";
+import { getVitalDashboard, getVitalOpcionesFiltro } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 
-export default async function VitalDashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+export default async function VitalDashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;
   const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
@@ -27,14 +28,25 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
     return <SectionHelp>La conexión con VITAL no está configurada en este servidor.</SectionHelp>;
   }
 
-  const d = await getVitalDashboard(rango);
+  const tramitesSeleccionados = sp.tramite?.split(",").map((x) => parseInt(x, 10)).filter(Number.isFinite);
+  const [d, opciones] = await Promise.all([getVitalDashboard(rango, tramitesSeleccionados), getVitalOpcionesFiltro()]);
+  const selector = (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <SelectorTramites
+        opciones={opciones.tramites.map((t) => ({ valor: String(t.id), etiqueta: t.nombre, total: t.total }))}
+        paramName="tramite"
+        titulo="Trámite"
+      />
+    </div>
+  );
   if (d.total === 0) {
     return (
       <div className="space-y-4">
-        <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+        {selector}
         <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
-          {rango
-            ? "No hay solicitudes de VITAL en el período seleccionado."
+          {rango || (tramitesSeleccionados && tramitesSeleccionados.length > 0)
+            ? "No hay solicitudes de VITAL con estos filtros."
             : "Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la pestaña Solicitudes."}
         </p>
       </div>
@@ -43,7 +55,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-4">
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      {selector}
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Kpi icon={Inbox} label="Solicitudes traídas" value={num(d.total)} />

@@ -76,11 +76,15 @@ export async function getVitalUltimasRadicadas(n = 10) {
   });
 }
 
-export async function getVitalDashboard(periodo: RangoPeriodo = null) {
-  const filtroFecha: Prisma.SolicitudVitalWhereInput = periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {};
+export async function getVitalDashboard(periodo: RangoPeriodo = null, tramites?: number[]) {
+  const filtroFecha: Prisma.SolicitudVitalWhereInput = {
+    ...(periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {}),
+    ...(tramites && tramites.length > 0 ? { idTramiteVital: { in: tramites } } : {}),
+  };
   const condicionMensualSql = periodo
     ? Prisma.sql`"fechaRadicacion" >= ${periodo.desde} AND "fechaRadicacion" < ${periodo.hasta}`
     : Prisma.sql`"fechaRadicacion" >= now() - interval '24 months'`;
+  const condicionTramiteSql = tramites && tramites.length > 0 ? Prisma.sql`AND "idTramiteVital" IN (${Prisma.join(tramites)})` : Prisma.empty;
 
   const [total, conDocs, porTramiteRaw, porActividadRaw, mensualRaw, anualRaw, recurrentesRaw, ultimaSyncRaw] =
     await Promise.all([
@@ -97,11 +101,11 @@ export async function getVitalDashboard(periodo: RangoPeriodo = null) {
       db.$queryRaw<{ mes: Date; c: bigint }[]>`
         SELECT date_trunc('month', "fechaRadicacion") mes, COUNT(*) c
         FROM "SolicitudVital"
-        WHERE ${condicionMensualSql}
+        WHERE ${condicionMensualSql} ${condicionTramiteSql}
         GROUP BY 1 ORDER BY 1`,
       db.$queryRaw<{ anio: number; c: bigint }[]>`
         SELECT EXTRACT(YEAR FROM "fechaRadicacion")::int anio, COUNT(*) c
-        FROM "SolicitudVital" WHERE "fechaRadicacion" IS NOT NULL AND ${condicionMensualSql}
+        FROM "SolicitudVital" WHERE "fechaRadicacion" IS NOT NULL AND ${condicionMensualSql} ${condicionTramiteSql}
         GROUP BY 1 ORDER BY 1`,
       db.$queryRaw<{ nit: string; nombre: string | null; c: bigint; tramites: bigint }[]>`
         SELECT "solicitanteIdentificacion" nit, MAX("solicitanteNombre") nombre, COUNT(*) c,
@@ -110,7 +114,7 @@ export async function getVitalDashboard(periodo: RangoPeriodo = null) {
         WHERE "solicitanteIdentificacion" IS NOT NULL
           AND "solicitanteIdentificacion" NOT IN ('00000001', '0', '1', '9999999999')
           AND length("solicitanteIdentificacion") >= 5
-          AND ${condicionMensualSql}
+          AND ${condicionMensualSql} ${condicionTramiteSql}
         GROUP BY 1 ORDER BY 3 DESC LIMIT 10`,
       db.solicitudVital.aggregate({ _max: { ultimaSincronizacion: true } }),
     ]);

@@ -1,10 +1,14 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
-export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
-  const filtroFecha: Prisma.SincaResolucionWhereInput = periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {};
+export async function getHistoricoDashboard(periodo: RangoPeriodo = null, tipos?: string[]) {
+  const filtroFecha: Prisma.SincaResolucionWhereInput = {
+    ...(periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {}),
+    ...(tipos && tipos.length > 0 ? { tipoSolicitudCodigo: { in: tipos } } : {}),
+  };
+  const condicionTipoSql = tipos && tipos.length > 0 ? Prisma.sql`AND "tipoSolicitudCodigo" IN (${Prisma.join(tipos)})` : Prisma.empty;
 
   const [total, aprobadas, conResolucion, diasRaw, porAnioRaw, porTipoRaw, porEstadoRaw, porMunicipioRaw, recientes, ultimaSync] =
     await Promise.all([
@@ -16,11 +20,11 @@ export async function getHistoricoDashboard(periodo: RangoPeriodo = null) {
             SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
                    COUNT("diasResolucion") con
             FROM "SincaResolucion"
-            WHERE "fechaResolucion" >= ${periodo.desde} AND "fechaResolucion" < ${periodo.hasta}`
+            WHERE "fechaResolucion" >= ${periodo.desde} AND "fechaResolucion" < ${periodo.hasta} ${condicionTipoSql}`
         : db.$queryRaw<{ p50: number | null; con: bigint }[]>`
             SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY "diasResolucion") p50,
                    COUNT("diasResolucion") con
-            FROM "SincaResolucion"`,
+            FROM "SincaResolucion" ${tipos && tipos.length > 0 ? Prisma.sql`WHERE "tipoSolicitudCodigo" IN (${Prisma.join(tipos)})` : Prisma.empty}`,
       db.sincaResolucion.groupBy({
         by: ["anioResolucion"],
         _count: { _all: true },

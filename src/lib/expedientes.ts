@@ -6,6 +6,7 @@ export type FiltrosExpedientes = {
   tramiteIdsPermitidos: string[] | null;
   estado?: string;
   tramite?: string;
+  tramites?: string[];
   municipio?: string;
   rango: RangoPeriodo;
   busqueda?: string;
@@ -14,13 +15,14 @@ export type FiltrosExpedientes = {
   cargos?: string[];
 };
 
-// Compartido entre la lista de /expedientes y la exportación (XLSX/CSV): así se garantiza, por
-// construcción, que exportar produzca el mismo número de registros que muestra la pantalla.
+// Compartido entre la lista de /expedientes, la exportación (XLSX/CSV) y el módulo de minería
+// (/mineria): así se garantiza, por construcción, que todos cuenten exactamente lo mismo.
 export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.ExpedienteWhereInput {
   const filtros: Prisma.ExpedienteWhereInput[] = [];
   if (f.tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: f.tramiteIdsPermitidos } });
   if (f.estado) filtros.push({ estado: f.estado as EstadoExpediente });
   if (f.tramite) filtros.push({ tramiteTipoId: f.tramite });
+  if (f.tramites && f.tramites.length > 0) filtros.push({ tramiteTipoId: { in: f.tramites } });
   if (f.municipio) filtros.push({ municipio: f.municipio });
   if (f.rango) filtros.push({ fechaRadicacion: { gte: f.rango.desde, lt: f.rango.hasta } });
   if (f.busqueda) {

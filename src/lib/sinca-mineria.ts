@@ -66,8 +66,11 @@ function kmeans(vectores: number[][], k: number, iteraciones = 40) {
 
 export type Mineria = Awaited<ReturnType<typeof calcularMineria>>;
 
-export async function calcularMineria(periodo: RangoPeriodo = null) {
-  const filtroFecha = periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {};
+export async function calcularMineria(periodo: RangoPeriodo = null, tipos?: string[]) {
+  const filtroFecha = {
+    ...(periodo ? { fechaResolucion: { gte: periodo.desde, lt: periodo.hasta } } : {}),
+    ...(tipos && tipos.length > 0 ? { tipoSolicitudCodigo: { in: tipos } } : {}),
+  };
   const filas: Fila[] = await db.sincaResolucion.findMany({
     where: filtroFecha,
     select: {

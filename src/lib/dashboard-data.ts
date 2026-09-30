@@ -19,8 +19,22 @@ const MESES_CORTOS = [
 
 const MAX_MESES_SERIE = 120;
 
-export async function getDashboardData(tramiteIds: string[] | null, periodo: RangoPeriodo = null) {
-  const filtroTramite: Prisma.ExpedienteWhereInput = tramiteIds ? { tramiteTipoId: { in: tramiteIds } } : {};
+export async function getDashboardData(
+  tramiteIds: string[] | null,
+  periodo: RangoPeriodo = null,
+  tramitesSeleccionados?: string[]
+) {
+  // tramiteIds es el alcance de PERMISOS (null = admin, ve todo); tramitesSeleccionados es el
+  // filtro que el usuario eligió en el selector. El efectivo es la intersección: nunca se puede
+  // ver, filtrando, más de lo que los permisos ya permitían.
+  const tramiteIdsEfectivos =
+    tramitesSeleccionados && tramitesSeleccionados.length > 0
+      ? tramiteIds
+        ? tramiteIds.filter((id) => tramitesSeleccionados.includes(id))
+        : tramitesSeleccionados
+      : tramiteIds;
+
+  const filtroTramite: Prisma.ExpedienteWhereInput = tramiteIdsEfectivos ? { tramiteTipoId: { in: tramiteIdsEfectivos } } : {};
   const filtroFecha: Prisma.ExpedienteWhereInput = periodo ? { fechaRadicacion: { gte: periodo.desde, lt: periodo.hasta } } : {};
   const filtroCombinado: Prisma.ExpedienteWhereInput = { AND: [filtroTramite, filtroFecha] };
 
@@ -29,14 +43,14 @@ export async function getDashboardData(tramiteIds: string[] | null, periodo: Ran
       ? Prisma.sql`"fechaRadicacion" >= ${periodo.desde} AND "fechaRadicacion" < ${periodo.hasta}`
       : Prisma.sql`"fechaRadicacion" >= now() - interval '12 months'`,
   ];
-  if (tramiteIds) {
-    condicionesSql.push(tramiteIds.length > 0 ? Prisma.sql`"tramiteTipoId" IN (${Prisma.join(tramiteIds)})` : Prisma.sql`false`);
+  if (tramiteIdsEfectivos) {
+    condicionesSql.push(tramiteIdsEfectivos.length > 0 ? Prisma.sql`"tramiteTipoId" IN (${Prisma.join(tramiteIdsEfectivos)})` : Prisma.sql`false`);
   }
   const whereSql = Prisma.join(condicionesSql, " AND ");
 
   const [totalTramites, totalExpedientes, porEstado, recientes, porMunicipioRaw, porTramiteRaw, mensualRaw] =
     await Promise.all([
-      tramiteIds ? tramiteIds.length : db.tramiteTipo.count({ where: { activo: true } }),
+      tramiteIdsEfectivos ? tramiteIdsEfectivos.length : db.tramiteTipo.count({ where: { activo: true } }),
       db.expediente.count({ where: filtroCombinado }),
       db.expediente.groupBy({ by: ["estado"], where: filtroCombinado, _count: { _all: true } }),
       db.expediente.findMany({

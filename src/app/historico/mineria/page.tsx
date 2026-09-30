@@ -7,6 +7,7 @@ import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getAnalitica } from "@/lib/sinca-analitica";
 import { getMineria } from "@/lib/sinca-mineria";
 import { sincaConfigurado } from "@/lib/sinca";
+import { getHistoricoOpcionesFiltro } from "@/lib/sinca-data";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { ForecastChart } from "@/components/charts/ForecastChart";
@@ -17,6 +18,7 @@ import { MiniColumnas } from "@/components/charts/MiniColumnas";
 import { PipelineKDD } from "@/components/PipelineKDD";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { SelectorTramites } from "@/components/SelectorTramites";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
 const pctSigno = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} %`);
@@ -40,7 +42,7 @@ function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale;
   );
 }
 
-export default async function MineriaPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+export default async function MineriaPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tipo?: string }> }) {
   const sp = await searchParams;
   const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
@@ -52,13 +54,23 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
-  const [a, m] = await Promise.all([getAnalitica(rango), getMineria(rango)]);
+  const tipos = sp.tipo?.split(",").filter(Boolean);
+  const [a, m, opciones] = await Promise.all([getAnalitica(rango, tipos), getMineria(rango, tipos), getHistoricoOpcionesFiltro()]);
   if (a.totalGeneral === 0) {
     return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
   }
 
   const g = a.pronostico;
-  const selector = <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />;
+  const selector = (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <SelectorTramites
+        opciones={opciones.tipos.map((t) => ({ valor: t.codigo, etiqueta: t.nombre, total: t.total }))}
+        paramName="tipo"
+        titulo="Tipo de trámite"
+      />
+    </div>
+  );
 
   return (
     <div className="space-y-4">

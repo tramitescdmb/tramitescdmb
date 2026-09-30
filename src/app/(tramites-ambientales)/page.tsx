@@ -5,15 +5,17 @@ import { ProgresoExpediente } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getPendientes } from "@/lib/pendientes";
-import { obtenerPermisosUsuario, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederFirmasTramite, puedeAccederTramite } from "@/lib/permisos";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { resumirPendientesFirma, rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
 import { GloboPendientes } from "@/components/GloboPendientes";
 import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { SelectorTramites } from "@/components/SelectorTramites";
 
 function saludo(hora: number) {
   if (hora < 12) return "Buenos días";
@@ -25,17 +27,23 @@ function horaBogota(): number {
   return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;
   const { rango, etiqueta } = resolverPeriodo(sp);
   const session = await getSession();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
-  const [d, pendientes, buzonFirmas] = await Promise.all([
-    getDashboardData(tramiteIds, rango),
+  const tramitesSeleccionados = sp.tramite?.split(",").filter(Boolean);
+  const [d, pendientes, buzonFirmas, todosLosTramites] = await Promise.all([
+    getDashboardData(tramiteIds, rango, tramitesSeleccionados),
     getPendientes(session),
     session && permisos && puedeAccederFirmasTramite(permisos) ? listarBuzon(session.userId, "documentoExpediente") : Promise.resolve([]),
+    db.tramiteTipo.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
   ]);
+  const opcionesTramite = (permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites).map((t) => ({
+    valor: t.id,
+    etiqueta: t.nombre,
+  }));
   const resumenFirmas = resumirPendientesFirma(buzonFirmas);
   const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
@@ -48,7 +56,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
       </div>
 
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <div className="flex flex-wrap items-center gap-2.5">
+        <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+        <SelectorTramites opciones={opcionesTramite} titulo="Trámites" />
+      </div>
 
       {resumenFirmas.total > 0 && (
         <div className={`rounded-xl border p-4 shadow-soft ${resumenFirmas.listos > 0 ? "border-red-200 bg-red-50/40" : "border-stone-200 bg-white"}`}>

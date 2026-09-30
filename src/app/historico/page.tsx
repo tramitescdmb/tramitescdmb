@@ -4,11 +4,12 @@ import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash } from 
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
-import { getHistoricoDashboard } from "@/lib/sinca-data";
+import { getHistoricoDashboard, getHistoricoOpcionesFiltro } from "@/lib/sinca-data";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 
 const num = (v: number) => v.toLocaleString("es-CO");
@@ -16,7 +17,7 @@ const num = (v: number) => v.toLocaleString("es-CO");
 export default async function HistoricoPanelPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ok?: string; error?: string } & FiltrosPeriodo>;
+  searchParams: Promise<{ ok?: string; error?: string; tipo?: string } & FiltrosPeriodo>;
 }) {
   const sp = await searchParams;
   const { ok, error } = sp;
@@ -36,9 +37,19 @@ export default async function HistoricoPanelPage({
     );
   }
 
-  const d = await getHistoricoDashboard(rango);
+  const tipos = sp.tipo?.split(",").filter(Boolean);
+  const [d, opciones] = await Promise.all([getHistoricoDashboard(rango, tipos), getHistoricoOpcionesFiltro()]);
   const sinDatos = d.total === 0;
-  const selector = <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />;
+  const selector = (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <SelectorTramites
+        opciones={opciones.tipos.map((t) => ({ valor: t.codigo, etiqueta: t.nombre, total: t.total }))}
+        paramName="tipo"
+        titulo="Tipo de trámite"
+      />
+    </div>
+  );
 
   const botonSync = esAdmin ? (
     <form action="/api/sinca/sincronizar" method="post">
