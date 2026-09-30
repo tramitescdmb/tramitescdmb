@@ -716,14 +716,38 @@ model VisitaTecnica {
   cartesianaY    Float?
   cartesianaZ    Float?
   precisionM     Float?
+  capturaManual  Boolean  @default(false)
+  fueraJurisdiccion Boolean @default(false)
   nota           String?  @db.Text
   capturadoPorId String
+  // Momento real de la captura (GPS del dispositivo o ingreso manual) — distinto de `createdAt`
+  // (cuándo quedó guardada en el servidor), que puede ser más tarde si se capturó sin conexión.
+  capturadoEn    DateTime @default(now())
   createdAt      DateTime @default(now())
 
-  expediente   Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  capturadoPor Usuario    @relation(fields: [capturadoPorId], references: [id])
+  expediente   Expediente          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  capturadoPor Usuario             @relation(fields: [capturadoPorId], references: [id])
+  fotos        VisitaTecnicaFoto[]
 
   @@index([expedienteId])
+}
+
+model VisitaTecnicaFoto {
+  id          String    @id @default(cuid())
+  visitaId    String
+  storagePath String
+  mimeType    String
+  tamanoBytes Int
+  // Metadatos EXIF de la foto, cuando la cámara los conserva — no siempre existen (fecha/GPS se
+  // pueden perder al comprimir o si el dispositivo los omite), por eso todos son opcionales.
+  tomadaEn    DateTime?
+  latExif     Float?
+  lonExif     Float?
+  createdAt   DateTime  @default(now())
+
+  visita VisitaTecnica @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+
+  @@index([visitaId])
 }
 
 model SolicitudVital {

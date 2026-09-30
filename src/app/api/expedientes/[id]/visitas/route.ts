@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { puedeEditarExpediente } from "@/lib/permisos";
+import { puntoEnJurisdiccionCdmb } from "@/lib/jurisdiccion-cdmb-servidor";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const lon = Number(body.lon);
   const precisionM = body.precisionM != null ? Number(body.precisionM) : null;
   const nota: string | null = body.nota?.trim() || null;
+  const capturaManual = body.capturaManual === true;
+  const capturadoEn = body.capturadoEn ? new Date(body.capturadoEn) : new Date();
 
   if (!Number.isFinite(pasoNumero)) {
     return NextResponse.json({ error: "Falta el número de paso." }, { status: 400 });
@@ -27,8 +30,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!esLatLonValido(lat, lon)) {
     return NextResponse.json({ error: "La ubicación recibida no es válida." }, { status: 400 });
   }
+  if (Number.isNaN(capturadoEn.getTime())) {
+    return NextResponse.json({ error: "La fecha de captura recibida no es válida." }, { status: 400 });
+  }
 
   const c = desdeLatLon(lat, lon);
+  const fueraJurisdiccion = !puntoEnJurisdiccionCdmb(lat, lon);
 
   const visita = await db.visitaTecnica.create({
     data: {
@@ -42,8 +49,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       cartesianaY: c.cartesianaY,
       cartesianaZ: c.cartesianaZ,
       precisionM: Number.isFinite(precisionM) ? precisionM : null,
+      capturaManual,
+      fueraJurisdiccion,
       nota,
       capturadoPorId: session.userId,
+      capturadoEn,
     },
   });
 
@@ -58,5 +68,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   await db.expediente.update({ where: { id }, data: { fechaUltimoMovimiento: new Date() } });
 
-  return NextResponse.json({ id: visita.id });
+  return NextResponse.json({ id: visita.id, fueraJurisdiccion });
 }
