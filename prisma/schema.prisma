@@ -1635,6 +1635,7 @@ model ExpedienteContractual {
   valor                    Decimal?           @db.Decimal(18, 2)
   numeroContrato           String?
   numeroProcesoSecop       String?
+  fechaSuscripcion         DateTime?
   fechaInicio              DateTime?
   fechaFinEstimada         DateTime?
   dependenciaSolicitanteId String

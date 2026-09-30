@@ -493,6 +493,7 @@ export default async function CorrespondenciaDetallePage({
                       rol: s.rol,
                       orden: s.orden,
                       estado: s.estado,
+                      completadoEn: s.completadoEn ? fechaHora(s.completadoEn) : null,
                     }))}
                   />
                 )}

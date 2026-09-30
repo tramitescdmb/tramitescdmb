@@ -7,6 +7,7 @@ import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
+import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
+              rolContratacion: true,
               dependencia: { select: { nombre: true } },
               contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
@@ -66,6 +68,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               denominacionEmpleo: true,
               denominacionComplemento: true,
               sexo: true,
+              rolContratacion: true,
               dependencia: { select: { nombre: true } },
               contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
             },
@@ -104,6 +107,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: formatearFechaHoraLarga(f.fechaHora),
       hash: f.hashContenido,
       calidad: f.calidad,
+      cargo: cargoDelFirmante(f.usuario, "GECON"),
     })),
     ...doc.solicitudesFirma.map((s) => ({
       nombre: s.usuarioAsignado.nombre,
@@ -116,6 +120,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",
+      cargo: cargoDelFirmante(s.usuarioAsignado, "GECON"),
     })),
   ];
 

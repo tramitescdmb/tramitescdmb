@@ -12,12 +12,14 @@ export type CarpetaContractualData = {
   modalidadSeleccion: ModalidadSeleccion;
   etapaActual: EtapaContratacion;
   cerrado: boolean;
+  fechaInicio: Date | null;
   dependencia: string;
   contratista: string | null;
   documentos: number;
 };
 
 export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData }) {
+  const pendienteDeInicio = !c.cerrado && c.etapaActual === "CONTRACTUAL" && !c.fechaInicio;
   return (
     <Link prefetch={false}
       href={`/contratacion/expedientes/${c.id}`}
@@ -40,11 +42,12 @@ export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData 
         <span className={`font-mono text-sm font-semibold ${c.cerrado ? "text-stone-600" : "text-cdmb-800"}`}>{c.numero}</span>
         <span
           className={`inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-            c.cerrado ? "bg-stone-200/70 text-stone-600" : "bg-emerald-100 text-emerald-800"
+            c.cerrado ? "bg-stone-200/70 text-stone-600" : pendienteDeInicio ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
           }`}
+          title={pendienteDeInicio ? "Sin fecha de inicio: no se calculan plazos ni vencimientos." : undefined}
         >
           {c.cerrado ? <Lock className="h-2.5 w-2.5" aria-hidden /> : <FolderOpen className="h-2.5 w-2.5" aria-hidden />}
-          {c.cerrado ? "Cerrado" : ETIQUETA_ETAPA[c.etapaActual]}
+          {c.cerrado ? "Cerrado" : pendienteDeInicio ? "Pendiente de inicio" : ETIQUETA_ETAPA[c.etapaActual]}
         </span>
       </div>
 

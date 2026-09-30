@@ -78,6 +78,7 @@ export function NuevoExpedienteContractualForm({
   const [valor, setValor] = useState("");
   const [numeroContrato, setNumeroContrato] = useState("");
   const [numeroProcesoSecop, setNumeroProcesoSecop] = useState("");
+  const [fechaSuscripcion, setFechaSuscripcion] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinEstimada, setFechaFinEstimada] = useState("");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState("");
@@ -184,6 +185,7 @@ export function NuevoExpedienteContractualForm({
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,
+          fechaSuscripcion: fechaSuscripcion || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
           dependenciaSolicitanteId,
@@ -265,7 +267,10 @@ export function NuevoExpedienteContractualForm({
                   className={campoCls}
                 />
               </Field>
-              <Field label="Fecha de inicio" icon={<CalendarRange className="h-4 w-4" />}>
+              <Field label="Fecha de suscripción" icon={<CalendarRange className="h-4 w-4" />} help="Fecha del contrato (firma). No es la fecha de inicio.">
+                <input type="date" value={fechaSuscripcion} onChange={(e) => setFechaSuscripcion(e.target.value)} className={campoCls} />
+              </Field>
+              <Field label="Fecha de inicio" icon={<CalendarRange className="h-4 w-4" />} help="Acta de inicio. De aquí se calculan plazos y vencimientos.">
                 <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className={campoCls} />
               </Field>
               <Field label="Fin estimado">

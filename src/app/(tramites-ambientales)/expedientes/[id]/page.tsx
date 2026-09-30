@@ -192,6 +192,7 @@ export default async function ExpedienteDetallePage({
       orden: s.orden,
       calidad: s.calidad,
       estado: s.estado,
+      completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
     }));
     const miSolicitud = session
       ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")

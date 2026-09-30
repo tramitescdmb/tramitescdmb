@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
       numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       numeroProcesoSecop: typeof body.numeroProcesoSecop === "string" ? body.numeroProcesoSecop : null,
+      fechaSuscripcion: body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null,
       fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null,
       fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null,
       dependenciaSolicitanteId,

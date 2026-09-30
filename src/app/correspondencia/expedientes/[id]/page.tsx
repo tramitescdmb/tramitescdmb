@@ -517,6 +517,7 @@ export default async function ExpedienteDetallePage({
                                   rol: x.rol,
                                   orden: x.orden,
                                   estado: x.estado,
+                                  completadoEn: x.completadoEn ? fechaHora(x.completadoEn) : null,
                                 }))}
                               />
                             )}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cargoDelFirmante, esContratista, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas } from "./jerarquia-firma";
+import { puedeActuarSolicitud } from "./solicitudes-firma";
 
 const director = { denominacionEmpleo: "DIRECTOR_GENERAL", sexo: "M" };
 const secretaria = { denominacionEmpleo: "SECRETARIO_GENERAL", sexo: "F" };
@@ -57,5 +58,46 @@ describe("cargoDelFirmante", () => {
     expect(cargoDelFirmante(supervisor, "GECON")).toBe("Profesional Especializada · Supervisor");
     expect(cargoDelFirmante(supervisor, "SGDEA")).toBe("Profesional Especializada");
     expect(cargoDelFirmante(contratistaPorRol)).toBe("Contratista");
+  });
+});
+
+describe("orden de firma (ítem 8): nadie firma fuera de turno", () => {
+  // Reproduce exactamente lo que asignarFirmantes() hace en producción: orden = nivelFirma(persona),
+  // nunca lo elige quien asigna (src/lib/solicitudes-firma.ts, createMany). Cada caso arma el mismo
+  // arreglo de solicitudes "todas" que vería puedeActuarSolicitud() en el detalle del expediente.
+  const solicitud = (persona: typeof director | typeof supervisor | typeof contratistaPorRol, estado: "PENDIENTE" | "COMPLETADA") => ({
+    rol: "FIRMA" as const,
+    orden: nivelFirma(persona),
+    estado,
+  });
+
+  it("el contratista no puede firmar mientras el supervisor tenga la firma pendiente", () => {
+    const todas = [solicitud(supervisor, "PENDIENTE"), solicitud(contratistaPorRol, "PENDIENTE")];
+    const laDelContratista = todas[1]!;
+    expect(puedeActuarSolicitud(todas, laDelContratista)).toBe(false);
+  });
+
+  it("el contratista sí puede firmar una vez el supervisor ya firmó", () => {
+    const todas = [solicitud(supervisor, "COMPLETADA"), solicitud(contratistaPorRol, "PENDIENTE")];
+    const laDelContratista = todas[1]!;
+    expect(puedeActuarSolicitud(todas, laDelContratista)).toBe(true);
+  });
+
+  it("el subdirector firma antes que el supervisor: el supervisor espera al subdirector, no al revés", () => {
+    const todas = [solicitud(subdirector, "PENDIENTE"), solicitud(supervisor, "PENDIENTE")];
+    const [laDelSubdirector, laDelSupervisor] = todas as [ReturnType<typeof solicitud>, ReturnType<typeof solicitud>];
+    expect(puedeActuarSolicitud(todas, laDelSubdirector)).toBe(true);
+    expect(puedeActuarSolicitud(todas, laDelSupervisor)).toBe(false);
+  });
+
+  it("director, secretaría general y subdirección firman antes que cualquier funcionario o supervisor", () => {
+    const todas = [
+      solicitud(director, "PENDIENTE"),
+      solicitud(secretaria, "PENDIENTE"),
+      solicitud(subdirector, "PENDIENTE"),
+      solicitud(supervisor, "PENDIENTE"),
+    ];
+    const laDelSupervisor = todas[3]!;
+    expect(puedeActuarSolicitud(todas, laDelSupervisor)).toBe(false);
   });
 });

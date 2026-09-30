@@ -236,6 +236,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
       orden: s.orden,
       calidad: s.calidad,
       estado: s.estado,
+      completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
     }));
     const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
     const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
@@ -447,6 +448,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 dependencias={dependencias}
                 numeroContratoActual={expediente.numeroContrato}
                 numeroProcesoSecopActual={expediente.numeroProcesoSecop}
+                fechaSuscripcionActual={expediente.fechaSuscripcion ? expediente.fechaSuscripcion.toISOString().slice(0, 10) : null}
                 fechaInicioActual={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
                 fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
               />
@@ -465,8 +467,24 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º contrato:</dt><dd className="font-medium text-stone-800">{expediente.numeroContrato ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <dt className="text-stone-500">Suscripción:</dt>
+            <dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaSuscripcion)}</dd>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Vigencia:</dt>
-            <dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</dd>
+            <dd className="font-medium text-stone-800">
+              {!expediente.fechaInicio && expediente.etapaActual === "CONTRACTUAL" && !expediente.cerrado ? (
+                <span
+                  className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                  title="Sin fecha de inicio (acta de inicio) no se calculan plazos ni vencimientos."
+                >
+                  Pendiente de inicio
+                </span>
+              ) : (
+                <>{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</>
+              )}
+            </dd>
           </div>
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
@@ -784,6 +802,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                             orden: s.orden,
                             calidad: s.calidad,
                             estado: s.estado,
+                            completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
                           }))}
                         />
                       )}

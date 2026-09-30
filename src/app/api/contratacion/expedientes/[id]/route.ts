@@ -66,6 +66,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (
     "numeroContrato" in body ||
     "numeroProcesoSecop" in body ||
+    "fechaSuscripcion" in body ||
     "fechaInicio" in body ||
     "fechaFinEstimada" in body ||
     "modalidadSeleccion" in body ||
@@ -102,6 +103,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...("numeroContrato" in body ? { numeroContrato: body.numeroContrato ? String(body.numeroContrato).trim() : null } : {}),
         ...("numeroProcesoSecop" in body ? { numeroProcesoSecop } : {}),
+        ...("fechaSuscripcion" in body ? { fechaSuscripcion: body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null } : {}),
         ...("fechaInicio" in body ? { fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null } : {}),
         ...("fechaFinEstimada" in body ? { fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null } : {}),
         ...("modalidadSeleccion" in body ? { modalidadSeleccion: body.modalidadSeleccion as ModalidadSeleccion } : {}),

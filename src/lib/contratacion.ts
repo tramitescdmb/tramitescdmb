@@ -103,6 +103,7 @@ export type ItemChecklist = Awaited<ReturnType<typeof obtenerRequisitosDeEtapa>>
           usuarioAsignadoId: string;
           usuarioAsignadoNombre: string;
           calidad: CalidadFirma | null;
+          completadoEn: Date | null;
         }[];
       }
     | null;
@@ -132,6 +133,7 @@ export function cruzarChecklist(
       estado: EstadoSolicitudFirma;
       usuarioAsignadoId: string;
       calidad?: CalidadFirma | null;
+      completadoEn: Date | null;
       usuarioAsignado: { nombre: string };
     }[];
   }[]
@@ -167,6 +169,7 @@ export function cruzarChecklist(
               usuarioAsignadoId: s.usuarioAsignadoId,
               usuarioAsignadoNombre: s.usuarioAsignado.nombre,
               calidad: s.calidad ?? null,
+              completadoEn: s.completadoEn,
             })),
           }
         : null,
@@ -273,6 +276,7 @@ export async function crearExpedienteContractual(datos: {
   valor?: number | null;
   numeroContrato?: string | null;
   numeroProcesoSecop?: string | null;
+  fechaSuscripcion?: Date | null;
   fechaInicio?: Date | null;
   fechaFinEstimada?: Date | null;
   dependenciaSolicitanteId: string;
@@ -298,6 +302,7 @@ export async function crearExpedienteContractual(datos: {
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
       numeroProcesoSecop,
+      fechaSuscripcion: datos.fechaSuscripcion ?? null,
       fechaInicio: datos.fechaInicio ?? null,
       fechaFinEstimada: datos.fechaFinEstimada ?? null,
       dependenciaSolicitanteId: datos.dependenciaSolicitanteId,
@@ -617,7 +622,9 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
       createdAt: true,
       subidoPor: { select: { nombre: true } },
       firmas: { select: { fechaHora: true, formato: true } },
-      solicitudesFirma: { select: { id: true, rol: true, orden: true, estado: true, usuarioAsignadoId: true, usuarioAsignado: { select: { nombre: true } } } },
+      solicitudesFirma: {
+        select: { id: true, rol: true, orden: true, estado: true, usuarioAsignadoId: true, completadoEn: true, usuarioAsignado: { select: { nombre: true } } },
+      },
     },
   });
   {

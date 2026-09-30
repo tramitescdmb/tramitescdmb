@@ -18,6 +18,7 @@ export function EditarDatosContratoForm({
   dependencias,
   numeroContratoActual,
   numeroProcesoSecopActual,
+  fechaSuscripcionActual,
   fechaInicioActual,
   fechaFinEstimadaActual,
 }: {
@@ -29,6 +30,7 @@ export function EditarDatosContratoForm({
   dependencias: Dependencia[];
   numeroContratoActual: string | null;
   numeroProcesoSecopActual: string | null;
+  fechaSuscripcionActual: string | null;
   fechaInicioActual: string | null;
   fechaFinEstimadaActual: string | null;
 }) {
@@ -39,6 +41,7 @@ export function EditarDatosContratoForm({
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState(dependenciaActualId);
   const [numeroContrato, setNumeroContrato] = useState(numeroContratoActual ?? "");
   const [numeroProcesoSecop, setNumeroProcesoSecop] = useState(numeroProcesoSecopActual ?? "");
+  const [fechaSuscripcion, setFechaSuscripcion] = useState(fechaSuscripcionActual ?? "");
   const [fechaInicio, setFechaInicio] = useState(fechaInicioActual ?? "");
   const [fechaFinEstimada, setFechaFinEstimada] = useState(fechaFinEstimadaActual ?? "");
   const [guardando, setGuardando] = useState(false);
@@ -58,6 +61,7 @@ export function EditarDatosContratoForm({
           dependenciaSolicitanteId,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,
+          fechaSuscripcion: fechaSuscripcion || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
         }),
@@ -141,7 +145,16 @@ export function EditarDatosContratoForm({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block text-xs font-medium text-stone-600">
-                  Fecha de inicio
+                  Fecha de suscripción
+                  <input
+                    type="date"
+                    value={fechaSuscripcion}
+                    onChange={(e) => setFechaSuscripcion(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-stone-600">
+                  Fecha de inicio (acta de inicio)
                   <input
                     type="date"
                     value={fechaInicio}
@@ -160,8 +173,8 @@ export function EditarDatosContratoForm({
                 </label>
               </div>
               <p className="text-[11px] text-stone-400">
-                Útil para ajustar la fecha de inicio a la del Acta de Inicio real, corregir un dato mal capturado al abrir el
-                expediente, o registrar el número de contrato cuando aún no se conocía.
+                Los plazos y vencimientos se calculan desde la fecha de inicio (acta de inicio), no desde la fecha de
+                suscripción. Sin fecha de inicio, el contrato queda «Pendiente de inicio» y no se calculan plazos.
               </p>
             </div>
 

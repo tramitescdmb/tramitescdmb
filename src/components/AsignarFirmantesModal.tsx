@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X } from "lucide-react";
 import { OPCIONES_CALIDAD_ASIGNACION, ETIQUETA_CALIDAD_FIRMA, rotuloCalidadFirma, type CalidadPresentacion } from "@/lib/calidad-firma";
+import { ETIQUETA_NIVEL_FIRMA, type NivelFirma } from "@/lib/jerarquia-firma";
+
+function etiquetaTurno(orden: number): string {
+  return ETIQUETA_NIVEL_FIRMA[orden as NivelFirma] ?? `Turno ${orden}`;
+}
 
 type RolFirmante = "FIRMA" | "VISTO_BUENO" | "LECTURA";
 type EstadoSolicitudFirma = "PENDIENTE" | "COMPLETADA" | "RECHAZADA";
@@ -34,6 +39,7 @@ export type FirmanteAsignado = {
   rol: RolFirmante;
   orden: number;
   estado: EstadoSolicitudFirma;
+  completadoEn?: string | null;
 };
 
 export function AsignarFirmantesModal({
@@ -129,15 +135,21 @@ export function AsignarFirmantesModal({
             {firmantesActuales.length > 0 ? (
               <ul className="mb-4 divide-y divide-stone-100 rounded-lg border border-stone-100 text-xs">
                 {firmantesActuales.map((f) => (
-                  <li key={f.id} className="flex items-center justify-between gap-2 p-2">
-                    <span className="text-stone-700">
-                      {f.usuarioAsignadoNombre}{" "}
-                      <span className="text-stone-400">
-                        — {ETIQUETA_ROL[f.rol]}
-                        {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""}
+                  <li key={f.id} className="flex flex-col gap-1 p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-stone-700">
+                        {f.usuarioAsignadoNombre}{" "}
+                        <span className="text-stone-400">
+                          — {ETIQUETA_ROL[f.rol]}
+                          {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""}
+                        </span>
                       </span>
+                      <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
+                    </div>
+                    <span className="text-[11px] text-stone-400">
+                      Turno: {etiquetaTurno(f.orden)}
+                      {f.estado === "COMPLETADA" && f.completadoEn ? ` · ${f.completadoEn}` : ""}
                     </span>
-                    <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
                   </li>
                 ))}
               </ul>

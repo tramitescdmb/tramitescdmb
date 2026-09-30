@@ -129,6 +129,7 @@ export default async function ExpedientesContratacionPage({
                 modalidadSeleccion: e.modalidadSeleccion,
                 etapaActual: e.etapaActual,
                 cerrado: e.cerrado,
+                fechaInicio: e.fechaInicio,
                 dependencia: e.dependenciaSolicitante.nombre,
                 contratista: e.contratista?.nombreORazonSocial ?? null,
                 documentos: e._count.documentos,
@@ -169,13 +170,19 @@ export default async function ExpedientesContratacionPage({
                   <td className="px-3 py-2 text-xs text-stone-500">{e.contratista?.nombreORazonSocial ?? "—"}</td>
                   <td className="px-3 py-2 text-xs text-stone-500">{e._count.documentos}</td>
                   <td className="px-3 py-2 text-xs">
-                    <span
-                      className={`rounded-full px-2 py-0.5 font-medium ${
-                        e.cerrado ? "bg-stone-100 text-stone-600" : "bg-cdmb-50 text-cdmb-700"
-                      }`}
-                    >
-                      {e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual]}
-                    </span>
+                    {!e.cerrado && e.etapaActual === "CONTRACTUAL" && !e.fechaInicio ? (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700" title="Sin fecha de inicio: no se calculan plazos ni vencimientos.">
+                        Pendiente de inicio
+                      </span>
+                    ) : (
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-medium ${
+                          e.cerrado ? "bg-stone-100 text-stone-600" : "bg-cdmb-50 text-cdmb-700"
+                        }`}
+                      >
+                        {e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual]}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs text-stone-400">{formatearFecha(e.createdAt)}</td>
                 </tr>

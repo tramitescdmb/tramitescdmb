@@ -6,6 +6,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { etiquetaCalidadCompleta } from "@/lib/calidad-firma";
+import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
 export default async function FichaFirmaComunicacionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,7 +42,19 @@ export default async function FichaFirmaComunicacionPage({ params }: { params: P
       solicitudesFirma: {
         where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
         orderBy: { completadoEn: "asc" },
-        include: { usuarioAsignado: { select: { nombre: true, cedulaONit: true, tipoIdentificacionFirma: true, correoNotificacion: true, denominacionEmpleo: true } } },
+        include: {
+          usuarioAsignado: {
+            select: {
+              nombre: true,
+              cedulaONit: true,
+              tipoIdentificacionFirma: true,
+              correoNotificacion: true,
+              denominacionEmpleo: true,
+              denominacionComplemento: true,
+              sexo: true,
+            },
+          },
+        },
       },
     },
   });
@@ -69,9 +83,10 @@ export default async function FichaFirmaComunicacionPage({ params }: { params: P
                 <p className="flex items-center gap-1.5 font-medium text-stone-900">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
                   {f.usuario.nombre}
-                  {f.usuario.denominacionEmpleo && <span className="font-normal text-stone-500"> — {f.usuario.denominacionEmpleo}</span>}
+                  <span className="font-normal text-stone-500"> — {cargoDelFirmante(f.usuario, "SGDEA")}</span>
                 </p>
                 <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                  <Dato k="Calidad de la firma" v={etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad })} />
                   <Dato k={etiquetaDatoIdentificacion(f.usuario.tipoIdentificacionFirma)} v={f.usuario.cedulaONit ?? "no registrada"} mono />
                   <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
                   <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
@@ -92,10 +107,11 @@ export default async function FichaFirmaComunicacionPage({ params }: { params: P
                 <p className="flex items-center gap-1.5 font-medium text-stone-900">
                   <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
                   {s.usuarioAsignado.nombre}
-                  {s.usuarioAsignado.denominacionEmpleo && <span className="font-normal text-stone-500"> — {s.usuarioAsignado.denominacionEmpleo}</span>}
+                  <span className="font-normal text-stone-500"> — {cargoDelFirmante(s.usuarioAsignado, "SGDEA")}</span>
                   <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                 </p>
                 <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                  <Dato k="Calidad de la firma" v="Visto bueno" />
                   <Dato k={etiquetaDatoIdentificacion(s.usuarioAsignado.tipoIdentificacionFirma)} v={s.usuarioAsignado.cedulaONit ?? "no registrada"} mono />
                   <Dato k="Correo de notificación" v={s.usuarioAsignado.correoNotificacion ?? "no registrado"} />
                   <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />
