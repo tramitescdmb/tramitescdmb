@@ -10,7 +10,7 @@ const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
   { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
   { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
-  { href: "/geovisor", label: "Geovisor", icon: Map },
+  { href: "/geovisor", label: "Visor de trámites", icon: Map },
   { href: "/solicitantes", label: "Solicitantes", icon: Users, requiereTramite: true },
   { href: "/firmas/buzon", label: "Firmas", icon: PenLine, prefijo: "/firmas", requiereFirmas: true },
 ];

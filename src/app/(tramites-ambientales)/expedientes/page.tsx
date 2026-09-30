@@ -92,7 +92,7 @@ export default async function ExpedientesPage({
   const hrefPagina = (p: number) => conFiltro({ page: p > 1 ? String(p) : undefined });
   const hrefGeovisor = () => {
     const params = new URLSearchParams();
-    for (const [k, v] of Object.entries({ estado, tramite, municipio, desde: sp.desde, hasta: sp.hasta })) {
+    for (const [k, v] of Object.entries({ desde: sp.desde, hasta: sp.hasta })) {
       if (v) params.set(k, v);
     }
     const qs = params.toString();

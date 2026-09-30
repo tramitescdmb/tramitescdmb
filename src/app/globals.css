@@ -16,3 +16,7 @@ body {
   background-color: #d5f2dd; /* cdmb-100 */
   color: #134129; /* cdmb-900 */
 }
+
+.leaflet-interactive:focus {
+  outline: none;
+}
