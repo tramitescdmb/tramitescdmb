@@ -10,20 +10,9 @@ import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { formatearFecha } from "@/lib/fecha";
+import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
 
 const POR_PAGINA = 30;
-
-const ESTADOS = [
-  "RADICADO",
-  "EN_TRAMITE",
-  "INFORMACION_ADICIONAL_REQUERIDA",
-  "SUSPENDIDO",
-  "APROBADO",
-  "NEGADO",
-  "DESISTIDO",
-  "ARCHIVADO",
-  "RECHAZADO",
-] as const;
 
 export default async function ExpedientesPage({
   searchParams,
@@ -55,7 +44,7 @@ export default async function ExpedientesPage({
 
   const filtros: Prisma.ExpedienteWhereInput[] = [];
   if (tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: tramiteIdsPermitidos } });
-  if (estado) filtros.push({ estado: estado as (typeof ESTADOS)[number] });
+  if (estado) filtros.push({ estado: estado as (typeof ESTADOS_EXPEDIENTE)[number] });
   if (tramite) filtros.push({ tramiteTipoId: tramite });
   if (municipio) filtros.push({ municipio });
   if (rango) filtros.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
@@ -101,6 +90,14 @@ export default async function ExpedientesPage({
     return qs ? `/expedientes?${qs}` : "/expedientes";
   };
   const hrefPagina = (p: number) => conFiltro({ page: p > 1 ? String(p) : undefined });
+  const hrefGeovisor = () => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries({ estado, tramite, municipio, desde: sp.desde, hasta: sp.hasta })) {
+      if (v) params.set(k, v);
+    }
+    const qs = params.toString();
+    return qs ? `/geovisor?${qs}` : "/geovisor";
+  };
 
   const clausulasFiltro: string[] = [];
   if (tramite) {
@@ -116,12 +113,17 @@ export default async function ExpedientesPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Expedientes</h2>
-        <p className="text-sm text-stone-500">
-          Todos los casos radicados, de cualquier trámite. Puede filtrarse por estado, o buscarse por
-          número, solicitante, trámite o municipio.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold text-stone-900">Expedientes</h2>
+          <p className="text-sm text-stone-500">
+            Todos los casos radicados, de cualquier trámite. Puede filtrarse por estado, o buscarse por
+            número, solicitante, trámite o municipio.
+          </p>
+        </div>
+        <Link href={hrefGeovisor()} className="text-sm font-medium text-cdmb-700 hover:underline">
+          Ver en el geovisor →
+        </Link>
       </div>
 
       {soloMios && (
@@ -204,7 +206,7 @@ export default async function ExpedientesPage({
         >
           Todos
         </Link>
-        {ESTADOS.map((e) => (
+        {ESTADOS_EXPEDIENTE.map((e) => (
           <Link
             key={e}
             href={conFiltro({ estado: e })}

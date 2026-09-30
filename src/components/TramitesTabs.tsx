@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine } from "lucide-react";
+import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map } from "lucide-react";
 import { GloboPendientes } from "@/components/GloboPendientes";
 import { SIN_PENDIENTES_FIRMA, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/", label: "Panel", icon: LayoutDashboard, exacto: true },
   { href: "/tramites", label: "Catálogo de trámites", icon: LibraryBig },
   { href: "/expedientes", label: "Expedientes", icon: FolderOpen },
+  { href: "/geovisor", label: "Geovisor", icon: Map },
   { href: "/solicitantes", label: "Solicitantes", icon: Users, requiereTramite: true },
   { href: "/firmas/buzon", label: "Firmas", icon: PenLine, prefijo: "/firmas", requiereFirmas: true },
 ];
