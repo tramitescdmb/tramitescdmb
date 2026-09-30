@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -20,10 +21,13 @@ import {
   HelpCircle,
   ExternalLink,
   Loader2,
+  Link2,
+  FileText,
 } from "lucide-react";
 import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
 import { normalizar } from "@/lib/cargos";
+import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, type CapaContextoReporte } from "@/lib/geovisor-exportar";
 
 export type PuntoTramite = {
   id: string;
@@ -133,6 +137,45 @@ function puntoEnPoligono(p: [number, number], poly: [number, number][]): boolean
   return dentro;
 }
 
+function circuloComoPoligono(centro: [number, number], radioM: number): [number, number][] {
+  const n = 40;
+  const latR = radioM / 111_320;
+  const lonR = radioM / (111_320 * Math.cos((centro[0] * Math.PI) / 180));
+  const out: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const ang = (2 * Math.PI * i) / n;
+    out.push([centro[0] + latR * Math.sin(ang), centro[1] + lonR * Math.cos(ang)]);
+  }
+  return out;
+}
+
+// Anillos (lat,lon) de un Polygon/MultiPolygon — para probar si un vértice de
+// la zona cae DENTRO de una capa de contexto (el caso típico: la zona medida
+// es pequeña y queda adentro de un área protegida o un municipio mucho más
+// grandes, así que ningún vértice de ESE polígono cae dentro de la zona).
+function anillosDeGeometria(geom: Feature["geometry"]): [number, number][][] {
+  if (!geom) return [];
+  if (geom.type === "Polygon") return geom.coordinates.map((anillo) => anillo.map(([lon, lat]) => [lat, lon] as [number, number]));
+  if (geom.type === "MultiPolygon") return geom.coordinates.flatMap((poli) => poli.map((anillo) => anillo.map(([lon, lat]) => [lat, lon] as [number, number])));
+  return [];
+}
+
+function puntosDeGeometria(geom: Feature["geometry"]): [number, number][] {
+  if (!geom) return [];
+  if (geom.type === "Point") return [[geom.coordinates[1]!, geom.coordinates[0]!]];
+  if (geom.type === "MultiPoint" || geom.type === "LineString") return geom.coordinates.map(([lon, lat]) => [lat!, lon!]);
+  if (geom.type === "MultiLineString") return geom.coordinates.flat().map(([lon, lat]) => [lat!, lon!]);
+  return anillosDeGeometria(geom).flat();
+}
+
+// "Toca" = algún punto de la capa cae dentro de la zona, o algún vértice de
+// la zona cae dentro de uno de los anillos de la capa — sin esto último, una
+// zona chica adentro de un polígono grande no se detectaría nunca.
+function featureTocaPoligono(f: Feature, zona: [number, number][]): boolean {
+  if (puntosDeGeometria(f.geometry).some((p) => puntoEnPoligono(p, zona))) return true;
+  return anillosDeGeometria(f.geometry).some((anillo) => zona.some((p) => puntoEnPoligono(p, anillo)));
+}
+
 function fmtDist(m: number): string {
   return m < 1000 ? `${m.toFixed(0)} m` : `${(m / 1000).toFixed(2)} km`;
 }
@@ -155,6 +198,9 @@ function descargarTexto(contenido: string, nombreArchivo: string, tipoMime: stri
 }
 
 export function GeovisorTramites({ expedientes, tramites }: { expedientes: PuntoTramite[]; tramites: TramiteOpcion[] }) {
+  const searchParams = useSearchParams();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se usa una vez, al montar (inicializador de useState)
+  const zonaInicial = useMemo(() => parseZonaParam(searchParams.get("zona")), []);
   const contenedorRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const clusterRef = useRef<import("leaflet").MarkerClusterGroup | null>(null);
@@ -167,7 +213,7 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const modoRef = useRef<"medir" | "cerca" | null>(null);
 
   const [panelAbierto, setPanelAbierto] = useState(true);
-  const [pestana, setPestana] = useState<Pestana>("filtrar");
+  const [pestana, setPestana] = useState<Pestana>(zonaInicial.length >= 3 ? "medir" : "filtrar");
   const [zoomActual, setZoomActual] = useState(10);
   const [mensajeMapa, setMensajeMapa] = useState<string | null>(null);
   const [ayudaAbierta, setAyudaAbierta] = useState(false);
@@ -193,9 +239,9 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const [tramiteSel, setTramiteSel] = useState<string>("");
   const [estadosOcultos, setEstadosOcultos] = useState<Set<string>>(new Set());
 
-  const [modoMedir, setModoMedir] = useState(false);
+  const [modoMedir, setModoMedir] = useState(zonaInicial.length >= 3);
   const [medirArea, setMedirArea] = useState(true);
-  const [medida, setMedida] = useState<[number, number][]>([]);
+  const [medida, setMedida] = useState<[number, number][]>(zonaInicial);
 
   const [modoCerca, setModoCerca] = useState(false);
   const [puntoCerca, setPuntoCerca] = useState<[number, number] | null>(null);
@@ -563,25 +609,91 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     }
   }
 
-  function descargarCerca() {
-    const geojson: FeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { tipo: "punto-cercania", radio_m: radioCerca, tramites_dentro: tramitesCerca.length },
-          geometry: { type: "Point", coordinates: [puntoCerca![1], puntoCerca![0]] },
-        },
-        ...tramitesCerca.map((t) => ({
-          type: "Feature" as const,
-          properties: { numero: t.numero, tramite: t.tramiteNombre, estado: t.estado, municipio: t.municipio, distancia_m: Math.round(t.distanciaM) },
-          geometry: { type: "Point" as const, coordinates: [t.lon, t.lat] },
-        })),
-      ],
-    };
+  function contextoDeZona(zona: [number, number][]): CapaContextoReporte[] {
+    if (zona.length < 3) return [];
+    const resultado: CapaContextoReporte[] = [];
+    for (const cfg of CAPAS_CONTEXTO) {
+      const datos = capas[cfg.id].datos;
+      if (!datos) continue;
+      const nombres = new Set<string>();
+      for (const f of datos.features) {
+        const nombre = f.properties?.nombre as string | undefined;
+        if (nombre && featureTocaPoligono(f, zona)) nombres.add(nombre);
+      }
+      if (nombres.size > 0) resultado.push({ titulo: cfg.etiqueta, elementos: [...nombres].sort((a, b) => a.localeCompare(b, "es")) });
+    }
+    return resultado;
+  }
+
+  function nombreArchivo(base: string, extension: string): string {
     const hoy = new Date();
     const fecha = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, "0")}${String(hoy.getDate()).padStart(2, "0")}`;
-    descargarTexto(JSON.stringify(geojson, null, 2), `tramites_cerca_${fecha}.geojson`, "application/geo+json;charset=utf-8");
+    return `${base}_${fecha}.${extension}`;
+  }
+
+  function descargarCerca() {
+    if (!puntoCerca) return;
+    const origen = window.location.origin;
+    const zona = circuloComoPoligono(puntoCerca, radioCerca);
+    const contenido = geoJsonTramites(tramitesCerca, {
+      zona,
+      areaM2: Math.PI * radioCerca ** 2,
+      contexto: contextoDeZona(zona),
+      origen,
+    });
+    descargarTexto(contenido, nombreArchivo("tramites_cerca", "geojson"), "application/geo+json;charset=utf-8");
+  }
+
+  function copiarEnlaceZona() {
+    const z = zonaAParam(medida);
+    if (!z) return;
+    const url = `${window.location.origin}/geovisor?zona=${encodeURIComponent(z)}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => mostrarMensaje("Enlace de la zona copiado."))
+      .catch(() => mostrarMensaje("No se pudo copiar el enlace."));
+  }
+
+  function descargarReporte() {
+    const origen = window.location.origin;
+    let contenido: string;
+    if (medida.length >= 3) {
+      contenido = htmlReporte({
+        titulo: "Reporte de zona seleccionada",
+        puntos: tramitesEnZona,
+        zona: medida,
+        areaM2: area,
+        perimetroM: perimetro,
+        contexto: contextoDeZona(medida),
+        origen,
+      });
+    } else if (puntoCerca) {
+      const zona = circuloComoPoligono(puntoCerca, radioCerca);
+      contenido = htmlReporte({
+        titulo: `Trámites a menos de ${fmtDist(radioCerca)} de un punto`,
+        puntos: tramitesCerca,
+        zona,
+        areaM2: Math.PI * radioCerca ** 2,
+        contexto: contextoDeZona(zona),
+        origen,
+      });
+    } else {
+      contenido = htmlReporte({
+        titulo: municipioSel ? `Trámites de ${municipioSel}` : "Trámites — vista actual",
+        puntos: expedientesVisibles,
+        origen,
+      });
+    }
+    descargarTexto(contenido, nombreArchivo("reporte_tramites", "html"), "text/html;charset=utf-8");
+  }
+
+  function descargarVisibles(csv: boolean) {
+    const origen = window.location.origin;
+    if (csv) {
+      descargarTexto(csvTramites(expedientesVisibles, origen), nombreArchivo("tramites", "csv"), "text/csv;charset=utf-8");
+    } else {
+      descargarTexto(geoJsonTramites(expedientesVisibles, { origen }), nombreArchivo("tramites", "geojson"), "application/geo+json;charset=utf-8");
+    }
   }
 
   function zoomAMunicipio(nombre: string) {
@@ -601,24 +713,14 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   }
 
   function descargarZona() {
-    const geojson: FeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { tipo: "zona-medida", area_m2: Math.round(area), perimetro_m: Math.round(perimetro), tramites_dentro: tramitesEnZona.length },
-          geometry: { type: "Polygon", coordinates: [[...medida, medida[0]!].map(([lat, lon]) => [lon, lat])] },
-        },
-        ...tramitesEnZona.map((t) => ({
-          type: "Feature" as const,
-          properties: { numero: t.numero, tramite: t.tramiteNombre, solicitante: t.solicitanteNombre, estado: t.estado, municipio: t.municipio },
-          geometry: { type: "Point" as const, coordinates: [t.lon, t.lat] },
-        })),
-      ],
-    };
-    const hoy = new Date();
-    const fecha = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, "0")}${String(hoy.getDate()).padStart(2, "0")}`;
-    descargarTexto(JSON.stringify(geojson, null, 2), `zona_tramites_${fecha}.geojson`, "application/geo+json;charset=utf-8");
+    const contenido = geoJsonTramites(tramitesEnZona, {
+      zona: medida,
+      areaM2: area,
+      perimetroM: perimetro,
+      contexto: contextoDeZona(medida),
+      origen: window.location.origin,
+    });
+    descargarTexto(contenido, nombreArchivo("zona_tramites", "geojson"), "application/geo+json;charset=utf-8");
   }
 
   function verTodo() {
@@ -631,7 +733,7 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const anchoPanel = panelAbierto ? "w-full max-w-xs shrink-0 sm:w-80" : "w-0";
 
   return (
-    <div className="relative flex h-[calc(100vh-230px)] min-h-[560px] w-full overflow-hidden rounded-xl border border-stone-200 shadow-soft">
+    <div className="relative flex h-[calc(100vh-160px)] min-h-[760px] w-full overflow-hidden rounded-xl border border-stone-200 shadow-soft">
       <div className={`min-w-0 overflow-hidden border-stone-200 bg-white transition-[width] ${panelAbierto ? "border-r" : ""} ${anchoPanel}`}>
         <div className="flex h-full w-80 max-w-xs flex-col sm:w-80">
           <div className="flex items-center gap-2 border-b border-stone-100 px-3 py-2.5">
@@ -713,6 +815,10 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
                 onUsarMiUbicacion={usarMiUbicacionEnCerca}
                 buscandoUbicacion={buscandoUbicacion}
                 onDescargarCerca={descargarCerca}
+                onCopiarEnlace={copiarEnlaceZona}
+                onDescargarReporte={descargarReporte}
+                totalVisibles={expedientesVisibles.length}
+                onDescargarVisibles={descargarVisibles}
               />
             )}
           </div>
@@ -1126,6 +1232,10 @@ function PanelMedir({
   onUsarMiUbicacion,
   buscandoUbicacion,
   onDescargarCerca,
+  onCopiarEnlace,
+  onDescargarReporte,
+  totalVisibles,
+  onDescargarVisibles,
 }: {
   modoMedir: boolean;
   onModoMedir: (v: boolean) => void;
@@ -1148,6 +1258,10 @@ function PanelMedir({
   onUsarMiUbicacion: () => void;
   buscandoUbicacion: boolean;
   onDescargarCerca: () => void;
+  onCopiarEnlace: () => void;
+  onDescargarReporte: () => void;
+  totalVisibles: number;
+  onDescargarVisibles: (csv: boolean) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -1252,7 +1366,28 @@ function PanelMedir({
                 <Download className="h-3.5 w-3.5" aria-hidden />
                 Descargar zona (GeoJSON)
               </button>
-              <p className="text-[10.5px] text-stone-400">El GeoJSON incluye la zona y los trámites de adentro; se abre en QGIS, ArcGIS o Google Earth.</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onCopiarEnlace}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-stone-200 px-2 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                >
+                  <Link2 className="h-3.5 w-3.5" aria-hidden />
+                  Enlace de la zona
+                </button>
+                <button
+                  type="button"
+                  onClick={onDescargarReporte}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-stone-200 px-2 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                >
+                  <FileText className="h-3.5 w-3.5" aria-hidden />
+                  Reporte (HTML)
+                </button>
+              </div>
+              <p className="text-[10.5px] text-stone-400">
+                El GeoJSON incluye la zona y los trámites de adentro; se abre en QGIS, ArcGIS o Google Earth. El reporte es una página lista para
+                imprimir o guardar como PDF.
+              </p>
             </>
           )}
         </>
@@ -1324,6 +1459,40 @@ function PanelMedir({
             )}
           </div>
         )}
+      </div>
+
+      <div className="border-t border-stone-100 pt-3">
+        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-400">Descargar lo que se ve ahora</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onDescargarVisibles(false)}
+            disabled={totalVisibles === 0}
+            className="flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden />
+            GeoJSON ({totalVisibles})
+          </button>
+          <button
+            type="button"
+            onClick={() => onDescargarVisibles(true)}
+            disabled={totalVisibles === 0}
+            className="flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden />
+            CSV
+          </button>
+          <button
+            type="button"
+            onClick={onDescargarReporte}
+            disabled={totalVisibles === 0}
+            className="flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          >
+            <FileText className="h-3.5 w-3.5" aria-hidden />
+            Reporte
+          </button>
+        </div>
+        <p className="mt-1.5 text-[10.5px] text-stone-400">Respeta los filtros activos de la pestaña Filtrar.</p>
       </div>
     </div>
   );
