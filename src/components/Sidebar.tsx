@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { SidebarNav } from "@/components/SidebarNav";
 
@@ -31,12 +32,20 @@ export function Sidebar({
   iniciales: string;
 }) {
   const [colapsado, setColapsado] = useState(false);
+  const pathname = usePathname();
 
+  // El geovisor necesita todo el ancho posible para el mapa: entrar a esa ruta
+  // colapsa el menú aunque la preferencia guardada sea "expandido". Al salir se
+  // respeta de nuevo la preferencia del usuario.
   useEffect(() => {
+    if (pathname?.startsWith("/geovisor")) {
+      setColapsado(true);
+      return;
+    }
     try {
-      if (window.localStorage.getItem(CLAVE_COLAPSADO) === "1") setColapsado(true);
+      setColapsado(window.localStorage.getItem(CLAVE_COLAPSADO) === "1");
     } catch {}
-  }, []);
+  }, [pathname]);
 
   function alternar() {
     setColapsado((actual) => {

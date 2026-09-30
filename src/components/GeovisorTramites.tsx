@@ -5,9 +5,25 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import type { Feature, FeatureCollection } from "geojson";
-import { SlidersHorizontal, Layers, Ruler, PanelLeftClose, PanelLeftOpen, Undo2, Trash2, Download } from "lucide-react";
+import {
+  SlidersHorizontal,
+  Layers,
+  Ruler,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Undo2,
+  Trash2,
+  Download,
+  X,
+  LocateFixed,
+  Camera,
+  HelpCircle,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
+import { normalizar } from "@/lib/cargos";
 
 export type PuntoTramite = {
   id: string;
@@ -39,6 +55,48 @@ const CAPAS_CONTEXTO: { id: CapaContextoId; etiqueta: string; fuente: string; ar
 
 type EstadoCapa = { on: boolean; cargando: boolean; datos: FeatureCollection | null };
 const capaVacia = (): EstadoCapa => ({ on: false, cargando: false, datos: null });
+
+type ElementoAgrupado = { nombre: string; features: Feature[]; props: Record<string, unknown> };
+
+// Varias features pueden compartir nombre (p. ej. tramos del mismo río) — se agrupan en
+// una sola fila de la lista, que al hacer zoom encuadra todas sus partes. Las features
+// sin nombre (comunes en hidrografía) se excluyen de la lista aunque sigan en el mapa.
+function agruparPorNombre(features: Feature[]): ElementoAgrupado[] {
+  const grupos = new Map<string, Feature[]>();
+  for (const f of features) {
+    const nombre = (f.properties?.nombre as string | undefined)?.trim();
+    if (!nombre) continue;
+    const lista = grupos.get(nombre) ?? [];
+    lista.push(f);
+    grupos.set(nombre, lista);
+  }
+  return Array.from(grupos.entries())
+    .map(([nombre, fs]) => ({ nombre, features: fs, props: fs[0]!.properties ?? {} }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+function agruparVeredasPorMunicipio(features: Feature[]): [string, ElementoAgrupado[]][] {
+  const porMunicipio = new Map<string, Feature[]>();
+  for (const f of features) {
+    const m = (f.properties?.municipio as string | undefined) ?? "(sin municipio)";
+    const lista = porMunicipio.get(m) ?? [];
+    lista.push(f);
+    porMunicipio.set(m, lista);
+  }
+  return Array.from(porMunicipio.entries())
+    .sort((a, b) => a[0].localeCompare(b[0], "es"))
+    .map(([m, fs]) => [m, agruparPorNombre(fs)]);
+}
+
+function subtituloElemento(props: Record<string, unknown>): string {
+  const partes: string[] = [];
+  if (typeof props.tipo === "string" && props.tipo) partes.push(props.tipo);
+  if (typeof props.administra === "string" && props.administra) partes.push(props.administra);
+  const hectareas = Number(props.hectareas);
+  if (hectareas > 0) partes.push(`${props.hectareas} ha`);
+  else if (typeof props.codigo === "string" && props.codigo) partes.push(props.codigo);
+  return partes.join(" · ");
+}
 
 const RADIO_TIERRA_M = 6_371_000;
 
@@ -103,12 +161,19 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const municipiosCapaRef = useRef<import("leaflet").GeoJSON | null>(null);
   const municipiosDatosRef = useRef<FeatureCollection | null>(null);
   const medicionCapaRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const miUbicacionCapaRef = useRef<import("leaflet").LayerGroup | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const capasContextoRef = useRef<Partial<Record<CapaContextoId, import("leaflet").GeoJSON>>>({});
-  const modoMedirRef = useRef(false);
+  const modoRef = useRef<"medir" | "cerca" | null>(null);
 
   const [panelAbierto, setPanelAbierto] = useState(true);
   const [pestana, setPestana] = useState<Pestana>("filtrar");
+  const [zoomActual, setZoomActual] = useState(10);
+  const [mensajeMapa, setMensajeMapa] = useState<string | null>(null);
+  const [ayudaAbierta, setAyudaAbierta] = useState(false);
+  const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
+  const [descargandoImagen, setDescargandoImagen] = useState(false);
+  const [miUbicacion, setMiUbicacion] = useState<[number, number] | null>(null);
 
   const [capaTramites, setCapaTramites] = useState(true);
   const [capaMunicipios, setCapaMunicipios] = useState(true);
@@ -132,17 +197,26 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const [medirArea, setMedirArea] = useState(true);
   const [medida, setMedida] = useState<[number, number][]>([]);
 
+  const [modoCerca, setModoCerca] = useState(false);
+  const [puntoCerca, setPuntoCerca] = useState<[number, number] | null>(null);
+  const [radioCerca, setRadioCerca] = useState(1000);
+
   useEffect(() => {
-    modoMedirRef.current = modoMedir;
-  }, [modoMedir]);
+    modoRef.current = modoMedir ? "medir" : modoCerca ? "cerca" : null;
+  }, [modoMedir, modoCerca]);
+
+  function mostrarMensaje(texto: string) {
+    setMensajeMapa(texto);
+    setTimeout(() => setMensajeMapa((actual) => (actual === texto ? null : actual)), 4000);
+  }
 
   const expedientesVisibles = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
+    const q = normalizar(busqueda.trim());
     return expedientes.filter((e) => {
       if (municipioSel && e.municipio !== municipioSel) return false;
       if (tramiteSel && e.tramiteTipoId !== tramiteSel) return false;
       if (estadosOcultos.has(e.estado)) return false;
-      if (q && !e.numero.toLowerCase().includes(q) && !e.solicitanteNombre.toLowerCase().includes(q)) return false;
+      if (q && !normalizar(e.numero).includes(q) && !normalizar(e.solicitanteNombre).includes(q)) return false;
       return true;
     });
   }, [expedientes, municipioSel, tramiteSel, estadosOcultos, busqueda]);
@@ -166,6 +240,15 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     return expedientesVisibles.filter((e) => puntoEnPoligono([e.lat, e.lon], medida));
   }, [expedientesVisibles, medida]);
 
+  const tramitesCerca = useMemo(() => {
+    if (!puntoCerca) return [];
+    return expedientesVisibles
+      .map((e) => ({ e, d: distanciaM(puntoCerca, [e.lat, e.lon]) }))
+      .filter(({ d }) => d <= radioCerca)
+      .sort((a, b) => a.d - b.d)
+      .map(({ e, d }) => ({ ...e, distanciaM: d }));
+  }, [expedientesVisibles, puntoCerca, radioCerca]);
+
   const distanciaLinea = useMemo(() => {
     let t = 0;
     for (let i = 0; i < medida.length - 1; i++) t += distanciaM(medida[i]!, medida[i + 1]!);
@@ -187,7 +270,12 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
+        crossOrigin: true,
       }).addTo(map);
+
+      // Pane propio con z-index por encima de las capas de contexto (overlayPane=400):
+      // así el límite municipal nunca queda tapado por el relleno de otra capa.
+      map.createPane("limites").style.zIndex = "450";
 
       const cluster = L.markerClusterGroup({ maxClusterRadius: 50 });
       map.addLayer(cluster);
@@ -195,11 +283,16 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
 
       const medicion = L.layerGroup().addTo(map);
       medicionCapaRef.current = medicion;
+      miUbicacionCapaRef.current = L.layerGroup().addTo(map);
 
       map.on("click", (e: import("leaflet").LeafletMouseEvent) => {
-        if (!modoMedirRef.current) return;
-        setMedida((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
+        if (modoRef.current === "medir") {
+          setMedida((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
+        } else if (modoRef.current === "cerca") {
+          setPuntoCerca([e.latlng.lat, e.latlng.lng]);
+        }
       });
+      map.on("zoomend", () => setZoomActual(map.getZoom()));
 
       mapRef.current = map;
 
@@ -209,7 +302,8 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
           if (cancelado || !mapRef.current) return;
           municipiosDatosRef.current = geojson;
           const capa = L.geoJSON(geojson, {
-            style: { color: "#166534", weight: 1.4, fillColor: "#166534", fillOpacity: 0.04 },
+            pane: "limites",
+            style: { color: "#14532d", weight: 2, fillColor: "#166534", fillOpacity: 0.05 },
             onEachFeature: (feature, layer) => {
               const nombre = feature.properties?.nombre;
               if (nombre) layer.bindTooltip(nombre, { sticky: true, className: "text-xs" });
@@ -234,14 +328,13 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     if (!L || !cluster) return;
     cluster.clearLayers();
     for (const p of expedientesVisibles) {
-      const marker = L.marker([p.lat, p.lon]);
+      const marker = L.marker([p.lat, p.lon], { icon: iconoTramite(L) });
       const contenedor = document.createElement("div");
       contenedor.className = "text-xs leading-relaxed";
       contenedor.innerHTML = `
         <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
         <p class="text-stone-700">${escapeHtml(p.tramiteCodigo)} — ${escapeHtml(p.tramiteNombre)}</p>
-        <p class="text-stone-500">${escapeHtml(p.solicitanteNombre)} · ${escapeHtml(p.municipio)}</p>
-        <p class="text-stone-500">${escapeHtml(p.estado.replaceAll("_", " "))}</p>
+        <p class="text-stone-500">${escapeHtml(p.municipio)} · ${escapeHtml(p.estado.replaceAll("_", " "))}</p>
       `;
       const enlace = document.createElement("a");
       enlace.href = `/expedientes/${p.id}`;
@@ -309,7 +402,12 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
           style: (feature?: Feature) => estiloCapaContexto(cfg, feature),
           onEachFeature: (feature, layer) => {
             const nombre = feature.properties?.nombre;
-            if (nombre) layer.bindTooltip(nombre, { sticky: true, className: "text-xs" });
+            if (!nombre) return;
+            if (cfg.id === "veredas") {
+              layer.bindTooltip(nombre, { permanent: true, direction: "center", className: "etiqueta-vereda" });
+            } else {
+              layer.bindTooltip(nombre, { sticky: true, className: "text-xs" });
+            }
           },
         });
         capa.addTo(map);
@@ -322,6 +420,26 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       }
     }
   }, [capas]);
+
+  // --- nombres de vereda: solo visibles acercando el mapa, para no saturar ---
+  useEffect(() => {
+    const capa = capasContextoRef.current.veredas;
+    if (!capa) return;
+    const visible = zoomActual >= 13;
+    capa.eachLayer((layer) => {
+      const conTooltip = layer as import("leaflet").Layer & { getTooltip?: () => import("leaflet").Tooltip | undefined };
+      conTooltip.getTooltip?.()?.getElement()?.style.setProperty("display", visible ? "" : "none");
+    });
+  }, [zoomActual, capas.veredas.datos]);
+
+  function encuadrarElemento(grupo: ElementoAgrupado) {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const fc: FeatureCollection = { type: "FeatureCollection", features: grupo.features };
+    const bounds = L.geoJSON(fc).getBounds();
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24] });
+  }
 
   // --- herramienta de medición ---
   useEffect(() => {
@@ -340,9 +458,130 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     }
   }, [medida, medirArea]);
 
+  // --- trámites cerca de un punto: punto + radio sobre el mapa ---
+  useEffect(() => {
+    const L = leafletRef.current;
+    const capa = medicionCapaRef.current;
+    if (!L || !capa || modoRef.current !== "cerca") return;
+    if (medida.length === 0) capa.clearLayers();
+    if (!puntoCerca) return;
+    L.circle(puntoCerca, { radius: radioCerca, color: "#b45309", weight: 1.5, fillColor: "#b45309", fillOpacity: 0.07 }).addTo(capa);
+    L.circleMarker(puntoCerca, { radius: 5, color: "#b45309", weight: 3, fillColor: "#fff", fillOpacity: 1 }).addTo(capa);
+  }, [puntoCerca, radioCerca, medida.length]);
+
+  // --- mi ubicación: marcador propio ---
+  useEffect(() => {
+    const L = leafletRef.current;
+    const capa = miUbicacionCapaRef.current;
+    if (!L || !capa) return;
+    capa.clearLayers();
+    if (!miUbicacion) return;
+    L.marker(miUbicacion, { icon: iconoPunto("#ea580c", L), zIndexOffset: 1000 }).addTo(capa);
+  }, [miUbicacion]);
+
   function activarMedir(v: boolean) {
     setModoMedir(v);
-    if (!v) setMedida([]);
+    setMedida([]);
+    if (v) {
+      setModoCerca(false);
+      setPuntoCerca(null);
+    }
+  }
+
+  function activarCerca(v: boolean) {
+    setModoCerca(v);
+    if (v) {
+      setModoMedir(false);
+      setMedida([]);
+    } else {
+      setPuntoCerca(null);
+    }
+  }
+
+  function miUbicacionAhora(): Promise<[number, number] | null> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        mostrarMensaje("Este navegador no admite geolocalización.");
+        resolve(null);
+        return;
+      }
+      setBuscandoUbicacion(true);
+      let resuelto = false;
+      const terminar = (p: [number, number] | null, mensaje?: string) => {
+        if (resuelto) return;
+        resuelto = true;
+        if (mensaje) mostrarMensaje(mensaje);
+        setBuscandoUbicacion(false);
+        resolve(p);
+      };
+      // El `timeout` del navegador no cubre la espera del permiso (si el usuario nunca
+      // responde al aviso, el callback de error tampoco llega) — sin este respaldo el
+      // botón se queda girando indefinidamente.
+      setTimeout(() => terminar(null, "No se pudo obtener su ubicación (tiempo agotado)."), 12_000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setMiUbicacion(p);
+          mapRef.current?.setView(p, 13);
+          terminar(p);
+        },
+        () => terminar(null, "No se pudo obtener su ubicación. Verifique el permiso del navegador."),
+        { enableHighAccuracy: true, timeout: 10_000 },
+      );
+    });
+  }
+
+  async function usarMiUbicacionEnCerca() {
+    const p = await miUbicacionAhora();
+    if (p) {
+      setModoCerca(true);
+      setModoMedir(false);
+      setMedida([]);
+      setPuntoCerca(p);
+    }
+  }
+
+  async function descargarImagenMapa() {
+    if (!contenedorRef.current) return;
+    setDescargandoImagen(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(contenedorRef.current, { useCORS: true, logging: false });
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `visor_tramites_${new Date().toISOString().slice(0, 10)}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    } catch {
+      mostrarMensaje("No se pudo generar la imagen del mapa.");
+    } finally {
+      setDescargandoImagen(false);
+    }
+  }
+
+  function descargarCerca() {
+    const geojson: FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { tipo: "punto-cercania", radio_m: radioCerca, tramites_dentro: tramitesCerca.length },
+          geometry: { type: "Point", coordinates: [puntoCerca![1], puntoCerca![0]] },
+        },
+        ...tramitesCerca.map((t) => ({
+          type: "Feature" as const,
+          properties: { numero: t.numero, tramite: t.tramiteNombre, estado: t.estado, municipio: t.municipio, distancia_m: Math.round(t.distanciaM) },
+          geometry: { type: "Point" as const, coordinates: [t.lon, t.lat] },
+        })),
+      ],
+    };
+    const hoy = new Date();
+    const fecha = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, "0")}${String(hoy.getDate()).padStart(2, "0")}`;
+    descargarTexto(JSON.stringify(geojson, null, 2), `tramites_cerca_${fecha}.geojson`, "application/geo+json;charset=utf-8");
   }
 
   function zoomAMunicipio(nombre: string) {
@@ -392,12 +631,20 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
   const anchoPanel = panelAbierto ? "w-full max-w-xs shrink-0 sm:w-80" : "w-0";
 
   return (
-    <div className="flex h-[700px] w-full overflow-hidden rounded-xl border border-stone-200 shadow-soft">
-      <div className={`overflow-hidden border-stone-200 bg-white transition-[width] ${panelAbierto ? "border-r" : ""} ${anchoPanel}`}>
+    <div className="relative flex h-[calc(100vh-230px)] min-h-[560px] w-full overflow-hidden rounded-xl border border-stone-200 shadow-soft">
+      <div className={`min-w-0 overflow-hidden border-stone-200 bg-white transition-[width] ${panelAbierto ? "border-r" : ""} ${anchoPanel}`}>
         <div className="flex h-full w-80 max-w-xs flex-col sm:w-80">
           <div className="flex items-center gap-2 border-b border-stone-100 px-3 py-2.5">
             <Layers className="h-4 w-4 text-cdmb-600" aria-hidden />
             <h3 className="flex-1 text-sm font-semibold text-stone-900">Visor de trámites</h3>
+            <button
+              type="button"
+              onClick={() => setPanelAbierto(false)}
+              title="Cerrar panel"
+              className="rounded-md p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
           </div>
           <div className="flex gap-1 border-b border-stone-100 p-2">
             <BotonPestana activa={pestana === "filtrar"} onClick={() => setPestana("filtrar")} icon={<SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />} label="Filtrar" />
@@ -440,6 +687,7 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
                 onCapaEtiquetas={setCapaEtiquetas}
                 capas={capas}
                 onToggleCapa={alternarCapaContexto}
+                onZoomElemento={encuadrarElemento}
               />
             )}
             {pestana === "medir" && (
@@ -456,6 +704,15 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
                 area={area}
                 tramitesEnZona={tramitesEnZona}
                 onDescargarZona={descargarZona}
+                modoCerca={modoCerca}
+                onModoCerca={activarCerca}
+                puntoCerca={puntoCerca}
+                radioCerca={radioCerca}
+                onRadioCerca={setRadioCerca}
+                tramitesCerca={tramitesCerca}
+                onUsarMiUbicacion={usarMiUbicacionEnCerca}
+                buscandoUbicacion={buscandoUbicacion}
+                onDescargarCerca={descargarCerca}
               />
             )}
           </div>
@@ -464,23 +721,65 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
 
       <div className="relative flex-1">
         <div ref={contenedorRef} className="h-full w-full" />
-        <button
-          type="button"
-          onClick={() => setPanelAbierto((v) => !v)}
-          title={panelAbierto ? "Ocultar panel" : "Mostrar panel"}
-          className="absolute left-3 top-3 z-[550] flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-700 shadow-sm hover:bg-stone-50"
-        >
-          {panelAbierto ? <PanelLeftClose className="h-4 w-4" aria-hidden /> : <PanelLeftOpen className="h-4 w-4" aria-hidden />}
-        </button>
-        {expedientesVisibles.length === 0 && (
+        <div className="absolute left-3 top-3 z-[550] flex flex-col gap-1.5">
+          <BotonMapa
+            icon={panelAbierto ? <PanelLeftClose className="h-4 w-4" aria-hidden /> : <PanelLeftOpen className="h-4 w-4" aria-hidden />}
+            title={panelAbierto ? "Ocultar panel" : "Mostrar panel"}
+            onClick={() => setPanelAbierto((v) => !v)}
+          />
+          <BotonMapa
+            icon={buscandoUbicacion ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <LocateFixed className="h-4 w-4" aria-hidden />}
+            title="Mi ubicación"
+            onClick={() => miUbicacionAhora()}
+            disabled={buscandoUbicacion}
+          />
+          <BotonMapa
+            icon={descargandoImagen ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
+            title="Descargar imagen"
+            onClick={descargarImagenMapa}
+            disabled={descargandoImagen}
+          />
+          <BotonMapa icon={<HelpCircle className="h-4 w-4" aria-hidden />} title="Ayuda" onClick={() => setAyudaAbierta(true)} />
+        </div>
+        {mensajeMapa && (
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-[550] flex justify-center">
+            <p className="rounded-full bg-white px-3 py-1 text-xs text-stone-600 shadow">{mensajeMapa}</p>
+          </div>
+        )}
+        {!mensajeMapa && expedientesVisibles.length === 0 && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-[550] flex justify-center">
             <p className="rounded-full bg-white px-3 py-1 text-xs text-stone-500 shadow">
               {expedientes.length === 0 ? "Ningún trámite con este filtro tiene ubicación registrada." : "Ningún trámite coincide con el filtro actual."}
             </p>
           </div>
         )}
+        {ayudaAbierta && <PanelAyuda onCerrar={() => setAyudaAbierta(false)} />}
       </div>
     </div>
+  );
+}
+
+function BotonMapa({
+  icon,
+  title,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-700 shadow-sm hover:bg-stone-50 disabled:opacity-60"
+    >
+      {icon}
+    </button>
   );
 }
 
@@ -497,6 +796,29 @@ function estiloCapaContexto(cfg: (typeof CAPAS_CONTEXTO)[number], feature?: Feat
   }
   if (cfg.soloContorno) return { color: cfg.color, weight: 1.4, fillOpacity: 0 };
   return { color: cfg.color, weight: 1.1, fillColor: cfg.color, fillOpacity: 0.14 };
+}
+
+function iconoTramite(L: typeof import("leaflet")): import("leaflet").DivIcon {
+  return L.divIcon({
+    className: "",
+    html:
+      '<svg width="25" height="34" viewBox="0 0 25 34" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M12.5 0C5.6 0 0 5.6 0 12.5 0 21.9 12.5 34 12.5 34S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="#166534"/>' +
+      '<circle cx="12.5" cy="12.5" r="5.2" fill="#fff"/>' +
+      "</svg>",
+    iconSize: [25, 34],
+    iconAnchor: [12.5, 34],
+    popupAnchor: [0, -30],
+  });
+}
+
+function iconoPunto(color: string, L: typeof import("leaflet")): import("leaflet").DivIcon {
+  return L.divIcon({
+    className: "",
+    html: `<span style="display:block;width:16px;height:16px;border-radius:9999px;background:#fff;border:3px solid ${color};box-shadow:0 1px 3px rgba(0,0,0,0.4)"></span>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
 }
 
 function escapeHtml(s: string): string {
@@ -619,6 +941,7 @@ function PanelCapas({
   onCapaEtiquetas,
   capas,
   onToggleCapa,
+  onZoomElemento,
 }: {
   capaTramites: boolean;
   onCapaTramites: (v: boolean) => void;
@@ -629,6 +952,7 @@ function PanelCapas({
   onCapaEtiquetas: (v: boolean) => void;
   capas: Record<CapaContextoId, EstadoCapa>;
   onToggleCapa: (id: CapaContextoId, on: boolean) => void;
+  onZoomElemento: (grupo: ElementoAgrupado) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -650,18 +974,29 @@ function PanelCapas({
       <div className="border-t border-stone-100 pt-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Capas de contexto</p>
         <p className="mb-2 mt-0.5 text-[11px] text-stone-400">Cada capa viene de la entidad externa que la produce (entre paréntesis) y se carga al encenderla.</p>
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {CAPAS_CONTEXTO.map((cfg) => {
             const estado = capas[cfg.id];
+            const n = estado.datos?.features.length;
             return (
               <li key={cfg.id}>
                 <label className="flex items-center gap-2 text-xs text-stone-600">
                   <input type="checkbox" checked={estado.on} onChange={(e) => onToggleCapa(cfg.id, e.target.checked)} />
-                  <span>
+                  <span className="flex-1">
                     {cfg.etiqueta} <span className="text-stone-400">({cfg.fuente})</span>
+                    {n !== undefined && <span className="text-stone-400"> ({n})</span>}
                   </span>
                   {estado.cargando && <span className="h-3 w-3 flex-none animate-spin rounded-full border-2 border-cdmb-500 border-t-transparent" />}
                 </label>
+                {estado.on && estado.datos && cfg.id !== "veredas" && (
+                  <ListaElementos
+                    grupos={agruparPorNombre(estado.datos.features)}
+                    color={cfg.color}
+                    conEnlace={cfg.id === "areas"}
+                    onZoom={onZoomElemento}
+                  />
+                )}
+                {estado.on && estado.datos && cfg.id === "veredas" && <ListaVeredas features={estado.datos.features} onZoom={onZoomElemento} />}
               </li>
             );
           })}
@@ -682,6 +1017,80 @@ function PanelCapas({
           <FilaLeyenda color="#1565C0" texto="Subzonas hidrográficas" />
         </ul>
       </div>
+    </div>
+  );
+}
+
+function ListaElementos({
+  grupos,
+  color,
+  conEnlace,
+  onZoom,
+}: {
+  grupos: ElementoAgrupado[];
+  color: string;
+  conEnlace: boolean;
+  onZoom: (grupo: ElementoAgrupado) => void;
+}) {
+  if (grupos.length === 0) return null;
+  return (
+    <ul className="ml-6 mt-1 max-h-48 space-y-0.5 overflow-y-auto border-l border-stone-100 pl-2">
+      {grupos.map((g) => (
+        <FilaElemento key={g.nombre} grupo={g} color={color} conEnlace={conEnlace} onZoom={onZoom} />
+      ))}
+    </ul>
+  );
+}
+
+function FilaElemento({
+  grupo,
+  color,
+  conEnlace,
+  onZoom,
+}: {
+  grupo: ElementoAgrupado;
+  color: string;
+  conEnlace: boolean;
+  onZoom: (grupo: ElementoAgrupado) => void;
+}) {
+  const sub = subtituloElemento(grupo.props);
+  const url = conEnlace && typeof grupo.props.url === "string" ? grupo.props.url : null;
+  return (
+    <li className="flex items-start gap-1.5 py-1">
+      <button type="button" onClick={() => onZoom(grupo)} className="flex-1 text-left">
+        <span className="flex items-start gap-1.5">
+          <span className="mt-1 h-2 w-2 flex-none rounded-full" style={{ backgroundColor: color }} />
+          <span>
+            <span className="block text-[11.5px] font-medium leading-tight text-stone-700">{grupo.nombre}</span>
+            {sub && <span className="block text-[10.5px] leading-tight text-stone-400">{sub}</span>}
+          </span>
+        </span>
+      </button>
+      {url && (
+        <a href={url} target="_blank" rel="noopener noreferrer" title="Abrir ficha externa" className="mt-0.5 flex-none text-stone-400 hover:text-cdmb-600">
+          <ExternalLink className="h-3 w-3" aria-hidden />
+        </a>
+      )}
+    </li>
+  );
+}
+
+function ListaVeredas({ features, onZoom }: { features: Feature[]; onZoom: (grupo: ElementoAgrupado) => void }) {
+  const porMunicipio = useMemo(() => agruparVeredasPorMunicipio(features), [features]);
+  return (
+    <div className="ml-6 mt-1 max-h-56 space-y-0.5 overflow-y-auto border-l border-stone-100 pl-2">
+      {porMunicipio.map(([municipio, grupos]) => (
+        <details key={municipio} className="text-xs">
+          <summary className="cursor-pointer select-none py-1 text-[11.5px] font-medium text-stone-600 hover:text-stone-800">
+            {municipio} <span className="text-stone-400">({grupos.length})</span>
+          </summary>
+          <ul className="space-y-0.5 pb-1 pl-3">
+            {grupos.map((g) => (
+              <FilaElemento key={g.nombre} grupo={g} color="#8D6E63" conEnlace={false} onZoom={onZoom} />
+            ))}
+          </ul>
+        </details>
+      ))}
     </div>
   );
 }
@@ -708,6 +1117,15 @@ function PanelMedir({
   area,
   tramitesEnZona,
   onDescargarZona,
+  modoCerca,
+  onModoCerca,
+  puntoCerca,
+  radioCerca,
+  onRadioCerca,
+  tramitesCerca,
+  onUsarMiUbicacion,
+  buscandoUbicacion,
+  onDescargarCerca,
 }: {
   modoMedir: boolean;
   onModoMedir: (v: boolean) => void;
@@ -721,6 +1139,15 @@ function PanelMedir({
   area: number;
   tramitesEnZona: PuntoTramite[];
   onDescargarZona: () => void;
+  modoCerca: boolean;
+  onModoCerca: (v: boolean) => void;
+  puntoCerca: [number, number] | null;
+  radioCerca: number;
+  onRadioCerca: (v: number) => void;
+  tramitesCerca: (PuntoTramite & { distanciaM: number })[];
+  onUsarMiUbicacion: () => void;
+  buscandoUbicacion: boolean;
+  onDescargarCerca: () => void;
 }) {
   return (
     <div className="space-y-3">
@@ -830,6 +1257,130 @@ function PanelMedir({
           )}
         </>
       )}
+
+      <div className="border-t border-stone-100 pt-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+          <input type="checkbox" checked={modoCerca} onChange={(e) => onModoCerca(e.target.checked)} />
+          Trámites cerca de un punto
+        </label>
+
+        {modoCerca && (
+          <div className="mt-2 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium text-stone-600">
+                {puntoCerca ? `${tramitesCerca.length} trámite${tramitesCerca.length === 1 ? "" : "s"} a menos de ${fmtDist(radioCerca)}` : "Toque el mapa para elegir un punto."}
+              </p>
+              <button
+                type="button"
+                onClick={onUsarMiUbicacion}
+                disabled={buscandoUbicacion}
+                className="flex flex-none items-center gap-1 rounded-md border border-stone-200 px-2 py-1 text-[11px] font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+              >
+                {buscandoUbicacion ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden /> : <LocateFixed className="h-3 w-3" aria-hidden />}
+                Mi ubicación
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {[500, 1000, 2000, 5000].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => onRadioCerca(r)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                    radioCerca === r ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                  }`}
+                >
+                  {fmtDist(r)}
+                </button>
+              ))}
+            </div>
+
+            {puntoCerca && (
+              <>
+                {tramitesCerca.length > 0 && (
+                  <ul className="max-h-32 space-y-1 overflow-y-auto rounded-md border border-stone-100 bg-stone-50/60 p-2 text-[11px]">
+                    {tramitesCerca.slice(0, 20).map((t) => (
+                      <li key={t.id} className="flex items-center justify-between gap-2">
+                        <a href={`/expedientes/${t.id}`} className="truncate font-mono text-cdmb-700 hover:underline">
+                          {t.numero}
+                        </a>
+                        <span className="flex-none text-stone-400">{fmtDist(t.distanciaM)}</span>
+                      </li>
+                    ))}
+                    {tramitesCerca.length > 20 && <li className="text-stone-400">… y {tramitesCerca.length - 20} más</li>}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  onClick={onDescargarCerca}
+                  disabled={tramitesCerca.length === 0}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden />
+                  Descargar (GeoJSON)
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PanelAyuda({ onCerrar }: { onCerrar: () => void }) {
+  return (
+    <div className="absolute inset-0 z-[600] flex justify-end">
+      <button type="button" onClick={onCerrar} aria-label="Cerrar ayuda" className="absolute inset-0 bg-stone-900/30" />
+      <div className="relative flex h-full w-full max-w-sm flex-col bg-white shadow-xl">
+        <div className="flex items-center gap-2 bg-cdmb-700 px-4 py-3">
+          <HelpCircle className="h-4 w-4 text-white" aria-hidden />
+          <h4 className="flex-1 text-sm font-semibold text-white">Cómo usar el visor de trámites</h4>
+          <button type="button" onClick={onCerrar} className="rounded-md p-1 text-white/80 hover:bg-white/10 hover:text-white">
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 text-xs text-stone-600">
+          <SeccionAyuda titulo="¿Qué es?">
+            <p>Muestra los trámites ambientales con ubicación registrada sobre el mapa de la jurisdicción de la CDMB, con capas oficiales de contexto (municipios, áreas protegidas, ríos).</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo="Moverse por el mapa">
+            <p>Arrastre para desplazarse; use la rueda del mouse o los botones + / − para acercar y alejar.</p>
+            <p>El botón de diana (&quot;Mi ubicación&quot;) centra el mapa donde usted está — el navegador pedirá permiso.</p>
+            <p>El botón de cámara descarga una imagen PNG del mapa tal como se ve en pantalla.</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo='Pestaña "Filtrar"'>
+            <p>Busque por número de expediente o solicitante. Filtre por trámite, por municipio (con el conteo de cada uno) o por estado.</p>
+            <p>&quot;Ver todo&quot; quita todos los filtros activos.</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo='Pestaña "Capas"'>
+            <p>Encienda o apague: los trámites, los límites municipales y las capas de contexto. Estas últimas vienen de la entidad externa que las produce, señalada entre paréntesis: áreas protegidas (RUNAP), páramos delimitados (MADS), veredas (DANE), hidrografía y subzonas hidrográficas (IDEAM), áreas de conservación de aves (Humboldt) y bosque seco tropical (MADS).</p>
+            <p>Cada capa encendida muestra debajo la lista de sus elementos con nombre — toque uno para encuadrarlo en el mapa. Las veredas, al ser cerca de 400, van agrupadas por municipio.</p>
+            <p>Los nombres de las veredas aparecen sobre el mapa al acercar lo suficiente.</p>
+            <p>La leyenda al final explica qué significa cada color.</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo='Pestaña "Medir"'>
+            <p>Marque &quot;Medir / seleccionar una zona&quot; y toque el mapa para poner puntos. Elija entre medir una DISTANCIA (línea) o una ZONA (polígono).</p>
+            <p>Con 2 puntos ve la distancia. Con 3 o más se cierra la zona y ve el perímetro, el área y cuántos trámites caen dentro — descargable en GeoJSON.</p>
+            <p>Otra herramienta: &quot;Trámites cerca de un punto&quot; — toque el mapa (o use su ubicación), elija un radio (500 m a 5 km) y vea la lista de trámites dentro de ese círculo, también descargable.</p>
+            <p>&quot;Quitar punto&quot; borra el último; &quot;Limpiar&quot; empieza de nuevo.</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo="Fuentes">
+            <p>Cartografía base: © OpenStreetMap. Capas de contexto: áreas protegidas — RUNAP; páramos delimitados y bosque seco tropical — MADS; veredas — DANE; hidrografía y subzonas hidrográficas — IDEAM; áreas de conservación de aves (AICA) — Instituto Humboldt. Datos de trámites: CDMB.</p>
+            <p>El visor es informativo y no constituye cartografía oficial de linderos.</p>
+          </SeccionAyuda>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeccionAyuda({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <p className="mb-1 text-xs font-semibold text-stone-800">{titulo}</p>
+      <div className="space-y-1.5 text-[11.5px] leading-relaxed text-stone-500">{children}</div>
     </div>
   );
 }
