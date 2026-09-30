@@ -7,7 +7,7 @@ import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { identidadFirmante } from "@/lib/contratacion";
-import { cargoDelFirmante } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
@@ -108,6 +108,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       hash: f.hashContenido,
       calidad: f.calidad,
       cargo: cargoDelFirmante(f.usuario, "GECON"),
+      nivel: nivelFirma(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
       nombre: s.usuarioAsignado.nombre,
@@ -121,6 +122,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       hash: "",
       calidad: "VISTO_BUENO",
       cargo: cargoDelFirmante(s.usuarioAsignado, "GECON"),
+      nivel: nivelFirma(s.usuarioAsignado),
     })),
   ];
 

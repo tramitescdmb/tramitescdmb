@@ -22,6 +22,23 @@ describe("calidad de la firma", () => {
     expect(ordenarPorCalidad(firmas, (f) => f.c).map((f) => f.n)).toEqual(["principal-1", "sin-calidad", "principal-2", "proyecta", "revisa"]);
   });
 
+  it("con desempate por jerarquía, el contratista nunca queda antes que alguien de mayor jerarquía en la misma calidad", () => {
+    const firmas = [
+      { n: "contratista", c: "PRINCIPAL", nivel: 5 },
+      { n: "supervisor", c: "PRINCIPAL", nivel: 4 },
+      { n: "director", c: "PRINCIPAL", nivel: 1 },
+    ];
+    expect(ordenarPorCalidad(firmas, (f) => f.c, (f) => f.nivel).map((f) => f.n)).toEqual(["director", "supervisor", "contratista"]);
+  });
+
+  it("sin desempate, respeta el orden original aunque un contratista haya firmado primero cronológicamente", () => {
+    const firmas = [
+      { n: "contratista", c: "PRINCIPAL" },
+      { n: "supervisor", c: "PRINCIPAL" },
+    ];
+    expect(ordenarPorCalidad(firmas, (f) => f.c).map((f) => f.n)).toEqual(["contratista", "supervisor"]);
+  });
+
   it("el firmante principal no lleva rótulo; proyectó y revisó sí", () => {
     expect(rotuloCalidadFirma("PRINCIPAL")).toBeNull();
     expect(rotuloCalidadFirma(null)).toBeNull();

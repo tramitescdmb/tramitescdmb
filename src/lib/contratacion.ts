@@ -25,6 +25,12 @@ export function vigenciaDeExpediente(fechaInicio: Date | null | undefined, creat
   return (fechaInicio ?? createdAt).getFullYear();
 }
 
+export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null): void {
+  if (fechaSuscripcion && fechaInicio && fechaSuscripcion > fechaInicio) {
+    throw new Error("La fecha de suscripción no puede ser posterior a la fecha de inicio (acta de inicio).");
+  }
+}
+
 const FORMATO_SECOP = /^[A-Za-z0-9.\-/]{3,40}$/;
 
 export function validarFormatoSecop(numeroProcesoSecop: string): void {
@@ -286,6 +292,7 @@ export async function crearExpedienteContractual(datos: {
 }) {
   if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
+  validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null);
 
   const numeroProcesoSecop = datos.numeroProcesoSecop?.trim() || null;
   if (numeroProcesoSecop) {

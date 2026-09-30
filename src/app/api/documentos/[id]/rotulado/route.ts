@@ -6,6 +6,7 @@ import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
+import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
@@ -28,14 +29,37 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           hashContenido: true,
           calidad: true,
           usuario: {
-            select: { nombre: true, cedulaONit: true, tipoIdentificacionFirma: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } },
+            select: {
+              nombre: true,
+              cedulaONit: true,
+              tipoIdentificacionFirma: true,
+              denominacionEmpleo: true,
+              denominacionComplemento: true,
+              sexo: true,
+              rolContratacion: true,
+              dependencia: { select: { nombre: true } },
+            },
           },
         },
       },
       solicitudesFirma: {
         where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
         orderBy: { completadoEn: "asc" },
-        select: { completadoEn: true, usuarioAsignado: { select: { nombre: true, cedulaONit: true, tipoIdentificacionFirma: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } } },
+        select: {
+          completadoEn: true,
+          usuarioAsignado: {
+            select: {
+              nombre: true,
+              cedulaONit: true,
+              tipoIdentificacionFirma: true,
+              denominacionEmpleo: true,
+              denominacionComplemento: true,
+              sexo: true,
+              rolContratacion: true,
+              dependencia: { select: { nombre: true } },
+            },
+          },
+        },
       },
     },
   });
@@ -65,6 +89,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: formatearFechaHoraLarga(f.fechaHora),
       hash: f.hashContenido,
       calidad: f.calidad,
+      cargo: cargoDelFirmante(f.usuario, "TRAMITES"),
+      nivel: nivelFirma(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
       nombre: s.usuarioAsignado.nombre,
@@ -77,6 +103,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",
+      cargo: cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
+      nivel: nivelFirma(s.usuarioAsignado),
     })),
   ];
 

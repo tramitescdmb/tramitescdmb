@@ -38,6 +38,7 @@ export type FirmaRotuloPdf = {
   hash: string;
   calidad?: string | null;
   cargo?: string | null;
+  nivel?: number;
 };
 
 export async function estamparRotulo(
@@ -92,7 +93,7 @@ export async function estamparRotulo(
     cy -= 9;
     page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
     cy -= 11;
-    for (const f of ordenarPorCalidad(firmas, (x) => x.calidad)) {
+    for (const f of ordenarPorCalidad(firmas, (x) => x.calidad, (x) => x.nivel ?? 4)) {
       const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
       const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
       const rotulo = rotuloCalidadFirma(f.calidad);
@@ -123,7 +124,7 @@ async function estamparFirmasExpediente(
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   if (firmasSinOrden.length === 0) return pdf.save();
-  const firmas = ordenarPorCalidad(firmasSinOrden, (f) => f.calidad);
+  const firmas = ordenarPorCalidad(firmasSinOrden, (f) => f.calidad, (f) => f.nivel ?? 4);
 
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);

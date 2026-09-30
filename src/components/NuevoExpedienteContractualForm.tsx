@@ -267,7 +267,7 @@ export function NuevoExpedienteContractualForm({
                   className={campoCls}
                 />
               </Field>
-              <Field label="Fecha de suscripción" icon={<CalendarRange className="h-4 w-4" />} help="Fecha del contrato (firma). No es la fecha de inicio.">
+              <Field label="Fecha de suscripción" icon={<CalendarRange className="h-4 w-4" />} help="Fecha del contrato (firma), anterior o igual a la fecha de inicio.">
                 <input type="date" value={fechaSuscripcion} onChange={(e) => setFechaSuscripcion(e.target.value)} className={campoCls} />
               </Field>
               <Field label="Fecha de inicio" icon={<CalendarRange className="h-4 w-4" />} help="Acta de inicio. De aquí se calculan plazos y vencimientos.">

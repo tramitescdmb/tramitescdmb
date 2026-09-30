@@ -8,7 +8,7 @@ import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { ordenarPorCalidad, rotuloCalidadFirma, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
-import { cargoDelFirmante } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { BotonImprimir } from "@/components/BotonImprimir";
 
 export default async function FichaFirmaExpedienteTramitePage({
@@ -126,7 +126,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                 <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4">
                   <p className="mb-1.5 text-sm font-semibold text-stone-800">{doc.nombre}</p>
                   <ul className="space-y-3">
-                    {ordenarPorCalidad(doc.firmas, (f) => f.calidad).map((f) => (
+                    {ordenarPorCalidad(doc.firmas, (f) => f.calidad, (f) => nivelFirma(f.usuario)).map((f) => (
                       <li key={f.id} className={`rounded-lg border border-stone-100 bg-stone-50/60 ${rotuloCalidadFirma(f.calidad) ? "p-2.5 text-xs" : "p-3 text-sm"}`}>
                         <p className="flex items-center gap-1.5 font-medium text-stone-900">
                           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />

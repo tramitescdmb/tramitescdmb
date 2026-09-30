@@ -174,7 +174,8 @@ export function EditarDatosContratoForm({
               </div>
               <p className="text-[11px] text-stone-400">
                 Los plazos y vencimientos se calculan desde la fecha de inicio (acta de inicio), no desde la fecha de
-                suscripción. Sin fecha de inicio, el contrato queda «Pendiente de inicio» y no se calculan plazos.
+                suscripción — que debe ser igual o anterior a ella. Sin fecha de inicio, el contrato queda «Pendiente
+                de inicio» y no se calculan plazos.
               </p>
             </div>
 

@@ -7,7 +7,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaSgdea } from "@/lib/pdf-rotulado";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
-import { cargoDelFirmante } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 const USUARIO_SELLO = {
@@ -59,6 +59,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     sexo: u.sexo,
     dependencia: u.dependencia?.nombre ?? null,
     cargo: cargoDelFirmante(u, "SGDEA"),
+    nivel: nivelFirma(u),
   });
   const firmantes = [
     ...firmas.map((f) => ({ ...aSello(f.usuario), fechaHora: formatearFechaHoraLarga(f.fechaHora), hash: f.hashContenido, calidad: f.calidad })),

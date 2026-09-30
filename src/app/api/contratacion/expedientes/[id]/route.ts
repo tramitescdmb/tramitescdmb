@@ -16,6 +16,7 @@ import {
   validarFormatoSecop,
   verificarUnicidadSecopPorVigencia,
   vigenciaDeExpediente,
+  validarOrdenFechasContrato,
 } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
@@ -87,15 +88,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!dependencia) return NextResponse.json({ error: "La dependencia indicada no existe." }, { status: 404 });
     }
     const numeroProcesoSecop = "numeroProcesoSecop" in body && body.numeroProcesoSecop ? String(body.numeroProcesoSecop).trim() : null;
-    if (numeroProcesoSecop) {
+    if (numeroProcesoSecop || "fechaSuscripcion" in body || "fechaInicio" in body) {
       try {
-        validarFormatoSecop(numeroProcesoSecop);
-        const actual = await db.expedienteContractual.findUnique({ where: { id }, select: { fechaInicio: true, createdAt: true } });
+        const actual = await db.expedienteContractual.findUnique({
+          where: { id },
+          select: { fechaSuscripcion: true, fechaInicio: true, createdAt: true },
+        });
         if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+        const fechaSuscripcionEfectiva = "fechaSuscripcion" in body ? (body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null) : actual.fechaSuscripcion;
         const fechaInicioEfectiva = "fechaInicio" in body ? (body.fechaInicio ? new Date(body.fechaInicio) : null) : actual.fechaInicio;
-        await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(fechaInicioEfectiva, actual.createdAt), id);
+        validarOrdenFechasContrato(fechaSuscripcionEfectiva, fechaInicioEfectiva);
+        if (numeroProcesoSecop) {
+          validarFormatoSecop(numeroProcesoSecop);
+          await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(fechaInicioEfectiva, actual.createdAt), id);
+        }
       } catch (err) {
-        return NextResponse.json({ error: err instanceof Error ? err.message : "El número de proceso SECOP no es válido." }, { status: 409 });
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Los datos indicados no son válidos." }, { status: 409 });
       }
     }
     await db.expedienteContractual.update({

@@ -41,14 +41,18 @@ export function nivelSello(calidad: string | null | undefined): "principal" | "s
   return "principal";
 }
 
-export function ordenarPorCalidad<T>(items: T[], calidad: (item: T) => string | null | undefined): T[] {
+export function ordenarPorCalidad<T>(
+  items: T[],
+  calidad: (item: T) => string | null | undefined,
+  jerarquia?: (item: T) => number
+): T[] {
   const peso = (item: T) => {
     const c = calidad(item);
     return esCalidadPresentacion(c) ? ORDEN[c] : ORDEN.PRINCIPAL;
   };
   return items
     .map((item, i) => ({ item, i }))
-    .sort((a, b) => peso(a.item) - peso(b.item) || a.i - b.i)
+    .sort((a, b) => peso(a.item) - peso(b.item) || (jerarquia ? jerarquia(a.item) - jerarquia(b.item) : 0) || a.i - b.i)
     .map((x) => x.item);
 }
 
