@@ -312,7 +312,10 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       if (cancelado || !contenedorRef.current || mapRef.current) return;
       leafletRef.current = L;
 
-      const map = L.map(contenedorRef.current, { fadeAnimation: false }).setView(CENTRO_CDMB_POR_DEFECTO, 10);
+      const map = L.map(contenedorRef.current, { fadeAnimation: false, zoomControl: false }).setView(CENTRO_CDMB_POR_DEFECTO, 10);
+      // Zoom a la derecha: la izquierda ya tiene la barra de 4 botones propia (ocultar panel,
+      // mi ubicación, descargar imagen, ayuda) y ambos quedaban encimados en la misma esquina.
+      L.control.zoom({ position: "topright" }).addTo(map);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
@@ -366,6 +369,15 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       mapRef.current = null;
     };
   }, []);
+
+  // Al abrir/cerrar el panel el contenedor del mapa cambia de ancho por CSS (transition-[width]),
+  // pero Leaflet no se entera solo — sin este invalidateSize() el área recién liberada queda gris
+  // (sin teselas) hasta el próximo pan/zoom manual. El retraso deja que la transición termine antes
+  // de recalcular.
+  useEffect(() => {
+    const id = setTimeout(() => mapRef.current?.invalidateSize(), 250);
+    return () => clearTimeout(id);
+  }, [panelAbierto]);
 
   // --- capa de trámites: se repuebla cuando cambia el filtro visible ---
   useEffect(() => {
