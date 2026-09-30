@@ -30,6 +30,7 @@
     "bcryptjs": "^2.4.3",
     "browser-image-compression": "^2.0.2",
     "bwip-js": "^4.11.4",
+    "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
     "jose": "^5.9.6",
     "jszip": "^3.10.2",

@@ -1,16 +1,17 @@
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
+import { BotonExportar } from "@/components/BotonExportar";
 import { TablaExpedientes } from "@/components/tablas/TablaExpedientes";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { formatearFecha } from "@/lib/fecha";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
+import { construirWhereExpedientes, aniosConRadicacion } from "@/lib/expedientes";
 
 const POR_PAGINA = 30;
 
@@ -25,13 +26,14 @@ export default async function ExpedientesPage({
   const { estado, q, tramite, municipio, asignados, page: pageParam } = sp;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
 
-  const [todosLosTramites, session] = await Promise.all([
+  const [todosLosTramites, session, anios] = await Promise.all([
     db.tramiteTipo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true, codigo: true },
     }),
     getSession(),
+    aniosConRadicacion(),
   ]);
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramites = permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites;
@@ -42,30 +44,17 @@ export default async function ExpedientesPage({
 
   const soloMios = asignados === "mi" && Boolean(session);
 
-  const filtros: Prisma.ExpedienteWhereInput[] = [];
-  if (tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: tramiteIdsPermitidos } });
-  if (estado) filtros.push({ estado: estado as (typeof ESTADOS_EXPEDIENTE)[number] });
-  if (tramite) filtros.push({ tramiteTipoId: tramite });
-  if (municipio) filtros.push({ municipio });
-  if (rango) filtros.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
-  if (busqueda) {
-    filtros.push({
-      OR: [
-        { numero: { contains: busqueda, mode: "insensitive" } },
-        { solicitanteNombre: { contains: busqueda, mode: "insensitive" } },
-        { solicitanteIdentificacion: { contains: busqueda, mode: "insensitive" } },
-      ],
-    });
-  }
-  if (soloMios && session) {
-    filtros.push({
-      OR: [
-        { usuariosAsignados: { some: { id: session.userId } } },
-        ...(session.cargos.length > 0 ? [{ cargosAsignados: { some: { nombre: { in: session.cargos } } } }] : []),
-      ],
-    });
-  }
-  const where: Prisma.ExpedienteWhereInput = filtros.length ? { AND: filtros } : {};
+  const where = construirWhereExpedientes({
+    tramiteIdsPermitidos,
+    estado,
+    tramite,
+    municipio,
+    rango,
+    busqueda,
+    soloMios,
+    usuarioId: session?.userId,
+    cargos: session?.cargos,
+  });
 
   const [total, expedientes] = await Promise.all([
     db.expediente.count({ where }),
@@ -97,6 +86,14 @@ export default async function ExpedientesPage({
     }
     const qs = params.toString();
     return qs ? `/geovisor?${qs}` : "/geovisor";
+  };
+  const hrefExportar = (formato: "xlsx" | "csv") => {
+    const params = new URLSearchParams();
+    const actuales = { estado, q, tramite, municipio, asignados, desde: sp.desde, hasta: sp.hasta, formato };
+    for (const [k, v] of Object.entries(actuales)) {
+      if (v) params.set(k, v);
+    }
+    return `/api/expedientes/exportar?${params.toString()}`;
   };
 
   const clausulasFiltro: string[] = [];
@@ -136,6 +133,26 @@ export default async function ExpedientesPage({
       )}
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+
+      {anios.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-stone-500">Vigencia</span>
+          {anios.map((anio) => {
+            const activa = sp.desde === `${anio}-01-01` && sp.hasta === `${anio}-12-31`;
+            return (
+              <Link
+                key={anio}
+                href={conFiltro({ desde: `${anio}-01-01`, hasta: `${anio}-12-31` })}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  activa ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                }`}
+              >
+                {anio}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
@@ -219,7 +236,10 @@ export default async function ExpedientesPage({
         ))}
       </div>
 
-      <ResumenResultados total={total} detalle={detalleFiltro} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <ResumenResultados total={total} detalle={detalleFiltro} />
+        {total > 0 && <BotonExportar hrefXlsx={hrefExportar("xlsx")} hrefCsv={hrefExportar("csv")} />}
+      </div>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
         {expedientes.length === 0 ? (

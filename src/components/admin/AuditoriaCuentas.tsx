@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, Lock, UserCog, Trash2, type LucideIcon } from "lucide-react";
+import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, Lock, UserCog, Trash2, Download, type LucideIcon } from "lucide-react";
 import { TipoAuditoria } from "@prisma/client";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
@@ -15,6 +15,7 @@ const ETIQUETAS_TIPO: Record<TipoAuditoria, { icono: LucideIcon; clase: string; 
   USUARIO_ACTUALIZADO: { icono: UserCog, clase: "text-cdmb-600", texto: "Usuario actualizado" },
   CONFIGURACION_ACTUALIZADA: { icono: Palette, clase: "text-cdmb-600", texto: "Configuración actualizada" },
   CONTRATISTA_ELIMINADO: { icono: Trash2, clase: "text-stone-500", texto: "Contratista eliminado" },
+  EXPEDIENTES_EXPORTADOS: { icono: Download, clase: "text-cdmb-600", texto: "Expedientes exportados" },
 };
 
 const TIPOS_VALIDOS = new Set<string>(Object.values(TipoAuditoria));
