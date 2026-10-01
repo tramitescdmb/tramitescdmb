@@ -133,7 +133,7 @@ export function NuevoExpedienteDocumentalForm({
 
       <div className="border-t border-stone-100 pt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Dependencia y clasificación (TRD)</h3>
-        <SectionHelp>Opcional clasificar por serie/subserie — busque por código, nombre o dependencia.</SectionHelp>
+        <SectionHelp>Opcional clasificar por serie/subserie — ya filtradas por la dependencia elegida.</SectionHelp>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Dependencia" required>
             <BuscadorDependencia dependencias={dependencias} value={dependenciaId} onChange={setDependenciaId} />
@@ -144,7 +144,8 @@ export function NuevoExpedienteDocumentalForm({
               series={series}
               serieId={serieId}
               subserieId={subserieId}
-              dependenciaPreferidaId={dependenciaId || null}
+              dependenciaId={dependenciaId || null}
+              dependenciaControlada
               onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
               nameSerie="serieId"
               nameSubserie="subserieId"

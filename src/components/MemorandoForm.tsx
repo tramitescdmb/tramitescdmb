@@ -180,14 +180,15 @@ export function MemorandoForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación (TRD)</h3>
           <SectionHelp>
-            Opcional. Si clasifica el memorando, elija la subserie completa (serie + subserie) — busque por
-            código o nombre de la serie, la subserie o la dependencia.
+            Opcional. Si clasifica el memorando, elija la serie y luego la subserie — ya filtradas por la
+            dependencia de origen elegida arriba.
           </SectionHelp>
           <BuscadorSubserieTRD
             series={series}
             serieId={serieId}
             subserieId={subserieId}
-            dependenciaPreferidaId={dependenciaOrigenId || null}
+            dependenciaId={dependenciaOrigenId || null}
+            dependenciaControlada
             onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
           />
         </div>

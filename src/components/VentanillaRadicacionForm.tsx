@@ -265,8 +265,8 @@ export function VentanillaRadicacionForm({
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y destino (TRD)</h3>
           <SectionHelp>
             La dependencia destino es a quién va dirigida (se puede repartir después). La clasificación TRD es
-            opcional al radicar y se corrige luego desde el detalle — pero si la clasifica, elija la subserie
-            completa (serie + subserie), no solo la serie.
+            opcional al radicar y se corrige luego desde el detalle — la serie y la subserie que puede elegir ya
+            están filtradas por esa dependencia destino.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Dependencia destino" help="Puede repartirla después si no se sabe todavía.">
@@ -276,12 +276,13 @@ export function VentanillaRadicacionForm({
               </select>
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Clasificación TRD (serie / subserie)" help="Busque por código o nombre de la serie, la subserie o la dependencia.">
+              <Field label="Clasificación TRD (serie / subserie)">
                 <BuscadorSubserieTRD
                   series={series}
                   serieId={serieId}
                   subserieId={subserieId}
-                  dependenciaPreferidaId={dependenciaId || null}
+                  dependenciaId={dependenciaId || null}
+                  dependenciaControlada
                   onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
                 />
               </Field>

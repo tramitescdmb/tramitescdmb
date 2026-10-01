@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
+import { normalizar } from "@/lib/cargos";
 
 type Dependencia = { id: string; nombre: string };
 
@@ -30,8 +31,8 @@ export function BuscadorDependencia({
   }, []);
 
   const sugerencias = useMemo(() => {
-    const q = texto.trim().toLowerCase();
-    const lista = q ? dependencias.filter((d) => d.nombre.toLowerCase().includes(q)) : dependencias;
+    const q = normalizar(texto.trim());
+    const lista = q ? dependencias.filter((d) => normalizar(d.nombre).includes(q)) : dependencias;
     return lista.slice(0, 20);
   }, [texto, dependencias]);
 

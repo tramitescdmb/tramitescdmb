@@ -902,7 +902,7 @@ export default async function CorrespondenciaDetallePage({
             aplican los tiempos de retención de la nueva subserie.
           </SectionHelp>
           <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="space-y-3">
-            <Field label="Nueva subserie" required help="Busque por código o nombre de la serie, la subserie o la dependencia.">
+            <Field label="Nueva subserie" required help="Elija primero la dependencia, luego la serie y la subserie.">
               <BuscadorSubserieTRD series={seriesBuscables} nameSubserie="subserieId" requerido />
             </Field>
             <Field label="Motivo" required help="Por qué se reclasifica este radicado.">

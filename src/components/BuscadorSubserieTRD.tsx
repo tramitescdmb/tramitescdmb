@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 
 type Subserie = { id: string; codigo: string; nombre: string };
 export type SerieBuscable = {
@@ -13,15 +13,10 @@ export type SerieBuscable = {
   subseries: Subserie[];
 };
 
-type Opcion = {
-  serieId: string;
-  subserieId: string;
-  serie: string;
-  subserie: string;
-  dependencia: string | null;
-  clave: string;
-};
-
+// El código de serie se repite en las 29 dependencias de la CDMB — buscar en una lista plana global
+// (como hacía la versión anterior de este componente) es ambiguo: escribir "derechos de petición" trae
+// la misma serie repetida una vez por cada dependencia, sin forma de distinguirlas. Por eso ahora son 3
+// pasos en cascada (dependencia → serie → subserie), cada uno ya filtrado por el anterior.
 export function BuscadorSubserieTRD({
   series,
   serieId,
@@ -29,7 +24,8 @@ export function BuscadorSubserieTRD({
   onChange,
   nameSerie,
   nameSubserie,
-  dependenciaPreferidaId,
+  dependenciaId,
+  dependenciaControlada = false,
   requerido,
 }: {
   series: SerieBuscable[];
@@ -38,124 +34,103 @@ export function BuscadorSubserieTRD({
   onChange?: (serieId: string, subserieId: string) => void;
   nameSerie?: string;
   nameSubserie?: string;
-  dependenciaPreferidaId?: string | null;
+  // Si el formulario ya tiene su propio campo de dependencia (ej. "Dependencia destino"), páselo acá
+  // con dependenciaControlada=true: este componente no muestra un segundo selector de dependencia,
+  // solo filtra en vivo por el valor recibido. Sin dependenciaControlada, dependenciaId es apenas una
+  // sugerencia inicial y el componente muestra su propio paso de dependencia.
+  dependenciaId?: string | null;
+  dependenciaControlada?: boolean;
   requerido?: boolean;
 }) {
-  const opciones = useMemo<Opcion[]>(() => {
-    const list: Opcion[] = [];
-    for (const s of series) {
-      for (const ss of s.subseries) {
-        list.push({
-          serieId: s.id,
-          subserieId: ss.id,
-          serie: `${s.codigo} — ${s.nombre}`,
-          subserie: `${ss.codigo} — ${ss.nombre}`,
-          dependencia: s.dependenciaNombre ?? null,
-          clave: `${s.codigo} ${s.nombre} ${ss.codigo} ${ss.nombre} ${s.dependenciaNombre ?? ""}`.toLowerCase(),
-        });
-      }
-    }
-    return list;
+  const dependencias = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const s of series) if (s.dependenciaId) mapa.set(s.dependenciaId, s.dependenciaNombre || s.dependenciaId);
+    return [...mapa.entries()].map(([id, nombre]) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [series]);
 
-  const seleccion = useMemo(
-    () => opciones.find((o) => o.serieId === serieId && o.subserieId === subserieId) ?? null,
-    [opciones, serieId, subserieId],
+  // "Reclasificar" usa este componente sin onChange/serieId/subserieId (lee la selección solo del
+  // input oculto al enviar el <form>) — por eso serieId/subserieId siguen siendo estado PROPIO aquí,
+  // no derivado, y solo se reemplazan por el valor externo cuando el padre de verdad lo controla
+  // (lo pasa, aunque sea como cadena vacía).
+  const [serieIdPropio, setSerieIdPropio] = useState(serieId ?? "");
+  const [subserieIdPropio, setSubserieIdPropio] = useState(subserieId ?? "");
+  const serieIdEfectivo = serieId !== undefined ? serieId : serieIdPropio;
+  const subserieIdEfectivo = subserieId !== undefined ? subserieId : subserieIdPropio;
+
+  const serieActual = useMemo(() => series.find((s) => s.id === serieIdEfectivo), [series, serieIdEfectivo]);
+
+  const [dependenciaPropia, setDependenciaPropia] = useState(() => serieActual?.dependenciaId || dependenciaId || "");
+  useEffect(() => {
+    if (serieActual?.dependenciaId) setDependenciaPropia(serieActual.dependenciaId);
+  }, [serieActual]);
+
+  const dependenciaEfectiva = dependenciaControlada ? dependenciaId || "" : dependenciaPropia;
+
+  // En modo controlado, el formulario puede cambiar la dependencia externa (ej. "Dependencia destino")
+  // en cualquier momento. Si la serie ya elegida no pertenece a la nueva dependencia, queda huérfana:
+  // el chip de Serie deja de mostrarse (no aparece en la lista filtrada) pero serieId/subserieId siguen
+  // vivos en el estado del formulario y se enviarían igual al guardar. Hay que limpiarlos.
+  useEffect(() => {
+    if (!dependenciaControlada) return;
+    if (serieActual && serieActual.dependenciaId !== (dependenciaId || "")) onChange?.("", "");
+  }, [dependenciaControlada, dependenciaId, serieActual, onChange]);
+
+  const seriesDeDependencia = useMemo(
+    () => series.filter((s) => s.dependenciaId === dependenciaEfectiva).map((s) => ({ id: s.id, nombre: `${s.codigo} — ${s.nombre}` })),
+    [series, dependenciaEfectiva]
+  );
+  const subseriesDeSerie = useMemo(
+    () => (serieActual?.subseries ?? []).map((ss) => ({ id: ss.id, nombre: `${ss.codigo} — ${ss.nombre}` })),
+    [serieActual]
   );
 
-  const [texto, setTexto] = useState("");
-  const [abierto, setAbierto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function fuera(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setAbierto(false);
-    }
-    document.addEventListener("mousedown", fuera);
-    return () => document.removeEventListener("mousedown", fuera);
-  }, []);
-
-  const sugerencias = useMemo(() => {
-    const q = texto.trim().toLowerCase();
-    if (!q) return [];
-    const match = opciones.filter((o) => q.split(/\s+/).every((t) => o.clave.includes(t)));
-    if (dependenciaPreferidaId) {
-      const dep = series.find((s) => s.dependenciaId === dependenciaPreferidaId)?.dependenciaNombre?.toLowerCase();
-      if (dep) match.sort((a, b) => Number((b.dependencia ?? "").toLowerCase() === dep) - Number((a.dependencia ?? "").toLowerCase() === dep));
-    }
-    return match.slice(0, 12);
-  }, [texto, opciones, dependenciaPreferidaId, series]);
-
-  function elegir(o: Opcion) {
-    onChange?.(o.serieId, o.subserieId);
-    setTexto("");
-    setAbierto(false);
-  }
-  function limpiar() {
+  function elegirDependencia(id: string) {
+    setDependenciaPropia(id);
+    setSerieIdPropio("");
+    setSubserieIdPropio("");
     onChange?.("", "");
-    setTexto("");
+  }
+  function elegirSerie(id: string) {
+    setSerieIdPropio(id);
+    setSubserieIdPropio("");
+    onChange?.(id, "");
+  }
+  function elegirSubserie(id: string) {
+    setSubserieIdPropio(id);
+    onChange?.(serieIdEfectivo, id);
   }
 
   return (
-    <div ref={ref} className="relative">
-      {nameSerie && <input type="hidden" name={nameSerie} value={seleccion?.serieId ?? ""} />}
-      {nameSubserie && <input type="hidden" name={nameSubserie} value={seleccion?.subserieId ?? ""} required={requerido} />}
+    <div className="space-y-2.5">
+      {nameSerie && <input type="hidden" name={nameSerie} value={serieIdEfectivo} />}
+      {nameSubserie && <input type="hidden" name={nameSubserie} value={subserieIdEfectivo} required={requerido} />}
 
-      {seleccion ? (
-        <div className="flex items-start justify-between gap-2 rounded-md border border-cdmb-200 bg-cdmb-50/50 px-3 py-2 text-sm">
-          <span className="min-w-0">
-            <span className="block font-medium text-stone-800">{seleccion.subserie}</span>
-            <span className="block text-xs text-stone-500">
-              {seleccion.serie}
-              {seleccion.dependencia ? ` · ${seleccion.dependencia}` : ""}
-            </span>
-          </span>
-          <button type="button" onClick={limpiar} className="flex-none text-stone-400 hover:text-stone-600" aria-label="Quitar clasificación">
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      ) : (
-        <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
-          <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
-          <input
-            type="text"
-            value={texto}
-            onChange={(e) => {
-              setTexto(e.target.value);
-              setAbierto(true);
-            }}
-            onFocus={() => setAbierto(true)}
-            placeholder="Buscar serie, subserie o dependencia"
-            className="w-full text-sm outline-none"
-            autoComplete="off"
-          />
-        </span>
-      )}
-
-      {abierto && !seleccion && sugerencias.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-72 w-full min-w-[320px] overflow-y-auto rounded-md border border-stone-200 bg-white py-1 shadow-lg">
-          {sugerencias.map((o) => (
-            <li key={o.subserieId}>
-              <button
-                type="button"
-                onClick={() => elegir(o)}
-                className="flex w-full flex-col items-start px-3 py-1.5 text-left text-sm hover:bg-cdmb-50"
-              >
-                <span className="text-stone-800">{o.subserie}</span>
-                <span className="text-xs text-stone-400">
-                  {o.serie}
-                  {o.dependencia ? ` · ${o.dependencia}` : ""}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {abierto && !seleccion && texto.trim() && sugerencias.length === 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-xs text-stone-400 shadow-lg">
-          Sin coincidencias.
+      {!dependenciaControlada && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-stone-500">Dependencia</label>
+          <BuscadorDependencia dependencias={dependencias} value={dependenciaEfectiva} onChange={elegirDependencia} placeholder="Buscar dependencia…" />
         </div>
       )}
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-stone-500">Serie</label>
+        {dependenciaEfectiva ? (
+          <BuscadorDependencia dependencias={seriesDeDependencia} value={serieIdEfectivo} onChange={elegirSerie} placeholder="Buscar serie…" />
+        ) : (
+          <p className="rounded-md border border-dashed border-stone-200 px-3 py-2 text-xs text-stone-400">
+            {dependenciaControlada ? "Elija primero la dependencia arriba." : "Elija primero la dependencia."}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-stone-500">Subserie</label>
+        {serieIdEfectivo ? (
+          <BuscadorDependencia dependencias={subseriesDeSerie} value={subserieIdEfectivo} onChange={elegirSubserie} placeholder="Buscar subserie…" />
+        ) : (
+          <p className="rounded-md border border-dashed border-stone-200 px-3 py-2 text-xs text-stone-400">Elija primero la serie.</p>
+        )}
+      </div>
     </div>
   );
 }

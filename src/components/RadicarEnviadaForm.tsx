@@ -277,8 +277,8 @@ export function RadicarEnviadaForm({
         <div className="mt-4 border-t border-stone-100 pt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y origen (TRD)</h3>
           <SectionHelp>
-            Si clasifica el oficio, elija la subserie completa (serie + subserie). Busque por código o nombre de
-            la serie, la subserie o la dependencia. Se puede corregir después desde el detalle.
+            Si clasifica el oficio, elija la serie y luego la subserie — ya filtradas por la dependencia que
+            emite. Se puede corregir después desde el detalle.
           </SectionHelp>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Dependencia que emite">
@@ -293,7 +293,8 @@ export function RadicarEnviadaForm({
                   series={series}
                   serieId={serieId}
                   subserieId={subserieId}
-                  dependenciaPreferidaId={dependenciaOrigenId || null}
+                  dependenciaId={dependenciaOrigenId || null}
+                  dependenciaControlada
                   onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
                 />
               </Field>

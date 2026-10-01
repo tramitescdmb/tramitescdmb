@@ -3,9 +3,10 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { SelectorClasificacionTrd } from "@/components/admin/SelectorClasificacionTrd";
+import { SelectorSubserieTrdCascada } from "@/components/admin/SelectorSubserieTrdCascada";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 import {
-  catalogoSubseriesPorDependencia,
+  catalogoSeriesBuscables,
   tiposDocumentalesPorSubserie,
   tramitesParaClasificar,
   requisitosContratacionParaClasificar,
@@ -17,8 +18,8 @@ export default async function AdminTrdPage() {
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Clasificación TRD" volverHref="/" volverLabel="Ir al inicio" />;
 
-  const [subseriesPorDependencia, tiposPorSubserie, tramites, requisitos, subserieContratacionId] = await Promise.all([
-    catalogoSubseriesPorDependencia(),
+  const [series, tiposPorSubserie, tramites, requisitos, subserieContratacionId] = await Promise.all([
+    catalogoSeriesBuscables(),
     tiposDocumentalesPorSubserie(),
     tramitesParaClasificar(),
     requisitosContratacionParaClasificar(),
@@ -53,7 +54,7 @@ export default async function AdminTrdPage() {
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="text-sm font-semibold text-stone-900">GECON — subserie de la contratación</h2>
         <p className="mb-3 text-xs text-stone-500">Aplica a todos los expedientes contractuales, sin importar la modalidad.</p>
-        <SelectorClasificacionTrd tipo="configuracion" valorInicial={subserieContratacionId} grupos={subseriesPorDependencia} />
+        <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} series={series} />
       </section>
 
       <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
@@ -99,11 +100,11 @@ export default async function AdminTrdPage() {
         </div>
         <ul className="divide-y divide-stone-100">
           {tramites.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
-              <span className="text-sm text-stone-700">
+            <li key={t.id} className="px-4 py-3">
+              <p className="mb-1.5 text-sm text-stone-700">
                 {t.codigo} — {t.nombre}
-              </span>
-              <SelectorClasificacionTrd tipo="tramiteTipo" id={t.id} valorInicial={t.subserieId} grupos={subseriesPorDependencia} />
+              </p>
+              <SelectorSubserieTrdCascada tipo="tramiteTipo" id={t.id} valorInicial={t.subserieId} series={series} />
             </li>
           ))}
         </ul>

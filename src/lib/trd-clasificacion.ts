@@ -1,35 +1,21 @@
 // Datos para la pantalla de administración /admin/trd — preclasificación TRD de Trámites 2.0 y GECON
 // (reusa el catálogo de series/subseries/tipos documentales del SGDEA, ya real y completo).
 import { db } from "@/lib/db";
+import { listarSeriesVigentes } from "@/lib/trd";
+import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
 
-// El código de serie SE REPITE en las 29 dependencias (ver [[project_sgdea_correspondencia]]) — una
-// lista plana global de subseries es ambigua (p.ej. "Actas de Comité Primario" existe decenas de
-// veces). Por eso se agrupa SIEMPRE por dependencia, mismo criterio ya establecido para la TRD del
-// SGDEA.
-export async function catalogoSubseriesPorDependencia() {
-  const series = await db.serieDocumental.findMany({
-    where: { vigenteHasta: null, activo: true },
-    orderBy: { codigo: "asc" },
-    select: {
-      codigo: true,
-      nombre: true,
-      dependencia: { select: { nombre: true } },
-      subseries: { where: { activo: true }, orderBy: { codigo: "asc" }, select: { id: true, codigo: true, nombre: true } },
-    },
-  });
-  const porDependencia = new Map<string, { id: string; etiqueta: string }[]>();
-  for (const s of series) {
-    const dep = s.dependencia?.nombre ?? "Sin dependencia asignada";
-    const lista = porDependencia.get(dep) ?? [];
-    for (const sub of s.subseries) {
-      lista.push({ id: sub.id, etiqueta: `${s.codigo}.${sub.codigo} — ${s.nombre} / ${sub.nombre}` });
-    }
-    porDependencia.set(dep, lista);
-  }
-  return [...porDependencia.entries()]
-    .filter(([, subseries]) => subseries.length > 0)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([dependencia, subseries]) => ({ dependencia, subseries }));
+// Mismo catálogo que ya usan los formularios de radicar del SGDEA (BuscadorSubserieTRD) — un solo
+// origen de datos para el selector en cascada dependencia → serie → subserie en toda la aplicación.
+export async function catalogoSeriesBuscables(): Promise<SerieBuscable[]> {
+  const series = await listarSeriesVigentes();
+  return series.map((s) => ({
+    id: s.id,
+    codigo: s.codigo,
+    nombre: s.nombre,
+    dependenciaId: s.dependencia?.id ?? null,
+    dependenciaNombre: s.dependencia?.nombre ?? null,
+    subseries: s.subseries.map((sub) => ({ id: sub.id, codigo: sub.codigo, nombre: sub.nombre })),
+  }));
 }
 
 export async function tiposDocumentalesPorSubserie() {
