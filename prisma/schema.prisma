@@ -48,6 +48,12 @@ model ConfiguracionSitio {
   jornadaHoraInicioTarde String?
   jornadaHoraFinTarde    String?
 
+  // TRD: subserie única para todos los expedientes de GECON (en la práctica, contratación suele caer
+  // bajo una sola serie archivística sin importar la modalidad) — a diferencia de Trámites 2.0, que
+  // clasifica por cada TramiteTipo.
+  subserieContratacionId String?
+  subserieContratacion   SubserieDocumental? @relation(fields: [subserieContratacionId], references: [id])
+
   updatedAt DateTime @updatedAt
 }
 
@@ -382,29 +388,38 @@ model TramiteTipo {
   autoridadResponsabilidad String   @db.Text
   suitNumeros              String[] @default([])
   activo                   Boolean  @default(true)
+  // TRD: serie/subserie del expediente completo de este trámite (retención y disposición final se
+  // cuentan por acá, no por documento individual — un expediente es un solo legajo archivístico).
+  subserieId               String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
+  subserie             SubserieDocumental?            @relation(fields: [subserieId], references: [id])
   flujos               Flujo[]
   documentosRequeridos DocumentoRequeridoDefinicion[]
   expedientes          Expediente[]
   usuariosConAcceso    UsuarioTramiteAcceso[]
+
+  @@index([subserieId])
 }
 
 model DocumentoRequeridoDefinicion {
-  id            String           @id @default(cuid())
-  tramiteTipoId String
-  orden         Int
-  nombre        String
-  obligatorio   Boolean          @default(true)
-  notas         String?
-  aplicaA       TipoSolicitante?
-  puedeFirmarse Boolean          @default(true)
+  id               String           @id @default(cuid())
+  tramiteTipoId    String
+  orden            Int
+  nombre           String
+  obligatorio      Boolean          @default(true)
+  notas            String?
+  aplicaA          TipoSolicitante?
+  puedeFirmarse    Boolean          @default(true)
+  tipoDocumentalId String?
 
-  tramiteTipo TramiteTipo           @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
-  documentos  ExpedienteDocumento[]
+  tramiteTipo    TramiteTipo           @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
+  tipoDocumental TipoDocumental?       @relation(fields: [tipoDocumentalId], references: [id])
+  documentos     ExpedienteDocumento[]
 
   @@index([tramiteTipoId])
+  @@index([tipoDocumentalId])
 }
 
 model Flujo {
@@ -559,10 +574,13 @@ model Expediente {
   createdById         String
   responsableActualId String?
 
-  fechaRadicacion       DateTime @default(now())
-  fechaUltimoMovimiento DateTime @default(now())
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  fechaRadicacion       DateTime  @default(now())
+  fechaUltimoMovimiento DateTime  @default(now())
+  // TRD: momento en que el expediente llegó a un estado terminal — desde acá se cuenta la retención
+  // de la subserie (gestión y luego central). Null mientras el expediente sigue activo.
+  fechaCierre           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   tramiteTipo       TramiteTipo  @relation(fields: [tramiteTipoId], references: [id])
   flujo             Flujo        @relation(fields: [flujoId], references: [id])
@@ -598,19 +616,23 @@ model Expediente {
 }
 
 model ExpedienteDocumento {
-  id           String   @id @default(cuid())
-  expedienteId String
-  pasoNumero   Int?
-  requisitoId  String?
-  nombre       String
-  descripcion  String?
-  storagePath  String
-  mimeType     String
-  tamanoBytes  Int
-  hashSha256   String?
-  subidoPorId  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  id               String   @id @default(cuid())
+  expedienteId     String
+  pasoNumero       Int?
+  requisitoId      String?
+  // Heredado del requisito (DocumentoRequeridoDefinicion.tipoDocumental) cuando el documento
+  // corresponde a uno de la radicación; sin requisito (documento libre de un paso) queda sin
+  // clasificar por ahora — ver [[project_seyca_tramites2]] ítem TRD.
+  tipoDocumentalId String?
+  nombre           String
+  descripcion      String?
+  storagePath      String
+  mimeType         String
+  tamanoBytes      Int
+  hashSha256       String?
+  subidoPorId      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 
   requiereFirma        Boolean                   @default(true)
   estadoValidacion     EstadoValidacionDocumento @default(PENDIENTE)
@@ -622,12 +644,14 @@ model ExpedienteDocumento {
   subidoPor        Usuario                       @relation("ExpedienteDocumentoSubidoPor", fields: [subidoPorId], references: [id])
   validadoPor      Usuario?                      @relation("ExpedienteDocumentoValidadoPor", fields: [validadoPorId], references: [id])
   requisito        DocumentoRequeridoDefinicion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  tipoDocumental   TipoDocumental?               @relation(fields: [tipoDocumentalId], references: [id])
   firmas           FirmaExpedienteDocumento[]
   solicitudesFirma SolicitudFirma[]
   avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([expedienteId])
   @@index([requisitoId])
+  @@index([tipoDocumentalId])
 }
 
 enum EstadoValidacionDocumento {
@@ -705,25 +729,25 @@ model ExpedienteEvento {
  * disponible en el paso actual, y cada funcionario lo usa si corresponde a su procedimiento.
  */
 model VisitaTecnica {
-  id             String   @id @default(cuid())
-  expedienteId   String
-  pasoNumero     Int
-  lat            Float
-  lon            Float
-  planaX         Float?
-  planaY         Float?
-  cartesianaX    Float?
-  cartesianaY    Float?
-  cartesianaZ    Float?
-  precisionM     Float?
-  capturaManual  Boolean  @default(false)
-  fueraJurisdiccion Boolean @default(false)
-  nota           String?  @db.Text
-  capturadoPorId String
+  id                String   @id @default(cuid())
+  expedienteId      String
+  pasoNumero        Int
+  lat               Float
+  lon               Float
+  planaX            Float?
+  planaY            Float?
+  cartesianaX       Float?
+  cartesianaY       Float?
+  cartesianaZ       Float?
+  precisionM        Float?
+  capturaManual     Boolean  @default(false)
+  fueraJurisdiccion Boolean  @default(false)
+  nota              String?  @db.Text
+  capturadoPorId    String
   // Momento real de la captura (GPS del dispositivo o ingreso manual) — distinto de `createdAt`
   // (cuándo quedó guardada en el servidor), que puede ser más tarde si se capturó sin conexión.
-  capturadoEn    DateTime @default(now())
-  createdAt      DateTime @default(now())
+  capturadoEn       DateTime @default(now())
+  createdAt         DateTime @default(now())
 
   expediente   Expediente          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   capturadoPor Usuario             @relation(fields: [capturadoPorId], references: [id])
@@ -980,6 +1004,8 @@ model SubserieDocumental {
   comunicaciones          Comunicacion[]
   tiposDocumentales       TipoDocumental[]
   expedientesDocumentales ExpedienteDocumental[]
+  tramiteTipos            TramiteTipo[]
+  configuracionesSitio    ConfiguracionSitio[]
 
   @@unique([serieId, codigo])
   @@index([serieId])
@@ -1067,8 +1093,12 @@ model TipoDocumental {
   soportePapel       Boolean @default(false)
   soporteElectronico Boolean @default(false)
 
-  subserie          SubserieDocumental @relation(fields: [subserieId], references: [id], onDelete: Cascade)
-  documentosArchivo DocumentoArchivo[]
+  subserie               SubserieDocumental               @relation(fields: [subserieId], references: [id], onDelete: Cascade)
+  documentosArchivo      DocumentoArchivo[]
+  documentosRequeridos   DocumentoRequeridoDefinicion[]
+  expedienteDocumentos   ExpedienteDocumento[]
+  requisitosContratacion RequisitoDocumentoContratacion[]
+  documentosContrato     DocumentoContrato[]
 
   @@index([subserieId])
 }
@@ -1760,28 +1790,32 @@ model RequisitoDocumentoContratacion {
   notaOrigenExterno  String?             @db.Text
   fuente             String?
   activo             Boolean             @default(true)
+  tipoDocumentalId   String?
 
+  tipoDocumental     TipoDocumental?          @relation(fields: [tipoDocumentalId], references: [id])
   documentos         DocumentoContrato[]
   periodosEventuales PeriodoInformeEventual[]
 
   @@index([modalidadSeleccion])
   @@index([etapa])
+  @@index([tipoDocumentalId])
 }
 
 model DocumentoContrato {
-  id           String            @id @default(cuid())
-  expedienteId String
-  etapa        EtapaContratacion
-  categoria    String?
-  requisitoId  String?
-  nombre       String
-  storagePath  String
-  mimeType     String
-  tamanoBytes  Int
-  hashSha256   String?
-  subidoPorId  String
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id               String            @id @default(cuid())
+  expedienteId     String
+  etapa            EtapaContratacion
+  categoria        String?
+  requisitoId      String?
+  tipoDocumentalId String?
+  nombre           String
+  storagePath      String
+  mimeType         String
+  tamanoBytes      Int
+  hashSha256       String?
+  subidoPorId      String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   requiereFirma        Boolean                           @default(false)
   firmadoEnSecop       Boolean                           @default(false)
@@ -1803,6 +1837,7 @@ model DocumentoContrato {
   validadoPor              Usuario?                        @relation("DocContratoValidadoPor", fields: [validadoPorId], references: [id])
   verificacionRecepcionPor Usuario?                        @relation("DocContratoVerificacionRecepcion", fields: [verificacionRecepcionPorId], references: [id])
   requisito                RequisitoDocumentoContratacion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+  tipoDocumental           TipoDocumental?                 @relation(fields: [tipoDocumentalId], references: [id])
   periodoEventual          PeriodoInformeEventual?         @relation(fields: [periodoEventualId], references: [id], onDelete: SetNull)
   firmas                   FirmaDocumentoContrato[]
   solicitudesFirma         SolicitudFirma[]
@@ -1812,6 +1847,7 @@ model DocumentoContrato {
   @@index([etapa])
   @@index([requisitoId])
   @@index([periodoEventualId])
+  @@index([tipoDocumentalId])
 }
 
 model AvisoRechazoDocumento {

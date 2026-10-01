@@ -235,12 +235,15 @@ export async function POST(req: NextRequest) {
   });
 
   if (Array.isArray(documentos) && documentos.length > 0) {
+    const tipoDocumentalPorRequisito = new Map(tramite.documentosRequeridos.map((r) => [r.id, r.tipoDocumentalId]));
     await db.expedienteDocumento.createMany({
       data: documentos
         .filter((d) => d?.path && d?.nombre)
         .map((d) => ({
           expedienteId: expediente.id,
           pasoNumero: null,
+          requisitoId: d.documentoRequeridoId || null,
+          tipoDocumentalId: d.documentoRequeridoId ? tipoDocumentalPorRequisito.get(d.documentoRequeridoId) ?? null : null,
           nombre: d.nombre,
           descripcion: d.descripcion || null,
           storagePath: d.path,

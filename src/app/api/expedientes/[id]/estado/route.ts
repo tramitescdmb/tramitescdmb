@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
+import { ESTADOS_EXPEDIENTE, ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 
-const ESTADOS_VALIDOS = [
-  "RADICADO",
-  "EN_TRAMITE",
-  "INFORMACION_ADICIONAL_REQUERIDA",
-  "SUSPENDIDO",
-  "APROBADO",
-  "NEGADO",
-  "DESISTIDO",
-  "ARCHIVADO",
-  "RECHAZADO",
-];
+const ESTADOS_VALIDOS: string[] = [...ESTADOS_EXPEDIENTE];
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,9 +26,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const expediente = await db.expediente.findUnique({ where: { id } });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
 
+  const esTerminal = (ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(nuevoEstado);
   await db.expediente.update({
     where: { id },
-    data: { estado: nuevoEstado as typeof expediente.estado, fechaUltimoMovimiento: new Date() },
+    data: {
+      estado: nuevoEstado as typeof expediente.estado,
+      fechaUltimoMovimiento: new Date(),
+      fechaCierre: esTerminal ? new Date() : null,
+    },
   });
 
   await db.expedienteEvento.create({

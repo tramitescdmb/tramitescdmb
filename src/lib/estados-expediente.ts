@@ -9,3 +9,5 @@ export const ESTADOS_EXPEDIENTE = [
   "ARCHIVADO",
   "RECHAZADO",
 ] as const;
+
+export const ESTADOS_TERMINALES_EXPEDIENTE = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"] as const;

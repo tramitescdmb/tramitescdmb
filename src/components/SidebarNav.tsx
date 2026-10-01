@@ -13,6 +13,7 @@ import {
   Palette,
   Lock,
   LayoutGrid,
+  FolderClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ const ITEMS_ADMIN: Item[] = [
   { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
   { href: "/admin/seguridad", label: "Seguridad", icon: Lock },
   { href: "/admin/modulos", label: "Módulos", icon: LayoutGrid },
+  { href: "/admin/trd", label: "Clasificación TRD", icon: FolderClock },
 ];
 
 export function SidebarNav({

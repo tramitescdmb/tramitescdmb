@@ -4,8 +4,9 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeGestionarPaso } from "@/lib/cargos";
 import { puedeEditarExpediente } from "@/lib/permisos";
+import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 
-const ESTADOS_TERMINALES: EstadoExpediente[] = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
+const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
 function esEstadoValido(valor: string): valor is EstadoExpediente {
   return (Object.values(EstadoExpediente) as string[]).includes(valor);
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       estado: nuevoEstado,
       fechaUltimoMovimiento: new Date(),
       responsableActualId: session.userId,
+      fechaCierre: ESTADOS_TERMINALES.includes(nuevoEstado) ? new Date() : null,
     },
   });
 

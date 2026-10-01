@@ -352,6 +352,7 @@ export async function agregarDocumentoContrato(datos: {
 
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;
+  let tipoDocumentalId: string | null = null;
   if (datos.requisitoId) {
     const requisito = await db.requisitoDocumentoContratacion.findUnique({ where: { id: datos.requisitoId } });
     if (!requisito || requisito.etapa !== datos.etapa || (requisito.modalidadSeleccion && requisito.modalidadSeleccion !== expediente.modalidadSeleccion)) {
@@ -359,6 +360,7 @@ export async function agregarDocumentoContrato(datos: {
     }
     nombre = requisito.nombre;
     categoria = null;
+    tipoDocumentalId = requisito.tipoDocumentalId;
 
     if (esRequisitoPorPeriodos(requisito)) {
       const periodoMes = datos.periodoMes?.trim() || null;
@@ -394,6 +396,7 @@ export async function agregarDocumentoContrato(datos: {
       etapa: datos.etapa,
       categoria,
       requisitoId: datos.requisitoId || null,
+      tipoDocumentalId,
       nombre,
       storagePath: datos.storagePath,
       mimeType: datos.mimeType,

@@ -118,9 +118,16 @@ export default async function ExpedientesPage({
             número, solicitante, trámite o municipio.
           </p>
         </div>
-        <Link href={hrefGeovisor()} className="text-sm font-medium text-cdmb-700 hover:underline">
-          Ver en el geovisor →
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          {session?.rol === "ADMIN" && (
+            <Link href="/expedientes/disposicion" className="text-sm font-medium text-cdmb-700 hover:underline">
+              Disposición final (TRD)
+            </Link>
+          )}
+          <Link href={hrefGeovisor()} className="text-sm font-medium text-cdmb-700 hover:underline">
+            Ver en el geovisor →
+          </Link>
+        </div>
       </div>
 
       {soloMios && (

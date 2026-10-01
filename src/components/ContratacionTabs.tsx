@@ -58,6 +58,7 @@ export function ContratacionTabs({
       lado: "derecha",
       items: [
         entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true }),
+        entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/disposicion", label: "Disposición final (TRD)", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del GECON", prefijo: true, separador: true }),
         entrada(permitido.administradorSistema, SOLO_ADMIN, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/auditoria", label: "Auditoría de cuentas", prefijo: true }),
