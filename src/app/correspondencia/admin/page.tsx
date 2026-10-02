@@ -251,9 +251,10 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
               <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-4">
                 <input type="checkbox" name="sincronizar" className="mt-0.5" />
                 <span>
-                  El archivo es la TRD completa de las dependencias que incluye: desactivar las series y subseries de esas
-                  dependencias que no vengan en él. No se borra nada; los documentos ya clasificados conservan su
-                  clasificación.
+                  El archivo es la TRD completa de las dependencias que incluye: eliminar las series y subseries de esas
+                  dependencias que no vengan en él. Si una subserie eliminada tenía documentos clasificados y su serie
+                  queda con una sola subserie, esos documentos pasan a ella; si no hay un reemplazo único, la subserie no
+                  se elimina y se informa para reclasificarla.
                 </span>
               </label>
               <div className="sm:col-span-4">

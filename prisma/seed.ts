@@ -247,16 +247,7 @@ async function seedCorrespondencia() {
     idPorCodigo.set(d.codigo, fila.id);
   }
 
-  const serie =
-    (await db.serieDocumental.findFirst({ where: { codigo: "SIN-CLASIF", version: "1", dependenciaId: null } })) ??
-    (await db.serieDocumental.create({ data: { codigo: "SIN-CLASIF", nombre: "Sin clasificar (pendiente TRD)", version: "1" } }));
-  await db.subserieDocumental.upsert({
-    where: { serieId_codigo: { serieId: serie.id, codigo: "GEN" } },
-    create: { serieId: serie.id, codigo: "GEN", nombre: "General", retencionGestionAnios: 0, retencionCentralAnios: 0 },
-    update: {},
-  });
-
-  console.log(`Sembradas ${dependencias.length} dependencias + serie por defecto "Sin clasificar".`);
+  console.log(`Sembradas ${dependencias.length} dependencias.`);
 }
 
 async function main() {

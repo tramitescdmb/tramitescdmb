@@ -168,6 +168,9 @@ export type ResultadoImportacionTrd = {
   subseriesActualizadas: number;
   subseriesSinCambios: number;
   subseriesDesactivadas: number;
+  subseriesEliminadas: number;
+  subseriesReclasificadas: number;
+  seriesEliminadas: number;
   tiposDocumentalesCreados: number;
   filasProcesadas: number;
   errores: string[];
@@ -215,6 +218,9 @@ export async function importarTrd(
     subseriesActualizadas: 0,
     subseriesSinCambios: 0,
     subseriesDesactivadas: 0,
+    subseriesEliminadas: 0,
+    subseriesReclasificadas: 0,
+    seriesEliminadas: 0,
     tiposDocumentalesCreados: 0,
     filasProcesadas: 0,
     errores: [],
@@ -412,22 +418,89 @@ export async function importarTrd(
   if (opciones.sincronizar) {
     for (const serie of series.values()) {
       if (!serie.dependenciaId || !dependenciasTocadas.has(serie.dependenciaId) || serie.vigenteHasta) continue;
-      if (!seriesRevisadas.has(serie.id)) {
-        if (serie.activo) {
-          if (escribir) await db.serieDocumental.update({ where: { id: serie.id }, data: { activo: false } });
-          serie.activo = false;
-          resultado.seriesDesactivadas++;
-        }
-        continue;
-      }
+      const enArchivo = serie.subseries.filter((s) => subseriesTocadas.has(s.id));
+      const reemplazo = enArchivo.length === 1 ? enArchivo[0]! : null;
+      let quedanSubseries = enArchivo.length;
       for (const sub of serie.subseries) {
-        if (subseriesTocadas.has(sub.id) || !sub.activo) continue;
-        if (escribir) await db.subserieDocumental.update({ where: { id: sub.id }, data: { activo: false } });
-        sub.activo = false;
-        resultado.subseriesDesactivadas++;
+        if (subseriesTocadas.has(sub.id)) continue;
+        const usos = await usosSubserie(sub.id);
+        if (usos.total > 0 && !reemplazo) {
+          quedanSubseries++;
+          if (sub.activo) {
+            if (escribir) await db.subserieDocumental.update({ where: { id: sub.id }, data: { activo: false } });
+            sub.activo = false;
+            resultado.subseriesDesactivadas++;
+          }
+          resultado.errores.push(
+            `La subserie ${sub.codigo} "${sub.nombre}" no viene en el archivo pero tiene ${usos.total} registro(s) clasificados y su serie no tiene una única subserie de reemplazo: se dejó inactiva. Reclasifique esos registros y vuelva a cargar el archivo para eliminarla.`
+          );
+          continue;
+        }
+        if (escribir) {
+          if (usos.total > 0 && reemplazo) await moverClasificacion(sub.id, reemplazo.id);
+          await db.subserieDocumental.delete({ where: { id: sub.id } });
+        }
+        if (usos.total > 0) resultado.subseriesReclasificadas++;
+        resultado.subseriesEliminadas++;
+      }
+      if (quedanSubseries === 0) {
+        const usosSerie = await usosSerieDocumental(serie.id);
+        if (usosSerie > 0) {
+          if (serie.activo) {
+            if (escribir) await db.serieDocumental.update({ where: { id: serie.id }, data: { activo: false } });
+            serie.activo = false;
+            resultado.seriesDesactivadas++;
+          }
+          resultado.errores.push(
+            `La serie ${serie.codigo} "${serie.nombre}" no viene en el archivo pero tiene ${usosSerie} registro(s) clasificados: se dejó inactiva.`
+          );
+        } else {
+          if (escribir) await db.serieDocumental.delete({ where: { id: serie.id } });
+          resultado.seriesEliminadas++;
+        }
       }
     }
   }
 
   return resultado;
+}
+
+async function usosSubserie(subserieId: string): Promise<{ total: number }> {
+  const tipo = { tipoDocumental: { subserieId } };
+  const conteos = await Promise.all([
+    db.comunicacion.count({ where: { subserieId } }),
+    db.expedienteDocumental.count({ where: { subserieId } }),
+    db.tramiteTipo.count({ where: { subserieId } }),
+    db.configuracionSitio.count({ where: { subserieContratacionId: subserieId } }),
+    db.documentoArchivo.count({ where: tipo }),
+    db.documentoRequeridoDefinicion.count({ where: tipo }),
+    db.expedienteDocumento.count({ where: tipo }),
+    db.requisitoDocumentoContratacion.count({ where: tipo }),
+    db.documentoContrato.count({ where: tipo }),
+  ]);
+  return { total: conteos.reduce((a, b) => a + b, 0) };
+}
+
+async function usosSerieDocumental(serieId: string): Promise<number> {
+  const conteos = await Promise.all([
+    db.comunicacion.count({ where: { serieId } }),
+    db.expedienteDocumental.count({ where: { serieId } }),
+    db.campoMetadato.count({ where: { serieId } }),
+  ]);
+  return conteos.reduce((a, b) => a + b, 0);
+}
+
+async function moverClasificacion(desdeId: string, haciaId: string): Promise<void> {
+  const tipo = { tipoDocumental: { subserieId: desdeId } };
+  await db.$transaction([
+    db.comunicacion.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
+    db.expedienteDocumental.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
+    db.tramiteTipo.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
+    db.configuracionSitio.updateMany({ where: { subserieContratacionId: desdeId }, data: { subserieContratacionId: haciaId } }),
+    db.documentoArchivo.updateMany({ where: tipo, data: { tipoDocumentalId: null } }),
+    db.documentoRequeridoDefinicion.updateMany({ where: tipo, data: { tipoDocumentalId: null } }),
+    db.expedienteDocumento.updateMany({ where: tipo, data: { tipoDocumentalId: null } }),
+    db.requisitoDocumentoContratacion.updateMany({ where: tipo, data: { tipoDocumentalId: null } }),
+    db.documentoContrato.updateMany({ where: tipo, data: { tipoDocumentalId: null } }),
+  ]);
 }

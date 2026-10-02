@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const resultado = await importarTrd(filas, { modo, version, sincronizar });
-    const descripcion = `${session.nombre} importó una TRD ${modo === "vigente" ? "vigente" : "histórica"} (versión "${version}", archivo "${archivo.name}"${sincronizar ? ", sincronizando" : ""}): ${resultado.filasProcesadas} filas, ${resultado.dependenciasCreadas} dependencias nuevas, ${resultado.seriesCreadas} series nuevas, ${resultado.seriesActualizadas} series actualizadas, ${resultado.subseriesCreadas} subseries nuevas, ${resultado.subseriesActualizadas} actualizadas, ${resultado.subseriesSinCambios} sin cambios, ${resultado.subseriesDesactivadas} subseries y ${resultado.seriesDesactivadas} series desactivadas.`;
+    const descripcion = `${session.nombre} importó una TRD ${modo === "vigente" ? "vigente" : "histórica"} (versión "${version}", archivo "${archivo.name}"${sincronizar ? ", sincronizando" : ""}): ${resultado.filasProcesadas} filas, ${resultado.dependenciasCreadas} dependencias nuevas, ${resultado.seriesCreadas} series nuevas, ${resultado.seriesActualizadas} series actualizadas, ${resultado.subseriesCreadas} subseries nuevas, ${resultado.subseriesActualizadas} actualizadas, ${resultado.subseriesSinCambios} sin cambios, ${resultado.subseriesEliminadas} subseries eliminadas (${resultado.subseriesReclasificadas} con sus registros pasados a la subserie de reemplazo), ${resultado.seriesEliminadas} series eliminadas, ${resultado.subseriesDesactivadas} subseries y ${resultado.seriesDesactivadas} series inactivas por tener registros sin reemplazo.`;
     await registrarAuditoria({ tipo: "CONFIGURACION_ACTUALIZADA", descripcion, usuarioId: session.userId });
     const { ip, userAgent } = datosPeticion(req.headers);
     await registrarAuditoriaDoc({
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       userAgent,
       detalle: descripcion,
     });
-    const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} subseries actualizadas · ${resultado.subseriesSinCambios} sin cambios${sincronizar ? ` · ${resultado.subseriesDesactivadas} subseries y ${resultado.seriesDesactivadas} series desactivadas por no venir en el archivo` : ""}${resultado.errores.length ? ` · ${resultado.errores.length} aviso(s), vea abajo` : ""}.`;
+    const resumen = `Importación lista: ${resultado.filasProcesadas} filas · ${resultado.seriesCreadas} series y ${resultado.subseriesCreadas} subseries nuevas · ${resultado.subseriesActualizadas} subseries actualizadas · ${resultado.subseriesSinCambios} sin cambios${sincronizar ? ` · ${resultado.subseriesEliminadas} subseries y ${resultado.seriesEliminadas} series eliminadas por no venir en el archivo` : ""}${resultado.errores.length ? ` · ${resultado.errores.length} aviso(s), vea abajo` : ""}.`;
     if (resultado.errores.length > 0) {
       console.warn("Errores en importación de TRD:", resultado.errores);
       const MOSTRAR = 8;
