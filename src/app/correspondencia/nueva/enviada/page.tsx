@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
+import { datosRespuestaRecibida } from "@/lib/correspondencia-respuesta";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
@@ -16,53 +16,13 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
   const { respondeAId } = await searchParams;
-  const [dependencias, series, recibidaARespoder, documentosRespuesta, plantillas] = await Promise.all([
+  const [dependencias, series, inicial, plantillas] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
-    respondeAId
-      ? db.comunicacion.findUnique({
-          where: { id: respondeAId },
-          select: {
-            id: true,
-            radicado: true,
-            asunto: true,
-            respuestaTexto: true,
-            terceroTipo: true,
-            terceroTipoIdentificacion: true,
-            terceroIdentificacion: true,
-            terceroNombre: true,
-            terceroEmail: true,
-            terceroTelefono: true,
-            terceroDireccion: true,
-            terceroMunicipio: true,
-          },
-        })
-      : null,
-    respondeAId
-      ? db.comunicacionDocumento.findMany({
-          where: { comunicacionId: respondeAId, esRespuesta: true },
-          select: { nombre: true },
-        })
-      : [],
+    respondeAId ? datosRespuestaRecibida(respondeAId) : null,
     listarPlantillas("ENVIADA"),
   ]);
   const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
-  const inicial = recibidaARespoder
-    ? {
-        respondeAId: recibidaARespoder.id,
-        respondeALabel: `${recibidaARespoder.radicado} — ${recibidaARespoder.asunto.slice(0, 60)}${recibidaARespoder.terceroNombre ? ` (${recibidaARespoder.terceroNombre})` : ""}`,
-        asunto: `Respuesta a ${recibidaARespoder.radicado} — ${recibidaARespoder.asunto}`,
-        contenido: recibidaARespoder.respuestaTexto ?? "",
-        destinatarioTipo: recibidaARespoder.terceroTipo ?? undefined,
-        destinatarioTipoIdentificacion: recibidaARespoder.terceroTipoIdentificacion ?? undefined,
-        destinatarioIdentificacion: recibidaARespoder.terceroIdentificacion ?? undefined,
-        destinatarioNombre: recibidaARespoder.terceroNombre ?? undefined,
-        destinatarioEmail: recibidaARespoder.terceroEmail ?? undefined,
-        destinatarioTelefono: recibidaARespoder.terceroTelefono ?? undefined,
-        destinatarioDireccion: recibidaARespoder.terceroDireccion ?? undefined,
-        destinatarioMunicipio: recibidaARespoder.terceroMunicipio ?? undefined,
-      }
-    : undefined;
 
   return (
     <div className="space-y-4">
@@ -84,8 +44,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
           subseries: s.subseries.map(subserieBuscable),
         }))}
         municipios={municipios}
-        inicial={inicial}
-        documentosRespuesta={documentosRespuesta.map((d) => d.nombre)}
+        inicial={inicial ?? undefined}
         plantillas={plantillas}
         usuarioNombre={session.nombre}
       />

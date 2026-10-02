@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar, puedeDespachar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, contarOficiosSinDespachar, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { comunicacionesFirmablesPor } from "@/lib/correspondencia";
+import { respuestasListasParaRadicar } from "@/lib/correspondencia-respuesta";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
@@ -53,13 +54,14 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables, listasParaRadicar] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(sp.serieId || undefined),
     contarComunicacionesVencidas(),
     puedeDespacharUsuario ? contarOficiosSinDespachar() : Promise.resolve(0),
     getCalendarioLaboral(),
     puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
+    puedeRadicarUsuario ? respuestasListasParaRadicar() : Promise.resolve([]),
   ]);
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || sp.despacho || rango);
@@ -118,6 +120,41 @@ export default async function CorrespondenciaBandejaPage({
             : `${sinDespachar} oficios de salida están radicados y firmados pero sin despachar al destinatario.`}{" "}
           <Link href="/correspondencia?tipo=ENVIADA&despacho=sin_despachar" className="font-medium underline hover:no-underline">Ver cuáles</Link>
         </div>
+      )}
+
+      {listasParaRadicar.length > 0 && (
+        <details open className="print:hidden rounded-xl border border-cdmb-200 bg-cdmb-50/50 shadow-soft">
+          <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-3 text-sm font-medium text-cdmb-800">
+            <Send className="h-4 w-4" aria-hidden />
+            Respuestas listas para radicar como salida — {listasParaRadicar.length}
+          </summary>
+          <div className="border-t border-cdmb-100 p-3">
+            <p className="mb-2 text-xs text-stone-500">
+              El funcionario asignado ya guardó la respuesta. Gestión documental la revisa, la radica como oficio de salida
+              (con los datos del peticionario ya cargados) y luego registra el despacho.
+            </p>
+            <ul className="space-y-1.5">
+              {listasParaRadicar.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
+                  <span className="min-w-0">
+                    <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
+                    <span className="ml-2 text-xs text-stone-500">
+                      {c.terceroNombre ?? "Sin peticionario"} · respondió {c.respuestaPor?.nombre ?? "—"}
+                      {c.respuestaEn ? ` el ${fecha(c.respuestaEn)}` : ""}
+                    </span>
+                    <span className="block truncate text-xs text-stone-400">{c.asunto}</span>
+                  </span>
+                  <Link
+                    href={`/correspondencia/nueva/enviada?respondeAId=${c.id}`}
+                    className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                  >
+                    <Send className="h-3.5 w-3.5" aria-hidden /> Radicar salida
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
       )}
 
       <div className="hidden print:block">

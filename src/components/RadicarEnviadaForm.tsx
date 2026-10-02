@@ -13,24 +13,11 @@ import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
+import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
+import type { DatosRespuestaRecibida } from "@/lib/correspondencia-respuesta";
 
 type Dependencia = { id: string; nombre: string };
-type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
-type ValoresIniciales = {
-  respondeAId?: string;
-  respondeALabel?: string;
-  asunto?: string;
-  contenido?: string;
-  destinatarioTipo?: "NATURAL" | "JURIDICA";
-  destinatarioTipoIdentificacion?: string;
-  destinatarioIdentificacion?: string;
-  destinatarioNombre?: string;
-  destinatarioEmail?: string;
-  destinatarioTelefono?: string;
-  destinatarioDireccion?: string;
-  destinatarioMunicipio?: string;
-};
+type Serie = SerieBuscable;
 
 const MEDIOS = [
   { value: "FISICO", label: "Físico" },
@@ -45,15 +32,13 @@ export function RadicarEnviadaForm({
   series,
   municipios,
   inicial,
-  documentosRespuesta,
   plantillas = [],
   usuarioNombre = "",
 }: {
   dependencias: Dependencia[];
   series: Serie[];
   municipios: string[];
-  inicial?: ValoresIniciales;
-  documentosRespuesta?: string[];
+  inicial?: DatosRespuestaRecibida;
   plantillas?: PlantillaOpcion[];
   usuarioNombre?: string;
 }) {
@@ -66,16 +51,61 @@ export function RadicarEnviadaForm({
   const [telefono, setTelefono] = useState(inicial?.destinatarioTelefono ?? "");
   const [direccion, setDireccion] = useState(inicial?.destinatarioDireccion ?? "");
   const [municipio, setMunicipio] = useState(inicial?.destinatarioMunicipio ?? "");
-  const [departamento, setDepartamento] = useState("");
+  const [departamento, setDepartamento] = useState(inicial?.destinatarioDepartamento ?? "");
   const [terceroCargado, setTerceroCargado] = useState(false);
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState(inicial?.asunto ?? "");
   const [contenido, setContenido] = useState(inicial?.contenido ?? "");
   const [folios, setFolios] = useState(1);
-  const [dependenciaOrigenId, setDependenciaOrigenId] = useState("");
-  const [serieId, setSerieId] = useState("");
-  const [subserieId, setSubserieId] = useState("");
+  const [dependenciaOrigenId, setDependenciaOrigenId] = useState(inicial?.dependenciaOrigenId ?? "");
+  const [serieId, setSerieId] = useState(inicial?.serieId ?? "");
+  const [subserieId, setSubserieId] = useState(inicial?.subserieId ?? "");
   const [respondeAId, setRespondeAId] = useState(inicial?.respondeAId ?? "");
+  const [recibida, setRecibida] = useState<DatosRespuestaRecibida | null>(inicial ?? null);
+  const [destinatarioBloqueado, setDestinatarioBloqueado] = useState(Boolean(inicial));
+  const [cargandoRecibida, setCargandoRecibida] = useState(false);
+  const documentosRespuesta = recibida?.documentosRespuesta ?? [];
+
+  function aplicarRecibida(d: DatosRespuestaRecibida) {
+    setRecibida(d);
+    setTipo(d.destinatarioTipo ?? "NATURAL");
+    setTipoId(d.destinatarioTipoIdentificacion ?? "CC");
+    setIdentificacion(d.destinatarioIdentificacion ?? "");
+    setNombre(d.destinatarioNombre ?? "");
+    setEmail(d.destinatarioEmail ?? "");
+    setTelefono(d.destinatarioTelefono ?? "");
+    setDireccion(d.destinatarioDireccion ?? "");
+    setMunicipio(d.destinatarioMunicipio ?? "");
+    setDepartamento(d.destinatarioDepartamento ?? "");
+    setAsunto(d.asunto);
+    setContenido(d.contenido);
+    setDependenciaOrigenId(d.dependenciaOrigenId ?? "");
+    setSerieId(d.serieId ?? "");
+    setSubserieId(d.subserieId ?? "");
+    setDestinatarioBloqueado(true);
+    setTerceroCargado(false);
+  }
+
+  async function elegirRecibida(id: string) {
+    setRespondeAId(id);
+    if (!id) {
+      setRecibida(null);
+      setDestinatarioBloqueado(false);
+      return;
+    }
+    setCargandoRecibida(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/correspondencia/recibidas-pendientes?id=${encodeURIComponent(id)}`);
+      const data = await r.json();
+      if (!r.ok || !data.detalle) throw new Error(data.error || "No se pudieron cargar los datos del radicado.");
+      aplicarRecibida(data.detalle as DatosRespuestaRecibida);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudieron cargar los datos del radicado.");
+    } finally {
+      setCargandoRecibida(false);
+    }
+  }
   const [archivos, setArchivos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
@@ -170,16 +200,49 @@ export function RadicarEnviadaForm({
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">¿Responde a una comunicación recibida?</h2>
-        <p className="mb-3 text-xs text-stone-400">Opcional — busque por radicado, asunto o tercero. Si la elige, esa recibida pasa a estado &quot;Respondida&quot; al radicar esta enviada.</p>
+        <p className="mb-3 text-xs text-stone-400">
+          Busque por radicado, asunto o tercero. Al elegirla se cargan el destinatario, el asunto, la respuesta del
+          funcionario, la dependencia que respondió, la clasificación TRD y los documentos de la respuesta. Esa recibida
+          pasa a estado &quot;Respondida&quot; al radicar esta enviada.
+        </p>
         <BuscadorRecibidaPendiente
-          valorInicial={inicial?.respondeAId && inicial?.respondeALabel ? { id: inicial.respondeAId, label: inicial.respondeALabel } : null}
-          onChange={setRespondeAId}
+          valorInicial={inicial ? { id: inicial.respondeAId, label: inicial.respondeALabel } : null}
+          onChange={elegirRecibida}
         />
+        {cargandoRecibida && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-stone-500">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Cargando los datos del radicado…
+          </p>
+        )}
+        {recibida && !cargandoRecibida && (
+          <p className="mt-2 text-xs text-stone-600">
+            {recibida.respuestaPorNombre
+              ? `Respuesta proyectada por ${recibida.respuestaPorNombre}.`
+              : "El funcionario asignado todavía no ha guardado una respuesta: el contenido del oficio queda vacío."}
+          </p>
+        )}
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Destinatario</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-stone-900">Destinatario</h2>
+          {destinatarioBloqueado && (
+            <button
+              type="button"
+              onClick={() => setDestinatarioBloqueado(false)}
+              className="text-xs font-medium text-cdmb-700 hover:underline"
+            >
+              Corregir datos del destinatario
+            </button>
+          )}
+        </div>
+        {destinatarioBloqueado && (
+          <SectionHelp>
+            Datos del peticionario tomados del radicado {recibida?.respondeALabel.split(" — ")[0]}. Quedan bloqueados para evitar
+            errores de digitación; use &quot;Corregir datos del destinatario&quot; solo si el peticionario informó un cambio.
+          </SectionHelp>
+        )}
+        <fieldset disabled={destinatarioBloqueado} className="grid grid-cols-1 gap-3 disabled:opacity-80 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Tipo de persona">
             <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
               <option value="NATURAL">Natural</option>
@@ -229,7 +292,7 @@ export function RadicarEnviadaForm({
               <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
             </Field>
           </div>
-        </div>
+        </fieldset>
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
