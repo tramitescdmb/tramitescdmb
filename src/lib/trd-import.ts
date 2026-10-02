@@ -18,6 +18,9 @@ export type FilaTrdCsv = {
   disposicion_s: string;
   procedimiento: string;
   tipos_documentales: string;
+  disposicion_final?: string;
+  reprografia?: string;
+  numeroFila?: number;
 };
 
 export const COLUMNAS_TRD_CSV = [
@@ -71,7 +74,21 @@ const ALIAS_COLUMNAS: Record<string, (typeof COLUMNAS_TRD_CSV)[number]> = {
   tipo_documental: "tipos_documentales",
 };
 
-function normalizarEncabezado(h: string): string {
+const ALIAS_EXTRA: Record<string, keyof FilaTrdCsv> = {
+  oficina_productora: "dependencia_nombre",
+  oficina: "dependencia_nombre",
+  unidad_administrativa: "dependencia_nombre",
+  tiempo_retencion_ag: "retencion_gestion",
+  retencion_ag: "retencion_gestion",
+  tiempo_retencion_ac: "retencion_central",
+  retencion_ac: "retencion_central",
+  disposicion_final: "disposicion_final",
+  disposicion: "disposicion_final",
+  procedimiento_de_reprografia: "reprografia",
+  reprografia: "reprografia",
+};
+
+export function normalizarEncabezado(h: string): string {
   const base = h
     .trim()
     .toLowerCase()
@@ -79,7 +96,7 @@ function normalizarEncabezado(h: string): string {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[\s.\-/]+/g, "_")
     .replace(/^_+|_+$/g, "");
-  return ALIAS_COLUMNAS[base] ?? base;
+  return ALIAS_COLUMNAS[base] ?? ALIAS_EXTRA[base] ?? base;
 }
 
 export function parsearCsvTrd(contenido: string): { filas: FilaTrdCsv[]; errores: string[] } {
@@ -145,179 +162,272 @@ export function parsearXmlTrd(contenido: string): { filas: FilaTrdCsv[]; errores
 export type ResultadoImportacionTrd = {
   dependenciasCreadas: number;
   seriesCreadas: number;
+  seriesActualizadas: number;
+  seriesDesactivadas: number;
   subseriesCreadas: number;
   subseriesActualizadas: number;
+  subseriesSinCambios: number;
+  subseriesDesactivadas: number;
   tiposDocumentalesCreados: number;
   filasProcesadas: number;
   errores: string[];
 };
 
-function marcasADisposiciones(fila: FilaTrdCsv): DisposicionFinal[] {
-  const d: DisposicionFinal[] = [];
-  if ((fila.disposicion_ct || "").trim()) d.push("CONSERVACION_TOTAL");
-  if ((fila.disposicion_e || "").trim()) d.push("ELIMINACION");
-  if ((fila.disposicion_md || "").trim()) d.push("MICROFILMACION_DIGITALIZACION");
-  if ((fila.disposicion_s || "").trim()) d.push("SELECCION");
-  return d;
+const ORDEN_DISPOSICION: DisposicionFinal[] = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
+
+export function marcasADisposiciones(fila: FilaTrdCsv): DisposicionFinal[] {
+  const d = new Set<DisposicionFinal>();
+  if ((fila.disposicion_ct || "").trim()) d.add("CONSERVACION_TOTAL");
+  if ((fila.disposicion_e || "").trim()) d.add("ELIMINACION");
+  if ((fila.disposicion_md || "").trim()) d.add("MICROFILMACION_DIGITALIZACION");
+  if ((fila.disposicion_s || "").trim()) d.add("SELECCION");
+  const siglas = `${fila.disposicion_final ?? ""} ${fila.reprografia ?? ""}`
+    .toUpperCase()
+    .split(/[^A-Z]+/)
+    .filter(Boolean);
+  for (const sigla of siglas) {
+    if (sigla === "CT") d.add("CONSERVACION_TOTAL");
+    else if (sigla === "E") d.add("ELIMINACION");
+    else if (sigla === "S") d.add("SELECCION");
+    else if (sigla === "M" || sigla === "D" || sigla === "MD") d.add("MICROFILMACION_DIGITALIZACION");
+  }
+  return ORDEN_DISPOSICION.filter((x) => d.has(x));
+}
+
+function mismoConjunto(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && [...a].sort().join("|") === [...b].sort().join("|");
+}
+
+function aniosRetencion(valor: string | undefined): number {
+  return Math.max(0, Math.floor(Number(valor) || 0));
 }
 
 export async function importarTrd(
   filas: FilaTrdCsv[],
-  opciones: { modo: "vigente" | "historica"; version: string }
+  opciones: { modo: "vigente" | "historica"; version: string; sincronizar?: boolean; simular?: boolean }
 ): Promise<ResultadoImportacionTrd> {
   const resultado: ResultadoImportacionTrd = {
     dependenciasCreadas: 0,
     seriesCreadas: 0,
+    seriesActualizadas: 0,
+    seriesDesactivadas: 0,
     subseriesCreadas: 0,
     subseriesActualizadas: 0,
+    subseriesSinCambios: 0,
+    subseriesDesactivadas: 0,
     tiposDocumentalesCreados: 0,
     filasProcesadas: 0,
     errores: [],
   };
   const version = opciones.version.trim() || `import-${new Date().toISOString().slice(0, 10)}`;
+  const escribir = !opciones.simular;
+  let contadorSimulado = 0;
+  const idSimulado = () => `simulado-${++contadorSimulado}`;
 
-  await (async (tx: typeof db) => {
-      const dependenciaPorCodigo = new Map<string, string>();
-      const seriePorClave = new Map<string, string>();
-      const nombreSeriePorClave = new Map<string, string>();
-      const nombreSubseriePorClave = new Map<string, string>();
+  const dependencias = new Map(
+    (await db.dependencia.findMany({ select: { id: true, codigo: true } })).map((d) => [d.codigo, d.id] as const)
+  );
+  const seriesExistentes = await db.serieDocumental.findMany({
+    where: { version },
+    select: {
+      id: true,
+      dependenciaId: true,
+      codigo: true,
+      nombre: true,
+      descripcion: true,
+      activo: true,
+      vigenteHasta: true,
+      subseries: {
+        select: {
+          id: true,
+          codigo: true,
+          nombre: true,
+          retencionGestionAnios: true,
+          retencionCentralAnios: true,
+          disposicionesFinal: true,
+          procedimiento: true,
+          activo: true,
+        },
+      },
+    },
+  });
+  type SerieCargada = (typeof seriesExistentes)[number];
+  const series = new Map<string, SerieCargada>(seriesExistentes.map((s) => [`${s.dependenciaId}:${s.codigo}`, s]));
 
-      for (let i = 0; i < filas.length; i++) {
-        const fila = filas[i]!;
-        const numFila = i + 2;
-        const depCodigo = (fila.dependencia_codigo || "").trim();
-        const depNombre = (fila.dependencia_nombre || "").trim();
-        const serieCodigo = (fila.serie_codigo || "").trim();
-        const serieNombre = (fila.serie_nombre || "").trim();
-        const serieDescripcion = (fila.serie_descripcion || "").trim() || null;
-        const subserieCodigo = (fila.subserie_codigo || "").trim();
-        const subserieNombre = (fila.subserie_nombre || "").trim();
+  const nombreSeriePorClave = new Map<string, string>();
+  const nombreSubseriePorClave = new Map<string, string>();
+  const dependenciasTocadas = new Set<string>();
+  const seriesRevisadas = new Set<string>();
+  const subseriesTocadas = new Set<string>();
 
-        if (!depCodigo || !serieCodigo || !subserieCodigo) {
-          resultado.errores.push(`Fila ${numFila}: faltan código de dependencia, serie o subserie — se omitió.`);
-          continue;
-        }
+  for (let i = 0; i < filas.length; i++) {
+    const fila = filas[i]!;
+    const numFila = fila.numeroFila ?? i + 2;
+    const depCodigo = (fila.dependencia_codigo || "").trim();
+    const depNombre = (fila.dependencia_nombre || "").trim();
+    const serieCodigo = (fila.serie_codigo || "").trim();
+    const serieNombre = (fila.serie_nombre || "").trim();
+    const serieDescripcion = (fila.serie_descripcion || "").trim() || null;
+    let subserieCodigo = (fila.subserie_codigo || "").trim();
+    let subserieNombre = (fila.subserie_nombre || "").trim();
 
-        let dependenciaId = dependenciaPorCodigo.get(depCodigo);
-        if (!dependenciaId) {
-          const existente = await tx.dependencia.findUnique({ where: { codigo: depCodigo }, select: { id: true } });
-          if (existente) {
-            dependenciaId = existente.id;
-          } else {
-            const nueva = await tx.dependencia.create({
-              data: { codigo: depCodigo, nombre: depNombre || depCodigo, nivel: depCodigo.length > 3 ? 1 : 0 },
-            });
-            dependenciaId = nueva.id;
-            resultado.dependenciasCreadas++;
-          }
-          dependenciaPorCodigo.set(depCodigo, dependenciaId);
-        }
+    if (!depCodigo || !serieCodigo) {
+      resultado.errores.push(`Fila ${numFila}: faltan el código de la dependencia o de la serie — se omitió.`);
+      continue;
+    }
+    if (!subserieCodigo) {
+      subserieCodigo = serieCodigo;
+      subserieNombre = serieNombre || serieCodigo;
+    }
 
-        const claveSerie = `${dependenciaId}:${serieCodigo}`;
-        if (serieNombre) {
-          const nombreAnterior = nombreSeriePorClave.get(claveSerie);
-          if (nombreAnterior && nombreAnterior !== serieNombre) {
-            resultado.errores.push(
-              `Fila ${numFila}: la serie "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior de este mismo archivo; aquí trae "${serieNombre}" — revise si es un error de digitación (se guardó este último nombre).`
-            );
-          }
-          nombreSeriePorClave.set(claveSerie, serieNombre);
-        }
-        let serieId = seriePorClave.get(claveSerie);
-        if (!serieId) {
-          const existente = await tx.serieDocumental.findFirst({
-            where: { dependenciaId, codigo: serieCodigo, version },
-            select: { id: true },
-          });
-          if (existente) {
-            serieId = existente.id;
-            await tx.serieDocumental.update({
-              where: { id: existente.id },
-              data: { nombre: serieNombre || serieCodigo, descripcion: serieDescripcion },
-            });
-          } else {
-            if (opciones.modo === "vigente") {
-              await tx.serieDocumental.updateMany({
-                where: { dependenciaId, codigo: serieCodigo, vigenteHasta: null },
-                data: { vigenteHasta: new Date() },
-              });
-            }
-            const nuevaSerie = await tx.serieDocumental.create({
-              data: {
-                codigo: serieCodigo,
-                nombre: serieNombre || serieCodigo,
-                descripcion: serieDescripcion,
-                dependenciaId,
-                version,
-                vigenteHasta: opciones.modo === "historica" ? new Date() : null,
-              },
-            });
-            serieId = nuevaSerie.id;
-            resultado.seriesCreadas++;
-          }
-          seriePorClave.set(claveSerie, serieId);
-        }
+    let dependenciaId = dependencias.get(depCodigo);
+    if (!dependenciaId) {
+      dependenciaId = escribir
+        ? (await db.dependencia.create({ data: { codigo: depCodigo, nombre: depNombre || depCodigo, nivel: depCodigo.length > 3 ? 1 : 0 } })).id
+        : idSimulado();
+      dependencias.set(depCodigo, dependenciaId);
+      resultado.dependenciasCreadas++;
+    }
+    dependenciasTocadas.add(dependenciaId);
 
-        const disposicionesFinal = marcasADisposiciones(fila);
-        const retencionGestionAnios = Math.max(0, Math.floor(Number(fila.retencion_gestion) || 0));
-        const retencionCentralAnios = Math.max(0, Math.floor(Number(fila.retencion_central) || 0));
-        const procedimiento = (fila.procedimiento || "").trim() || null;
-
-        const claveSubserie = `${serieId}:${subserieCodigo}`;
-        if (subserieNombre) {
-          const nombreAnterior = nombreSubseriePorClave.get(claveSubserie);
-          if (nombreAnterior && nombreAnterior !== subserieNombre) {
-            resultado.errores.push(
-              `Fila ${numFila}: la subserie "${subserieCodigo}" de "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior; aquí trae "${subserieNombre}" — revise si es un error de digitación (se guardó este último nombre).`
-            );
-          }
-          nombreSubseriePorClave.set(claveSubserie, subserieNombre);
-        }
-
-        const subserieExistente = await tx.subserieDocumental.findFirst({
-          where: { serieId, codigo: subserieCodigo },
-          select: { id: true },
-        });
-        let subserieId: string;
-        if (subserieExistente) {
-          await tx.subserieDocumental.update({
-            where: { id: subserieExistente.id },
-            data: { nombre: subserieNombre || subserieCodigo, retencionGestionAnios, retencionCentralAnios, disposicionesFinal, procedimiento },
-          });
-          subserieId = subserieExistente.id;
-          resultado.subseriesActualizadas++;
-        } else {
-          const nuevaSubserie = await tx.subserieDocumental.create({
-            data: {
-              serieId,
-              codigo: subserieCodigo,
-              nombre: subserieNombre || subserieCodigo,
-              retencionGestionAnios,
-              retencionCentralAnios,
-              disposicionesFinal,
-              procedimiento,
-            },
-          });
-          subserieId = nuevaSubserie.id;
-          resultado.subseriesCreadas++;
-        }
-
-        const tiposTexto = (fila.tipos_documentales || "").trim();
-        if (tiposTexto) {
-          await tx.tipoDocumental.deleteMany({ where: { subserieId } });
-          const nombres = tiposTexto
-            .split("|")
-            .map((t) => t.trim())
-            .filter(Boolean);
-          if (nombres.length > 0) {
-            await tx.tipoDocumental.createMany({ data: nombres.map((nombre) => ({ subserieId, nombre })) });
-            resultado.tiposDocumentalesCreados += nombres.length;
-          }
-        }
-
-        resultado.filasProcesadas++;
+    const claveSerie = `${dependenciaId}:${serieCodigo}`;
+    if (serieNombre) {
+      const nombreAnterior = nombreSeriePorClave.get(claveSerie);
+      if (nombreAnterior && nombreAnterior !== serieNombre) {
+        resultado.errores.push(
+          `Fila ${numFila}: la serie "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior de este mismo archivo; aquí trae "${serieNombre}" — revise si es un error de digitación (se guardó el primer nombre).`
+        );
+      } else {
+        nombreSeriePorClave.set(claveSerie, serieNombre);
       }
-  })(db);
+    }
+
+    let serie = series.get(claveSerie);
+    if (!serie) {
+      if (opciones.modo === "vigente" && escribir) {
+        await db.serieDocumental.updateMany({
+          where: { dependenciaId, codigo: serieCodigo, vigenteHasta: null },
+          data: { vigenteHasta: new Date() },
+        });
+      }
+      const datosSerie = {
+        codigo: serieCodigo,
+        nombre: serieNombre || serieCodigo,
+        descripcion: serieDescripcion,
+        dependenciaId,
+        version,
+        vigenteHasta: opciones.modo === "historica" ? new Date() : null,
+      };
+      const id = escribir ? (await db.serieDocumental.create({ data: datosSerie })).id : idSimulado();
+      serie = { ...datosSerie, id, activo: true, subseries: [] };
+      series.set(claveSerie, serie);
+      seriesRevisadas.add(serie.id);
+      resultado.seriesCreadas++;
+    } else if (!seriesRevisadas.has(serie.id)) {
+      seriesRevisadas.add(serie.id);
+      const cambios: { nombre?: string; descripcion?: string; activo?: boolean } = {};
+      if (serieNombre && serieNombre !== serie.nombre) cambios.nombre = serieNombre;
+      if (serieDescripcion && serieDescripcion !== serie.descripcion) cambios.descripcion = serieDescripcion;
+      if (opciones.sincronizar && !serie.activo) cambios.activo = true;
+      if (Object.keys(cambios).length > 0) {
+        if (escribir) await db.serieDocumental.update({ where: { id: serie.id }, data: cambios });
+        Object.assign(serie, cambios);
+        resultado.seriesActualizadas++;
+      }
+    }
+
+    const claveSubserie = `${serie.id}:${subserieCodigo}`;
+    if (subserieNombre) {
+      const nombreAnterior = nombreSubseriePorClave.get(claveSubserie);
+      if (nombreAnterior && nombreAnterior !== subserieNombre) {
+        resultado.errores.push(
+          `Fila ${numFila}: la subserie "${subserieCodigo}" de "${serieCodigo}" ya apareció como "${nombreAnterior}" en una fila anterior; aquí trae "${subserieNombre}" — revise si es un error de digitación (se guardó este último nombre).`
+        );
+      }
+      nombreSubseriePorClave.set(claveSubserie, subserieNombre);
+    }
+
+    const disposicionesFinal = marcasADisposiciones(fila);
+    const retencionGestionAnios = aniosRetencion(fila.retencion_gestion);
+    const retencionCentralAnios = aniosRetencion(fila.retencion_central);
+    const procedimiento = (fila.procedimiento || "").trim() || null;
+
+    const existente = serie.subseries.find((s) => s.codigo === subserieCodigo);
+    let subserieId: string;
+    if (existente) {
+      const cambios: {
+        nombre?: string;
+        retencionGestionAnios?: number;
+        retencionCentralAnios?: number;
+        disposicionesFinal?: DisposicionFinal[];
+        procedimiento?: string;
+        activo?: boolean;
+      } = {};
+      if (subserieNombre && subserieNombre !== existente.nombre) cambios.nombre = subserieNombre;
+      if (retencionGestionAnios !== existente.retencionGestionAnios) cambios.retencionGestionAnios = retencionGestionAnios;
+      if (retencionCentralAnios !== existente.retencionCentralAnios) cambios.retencionCentralAnios = retencionCentralAnios;
+      if (!mismoConjunto(disposicionesFinal, existente.disposicionesFinal)) cambios.disposicionesFinal = disposicionesFinal;
+      if (procedimiento && procedimiento !== existente.procedimiento) cambios.procedimiento = procedimiento;
+      if (opciones.sincronizar && !existente.activo) cambios.activo = true;
+      if (Object.keys(cambios).length > 0) {
+        if (escribir) await db.subserieDocumental.update({ where: { id: existente.id }, data: cambios });
+        Object.assign(existente, cambios);
+        resultado.subseriesActualizadas++;
+      } else {
+        resultado.subseriesSinCambios++;
+      }
+      subserieId = existente.id;
+    } else {
+      const datosSubserie = {
+        serieId: serie.id,
+        codigo: subserieCodigo,
+        nombre: subserieNombre || subserieCodigo,
+        retencionGestionAnios,
+        retencionCentralAnios,
+        disposicionesFinal,
+        procedimiento,
+      };
+      subserieId = escribir ? (await db.subserieDocumental.create({ data: datosSubserie })).id : idSimulado();
+      serie.subseries.push({ ...datosSubserie, id: subserieId, activo: true });
+      resultado.subseriesCreadas++;
+    }
+    subseriesTocadas.add(subserieId);
+
+    const tiposTexto = (fila.tipos_documentales || "").trim();
+    if (tiposTexto) {
+      const nombres = tiposTexto
+        .split("|")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (escribir) {
+        await db.tipoDocumental.deleteMany({ where: { subserieId } });
+        if (nombres.length > 0) await db.tipoDocumental.createMany({ data: nombres.map((nombre) => ({ subserieId, nombre })) });
+      }
+      resultado.tiposDocumentalesCreados += nombres.length;
+    }
+
+    resultado.filasProcesadas++;
+  }
+
+  if (opciones.sincronizar) {
+    for (const serie of series.values()) {
+      if (!serie.dependenciaId || !dependenciasTocadas.has(serie.dependenciaId) || serie.vigenteHasta) continue;
+      if (!seriesRevisadas.has(serie.id)) {
+        if (serie.activo) {
+          if (escribir) await db.serieDocumental.update({ where: { id: serie.id }, data: { activo: false } });
+          serie.activo = false;
+          resultado.seriesDesactivadas++;
+        }
+        continue;
+      }
+      for (const sub of serie.subseries) {
+        if (subseriesTocadas.has(sub.id) || !sub.activo) continue;
+        if (escribir) await db.subserieDocumental.update({ where: { id: sub.id }, data: { activo: false } });
+        sub.activo = false;
+        resultado.subseriesDesactivadas++;
+      }
+    }
+  }
 
   return resultado;
 }

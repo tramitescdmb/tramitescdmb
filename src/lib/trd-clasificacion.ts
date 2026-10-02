@@ -2,6 +2,7 @@
 // (reusa el catálogo de series/subseries/tipos documentales del SGDEA, ya real y completo).
 import { db } from "@/lib/db";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { subserieBuscable } from "@/lib/trd-presentacion";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
 
 // Mismo catálogo que ya usan los formularios de radicar del SGDEA (BuscadorSubserieTRD) — un solo
@@ -14,7 +15,7 @@ export async function catalogoSeriesBuscables(): Promise<SerieBuscable[]> {
     nombre: s.nombre,
     dependenciaId: s.dependencia?.id ?? null,
     dependenciaNombre: s.dependencia?.nombre ?? null,
-    subseries: s.subseries.map((sub) => ({ id: sub.id, codigo: sub.codigo, nombre: sub.nombre })),
+    subseries: s.subseries.map(subserieBuscable),
   }));
 }
 

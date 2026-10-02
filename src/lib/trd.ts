@@ -22,9 +22,4 @@ export async function listarSeries() {
   });
 }
 
-export const ETIQUETA_DISPOSICION: Record<string, string> = {
-  CONSERVACION_TOTAL: "Conservación total",
-  ELIMINACION: "Eliminación",
-  SELECCION: "Selección",
-  MICROFILMACION_DIGITALIZACION: "Microfilmación / Digitalización",
-};
+export { ETIQUETA_DISPOSICION } from "@/lib/trd-presentacion";

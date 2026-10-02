@@ -22,6 +22,7 @@ import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { listarTerminos } from "@/lib/vocabulario";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento, devolucionDeReparoPermitida } from "@/lib/pqrsd";
@@ -276,7 +277,7 @@ export default async function CorrespondenciaDetallePage({
     nombre: s.nombre,
     dependenciaId: s.dependencia?.id ?? null,
     dependenciaNombre: s.dependencia?.nombre ?? null,
-    subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
+    subseries: s.subseries.map(subserieBuscable),
   }));
 
   const tieneTercero = c.tipo !== "INTERNA";

@@ -29,7 +29,7 @@ function agruparPorDependencia(series: Awaited<ReturnType<typeof listarSeries>>)
       esAnterior: s.vigenteHasta !== null,
       actualizadaEn: formatearFecha(s.updatedAt),
       totalComunicaciones: s._count.comunicaciones,
-      subseries: s.subseries.map((ss) => ({
+      subseries: s.subseries.filter((ss) => ss.activo).map((ss) => ({
         id: ss.id,
         codigo: ss.codigo,
         nombre: ss.nombre,
@@ -202,10 +202,18 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </SectionHelp>
 
         <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (CSV o XML)</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (Excel, CSV o XML)</summary>
           <div className="mt-3 space-y-3">
             <SectionHelp>
-              Cargue toda una TRD de una vez desde un archivo de texto separado por &quot;;&quot; (así es como Excel
+              <strong>Excel (.xlsx):</strong> se admite el cuadro resumen de la TRD con las columnas Código y Oficina
+              productora, Código y Serie, Código y Subserie, Tiempo de retención AG y AC, Disposición final (CT, E, S) y
+              Procedimiento de reprografía (D o M). La fila de encabezados se detecta sola aunque haya filas de título
+              encima. Una fila sin subserie significa que la serie no se subdivide: se clasifica la serie completa. Los
+              códigos de subserie se guardan como serie.subserie (ej. 20.8). El procedimiento y los tipos documentales ya
+              registrados se conservan cuando el archivo no los trae.
+            </SectionHelp>
+            <SectionHelp>
+              <strong>CSV o XML:</strong> cargue toda una TRD de una vez desde un archivo de texto separado por &quot;;&quot; (así es como Excel
               exporta un CSV) o desde el XML que exporta este mismo sistema (mismas columnas, una etiqueta por
               campo). Debe tener, como mínimo, las columnas <code>dependencia_codigo</code>,{" "}
               <code>dependencia_nombre</code>, <code>serie_codigo</code>, <code>serie_nombre</code>,{" "}
@@ -217,12 +225,18 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
               dependencias que no existan todavía se crean automáticamente a partir del código y el nombre del archivo.
               Si una serie ya existe (mismo código, dependencia y versión), reimportarla actualiza su nombre y
               descripción con lo que traiga el archivo. El formato se detecta por la extensión del archivo
-              (<code>.csv</code> o <code>.xml</code>).
+              (<code>.xlsx</code>, <code>.csv</code> o <code>.xml</code>).
             </SectionHelp>
             <form action="/api/correspondencia/trd/importar" method="post" encType="multipart/form-data" className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div className="sm:col-span-2">
-                <Field label="Archivo CSV o XML" required>
-                  <input type="file" name="archivo" accept=".csv,text/csv,.xml,text/xml,application/xml" required className="w-full text-sm" />
+                <Field label="Archivo Excel, CSV o XML" required>
+                  <input
+                    type="file"
+                    name="archivo"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,text/csv,.xml,text/xml,application/xml"
+                    required
+                    className="w-full text-sm"
+                  />
                 </Field>
               </div>
               <Field label="Versión de esta TRD" required help='Identificador libre, ej. "2022-1" o el año de aprobación.'>
@@ -234,6 +248,14 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
                   <option value="historica">TRD histórica (para migrar)</option>
                 </select>
               </Field>
+              <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-4">
+                <input type="checkbox" name="sincronizar" className="mt-0.5" />
+                <span>
+                  El archivo es la TRD completa de las dependencias que incluye: desactivar las series y subseries de esas
+                  dependencias que no vengan en él. No se borra nada; los documentos ya clasificados conservan su
+                  clasificación.
+                </span>
+              </label>
               <div className="sm:col-span-4">
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
                   <Upload className="h-3.5 w-3.5" aria-hidden /> Importar TRD

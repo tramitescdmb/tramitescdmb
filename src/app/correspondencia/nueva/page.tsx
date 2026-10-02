@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { subserieBuscable } from "@/lib/trd-presentacion";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { VentanillaRadicacionForm } from "@/components/VentanillaRadicacionForm";
 
@@ -32,7 +33,7 @@ export default async function NuevaRadicacionPage() {
           nombre: s.nombre,
           dependenciaId: s.dependenciaId,
           dependenciaNombre: s.dependencia?.nombre ?? null,
-          subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
+          subseries: s.subseries.map(subserieBuscable),
         }))}
         municipios={municipios}
       />

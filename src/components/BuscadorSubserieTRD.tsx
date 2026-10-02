@@ -2,15 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
+import { esSerieSinSubseries, resumenRetencion, type SubserieBuscable } from "@/lib/trd-presentacion";
 
-type Subserie = { id: string; codigo: string; nombre: string };
 export type SerieBuscable = {
   id: string;
   codigo: string;
   nombre: string;
   dependenciaId?: string | null;
   dependenciaNombre?: string | null;
-  subseries: Subserie[];
+  subseries: SubserieBuscable[];
 };
 
 // El código de serie se repite en las 29 dependencias de la CDMB — buscar en una lista plana global
@@ -91,10 +91,16 @@ export function BuscadorSubserieTRD({
     onChange?.("", "");
   }
   function elegirSerie(id: string) {
+    const serie = series.find((s) => s.id === id);
+    const unica = serie && serie.subseries.length === 1 ? serie.subseries[0]!.id : "";
     setSerieIdPropio(id);
-    setSubserieIdPropio("");
-    onChange?.(id, "");
+    setSubserieIdPropio(unica);
+    onChange?.(id, unica);
   }
+
+  const sinSubseries = serieActual ? esSerieSinSubseries(serieActual) : false;
+  const subserieActual = serieActual?.subseries.find((ss) => ss.id === subserieIdEfectivo);
+  const retencion = subserieActual ? resumenRetencion(subserieActual) : null;
   function elegirSubserie(id: string) {
     setSubserieIdPropio(id);
     onChange?.(serieIdEfectivo, id);
@@ -125,12 +131,22 @@ export function BuscadorSubserieTRD({
 
       <div>
         <label className="mb-1 block text-xs font-medium text-stone-500">Subserie</label>
-        {serieIdEfectivo ? (
-          <BuscadorDependencia dependencias={subseriesDeSerie} value={subserieIdEfectivo} onChange={elegirSubserie} placeholder="Buscar subserie…" />
-        ) : (
+        {!serieIdEfectivo ? (
           <p className="rounded-md border border-dashed border-stone-200 px-3 py-2 text-xs text-stone-400">Elija primero la serie.</p>
+        ) : sinSubseries ? (
+          <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+            Esta serie no tiene subseries en la TRD: se clasifica la serie completa.
+          </p>
+        ) : (
+          <BuscadorDependencia dependencias={subseriesDeSerie} value={subserieIdEfectivo} onChange={elegirSubserie} placeholder="Buscar subserie…" />
         )}
       </div>
+
+      {retencion && (
+        <p className="rounded-md border border-cdmb-100 bg-cdmb-50 px-3 py-2 text-xs text-cdmb-800">
+          <span className="font-medium">Retención según la TRD.</span> {retencion}
+        </p>
+      )}
     </div>
   );
 }

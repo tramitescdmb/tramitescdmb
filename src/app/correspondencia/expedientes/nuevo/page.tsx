@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
+import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { NuevoExpedienteDocumentalForm } from "@/components/NuevoExpedienteDocumentalForm";
 
@@ -50,7 +51,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
             nombre: s.nombre,
             dependenciaId: s.dependenciaId,
             dependenciaNombre: s.dependencia?.nombre ?? null,
-            subseries: s.subseries.map((ss) => ({ id: ss.id, codigo: ss.codigo, nombre: ss.nombre })),
+            subseries: s.subseries.map(subserieBuscable),
           }))}
           plantillas={plantillas}
           usuarioNombre={session.nombre}
