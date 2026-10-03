@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { ETIQUETA_CACHE_CATALOGO_TRD } from "@/lib/trd-clasificacion";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -76,5 +78,6 @@ export async function POST(req: NextRequest) {
   }).catch((err) => console.error("registrarAuditoriaDoc (crear serie) falló:", err));
 
   volver.searchParams.set("ok", `Serie ${codigo} creada.`);
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
   return NextResponse.redirect(volver, { status: 303 });
 }

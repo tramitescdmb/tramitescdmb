@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BuscadorSubserieTRD, type SerieBuscable } from "@/components/BuscadorSubserieTRD";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { useCatalogoTrd } from "@/components/trd/CatalogoTrd";
 
 // Igual que SelectorClasificacionTrd (autosave por fila, PATCH /api/admin/trd-clasificacion) pero para
 // elegir una SUBSERIE completa con el buscador en cascada dependencia → serie → subserie, en vez de un
@@ -10,13 +11,12 @@ export function SelectorSubserieTrdCascada({
   tipo,
   id,
   valorInicial,
-  series,
 }: {
   tipo: "tramiteTipo" | "configuracion" | "modalidad";
   id?: string;
   valorInicial: string | null;
-  series: SerieBuscable[];
 }) {
+  const { series } = useCatalogoTrd();
   const serieInicial = series.find((s) => s.subseries.some((sub) => sub.id === valorInicial));
   const [serieId, setSerieId] = useState(serieInicial?.id ?? "");
   const [subserieId, setSubserieId] = useState(valorInicial ?? "");

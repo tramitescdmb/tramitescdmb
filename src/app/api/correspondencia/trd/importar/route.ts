@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { ETIQUETA_CACHE_CATALOGO_TRD } from "@/lib/trd-clasificacion";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { parsearCsvTrd, parsearXmlTrd, importarTrd } from "@/lib/trd-import";
@@ -81,5 +83,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? `No se pudo importar: ${err.message}` : "No se pudo importar la TRD.");
   }
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
   return NextResponse.redirect(volver, { status: 303 });
 }

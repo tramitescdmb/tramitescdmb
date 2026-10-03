@@ -3,7 +3,7 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
-import { catalogoSeriesBuscables, subseriesPorModalidad } from "@/lib/trd-clasificacion";
+import { catalogoSeriesBuscablesCacheado, subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
@@ -18,7 +18,7 @@ export default async function NuevoExpedienteContractualPage() {
   }
 
   const [series, subseriePorModalidad, dependencias, supervisores] = await Promise.all([
-    catalogoSeriesBuscables(),
+    catalogoSeriesBuscablesCacheado(),
     subseriesPorModalidad(),
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
     db.usuario.findMany({

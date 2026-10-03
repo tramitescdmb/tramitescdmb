@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree } from "lucide-react";
-import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
-import { catalogoSeriesBuscables } from "@/lib/trd-clasificacion";
+import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -16,6 +15,7 @@ import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { Paginador } from "@/components/Paginador";
 import { formatearFecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { puedeFirmar } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { construirFilasFirmantes } from "@/lib/panel-firmas";
@@ -89,14 +89,13 @@ export default async function ExpedienteDetallePage({
     redirect(`/correspondencia/expedientes?error=${encodeURIComponent(mensaje)}`);
   }
 
-  await registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` });
+  after(() => registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` }));
 
   const bitacoraPage = Math.max(1, parseInt(sp.bp ?? "1", 10) || 1);
   const puedeReclasificar =
     puedeAdministrarArchivo(permisos) ||
     (expediente.estado === "ABIERTO" && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId));
-  const [seriesTrd, totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar, usuariosFirmantes] = await Promise.all([
-    puedeReclasificar ? catalogoSeriesBuscables() : Promise.resolve([]),
+  const [totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar, usuariosFirmantes] = await Promise.all([
     db.auditoriaDoc.count({ where: { entidad: "ExpedienteDocumental", entidadId: id } }),
     db.auditoriaDoc.findMany({
       where: { entidad: "ExpedienteDocumental", entidadId: id },
@@ -383,9 +382,9 @@ export default async function ExpedienteDetallePage({
                         </span>
                       </span>
                       <span className="flex flex-none items-center gap-1.5">
-                        <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
+                        <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 && doc.mimeType === "application/pdf" ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
                         <a
-                          href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                          href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 && doc.mimeType === "application/pdf" ? "/rotulado" : ""}`}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
@@ -396,7 +395,7 @@ export default async function ExpedienteDetallePage({
                       </span>
                      </div>
 
-                     {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0 || (abierto && puedeEditar)) && (() => {
+                     {(doc.firmas.length > 0 || doc.solicitudesFirma.length > 0 || (abierto && puedeEditar)) && (() => {
                       const miSolicitud = doc.solicitudesFirma.find((x) => x.usuarioAsignadoId === session.userId && x.estado === "PENDIENTE" && x.rol !== "LECTURA");
                       const miTurno = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
                       const yaFirme = doc.firmas.some((f) => f.usuario.id === session.userId);
@@ -420,7 +419,7 @@ export default async function ExpedienteDetallePage({
                                       endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/completar`}
                                       endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/rechazar`}
                                       documentoNombre={doc.nombre}
-                                      documentoUrl={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                                      documentoUrl={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 && doc.mimeType === "application/pdf" ? "/rotulado" : ""}`}
                                       documentoMimeType={doc.mimeType}
                                     />
                                   )}
@@ -613,20 +612,7 @@ export default async function ExpedienteDetallePage({
                   Si el expediente quedó mal clasificado, elija la dependencia, la serie y la subserie correctas. Queda en la bitácora
                   con la clasificación anterior, la nueva y el motivo; la retención se calcula con la nueva subserie.
                 </SectionHelp>
-                <form action={`/api/correspondencia/expedientes/${id}/reclasificar`} method="post" className="space-y-3">
-                  <BuscadorSubserieTRD series={seriesTrd} nameSubserie="subserieId" requerido />
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="min-w-[260px] flex-1">
-                      <Field label="Motivo" required>
-                        <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                      </Field>
-                    </div>
-                    <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
-                      <FolderTree className="h-3.5 w-3.5" aria-hidden />
-                      Reclasificar
-                    </button>
-                  </div>
-                </form>
+                <ReclasificarTrdForm action={`/api/correspondencia/expedientes/${id}/reclasificar`} />
               </section>
             )}
             {puedePrestar && (

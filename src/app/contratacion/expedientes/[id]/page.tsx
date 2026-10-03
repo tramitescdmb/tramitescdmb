@@ -4,7 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
-import { catalogoSeriesBuscables, subseriesPorModalidad } from "@/lib/trd-clasificacion";
+import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
+import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { ReclasificarTrdContratoForm } from "@/components/ReclasificarTrdContratoForm";
 import { db } from "@/lib/db";
@@ -169,9 +170,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
   const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
-  const [subseriePorModalidadTrd, seriesTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
-    puedeEditarDatosGenerales ? catalogoSeriesBuscables() : Promise.resolve([]),
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -546,20 +546,20 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             )}
           </div>
           {puedeEditarDatosGenerales && (
-            <details className="mt-2 text-xs" open={!expediente.subserie}>
-              <summary className="cursor-pointer font-medium text-cdmb-700">{expediente.subserie ? "Reclasificar" : "Clasificar este expediente"}</summary>
-              <div className="mt-2">
-                <ReclasificarTrdContratoForm
-                  expedienteId={id}
-                  series={seriesTrd}
-                  subseriePorModalidad={subseriePorModalidadTrd}
-                  modalidad={expediente.modalidadSeleccion}
-                  modalidadEtiqueta={ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}
-                  serieIdActual={expediente.subserie?.serieId ?? null}
-                  subserieIdActual={expediente.subserieId}
-                />
-              </div>
-            </details>
+            <DetallesPerezosos
+              className="mt-2 text-xs"
+              abiertoInicial={!expediente.subserie}
+              resumen={expediente.subserie ? "Reclasificar" : "Clasificar este expediente"}
+            >
+              <ReclasificarTrdContratoForm
+                expedienteId={id}
+                subseriePorModalidad={subseriePorModalidadTrd}
+                modalidad={expediente.modalidadSeleccion}
+                modalidadEtiqueta={ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}
+                serieIdActual={expediente.subserie?.serieId ?? null}
+                subserieIdActual={expediente.subserieId}
+              />
+            </DetallesPerezosos>
           )}
         </div>
 

@@ -187,11 +187,10 @@ export async function asignarFirmantes(
 export async function validarDocumentoArchivoFirmable(documentoArchivoId: string) {
   const doc = await db.documentoArchivo.findUnique({
     where: { id: documentoArchivoId },
-    select: { retiradoEn: true, mimeType: true, expediente: { select: { estado: true } } },
+    select: { retiradoEn: true, expediente: { select: { estado: true } } },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.retiradoEn) throw new Error("Este documento fue retirado del expediente: no se puede firmar.");
-  if (doc.mimeType !== "application/pdf") throw new Error("Solo se pueden firmar documentos PDF.");
   if (doc.expediente.estado !== "ABIERTO") throw new Error("El expediente está cerrado: sus documentos ya no se pueden firmar.");
 }
 

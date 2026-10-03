@@ -5,6 +5,14 @@ import { ArrowLeft, MapPin, FileText, Building2, ClipboardList, Download, Scroll
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi, type SincaNit } from "@/lib/sinca";
+import { unstable_cache } from "next/cache";
+import { after } from "next/server";
+
+const obtenerResolucionDetalleCacheado = unstable_cache(
+  (nroSolicitud: number) => obtenerResolucionDetalle(nroSolicitud),
+  ["sinca-resolucion-detalle-v1"],
+  { revalidate: 86400 }
+);
 
 function fecha(valor: Date | string | null | undefined) {
   if (!valor) return null;
@@ -74,10 +82,18 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
 
   let d: SincaResolucionDetalleApi | null = null;
   let errorDetalle = false;
-  try {
-    d = await obtenerResolucionDetalle(nroSolicitud);
-  } catch {
+  const consulta = obtenerResolucionDetalleCacheado(nroSolicitud);
+  const resultado = await Promise.race([
+    consulta.then((valor) => ({ valor })).catch(() => ({ valor: undefined })),
+    new Promise<null>((resolver) => setTimeout(() => resolver(null), 3500)),
+  ]);
+  if (resultado === null) {
     errorDetalle = true;
+    after(() => consulta.catch(() => {}));
+  } else if (resultado.valor === undefined) {
+    errorDetalle = true;
+  } else {
+    d = resultado.valor;
   }
 
   const docs = d?.emision_documentos ?? [];
@@ -166,7 +182,10 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
 
       <Tarjeta icon={FileText} titulo="Documentos de la resolución">
         {errorDetalle ? (
-          <p className="text-sm text-stone-500">No fue posible consultar los documentos en SINCA 1.0 en este momento.</p>
+          <p className="text-sm text-stone-500">
+            SINCA 1.0 no respondió a tiempo: se muestran los datos guardados en esta plataforma. Los documentos y el detalle
+            ampliado se siguen consultando en segundo plano; vuelva a abrir el trámite en unos segundos.
+          </p>
         ) : docs.length === 0 ? (
           <p className="text-sm text-stone-500">Sin documentos registrados en SINCA 1.0.</p>
         ) : (

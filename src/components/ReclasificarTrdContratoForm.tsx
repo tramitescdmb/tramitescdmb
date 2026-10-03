@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderTree, Loader2 } from "lucide-react";
-import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
+import { useCatalogoTrd } from "@/components/trd/CatalogoTrd";
 import { SelectorTrdContrato } from "@/components/SelectorTrdContrato";
 
 export function ReclasificarTrdContratoForm({
   expedienteId,
-  series,
   subseriePorModalidad,
   modalidad,
   modalidadEtiqueta,
@@ -16,7 +15,6 @@ export function ReclasificarTrdContratoForm({
   subserieIdActual,
 }: {
   expedienteId: string;
-  series: SerieBuscable[];
   subseriePorModalidad: Record<string, string>;
   modalidad: string;
   modalidadEtiqueta: string;
@@ -24,6 +22,7 @@ export function ReclasificarTrdContratoForm({
   subserieIdActual: string | null;
 }) {
   const router = useRouter();
+  const { series, cargando, error: errorCatalogo } = useCatalogoTrd();
   const [serieId, setSerieId] = useState(serieIdActual ?? "");
   const [subserieId, setSubserieId] = useState(subserieIdActual ?? "");
   const [motivo, setMotivo] = useState(subserieIdActual ? "" : "Clasificación inicial del expediente");
@@ -49,6 +48,9 @@ export function ReclasificarTrdContratoForm({
       setGuardando(false);
     }
   }
+
+  if (cargando) return <p className="flex items-center gap-1.5 text-xs text-stone-500"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Cargando la TRD…</p>;
+  if (errorCatalogo) return <p className="text-xs text-red-700">{errorCatalogo}</p>;
 
   return (
     <div className="space-y-3">

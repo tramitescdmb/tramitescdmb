@@ -4,9 +4,10 @@ import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { SelectorClasificacionTrd } from "@/components/admin/SelectorClasificacionTrd";
 import { SelectorSubserieTrdCascada } from "@/components/admin/SelectorSubserieTrdCascada";
+import { ProveedorCatalogoTrd } from "@/components/trd/CatalogoTrd";
 import { ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion-etiquetas";
 import {
-  catalogoSeriesBuscables,
+  catalogoSeriesBuscablesCacheado,
   tiposDocumentalesPorSubserie,
   tramitesParaClasificar,
   requisitosContratacionParaClasificar,
@@ -20,7 +21,7 @@ export default async function AdminTrdPage() {
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Clasificación TRD" volverHref="/" volverLabel="Ir al inicio" />;
 
   const [series, tiposPorSubserie, tramites, requisitos, subserieContratacionId, porModalidad] = await Promise.all([
-    catalogoSeriesBuscables(),
+    catalogoSeriesBuscablesCacheado(),
     tiposDocumentalesPorSubserie(),
     tramitesParaClasificar(),
     requisitosContratacionParaClasificar(),
@@ -37,6 +38,7 @@ export default async function AdminTrdPage() {
   const tiposDeSubserieContratacion = subserieContratacionId ? tiposPorSubserie.get(subserieContratacionId) ?? [] : [];
 
   return (
+    <ProveedorCatalogoTrd series={series}>
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-stone-900">Clasificación TRD — Trámites y GECON</h1>
@@ -66,7 +68,7 @@ export default async function AdminTrdPage() {
           {ORDEN_MODALIDADES.map((m) => (
             <div key={m} className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[260px_1fr] md:items-start">
               <p className="text-sm font-medium text-stone-800">{ETIQUETA_MODALIDAD[m]}</p>
-              <SelectorSubserieTrdCascada tipo="modalidad" id={m} valorInicial={porModalidad[m] ?? null} series={series} />
+              <SelectorSubserieTrdCascada tipo="modalidad" id={m} valorInicial={porModalidad[m] ?? null} />
             </div>
           ))}
         </div>
@@ -77,7 +79,7 @@ export default async function AdminTrdPage() {
         <p className="mb-3 text-xs text-stone-500">
           Se usa solo para los contratos cuya modalidad no tiene subserie asignada arriba.
         </p>
-        <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} series={series} />
+        <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} />
       </section>
 
       <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
@@ -127,7 +129,7 @@ export default async function AdminTrdPage() {
               <p className="mb-1.5 text-sm text-stone-700">
                 {t.codigo} — {t.nombre}
               </p>
-              <SelectorSubserieTrdCascada tipo="tramiteTipo" id={t.id} valorInicial={t.subserieId} series={series} />
+              <SelectorSubserieTrdCascada tipo="tramiteTipo" id={t.id} valorInicial={t.subserieId} />
             </li>
           ))}
         </ul>
@@ -173,5 +175,6 @@ export default async function AdminTrdPage() {
         </div>
       </section>
     </div>
+    </ProveedorCatalogoTrd>
   );
 }

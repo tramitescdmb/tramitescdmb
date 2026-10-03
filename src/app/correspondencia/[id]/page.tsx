@@ -22,8 +22,6 @@ import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
 import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { listarDependenciasActivas } from "@/lib/dependencias";
-import { listarSeriesVigentes } from "@/lib/trd";
-import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { listarTerminos } from "@/lib/vocabulario";
 import { ETIQUETA_TIPO_PQRSD, estadoVencimiento, devolucionDeReparoPermitida } from "@/lib/pqrsd";
@@ -39,12 +37,14 @@ import { PanelFirmas } from "@/components/PanelFirmas";
 import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
 import { construirFilasFirmantes } from "@/lib/panel-firmas";
 import { DistribuirForm } from "@/components/DistribuirForm";
-import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { ETIQUETA_MEDIO_DESPACHO, motivoBloqueoRespuesta } from "@/lib/correspondencia";
 import { puedeDespachar } from "@/lib/permisos";
 import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
+import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada", EN_REPARTO: "En reparto", ASIGNADA: "Asignada", EN_TRAMITE: "En trámite",
@@ -233,8 +233,8 @@ export default async function CorrespondenciaDetallePage({
       documentosRespuesta.length > 0 ||
       (puedeRadicarUsuario && ["ASIGNADA", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "RESPONDIDA"].includes(c.estado)));
 
+  after(() => registrarAuditoriaDoc({ entidad: "Comunicacion", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${c.radicado}` }));
   const [
-    ,
     bitacora,
     usuariosOpcionesCrudo,
     colaboradoresDependencia,
@@ -242,9 +242,7 @@ export default async function CorrespondenciaDetallePage({
     plantillasRespuesta,
     terminosVocabulario,
     [dependencias, usuarios],
-    seriesVigentes,
   ] = await Promise.all([
-    registrarAuditoriaDoc({ entidad: "Comunicacion", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${c.radicado}` }),
     db.auditoriaDoc.findMany({
       where: { entidad: "Comunicacion", entidadId: id },
       orderBy: { secuencia: "desc" },
@@ -278,7 +276,6 @@ export default async function CorrespondenciaDetallePage({
           }),
         ])
       : Promise.resolve([[], []]),
-    puedeAdministrarArchivoUsuario ? listarSeriesVigentes() : Promise.resolve([]),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const puedeDevolverUsuario =
@@ -286,14 +283,6 @@ export default async function CorrespondenciaDetallePage({
     !["RESPONDIDA", "ARCHIVADA", "ANULADA"].includes(c.estado) &&
     puedeDevolverReparto(permisos, session.userId, distribucionesVigentes);
   const devolucionATiempo = devolucionDeReparoPermitida(c.fechaVencimiento, calendario);
-  const seriesBuscables = seriesVigentes.map((s) => ({
-    id: s.id,
-    codigo: s.codigo,
-    nombre: s.nombre,
-    dependenciaId: s.dependencia?.id ?? null,
-    dependenciaNombre: s.dependencia?.nombre ?? null,
-    subseries: s.subseries.map(subserieBuscable),
-  }));
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
@@ -955,18 +944,9 @@ export default async function CorrespondenciaDetallePage({
                   Corrige la clasificación TRD. Queda en la bitácora con la clasificación anterior, la nueva y el motivo;
                   aplican los tiempos de retención de la nueva subserie.
                 </SectionHelp>
-                <form action={`/api/correspondencia/${id}/reclasificar`} method="post" className="space-y-3">
-                  <Field label="Nueva subserie" required help="Elija primero la dependencia, luego la serie y la subserie.">
-                    <BuscadorSubserieTRD series={seriesBuscables} nameSubserie="subserieId" requerido />
-                  </Field>
-                  <Field label="Motivo" required help="Por qué se reclasifica este radicado.">
-                    <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                  </Field>
-                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-                    <FolderTree className="h-3.5 w-3.5" aria-hidden />
-                    Reclasificar
-                  </button>
-                </form>
+                <DetallesPerezosos className="text-sm" resumen="Reclasificar este radicado">
+                  <ReclasificarTrdForm action={`/api/correspondencia/${id}/reclasificar`} ayudaMotivo="Por qué se reclasifica este radicado." />
+                </DetallesPerezosos>
               </Tarjeta>
             )}
 

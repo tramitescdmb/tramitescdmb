@@ -1,5 +1,6 @@
 // Datos para la pantalla de administración /admin/trd — preclasificación TRD de Trámites 2.0 y GECON
 // (reusa el catálogo de series/subseries/tipos documentales del SGDEA, ya real y completo).
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
@@ -8,6 +9,13 @@ import type { ModalidadSeleccion } from "@prisma/client";
 
 // Mismo catálogo que ya usan los formularios de radicar del SGDEA (BuscadorSubserieTRD) — un solo
 // origen de datos para el selector en cascada dependencia → serie → subserie en toda la aplicación.
+export const ETIQUETA_CACHE_CATALOGO_TRD = "catalogo-trd";
+
+export const catalogoSeriesBuscablesCacheado = unstable_cache(() => catalogoSeriesBuscables(), ["catalogo-trd-v1"], {
+  tags: [ETIQUETA_CACHE_CATALOGO_TRD],
+  revalidate: 3600,
+});
+
 export async function catalogoSeriesBuscables(): Promise<SerieBuscable[]> {
   const series = await listarSeriesVigentes();
   return series.map((s) => ({
