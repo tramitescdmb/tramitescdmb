@@ -1000,13 +1000,14 @@ model SubserieDocumental {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  serie                    SerieDocumental         @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  serie                    SerieDocumental            @relation(fields: [serieId], references: [id], onDelete: Cascade)
   comunicaciones           Comunicacion[]
   tiposDocumentales        TipoDocumental[]
   expedientesDocumentales  ExpedienteDocumental[]
   tramiteTipos             TramiteTipo[]
   configuracionesSitio     ConfiguracionSitio[]
   expedientesContractuales ExpedienteContractual[]
+  modalidadesContratacion  TrdModalidadContratacion[]
 
   @@unique([serieId, codigo])
   @@index([serieId])
@@ -1648,6 +1649,16 @@ enum ModalidadSeleccion {
   CONVENIO_ASOCIACION
   ARRENDAMIENTO
   OTRA
+}
+
+model TrdModalidadContratacion {
+  modalidad  ModalidadSeleccion @id
+  subserieId String
+  updatedAt  DateTime           @updatedAt
+
+  subserie SubserieDocumental @relation(fields: [subserieId], references: [id])
+
+  @@index([subserieId])
 }
 
 enum EstadoValidacionDocumentoContrato {

@@ -4,13 +4,14 @@ import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { SelectorClasificacionTrd } from "@/components/admin/SelectorClasificacionTrd";
 import { SelectorSubserieTrdCascada } from "@/components/admin/SelectorSubserieTrdCascada";
-import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
+import { ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion-etiquetas";
 import {
   catalogoSeriesBuscables,
   tiposDocumentalesPorSubserie,
   tramitesParaClasificar,
   requisitosContratacionParaClasificar,
   subserieContratacionActual,
+  subseriesPorModalidad,
 } from "@/lib/trd-clasificacion";
 
 export default async function AdminTrdPage() {
@@ -18,12 +19,13 @@ export default async function AdminTrdPage() {
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Clasificación TRD" volverHref="/" volverLabel="Ir al inicio" />;
 
-  const [series, tiposPorSubserie, tramites, requisitos, subserieContratacionId] = await Promise.all([
+  const [series, tiposPorSubserie, tramites, requisitos, subserieContratacionId, porModalidad] = await Promise.all([
     catalogoSeriesBuscables(),
     tiposDocumentalesPorSubserie(),
     tramitesParaClasificar(),
     requisitosContratacionParaClasificar(),
     subserieContratacionActual(),
+    subseriesPorModalidad(),
   ]);
 
   const requisitosPorEtapa = new Map<string, typeof requisitos>();
@@ -47,17 +49,33 @@ export default async function AdminTrdPage() {
 
       <SectionHelp>
         Un expediente (de trámite o de contrato) es UN solo legajo archivístico: se clasifica una vez por tipo de
-        trámite o, en GECON, por contrato según su tipo (Prestación de Servicios, Obra, Consultoría, Convenios…), no por
+        trámite o, en GECON, por contrato según su modalidad de contratación, no por
         cada documento individual. Cada documento exigido dentro de ese expediente sí puede tener su propio tipo
         documental.
       </SectionHelp>
 
+      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="border-b border-stone-100 px-4 py-3">
+          <h2 className="text-sm font-semibold text-stone-900">GECON — subserie por modalidad de contratación</h2>
+          <p className="text-xs text-stone-500">
+            Cada expediente contractual se clasifica automáticamente con la subserie de su modalidad, al crearlo y al cambiarle la
+            modalidad. Se guarda de inmediato; un contrato puntual se puede reclasificar desde su expediente.
+          </p>
+        </div>
+        <div className="divide-y divide-stone-100">
+          {ORDEN_MODALIDADES.map((m) => (
+            <div key={m} className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[260px_1fr] md:items-start">
+              <p className="text-sm font-medium text-stone-800">{ETIQUETA_MODALIDAD[m]}</p>
+              <SelectorSubserieTrdCascada tipo="modalidad" id={m} valorInicial={porModalidad[m] ?? null} series={series} />
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="text-sm font-semibold text-stone-900">GECON — subserie de respaldo</h2>
         <p className="mb-3 text-xs text-stone-500">
-          Cada contrato se clasifica en su propio expediente: al crearlo se sugiere la subserie según el objeto y se puede
-          reclasificar después. Esta subserie solo se usa para calcular la retención de los contratos que todavía no tienen
-          clasificación propia.
+          Se usa solo para los contratos cuya modalidad no tiene subserie asignada arriba.
         </p>
         <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} series={series} />
       </section>

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ModalidadSeleccion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 
-const TIPOS_VALIDOS = ["tramiteTipo", "documentoRequerido", "requisitoContratacion", "configuracion"] as const;
+const TIPOS_VALIDOS = ["tramiteTipo", "documentoRequerido", "requisitoContratacion", "configuracion", "modalidad"] as const;
 type TipoClasificacion = (typeof TIPOS_VALIDOS)[number];
 
 export async function PATCH(req: NextRequest) {
@@ -24,6 +25,19 @@ export async function PATCH(req: NextRequest) {
 
   const id: string = String(body.id || "");
   if (!id) return NextResponse.json({ error: "Falta el identificador del registro a clasificar." }, { status: 400 });
+
+  if (tipo === "modalidad") {
+    const modalidad = id as ModalidadSeleccion;
+    if (!(Object.values(ModalidadSeleccion) as string[]).includes(modalidad)) {
+      return NextResponse.json({ error: "Modalidad de contratación inválida." }, { status: 400 });
+    }
+    if (valor) {
+      await db.trdModalidadContratacion.upsert({ where: { modalidad }, create: { modalidad, subserieId: valor }, update: { subserieId: valor } });
+    } else {
+      await db.trdModalidadContratacion.deleteMany({ where: { modalidad } });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   if (tipo === "tramiteTipo") {
     await db.tramiteTipo.update({ where: { id }, data: { subserieId: valor } });

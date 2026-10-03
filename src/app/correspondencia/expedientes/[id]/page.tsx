@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree } from "lucide-react";
+import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { catalogoSeriesBuscables } from "@/lib/trd-clasificacion";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -90,7 +92,11 @@ export default async function ExpedienteDetallePage({
   await registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` });
 
   const bitacoraPage = Math.max(1, parseInt(sp.bp ?? "1", 10) || 1);
-  const [totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar, usuariosFirmantes] = await Promise.all([
+  const puedeReclasificar =
+    puedeAdministrarArchivo(permisos) ||
+    (expediente.estado === "ABIERTO" && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId));
+  const [seriesTrd, totalBitacora, bitacora, prestamoVigente, historialPrestamos, usuariosParaPrestar, usuariosFirmantes] = await Promise.all([
+    puedeReclasificar ? catalogoSeriesBuscables() : Promise.resolve([]),
     db.auditoriaDoc.count({ where: { entidad: "ExpedienteDocumental", entidadId: id } }),
     db.auditoriaDoc.findMany({
       where: { entidad: "ExpedienteDocumental", entidadId: id },
@@ -217,7 +223,15 @@ export default async function ExpedienteDetallePage({
           </div>
           <div>
             <dt className="text-[11px] text-stone-400">Subserie</dt>
-            <dd className="text-sm text-stone-800">{expediente.subserie ? `${expediente.subserie.codigo} — ${expediente.subserie.nombre}` : "—"}</dd>
+            <dd className="text-sm text-stone-800">
+              {expediente.subserie ? `${expediente.subserie.codigo} — ${expediente.subserie.nombre}` : "—"}
+              {puedeReclasificar && (
+                <a href="#clasificacion" className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+                  <FolderTree className="h-3 w-3" aria-hidden />
+                  Reclasificar
+                </a>
+              )}
+            </dd>
           </div>
           <div>
             <dt className="text-[11px] text-stone-400">Abierto por</dt>
@@ -577,11 +591,44 @@ export default async function ExpedienteDetallePage({
           },
           {
             id: "administracion",
-            label: "Administración",
-            oculta: !(puedePrestar || puedeEditar || puedeAdministrarArchivo(permisos) || puedeCerrarEste || puedeReabrirEste),
+            label: "Clasificación y administración",
+            oculta: !(puedeReclasificar || puedePrestar || puedeEditar || puedeAdministrarArchivo(permisos) || puedeCerrarEste || puedeReabrirEste),
             icono: <Settings2 className="h-4 w-4" aria-hidden />,
             contenido: (
               <>
+            {puedeReclasificar && (
+              <section id="clasificacion" className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+                <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  <FolderTree className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
+                  Clasificación TRD
+                </h3>
+                <p className="mb-2 text-sm text-stone-700">
+                  Actual:{" "}
+                  <strong>
+                    {expediente.serie ? `${expediente.serie.codigo} — ${expediente.serie.nombre}` : "Sin serie"}
+                    {expediente.subserie ? ` · ${expediente.subserie.codigo} — ${expediente.subserie.nombre}` : ""}
+                  </strong>
+                </p>
+                <SectionHelp>
+                  Si el expediente quedó mal clasificado, elija la dependencia, la serie y la subserie correctas. Queda en la bitácora
+                  con la clasificación anterior, la nueva y el motivo; la retención se calcula con la nueva subserie.
+                </SectionHelp>
+                <form action={`/api/correspondencia/expedientes/${id}/reclasificar`} method="post" className="space-y-3">
+                  <BuscadorSubserieTRD series={seriesTrd} nameSubserie="subserieId" requerido />
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-[260px] flex-1">
+                      <Field label="Motivo" required>
+                        <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                      </Field>
+                    </div>
+                    <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
+                      <FolderTree className="h-3.5 w-3.5" aria-hidden />
+                      Reclasificar
+                    </button>
+                  </div>
+                </form>
+              </section>
+            )}
             {puedePrestar && (
               <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
                 <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">

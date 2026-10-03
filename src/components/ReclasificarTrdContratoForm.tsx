@@ -9,13 +9,17 @@ import { SelectorTrdContrato } from "@/components/SelectorTrdContrato";
 export function ReclasificarTrdContratoForm({
   expedienteId,
   series,
-  objeto,
+  subseriePorModalidad,
+  modalidad,
+  modalidadEtiqueta,
   serieIdActual,
   subserieIdActual,
 }: {
   expedienteId: string;
   series: SerieBuscable[];
-  objeto: string;
+  subseriePorModalidad: Record<string, string>;
+  modalidad: string;
+  modalidadEtiqueta: string;
   serieIdActual: string | null;
   subserieIdActual: string | null;
 }) {
@@ -50,7 +54,9 @@ export function ReclasificarTrdContratoForm({
     <div className="space-y-3">
       <SelectorTrdContrato
         series={series}
-        objeto={objeto}
+        subseriePorModalidad={subseriePorModalidad}
+        modalidad={modalidad}
+        modalidadEtiqueta={modalidadEtiqueta}
         serieId={serieId}
         subserieId={subserieId}
         autoaplicar={!subserieIdActual}

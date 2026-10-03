@@ -75,7 +75,7 @@ export function SidebarNav({
   ];
 
   return (
-    <nav className="flex flex-1 flex-col gap-7 overflow-y-auto px-3 py-5" aria-label="Navegación">
+    <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-3" aria-label="Navegación">
       <Grupo items={principal} activo={activo} colapsado={colapsado} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>
@@ -88,7 +88,7 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
       {titulo && !colapsado && (
         <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{titulo}</p>
       )}
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {items.map((item) => (
           <li key={item.href}>
             <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} />
@@ -107,7 +107,7 @@ function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; c
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}
       className={`flex items-center whitespace-nowrap rounded-xl text-sm font-medium transition-all ${
-        colapsado ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
+        colapsado ? "justify-center px-0 py-1.5" : "gap-3 px-3 py-1.5"
       } ${activo ? "bg-menu-500 text-stone-900" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
     >
       <span

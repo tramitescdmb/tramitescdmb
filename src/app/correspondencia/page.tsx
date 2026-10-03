@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, PlusCircle, Send, FileEdit, ChevronDown } from "lucide-react";
+import { Search, PlusCircle, Send, FileEdit, ChevronDown, Inbox, Layers } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar, puedeDespachar } from "@/lib/permisos";
 import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, contarOficiosSinDespachar, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
@@ -103,6 +103,51 @@ export default async function CorrespondenciaBandejaPage({
     <div className="space-y-4">
       {sp.ok && <div className="print:hidden rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      <div className="print:hidden flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-soft">
+        <nav className="flex flex-wrap gap-1" aria-label="Tipo de comunicación">
+          {([
+            { valor: "", etiqueta: "Todas", Icono: Layers },
+            { valor: "RECIBIDA", etiqueta: "Recibidas", Icono: Inbox },
+            { valor: "ENVIADA", etiqueta: "Enviadas", Icono: Send },
+            { valor: "INTERNA", etiqueta: "Memorandos", Icono: FileEdit },
+          ] as const).map(({ valor, etiqueta, Icono }) => {
+            const activo = (sp.tipo ?? "") === valor;
+            const params = new URLSearchParams();
+            if (valor) params.set("tipo", valor);
+            if (sp.estado) params.set("estado", sp.estado);
+            const href = params.toString() ? `/correspondencia?${params.toString()}` : "/correspondencia";
+            return (
+              <Link
+                key={etiqueta}
+                href={href}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activo ? "bg-menu-500 text-stone-900" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                }`}
+              >
+                <Icono className="h-4 w-4" aria-hidden />
+                {etiqueta}
+              </Link>
+            );
+          })}
+        </nav>
+        {puedeRadicarUsuario && (
+          <div className="flex flex-wrap gap-2">
+            <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white hover:bg-acento-600">
+              <PlusCircle className="h-4 w-4" aria-hidden />
+              Radicar recibida
+            </Link>
+            <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+              <Send className="h-4 w-4" aria-hidden />
+              Radicar enviada
+            </Link>
+            <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+              <FileEdit className="h-4 w-4" aria-hidden />
+              Nuevo memorando
+            </Link>
+          </div>
+        )}
+      </div>
 
       {vencidas > 0 && sp.vencimiento !== "vencidas" && (
         <div className="print:hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
@@ -298,22 +343,6 @@ export default async function CorrespondenciaBandejaPage({
         <ResumenResultados total={total} detalle={detalleFiltro} />
         <div className="flex flex-wrap gap-2 print:hidden">
           <BotonImprimir variante="secundario" />
-          {puedeRadicarUsuario && (
-            <>
-              <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white hover:bg-acento-600">
-                <PlusCircle className="h-4 w-4" aria-hidden />
-                Radicar recibida
-              </Link>
-              <Link href="/correspondencia/nueva/enviada" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-                <Send className="h-4 w-4" aria-hidden />
-                Radicar enviada
-              </Link>
-              <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-                <FileEdit className="h-4 w-4" aria-hidden />
-                Nuevo memorando
-              </Link>
-            </>
-          )}
         </div>
       </div>
 

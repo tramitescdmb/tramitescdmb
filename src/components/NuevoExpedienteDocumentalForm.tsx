@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, FolderOpen, FolderTree, Paperclip } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { Field, SectionHelp } from "@/components/Field";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
@@ -87,8 +88,15 @@ export function NuevoExpedienteDocumentalForm({
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+    <form onSubmit={enviar} className="space-y-4">
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+      <EncabezadoPaso
+        numero={1}
+        icono={<FolderOpen className="h-4 w-4" aria-hidden />}
+        titulo="Datos del expediente"
+        descripcion="Asunto con el que se identificará el expediente en el listado y el índice."
+      />
       {plantillas.length > 0 && (
         <PlantillaSelector
           plantillas={plantillas}
@@ -105,9 +113,37 @@ export function NuevoExpedienteDocumentalForm({
       <Field label="Descripción">
         <textarea name="descripcion" rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className={inputCls} />
       </Field>
+      </section>
 
-      <div className="border-t border-stone-100 pt-4">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Archivos</h3>
+      <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <EncabezadoPaso
+          numero={2}
+          icono={<FolderTree className="h-4 w-4" aria-hidden />}
+          titulo="Dependencia y clasificación (TRD)"
+          descripcion="Dependencia dueña del expediente y la serie/subserie donde se archiva. Se puede reclasificar después."
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Dependencia" required>
+            <BuscadorDependencia dependencias={dependencias} value={dependenciaId} onChange={setDependenciaId} />
+            <input type="hidden" name="dependenciaId" value={dependenciaId} required />
+          </Field>
+          <Field label="Serie / subserie (TRD)">
+            <BuscadorSubserieTRD
+              series={series}
+              serieId={serieId}
+              subserieId={subserieId}
+              dependenciaId={dependenciaId || null}
+              dependenciaControlada
+              onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
+              nameSerie="serieId"
+              nameSubserie="subserieId"
+            />
+          </Field>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <EncabezadoPaso numero={3} icono={<Paperclip className="h-4 w-4" aria-hidden />} titulo="Archivos iniciales" />
         <SectionHelp>
           Opcional — adjunte aquí el o los primeros documentos del expediente. Puede agregar más después de abrirlo.
         </SectionHelp>
@@ -129,30 +165,7 @@ export function NuevoExpedienteDocumentalForm({
             ))}
           </ul>
         )}
-      </div>
-
-      <div className="border-t border-stone-100 pt-4">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Dependencia y clasificación (TRD)</h3>
-        <SectionHelp>Opcional clasificar por serie/subserie — ya filtradas por la dependencia elegida.</SectionHelp>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Dependencia" required>
-            <BuscadorDependencia dependencias={dependencias} value={dependenciaId} onChange={setDependenciaId} />
-            <input type="hidden" name="dependenciaId" value={dependenciaId} required />
-          </Field>
-          <Field label="Serie / subserie (TRD)">
-            <BuscadorSubserieTRD
-              series={series}
-              serieId={serieId}
-              subserieId={subserieId}
-              dependenciaId={dependenciaId || null}
-              dependenciaControlada
-              onChange={(s, ss) => { setSerieId(s); setSubserieId(ss); }}
-              nameSerie="serieId"
-              nameSubserie="subserieId"
-            />
-          </Field>
-        </div>
-      </div>
+      </section>
 
       <button
         type="submit"

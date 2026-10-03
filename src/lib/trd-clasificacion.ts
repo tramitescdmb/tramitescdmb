@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
+import type { ModalidadSeleccion } from "@prisma/client";
 
 // Mismo catálogo que ya usan los formularios de radicar del SGDEA (BuscadorSubserieTRD) — un solo
 // origen de datos para el selector en cascada dependencia → serie → subserie en toda la aplicación.
@@ -17,6 +18,18 @@ export async function catalogoSeriesBuscables(): Promise<SerieBuscable[]> {
     dependenciaNombre: s.dependencia?.nombre ?? null,
     subseries: s.subseries.map(subserieBuscable),
   }));
+}
+
+export async function subseriesPorModalidad(): Promise<Partial<Record<ModalidadSeleccion, string>>> {
+  const filas = await db.trdModalidadContratacion.findMany({ select: { modalidad: true, subserieId: true } });
+  return Object.fromEntries(filas.map((f) => [f.modalidad, f.subserieId]));
+}
+
+export async function subserieDeModalidad(modalidad: ModalidadSeleccion): Promise<{ subserieId: string; motivo: string } | null> {
+  const fila = await db.trdModalidadContratacion.findUnique({ where: { modalidad }, select: { subserieId: true } });
+  if (fila) return { subserieId: fila.subserieId, motivo: "según su modalidad de contratación" };
+  const respaldo = await subserieContratacionActual();
+  return respaldo ? { subserieId: respaldo, motivo: "subserie de respaldo de GECON (la modalidad no tiene subserie asignada)" } : null;
 }
 
 export async function tiposDocumentalesPorSubserie() {

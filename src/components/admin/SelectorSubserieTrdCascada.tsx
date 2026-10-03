@@ -12,7 +12,7 @@ export function SelectorSubserieTrdCascada({
   valorInicial,
   series,
 }: {
-  tipo: "tramiteTipo" | "configuracion";
+  tipo: "tramiteTipo" | "configuracion" | "modalidad";
   id?: string;
   valorInicial: string | null;
   series: SerieBuscable[];

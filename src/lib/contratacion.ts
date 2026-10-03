@@ -9,6 +9,7 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
+import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 
 export * from "@/lib/contratacion-etiquetas";
 
@@ -292,7 +293,9 @@ export async function crearExpedienteContractual(datos: {
   creadoPorId: string;
 }) {
   if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
-  const subserie = datos.subserieId ? await validarSubserieContrato(datos.subserieId) : null;
+  const automatica = datos.subserieId ? null : await subserieDeModalidad(datos.modalidadSeleccion);
+  const subserieElegida = datos.subserieId ?? automatica?.subserieId ?? null;
+  const subserie = subserieElegida ? await validarSubserieContrato(subserieElegida) : null;
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
   validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null);
 
@@ -328,7 +331,7 @@ export async function crearExpedienteContractual(datos: {
   await registrarEventoContratacion(
     expediente.id,
     "CREACION",
-    `Expediente contractual creado: ${expediente.numero}${subserie ? ` · TRD ${subserie.etiqueta}` : " · sin clasificación TRD"}`,
+    `Expediente contractual creado: ${expediente.numero}${subserie ? ` · TRD ${subserie.etiqueta}${automatica ? ` (${automatica.motivo})` : ""}` : " · sin clasificación TRD"}`,
     datos.creadoPorId
   );
   return expediente;

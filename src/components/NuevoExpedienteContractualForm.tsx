@@ -71,8 +71,10 @@ export function NuevoExpedienteContractualForm({
   supervisores,
   modalidades,
   series,
+  subseriePorModalidad,
 }: {
   series: SerieBuscable[];
+  subseriePorModalidad: Record<string, string>;
   dependencias: Opcion[];
   supervisores: SupervisorOpcion[];
   modalidades: ModalidadOpcion[];
@@ -258,11 +260,13 @@ export function NuevoExpedienteContractualForm({
             n={2}
             icon={FolderTree}
             titulo="Clasificación TRD"
-            subtitulo="Dependencia, serie y subserie donde se archiva todo el expediente. Se sugiere según el objeto; puede cambiarla ahora o reclasificarla después."
+            subtitulo="Dependencia, serie y subserie donde se archiva todo el expediente. Se asigna según la modalidad de contratación; puede cambiarla ahora o reclasificarla después."
           >
             <SelectorTrdContrato
               series={series}
-              objeto={objeto}
+              subseriePorModalidad={subseriePorModalidad}
+              modalidad={modalidadSeleccion}
+              modalidadEtiqueta={modalidades.find((m) => m.valor === modalidadSeleccion)?.etiqueta ?? modalidadSeleccion}
               serieId={serieTrdId}
               subserieId={subserieTrdId}
               onChange={(s, ss) => {

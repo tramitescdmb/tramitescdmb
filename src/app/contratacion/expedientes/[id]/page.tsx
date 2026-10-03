@@ -2,8 +2,9 @@ import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree } from "lucide-react";
-import { catalogoSeriesBuscables } from "@/lib/trd-clasificacion";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History } from "lucide-react";
+import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
+import { catalogoSeriesBuscables, subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { ReclasificarTrdContratoForm } from "@/components/ReclasificarTrdContratoForm";
 import { db } from "@/lib/db";
@@ -168,7 +169,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
   const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
-  const [seriesTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const [subseriePorModalidadTrd, seriesTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+    puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeEditarDatosGenerales ? catalogoSeriesBuscables() : Promise.resolve([]),
     puedeGestionar
       ? db.usuario.findMany({
@@ -550,7 +552,9 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 <ReclasificarTrdContratoForm
                   expedienteId={id}
                   series={seriesTrd}
-                  objeto={expediente.objeto}
+                  subseriePorModalidad={subseriePorModalidadTrd}
+                  modalidad={expediente.modalidadSeleccion}
+                  modalidadEtiqueta={ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}
                   serieIdActual={expediente.subserie?.serieId ?? null}
                   subserieIdActual={expediente.subserieId}
                 />
@@ -648,389 +652,405 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         </div>
       </div>
 
-      {ETAPAS_ORDEN.map((etapa, i) => {
-        const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
-        const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos, expediente);
-        const ocultaPorRol = etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi;
-        const puedeVerEtapaCompleta =
-          !ocultaPorRol &&
-          (estado !== "bloqueada" ||
-            puedeGestionarPrivilegiado ||
-            (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
+      <PestanasDetalle
+        inicial={expediente.cerrado ? "POSTCONTRACTUAL" : expediente.etapaActual}
+        grupos={[
+          ...ETAPAS_ORDEN.map((etapa, i) => ({
+            id: etapa,
+            label: ETIQUETA_ETAPA[etapa],
+            icono: etapa === "PRECONTRACTUAL" ? <ClipboardList className="h-4 w-4" aria-hidden /> : etapa === "CONTRACTUAL" ? <FileSignature className="h-4 w-4" aria-hidden /> : <FolderCheck className="h-4 w-4" aria-hidden />,
+            contador: etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi ? undefined : expediente.documentos.filter((d) => d.etapa === etapa).length,
+            contenido: (() => {
+                const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
+                const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos, expediente);
+                const ocultaPorRol = etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi;
+                const puedeVerEtapaCompleta =
+                  !ocultaPorRol &&
+                  (estado !== "bloqueada" ||
+                    puedeGestionarPrivilegiado ||
+                    (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
 
-        if (!puedeVerEtapaCompleta) {
-          if (ocultaPorRol) {
-            return (
-              <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
-                <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-500">
-                  <Lock className="h-3.5 w-3.5" aria-hidden />
-                  {ETIQUETA_ETAPA[etapa]} — no disponible para el contratista
-                </h3>
-              </div>
-            );
-          }
-          const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
-          return (
-            <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
-              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-stone-500">
-                <Lock className="h-3.5 w-3.5" aria-hidden />
-                {ETIQUETA_ETAPA[etapa]} — se habilita al completar {ETIQUETA_ETAPA[ETAPAS_ORDEN[i - 1]!]}
-              </h3>
-              <ul className="grid grid-cols-1 gap-1 text-xs text-stone-400 sm:grid-cols-2">
-                {checklistFuturo.map((r) => (
-                  <li key={r.id}>• {r.nombre}{!r.obligatorio && " (opcional)"}</li>
-                ))}
-              </ul>
-            </div>
-          );
-        }
-
-        const checklist = checklistsPorEtapa.get(etapa) ?? [];
-        const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
-        const puedeSubir = (estado === "actual" || puedeGestionarPrivilegiado) && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
-        const etapaInfo =
-          estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
-        const puedeGestionarEtapaCerrada =
-          estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
-
-        return (
-          <details key={etapa} open={estado === "actual"} className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
-            <summary className="mb-3 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
-              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-                {estado === "completada" && <FileCheck2 className="h-4 w-4 text-emerald-600" aria-hidden />}
-                {estado === "bloqueada" && <Lock className="h-4 w-4 text-amber-500" aria-hidden />}
-                {ETIQUETA_ETAPA[etapa]}
-                {estado === "completada" && <span className="text-xs font-normal text-stone-400">(clic para expandir)</span>}
-                {estado === "bloqueada" && (
-                  <span className="text-xs font-normal text-amber-600" title="El expediente todavía no llega a esta etapa — se está viendo por adelantado porque su rol lo permite.">
-                    (aún no alcanzada — clic para expandir)
-                  </span>
-                )}
-              </h3>
-              <span className="flex items-center gap-1.5 text-xs text-stone-400">
-                {checklist.filter((c) => c.documento).length}/{checklist.length} documentos del catálogo
-                {estado !== "actual" && <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />}
-              </span>
-            </summary>
-
-            <ul className="mb-3 divide-y divide-stone-100 rounded-lg border border-stone-100">
-              {checklist.map((item) => {
-                const destacado = ITEMS_DESTACADOS.has(item.nombre);
-                return (
-                <li
-                  key={item.id}
-                  id={item.documento ? `documento-${item.documento.id}` : undefined}
-                  className={`flex flex-wrap items-center gap-2 rounded-md p-2.5 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300 ${
-                    destacado ? "bg-cdmb-50/60 ring-1 ring-inset ring-cdmb-200" : ""
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-800">
-                      {destacado && <ArrowRight className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />}
-                      {item.nombre}
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${item.obligatorio ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-500"}`}>
-                        {item.obligatorio ? "Obligatorio" : "Opcional"}
-                      </span>
-                      {item.gestionadoEnSecop && (
-                        <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
-                      )}
-                      {!esRequisitoPorPeriodos(item) && item.documento?.requiereFirma && !item.documento.cargadoEnSecop && (
-                        <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "animate-pulse bg-amber-100 text-amber-800"
-                          }`}
-                          title={
-                            item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
-                              ? "Ya tiene firmante(s) asignado(s)"
-                              : "Falta asignar quién debe firmarlo"
-                          }
-                        >
-                          {item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
-                        </span>
-                      )}
-                      {etapa === "PRECONTRACTUAL" && item.documento && !esRequisitoPorPeriodos(item) && (
-                        <VerificacionSecopControl
-                          documentoId={item.documento.id}
-                          verificacionRecepcionEn={item.documento.verificacionRecepcionEn}
-                          verificacionRecepcionPorNombre={item.documento.verificacionRecepcionPorNombre}
-                          verificacionRecepcionObservaciones={item.documento.verificacionRecepcionObservaciones}
-                          cargadoEnSecop={item.documento.cargadoEnSecop}
-                          cargadoEnSecopEn={item.documento.cargadoEnSecopEn}
-                          puedeGestionar={puedeGestionarSecop}
-                        />
-                      )}
-                    </p>
-                    <p className="flex items-center gap-1 text-[11px] text-stone-400">
-                      {item.codigoFormato && `${item.codigoFormato} · `}
-                      {item.fuente}
-                      {item.notaOrigenExterno && (
-                        <span title={item.notaOrigenExterno}>
-                          <Info className="h-3 w-3 flex-none text-stone-400" aria-hidden />
-                        </span>
-                      )}
-                    </p>
-                    {item.documento && !esRequisitoPorPeriodos(item) && (
-                      <p className="text-[11px] text-stone-400">
-                        Subido por {item.documento.subidoPorNombre} el {formatearFechaHora(item.documento.createdAt)}
-                        {item.documento.firmaFechaHora &&
-                          ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
-                      </p>
-                    )}
-                    {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.some((s) => s.estado !== "RECHAZADA") && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {item.documento.solicitudesFirma
-                          .filter((s) => s.estado !== "RECHAZADA")
-                          .map((s) => (
-                            <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                              {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                  {esRequisitoPorPeriodos(item) ? (
-                    <span className="flex-none text-xs text-stone-400">
-                      {expediente.documentos.filter((d) => d.requisitoId === item.id).length} informe(s) cargado(s)
-                    </span>
-                  ) : item.documento ? (
-                    <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[item.documento.estadoValidacion]}>
-                        {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
-                      </span>
-                      <VistaPreviaDocumento
-                        url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
-                        nombre={item.documento.nombre}
-                        mimeType={item.documento.mimeType}
-                      />
-                      {puedeValidar && item.documento.estadoValidacion !== "APROBADO" && (
-                        <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
-                      )}
-                      {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
-                        <a
-                          href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="PDF con el sello de firma electrónica y el QR de verificación estampados"
-                          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-                        >
-                          <Printer className="h-3.5 w-3.5" aria-hidden />
-                          Con firma
-                        </a>
-                      )}
-                      {puedeGestionarEtapaCerrada && (() => {
-                        const doc = item.documento!;
-                        const miSolicitud = doc.solicitudesFirma.find(
-                          (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
-                        );
-                        const puedeActuarYo = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
-                        return puedeActuarYo ? (
-                          <ConfirmarFirmaModal
-                            rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
-                            endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
-                            endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
-                            documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.totalFirmas > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
-                            documentoNombre={doc.nombre}
-                            documentoMimeType={doc.mimeType}
-                          />
-                        ) : null;
-                      })()}
-                      {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                        <AsignarFirmantesModal conCalidad contratistaPrincipal
-                          endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
-                          usuarios={usuariosOpciones}
-                          firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
-                            id: s.id,
-                            usuarioAsignadoId: s.usuarioAsignadoId,
-                            usuarioAsignadoNombre: s.usuarioAsignadoNombre,
-                            rol: s.rol,
-                            orden: s.orden,
-                            calidad: s.calidad,
-                            estado: s.estado,
-                            completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
-                          }))}
-                        />
-                      )}
-                      {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
-                        <EditarEliminarDocumentoContrato
-                          documentoId={item.documento.id}
-                          expedienteId={id}
-                          nombreActual={item.documento.nombre}
-                          requiereFirmaActual={item.documento.requiereFirma}
-                          sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
-                        />
-                      )}
-                    </div>
-                  ) : puedeSubir ? (
-                    <SubirDocumentoRequisitoForm
-                      expedienteId={id}
-                      etapa={etapa}
-                      requisitoId={item.id}
-                      requisitoNombre={item.nombre}
-                    />
-                  ) : (
-                    <span className="flex-none text-xs text-stone-300">Sin subir</span>
-                  )}
-                  {esRequisitoPorPeriodos(item) && panelPorPeriodos(item, etapa, puedeSubir, puedeGestionarEtapaCerrada)}
-                </li>
-                );
-              })}
-            </ul>
-
-            {documentosLibres.length > 0 && (
-              <div className="mb-3">
-                <p className="mb-1.5 text-xs font-medium text-stone-500">Otros documentos subidos en esta etapa (fuera del catálogo)</p>
-                <ul className="space-y-1.5">
-                  {documentosLibres.map((doc) => {
-                    const solicitudes = doc.solicitudesFirma.map((s) => ({
-                      id: s.id,
-                      usuarioAsignadoId: s.usuarioAsignadoId,
-                      usuarioAsignadoNombre: s.usuarioAsignado.nombre,
-                      rol: s.rol,
-                      orden: s.orden,
-                      calidad: s.calidad,
-                      estado: s.estado,
-                    }));
-                    const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
-                    const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+                if (!puedeVerEtapaCompleta) {
+                  if (ocultaPorRol) {
                     return (
-                      <li
-                        key={doc.id}
-                        id={`documento-${doc.id}`}
-                        className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
-                      >
-                        <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
-                        {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
-                        {doc.requiereFirma && !doc.cargadoEnSecop && (
-                          <span
-                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
-                            }`}
-                          >
-                            {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+                      <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
+                        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-500">
+                          <Lock className="h-3.5 w-3.5" aria-hidden />
+                          {ETIQUETA_ETAPA[etapa]} — no disponible para el contratista
+                        </h3>
+                      </div>
+                    );
+                  }
+                  const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
+                  return (
+                    <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
+                      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-stone-500">
+                        <Lock className="h-3.5 w-3.5" aria-hidden />
+                        {ETIQUETA_ETAPA[etapa]} — se habilita al completar {ETIQUETA_ETAPA[ETAPAS_ORDEN[i - 1]!]}
+                      </h3>
+                      <ul className="grid grid-cols-1 gap-1 text-xs text-stone-400 sm:grid-cols-2">
+                        {checklistFuturo.map((r) => (
+                          <li key={r.id}>• {r.nombre}{!r.obligatorio && " (opcional)"}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                }
+
+                const checklist = checklistsPorEtapa.get(etapa) ?? [];
+                const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
+                const puedeSubir = (estado === "actual" || puedeGestionarPrivilegiado) && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
+                const etapaInfo =
+                  estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
+                const puedeGestionarEtapaCerrada =
+                  estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
+
+                return (
+                  <details key={etapa} open className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
+                    <summary className="mb-3 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+                        {estado === "completada" && <FileCheck2 className="h-4 w-4 text-emerald-600" aria-hidden />}
+                        {estado === "bloqueada" && <Lock className="h-4 w-4 text-amber-500" aria-hidden />}
+                        {ETIQUETA_ETAPA[etapa]}
+                        {estado === "completada" && <span className="text-xs font-normal text-stone-400">(clic para expandir)</span>}
+                        {estado === "bloqueada" && (
+                          <span className="text-xs font-normal text-amber-600" title="El expediente todavía no llega a esta etapa — se está viendo por adelantado porque su rol lo permite.">
+                            (aún no alcanzada — clic para expandir)
                           </span>
                         )}
-                        {etapa === "PRECONTRACTUAL" && (
-                          <VerificacionSecopControl
-                            documentoId={doc.id}
-                            verificacionRecepcionEn={doc.verificacionRecepcionEn}
-                            verificacionRecepcionPorNombre={doc.verificacionRecepcionPor?.nombre ?? null}
-                            verificacionRecepcionObservaciones={doc.verificacionRecepcionObservaciones}
-                            cargadoEnSecop={doc.cargadoEnSecop}
-                            cargadoEnSecopEn={doc.cargadoEnSecopEn}
-                            puedeGestionar={puedeGestionarSecop}
-                          />
-                        )}
-                        {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
-                          <div className="flex flex-wrap gap-1">
-                            {solicitudes
-                              .filter((s) => s.estado !== "RECHAZADA")
-                              .map((s) => (
-                                <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                                  {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)}
+                      </h3>
+                      <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                        {checklist.filter((c) => c.documento).length}/{checklist.length} documentos del catálogo
+                        {estado !== "actual" && <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />}
+                      </span>
+                    </summary>
+
+                    <ul className="mb-3 divide-y divide-stone-100 rounded-lg border border-stone-100">
+                      {checklist.map((item) => {
+                        const destacado = ITEMS_DESTACADOS.has(item.nombre);
+                        return (
+                        <li
+                          key={item.id}
+                          id={item.documento ? `documento-${item.documento.id}` : undefined}
+                          className={`flex flex-wrap items-center gap-2 rounded-md p-2.5 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300 ${
+                            destacado ? "bg-cdmb-50/60 ring-1 ring-inset ring-cdmb-200" : ""
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-800">
+                              {destacado && <ArrowRight className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />}
+                              {item.nombre}
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${item.obligatorio ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-500"}`}>
+                                {item.obligatorio ? "Obligatorio" : "Opcional"}
+                              </span>
+                              {item.gestionadoEnSecop && (
+                                <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
+                              )}
+                              {!esRequisitoPorPeriodos(item) && item.documento?.requiereFirma && !item.documento.cargadoEnSecop && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                    item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : "animate-pulse bg-amber-100 text-amber-800"
+                                  }`}
+                                  title={
+                                    item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
+                                      ? "Ya tiene firmante(s) asignado(s)"
+                                      : "Falta asignar quién debe firmarlo"
+                                  }
+                                >
+                                  {item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
                                 </span>
-                              ))}
+                              )}
+                              {etapa === "PRECONTRACTUAL" && item.documento && !esRequisitoPorPeriodos(item) && (
+                                <VerificacionSecopControl
+                                  documentoId={item.documento.id}
+                                  verificacionRecepcionEn={item.documento.verificacionRecepcionEn}
+                                  verificacionRecepcionPorNombre={item.documento.verificacionRecepcionPorNombre}
+                                  verificacionRecepcionObservaciones={item.documento.verificacionRecepcionObservaciones}
+                                  cargadoEnSecop={item.documento.cargadoEnSecop}
+                                  cargadoEnSecopEn={item.documento.cargadoEnSecopEn}
+                                  puedeGestionar={puedeGestionarSecop}
+                                />
+                              )}
+                            </p>
+                            <p className="flex items-center gap-1 text-[11px] text-stone-400">
+                              {item.codigoFormato && `${item.codigoFormato} · `}
+                              {item.fuente}
+                              {item.notaOrigenExterno && (
+                                <span title={item.notaOrigenExterno}>
+                                  <Info className="h-3 w-3 flex-none text-stone-400" aria-hidden />
+                                </span>
+                              )}
+                            </p>
+                            {item.documento && !esRequisitoPorPeriodos(item) && (
+                              <p className="text-[11px] text-stone-400">
+                                Subido por {item.documento.subidoPorNombre} el {formatearFechaHora(item.documento.createdAt)}
+                                {item.documento.firmaFechaHora &&
+                                  ` · Firmado el ${formatearFechaHora(item.documento.firmaFechaHora)} (${etiquetaFormatoFirma(item.documento.firmaFormato ?? "hash-sha256")}${item.documento.totalFirmas > 1 ? `, ${item.documento.totalFirmas} firmantes` : ""})`}
+                              </p>
+                            )}
+                            {item.documento && !esRequisitoPorPeriodos(item) && item.documento.solicitudesFirma.some((s) => s.estado !== "RECHAZADA") && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {item.documento.solicitudesFirma
+                                  .filter((s) => s.estado !== "RECHAZADA")
+                                  .map((s) => (
+                                    <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                      {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                                    </span>
+                                  ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                        <VistaPreviaDocumento
-                          url={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
-                          nombre={doc.nombre}
-                          mimeType={doc.mimeType}
-                        />
-                        {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
-                        {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
-                          <a
-                            href={`/api/contratacion-documentos/${doc.id}/rotulado`}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="PDF con el sello de firma electrónica y el QR de verificación estampados"
-                            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-                          >
-                            <Printer className="h-3.5 w-3.5" aria-hidden />
-                            Con firma
-                          </a>
-                        )}
-                        {puedeGestionarEtapaCerrada && puedeActuarYo && (
-                          <ConfirmarFirmaModal
-                            rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
-                            endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/completar`}
-                            endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/rechazar`}
-                            documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
-                            documentoNombre={doc.nombre}
-                            documentoMimeType={doc.mimeType}
-                          />
-                        )}
-                        {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-                          <AsignarFirmantesModal conCalidad contratistaPrincipal
-                            endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
-                            usuarios={usuariosOpciones}
-                            firmantesActuales={solicitudes}
-                          />
-                        )}
-                        {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, doc.etapa)) && (
-                          <EditarEliminarDocumentoContrato
-                            documentoId={doc.id}
-                            expedienteId={id}
-                            nombreActual={doc.nombre}
-                            requiereFirmaActual={doc.requiereFirma}
-                            sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
-                          />
-                        )}
+                          {esRequisitoPorPeriodos(item) ? (
+                            <span className="flex-none text-xs text-stone-400">
+                              {expediente.documentos.filter((d) => d.requisitoId === item.id).length} informe(s) cargado(s)
+                            </span>
+                          ) : item.documento ? (
+                            <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
+                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[item.documento.estadoValidacion]}>
+                                {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
+                              </span>
+                              <VistaPreviaDocumento
+                                url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
+                                nombre={item.documento.nombre}
+                                mimeType={item.documento.mimeType}
+                              />
+                              {puedeValidar && item.documento.estadoValidacion !== "APROBADO" && (
+                                <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
+                              )}
+                              {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
+                                <a
+                                  href={`/api/contratacion-documentos/${item.documento.id}/rotulado`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                                >
+                                  <Printer className="h-3.5 w-3.5" aria-hidden />
+                                  Con firma
+                                </a>
+                              )}
+                              {puedeGestionarEtapaCerrada && (() => {
+                                const doc = item.documento!;
+                                const miSolicitud = doc.solicitudesFirma.find(
+                                  (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
+                                );
+                                const puedeActuarYo = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
+                                return puedeActuarYo ? (
+                                  <ConfirmarFirmaModal
+                                    rol={miSolicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                                    endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/completar`}
+                                    endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud.id}/rechazar`}
+                                    documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.totalFirmas > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
+                                    documentoNombre={doc.nombre}
+                                    documentoMimeType={doc.mimeType}
+                                  />
+                                ) : null;
+                              })()}
+                              {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
+                                <AsignarFirmantesModal conCalidad contratistaPrincipal
+                                  endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
+                                  usuarios={usuariosOpciones}
+                                  firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
+                                    id: s.id,
+                                    usuarioAsignadoId: s.usuarioAsignadoId,
+                                    usuarioAsignadoNombre: s.usuarioAsignadoNombre,
+                                    rol: s.rol,
+                                    orden: s.orden,
+                                    calidad: s.calidad,
+                                    estado: s.estado,
+                                    completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
+                                  }))}
+                                />
+                              )}
+                              {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
+                                <EditarEliminarDocumentoContrato
+                                  documentoId={item.documento.id}
+                                  expedienteId={id}
+                                  nombreActual={item.documento.nombre}
+                                  requiereFirmaActual={item.documento.requiereFirma}
+                                  sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
+                                />
+                              )}
+                            </div>
+                          ) : puedeSubir ? (
+                            <SubirDocumentoRequisitoForm
+                              expedienteId={id}
+                              etapa={etapa}
+                              requisitoId={item.id}
+                              requisitoNombre={item.nombre}
+                            />
+                          ) : (
+                            <span className="flex-none text-xs text-stone-300">Sin subir</span>
+                          )}
+                          {esRequisitoPorPeriodos(item) && panelPorPeriodos(item, etapa, puedeSubir, puedeGestionarEtapaCerrada)}
+                        </li>
+                        );
+                      })}
+                    </ul>
+
+                    {documentosLibres.length > 0 && (
+                      <div className="mb-3">
+                        <p className="mb-1.5 text-xs font-medium text-stone-500">Otros documentos subidos en esta etapa (fuera del catálogo)</p>
+                        <ul className="space-y-1.5">
+                          {documentosLibres.map((doc) => {
+                            const solicitudes = doc.solicitudesFirma.map((s) => ({
+                              id: s.id,
+                              usuarioAsignadoId: s.usuarioAsignadoId,
+                              usuarioAsignadoNombre: s.usuarioAsignado.nombre,
+                              rol: s.rol,
+                              orden: s.orden,
+                              calidad: s.calidad,
+                              estado: s.estado,
+                            }));
+                            const miSolicitud = solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
+                            const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+                            return (
+                              <li
+                                key={doc.id}
+                                id={`documento-${doc.id}`}
+                                className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+                              >
+                                <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
+                                {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
+                                {doc.requiereFirma && !doc.cargadoEnSecop && (
+                                  <span
+                                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                      solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
+                                    }`}
+                                  >
+                                    {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
+                                  </span>
+                                )}
+                                {etapa === "PRECONTRACTUAL" && (
+                                  <VerificacionSecopControl
+                                    documentoId={doc.id}
+                                    verificacionRecepcionEn={doc.verificacionRecepcionEn}
+                                    verificacionRecepcionPorNombre={doc.verificacionRecepcionPor?.nombre ?? null}
+                                    verificacionRecepcionObservaciones={doc.verificacionRecepcionObservaciones}
+                                    cargadoEnSecop={doc.cargadoEnSecop}
+                                    cargadoEnSecopEn={doc.cargadoEnSecopEn}
+                                    puedeGestionar={puedeGestionarSecop}
+                                  />
+                                )}
+                                {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {solicitudes
+                                      .filter((s) => s.estado !== "RECHAZADA")
+                                      .map((s) => (
+                                        <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                          {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
+                                <VistaPreviaDocumento
+                                  url={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
+                                  nombre={doc.nombre}
+                                  mimeType={doc.mimeType}
+                                />
+                                {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+                                {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
+                                  <a
+                                    href={`/api/contratacion-documentos/${doc.id}/rotulado`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    title="PDF con el sello de firma electrónica y el QR de verificación estampados"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                                  >
+                                    <Printer className="h-3.5 w-3.5" aria-hidden />
+                                    Con firma
+                                  </a>
+                                )}
+                                {puedeGestionarEtapaCerrada && puedeActuarYo && (
+                                  <ConfirmarFirmaModal
+                                    rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                                    endpointCompletar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/completar`}
+                                    endpointRechazar={`/api/contratacion/solicitudes-firma/${miSolicitud!.id}/rechazar`}
+                                    documentoUrl={`/api/contratacion-documentos/${doc.id}${doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
+                                    documentoNombre={doc.nombre}
+                                    documentoMimeType={doc.mimeType}
+                                  />
+                                )}
+                                {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
+                                  <AsignarFirmantesModal conCalidad contratistaPrincipal
+                                    endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
+                                    usuarios={usuariosOpciones}
+                                    firmantesActuales={solicitudes}
+                                  />
+                                )}
+                                {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, doc.etapa)) && (
+                                  <EditarEliminarDocumentoContrato
+                                    documentoId={doc.id}
+                                    expedienteId={id}
+                                    nombreActual={doc.nombre}
+                                    requiereFirmaActual={doc.requiereFirma}
+                                    sinTraza={puedeEditarSinTrazaDocumentoContrato(permisos)}
+                                  />
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
+                    {puedeSubir && (
+                      <details className="group">
+                        <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
+                          + Subir otro documento no listado en el catálogo
+                        </summary>
+                        <div className="mt-2">
+                          <SubirDocumentosContratoForm expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
+                        </div>
+                      </details>
+                    )}
+                  </details>
+                );
+            })(),
+          })),
+          {
+            id: "trazabilidad",
+            label: "Trazabilidad",
+            icono: <History className="h-4 w-4" aria-hidden />,
+            oculta: trazabilidad.length === 0,
+            contenido: (
+                <details open className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                  <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+                    <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+                      <Hash className="h-4 w-4 text-stone-400" aria-hidden />
+                      Trazabilidad de los documentos
+                    </h3>
+                    <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                      {trazabilidad.length} movimiento{trazabilidad.length === 1 ? "" : "s"}
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                    </span>
+                  </summary>
+                  <p className="mb-3 text-xs text-stone-500">
+                    Registro inalterable con cadena de hash: cada movimiento encadena su hash con el del anterior. Las
+                    acciones de Administrador y Jefe de Contratación no se registran aquí.
+                  </p>
+                  <ul className="divide-y divide-stone-100 text-xs">
+                    {[...trazabilidad].reverse().map((mov) => (
+                      <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                        <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
+                          {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>
+                        <span className="flex-none text-stone-400">{mov.usuario?.nombre ?? "—"}</span>
+                        <span className="flex-none text-stone-400">{formatearFechaHora(mov.createdAt)}</span>
+                        <span className="flex-none font-mono text-[10px] text-stone-300" title={`Hash: ${mov.hash}\nHash anterior: ${mov.hashAnterior ?? "(primer eslabón)"}`}>
+                          {mov.hash.slice(0, 10)}…
+                        </span>
                       </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-
-            {puedeSubir && (
-              <details className="group">
-                <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-                  + Subir otro documento no listado en el catálogo
-                </summary>
-                <div className="mt-2">
-                  <SubirDocumentosContratoForm expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
-                </div>
-              </details>
-            )}
-          </details>
-        );
-      })}
-
-      {trazabilidad.length > 0 && (
-        <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-              <Hash className="h-4 w-4 text-stone-400" aria-hidden />
-              Trazabilidad de los documentos
-            </h3>
-            <span className="flex items-center gap-1.5 text-xs text-stone-400">
-              {trazabilidad.length} movimiento{trazabilidad.length === 1 ? "" : "s"}
-              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
-            </span>
-          </summary>
-          <p className="mb-3 text-xs text-stone-500">
-            Registro inalterable con cadena de hash: cada movimiento encadena su hash con el del anterior. Las
-            acciones de Administrador y Jefe de Contratación no se registran aquí.
-          </p>
-          <ul className="divide-y divide-stone-100 text-xs">
-            {[...trazabilidad].reverse().map((mov) => (
-              <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
-                  {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>
-                <span className="flex-none text-stone-400">{mov.usuario?.nombre ?? "—"}</span>
-                <span className="flex-none text-stone-400">{formatearFechaHora(mov.createdAt)}</span>
-                <span className="flex-none font-mono text-[10px] text-stone-300" title={`Hash: ${mov.hash}\nHash anterior: ${mov.hashAnterior ?? "(primer eslabón)"}`}>
-                  {mov.hash.slice(0, 10)}…
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+                    ))}
+                  </ul>
+                </details>
+            ),
+          },
+        ]}
+      />
     </section>
   );
 }

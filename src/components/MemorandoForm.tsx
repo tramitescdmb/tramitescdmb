@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
+import { Loader2, Upload, X, ShieldCheck, ArrowRightLeft, FileText, FolderTree, Paperclip } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
@@ -118,11 +119,13 @@ export function MemorandoForm({
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Memorando</h2>
-        <SectionHelp>
-          Comunicación interna entre dependencias — no sale de la entidad. Queda firmada con hash al radicarla.
-        </SectionHelp>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <EncabezadoPaso
+          numero={1}
+          icono={<ArrowRightLeft className="h-4 w-4" aria-hidden />}
+          titulo="Origen y destino"
+          descripcion="Comunicación interna entre dependencias: no sale de la entidad."
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Dependencia de origen" required help="Quién firma este memorando.">
             <select value={dependenciaOrigenId} onChange={(e) => cambiarDependenciaOrigen(e.target.value)} className={inputCls}>
               <option value="">— Seleccione —</option>
@@ -147,14 +150,25 @@ export function MemorandoForm({
               </select>
             </Field>
           )}
-          <Field label="N.º de folios">
-            <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
-          </Field>
-          <div className="sm:col-span-2 lg:col-span-4">
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+        <EncabezadoPaso
+          numero={2}
+          icono={<FileText className="h-4 w-4" aria-hidden />}
+          titulo="Contenido"
+          descripcion="Asunto y cuerpo del memorando. Puede partir de una plantilla."
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sm:col-span-2 lg:col-span-3">
             <Field label="Asunto" required>
               <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
             </Field>
           </div>
+          <Field label="N.º de folios">
+            <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
+          </Field>
           <div className="sm:col-span-2 lg:col-span-4 space-y-2">
             <PlantillaSelector
               plantillas={plantillas}
@@ -177,8 +191,11 @@ export function MemorandoForm({
           </div>
         </div>
 
-        <div className="mt-4 border-t border-stone-100 pt-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación (TRD)</h3>
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+        <div>
+          <EncabezadoPaso numero={3} icono={<FolderTree className="h-4 w-4" aria-hidden />} titulo="Clasificación (TRD)" />
           <SectionHelp>
             Opcional. Si clasifica el memorando, elija la serie y luego la subserie — ya filtradas por la
             dependencia de origen elegida arriba.
@@ -195,8 +212,12 @@ export function MemorandoForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
-        <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
+        <EncabezadoPaso
+          numero={4}
+          icono={<Paperclip className="h-4 w-4" aria-hidden />}
+          titulo="Documentos adjuntos"
+          descripcion={`Hasta ${MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo ${TAMANO_MAXIMO_SGDEA_MB} MB.`}
+        />
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

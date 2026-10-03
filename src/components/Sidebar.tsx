@@ -6,8 +6,6 @@ import { usePathname } from "next/navigation";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { SidebarNav } from "@/components/SidebarNav";
 
-const CLAVE_COLAPSADO = "sidebar-colapsado";
-
 export function Sidebar({
   logoUrl,
   esAdmin,
@@ -31,35 +29,21 @@ export function Sidebar({
   subtitulo: string;
   iniciales: string;
 }) {
-  const [colapsado, setColapsado] = useState(false);
+  const [colapsado, setColapsado] = useState(true);
   const pathname = usePathname();
+  const modulo = pathname?.split("/")[1] ?? "";
 
-  // El geovisor necesita todo el ancho posible para el mapa: entrar a esa ruta
-  // colapsa el menú aunque la preferencia guardada sea "expandido". Al salir se
-  // respeta de nuevo la preferencia del usuario.
   useEffect(() => {
-    if (pathname?.startsWith("/geovisor")) {
-      setColapsado(true);
-      return;
-    }
-    try {
-      setColapsado(window.localStorage.getItem(CLAVE_COLAPSADO) === "1");
-    } catch {}
-  }, [pathname]);
+    setColapsado(true);
+  }, [modulo]);
 
   function alternar() {
-    setColapsado((actual) => {
-      const next = !actual;
-      try {
-        window.localStorage.setItem(CLAVE_COLAPSADO, next ? "1" : "0");
-      } catch {}
-      return next;
-    });
+    setColapsado((actual) => !actual);
   }
 
   return (
     <aside
-      className={`sticky top-0 hidden h-screen flex-none flex-col border-r border-cdmb-800 bg-cdmb-700 text-white transition-[width] duration-200 lg:flex ${
+      className={`sticky top-0 hidden h-[calc(100vh-2rem)] max-h-screen flex-none flex-col border-r border-cdmb-800 bg-cdmb-700 text-white transition-[width] duration-200 lg:flex ${
         colapsado ? "w-20" : "w-64"
       }`}
     >
@@ -116,14 +100,14 @@ export function Sidebar({
         colapsado={colapsado}
       />
 
-      <div className="border-t border-white/10 p-3">
+      <div className={`flex flex-none border-t border-white/10 p-2 ${colapsado ? "flex-col items-center gap-1" : "items-center gap-1"}`}>
         <Link prefetch={false}
           href="/mi-cuenta"
-          title={colapsado ? nombre : undefined}
+          title={colapsado ? `${nombre} · ${subtitulo}` : "Mi cuenta"}
           className={
             colapsado
-              ? "flex items-center justify-center rounded-xl py-2 transition-colors hover:bg-white/10"
-              : "flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-white/10"
+              ? "flex items-center justify-center rounded-xl p-1.5 transition-colors hover:bg-white/10"
+              : "flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/10"
           }
         >
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-menu-500 text-xs font-semibold text-stone-900">
@@ -136,17 +120,14 @@ export function Sidebar({
             </div>
           )}
         </Link>
-        <form action="/api/auth/logout" method="post" className={colapsado ? "mt-1.5 flex justify-center" : "mt-1.5 px-2"}>
+        <form action="/api/auth/logout" method="post" className="flex-none">
           <button
-            title={colapsado ? "Salir" : undefined}
-            className={
-              colapsado
-                ? "flex items-center justify-center rounded-lg border border-white/25 p-2 text-white/80 transition-transform hover:bg-white/10 active:scale-95"
-                : "flex items-center gap-1.5 rounded-lg border border-white/25 px-3 py-1.5 text-xs font-medium text-white/80 transition-transform hover:bg-white/10 active:scale-95"
-            }
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            className="flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
           >
-            <LogOut className="h-3.5 w-3.5" aria-hidden />
-            {!colapsado && "Salir"}
+            <LogOut className="h-4 w-4" aria-hidden />
+            Salir
           </button>
         </form>
       </div>

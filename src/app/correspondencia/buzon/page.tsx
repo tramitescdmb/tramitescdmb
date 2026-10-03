@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox, PenLine, Lock } from "lucide-react";
+import { Inbox, PenLine, Lock, Clock, Mail, FileText } from "lucide-react";
+import { formatearFechaHora } from "@/lib/fecha";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -32,11 +33,28 @@ export default async function BuzonCorrespondenciaPage() {
           No tiene comunicaciones ni documentos pendientes de firmar o revisar.
         </p>
       ) : (
-        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
-          {solicitudes.map((s) => {
+        [
+          { titulo: "Le toca a usted", Icono: PenLine, lista: solicitudes.filter((s) => s.puedeActuar), vacio: "Nada en su turno por ahora." },
+          { titulo: "En espera de turno", Icono: Clock, lista: solicitudes.filter((s) => !s.puedeActuar), vacio: null },
+        ].filter((g) => g.lista.length > 0 || g.vacio).map((grupo) => (
+        <section key={grupo.titulo} className="space-y-2">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-800">
+            <grupo.Icono className="h-4 w-4 text-cdmb-600" aria-hidden />
+            {grupo.titulo}
+            <span className="rounded-full bg-stone-100 px-2 text-xs font-medium text-stone-500">{grupo.lista.length}</span>
+          </h2>
+          {grupo.lista.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-stone-200 p-4 text-center text-xs text-stone-400">{grupo.vacio}</p>
+          ) : (
+        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-soft">
+          {grupo.lista.map((s) => {
             const pdfComunicacion = s.comunicacion?.documentos.find((d) => d.mimeType === "application/pdf") ?? null;
+            const IconoTipo = s.comunicacion ? Mail : FileText;
             return (
               <li key={s.id} className="flex flex-wrap items-center gap-3 p-4">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-cdmb-50 text-cdmb-700">
+                  <IconoTipo className="h-4 w-4" aria-hidden />
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-stone-800">{s.comunicacion?.asunto ?? s.documentoArchivo?.nombre}</p>
                   <p className="text-xs text-stone-400">
@@ -50,7 +68,7 @@ export default async function BuzonCorrespondenciaPage() {
                           </Link>
                         </>
                       )}{" "}
-                    · Asignado por {s.asignadoPor.nombre}
+                    · Asignado por {s.asignadoPor.nombre} el {formatearFechaHora(s.asignadoEn)}
                   </p>
                 </div>
                 <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
@@ -81,6 +99,9 @@ export default async function BuzonCorrespondenciaPage() {
             );
           })}
         </ul>
+          )}
+        </section>
+        ))
       )}
     </section>
   );

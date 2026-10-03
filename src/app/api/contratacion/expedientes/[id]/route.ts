@@ -19,6 +19,7 @@ import {
   validarOrdenFechasContrato,
 } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 
 const MODALIDADES_VALIDAS = new Set(Object.keys(ETIQUETA_MODALIDAD));
 
@@ -106,9 +107,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: err instanceof Error ? err.message : "Los datos indicados no son válidos." }, { status: 409 });
       }
     }
+    let reclasificacion: { subserieId: string; detalle: string } | null = null;
+    if ("modalidadSeleccion" in body) {
+      const previo = await db.expedienteContractual.findUnique({
+        where: { id },
+        select: { modalidadSeleccion: true, subserie: { select: { codigo: true, nombre: true } } },
+      });
+      const nuevaModalidad = body.modalidadSeleccion as ModalidadSeleccion;
+      if (previo && previo.modalidadSeleccion !== nuevaModalidad) {
+        const destino = await subserieDeModalidad(nuevaModalidad);
+        const sub = destino ? await db.subserieDocumental.findUnique({ where: { id: destino.subserieId }, select: { codigo: true, nombre: true } }) : null;
+        if (destino && sub) {
+          const anterior = previo.subserie ? `${previo.subserie.codigo} — ${previo.subserie.nombre}` : "sin clasificación";
+          reclasificacion = {
+            subserieId: destino.subserieId,
+            detalle: `TRD: ${anterior} → ${sub.codigo} — ${sub.nombre} (${destino.motivo}, por cambio de modalidad a ${ETIQUETA_MODALIDAD[nuevaModalidad]}).`,
+          };
+        }
+      }
+    }
     await db.expedienteContractual.update({
       where: { id },
       data: {
+        ...(reclasificacion ? { subserieId: reclasificacion.subserieId } : {}),
         ...("numeroContrato" in body ? { numeroContrato: body.numeroContrato ? String(body.numeroContrato).trim() : null } : {}),
         ...("numeroProcesoSecop" in body ? { numeroProcesoSecop } : {}),
         ...("fechaSuscripcion" in body ? { fechaSuscripcion: body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null } : {}),
@@ -120,6 +141,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
     await registrarEventoContratacion(id, "DATOS_CONTRATO_ACTUALIZADOS", "Se actualizaron los datos generales del expediente.", session.userId);
+    if (reclasificacion) await registrarEventoContratacion(id, "RECLASIFICACION_TRD", reclasificacion.detalle, session.userId);
     return NextResponse.json({ ok: true });
   }
 
