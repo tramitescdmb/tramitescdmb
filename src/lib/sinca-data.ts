@@ -105,6 +105,7 @@ export type FiltrosHistorico = {
   tipo?: string;
   municipio?: string;
   estado?: string;
+  coordenadas?: string;
   page?: string;
   vista?: string;
 };
@@ -130,6 +131,8 @@ export function construirWhereHistorico(filtros: FiltrosHistorico, rango: RangoP
   if (filtros.tipo?.trim()) and.push({ tipoSolicitudCodigo: filtros.tipo.trim() });
   if (filtros.municipio?.trim()) and.push({ municipio: filtros.municipio.trim() });
   if (filtros.estado?.trim()) and.push({ estado: filtros.estado.trim() });
+  if (filtros.coordenadas === "con") and.push({ lat: { not: null }, lon: { not: null } });
+  if (filtros.coordenadas === "sin") and.push({ OR: [{ lat: null }, { lon: null }] });
   if (and.length > 0) where.AND = and;
   return where;
 }

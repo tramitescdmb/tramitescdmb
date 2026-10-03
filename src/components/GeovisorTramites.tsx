@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
+import { estiloEstado, svgIconoEstado, svgPinEstado } from "@/lib/estados-expediente-estilo";
 import { normalizar } from "@/lib/cargos";
 import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, type CapaContextoReporte } from "@/lib/geovisor-exportar";
 
@@ -39,6 +40,17 @@ export type PuntoTramite = {
   municipio: string;
   solicitanteNombre: string;
   fechaRadicacion: string;
+  lat: number;
+  lon: number;
+};
+
+export type PuntoSinca = {
+  nroSolicitud: number;
+  numeroResolucion: string | null;
+  tipo: string | null;
+  municipio: string | null;
+  estado: string | null;
+  fecha: string | null;
   lat: number;
   lon: number;
 };
@@ -197,8 +209,21 @@ function descargarTexto(contenido: string, nombreArchivo: string, tipoMime: stri
   URL.revokeObjectURL(url);
 }
 
-export function GeovisorTramites({ expedientes, tramites }: { expedientes: PuntoTramite[]; tramites: TramiteOpcion[] }) {
+export function GeovisorTramites({
+  expedientes,
+  tramites,
+  puntosSinca = [],
+}: {
+  expedientes: PuntoTramite[];
+  tramites: TramiteOpcion[];
+  puntosSinca?: PuntoSinca[];
+}) {
   const searchParams = useSearchParams();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const puntoSincaInicial = useMemo(() => Number(searchParams.get("punto")) || null, []);
+  const sincaCapaRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const [mapaListo, setMapaListo] = useState(false);
+  const [capaSinca, setCapaSinca] = useState(() => searchParams.get("capa") === "sinca" && puntosSinca.length > 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se usa una vez, al montar (inicializador de useState)
   const zonaInicial = useMemo(() => parseZonaParam(searchParams.get("zona")), []);
   const contenedorRef = useRef<HTMLDivElement>(null);
@@ -343,7 +368,9 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       });
       map.on("zoomend", () => setZoomActual(map.getZoom()));
 
+      sincaCapaRef.current = L.layerGroup();
       mapRef.current = map;
+      setMapaListo(true);
 
       fetch("/geo/municipios_cdmb.geojson")
         .then((r) => r.json())
@@ -386,13 +413,15 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     if (!L || !cluster) return;
     cluster.clearLayers();
     for (const p of expedientesVisibles) {
-      const marker = L.marker([p.lat, p.lon], { icon: iconoTramite(L) });
+      const marker = L.marker([p.lat, p.lon], { icon: iconoTramite(L, p.estado) });
+      const estilo = estiloEstado(p.estado);
       const contenedor = document.createElement("div");
       contenedor.className = "text-xs leading-relaxed";
       contenedor.innerHTML = `
         <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
         <p class="text-stone-700">${escapeHtml(p.tramiteCodigo)} — ${escapeHtml(p.tramiteNombre)}</p>
-        <p class="text-stone-500">${escapeHtml(p.municipio)} · ${escapeHtml(p.estado.replaceAll("_", " "))}</p>
+        <p class="text-stone-500">${escapeHtml(p.municipio)}</p>
+        <p class="mt-0.5 flex items-center gap-1 font-medium" style="color:${estilo.color}">${svgIconoEstado(p.estado, 13)}${escapeHtml(estilo.etiqueta)}</p>
       `;
       const enlace = document.createElement("a");
       enlace.href = `/expedientes/${p.id}`;
@@ -402,7 +431,7 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
       marker.bindPopup(contenedor);
       cluster.addLayer(marker);
     }
-  }, [expedientesVisibles]);
+  }, [expedientesVisibles, mapaListo]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -411,6 +440,43 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
     if (capaTramites) map.addLayer(cluster);
     else map.removeLayer(cluster);
   }, [capaTramites]);
+
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    const capa = sincaCapaRef.current;
+    if (!mapaListo || !L || !map || !capa) return;
+    capa.clearLayers();
+    if (!capaSinca) {
+      map.removeLayer(capa);
+      return;
+    }
+    let destacado: import("leaflet").Marker | null = null;
+    for (const p of puntosSinca) {
+      const marker = L.marker([p.lat, p.lon], { icon: iconoSinca(L), zIndexOffset: 500 });
+      const contenedor = document.createElement("div");
+      contenedor.className = "text-xs leading-relaxed";
+      contenedor.innerHTML = `
+        <p class="font-semibold text-stone-500">SINCA 1.0 · solicitud ${p.nroSolicitud}</p>
+        <p class="font-mono font-semibold text-stone-800">Resolución ${escapeHtml(p.numeroResolucion ?? "—")}</p>
+        <p class="text-stone-700">${escapeHtml(p.tipo ?? "Sin tipo")}</p>
+        <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>
+      `;
+      const enlace = document.createElement("a");
+      enlace.href = `/historico/solicitudes/${p.nroSolicitud}`;
+      enlace.className = "mt-1 inline-block font-medium text-cdmb-700 hover:underline";
+      enlace.textContent = "Ver en SINCA 1.0 →";
+      contenedor.appendChild(enlace);
+      marker.bindPopup(contenedor);
+      capa.addLayer(marker);
+      if (puntoSincaInicial && p.nroSolicitud === puntoSincaInicial) destacado = marker;
+    }
+    map.addLayer(capa);
+    if (destacado) {
+      map.setView(destacado.getLatLng(), 16);
+      destacado.openPopup();
+    }
+  }, [mapaListo, capaSinca, puntosSinca, puntoSincaInicial]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -795,6 +861,9 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
                 capaTramites={capaTramites}
                 onCapaTramites={setCapaTramites}
                 totalTramites={expedientesVisibles.length}
+                capaSinca={capaSinca}
+                onCapaSinca={setCapaSinca}
+                totalSinca={puntosSinca.length}
                 capaMunicipios={capaMunicipios}
                 onCapaMunicipios={setCapaMunicipios}
                 capaEtiquetas={capaEtiquetas}
@@ -916,17 +985,27 @@ function estiloCapaContexto(cfg: (typeof CAPAS_CONTEXTO)[number], feature?: Feat
   return { color: cfg.color, weight: 1.1, fillColor: cfg.color, fillOpacity: 0.14 };
 }
 
-function iconoTramite(L: typeof import("leaflet")): import("leaflet").DivIcon {
+function iconoTramite(L: typeof import("leaflet"), estado: string): import("leaflet").DivIcon {
+  return L.divIcon({
+    className: "",
+    html: svgPinEstado(estado),
+    iconSize: [28, 38],
+    iconAnchor: [14, 38],
+    popupAnchor: [0, -34],
+  });
+}
+
+function iconoSinca(L: typeof import("leaflet")): import("leaflet").DivIcon {
   return L.divIcon({
     className: "",
     html:
-      '<svg width="25" height="34" viewBox="0 0 25 34" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M12.5 0C5.6 0 0 5.6 0 12.5 0 21.9 12.5 34 12.5 34S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="#166534"/>' +
-      '<circle cx="12.5" cy="12.5" r="5.2" fill="#fff"/>' +
+      '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect x="3" y="3" width="20" height="20" rx="3" transform="rotate(45 13 13)" fill="#20272a" stroke="#ffffff" stroke-width="1.5"/>' +
+      '<text x="13" y="16.5" text-anchor="middle" font-family="Work Sans, sans-serif" font-size="9" font-weight="700" fill="#85c800">S1</text>' +
       "</svg>",
-    iconSize: [25, 34],
-    iconAnchor: [12.5, 34],
-    popupAnchor: [0, -30],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -12],
   });
 }
 
@@ -1037,7 +1116,9 @@ function PanelFiltrar({
               <label className="flex items-center justify-between gap-2 text-xs text-stone-600">
                 <span className="flex items-center gap-1.5">
                   <input type="checkbox" checked={!estadosOcultos.has(e)} onChange={() => onToggleEstado(e)} />
-                  {e.replaceAll("_", " ")}
+                  <span className="flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgIconoEstado(e, 15) }} />
+                  <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: estiloEstado(e).color }} aria-hidden />
+                  {estiloEstado(e).etiqueta}
                 </span>
                 <span className="text-stone-400">{conteoEstado.get(e) ?? 0}</span>
               </label>
@@ -1053,6 +1134,9 @@ function PanelCapas({
   capaTramites,
   onCapaTramites,
   totalTramites,
+  capaSinca,
+  onCapaSinca,
+  totalSinca,
   capaMunicipios,
   onCapaMunicipios,
   capaEtiquetas,
@@ -1064,6 +1148,9 @@ function PanelCapas({
   capaTramites: boolean;
   onCapaTramites: (v: boolean) => void;
   totalTramites: number;
+  capaSinca: boolean;
+  onCapaSinca: (v: boolean) => void;
+  totalSinca: number;
   capaMunicipios: boolean;
   onCapaMunicipios: (v: boolean) => void;
   capaEtiquetas: boolean;
@@ -1076,8 +1163,21 @@ function PanelCapas({
     <div className="space-y-3">
       <label className="flex items-center gap-2 text-sm text-stone-700">
         <input type="checkbox" checked={capaTramites} onChange={(e) => onCapaTramites(e.target.checked)} />
-        Trámites ({totalTramites})
+        Trámites ambientales 2.0 ({totalTramites})
       </label>
+      {totalSinca > 0 && (
+        <div>
+          <label className="flex items-center gap-2 text-sm text-stone-700">
+            <input type="checkbox" checked={capaSinca} onChange={(e) => onCapaSinca(e.target.checked)} />
+            <span className="inline-flex h-4 w-4 flex-none rotate-45 items-center justify-center rounded-sm bg-[#20272a]" aria-hidden />
+            Trámites SINCA 1.0 ({totalSinca})
+          </label>
+          <p className="ml-6 text-[11px] text-stone-400">
+            Resoluciones históricas de SINCA 1.0 que registraron coordenadas. Capa independiente: no se mezcla con los filtros,
+            mediciones ni descargas de Trámites ambientales 2.0.
+          </p>
+        </div>
+      )}
       <label className="flex items-center gap-2 text-sm text-stone-700">
         <input type="checkbox" checked={capaMunicipios} onChange={(e) => onCapaMunicipios(e.target.checked)} />
         Límites municipales

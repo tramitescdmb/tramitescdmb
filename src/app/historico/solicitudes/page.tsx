@@ -57,7 +57,7 @@ export default async function HistoricoSolicitudesPage({
     return `/api/historico/exportar?${params.toString()}`;
   };
 
-  const hayFiltros = Boolean(filtros.q || rango || filtros.tipo || filtros.municipio || filtros.estado);
+  const hayFiltros = Boolean(filtros.q || rango || filtros.tipo || filtros.municipio || filtros.estado || filtros.coordenadas);
 
   const clausulasFiltro: string[] = [];
   if (filtros.tipo) {
@@ -68,6 +68,8 @@ export default async function HistoricoSolicitudesPage({
   if (filtros.municipio) clausulasFiltro.push(`en ${filtros.municipio}`);
   if (filtros.estado) clausulasFiltro.push(`en estado "${filtros.estado}"`);
   if (filtros.q) clausulasFiltro.push(`que coinciden con "${filtros.q}"`);
+  if (filtros.coordenadas === "con") clausulasFiltro.push("con coordenadas");
+  if (filtros.coordenadas === "sin") clausulasFiltro.push("sin coordenadas");
   const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
@@ -125,6 +127,15 @@ export default async function HistoricoSolicitudesPage({
               {opciones.estados.map((e) => (
                 <option key={e.nombre} value={e.nombre}>{e.nombre} ({e.total})</option>
               ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="mb-1.5 block text-xs font-medium text-graphite-600">Coordenadas</span>
+            <select name="coordenadas" defaultValue={filtros.coordenadas ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15">
+              <option value="">Todas</option>
+              <option value="con">Con coordenadas</option>
+              <option value="sin">Sin coordenadas</option>
             </select>
           </label>
 

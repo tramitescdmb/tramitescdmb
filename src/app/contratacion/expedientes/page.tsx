@@ -9,6 +9,7 @@ import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { CarpetaExpedienteContractual } from "@/components/CarpetaExpedienteContractual";
 import { BotonDescargarZip } from "@/components/BotonDescargarZip";
 import { formatearFecha } from "@/lib/fecha";
+import { TablaExpedientesContractuales } from "@/components/tablas/TablaExpedientesContractuales";
 
 export default async function ExpedientesContratacionPage({
   searchParams,
@@ -139,56 +140,25 @@ export default async function ExpedientesContratacionPage({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
-                <th className="px-3 py-2">Número</th>
-                <th className="px-3 py-2">N.º proceso SECOP</th>
-                <th className="px-3 py-2">N.º contrato</th>
-                <th className="px-3 py-2">Objeto</th>
-                <th className="px-3 py-2">Modalidad</th>
-                <th className="px-3 py-2">Dependencia</th>
-                <th className="px-3 py-2">Contratista</th>
-                <th className="px-3 py-2">Documentos</th>
-                <th className="px-3 py-2">Etapa</th>
-                <th className="px-3 py-2">Creado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((e) => (
-                <tr key={e.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
-                  <td className="px-3 py-2 font-mono text-xs">
-                    <Link href={`/contratacion/expedientes/${e.id}`} className="text-cdmb-700 hover:underline">
-                      {e.numero}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-stone-500">{e.numeroProcesoSecop ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-stone-500">{e.numeroContrato ?? "—"}</td>
-                  <td className="max-w-xs truncate px-3 py-2" title={e.objeto}>{e.objeto}</td>
-                  <td className="px-3 py-2 text-xs text-stone-500">{ETIQUETA_MODALIDAD[e.modalidadSeleccion]}</td>
-                  <td className="px-3 py-2 text-xs text-stone-500">{e.dependenciaSolicitante.nombre}</td>
-                  <td className="px-3 py-2 text-xs text-stone-500">{e.contratista?.nombreORazonSocial ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-stone-500">{e._count.documentos}</td>
-                  <td className="px-3 py-2 text-xs">
-                    {!e.cerrado && e.etapaActual === "CONTRACTUAL" && !e.fechaInicio ? (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700" title="Sin fecha de inicio: no se calculan plazos ni vencimientos.">
-                        Pendiente de inicio
-                      </span>
-                    ) : (
-                      <span
-                        className={`rounded-full px-2 py-0.5 font-medium ${
-                          e.cerrado ? "bg-stone-100 text-stone-600" : "bg-cdmb-50 text-cdmb-700"
-                        }`}
-                      >
-                        {e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual]}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-stone-400">{formatearFecha(e.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TablaExpedientesContractuales
+            filas={filas.map((e) => {
+              const pendiente = !e.cerrado && e.etapaActual === "CONTRACTUAL" && !e.fechaInicio;
+              return {
+                id: e.id,
+                numero: e.numero,
+                numeroProcesoSecop: e.numeroProcesoSecop,
+                numeroContrato: e.numeroContrato,
+                objeto: e.objeto,
+                modalidad: ETIQUETA_MODALIDAD[e.modalidadSeleccion],
+                dependencia: e.dependenciaSolicitante.nombre,
+                contratista: e.contratista?.nombreORazonSocial ?? null,
+                documentos: e._count.documentos,
+                etapa: pendiente ? "Pendiente de inicio" : e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
+                tonoEtapa: pendiente ? "pendiente" : e.cerrado ? "cerrado" : "activa",
+                creado: formatearFecha(e.createdAt),
+              };
+            })}
+          />
         </div>
       )}
 

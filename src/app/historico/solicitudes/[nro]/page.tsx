@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, MapPin, FileText, Building2, ClipboardList, Download, ScrollText } from "lucide-react";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { ArrowLeft, MapPin, FileText, Building2, ClipboardList, Download, ScrollText, Crosshair } from "lucide-react";import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi, type SincaNit } from "@/lib/sinca";
@@ -148,13 +147,18 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
             <Campo k="N.º de predios" v={txt(d?.nropredios_sol)} />
             <Campo k="Área (m²)" v={txt(d?.area_sol)} />
           </dl>
-          {base.lat != null && base.lon != null && (
-            <p className="mt-3 flex items-center gap-1.5 border-t border-stone-100 pt-2 text-xs text-stone-500">
-              <MapPin className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
-              {base.lat.toFixed(5)}, {base.lon.toFixed(5)} ·{" "}
-              <a href={`https://www.openstreetmap.org/?mlat=${base.lat}&mlon=${base.lon}#map=15/${base.lat}/${base.lon}`} target="_blank" rel="noopener noreferrer" className="text-cdmb-700 underline">
-                mapa
-              </a>
+          {base.lat != null && base.lon != null ? (
+            <p className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-2 text-xs text-stone-600">
+              <Crosshair className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
+              Latitud {base.lat.toFixed(6)} · Longitud {base.lon.toFixed(6)} (WGS84) ·
+              <Link href={`/geovisor?capa=sinca&punto=${base.nroSolicitud}`} className="text-cdmb-700 underline">
+                ver en el visor de trámites
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-3 flex items-center gap-1.5 border-t border-stone-100 pt-2 text-xs text-stone-400">
+              <Crosshair className="h-3.5 w-3.5 flex-none" aria-hidden />
+              SINCA 1.0 no registró coordenadas para este trámite.
             </p>
           )}
         </Tarjeta>

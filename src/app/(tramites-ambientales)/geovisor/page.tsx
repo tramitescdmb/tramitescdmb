@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederTramite, puedeAccederSeccion } from "@/lib/permisos";
+import { sincaConfigurado } from "@/lib/sinca";
+import { formatearFecha } from "@/lib/fecha";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { GeovisorTramites } from "@/components/GeovisorTramites";
@@ -23,6 +25,25 @@ export default async function GeovisorPage({ searchParams }: { searchParams: Pro
   if (tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: tramiteIdsPermitidos } });
   if (rango) filtros.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   const where: Prisma.ExpedienteWhereInput = { AND: filtros };
+
+  const veSinca = sincaConfigurado() && (permisos ? puedeAccederSeccion(permisos, "SINCA_BASE") : false);
+  const puntosSinca = veSinca
+    ? await db.sincaResolucion.findMany({
+        where: { lat: { not: null }, lon: { not: null } },
+        orderBy: { fechaResolucion: "desc" },
+        select: {
+          nroSolicitud: true,
+          numeroResolucion: true,
+          tipoSolicitudNombre: true,
+          tipoSolicitud: true,
+          municipio: true,
+          estado: true,
+          fechaResolucion: true,
+          lat: true,
+          lon: true,
+        },
+      })
+    : [];
 
   const expedientes = await db.expediente.findMany({
     where,
@@ -61,6 +82,16 @@ export default async function GeovisorPage({ searchParams }: { searchParams: Pro
 
       <GeovisorTramites
         tramites={tramites}
+        puntosSinca={puntosSinca.map((p) => ({
+          nroSolicitud: p.nroSolicitud,
+          numeroResolucion: p.numeroResolucion,
+          tipo: p.tipoSolicitudNombre ?? p.tipoSolicitud,
+          municipio: p.municipio,
+          estado: p.estado,
+          fecha: p.fechaResolucion ? formatearFecha(p.fechaResolucion) : null,
+          lat: p.lat!,
+          lon: p.lon!,
+        }))}
         expedientes={expedientes.map((e) => ({
           id: e.id,
           numero: e.numero,
