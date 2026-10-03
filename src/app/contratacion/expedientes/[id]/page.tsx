@@ -2,7 +2,10 @@ import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree } from "lucide-react";
+import { catalogoSeriesBuscables } from "@/lib/trd-clasificacion";
+import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
+import { ReclasificarTrdContratoForm } from "@/components/ReclasificarTrdContratoForm";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -121,6 +124,17 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     where: { id },
     include: {
       dependenciaSolicitante: { select: { nombre: true } },
+      subserie: {
+        select: {
+          codigo: true,
+          nombre: true,
+          serieId: true,
+          retencionGestionAnios: true,
+          retencionCentralAnios: true,
+          disposicionesFinal: true,
+          serie: { select: { nombre: true, dependencia: { select: { nombre: true } } } },
+        },
+      },
       contratista: { select: { id: true, nombreORazonSocial: true, identificacion: true } },
       expedienteRelacionado: { select: { numero: true } },
       expedientesQueLoReferencian: { select: { id: true, numero: true } },
@@ -154,7 +168,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
   const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
-  const [supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const [seriesTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+    puedeEditarDatosGenerales ? catalogoSeriesBuscables() : Promise.resolve([]),
     puedeGestionar
       ? db.usuario.findMany({
           where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -512,6 +527,37 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             )}
           </div>
         </dl>
+
+        <div className="mt-3 border-t border-stone-100 pt-3 text-sm">
+          <div className="flex flex-wrap items-start gap-1.5">
+            <FolderTree className="mt-0.5 h-3.5 w-3.5 text-stone-400" aria-hidden />
+            <span className="text-stone-500">Clasificación TRD:</span>
+            {expediente.subserie ? (
+              <span className="min-w-0">
+                <span className="font-medium text-stone-800">
+                  {expediente.subserie.serie.dependencia?.nombre} · {expediente.subserie.serie.nombre} · {expediente.subserie.codigo} — {expediente.subserie.nombre}
+                </span>
+                <span className="block text-xs text-stone-500">{resumenRetencion(subserieBuscable({ id: expediente.subserieId!, ...expediente.subserie }))}</span>
+              </span>
+            ) : (
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin clasificar</span>
+            )}
+          </div>
+          {puedeEditarDatosGenerales && (
+            <details className="mt-2 text-xs" open={!expediente.subserie}>
+              <summary className="cursor-pointer font-medium text-cdmb-700">{expediente.subserie ? "Reclasificar" : "Clasificar este expediente"}</summary>
+              <div className="mt-2">
+                <ReclasificarTrdContratoForm
+                  expedienteId={id}
+                  series={seriesTrd}
+                  objeto={expediente.objeto}
+                  serieIdActual={expediente.subserie?.serieId ?? null}
+                  subserieIdActual={expediente.subserieId}
+                />
+              </div>
+            </details>
+          )}
+        </div>
 
         {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0)) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stone-100 pt-3 text-xs text-stone-500">

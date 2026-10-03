@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       dependenciaSolicitanteId,
       contratistaId: body.contratistaId ? String(body.contratistaId) : null,
       supervisorUsuarioIds,
+      subserieId: body.subserieId ? String(body.subserieId) : null,
       creadoPorId: session.userId,
     });
     return NextResponse.json({ id: expediente.id, numero: expediente.numero }, { status: 201 });

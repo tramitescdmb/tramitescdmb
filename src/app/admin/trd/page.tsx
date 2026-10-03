@@ -47,13 +47,18 @@ export default async function AdminTrdPage() {
 
       <SectionHelp>
         Un expediente (de trámite o de contrato) es UN solo legajo archivístico: se clasifica una vez por tipo de
-        trámite (o, en GECON, una sola vez para toda la contratación), no por cada documento individual. Cada documento
-        exigido dentro de ese expediente sí puede tener su propio tipo documental, dentro de la misma subserie.
+        trámite o, en GECON, por contrato según su tipo (Prestación de Servicios, Obra, Consultoría, Convenios…), no por
+        cada documento individual. Cada documento exigido dentro de ese expediente sí puede tener su propio tipo
+        documental.
       </SectionHelp>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="text-sm font-semibold text-stone-900">GECON — subserie de la contratación</h2>
-        <p className="mb-3 text-xs text-stone-500">Aplica a todos los expedientes contractuales, sin importar la modalidad.</p>
+        <h2 className="text-sm font-semibold text-stone-900">GECON — subserie de respaldo</h2>
+        <p className="mb-3 text-xs text-stone-500">
+          Cada contrato se clasifica en su propio expediente: al crearlo se sugiere la subserie según el objeto y se puede
+          reclasificar después. Esta subserie solo se usa para calcular la retención de los contratos que todavía no tienen
+          clasificación propia.
+        </p>
         <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} series={series} />
       </section>
 

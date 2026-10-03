@@ -14,12 +14,15 @@ import {
   UserPlus,
   Users,
   AlertTriangle,
+  FolderTree,
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
 import { Field } from "@/components/Field";
 import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
+import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
+import { SelectorTrdContrato } from "@/components/SelectorTrdContrato";
 
 type Opcion = { id: string; nombre: string };
 type SupervisorOpcion = { id: string; nombre: string; dependenciaNombre?: string | null };
@@ -67,7 +70,9 @@ export function NuevoExpedienteContractualForm({
   dependencias,
   supervisores,
   modalidades,
+  series,
 }: {
+  series: SerieBuscable[];
   dependencias: Opcion[];
   supervisores: SupervisorOpcion[];
   modalidades: ModalidadOpcion[];
@@ -82,6 +87,8 @@ export function NuevoExpedienteContractualForm({
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinEstimada, setFechaFinEstimada] = useState("");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState("");
+  const [serieTrdId, setSerieTrdId] = useState("");
+  const [subserieTrdId, setSubserieTrdId] = useState("");
   const [supervisorUsuarioIds, setSupervisorUsuarioIds] = useState<Set<string>>(new Set());
   const [filtroSupervisor, setFiltroSupervisor] = useState("");
   const [dependenciaFiltroSupervisor, setDependenciaFiltroSupervisor] = useState("");
@@ -191,6 +198,7 @@ export function NuevoExpedienteContractualForm({
           dependenciaSolicitanteId,
           contratistaId,
           supervisorUsuarioIds: Array.from(supervisorUsuarioIds),
+          subserieId: subserieTrdId || null,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -246,7 +254,27 @@ export function NuevoExpedienteContractualForm({
 
           <div className="border-t border-dashed border-stone-100" />
 
-          <SeccionFormulario n={2} icon={CircleDollarSign} titulo="Presupuesto y plazo" subtitulo="Opcional.">
+          <SeccionFormulario
+            n={2}
+            icon={FolderTree}
+            titulo="Clasificación TRD"
+            subtitulo="Dependencia, serie y subserie donde se archiva todo el expediente. Se sugiere según el objeto; puede cambiarla ahora o reclasificarla después."
+          >
+            <SelectorTrdContrato
+              series={series}
+              objeto={objeto}
+              serieId={serieTrdId}
+              subserieId={subserieTrdId}
+              onChange={(s, ss) => {
+                setSerieTrdId(s);
+                setSubserieTrdId(ss);
+              }}
+            />
+          </SeccionFormulario>
+
+          <div className="border-t border-dashed border-stone-100" />
+
+          <SeccionFormulario n={3} icon={CircleDollarSign} titulo="Presupuesto y plazo" subtitulo="Opcional.">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Valor del contrato" icon={<CircleDollarSign className="h-4 w-4" />} help="En pesos colombianos.">
                 <CampoMoneda value={valor} onChange={setValor} className="rounded-xl" />
@@ -282,7 +310,7 @@ export function NuevoExpedienteContractualForm({
           <div className="border-t border-dashed border-stone-100" />
 
           <SeccionFormulario
-            n={3}
+            n={4}
             icon={UserSearch}
             titulo="Contratista"
             subtitulo="Opcional en esta etapa."
@@ -366,7 +394,7 @@ export function NuevoExpedienteContractualForm({
           {supervisores.length > 0 && (
             <>
               <div className="border-t border-dashed border-stone-100" />
-              <SeccionFormulario n={4} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
+              <SeccionFormulario n={5} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
               <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   type="text"

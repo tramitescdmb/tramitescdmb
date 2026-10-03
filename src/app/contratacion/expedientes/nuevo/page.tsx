@@ -3,6 +3,7 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
+import { catalogoSeriesBuscables } from "@/lib/trd-clasificacion";
 import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
@@ -16,7 +17,8 @@ export default async function NuevoExpedienteContractualPage() {
     return <AccesoRestringido titulo="Nuevo expediente" quien="administrador o jefe de contratación" volverHref="/contratacion/expedientes" volverLabel="Ver expedientes" />;
   }
 
-  const [dependencias, supervisores] = await Promise.all([
+  const [series, dependencias, supervisores] = await Promise.all([
+    catalogoSeriesBuscables(),
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
     db.usuario.findMany({
       where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
@@ -30,6 +32,7 @@ export default async function NuevoExpedienteContractualPage() {
     <section className="mx-auto max-w-3xl space-y-4">
       <TituloSeccion icon={FilePlus2}>Nuevo expediente contractual</TituloSeccion>
       <NuevoExpedienteContractualForm
+        series={series}
         dependencias={dependencias}
         supervisores={supervisoresOpciones}
         modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}

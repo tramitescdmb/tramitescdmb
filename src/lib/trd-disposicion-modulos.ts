@@ -55,19 +55,24 @@ export async function contratosEnDisposicion(): Promise<{ clasificados: Expedien
 
   const contratos = await db.expedienteContractual.findMany({
     where: { fechaCierre: { not: null }, eliminado: false },
-    select: { id: true, numero: true, fechaCierre: true },
+    select: {
+      id: true,
+      numero: true,
+      fechaCierre: true,
+      subserie: { select: { nombre: true, retencionGestionAnios: true, retencionCentralAnios: true } },
+    },
   });
   const ahora = new Date();
-  if (!subserie) return { clasificados: [], sinClasificar: contratos.length };
-
-  const clasificados = contratos.map((c) => {
-    const { fase, fechaFinGestion, fechaFinCentral } = calcularFaseArchivistica(
-      c.fechaCierre!,
-      subserie.retencionGestionAnios,
-      subserie.retencionCentralAnios,
-      ahora
-    );
-    return { id: c.id, numero: c.numero, fechaCierre: c.fechaCierre!, fase, fechaFinGestion, fechaFinCentral, subserie: subserie.nombre };
-  });
-  return { clasificados, sinClasificar: 0 };
+  const clasificados: ExpedienteEnDisposicion[] = [];
+  let sinClasificar = 0;
+  for (const c of contratos) {
+    const s = c.subserie ?? subserie;
+    if (!s || !c.fechaCierre) {
+      sinClasificar++;
+      continue;
+    }
+    const { fase, fechaFinGestion, fechaFinCentral } = calcularFaseArchivistica(c.fechaCierre, s.retencionGestionAnios, s.retencionCentralAnios, ahora);
+    clasificados.push({ id: c.id, numero: c.numero, fechaCierre: c.fechaCierre, fase, fechaFinGestion, fechaFinCentral, subserie: s.nombre });
+  }
+  return { clasificados, sinClasificar };
 }

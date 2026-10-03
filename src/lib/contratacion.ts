@@ -288,9 +288,11 @@ export async function crearExpedienteContractual(datos: {
   dependenciaSolicitanteId: string;
   contratistaId?: string | null;
   supervisorUsuarioIds?: string[];
+  subserieId?: string | null;
   creadoPorId: string;
 }) {
   if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
+  const subserie = datos.subserieId ? await validarSubserieContrato(datos.subserieId) : null;
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
   validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null);
 
@@ -313,6 +315,7 @@ export async function crearExpedienteContractual(datos: {
       fechaInicio: datos.fechaInicio ?? null,
       fechaFinEstimada: datos.fechaFinEstimada ?? null,
       dependenciaSolicitanteId: datos.dependenciaSolicitanteId,
+      subserieId: subserie?.id ?? null,
       contratistaId: datos.contratistaId || null,
       creadoPorId: datos.creadoPorId,
       etapas: { create: { etapa: "PRECONTRACTUAL" } },
@@ -322,8 +325,36 @@ export async function crearExpedienteContractual(datos: {
     },
   });
 
-  await registrarEventoContratacion(expediente.id, "CREACION", `Expediente contractual creado: ${expediente.numero}`, datos.creadoPorId);
+  await registrarEventoContratacion(
+    expediente.id,
+    "CREACION",
+    `Expediente contractual creado: ${expediente.numero}${subserie ? ` · TRD ${subserie.etiqueta}` : " · sin clasificación TRD"}`,
+    datos.creadoPorId
+  );
   return expediente;
+}
+
+async function validarSubserieContrato(subserieId: string) {
+  const s = await db.subserieDocumental.findUnique({
+    where: { id: subserieId },
+    select: { id: true, codigo: true, nombre: true, activo: true, serie: { select: { activo: true, vigenteHasta: true } } },
+  });
+  if (!s || !s.activo || !s.serie.activo || s.serie.vigenteHasta) throw new Error("La subserie TRD elegida no existe o no está vigente.");
+  return { id: s.id, etiqueta: `${s.codigo} — ${s.nombre}` };
+}
+
+export async function reclasificarTrdContrato(expedienteId: string, subserieId: string, motivo: string, usuarioId: string) {
+  if (!motivo.trim()) throw new Error("Indique el motivo de la reclasificación.");
+  const actual = await db.expedienteContractual.findUnique({
+    where: { id: expedienteId },
+    select: { eliminado: true, subserie: { select: { codigo: true, nombre: true } } },
+  });
+  if (!actual || actual.eliminado) throw new Error("El expediente no existe.");
+  const nueva = await validarSubserieContrato(subserieId);
+  await db.expedienteContractual.update({ where: { id: expedienteId }, data: { subserieId: nueva.id } });
+  const anterior = actual.subserie ? `${actual.subserie.codigo} — ${actual.subserie.nombre}` : "sin clasificación";
+  await registrarEventoContratacion(expedienteId, "RECLASIFICACION_TRD", `TRD: ${anterior} → ${nueva.etiqueta}. Motivo: ${motivo.trim()}`, usuarioId);
+  return nueva;
 }
 
 export async function agregarDocumentoContrato(datos: {

@@ -1000,12 +1000,13 @@ model SubserieDocumental {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  serie                   SerieDocumental        @relation(fields: [serieId], references: [id], onDelete: Cascade)
-  comunicaciones          Comunicacion[]
-  tiposDocumentales       TipoDocumental[]
-  expedientesDocumentales ExpedienteDocumental[]
-  tramiteTipos            TramiteTipo[]
-  configuracionesSitio    ConfiguracionSitio[]
+  serie                    SerieDocumental         @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  comunicaciones           Comunicacion[]
+  tiposDocumentales        TipoDocumental[]
+  expedientesDocumentales  ExpedienteDocumental[]
+  tramiteTipos             TramiteTipo[]
+  configuracionesSitio     ConfiguracionSitio[]
+  expedientesContractuales ExpedienteContractual[]
 
   @@unique([serieId, codigo])
   @@index([serieId])
@@ -1694,6 +1695,7 @@ model ExpedienteContractual {
   fechaInicio              DateTime?
   fechaFinEstimada         DateTime?
   dependenciaSolicitanteId String
+  subserieId               String?
   etapaActual              EtapaContratacion  @default(PRECONTRACTUAL)
   cerrado                  Boolean            @default(false)
   fechaCierre              DateTime?
@@ -1710,6 +1712,7 @@ model ExpedienteContractual {
   motivoEliminacion String?   @db.Text
 
   dependenciaSolicitante Dependencia            @relation(fields: [dependenciaSolicitanteId], references: [id])
+  subserie               SubserieDocumental?    @relation(fields: [subserieId], references: [id])
   contratista            Contratista?           @relation(fields: [contratistaId], references: [id])
   creadoPor              Usuario                @relation("ExpContractualCreadoPor", fields: [creadoPorId], references: [id])
   expedienteRelacionado  ExpedienteContractual? @relation("ExpedienteContractualRelacionado", fields: [expedienteRelacionadoId], references: [id])
@@ -1726,6 +1729,7 @@ model ExpedienteContractual {
 
   @@index([etapaActual])
   @@index([dependenciaSolicitanteId])
+  @@index([subserieId])
   @@index([contratistaId])
   @@index([expedienteRelacionadoId])
   @@index([numeroContrato])
