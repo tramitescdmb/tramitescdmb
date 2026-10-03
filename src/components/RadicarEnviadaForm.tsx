@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, X, ShieldCheck } from "lucide-react";
+import { Loader2, Upload, X, ShieldCheck, Reply, UserRound, FileText, Paperclip } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
@@ -199,7 +200,7 @@ export function RadicarEnviadaForm({
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-1 text-sm font-semibold text-stone-900">¿Responde a una comunicación recibida?</h2>
+        <EncabezadoPaso numero={1} icono={<Reply className="h-4 w-4" aria-hidden />} titulo="¿Responde a una comunicación recibida?" />
         <p className="mb-3 text-xs text-stone-400">
           Busque por radicado, asunto o tercero. Al elegirla se cargan el destinatario, el asunto, la respuesta del
           funcionario, la dependencia que respondió, la clasificación TRD y los documentos de la respuesta. Esa recibida
@@ -225,7 +226,7 @@ export function RadicarEnviadaForm({
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-stone-900">Destinatario</h2>
+          <EncabezadoPaso numero={2} icono={<UserRound className="h-4 w-4" aria-hidden />} titulo="Destinatario" />
           {destinatarioBloqueado && (
             <button
               type="button"
@@ -296,7 +297,12 @@ export function RadicarEnviadaForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Oficio</h2>
+        <EncabezadoPaso
+          numero={3}
+          icono={<FileText className="h-4 w-4" aria-hidden />}
+          titulo="Oficio y clasificación"
+          descripcion="Asunto, contenido, medio de envío y la serie/subserie de la TRD."
+        />
         <SectionHelp>
           Al radicar queda firmado con hash SHA-256 (Ley 527/1999) — el asunto y el contenido dejan de poder
           modificarse sin que se detecte.
@@ -378,8 +384,12 @@ export function RadicarEnviadaForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
-        <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
+        <EncabezadoPaso
+          numero={4}
+          icono={<Paperclip className="h-4 w-4" aria-hidden />}
+          titulo="Documentos adjuntos"
+          descripcion={respondeAId ? undefined : `Hasta ${MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo ${TAMANO_MAXIMO_SGDEA_MB} MB.`}
+        />
         {respondeAId ? (
           <SectionHelp>
             {documentosRespuesta.length > 0

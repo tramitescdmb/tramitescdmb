@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, UserRound, Mail, FolderTree, Paperclip } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
+import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
 import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
@@ -12,8 +14,7 @@ import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
 
 type Dependencia = { id: string; nombre: string };
-type Subserie = { id: string; codigo: string; nombre: string };
-type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
+type Serie = SerieBuscable;
 
 const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI", "ANONIMO", "OTRO"];
 const TIPOS_PQRSD = [
@@ -158,7 +159,12 @@ export function VentanillaRadicacionForm({
       {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Remitente</h2>
+        <EncabezadoPaso
+          numero={1}
+          icono={<UserRound className="h-4 w-4" aria-hidden />}
+          titulo="Remitente"
+          descripcion="Quién envía la comunicación. Escriba primero la identificación: si ya radicó antes, se cargan sus datos."
+        />
         <SectionHelp>
           Si queda identificado (documento) y con municipio, se guarda en el registro maestro de terceros para no
           volver a digitarlo en el próximo radicado.
@@ -218,7 +224,12 @@ export function VentanillaRadicacionForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Comunicación</h2>
+        <EncabezadoPaso
+          numero={2}
+          icono={<Mail className="h-4 w-4" aria-hidden />}
+          titulo="Comunicación"
+          descripcion="Asunto, qué se solicita, medio de recepción y si es una PQRSD con término de ley."
+        />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-4">
             <Field label="Asunto" required>
@@ -260,9 +271,16 @@ export function VentanillaRadicacionForm({
             </Field>
           </div>
         </div>
+      </section>
 
-        <div className="mt-4 border-t border-stone-100 pt-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Clasificación y destino (TRD)</h3>
+      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+        <div>
+          <EncabezadoPaso
+            numero={3}
+            icono={<FolderTree className="h-4 w-4" aria-hidden />}
+            titulo="Destino y clasificación (TRD)"
+            descripcion="A qué dependencia va y en qué serie y subserie se archiva."
+          />
           <SectionHelp>
             La dependencia destino es a quién va dirigida (se puede repartir después). La clasificación TRD es
             opcional al radicar y se corrige luego desde el detalle — la serie y la subserie que puede elegir ya
@@ -292,8 +310,12 @@ export function VentanillaRadicacionForm({
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
-        <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
+        <EncabezadoPaso
+          numero={4}
+          icono={<Paperclip className="h-4 w-4" aria-hidden />}
+          titulo="Documentos adjuntos"
+          descripcion={`El documento recibido y sus anexos digitalizados. Hasta ${MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo ${TAMANO_MAXIMO_SGDEA_MB} MB.`}
+        />
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
           <Upload className="h-4 w-4" aria-hidden />
           Agregar archivos

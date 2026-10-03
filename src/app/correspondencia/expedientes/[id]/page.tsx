@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload } from "lucide-react";
+import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
@@ -264,462 +265,515 @@ export default async function ExpedienteDetallePage({
         )}
       </div>
 
-      {puedePrestar && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
-            <Handshake className="h-3.5 w-3.5" aria-hidden />
-            Préstamo
-          </h3>
-          <SectionHelp>Registra quién tiene el expediente en este momento — no bloquea subir, editar ni cerrar.</SectionHelp>
-          {prestamoVigente ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-              <span>
-                Prestado a <strong>{prestamoVigente.prestadoA.nombre}</strong> desde {formatearFecha(prestamoVigente.fechaPrestamo)}
-                {prestamoVigente.fechaDevolucionEsperada && <> · vence {formatearFecha(prestamoVigente.fechaDevolucionEsperada)}</>}
-                {prestamoVigente.motivo && <> · {prestamoVigente.motivo}</>}
-              </span>
-              <form action={`/api/correspondencia/expedientes/${id}/devolver`} method="post">
-                <input type="hidden" name="prestamoId" value={prestamoVigente.id} />
-                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
-                  <Undo2 className="h-3.5 w-3.5" aria-hidden />
-                  Registrar devolución
-                </button>
-              </form>
-            </div>
-          ) : (
-            <form action={`/api/correspondencia/expedientes/${id}/prestar`} method="post" className="flex flex-wrap items-end gap-3">
-              <div className="min-w-[180px]">
-                <Field label="Prestar a" required>
-                  <select name="prestadoAId" required defaultValue="" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
-                    <option value="" disabled>— Elegir —</option>
-                    {usuariosParaPrestar.map((u) => (
-                      <option key={u.id} value={u.id}>{u.nombre}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <div className="min-w-[160px]">
-                <Field label="Devolución esperada" help="Opcional.">
-                  <input type="date" name="fechaDevolucionEsperada" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                </Field>
-              </div>
-              <div className="min-w-[200px] flex-1">
-                <Field label="Motivo" help="Opcional.">
-                  <input name="motivo" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                </Field>
-              </div>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-                <Handshake className="h-3.5 w-3.5" aria-hidden />
-                Prestar
-              </button>
-            </form>
-          )}
-          {historialPrestamos.length > 0 && (
-            <ul className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-xs text-stone-400">
-              {historialPrestamos.map((p) => (
-                <li key={p.id}>
-                  {p.prestadoA.nombre}: {formatearFecha(p.fechaPrestamo)} → {formatearFecha(p.fechaDevolucionReal)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {puedeEditar && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
-            <Pencil className="h-3.5 w-3.5" aria-hidden />
-            Asunto y descripción
-          </h3>
-          <SectionHelp>Lo que identifica a este expediente en el listado — se puede corregir mientras siga abierto.</SectionHelp>
-          <form action={`/api/correspondencia/expedientes/${id}/editar`} method="post" className="space-y-3">
-            <Field label="Asunto" required>
-              <input name="asunto" required defaultValue={expediente.asunto} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-            </Field>
-            <Field label="Descripción">
-              <input name="descripcion" defaultValue={expediente.descripcion ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-            </Field>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              <Pencil className="h-3.5 w-3.5" aria-hidden />
-              Guardar
-            </button>
-          </form>
-        </section>
-      )}
-
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
-          <span>Índice electrónico ({documentosActivos.length} archivo{documentosActivos.length === 1 ? "" : "s"}{documentosActivos.length > 0 ? ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}` : ""})</span>
-          {documentosActivos.length > 0 && (
-            <span className="flex items-center gap-3 normal-case tracking-normal">
-              <a
-                href={`/api/correspondencia/expedientes/${id}/indice`}
-                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
-              >
-                <Download className="h-3 w-3" aria-hidden />
-                Descargar índice (CSV)
-              </a>
-              <a
-                href={`/api/correspondencia/expedientes/${id}/indice?formato=xml`}
-                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
-              >
-                <Download className="h-3 w-3" aria-hidden />
-                XML
-              </a>
-              <a
-                href={`/api/correspondencia/expedientes/${id}/consolidado`}
-                className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
-                title="Todo el expediente en un solo PDF: portada, índice y cada archivo foliado (respuestas con rótulo y firma, luego solicitudes y adjuntos)"
-              >
-                <Download className="h-3 w-3" aria-hidden />
-                PDF consolidado
-              </a>
-            </span>
-          )}
-        </h3>
-        <SectionHelp>
-          Huella (hash) se actualiza sola al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al cerrar, el
-          índice queda firmado con hash. La lista se ve ordenada según el criterio configurado para la serie
-          (<strong>{ETIQUETA_CRITERIO_ORDEN[criterioOrden]}</strong>); el número es su orden real de incorporación al
-          índice firmado, por eso puede no coincidir con el orden visual. El folio de cada documento es el número de
-          hojas que declaró quien lo subió (por defecto 1); el rango mostrado es acumulado sobre el orden real del índice.
-        </SectionHelp>
-        {puedeAdministrarArchivo(permisos) && expediente.serie && (
-          <form action={`/api/correspondencia/series/${expediente.serie.id}/criterio-orden`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
-            <label className="text-xs">
-              <span className="mb-1 block font-medium text-stone-600">Orden de los documentos de la serie {expediente.serie.codigo}</span>
-              <select name="criterio" defaultValue={criterioOrden} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
-                {CRITERIOS_ORDEN.map((c) => (<option key={c} value={c}>{ETIQUETA_CRITERIO_ORDEN[c]}</option>))}
-              </select>
-            </label>
-            <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
-            <span className="text-[11px] text-stone-400">Aplica a todos los expedientes de esta serie. No cambia el índice firmado.</span>
-          </form>
-        )}
-        {puedeAdministrarArchivo(permisos) && expediente.serie && (
-          <form action={`/api/correspondencia/series/${expediente.serie.id}/retencion`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
-            <label className="text-xs">
-              <span className="mb-1 block font-medium text-stone-600">Retención de la serie {expediente.serie.codigo} cuenta desde</span>
-              <select name="retencionDesde" defaultValue={expediente.serie.retencionDesde} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
-                <option value="RADICACION">La radicación / creación de cada documento</option>
-                <option value="CIERRE_EXPEDIENTE">El cierre del expediente (MoReq 2.6)</option>
-              </select>
-            </label>
-            <label className="text-xs">
-              <span className="mb-1 block font-medium text-stone-600">Máx. folios por tomo (MoReq 1.43)</span>
-              <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
-            </label>
-            <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
-          </form>
-        )}
-        {documentosActivos.length === 0 ? (
-          <p className="text-sm text-stone-400">Todavía no se ha agregado ningún archivo.</p>
-        ) : (
-          <ul className="space-y-2">
-            {documentosOrdenados.map((doc) => (
-              <li key={doc.id} className="rounded-lg border border-stone-200 px-3 py-2">
-               <div className="flex items-center justify-between gap-3">
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="flex-none font-mono text-xs text-stone-400" title="Orden de incorporación al índice electrónico">{String(doc.ordenIndice).padStart(3, "0")}</span>
-                  <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-1.5">
-                      <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
-                      {doc.tipoDocumental && (
-                        <span className="flex-none rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
-                      )}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">
-                      {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
-                      {(() => {
-                        const r = rangoFolios.get(doc.id);
-                        if (!r) return null;
-                        return (
-                          <span title="Rango de folios en el índice">
-                            · Folio{r.desde === r.hasta ? ` ${r.desde}` : `s ${r.desde}-${r.hasta}`}
-                          </span>
-                        );
-                      })()}
-                      {doc.hashSha256 && (
-                        <span className="flex items-center gap-1" title={doc.hashSha256}>
-                          · <ShieldCheck className="h-3 w-3" aria-hidden /> SHA-256 {doc.hashSha256.slice(0, 12)}…
-                        </span>
-                      )}
-                      {doc.reemplaza && (
-                        <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 font-medium text-cdmb-700" title={doc.reemplaza.nombre}>
-                          Versión de {String(doc.reemplaza.ordenIndice).padStart(3, "0")}
-                        </span>
-                      )}
-                      {doc.reemplazadoPor.length > 0 && (
-                        <span className="rounded-full bg-stone-100 px-1.5 py-0.5 font-medium text-stone-500" title={doc.reemplazadoPor.map((r) => r.nombre).join(", ")}>
-                          Reemplazado por {doc.reemplazadoPor.map((r) => String(r.ordenIndice).padStart(3, "0")).join(", ")}
-                        </span>
-                      )}
-                    </span>
+      <PestanasDetalle
+        inicial={sp.bp ? "historial" : undefined}
+        grupos={[
+          {
+            id: "documentos",
+            label: "Documentos",
+            icono: <FileText className="h-4 w-4" aria-hidden />,
+            contador: documentosActivos.length,
+            contenido: (
+              <>
+            <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <h3 className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-stone-500">
+                <span>Índice electrónico ({documentosActivos.length} archivo{documentosActivos.length === 1 ? "" : "s"}{documentosActivos.length > 0 ? ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}` : ""})</span>
+                {documentosActivos.length > 0 && (
+                  <span className="flex items-center gap-3 normal-case tracking-normal">
+                    <a
+                      href={`/api/correspondencia/expedientes/${id}/indice`}
+                      className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+                    >
+                      <Download className="h-3 w-3" aria-hidden />
+                      Descargar índice (CSV)
+                    </a>
+                    <a
+                      href={`/api/correspondencia/expedientes/${id}/indice?formato=xml`}
+                      className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+                    >
+                      <Download className="h-3 w-3" aria-hidden />
+                      XML
+                    </a>
+                    <a
+                      href={`/api/correspondencia/expedientes/${id}/consolidado`}
+                      className="flex items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline"
+                      title="Todo el expediente en un solo PDF: portada, índice y cada archivo foliado (respuestas con rótulo y firma, luego solicitudes y adjuntos)"
+                    >
+                      <Download className="h-3 w-3" aria-hidden />
+                      PDF consolidado
+                    </a>
                   </span>
-                </span>
-                <span className="flex flex-none items-center gap-1.5">
-                  <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
-                  <a
-                    href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
-                  >
-                    <Download className="h-3.5 w-3.5" aria-hidden />
-                    Abrir
-                  </a>
-                </span>
-               </div>
+                )}
+              </h3>
+              <SectionHelp>
+                Huella (hash) se actualiza sola al agregar un documento (Art. 4.3.2.3 Acuerdo 001/2024 AGN). Al cerrar, el
+                índice queda firmado con hash. La lista se ve ordenada según el criterio configurado para la serie
+                (<strong>{ETIQUETA_CRITERIO_ORDEN[criterioOrden]}</strong>); el número es su orden real de incorporación al
+                índice firmado, por eso puede no coincidir con el orden visual. El folio de cada documento es el número de
+                hojas que declaró quien lo subió (por defecto 1); el rango mostrado es acumulado sobre el orden real del índice.
+              </SectionHelp>
+              {puedeSubir && (
+                <div id="agregar-documento" className="mb-4 rounded-lg border border-cdmb-100 bg-cdmb-50/40 p-3">
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-cdmb-800"><Upload className="h-4 w-4" aria-hidden /> Agregar documento o nueva versión</p>
+                  <SubirDocumentoExpedienteForm
+                    expedienteId={id}
+                    tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []}
+                    documentosExistentes={documentosActivos.map((d) => ({ id: d.id, nombre: d.nombre }))}
+                  />
+                </div>
+              )}
+              {documentosActivos.length === 0 ? (
+                <p className="text-sm text-stone-400">Todavía no se ha agregado ningún archivo.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {documentosOrdenados.map((doc) => (
+                    <li key={doc.id} className="rounded-lg border border-stone-200 px-3 py-2">
+                     <div className="flex items-center justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex-none font-mono text-xs text-stone-400" title="Orden de incorporación al índice electrónico">{String(doc.ordenIndice).padStart(3, "0")}</span>
+                        <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-1.5">
+                            <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
+                            {doc.tipoDocumental && (
+                              <span className="flex-none rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
+                            )}
+                          </span>
+                          <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">
+                            {doc.subidoPor.nombre} · {doc.fechaDocumento ? <>{formatearFecha(doc.fechaDocumento)} (doc.) · subido {fechaHora(doc.createdAt)}</> : fechaHora(doc.createdAt)}
+                            {(() => {
+                              const r = rangoFolios.get(doc.id);
+                              if (!r) return null;
+                              return (
+                                <span title="Rango de folios en el índice">
+                                  · Folio{r.desde === r.hasta ? ` ${r.desde}` : `s ${r.desde}-${r.hasta}`}
+                                </span>
+                              );
+                            })()}
+                            {doc.hashSha256 && (
+                              <span className="flex items-center gap-1" title={doc.hashSha256}>
+                                · <ShieldCheck className="h-3 w-3" aria-hidden /> SHA-256 {doc.hashSha256.slice(0, 12)}…
+                              </span>
+                            )}
+                            {doc.reemplaza && (
+                              <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 font-medium text-cdmb-700" title={doc.reemplaza.nombre}>
+                                Versión de {String(doc.reemplaza.ordenIndice).padStart(3, "0")}
+                              </span>
+                            )}
+                            {doc.reemplazadoPor.length > 0 && (
+                              <span className="rounded-full bg-stone-100 px-1.5 py-0.5 font-medium text-stone-500" title={doc.reemplazadoPor.map((r) => r.nombre).join(", ")}>
+                                Reemplazado por {doc.reemplazadoPor.map((r) => String(r.ordenIndice).padStart(3, "0")).join(", ")}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="flex flex-none items-center gap-1.5">
+                        <VistaPreviaDocumento url={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
+                        <a
+                          href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                        >
+                          <Download className="h-3.5 w-3.5" aria-hidden />
+                          Abrir
+                        </a>
+                      </span>
+                     </div>
 
-               {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0 || (abierto && puedeEditar)) && (() => {
-                const miSolicitud = doc.solicitudesFirma.find((x) => x.usuarioAsignadoId === session.userId && x.estado === "PENDIENTE" && x.rol !== "LECTURA");
-                const miTurno = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
-                const yaFirme = doc.firmas.some((f) => f.usuario.id === session.userId);
-                const pendientes = doc.solicitudesFirma.filter((x) => x.estado === "PENDIENTE" && x.rol !== "LECTURA").length;
-                return (
-                  <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs" open={Boolean(miTurno)}>
-                    <summary className="cursor-pointer text-stone-500 hover:text-stone-800">
-                      Firmas electrónicas
-                      {doc.firmas.length > 0 && <span className="ml-1 text-emerald-700">· {doc.firmas.length} firmada{doc.firmas.length === 1 ? "" : "s"}</span>}
-                      {pendientes > 0 && <span className="ml-1 text-amber-700">· {pendientes} pendiente{pendientes === 1 ? "" : "s"}</span>}
-                    </summary>
-                    <div className="mt-2">
-                      <PanelFirmas
-                        filas={construirFilasFirmantes(doc.solicitudesFirma, doc.firmas, "SGDEA")}
-                        vacio="Este documento todavía no está firmado."
-                        acciones={
-                          <>
-                            {miTurno && (
-                              <ConfirmarFirmaModal
-                                rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
-                                endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/completar`}
-                                endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/rechazar`}
-                                documentoNombre={doc.nombre}
-                                documentoUrl={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
-                                documentoMimeType={doc.mimeType}
-                              />
-                            )}
-                            {abierto && puedeEditar && puedeFirmarUsuario && !miSolicitud && !yaFirme && (
-                              <BotonFirmarDirecto endpoint={`/api/documentos-archivo/${doc.id}/firmar`} descripcion={`Va a firmar "${doc.nombre}" del expediente ${expediente.numero}.`} />
-                            )}
-                            {abierto && puedeEditar && (
-                              <AsignarFirmantesModal
-                                endpointAsignar={`/api/documentos-archivo/${doc.id}/solicitudes-firma`}
-                                usuarios={opcionesFirmantes}
-                                conCalidad
-                                firmantesActuales={doc.solicitudesFirma.map((x) => ({
-                                  id: x.id,
-                                  usuarioAsignadoId: x.usuarioAsignadoId,
-                                  usuarioAsignadoNombre: x.usuarioAsignado.nombre,
-                                  calidad: x.calidad,
-                                  rol: x.rol,
-                                  orden: x.orden,
-                                  estado: x.estado,
-                                  completadoEn: x.completadoEn ? fechaHora(x.completadoEn) : null,
-                                }))}
-                              />
-                            )}
-                          </>
-                        }
-                      />
-                    </div>
-                  </details>
-                );
-              })()}
+                     {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0 || (abierto && puedeEditar)) && (() => {
+                      const miSolicitud = doc.solicitudesFirma.find((x) => x.usuarioAsignadoId === session.userId && x.estado === "PENDIENTE" && x.rol !== "LECTURA");
+                      const miTurno = miSolicitud && puedeActuarSolicitud(doc.solicitudesFirma, miSolicitud);
+                      const yaFirme = doc.firmas.some((f) => f.usuario.id === session.userId);
+                      const pendientes = doc.solicitudesFirma.filter((x) => x.estado === "PENDIENTE" && x.rol !== "LECTURA").length;
+                      return (
+                        <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs" open={Boolean(miTurno)}>
+                          <summary className="cursor-pointer text-stone-500 hover:text-stone-800">
+                            Firmas electrónicas
+                            {doc.firmas.length > 0 && <span className="ml-1 text-emerald-700">· {doc.firmas.length} firmada{doc.firmas.length === 1 ? "" : "s"}</span>}
+                            {pendientes > 0 && <span className="ml-1 text-amber-700">· {pendientes} pendiente{pendientes === 1 ? "" : "s"}</span>}
+                          </summary>
+                          <div className="mt-2">
+                            <PanelFirmas
+                              filas={construirFilasFirmantes(doc.solicitudesFirma, doc.firmas, "SGDEA")}
+                              vacio="Este documento todavía no está firmado."
+                              acciones={
+                                <>
+                                  {miTurno && (
+                                    <ConfirmarFirmaModal
+                                      rol={miSolicitud!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
+                                      endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/completar`}
+                                      endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitud!.id}/rechazar`}
+                                      documentoNombre={doc.nombre}
+                                      documentoUrl={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
+                                      documentoMimeType={doc.mimeType}
+                                    />
+                                  )}
+                                  {abierto && puedeEditar && puedeFirmarUsuario && !miSolicitud && !yaFirme && (
+                                    <BotonFirmarDirecto endpoint={`/api/documentos-archivo/${doc.id}/firmar`} descripcion={`Va a firmar "${doc.nombre}" del expediente ${expediente.numero}.`} />
+                                  )}
+                                  {abierto && puedeEditar && (
+                                    <AsignarFirmantesModal
+                                      endpointAsignar={`/api/documentos-archivo/${doc.id}/solicitudes-firma`}
+                                      usuarios={opcionesFirmantes}
+                                      conCalidad
+                                      firmantesActuales={doc.solicitudesFirma.map((x) => ({
+                                        id: x.id,
+                                        usuarioAsignadoId: x.usuarioAsignadoId,
+                                        usuarioAsignadoNombre: x.usuarioAsignado.nombre,
+                                        calidad: x.calidad,
+                                        rol: x.rol,
+                                        orden: x.orden,
+                                        estado: x.estado,
+                                        completadoEn: x.completadoEn ? fechaHora(x.completadoEn) : null,
+                                      }))}
+                                    />
+                                  )}
+                                </>
+                              }
+                            />
+                          </div>
+                        </details>
+                      );
+                    })()}
 
-               {puedeEditar && (
-                <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs">
-                  <summary className="cursor-pointer text-stone-400 hover:text-stone-700">Corregir o retirar</summary>
-                  <div className="mt-2 space-y-3">
-                    <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
-                      <input type="hidden" name="accion" value="editar" />
-                      <label className="text-[11px]">
-                        <span className="mb-0.5 block font-medium text-stone-500">Nombre</span>
-                        <input name="nombre" defaultValue={doc.nombre} className="w-56 rounded-md border border-stone-200 px-2 py-1 text-xs" />
-                      </label>
-                      <label className="text-[11px]">
-                        <span className="mb-0.5 block font-medium text-stone-500">Folios</span>
-                        <input name="numeroFolios" type="number" min={1} defaultValue={doc.numeroFolios} className="w-16 rounded-md border border-stone-200 px-2 py-1 text-xs" />
-                      </label>
-                      <label className="text-[11px]">
-                        <span className="mb-0.5 block font-medium text-stone-500">Fecha del documento</span>
-                        <input name="fechaDocumento" type="date" defaultValue={doc.fechaDocumento ? doc.fechaDocumento.toISOString().slice(0, 10) : ""} className="rounded-md border border-stone-200 px-2 py-1 text-xs" />
-                      </label>
-                      {(expediente.subserie?.tiposDocumentales.length ?? 0) > 0 && (
-                        <label className="text-[11px]">
-                          <span className="mb-0.5 block font-medium text-stone-500">Tipo documental</span>
-                          <select name="tipoDocumentalId" defaultValue={doc.tipoDocumentalId ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs">
-                            <option value="">— Sin tipo —</option>
-                            {expediente.subserie!.tiposDocumentales.map((t) => (
-                              <option key={t.id} value={t.id}>{t.nombre}</option>
-                            ))}
+                     {puedeEditar && (
+                      <details className="mt-1.5 border-t border-stone-100 pt-1.5 text-xs">
+                        <summary className="cursor-pointer text-stone-400 hover:text-stone-700">Corregir o retirar</summary>
+                        <div className="mt-2 space-y-3">
+                          <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
+                            <input type="hidden" name="accion" value="editar" />
+                            <label className="text-[11px]">
+                              <span className="mb-0.5 block font-medium text-stone-500">Nombre</span>
+                              <input name="nombre" defaultValue={doc.nombre} className="w-56 rounded-md border border-stone-200 px-2 py-1 text-xs" />
+                            </label>
+                            <label className="text-[11px]">
+                              <span className="mb-0.5 block font-medium text-stone-500">Folios</span>
+                              <input name="numeroFolios" type="number" min={1} defaultValue={doc.numeroFolios} className="w-16 rounded-md border border-stone-200 px-2 py-1 text-xs" />
+                            </label>
+                            <label className="text-[11px]">
+                              <span className="mb-0.5 block font-medium text-stone-500">Fecha del documento</span>
+                              <input name="fechaDocumento" type="date" defaultValue={doc.fechaDocumento ? doc.fechaDocumento.toISOString().slice(0, 10) : ""} className="rounded-md border border-stone-200 px-2 py-1 text-xs" />
+                            </label>
+                            {(expediente.subserie?.tiposDocumentales.length ?? 0) > 0 && (
+                              <label className="text-[11px]">
+                                <span className="mb-0.5 block font-medium text-stone-500">Tipo documental</span>
+                                <select name="tipoDocumentalId" defaultValue={doc.tipoDocumentalId ?? ""} className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs">
+                                  <option value="">— Sin tipo —</option>
+                                  {expediente.subserie!.tiposDocumentales.map((t) => (
+                                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                                  ))}
+                                </select>
+                              </label>
+                            )}
+                            <button type="submit" className="rounded-md border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50">Guardar corrección</button>
+                          </form>
+                          <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
+                            <input type="hidden" name="accion" value="retirar" />
+                            <label className="flex-1 text-[11px]" style={{ minWidth: 220 }}>
+                              <span className="mb-0.5 block font-medium text-stone-500">Retirar del índice — motivo</span>
+                              <input name="motivo" required placeholder="Ej. se subió el archivo equivocado" className="w-full rounded-md border border-stone-200 px-2 py-1 text-xs" />
+                            </label>
+                            <button type="submit" className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50">
+                              <Undo2 className="h-3 w-3" aria-hidden />
+                              Retirar del índice
+                            </button>
+                          </form>
+                        </div>
+                      </details>
+                     )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {documentosRetirados.length > 0 && (
+                <details className="mt-3 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2 text-xs">
+                  <summary className="cursor-pointer font-medium text-stone-500">
+                    {documentosRetirados.length} archivo{documentosRetirados.length === 1 ? "" : "s"} retirado{documentosRetirados.length === 1 ? "" : "s"} del índice
+                  </summary>
+                  <ul className="mt-2 space-y-1.5">
+                    {documentosRetirados.map((doc) => (
+                      <li key={doc.id} className="text-stone-500">
+                        <span className="line-through">{doc.nombre}</span>
+                        {" — "}retirado {fechaHora(doc.retiradoEn)}{doc.retiradoPor ? ` por ${doc.retiradoPor.nombre}` : ""}
+                        {doc.motivoRetiro ? `: ${doc.motivoRetiro}` : ""}
+                        {" · "}
+                        <a href={`/api/documentos-archivo/${doc.id}`} target="_blank" rel="noreferrer" className="text-cdmb-700 hover:underline">ver archivo</a>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-1.5 text-[11px] text-stone-400">El archivo no se borra: queda como constancia (Ley 594/2000), fuera del índice, del hash y del FUID.</p>
+                </details>
+              )}
+
+              {puedeAdministrarArchivo(permisos) && expediente.serie && (
+                <details className="mt-4 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2 text-xs">
+                  <summary className="cursor-pointer font-medium text-stone-500">Configuración de la serie {expediente.serie.codigo} (orden, retención y tomos)</summary>
+                  <div className="mt-2">
+                    {puedeAdministrarArchivo(permisos) && expediente.serie && (
+                      <form action={`/api/correspondencia/series/${expediente.serie.id}/criterio-orden`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+                        <label className="text-xs">
+                          <span className="mb-1 block font-medium text-stone-600">Orden de los documentos de la serie {expediente.serie.codigo}</span>
+                          <select name="criterio" defaultValue={criterioOrden} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
+                            {CRITERIOS_ORDEN.map((c) => (<option key={c} value={c}>{ETIQUETA_CRITERIO_ORDEN[c]}</option>))}
                           </select>
                         </label>
-                      )}
-                      <button type="submit" className="rounded-md border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50">Guardar corrección</button>
-                    </form>
-                    <form action={`/api/correspondencia/expedientes/${id}/documento/${doc.id}`} method="post" className="flex flex-wrap items-end gap-2">
-                      <input type="hidden" name="accion" value="retirar" />
-                      <label className="flex-1 text-[11px]" style={{ minWidth: 220 }}>
-                        <span className="mb-0.5 block font-medium text-stone-500">Retirar del índice — motivo</span>
-                        <input name="motivo" required placeholder="Ej. se subió el archivo equivocado" className="w-full rounded-md border border-stone-200 px-2 py-1 text-xs" />
-                      </label>
-                      <button type="submit" className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50">
-                        <Undo2 className="h-3 w-3" aria-hidden />
-                        Retirar del índice
+                        <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
+                        <span className="text-[11px] text-stone-400">Aplica a todos los expedientes de esta serie. No cambia el índice firmado.</span>
+                      </form>
+                    )}
+                    {puedeAdministrarArchivo(permisos) && expediente.serie && (
+                      <form action={`/api/correspondencia/series/${expediente.serie.id}/retencion`} method="post" className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+                        <label className="text-xs">
+                          <span className="mb-1 block font-medium text-stone-600">Retención de la serie {expediente.serie.codigo} cuenta desde</span>
+                          <select name="retencionDesde" defaultValue={expediente.serie.retencionDesde} className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
+                            <option value="RADICACION">La radicación / creación de cada documento</option>
+                            <option value="CIERRE_EXPEDIENTE">El cierre del expediente (MoReq 2.6)</option>
+                          </select>
+                        </label>
+                        <label className="text-xs">
+                          <span className="mb-1 block font-medium text-stone-600">Máx. folios por tomo (MoReq 1.43)</span>
+                          <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
+                        </label>
+                        <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
+                      </form>
+                    )}
+                  </div>
+                </details>
+              )}
+            </section>
+
+              </>
+            ),
+          },
+          {
+            id: "comunicaciones",
+            label: "Comunicaciones",
+            icono: <Mail className="h-4 w-4" aria-hidden />,
+            contador: expediente.comunicaciones.length,
+            oculta: expediente.comunicaciones.length === 0,
+            contenido: (
+              <>
+            {expediente.comunicaciones.length > 0 && (
+              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-stone-500">Comunicaciones archivadas aquí</h3>
+                <ul className="space-y-1.5">
+                  {expediente.comunicaciones.map((c) => (
+                    <li key={c.id}>
+                      <Link href={`/correspondencia/${c.id}`} className="text-sm text-cdmb-700 hover:underline">
+                        {c.radicado}
+                      </Link>
+                      <span className="ml-2 text-xs text-stone-400">{c.asunto}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+              </>
+            ),
+          },
+          {
+            id: "administracion",
+            label: "Administración",
+            oculta: !(puedePrestar || puedeEditar || puedeAdministrarArchivo(permisos) || puedeCerrarEste || puedeReabrirEste),
+            icono: <Settings2 className="h-4 w-4" aria-hidden />,
+            contenido: (
+              <>
+            {puedePrestar && (
+              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  <Handshake className="h-3.5 w-3.5" aria-hidden />
+                  Préstamo
+                </h3>
+                <SectionHelp>Registra quién tiene el expediente en este momento — no bloquea subir, editar ni cerrar.</SectionHelp>
+                {prestamoVigente ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+                    <span>
+                      Prestado a <strong>{prestamoVigente.prestadoA.nombre}</strong> desde {formatearFecha(prestamoVigente.fechaPrestamo)}
+                      {prestamoVigente.fechaDevolucionEsperada && <> · vence {formatearFecha(prestamoVigente.fechaDevolucionEsperada)}</>}
+                      {prestamoVigente.motivo && <> · {prestamoVigente.motivo}</>}
+                    </span>
+                    <form action={`/api/correspondencia/expedientes/${id}/devolver`} method="post">
+                      <input type="hidden" name="prestamoId" value={prestamoVigente.id} />
+                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
+                        <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                        Registrar devolución
                       </button>
                     </form>
                   </div>
-                </details>
-               )}
-              </li>
-            ))}
-          </ul>
-        )}
+                ) : (
+                  <form action={`/api/correspondencia/expedientes/${id}/prestar`} method="post" className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-[180px]">
+                      <Field label="Prestar a" required>
+                        <select name="prestadoAId" required defaultValue="" className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
+                          <option value="" disabled>— Elegir —</option>
+                          {usuariosParaPrestar.map((u) => (
+                            <option key={u.id} value={u.id}>{u.nombre}</option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                    <div className="min-w-[160px]">
+                      <Field label="Devolución esperada" help="Opcional.">
+                        <input type="date" name="fechaDevolucionEsperada" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                      </Field>
+                    </div>
+                    <div className="min-w-[200px] flex-1">
+                      <Field label="Motivo" help="Opcional.">
+                        <input name="motivo" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                      </Field>
+                    </div>
+                    <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                      <Handshake className="h-3.5 w-3.5" aria-hidden />
+                      Prestar
+                    </button>
+                  </form>
+                )}
+                {historialPrestamos.length > 0 && (
+                  <ul className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-xs text-stone-400">
+                    {historialPrestamos.map((p) => (
+                      <li key={p.id}>
+                        {p.prestadoA.nombre}: {formatearFecha(p.fechaPrestamo)} → {formatearFecha(p.fechaDevolucionReal)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
 
-        {documentosRetirados.length > 0 && (
-          <details className="mt-3 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2 text-xs">
-            <summary className="cursor-pointer font-medium text-stone-500">
-              {documentosRetirados.length} archivo{documentosRetirados.length === 1 ? "" : "s"} retirado{documentosRetirados.length === 1 ? "" : "s"} del índice
-            </summary>
-            <ul className="mt-2 space-y-1.5">
-              {documentosRetirados.map((doc) => (
-                <li key={doc.id} className="text-stone-500">
-                  <span className="line-through">{doc.nombre}</span>
-                  {" — "}retirado {fechaHora(doc.retiradoEn)}{doc.retiradoPor ? ` por ${doc.retiradoPor.nombre}` : ""}
-                  {doc.motivoRetiro ? `: ${doc.motivoRetiro}` : ""}
-                  {" · "}
-                  <a href={`/api/documentos-archivo/${doc.id}`} target="_blank" rel="noreferrer" className="text-cdmb-700 hover:underline">ver archivo</a>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-1.5 text-[11px] text-stone-400">El archivo no se borra: queda como constancia (Ley 594/2000), fuera del índice, del hash y del FUID.</p>
-          </details>
-        )}
+            {puedeEditar && (
+              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                  Asunto y descripción
+                </h3>
+                <SectionHelp>Lo que identifica a este expediente en el listado — se puede corregir mientras siga abierto.</SectionHelp>
+                <form action={`/api/correspondencia/expedientes/${id}/editar`} method="post" className="space-y-3">
+                  <Field label="Asunto" required>
+                    <input name="asunto" required defaultValue={expediente.asunto} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                  </Field>
+                  <Field label="Descripción">
+                    <input name="descripcion" defaultValue={expediente.descripcion ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                  </Field>
+                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                    Guardar
+                  </button>
+                </form>
+              </section>
+            )}
 
-        {puedeSubir && (
-          <div className="mt-4 border-t border-stone-100 pt-4">
-            <SubirDocumentoExpedienteForm
-              expedienteId={id}
-              tiposDocumentales={expediente.subserie?.tiposDocumentales ?? []}
-              documentosExistentes={documentosActivos.map((d) => ({ id: d.id, nombre: d.nombre }))}
-            />
-          </div>
-        )}
-      </section>
+            {puedeAdministrarArchivo(permisos) && (
+              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Nivel de acceso a la información (Ley 1712/2014)</h3>
+                <SectionHelp>
+                  Pública por defecto (Ley 1712/2014). <strong>Clasificado</strong>: protege un derecho particular.{" "}
+                  <strong>Reservado</strong>: protege un interés público. Ambos exigen fundamento escrito.
+                </SectionHelp>
+                <form action={`/api/correspondencia/expedientes/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-[200px]">
+                    <Field label="Nivel de acceso" required>
+                      <select name="nivelAcceso" required defaultValue={expediente.nivelAcceso} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
+                        {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
+                          <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <div className="min-w-[260px] flex-1">
+                    <Field label="Fundamento" help="Obligatorio si elige clasificado o reservado.">
+                      <input name="fundamento" defaultValue={expediente.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    </Field>
+                  </div>
+                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                    <Lock className="h-3.5 w-3.5" aria-hidden />
+                    Guardar
+                  </button>
+                </form>
+              </section>
+            )}
 
-      {expediente.comunicaciones.length > 0 && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-stone-500">Comunicaciones archivadas aquí</h3>
-          <ul className="space-y-1.5">
-            {expediente.comunicaciones.map((c) => (
-              <li key={c.id}>
-                <Link href={`/correspondencia/${c.id}`} className="text-sm text-cdmb-700 hover:underline">
-                  {c.radicado}
-                </Link>
-                <span className="ml-2 text-xs text-stone-400">{c.asunto}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+            {puedeCerrarEste && (
+              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Cierre del expediente</h3>
+                <SectionHelp>
+                  Al cerrar (Art. 4.3.2.4 Acuerdo 001/2024 AGN) se firma el índice con hash y deja de admitir documentos —
+                  definitivo, aunque el expediente nunca se borra.
+                </SectionHelp>
+                <form action={`/api/correspondencia/expedientes/${id}/cerrar`} method="post">
+                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                    <Lock className="h-3.5 w-3.5" aria-hidden />
+                    Cerrar expediente y firmar índice
+                  </button>
+                </form>
+              </section>
+            )}
 
-      {puedeAdministrarArchivo(permisos) && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Nivel de acceso a la información (Ley 1712/2014)</h3>
-          <SectionHelp>
-            Pública por defecto (Ley 1712/2014). <strong>Clasificado</strong>: protege un derecho particular.{" "}
-            <strong>Reservado</strong>: protege un interés público. Ambos exigen fundamento escrito.
-          </SectionHelp>
-          <form action={`/api/correspondencia/expedientes/${id}/nivel-acceso`} method="post" className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[200px]">
-              <Field label="Nivel de acceso" required>
-                <select name="nivelAcceso" required defaultValue={expediente.nivelAcceso} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
-                  {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
-                    <option key={n} value={n}>{ETIQUETA_NIVEL_ACCESO[n]}</option>
+            {puedeReabrirEste && (
+              <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                  Reabrir expediente
+                </h3>
+                <SectionHelp>
+                  Deja de estar cerrado y vuelve a admitir documentos y comunicaciones — el índice firmado (hash) se
+                  descarta; al cerrarlo de nuevo se firma uno nuevo. Exige motivo y queda en la bitácora inalterable.
+                </SectionHelp>
+                <form action={`/api/correspondencia/expedientes/${id}/reabrir`} method="post" className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-[260px] flex-1">
+                    <Field label="Motivo" required>
+                      <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    </Field>
+                  </div>
+                  <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100">
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                    Reabrir
+                  </button>
+                </form>
+              </section>
+            )}
+
+              </>
+            ),
+          },
+          {
+            id: "historial",
+            label: "Historial",
+            icono: <History className="h-4 w-4" aria-hidden />,
+            contenido: (
+              <>
+            <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+              <div className="p-4">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
+                <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>
+                <ul className="divide-y divide-stone-100">
+                  {bitacora.map((b) => (
+                    <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
+                      <span className="text-stone-700">
+                        <span className="font-medium">{ETIQUETA_ACCION[b.accion] ?? b.accion}</span>
+                        {b.detalle ? ` — ${b.detalle}` : ""}
+                      </span>
+                      <span className="text-xs text-stone-400">{b.usuario?.nombre ?? "—"} · {fechaHora(b.createdAt)}</span>
+                    </li>
                   ))}
-                </select>
-              </Field>
-            </div>
-            <div className="min-w-[260px] flex-1">
-              <Field label="Fundamento" help="Obligatorio si elige clasificado o reservado.">
-                <input name="fundamento" defaultValue={expediente.fundamentoNivelAcceso ?? ""} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-              </Field>
-            </div>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              <Lock className="h-3.5 w-3.5" aria-hidden />
-              Guardar
-            </button>
-          </form>
-        </section>
-      )}
-
-      {puedeCerrarEste && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Cierre del expediente</h3>
-          <SectionHelp>
-            Al cerrar (Art. 4.3.2.4 Acuerdo 001/2024 AGN) se firma el índice con hash y deja de admitir documentos —
-            definitivo, aunque el expediente nunca se borra.
-          </SectionHelp>
-          <form action={`/api/correspondencia/expedientes/${id}/cerrar`} method="post">
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              <Lock className="h-3.5 w-3.5" aria-hidden />
-              Cerrar expediente y firmar índice
-            </button>
-          </form>
-        </section>
-      )}
-
-      {puedeReabrirEste && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
-          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-            Reabrir expediente
-          </h3>
-          <SectionHelp>
-            Deja de estar cerrado y vuelve a admitir documentos y comunicaciones — el índice firmado (hash) se
-            descarta; al cerrarlo de nuevo se firma uno nuevo. Exige motivo y queda en la bitácora inalterable.
-          </SectionHelp>
-          <form action={`/api/correspondencia/expedientes/${id}/reabrir`} method="post" className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[260px] flex-1">
-              <Field label="Motivo" required>
-                <input name="motivo" required className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
-              </Field>
-            </div>
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100">
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-              Reabrir
-            </button>
-          </form>
-        </section>
-      )}
-
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-        <div className="p-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría (inalterable)</h3>
-          <SectionHelp>Quién y cuándo actuó sobre este expediente — inalterable.</SectionHelp>
-          <ul className="divide-y divide-stone-100">
-            {bitacora.map((b) => (
-              <li key={b.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
-                <span className="text-stone-700">
-                  <span className="font-medium">{ETIQUETA_ACCION[b.accion] ?? b.accion}</span>
-                  {b.detalle ? ` — ${b.detalle}` : ""}
-                </span>
-                <span className="text-xs text-stone-400">{b.usuario?.nombre ?? "—"} · {fechaHora(b.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <Paginador
-          paginaActual={bitacoraPage}
-          totalPaginas={totalPaginasBitacora}
-          total={totalBitacora}
-          porPagina={BITACORA_POR_PAGINA}
-          hrefPagina={hrefBitacoraPagina}
-        />
-      </section>
+                </ul>
+              </div>
+              <Paginador
+                paginaActual={bitacoraPage}
+                totalPaginas={totalPaginasBitacora}
+                total={totalBitacora}
+                porPagina={BITACORA_POR_PAGINA}
+                hrefPagina={hrefBitacoraPagina}
+              />
+            </section>
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
