@@ -10,10 +10,10 @@ import {
   puedeDistribuir,
   puedeAdministrarArchivo,
   puedeRadicar,
-  puedeFirmar,
   puedeResponderComoAsignado,
   puedeDevolverReparto,
   puedeAsignarFirmantesComunicacion,
+  puedeFirmarComunicacionDirecto,
   puedeSubdistribuirInternamente,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
@@ -39,7 +39,7 @@ import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
 import { construirFilasFirmantes } from "@/lib/panel-firmas";
 import { DistribuirForm } from "@/components/DistribuirForm";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
-import { ETIQUETA_MEDIO_DESPACHO } from "@/lib/correspondencia";
+import { ETIQUETA_MEDIO_DESPACHO, motivoBloqueoRespuesta } from "@/lib/correspondencia";
 import { puedeDespachar } from "@/lib/permisos";
 import { puedeOperarFlujos } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
@@ -67,6 +67,7 @@ function proximoPaso(c: {
   tipo: string;
   estado: string;
   respuestaTexto: string | null;
+  respuestaFirmada: boolean;
   respuestas: { despachadaEn: Date | string | null }[];
   respondeAId: string | null;
   despachadaEn: Date | string | null;
@@ -112,9 +113,14 @@ function proximoPaso(c: {
       ? { texto: "Ya está asignada a usted. Siguiente paso: escriba su respuesta más abajo, en «Respuesta del funcionario». Es un borrador; la ventanilla de salida la radica y la despacha.", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
       : { texto: "Ya está repartida — falta que el funcionario a cargo escriba el borrador de respuesta." };
   }
+  if (!c.respuestaFirmada) {
+    return permisos.puedeResponder
+      ? { texto: "Ya hay respuesta. Siguiente paso: fírmela y solicite las firmas que correspondan (Revisó, Firma principal).", accionHref: "#firmas", accionTexto: "Ir a Firmas de la respuesta" }
+      : { texto: "Ya hay respuesta, pero le faltan firmas: gestión documental la radica como salida cuando tenga la firma principal y ninguna pendiente." };
+  }
   return permisos.puedeRadicar
-    ? { texto: "Ya hay un borrador de respuesta del funcionario. Siguiente paso de la ventanilla de salida: radicarlo como oficio de salida (queda firmado) y luego registrar el despacho.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
-    : { texto: "Ya hay un borrador de respuesta. Falta que la ventanilla de salida lo radique como oficio de salida y lo despache." };
+    ? { texto: "La respuesta está firmada. Siguiente paso de gestión documental: radicarla como oficio de salida y luego registrar el despacho.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
+    : { texto: "La respuesta está firmada. Falta que gestión documental la radique como oficio de salida y la despache." };
 }
 
 function Campo({ k, v }: { k: string; v: ReactNode }) {
@@ -190,14 +196,11 @@ export default async function CorrespondenciaDetallePage({
   const puedeAdministrarArchivoUsuario = puedeAdministrarArchivo(permisos);
   const puedeRadicarUsuario = puedeRadicar(permisos);
   const puedeDespacharUsuario = puedeDespachar(permisos);
-  const puedeFirmarUsuario = puedeFirmar(permisos);
-  const puedeAsignarFirmantesUsuario =
-    c.estado !== "ANULADA" &&
-    !c.despachadaEn &&
-    puedeAsignarFirmantesComunicacion(permisos, c, session.userId, [
-      ...c.distribuciones.filter((d) => d.activa).map((d) => d.usuarioId),
-      ...(c.respondeA?.distribuciones.map((d) => d.usuarioId) ?? []),
-    ]);
+  const hayRespuestaParaFirmar =
+    c.tipo === "RECIBIDA" && c.respuestas.length === 0 && (Boolean(c.respuestaTexto) || c.documentos.some((d) => d.esRespuesta));
+  const firmasHabilitadas = c.estado !== "ANULADA" && !c.despachadaEn && (c.tipo !== "RECIBIDA" || hayRespuestaParaFirmar);
+  const puedeAsignarFirmantesUsuario = firmasHabilitadas && puedeAsignarFirmantesComunicacion(permisos, c, session.userId);
+  const puedeFirmarDirectoUsuario = firmasHabilitadas && puedeFirmarComunicacionDirecto(permisos, c, session.userId);
   const filasFirmantes = construirFilasFirmantes(c.solicitudesFirma, c.firmas, "SGDEA");
   const miSolicitudFirma = c.solicitudesFirma.find(
     (s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA"
@@ -211,6 +214,14 @@ export default async function CorrespondenciaDetallePage({
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
   const pdfPrincipal = documentosOriginales.find((d) => d.mimeType === "application/pdf") ?? null;
   const documentosRespuesta = c.documentos.filter((d) => d.esRespuesta);
+  const bloqueoRespuesta =
+    c.tipo === "RECIBIDA"
+      ? motivoBloqueoRespuesta(
+          c.firmas,
+          c.solicitudesFirma.filter((s) => s.estado === "PENDIENTE" && s.rol !== "LECTURA").map((s) => s.usuarioAsignado.nombre)
+        )
+      : null;
+  const pdfAFirmar =c.tipo === "RECIBIDA" ? (documentosRespuesta.find((d) => d.mimeType === "application/pdf") ?? null) : pdfPrincipal;
   const mostrarRespuesta =
     c.tipo === "RECIBIDA" &&
     (puedeResponder ||
@@ -283,7 +294,7 @@ export default async function CorrespondenciaDetallePage({
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
   const siguientePaso = proximoPaso(
-    { ...c, devuelta: devolucionesPrevias.length > 0 && distribucionesVigentes.length === 0 },
+    { ...c, devuelta: devolucionesPrevias.length > 0 && distribucionesVigentes.length === 0, respuestaFirmada: bloqueoRespuesta === null },
     {
       puedeDistribuir: puedeDistribuirUsuario,
       puedeResponder,
@@ -438,9 +449,10 @@ export default async function CorrespondenciaDetallePage({
         </Tarjeta>
       )}
 
-      {c.tipo !== "RECIBIDA" && (
+      {(c.tipo !== "RECIBIDA" || hayRespuestaParaFirmar || c.firmas.length > 0) && (
         <Tarjeta
-          titulo="Firma electrónica"
+          id="firmas"
+          titulo={c.tipo === "RECIBIDA" ? "Firmas de la respuesta" : "Firma electrónica"}
           extra={
             c.firmas.length > 0 ? (
               <Link href={`/correspondencia/${id}/ficha-firma`} className="text-xs font-medium text-cdmb-700 hover:underline">
@@ -449,6 +461,13 @@ export default async function CorrespondenciaDetallePage({
             ) : undefined
           }
         >
+          {c.tipo === "RECIBIDA" && (
+            <SectionHelp>
+              Quien proyecta la respuesta la firma (Proyectó) y solicita las firmas que correspondan (Revisó, Firma principal). Cualquier
+              funcionario puede firmar y solicitar firmas; la ventanilla de radicación no. Gestión documental solo la radica como salida
+              cuando tiene la firma principal y ninguna firma o visto bueno pendiente; al radicarla, estas firmas pasan al oficio.
+            </SectionHelp>
+          )}
           {c.tipo === "ENVIADA" && !c.despachadaEn && (
             <SectionHelp>
               El oficio se firma antes de enviarlo: la firma sella el contenido y los PDF adjuntos. Para despacharlo debe tener la firma del
@@ -457,7 +476,7 @@ export default async function CorrespondenciaDetallePage({
           )}
           <PanelFirmas
             filas={filasFirmantes}
-            vacio={c.tipo === "ENVIADA" ? "El oficio todavía no está firmado." : undefined}
+            vacio={c.tipo === "ENVIADA" ? "El oficio todavía no está firmado." : c.tipo === "RECIBIDA" ? "La respuesta todavía no está firmada." : undefined}
             acciones={
               <>
                 {puedoActuarMiSolicitud && (
@@ -465,20 +484,24 @@ export default async function CorrespondenciaDetallePage({
                     rol={miSolicitudFirma!.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}
                     endpointCompletar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/completar`}
                     endpointRechazar={`/api/correspondencia/solicitudes-firma/${miSolicitudFirma!.id}/rechazar`}
-                    documentoNombre={c.asunto}
-                    documentoUrl={pdfPrincipal ? `/api/correspondencia-documentos/${pdfPrincipal.id}/rotulado` : undefined}
-                    documentoMimeType={pdfPrincipal ? "application/pdf" : undefined}
-                    contenidoTexto={pdfPrincipal ? undefined : (c.contenido ?? "")}
+                    documentoNombre={c.tipo === "RECIBIDA" ? `Respuesta a ${c.radicado}` : c.asunto}
+                    documentoUrl={pdfAFirmar ? `/api/correspondencia-documentos/${pdfAFirmar.id}/rotulado` : undefined}
+                    documentoMimeType={pdfAFirmar ? "application/pdf" : undefined}
+                    contenidoTexto={pdfAFirmar ? undefined : ((c.tipo === "RECIBIDA" ? c.respuestaTexto : c.contenido) ?? "")}
                   />
                 )}
                 {!miSolicitudFirma &&
-                  puedeFirmarUsuario &&
-                  c.estado !== "ANULADA" &&
-                  !c.despachadaEn &&
+                  puedeFirmarDirectoUsuario &&
                   !c.firmas.some((f) => f.usuarioId === session.userId) && (
                     <BotonFirmarDirecto
                       endpoint={`/api/correspondencia/${id}/firmar`}
-                      descripcion={`Va a firmar ${c.radicado} — ${c.asunto}${documentosOriginales.length > 0 ? ` y sus ${documentosOriginales.length} documento(s) adjunto(s)` : ""}.`}
+                      conCalidad
+                      calidadInicial={c.tipo === "RECIBIDA" ? "PROYECTO" : "PRINCIPAL"}
+                      descripcion={
+                        c.tipo === "RECIBIDA"
+                          ? `Va a firmar la respuesta a ${c.radicado}${documentosRespuesta.length > 0 ? ` y sus ${documentosRespuesta.length} documento(s)` : ""}.`
+                          : `Va a firmar ${c.radicado} — ${c.asunto}${documentosOriginales.length > 0 ? ` y sus ${documentosOriginales.length} documento(s) adjunto(s)` : ""}.`
+                      }
                     />
                   )}
                 {puedeAsignarFirmantesUsuario && (
@@ -705,18 +728,23 @@ export default async function CorrespondenciaDetallePage({
             !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>
           )}
           {puedeRadicarUsuario && c.respuestaTexto && c.respuestas.length === 0 && (
-            <Link
-              href={`/correspondencia/nueva/enviada?respondeAId=${id}`}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50"
-            >
-              <Send className="h-3.5 w-3.5" aria-hidden />
-              Radicar como oficio de salida
-            </Link>
+            bloqueoRespuesta ? (
+              <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{bloqueoRespuesta}</p>
+            ) : (
+              <Link
+                href={`/correspondencia/nueva/enviada?respondeAId=${id}`}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50"
+              >
+                <Send className="h-3.5 w-3.5" aria-hidden />
+                Radicar como oficio de salida
+              </Link>
+            )
           )}
           {puedeResponder && !puedeRadicarUsuario && c.respuestaTexto && c.respuestas.length === 0 && (
-            <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-              Su respuesta quedó registrada. La ventanilla de salida la radicará como oficio de salida y
-              registrará su envío al peticionario — usted no tiene que hacer nada más aquí.
+            <p className={`mt-3 rounded-md px-3 py-2 text-xs ${bloqueoRespuesta ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+              {bloqueoRespuesta
+                ? <>Su respuesta quedó guardada. Siguiente paso: fírmela y solicite las firmas que correspondan en <a href="#firmas" className="font-medium underline">Firmas de la respuesta</a>. {bloqueoRespuesta}</>
+                : "La respuesta está firmada. Gestión documental la radicará como oficio de salida y registrará su envío al peticionario."}
             </p>
           )}
         </Tarjeta>

@@ -151,7 +151,7 @@ export function RadicarEnviadaForm({
     try {
       const folder = crypto.randomUUID();
       const documentos = await subirDocumentosConProgreso(
-        archivos,
+        respondeAId ? [] : archivos,
         (f, file) => subirArchivoDirecto(f, file, { nuevo: true }),
         folder,
         (pct, texto) => setProgreso({ pct, texto })
@@ -323,8 +323,19 @@ export function RadicarEnviadaForm({
                 DEPENDENCIA: dependencias.find((d) => d.id === dependenciaOrigenId)?.nombre ?? "",
               }}
             />
-            <Field label="Contenido" required>
-              <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={8} className={inputCls} placeholder="Cuerpo del oficio…" />
+            <Field
+              label="Contenido"
+              required
+              help={respondeAId ? "Es la respuesta que firmaron los funcionarios: no se modifica al radicarla." : undefined}
+            >
+              <textarea
+                value={contenido}
+                onChange={(e) => setContenido(e.target.value)}
+                readOnly={Boolean(respondeAId)}
+                rows={8}
+                className={`${inputCls} ${respondeAId ? "bg-stone-50 text-stone-600" : ""}`}
+                placeholder="Cuerpo del oficio…"
+              />
             </Field>
           </div>
           <Field label="Medio de envío">
@@ -369,17 +380,20 @@ export function RadicarEnviadaForm({
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-1 text-sm font-semibold text-stone-900">Documentos adjuntos</h2>
         <p className="mb-3 text-xs text-stone-400">Hasta {MAX_ARCHIVOS_LOTE} archivos, cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.</p>
-        {documentosRespuesta && documentosRespuesta.length > 0 && (
+        {respondeAId ? (
           <SectionHelp>
-            Se incluirán automáticamente en el oficio {documentosRespuesta.length === 1 ? "el documento" : "los documentos"} que
-            el funcionario adjuntó a su respuesta: {documentosRespuesta.join(", ")}.
+            {documentosRespuesta.length > 0
+              ? `Salen con el oficio, firmados, ${documentosRespuesta.length === 1 ? "el documento" : "los documentos"} de la respuesta: ${documentosRespuesta.join(", ")}.`
+              : "La respuesta no tiene documentos adjuntos."}{" "}
+            No se pueden agregar archivos nuevos: quedarían por fuera de las firmas.
           </SectionHelp>
+        ) : (
+          <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
+            <Upload className="h-4 w-4" aria-hidden />
+            Agregar archivos
+            <input type="file" multiple accept={ACCEPT_DOCUMENTOS} className="hidden" onChange={(e) => agregarArchivos(e.target.files)} />
+          </label>
         )}
-        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50">
-          <Upload className="h-4 w-4" aria-hidden />
-          Agregar archivos
-          <input type="file" multiple accept={ACCEPT_DOCUMENTOS} className="hidden" onChange={(e) => agregarArchivos(e.target.files)} />
-        </label>
         {archivos.length > 0 && (
           <ul className="mt-3 space-y-1.5">
             {archivos.map((f, i) => (

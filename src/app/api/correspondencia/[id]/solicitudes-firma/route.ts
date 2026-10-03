@@ -12,22 +12,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const c = await db.comunicacion.findUnique({
-    where: { id },
-    select: {
-      tipo: true,
-      dependenciaDestinoId: true,
-      dependenciaOrigenId: true,
-      radicadoPorId: true,
-      respuestaPorId: true,
-      distribuciones: { where: { activa: true }, select: { usuarioId: true } },
-      respondeA: { select: { distribuciones: { where: { activa: true }, select: { usuarioId: true } } } },
-    },
-  });
+  const c = await db.comunicacion.findUnique({ where: { id }, select: { radicadoPorId: true } });
   if (!c) return NextResponse.json({ error: "La comunicación no existe." }, { status: 404 });
-  const usuariosDistribucion = [...c.distribuciones, ...(c.respondeA?.distribuciones ?? [])].map((d) => d.usuarioId);
-  if (!puedeAsignarFirmantesComunicacion(permisos, c, session.userId, usuariosDistribucion)) {
-    return NextResponse.json({ error: "No tiene permiso para solicitar firmas en esta comunicación." }, { status: 403 });
+  if (!puedeAsignarFirmantesComunicacion(permisos, c, session.userId)) {
+    return NextResponse.json(
+      { error: "La ventanilla de radicación no solicita firmas: las gestionan los funcionarios que proyectan, revisan o firman el documento." },
+      { status: 403 }
+    );
   }
 
   const leido = leerFirmantesSolicitud(await req.json().catch(() => null));

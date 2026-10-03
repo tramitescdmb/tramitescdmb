@@ -15,6 +15,8 @@ import {
   puedeGestionarExpedienteCompleto,
   puedeValidarDocumentoContrato,
   puedeEliminarExpedienteContractual,
+  puedeAsignarFirmantesComunicacion,
+  puedeFirmarComunicacionDirecto,
   type PermisosUsuario,
 } from "./permisos";
 
@@ -314,5 +316,43 @@ describe("Editar y eliminar expedientes (ítem 4) — por rol, y visibilidad de 
     expect(puedeVerExpedienteContractual(permContrat("ADMINISTRADOR_CONTRATACION"), expEliminado)).toBe(false);
     expect(puedeVerExpedienteContractual(permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expA"]) }), expEliminado)).toBe(false);
     expect(puedeVerExpedienteContractual(permContrat("JEFE_CONTRATACION"), { ...exp, eliminado: false })).toBe(true);
+  });
+});
+
+describe("firmas de comunicaciones del SGDEA", () => {
+  const sgdea = (rol: PermisosUsuario["correspondencia"], extra: Partial<PermisosUsuario> = {}): PermisosUsuario => ({
+    ...sinAcceso,
+    correspondencia: rol,
+    puedeFirmar: true,
+    ...extra,
+  });
+  const recibida = { radicadoPorId: "ventanilla-1" };
+
+  it("cualquier funcionario con acceso al SGDEA puede firmar y asignar firmas, sin importar su rol", () => {
+    for (const rol of ["FUNCIONARIO_DEPENDENCIA", "JEFE_DEPENDENCIA", "ADMIN_ARCHIVO"] as const) {
+      expect(puedeAsignarFirmantesComunicacion(sgdea(rol), recibida, "funcionario-1")).toBe(true);
+      expect(puedeFirmarComunicacionDirecto(sgdea(rol), recibida, "funcionario-1")).toBe(true);
+    }
+  });
+
+  it("la ventanilla de radicación nunca firma ni envía a firmar", () => {
+    expect(puedeAsignarFirmantesComunicacion(sgdea("OPERADOR_VENTANILLA"), recibida, "otro")).toBe(false);
+    expect(puedeFirmarComunicacionDirecto(sgdea("OPERADOR_VENTANILLA"), recibida, "otro")).toBe(false);
+  });
+
+  it("quien radicó la comunicación no firma ni asigna firmas sobre ella", () => {
+    expect(puedeAsignarFirmantesComunicacion(sgdea("ADMIN_ARCHIVO"), recibida, "ventanilla-1")).toBe(false);
+    expect(puedeFirmarComunicacionDirecto(sgdea("ADMIN_ARCHIVO"), recibida, "ventanilla-1")).toBe(false);
+  });
+
+  it("un contratista puede firmar pero no asignar firmas a nadie", () => {
+    const contratista = sgdea("FUNCIONARIO_DEPENDENCIA", { contratacion: "CONTRATISTA" });
+    expect(puedeFirmarComunicacionDirecto(contratista, recibida, "c-1")).toBe(true);
+    expect(puedeAsignarFirmantesComunicacion(contratista, recibida, "c-1")).toBe(false);
+  });
+
+  it("sin acceso al SGDEA no hay firmas", () => {
+    expect(puedeAsignarFirmantesComunicacion(sinAcceso, recibida, "x")).toBe(false);
+    expect(puedeFirmarComunicacionDirecto(sinAcceso, recibida, "x")).toBe(false);
   });
 });

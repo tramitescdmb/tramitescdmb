@@ -361,26 +361,28 @@ export async function tieneFirmaOSolicitudEnDocumentoContrato(usuarioId: string,
   return firmas + solicitudes > 0;
 }
 
+function actuaComoRadicador(permisos: PermisosUsuario, comunicacion: { radicadoPorId: string | null }, usuarioId: string): boolean {
+  if (permisos.esAdmin) return false;
+  return permisos.correspondencia === "OPERADOR_VENTANILLA" || comunicacion.radicadoPorId === usuarioId;
+}
+
 export function puedeAsignarFirmantesComunicacion(
   permisos: PermisosUsuario,
-  comunicacion: {
-    tipo: string;
-    dependenciaDestinoId: string | null;
-    dependenciaOrigenId: string | null;
-    radicadoPorId: string | null;
-    respuestaPorId?: string | null;
-  },
+  comunicacion: { radicadoPorId: string | null },
   usuarioId: string,
-  usuariosDistribucion: (string | null)[] = [],
 ): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
-  if (comunicacion.tipo === "RECIBIDA") return false;
-  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return true;
-  if (comunicacion.radicadoPorId === usuarioId || comunicacion.respuestaPorId === usuarioId) return true;
-  if (usuariosDistribucion.includes(usuarioId)) return true;
-  if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
-  const dependenciaComunicacion = comunicacion.dependenciaOrigenId ?? comunicacion.dependenciaDestinoId;
-  return dependenciaComunicacion !== null && dependenciaComunicacion === permisos.dependenciaId;
+  if (permisos.esAdmin) return true;
+  if (permisos.contratacion === "CONTRATISTA") return false;
+  return !actuaComoRadicador(permisos, comunicacion, usuarioId);
+}
+
+export function puedeFirmarComunicacionDirecto(
+  permisos: PermisosUsuario,
+  comunicacion: { radicadoPorId: string | null },
+  usuarioId: string,
+): boolean {
+  return puedeFirmar(permisos) && !actuaComoRadicador(permisos, comunicacion, usuarioId);
 }
 
 const CARGO_SIN_ESPECIFICO = "Otro / sin cargo específico";

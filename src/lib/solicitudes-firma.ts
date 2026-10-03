@@ -1,12 +1,12 @@
 import { db } from "@/lib/db";
 import { resolverFirma } from "@/lib/firma-proveedor";
-import { hashContenidoFirma } from "@/lib/firma";
 import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 import { nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
@@ -121,10 +121,9 @@ export async function asignarFirmantes(
     } else if (objetivo.tipo === "documentoArchivo") {
       await validarDocumentoArchivoFirmable(objetivo.id);
     } else {
-      const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: { tipo: true, estado: true } });
+      const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: SELECT_COMUNICACION_FIRMABLE });
       if (!c) throw new Error("La comunicación no existe.");
-      if (c.tipo === "RECIBIDA") throw new Error("Una comunicación recibida no se firma: no tiene un contenido redactado por la Corporación.");
-      if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+      await validarComunicacionFirmable(c);
     }
 
     const firmantesExistentes = await db.solicitudFirma.count({
@@ -374,21 +373,14 @@ export async function completarSolicitudFirma(
     });
   } else if (solicitud.comunicacion) {
     const c = solicitud.comunicacion;
-    if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+    await validarComunicacionFirmable(c);
     let firmaId: string;
     const previa = await db.firma.findFirst({ where: { comunicacionId: c.id, usuarioId }, select: { id: true } });
     if (previa) {
       firmaId = previa.id;
     } else {
-      const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId: c.id }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
       const fechaHora = new Date();
-      const hashContenido = hashContenidoFirma({
-        radicado: c.radicado,
-        asunto: c.asunto,
-        contenido: c.contenido,
-        fechaIso: fechaHora.toISOString(),
-        hashesDocumentos: documentos.map((d) => d.hashSha256),
-      });
+      const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
       const firma = await db.firma.create({
         data: {
@@ -515,7 +507,7 @@ export async function rechazarSolicitudFirma(
     include: {
       documentoContrato: { select: { id: true, nombre: true, expedienteId: true, subidoPorId: true } },
       documentoExpediente: { select: { id: true, nombre: true, expedienteId: true, pasoNumero: true, subidoPorId: true } },
-      comunicacion: { select: { id: true, radicado: true, radicadoPorId: true } },
+      comunicacion: { select: { id: true, tipo: true, radicado: true, radicadoPorId: true, respuestaPorId: true } },
       documentoArchivo: { select: { id: true, nombre: true, subidoPorId: true } },
     },
   });
@@ -570,9 +562,10 @@ export async function rechazarSolicitudFirma(
     });
   } else if (solicitud.comunicacion) {
     const c = solicitud.comunicacion;
-    if (c.radicadoPorId) {
+    const avisarA = (c.tipo === "RECIBIDA" ? c.respuestaPorId : null) ?? solicitud.asignadoPorId ?? c.radicadoPorId;
+    if (avisarA) {
       await db.avisoRechazoDocumento.create({
-        data: { comunicacionId: c.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: c.radicadoPorId },
+        data: { comunicacionId: c.id, mensaje: comentario.trim(), rechazadoPorId: usuarioId, subidoPorId: avisarA },
       });
     }
     await registrarAuditoriaDoc({

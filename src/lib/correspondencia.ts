@@ -14,6 +14,7 @@ import { validarPalabrasClave } from "@/lib/vocabulario";
 import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
+import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -235,14 +236,19 @@ export async function sellarFirmasConTsa(comunicacionId: string) {
   }
 }
 
-export async function agregarCofirma(comunicacionId: string, usuarioId: string, ip: string | null, userAgent: string | null = null) {
+export async function agregarCofirma(
+  comunicacionId: string,
+  usuarioId: string,
+  ip: string | null,
+  userAgent: string | null = null,
+  calidadElegida: CalidadFirma | null = null
+) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
-    select: { id: true, tipo: true, estado: true, radicado: true, asunto: true, contenido: true, firmas: { select: { usuarioId: true } } },
+    select: { ...SELECT_COMUNICACION_FIRMABLE, firmas: { select: { usuarioId: true } } },
   });
   if (!c) throw new Error("La comunicación no existe.");
-  if (c.tipo === "RECIBIDA") throw new Error("Una comunicación recibida no se firma: no tiene un contenido redactado por la Corporación.");
-  if (c.estado === "ANULADA") throw new Error("No se puede firmar una comunicación anulada.");
+  await validarComunicacionFirmable(c);
   if (c.firmas.some((f) => f.usuarioId === usuarioId)) throw new Error("Usted ya firmó esta comunicación.");
 
   const solicitudes = await db.solicitudFirma.findMany({
@@ -260,19 +266,15 @@ export async function agregarCofirma(comunicacionId: string, usuarioId: string, 
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
 
-  const documentos = await db.comunicacionDocumento.findMany({ where: { comunicacionId }, select: { hashSha256: true }, orderBy: { createdAt: "asc" } });
   const fechaHora = new Date();
-  const hashContenido = hashContenidoFirma({
-    radicado: c.radicado,
-    asunto: c.asunto,
-    contenido: c.contenido,
-    fechaIso: fechaHora.toISOString(),
-    hashesDocumentos: documentos.map((d) => d.hashSha256),
-  });
+  const hashContenido = await hashFirmaComunicacion(c, fechaHora);
   const datos = await resolverFirma(hashContenido);
+  const puedePrincipal = puedeSerFirmantePrincipal(usuario, "SGDEA");
+  if (calidadElegida === "PRINCIPAL" && !puedePrincipal) throw new Error("Su cargo no le permite firmar como firmante principal.");
+  const calidad: CalidadFirma = calidadElegida ?? (c.tipo === "RECIBIDA" || !puedePrincipal ? "PROYECTO" : "PRINCIPAL");
   return db.firma.create({
     data: {
-      calidad: puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
+      calidad,
       usuarioId,
       comunicacionId,
       fechaHora,
@@ -294,7 +296,20 @@ export async function firmarEnLote(comunicacionIds: string[], usuarioId: string,
   if (ids.length === 0) throw new Error("No se seleccionó ninguna comunicación.");
   const firmadas: string[] = [];
   const omitidas: { radicado: string; motivo: string }[] = [];
+  const asignadas = new Set(
+    (
+      await db.solicitudFirma.findMany({
+        where: { comunicacionId: { in: ids }, usuarioAsignadoId: usuarioId, estado: "PENDIENTE", rol: "FIRMA" },
+        select: { comunicacionId: true },
+      })
+    ).map((s) => s.comunicacionId)
+  );
   for (const id of ids) {
+    if (!asignadas.has(id)) {
+      const rad = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
+      omitidas.push({ radicado: rad?.radicado ?? id, motivo: "no tiene una solicitud de firma asignada a usted" });
+      continue;
+    }
     try {
       const c = await agregarCofirma(id, usuarioId, ip);
       const rad = await db.comunicacion.findUnique({ where: { id }, select: { radicado: true } });
@@ -311,9 +326,9 @@ export async function firmarEnLote(comunicacionIds: string[], usuarioId: string,
 export async function comunicacionesFirmablesPor(usuarioId: string) {
   return db.comunicacion.findMany({
     where: {
-      tipo: { in: ["ENVIADA", "INTERNA"] },
       estado: { notIn: ["ANULADA"] },
       firmas: { none: { usuarioId } },
+      solicitudesFirma: { some: { usuarioAsignadoId: usuarioId, estado: "PENDIENTE", rol: "FIRMA" } },
     },
     orderBy: { fechaRadicacion: "desc" },
     take: 50,
@@ -345,9 +360,25 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     const terceroId = await resolverOCrearTercero(tx, entrada.destinatario);
 
     let documentosRespuestaFuncionario: EntradaDocumento[] = [];
+    let contenidoFirmado: string | null = null;
     if (entrada.respondeAId) {
-      const original = await tx.comunicacion.findUnique({ where: { id: entrada.respondeAId }, select: { id: true, tipo: true } });
+      const original = await tx.comunicacion.findUnique({
+        where: { id: entrada.respondeAId },
+        select: {
+          id: true,
+          tipo: true,
+          respuestaTexto: true,
+          firmas: { select: { calidad: true } },
+          solicitudesFirma: { where: { estado: "PENDIENTE", rol: { not: "LECTURA" } }, select: { usuarioAsignado: { select: { nombre: true } } } },
+        },
+      });
       if (!original || original.tipo !== "RECIBIDA") throw new Error("La comunicación a la que responde no existe o no es una recibida.");
+      const bloqueo = motivoBloqueoRespuesta(original.firmas, original.solicitudesFirma.map((s) => s.usuarioAsignado.nombre));
+      if (bloqueo) throw new Error(bloqueo);
+      if ((entrada.documentos ?? []).length > 0) {
+        throw new Error("La respuesta sale con los documentos que firmaron los funcionarios; no se pueden agregar archivos nuevos al radicarla.");
+      }
+      contenidoFirmado = original.respuestaTexto;
       const adjuntosRespuesta = await tx.comunicacionDocumento.findMany({
         where: { comunicacionId: entrada.respondeAId, esRespuesta: true },
         select: { nombre: true, descripcion: true, storagePath: true, mimeType: true, tamanoBytes: true, hashSha256: true },
@@ -371,7 +402,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
         origen: "VENTANILLA",
         estado: "RADICADA",
         asunto: entrada.asunto,
-        contenido: entrada.contenido,
+        contenido: contenidoFirmado ?? entrada.contenido,
         folios: entrada.folios,
         anexosDescripcion: entrada.anexosDescripcion ?? null,
         terceroId,
@@ -395,6 +426,8 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     await crearDocumentos(tx, comunicacion.id, [...(entrada.documentos ?? []), ...documentosRespuestaFuncionario], entrada.radicadoPorId);
 
     if (entrada.respondeAId) {
+      await tx.firma.updateMany({ where: { comunicacionId: entrada.respondeAId }, data: { comunicacionId: comunicacion.id } });
+      await tx.solicitudFirma.updateMany({ where: { comunicacionId: entrada.respondeAId }, data: { comunicacionId: comunicacion.id } });
       await tx.comunicacion.update({ where: { id: entrada.respondeAId }, data: { estado: "RESPONDIDA" } });
     }
 
@@ -515,17 +548,37 @@ export async function registrarRespuestaFuncionario(
 ) {
   const c = await db.comunicacion.findUnique({
     where: { id: comunicacionId },
-    select: { id: true, tipo: true, estado: true, _count: { select: { respuestas: true } } },
+    select: {
+      id: true,
+      tipo: true,
+      estado: true,
+      _count: { select: { respuestas: true } },
+      firmas: { select: { id: true, usuarioId: true, usuario: { select: { nombre: true } } } },
+    },
   });
   if (!c) throw new Error("La comunicación no existe.");
   if (c.tipo !== "RECIBIDA") throw new Error("Solo se responde a comunicaciones recibidas.");
   if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");
   if (c._count.respuestas > 0) throw new Error("Ya se radicó una respuesta formal para esta comunicación.");
   if (!texto.trim()) throw new Error("Escriba el contenido de la respuesta.");
+  const firmasAjenas = c.firmas.filter((f) => f.usuarioId !== usuarioId);
+  if (firmasAjenas.length > 0) {
+    throw new Error(
+      `La respuesta ya tiene la firma de ${firmasAjenas.map((f) => f.usuario.nombre).join(", ")}: no se puede modificar sin invalidarla. Pida que rechacen o retiren su firma antes de corregirla.`
+    );
+  }
 
   const pasaAEnTramite = c.estado === "ASIGNADA" || c.estado === "EN_REPARTO";
 
   return db.$transaction(async (tx) => {
+    if (c.firmas.length > 0) {
+      const idsFirmas = c.firmas.map((f) => f.id);
+      await tx.solicitudFirma.updateMany({
+        where: { firmaId: { in: idsFirmas } },
+        data: { estado: "PENDIENTE", firmaId: null, completadoEn: null },
+      });
+      await tx.firma.deleteMany({ where: { id: { in: idsFirmas } } });
+    }
     const actualizada = await tx.comunicacion.update({
       where: { id: comunicacionId },
       data: {
@@ -700,6 +753,16 @@ export type ResultadoDespacho = {
   expedienteNumero: string | null;
   avisoExpediente: string | null;
 };
+
+export function motivoBloqueoRespuesta(firmas: { calidad: string | null }[], pendientes: string[]): string | null {
+  if (!firmas.some((f) => f.calidad === null || f.calidad === "PRINCIPAL")) {
+    return "La respuesta todavía no tiene la firma del firmante principal: el funcionario que la proyectó debe firmarla y solicitar la firma principal antes de que gestión documental la radique como salida.";
+  }
+  if (pendientes.length > 0) {
+    return `La respuesta tiene firmas o vistos buenos pendientes (${pendientes.join(", ")}): no se puede radicar como salida todavía.`;
+  }
+  return null;
+}
 
 export function motivoBloqueoDespacho(firmas: { calidad: string | null }[], pendientes: string[]): string | null {
   if (!firmas.some((f) => f.calidad === null || f.calidad === "PRINCIPAL")) {
