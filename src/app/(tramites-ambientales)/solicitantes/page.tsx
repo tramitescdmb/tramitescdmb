@@ -86,7 +86,7 @@ export default async function SolicitantesPage({
         <div className="flex flex-none flex-wrap items-center gap-2">
           <Link
             href="/solicitantes/nuevo"
-            className="rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95"
+            className="rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
           >
             + Nuevo solicitante
           </Link>
@@ -103,7 +103,7 @@ export default async function SolicitantesPage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="NIT, cédula, nombre o apellido…"
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </div>
         <div className="min-w-[200px]">
@@ -111,7 +111,7 @@ export default async function SolicitantesPage({
           <select
             name="municipio"
             defaultValue={municipio ?? ""}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           >
             <option value="">Todos</option>
             <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
@@ -124,7 +124,7 @@ export default async function SolicitantesPage({
         </div>
         <button
           type="submit"
-          className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95"
+          className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
         >
           Buscar
         </button>

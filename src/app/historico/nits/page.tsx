@@ -106,7 +106,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <div className="flex items-end gap-2">
           <label className="flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
               <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
               <input
                 type="text"
@@ -179,7 +179,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
           </label>
 
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               Filtrar
             </button>
             {hayFiltros && (
@@ -219,7 +219,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
             cron diario lo mantiene al día automáticamente (incluye resoluciones de fondo nuevas sobre NIT ya existentes).
           </span>
           <form action="/api/historico/nits/sincronizar" method="post">
-            <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+            <button className="flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
               <RefreshCw className="h-3.5 w-3.5" aria-hidden />
               Sincronizar ahora
             </button>

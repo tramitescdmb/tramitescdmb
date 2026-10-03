@@ -42,7 +42,7 @@ export function AprobarEtapaContratoBoton({ expedienteId, etiquetaSiguiente }: {
         type="button"
         onClick={aprobar}
         disabled={cargando}
-        className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-cdmb-700 disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600 disabled:opacity-60"
       >
         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
         {cargando ? "Aprobando…" : `Aprobar paso a ${etiquetaSiguiente}`}

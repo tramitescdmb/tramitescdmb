@@ -56,8 +56,8 @@ export function flujoAMermaid(
   }
 
   lineas.push("  classDef inicio fill:#57635b,stroke:#57635b,color:#ffffff");
-  lineas.push("  classDef actual fill:#1c7a45,stroke:#125c33,color:#ffffff,font-weight:bold");
-  lineas.push("  classDef hecho fill:#e3f3e8,stroke:#1f7a4d,color:#14532d");
+  lineas.push("  classDef actual fill:#038f67,stroke:#125c33,color:#ffffff,font-weight:bold");
+  lineas.push("  classDef hecho fill:#e3f3e8,stroke:#1f7a4d,color:#026b4d");
 
   const actualOrden = opts.pasoActualId ? ordenPorId.get(opts.pasoActualId) : undefined;
   if (actualOrden !== undefined) lineas.push(`  class n${actualOrden} actual`);

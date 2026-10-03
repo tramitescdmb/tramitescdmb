@@ -14,7 +14,7 @@ import { formatearFecha } from "@/lib/fecha";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
 function agruparPorDependencia(series: Awaited<ReturnType<typeof listarSeries>>): GrupoVista[] {
   const mapa = new Map<string, GrupoVista>();
@@ -135,7 +135,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
             </select>
           </Field>
           <div className="sm:col-span-4">
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar dependencia
             </button>
           </div>
@@ -258,7 +258,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
                 </span>
               </label>
               <div className="sm:col-span-4">
-                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
                   <Upload className="h-3.5 w-3.5" aria-hidden /> Importar TRD
                 </button>
               </div>
@@ -294,7 +294,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
             </Field>
           </div>
           <div className="sm:col-span-4">
-            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar serie
             </button>
           </div>

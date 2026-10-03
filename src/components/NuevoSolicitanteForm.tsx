@@ -94,7 +94,7 @@ export function NuevoSolicitanteForm() {
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")}
-          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         >
           <option value="NATURAL">Persona natural</option>
           <option value="JURIDICA">Persona jurídica (empresa, entidad)</option>
@@ -111,7 +111,7 @@ export function NuevoSolicitanteForm() {
           required
           value={identificacion}
           onChange={(e) => setIdentificacion(e.target.value)}
-          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
         />
       </Field>
@@ -122,7 +122,7 @@ export function NuevoSolicitanteForm() {
             required
             value={razonSocial}
             onChange={(e) => setRazonSocial(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             placeholder="Ej: Industrias ABC S.A.S."
           />
         </Field>
@@ -133,7 +133,7 @@ export function NuevoSolicitanteForm() {
               required
               value={nombres}
               onChange={(e) => setNombres(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder="Ej: Juan Pérez"
             />
           </Field>
@@ -142,7 +142,7 @@ export function NuevoSolicitanteForm() {
               required
               value={apellidos}
               onChange={(e) => setApellidos(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder="Ej: Gómez Rodríguez"
             />
           </Field>
@@ -155,7 +155,7 @@ export function NuevoSolicitanteForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             placeholder="correo@ejemplo.com"
           />
         </Field>
@@ -163,7 +163,7 @@ export function NuevoSolicitanteForm() {
           <input
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             placeholder="Ej: 3001234567"
           />
         </Field>
@@ -174,7 +174,7 @@ export function NuevoSolicitanteForm() {
           <input
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </Field>
         <Field label="Municipio" required icon={<IconMapPin className={iconSm} />} help="">
@@ -184,7 +184,7 @@ export function NuevoSolicitanteForm() {
             departamento={departamento}
             onMunicipio={setMunicipio}
             onDepartamento={setDepartamento}
-            inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </Field>
       </div>
@@ -198,7 +198,7 @@ export function NuevoSolicitanteForm() {
           <select
             value={regimenTributario}
             onChange={(e) => setRegimenTributario(e.target.value)}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           >
             <option value="">Sin especificar</option>
             {REGIMENES_TRIBUTARIOS.map((r) => (
@@ -214,7 +214,7 @@ export function NuevoSolicitanteForm() {
               type="checkbox"
               checked={granContribuyente}
               onChange={(e) => setGranContribuyente(e.target.checked)}
-              className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-cdmb-500"
+              className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-vivo-500"
             />
             Gran contribuyente
           </label>
@@ -242,7 +242,7 @@ export function NuevoSolicitanteForm() {
         <button
           type="submit"
           disabled={guardando}
-          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="flex items-center gap-2 rounded-md bg-acento-500 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {guardando && <Spinner claro />}
           {guardando ? "Guardando…" : "Crear solicitante"}

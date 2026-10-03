@@ -137,7 +137,7 @@ export function EditarDocumentoBoton({
               type="button"
               onClick={guardarCambios}
               disabled={cargando}
-              className="mt-3 w-full rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+              className="mt-3 w-full rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
             >
               Guardar cambios
             </button>

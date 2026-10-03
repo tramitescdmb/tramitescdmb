@@ -2,7 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 
-const VERDE = rgb(0.11, 0.478, 0.271);
+const VERDE = rgb(0.012, 0.561, 0.404);
 const GRIS = rgb(0.33, 0.33, 0.33);
 const GRIS_CLARO = rgb(0.5, 0.5, 0.5);
 const MARGEN = 48;

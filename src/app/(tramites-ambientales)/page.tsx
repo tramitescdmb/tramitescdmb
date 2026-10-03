@@ -85,7 +85,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   </p>
                 </div>
                 {s.puedeActuar ? (
-                  <Link href={`/firmas/firmar/${s.id}`} className="flex-none rounded-md bg-cdmb-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-cdmb-700">
+                  <Link href={`/firmas/firmar/${s.id}`} className="flex-none rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
                     {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
                   </Link>
                 ) : (

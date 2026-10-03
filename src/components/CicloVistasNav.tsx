@@ -27,7 +27,7 @@ export function CicloVistasNav({ nodos, rutaRaiz, ariaLabel }: { nodos: NodoCicl
                       <span
                         className={`flex h-12 w-12 flex-none items-center justify-center rounded-full transition ${
                           activo
-                            ? "bg-cdmb-600 text-white shadow-sm ring-4 ring-cdmb-100"
+                            ? "bg-menu-500 text-stone-900 shadow-sm ring-4 ring-menu-100"
                             : "border-2 border-stone-200 bg-white text-stone-400 group-hover:border-cdmb-400 group-hover:text-cdmb-600 group-focus-visible:border-cdmb-400"
                         }`}
                       >

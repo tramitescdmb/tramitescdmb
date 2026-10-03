@@ -39,7 +39,7 @@ export default async function ExpedientesContratacionPage({
           puedeGestionarContratistas(permisos) ? (
             <Link
               href="/contratacion/expedientes/nuevo"
-              className="flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-cdmb-700"
+              className="flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
               Nuevo expediente
@@ -55,12 +55,12 @@ export default async function ExpedientesContratacionPage({
           name="q"
           defaultValue={sp.q ?? ""}
           placeholder="Buscar por número, N.º de proceso SECOP, N.º de contrato, objeto o contratista…"
-          className="min-w-[220px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="min-w-[220px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <select
           name="etapa"
           defaultValue={sp.etapa ?? ""}
-          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         >
           <option value="">Todas las etapas</option>
           {ETAPAS_ORDEN.map((e) => (
@@ -70,7 +70,7 @@ export default async function ExpedientesContratacionPage({
         <select
           name="dependenciaId"
           defaultValue={sp.dependenciaId ?? ""}
-          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         >
           <option value="">Todas las dependencias</option>
           {dependencias.map((d) => (
@@ -198,7 +198,7 @@ export default async function ExpedientesContratacionPage({
             <Link
               key={p}
               href={`?${new URLSearchParams({ ...sp, page: String(p) }).toString()}`}
-              className={`rounded-md px-2.5 py-1 ${p === page ? "bg-cdmb-600 text-white" : "text-stone-500 hover:bg-stone-100"}`}
+              className={`rounded-md px-2.5 py-1 ${p === page ? "bg-menu-500 text-stone-900" : "text-stone-500 hover:bg-stone-100"}`}
             >
               {p}
             </Link>

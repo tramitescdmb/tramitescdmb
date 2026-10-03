@@ -12,7 +12,7 @@ const ETIQUETA_DISPOSICION: Record<string, string> = {
   MICROFILMACION_DIGITALIZACION: "Microfilmación / Digitalización",
 };
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 const DISPOSICIONES = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
 
 type SubserieVista = {
@@ -311,7 +311,7 @@ export function TrdSeriesExplorer({ grupos }: { grupos: GrupoVista[] }) {
             type="button"
             onClick={aplicarCambioMasivo}
             disabled={enviando}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando ? "Aplicando…" : `Aplicar a ${seleccion.size} subserie(s)`}
           </button>

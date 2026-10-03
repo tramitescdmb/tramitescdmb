@@ -617,7 +617,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
               <span
                 key={etapa}
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  actual ? "bg-cdmb-600 text-white" : pasada ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-400"
+                  actual ? "bg-menu-500 text-stone-900" : pasada ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-400"
                 }`}
               >
                 {ETIQUETA_ETAPA[etapa]}

@@ -95,7 +95,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                   </p>
                 </div>
                 <form action={`/api/correspondencia/${c.id}/transferir`} method="post">
-                  <button type="submit" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                  <button type="submit" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                     <ArrowRightCircle className="h-3.5 w-3.5" aria-hidden />
                     Marcar transferida
                   </button>
@@ -129,7 +129,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
                   </p>
                 </div>
                 <form action={`/api/correspondencia/${c.id}/confirmar-transferencia`} method="post">
-                  <button type="submit" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                  <button type="submit" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                     <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
                     Confirmar recepción
                   </button>

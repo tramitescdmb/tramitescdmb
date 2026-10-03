@@ -94,7 +94,7 @@ export default async function BitacoraGeconPage({ searchParams }: { searchParams
           name="q"
           defaultValue={busqueda ?? ""}
           placeholder="Buscar por número de expediente (ej. CDMB-CTO-2026-000001)⬦"
-          className="min-w-[260px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="min-w-[260px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
           Buscar
@@ -107,14 +107,14 @@ export default async function BitacoraGeconPage({ searchParams }: { searchParams
       </form>
 
       <div className="flex flex-wrap gap-2">
-        <Link href={href(1, undefined)} className={`rounded-full px-3 py-1 text-xs font-medium ${!tipoValido ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+        <Link href={href(1, undefined)} className={`rounded-full px-3 py-1 text-xs font-medium ${!tipoValido ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
           Todo
         </Link>
         {tiposExistentes.map((t) => (
           <Link
             key={t.tipo}
             href={href(1, t.tipo)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${tipoValido === t.tipo ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${tipoValido === t.tipo ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
           >
             {infoEvento(t.tipo).texto} <span className="tabular-nums opacity-70">{t._count._all}</span>
           </Link>

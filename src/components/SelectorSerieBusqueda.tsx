@@ -59,7 +59,7 @@ export function SelectorSerieBusqueda({
   return (
     <div ref={ref} className="relative min-w-[220px] flex-1">
       <span className="mb-1 block text-xs font-medium text-stone-600">Serie documental (TRD)</span>
-      <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+      <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
         <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
         <input
           type="text"

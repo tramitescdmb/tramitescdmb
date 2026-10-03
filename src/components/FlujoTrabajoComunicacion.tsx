@@ -127,7 +127,7 @@ export async function FlujoTrabajoComunicacion({
               </label>
               <input name="comentario" placeholder="Comentario (opcional)" className="block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
               <div className="flex flex-wrap items-center gap-2">
-                <button className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">
+                <button className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden /> Completar paso
                 </button>
               </div>
@@ -162,7 +162,7 @@ export async function FlujoTrabajoComunicacion({
                   ))}
                 </select>
               </label>
-              <button className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Iniciar</button>
+              <button className="rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">Iniciar</button>
             </form>
           ) : (
             <p className="text-xs text-stone-400">

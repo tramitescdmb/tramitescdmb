@@ -54,14 +54,14 @@ export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { ti
       </SectionHelp>
 
       <div className="flex flex-wrap gap-2">
-        <Link href={basePath} className={`rounded-full px-3 py-1 text-xs font-medium ${!filtro ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+        <Link href={basePath} className={`rounded-full px-3 py-1 text-xs font-medium ${!filtro ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
           Todo
         </Link>
         {Object.entries(ETIQUETAS_TIPO).map(([key, { texto }]) => (
           <Link
             key={key}
             href={`${basePath}?tipo=${key}`}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${filtro === key ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${filtro === key ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
           >
             {texto}
           </Link>

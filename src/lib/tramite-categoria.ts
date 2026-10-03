@@ -26,7 +26,7 @@ type ColorToken =
 
 const CLASES_COLOR: Record<ColorToken, { icono: string; badge: string; barra: string; borde: string; pildora: string }> = {
   azul: { icono: "bg-blue-600 text-white", badge: "bg-blue-50 text-blue-700", barra: "bg-blue-500", borde: "border-blue-500", pildora: "bg-blue-600" },
-  cdmb: { icono: "bg-cdmb-600 text-white", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-500", borde: "border-cdmb-500", pildora: "bg-cdmb-600" },
+  cdmb: { icono: "bg-menu-500 text-stone-900", badge: "bg-cdmb-50 text-cdmb-700", barra: "bg-cdmb-500", borde: "border-cdmb-500", pildora: "bg-cdmb-600" },
   ambar: { icono: "bg-amber-700 text-white", badge: "bg-amber-50 text-amber-800", barra: "bg-amber-500", borde: "border-amber-500", pildora: "bg-amber-700" },
   cian: { icono: "bg-cyan-700 text-white", badge: "bg-cyan-50 text-cyan-800", barra: "bg-cyan-600", borde: "border-cyan-600", pildora: "bg-cyan-700" },
   naranja: { icono: "bg-orange-700 text-white", badge: "bg-orange-50 text-orange-800", barra: "bg-orange-500", borde: "border-orange-500", pildora: "bg-orange-700" },

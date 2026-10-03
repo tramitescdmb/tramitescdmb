@@ -182,7 +182,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
     const planas = punto ? desdeLatLon(punto.lat, punto.lon) : null;
 
     const tabClase = (activa: boolean) =>
-      `rounded-md px-2.5 py-1 text-xs font-medium ${activa ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`;
+      `rounded-md px-2.5 py-1 text-xs font-medium ${activa ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`;
 
     return (
       <div className="space-y-3">

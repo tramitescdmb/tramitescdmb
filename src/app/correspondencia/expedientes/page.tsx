@@ -105,7 +105,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white shadow-soft p-2.5">
-        <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+        <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
           <input
             type="text"
@@ -126,7 +126,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             <option key={d.id} value={d.id}>{d.nombre}</option>
           ))}
         </select>
-        <button type="submit" className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+        <button type="submit" className="flex-none rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">Filtrar</button>
         {hayFiltros && (
           <Link prefetch={false} href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
         )}
@@ -139,7 +139,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             <Link prefetch={false}
               href={hrefModo("carpetas")}
               aria-current={modo === "carpetas" ? "true" : undefined}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium ${modo === "carpetas" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium ${modo === "carpetas" ? "bg-menu-500 text-stone-900" : "bg-white text-stone-600 hover:bg-stone-50"}`}
             >
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
               Carpetas
@@ -147,7 +147,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             <Link prefetch={false}
               href={hrefModo("tabla")}
               aria-current={modo === "tabla" ? "true" : undefined}
-              className={`flex items-center gap-1 border-l border-stone-200 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-cdmb-600 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}
+              className={`flex items-center gap-1 border-l border-stone-200 px-2.5 py-1.5 text-xs font-medium ${modo === "tabla" ? "bg-menu-500 text-stone-900" : "bg-white text-stone-600 hover:bg-stone-50"}`}
             >
               <Table2 className="h-3.5 w-3.5" aria-hidden />
               Tabla
@@ -157,7 +157,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
           <DescargarCsvBoton href={hrefFuid()} label="FUID (CSV)" />
           <Link prefetch={false}
             href="/correspondencia/expedientes/nuevo"
-            className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700"
+            className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden />
             Nuevo expediente

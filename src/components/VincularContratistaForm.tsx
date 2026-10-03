@@ -97,7 +97,7 @@ export function VincularContratistaForm({ expedienteId, contratistaActual }: { e
             setNoEncontrado(false);
           }}
           placeholder="NIT o cédula del contratista"
-          className="w-52 rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-52 rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-xs focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <button
           type="button"

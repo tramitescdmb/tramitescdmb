@@ -13,7 +13,7 @@ import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
 import type { AccionAuditoriaDoc } from "@prisma/client";
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
 export default async function BitacoraPage({
   searchParams,
@@ -88,7 +88,7 @@ export default async function BitacoraPage({
           </select>
           <input type="date" name="desde" defaultValue={filtros.desde ?? ""} className={inputCls} />
           <input type="date" name="hasta" defaultValue={filtros.hasta ?? ""} className={inputCls} />
-          <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+          <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
             Filtrar
           </button>
         </form>

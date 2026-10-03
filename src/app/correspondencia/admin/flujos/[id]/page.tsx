@@ -13,7 +13,7 @@ import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 const TIPOS_PASO = ["TAREA", "REVISION", "DECISION", "FIN"] as const;
 const ASIGNACIONES = ["DEPENDENCIA_COMUNICACION", "DEPENDENCIA_FIJA", "CARGO", "RADICADOR", "RESPONSABLE_PASO_ANTERIOR", "MANUAL"] as const;
 
@@ -106,7 +106,7 @@ export default async function FlujoEditorPage({
           <Field label="Descripción"><input name="descripcion" defaultValue={flujo.descripcion ?? ""} className={inputCls} /></Field>
         </div>
         <div className="sm:col-span-3 flex flex-wrap items-center gap-3">
-          <button className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar datos</button>
+          <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar datos</button>
           <FormBoton accion={accion} name="accion" value={flujo.activo ? "desactivar" : "activar"} disabled={!flujo.activo && flujo.problemas.length > 0}
             className={flujo.activo ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}>
             {flujo.activo ? "Desactivar" : "Activar flujo"}
@@ -140,7 +140,7 @@ export default async function FlujoEditorPage({
             </label>
           ))}
         </div>
-        <button className="mt-3 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar acceso</button>
+        <button className="mt-3 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar acceso</button>
       </form>
 
       <div className="space-y-3">
@@ -213,7 +213,7 @@ export default async function FlujoEditorPage({
                       ))}
                     </select>
                   </label>
-                  <button className="rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                  <button className="rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                     + Salida
                   </button>
                 </form>
@@ -254,7 +254,7 @@ export default async function FlujoEditorPage({
                   <Field label="Instrucciones para el responsable"><textarea name="instrucciones" defaultValue={paso.instrucciones ?? ""} rows={2} className={inputCls} /></Field>
                 </div>
                 <div className="sm:col-span-3">
-                  <button className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar paso</button>
+                  <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar paso</button>
                 </div>
               </form>
             </details>
@@ -273,7 +273,7 @@ export default async function FlujoEditorPage({
               {TIPOS_PASO.map((t) => (<option key={t} value={t}>{ETIQUETA_TIPO_PASO[t]}</option>))}
             </select>
           </label>
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+          <button className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white hover:bg-acento-600">
             <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar paso
           </button>
           <span className="text-xs text-stone-400">Entra antes del paso «Fin» si el último lo es.</span>

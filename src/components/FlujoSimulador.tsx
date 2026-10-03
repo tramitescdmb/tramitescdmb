@@ -78,7 +78,7 @@ export function FlujoSimulador({ pasos, transiciones }: { pasos: Paso[]; transic
               key={i}
               type="button"
               onClick={() => elegir(t)}
-              className="rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+              className="rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
             >
               {t.etiqueta} → {porId.get(t.haciaPasoId)?.nombre}
             </button>

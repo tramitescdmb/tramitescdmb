@@ -146,7 +146,7 @@ export default async function CorrespondenciaBandejaPage({
                   </span>
                   <Link
                     href={`/correspondencia/nueva/enviada?respondeAId=${c.id}`}
-                    className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                    className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
                   >
                     <Send className="h-3.5 w-3.5" aria-hidden /> Radicar salida
                   </Link>
@@ -185,7 +185,7 @@ export default async function CorrespondenciaBandejaPage({
                 </li>
               ))}
             </ul>
-            <button type="submit" className="mt-3 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button type="submit" className="mt-3 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               Firmar seleccionadas
             </button>
           </form>
@@ -211,7 +211,7 @@ export default async function CorrespondenciaBandejaPage({
         <form method="get" className="flex flex-wrap items-end gap-2 border-t border-stone-100 p-3">
           <label className="min-w-[220px] flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+            <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
               <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
               <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder='Ej. concesión aguas  ·  "aprovechamiento forestal"  ·  vertimientos -renovación' className="w-full text-sm outline-none" />
             </span>
@@ -286,7 +286,7 @@ export default async function CorrespondenciaBandejaPage({
             </select>
           </label>
 
-          <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+          <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Filtrar</button>
           {hayFiltros && (
             <Link href="/correspondencia" className="rounded-md border border-stone-200 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
           )}
@@ -300,7 +300,7 @@ export default async function CorrespondenciaBandejaPage({
           <BotonImprimir variante="secundario" />
           {puedeRadicarUsuario && (
             <>
-              <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+              <Link href="/correspondencia/nueva" className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white hover:bg-acento-600">
                 <PlusCircle className="h-4 w-4" aria-hidden />
                 Radicar recibida
               </Link>

@@ -10,7 +10,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { SelectorSerieBusqueda } from "@/components/SelectorSerieBusqueda";
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 const TIPOS = ["TEXTO", "NUMERO", "FECHA", "LISTA", "BOOLEANO"] as const;
 const AMBITOS = ["AMBOS", "COMUNICACION", "EXPEDIENTE"] as const;
 
@@ -74,7 +74,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
             <input type="checkbox" name="obligatorio" className="rounded border-stone-200" /> Obligatorio
           </label>
           <div className="sm:col-span-3">
-            <button className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               <Plus className="h-3.5 w-3.5" aria-hidden /> Crear campo
             </button>
           </div>
@@ -121,7 +121,7 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
                   <input type="checkbox" name="obligatorio" defaultChecked={c.obligatorio} className="rounded border-stone-200" /> Obligatorio
                 </label>
                 <div className="sm:col-span-3 flex flex-wrap items-center gap-4">
-                  <button className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Guardar</button>
+                  <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar</button>
                 </div>
               </form>
               <div className="mt-2 flex flex-wrap items-center gap-4 border-t border-stone-100 pt-2">

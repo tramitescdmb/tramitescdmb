@@ -1,7 +1,7 @@
 import type { TipoComunicacion } from "@prisma/client";
 
 const COLOR_TIPO: Record<TipoComunicacion, string> = {
-  RECIBIDA: "#1c7a45",
+  RECIBIDA: "#038f67",
   ENVIADA: "#2563eb",
   INTERNA: "#d97706",
 };

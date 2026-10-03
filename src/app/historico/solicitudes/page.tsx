@@ -84,7 +84,7 @@ export default async function HistoricoSolicitudesPage({
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
             <label className="flex-1">
               <span className="mb-1.5 block text-xs font-medium text-graphite-600">Buscar</span>
-              <span className="flex items-center gap-2 rounded-xl border border-graphite-200 px-3.5 py-2.5 transition-shadow focus-within:border-cdmb-500 focus-within:ring-4 focus-within:ring-cdmb-500/15">
+              <span className="flex items-center gap-2 rounded-xl border border-graphite-200 px-3.5 py-2.5 transition-shadow focus-within:border-vivo-500 focus-within:ring-4 focus-within:ring-vivo-500/15">
                 <Search className="h-4 w-4 flex-none text-graphite-400" aria-hidden />
                 <input
                   type="text"
@@ -100,7 +100,7 @@ export default async function HistoricoSolicitudesPage({
 
           <label>
             <span className="mb-1.5 block text-xs font-medium text-graphite-600">Tipo de trámite</span>
-            <select name="tipo" defaultValue={filtros.tipo ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15">
+            <select name="tipo" defaultValue={filtros.tipo ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15">
               <option value="">Todos</option>
               {opciones.tipos.map((t) => (
                 <option key={t.codigo} value={t.codigo}>{t.nombre} ({t.total})</option>
@@ -110,7 +110,7 @@ export default async function HistoricoSolicitudesPage({
 
           <label>
             <span className="mb-1.5 block text-xs font-medium text-graphite-600">Municipio</span>
-            <select name="municipio" defaultValue={filtros.municipio ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15">
+            <select name="municipio" defaultValue={filtros.municipio ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15">
               <option value="">Todos</option>
               {opciones.municipios.map((m) => (
                 <option key={m.nombre} value={m.nombre}>{m.nombre} ({m.total})</option>
@@ -120,7 +120,7 @@ export default async function HistoricoSolicitudesPage({
 
           <label>
             <span className="mb-1.5 block text-xs font-medium text-graphite-600">Estado</span>
-            <select name="estado" defaultValue={filtros.estado ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15">
+            <select name="estado" defaultValue={filtros.estado ?? ""} className="w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15">
               <option value="">Todos</option>
               {opciones.estados.map((e) => (
                 <option key={e.nombre} value={e.nombre}>{e.nombre} ({e.total})</option>
@@ -129,7 +129,7 @@ export default async function HistoricoSolicitudesPage({
           </label>
 
           <div className="flex items-end gap-2">
-            <button type="submit" className="rounded-xl bg-cdmb-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cdmb-700 hover:shadow-md active:scale-[0.98]">
+            <button type="submit" className="rounded-xl bg-acento-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-acento-600 hover:shadow-md active:scale-[0.98]">
               Filtrar
             </button>
             {hayFiltros && (
@@ -175,7 +175,7 @@ export default async function HistoricoSolicitudesPage({
           </span>
           <form action="/api/sinca/sincronizar" method="post">
             <input type="hidden" name="volver" value="/historico/solicitudes" />
-            <button className="flex items-center gap-1.5 rounded-lg border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 transition-colors hover:bg-cdmb-50">
+            <button className="flex items-center gap-1.5 rounded-lg border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 transition-colors hover:bg-cdmb-50">
               <RefreshCw className="h-3.5 w-3.5" aria-hidden />
               Sincronizar ahora
             </button>

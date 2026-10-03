@@ -159,7 +159,7 @@ export function SubirDocumentoExpedienteForm({
           type="button"
           onClick={subir}
           disabled={subiendo}
-          className="inline-flex items-center gap-2 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 disabled:opacity-60"
         >
           {subiendo && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
           {subiendo ? (progreso ?? "Subiendo…") : `Agregar ${archivos.length} documento(s) al expediente`}

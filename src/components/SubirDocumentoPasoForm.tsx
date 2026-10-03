@@ -28,7 +28,7 @@ function BotonSubir({ onClick, subiendo, deshabilitado }: { onClick: () => void;
       type="button"
       onClick={onClick}
       disabled={deshabilitado}
-      className="inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1 text-xs font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex flex-none items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1 text-xs font-medium text-white hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {subiendo ? <Spinner /> : <Upload className="h-3.5 w-3.5" aria-hidden />}
       {subiendo ? "Subiendo…" : "Subir"}

@@ -33,12 +33,12 @@ export async function NavBar() {
   const usuarioTerminos = await db.usuario.findUnique({ where: { id: session.userId }, select: { terminosAceptadosEn: true } });
 
   const marca = (
-    <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-graphite-900">
+    <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-white">
       {config.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={config.logoUrl} alt="CDMB" className="h-8 w-auto flex-none" />
+        <img src={config.logoUrl} alt="CDMB" className="h-9 w-auto flex-none rounded-md bg-white p-0.5" />
       ) : (
-        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-cdmb-600 text-sm font-bold text-white">
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-sm font-bold text-cdmb-700">
           C
         </span>
       )}
@@ -63,7 +63,7 @@ export async function NavBar() {
         iniciales={iniciales(session.nombre)}
       />
 
-      <header className="border-b border-graphite-100 bg-white lg:hidden">
+      <header className="border-b border-cdmb-800 bg-cdmb-700 lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}
           <MobileNav

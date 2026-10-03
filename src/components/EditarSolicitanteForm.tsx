@@ -75,7 +75,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
               required
               value={razonSocial}
               onChange={(e) => setRazonSocial(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
         ) : (
@@ -85,7 +85,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
                 required
                 value={nombres}
                 onChange={(e) => setNombres(e.target.value)}
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
             <Field label="Apellidos" required help="">
@@ -93,7 +93,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
                 required
                 value={apellidos}
                 onChange={(e) => setApellidos(e.target.value)}
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
           </div>
@@ -105,14 +105,14 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
           <Field label="Teléfono" help="">
             <input
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
         </div>
@@ -122,7 +122,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
             <input
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
           <Field label="Municipio" required help="">
@@ -132,7 +132,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
               departamento={departamento}
               onMunicipio={setMunicipio}
               onDepartamento={setDepartamento}
-              inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              inputCls="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
         </div>
@@ -142,7 +142,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
             <select
               value={regimenTributario}
               onChange={(e) => setRegimenTributario(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             >
               <option value="">Sin especificar</option>
               {REGIMENES_TRIBUTARIOS.map((r) => (
@@ -158,7 +158,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
                 type="checkbox"
                 checked={granContribuyente}
                 onChange={(e) => setGranContribuyente(e.target.checked)}
-                className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-cdmb-500"
+                className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-vivo-500"
               />
               Gran contribuyente
             </label>
@@ -170,7 +170,7 @@ export function EditarSolicitanteForm({ solicitante }: { solicitante: Solicitant
         <button
           type="submit"
           disabled={guardando}
-          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="flex items-center gap-2 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {guardando && <Spinner claro />}
           {guardando ? "Guardando…" : "Guardar cambios"}

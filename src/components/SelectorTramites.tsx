@@ -67,7 +67,7 @@ export function SelectorTramites({
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Buscar…"
-            className="mb-2 w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-sm text-stone-700 focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
+            className="mb-2 w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-sm text-stone-700 focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
           />
           <div className="max-h-60 space-y-0.5 overflow-y-auto">
             {filtradas.length === 0 && <p className="px-1 py-2 text-xs text-stone-400">Sin coincidencias.</p>}
@@ -77,7 +77,7 @@ export function SelectorTramites({
                   type="checkbox"
                   checked={seleccion.has(o.valor)}
                   onChange={() => alternar(o.valor)}
-                  className="h-3.5 w-3.5 rounded border-stone-300 text-cdmb-600 focus:ring-cdmb-500"
+                  className="h-3.5 w-3.5 rounded border-stone-300 text-cdmb-600 focus:ring-vivo-500"
                 />
                 <span className="flex-1 truncate text-stone-700">{o.etiqueta}</span>
                 {o.total != null && <span className="text-xs text-stone-400">{o.total}</span>}
@@ -92,7 +92,7 @@ export function SelectorTramites({
             <button
               type="button"
               onClick={() => irA(seleccion)}
-              className="rounded-lg bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+              className="rounded-lg bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
             >
               Aplicar ({seleccion.size})
             </button>

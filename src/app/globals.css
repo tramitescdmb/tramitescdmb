@@ -7,14 +7,34 @@
 }
 
 body {
-  /* Gris muy claro, frío (no blanco puro, no cálido) — canvas neutro sobre el que
-     las tarjetas blancas "flotan" con sombra suave (línea de diseño tecnológica). */
-  background-color: #f4f6f8;
+  background-color: #faf8f3;
+  color: #1b2a20;
 }
 
 ::selection {
-  background-color: #d5f2dd; /* cdmb-100 */
-  color: #134129; /* cdmb-900 */
+  background-color: #dceee6;
+  color: #026b4d;
+}
+
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  select,
+  textarea {
+    border-color: #c7cec5;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):focus,
+  select:focus,
+  textarea:focus {
+    border-color: #01bd32;
+    outline: none;
+    box-shadow: 0 0 0 1px #01bd32;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: #038f67;
+  }
 }
 
 .leaflet-interactive:focus {

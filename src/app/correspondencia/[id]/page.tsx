@@ -564,7 +564,7 @@ export default async function CorrespondenciaDetallePage({
                         </span>
                         <span className="flex flex-none items-center gap-1.5">
                           <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
-                          <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                          <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                             <Download className="h-3.5 w-3.5" aria-hidden />
                             Abrir
                           </a>
@@ -607,7 +607,7 @@ export default async function CorrespondenciaDetallePage({
                   ) : (
                     <Link
                       href={`/correspondencia/nueva/enviada?respondeAId=${id}`}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50"
                     >
                       <Send className="h-3.5 w-3.5" aria-hidden />
                       Radicar como oficio de salida
@@ -762,7 +762,7 @@ export default async function CorrespondenciaDetallePage({
                         </span>
                       </label>
                     )}
-                    <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                    <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
                       <MailCheck className="h-3.5 w-3.5" aria-hidden />
                       Registrar despacho
                     </button>
@@ -797,7 +797,7 @@ export default async function CorrespondenciaDetallePage({
                       {c.fechaVencimiento ? " Al reanudarlo, el término se reanuda por los días hábiles que faltaban (Art. 17 CPACA)." : ""}
                     </p>
                     <form action={`/api/correspondencia/${id}/reactivar`} method="post" className="mt-3">
-                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
                         <PlayCircle className="h-3.5 w-3.5" aria-hidden />
                         Reanudar el trámite
                       </button>
@@ -859,7 +859,7 @@ export default async function CorrespondenciaDetallePage({
                       </span>
                       <span className="flex flex-none items-center gap-1.5">
                         <VistaPreviaDocumento url={`/api/correspondencia-documentos/${doc.id}`} nombre={doc.nombre} mimeType={doc.mimeType} miniatura />
-                        <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+                        <a href={`/api/correspondencia-documentos/${doc.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
                           <Download className="h-3.5 w-3.5" aria-hidden />
                           Abrir
                         </a>
@@ -907,7 +907,7 @@ export default async function CorrespondenciaDetallePage({
                           <input name="numeroExpediente" placeholder="Ej. M-DA-PR05-2026-0001" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                         </Field>
                       </div>
-                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
                         <Archive className="h-3.5 w-3.5" aria-hidden />
                         Archivar
                       </button>
@@ -939,7 +939,7 @@ export default async function CorrespondenciaDetallePage({
                           <input name="numeroExpedienteDocumental" placeholder="Ej. CDMB-X-2026-000001" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
                         </Field>
                       </div>
-                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
+                      <button type="submit" className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-4 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
                         <Archive className="h-3.5 w-3.5" aria-hidden />
                         Archivar
                       </button>

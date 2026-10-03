@@ -63,7 +63,7 @@ export function AvisoTratamientoDatos({ abierto }: { abierto: boolean }) {
             type="button"
             onClick={aceptar}
             disabled={guardando}
-            className="rounded-lg bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-acento-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {guardando ? "Guardando…" : "Autorizar y aceptar"}
           </button>

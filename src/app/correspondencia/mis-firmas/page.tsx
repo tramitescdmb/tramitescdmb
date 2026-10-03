@@ -55,7 +55,7 @@ export default async function MisFirmasCorrespondenciaPage() {
                         target="_blank"
                         rel="noreferrer"
                         title="Abre el PDF con su rótulo de radicación y sello de firma"
-                        className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                        className="inline-flex flex-none items-center gap-1 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
                       >
                         <FileText className="h-3.5 w-3.5" aria-hidden />
                         Ver documento
@@ -83,7 +83,7 @@ export default async function MisFirmasCorrespondenciaPage() {
                       target="_blank"
                       rel="noreferrer"
                       title={f.documentoArchivo!.mimeType === "application/pdf" ? "Abre el PDF con su sello de firma electrónica" : "Abre el archivo firmado"}
-                      className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                      className="inline-flex flex-none items-center gap-1 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
                     >
                       <FileText className="h-3.5 w-3.5" aria-hidden />
                       Ver documento

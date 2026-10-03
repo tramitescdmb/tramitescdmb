@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
-const inputCls = "min-w-0 flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "min-w-0 flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
 export function NuevoEspacioInformeForm({ expedienteId, requisitoId }: { expedienteId: string; requisitoId: string }) {
   const router = useRouter();
@@ -67,7 +67,7 @@ export function NuevoEspacioInformeForm({ expedienteId, requisitoId }: { expedie
           type="button"
           onClick={crear}
           disabled={guardando}
-          className="rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+          className="rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
         >
           {guardando ? "Creando…" : "Crear espacio"}
         </button>

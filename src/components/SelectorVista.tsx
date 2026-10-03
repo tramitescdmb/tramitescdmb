@@ -32,7 +32,7 @@ export function SelectorVista({ vistaActual }: { vistaActual: OpcionVista }) {
         id="selector-vista"
         value={vistaActual}
         onChange={(e) => cambiarVista(e.target.value as OpcionVista)}
-        className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
+        className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
       >
         {OPCIONES_VISTA.map((v) => (
           <option key={v} value={v}>

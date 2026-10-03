@@ -82,7 +82,7 @@ export function VincularUsuarioDominioForm({
         onChange={(e) => setUsuarioRed(e.target.value)}
         placeholder="Usuario de red (ej. jperez)"
         onKeyDown={(e) => e.key === "Enter" && vincular()}
-        className="w-48 rounded-lg border border-stone-200 px-2.5 py-1.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        className="w-48 rounded-lg border border-stone-200 px-2.5 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
       />
       <button
         type="button"

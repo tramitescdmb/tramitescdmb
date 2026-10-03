@@ -53,7 +53,7 @@ export default async function HistoricoPanelPage({
 
   const botonSync = esAdmin ? (
     <form action="/api/sinca/sincronizar" method="post">
-      <button className="flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
+      <button className="flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">
         <RefreshCw className="h-3.5 w-3.5" aria-hidden />
         Sincronizar ahora
       </button>

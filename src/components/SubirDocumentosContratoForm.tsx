@@ -80,7 +80,7 @@ export function SubirDocumentosContratoForm({
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
           placeholder="Categoría del documento (opcional)"
-          className="min-w-[220px] flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="min-w-[220px] flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <datalist id={datalistId}>
           {categoriasSugeridas.map((c) => (

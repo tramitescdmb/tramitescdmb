@@ -57,7 +57,7 @@ export async function MetadatosComunicacion({
             </label>
           ))}
           <div className="sm:col-span-2">
-            <button className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700">Guardar metadatos</button>
+            <button className="rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">Guardar metadatos</button>
           </div>
         </form>
       ) : (

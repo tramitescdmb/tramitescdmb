@@ -374,7 +374,7 @@ export default async function ExpedienteDetallePage({
                           href={`/api/documentos-archivo/${doc.id}${doc.firmas.length > 0 ? "/rotulado" : ""}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
                         >
                           <Download className="h-3.5 w-3.5" aria-hidden />
                           Abrir
@@ -520,7 +520,7 @@ export default async function ExpedienteDetallePage({
                             {CRITERIOS_ORDEN.map((c) => (<option key={c} value={c}>{ETIQUETA_CRITERIO_ORDEN[c]}</option>))}
                           </select>
                         </label>
-                        <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
+                        <button type="submit" className="rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
                         <span className="text-[11px] text-stone-400">Aplica a todos los expedientes de esta serie. No cambia el índice firmado.</span>
                       </form>
                     )}
@@ -537,7 +537,7 @@ export default async function ExpedienteDetallePage({
                           <span className="mb-1 block font-medium text-stone-600">Máx. folios por tomo (MoReq 1.43)</span>
                           <input type="number" name="maxFoliosPorTomo" min={0} defaultValue={expediente.serie.maxFoliosPorTomo ?? ""} placeholder="sin límite" className="w-32 rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
                         </label>
-                        <button type="submit" className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
+                        <button type="submit" className="rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50">Guardar</button>
                       </form>
                     )}
                   </div>

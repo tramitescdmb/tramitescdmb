@@ -274,7 +274,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
                 onChange={(e) => setLatManual(e.target.value)}
                 placeholder="Ej. 7.119349"
                 inputMode="decimal"
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
             <Field label="Longitud">
@@ -283,7 +283,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
                 onChange={(e) => setLonManual(e.target.value)}
                 placeholder="Ej. -73.122742"
                 inputMode="decimal"
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
           </div>
@@ -291,7 +291,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
             <button
               type="button"
               onClick={usarPuntoManual}
-              className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95"
+              className="rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
             >
               Usar este punto
             </button>
@@ -326,7 +326,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
             <input
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </Field>
 
@@ -365,7 +365,7 @@ export function CapturarVisitaTecnica({ expedienteId, pasoNumero }: { expediente
               type="button"
               onClick={guardarPunto}
               disabled={guardando}
-              className="flex items-center gap-2 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+              className="flex items-center gap-2 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
             >
               {guardando && <Spinner claro />}
               {guardando ? progreso ?? "Guardando…" : "Guardar visita"}

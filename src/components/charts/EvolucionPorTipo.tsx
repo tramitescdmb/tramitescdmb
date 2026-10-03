@@ -6,7 +6,7 @@ type Punto = { label: string; RECIBIDA: number; ENVIADA: number; INTERNA: number
 type SerieKey = "RECIBIDA" | "ENVIADA" | "INTERNA";
 
 const SERIES: { key: SerieKey; etiqueta: string; color: string }[] = [
-  { key: "RECIBIDA", etiqueta: "Recibidas", color: "#1c7a45" },
+  { key: "RECIBIDA", etiqueta: "Recibidas", color: "#038f67" },
   { key: "ENVIADA", etiqueta: "Enviadas", color: "#2563eb" },
   { key: "INTERNA", etiqueta: "Memorandos", color: "#d97706" },
 ];

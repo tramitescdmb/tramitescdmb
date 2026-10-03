@@ -4,7 +4,7 @@ import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello } from "@/lib/calidad-firma";
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 
-const VERDE = rgb(0.11, 0.478, 0.271);
+const VERDE = rgb(0.012, 0.561, 0.404);
 const GRIS = rgb(0.35, 0.35, 0.35);
 const GRIS_CLARO = rgb(0.5, 0.5, 0.5);
 

@@ -347,7 +347,7 @@ export default async function TramiteDetallePage({
                   </p>
                   <Link
                     href={flujoEnfocado ? `/tramites/${tramite.slug}/nuevo?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}/nuevo`}
-                    className="inline-flex w-full items-center justify-center rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600"
                   >
                     + Iniciar nuevo expediente
                   </Link>
@@ -370,7 +370,7 @@ export default async function TramiteDetallePage({
                     href="https://vital-publico.minambiente.gov.co/inicio"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600"
                   >
                     Ir a VITAL
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden />

@@ -52,7 +52,7 @@ export function SelectorClasificacionTrd({
         value={valor}
         disabled={deshabilitado || guardando}
         onChange={(e) => cambiar(e.target.value)}
-        className="w-full min-w-[220px] rounded-md border border-stone-200 px-2 py-1 text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500 disabled:bg-stone-50 disabled:text-stone-400"
+        className="w-full min-w-[220px] rounded-md border border-stone-200 px-2 py-1 text-xs focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500 disabled:bg-stone-50 disabled:text-stone-400"
       >
         <option value="">{placeholder}</option>
         {opciones.map((o) => (

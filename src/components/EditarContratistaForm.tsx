@@ -6,7 +6,7 @@ import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
 type Contratista = {
   id: string;
@@ -126,7 +126,7 @@ export function EditarContratistaForm({ contratista }: { contratista: Contratist
           </Field>
           <div className="flex items-end pb-2">
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" checked={granContribuyente} onChange={(e) => setGranContribuyente(e.target.checked)} className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-cdmb-500" />
+              <input type="checkbox" checked={granContribuyente} onChange={(e) => setGranContribuyente(e.target.checked)} className="h-4 w-4 rounded border-stone-200 text-cdmb-600 focus:ring-vivo-500" />
               Gran contribuyente
             </label>
           </div>
@@ -137,7 +137,7 @@ export function EditarContratistaForm({ contratista }: { contratista: Contratist
         <button
           type="submit"
           disabled={guardando}
-          className="flex items-center gap-2 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="flex items-center gap-2 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {guardando && <Spinner claro />}
           {guardando ? "Guardando…" : "Guardar cambios"}

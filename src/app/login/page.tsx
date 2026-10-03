@@ -10,7 +10,7 @@ const ERRORES: Record<string, string> = {
 
 const inputCls =
   "w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
-  "transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15";
+  "transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15";
 
 export default async function LoginPage({
   searchParams,
@@ -95,7 +95,7 @@ export default async function LoginPage({
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-cdmb-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cdmb-700 hover:shadow-md active:scale-[0.99]"
+            className="w-full rounded-xl bg-acento-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-acento-600 hover:shadow-md active:scale-[0.99]"
           >
             Ingresar
           </button>

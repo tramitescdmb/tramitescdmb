@@ -31,7 +31,7 @@ export async function Footer() {
       </div>
 
       {sellos.length > 0 && (
-        <div className="w-full bg-[#3366CC] px-4 py-4">
+        <div className="w-full bg-govco px-4 py-4">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-6">
             {sellos.map((s) => (
               // eslint-disable-next-line @next/next/no-img-element

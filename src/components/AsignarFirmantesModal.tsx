@@ -194,7 +194,7 @@ export function AsignarFirmantesModal({
                           onClick={() => setUsuarioId(u.id)}
                           aria-pressed={activo}
                           className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                            activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            activo ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                           }`}
                         >
                           {u.nombre}
@@ -247,7 +247,7 @@ export function AsignarFirmantesModal({
                 type="button"
                 onClick={agregar}
                 disabled={cargando}
-                className="w-full rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+                className="w-full rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
               >
                 {cargando ? "Agregando…" : "Agregar"}
               </button>

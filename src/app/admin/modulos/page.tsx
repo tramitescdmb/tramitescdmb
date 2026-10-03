@@ -46,7 +46,7 @@ export default async function ModulosPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
 
-        <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+        <button type="submit" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
           Guardar
         </button>
       </form>

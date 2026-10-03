@@ -66,7 +66,7 @@ export default async function ContratistasPage({
           puedeGestionarContratistas(permisos) ? (
             <Link prefetch={false}
               href="/contratacion/contratistas/nuevo"
-              className="flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-cdmb-700"
+              className="flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
               Nuevo contratista
@@ -86,7 +86,7 @@ export default async function ContratistasPage({
           name="q"
           defaultValue={busqueda ?? ""}
           placeholder="Buscar por identificación o nombre/razón social…"
-          className="min-w-[260px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="min-w-[260px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
           Buscar

@@ -87,7 +87,7 @@ export function PlantillaSelector({
               fetch(`/api/correspondencia/plantillas/${seleccionada.id}/usada`, { method: "POST" }).catch(() => {});
             }
           }}
-          className="rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50 disabled:opacity-40"
+          className="rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50 disabled:opacity-40"
         >
           Cargar
         </button>

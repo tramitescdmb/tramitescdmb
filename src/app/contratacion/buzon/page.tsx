@@ -61,7 +61,7 @@ export default async function BuzonContratacionPage() {
               {s.puedeActuar ? (
                 <Link
                   href={`/contratacion/firmar/${s.id}`}
-                  className="inline-flex flex-none items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                  className="inline-flex flex-none items-center gap-1 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
                 >
                   <PenLine className="h-3.5 w-3.5" aria-hidden />
                   {s.rol === "FIRMA" ? "Firmar" : "Dar visto bueno"}

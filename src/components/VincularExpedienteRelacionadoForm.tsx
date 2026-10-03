@@ -42,7 +42,7 @@ export function VincularExpedienteRelacionadoForm({
       <select
         value={valor}
         onChange={(e) => setValor(e.target.value)}
-        className="rounded-md border border-stone-200 px-2 py-1 text-xs focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+        className="rounded-md border border-stone-200 px-2 py-1 text-xs focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
       >
         <option value="">Ninguno</option>
         {opciones.map((o) => (

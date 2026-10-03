@@ -44,7 +44,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
         value={desde}
         onChange={(e) => setDesde(e.target.value)}
         aria-label="Desde"
-        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
+        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
       />
       <span className="text-xs text-stone-400">a</span>
       <input
@@ -52,13 +52,13 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
         value={hasta}
         onChange={(e) => setHasta(e.target.value)}
         aria-label="Hasta"
-        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15"
+        className="rounded-lg border border-stone-200 px-2 py-1.5 text-sm text-stone-700 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
       />
       <button
         type="button"
         onClick={aplicar}
         disabled={!desde || !hasta}
-        className="rounded-lg bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-acento-500 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Aplicar
       </button>

@@ -93,7 +93,7 @@ export default async function VitalSolicitudesPage({
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
             <label className="flex-1">
               <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
-              <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500">
+              <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
                 <Search className="h-4 w-4 flex-none text-stone-400" aria-hidden />
                 <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="ID VITAL, solicitante, identificación o actividad" className="w-full text-sm outline-none" />
               </span>
@@ -112,7 +112,7 @@ export default async function VitalSolicitudesPage({
           </label>
 
           <div className="flex items-end gap-2">
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">Filtrar</button>
+            <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Filtrar</button>
             {hayFiltros && (
               <Link href="/vital" className="rounded-md border border-stone-200 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
             )}
@@ -167,7 +167,7 @@ export default async function VitalSolicitudesPage({
               <label className="mb-1 block text-xs font-medium text-stone-600">Hasta</label>
               <input name="fechaFin" type="date" required defaultValue={AYER} className="rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
             </div>
-            <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+            <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
               Sincronizar
             </button>
           </form>

@@ -42,7 +42,7 @@ function Buscador({
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-stone-200 py-1.5 pl-8 pr-3 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full rounded-md border border-stone-200 py-1.5 pl-8 pr-3 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
       </div>
       {q && (
@@ -148,7 +148,7 @@ export function AsignacionExpedienteForm({
       <button
         type="submit"
         disabled={!cambio}
-        className="rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Guardar asignación
       </button>

@@ -195,7 +195,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
                         href={`/api/historico/documento/${base.nroSolicitud}/${i}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
                       >
                         <Download className="h-3.5 w-3.5" aria-hidden />
                         Ver / descargar {arch.split(".").pop()?.toUpperCase()}

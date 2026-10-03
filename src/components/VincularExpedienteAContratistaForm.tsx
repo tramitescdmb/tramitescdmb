@@ -54,7 +54,7 @@ export function VincularExpedienteAContratistaForm({
           <select
             value={expedienteId}
             onChange={(e) => setExpedienteId(e.target.value)}
-            className="min-w-0 max-w-full flex-1 rounded-md border border-stone-200 px-2 py-1.5 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="min-w-0 max-w-full flex-1 rounded-md border border-stone-200 px-2 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             aria-label="Expediente a vincular"
           >
             <option value="">Seleccione un expediente…</option>
@@ -68,7 +68,7 @@ export function VincularExpedienteAContratistaForm({
             type="button"
             onClick={vincular}
             disabled={!expedienteId || guardando}
-            className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
           >
             <Link2 className="h-3.5 w-3.5" aria-hidden />
             {guardando ? "Vinculando…" : "Vincular"}

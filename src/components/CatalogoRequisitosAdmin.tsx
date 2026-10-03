@@ -20,7 +20,7 @@ export type RequisitoCatalogo = {
   activo: boolean;
 };
 
-const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
 export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoCatalogo[] }) {
   const router = useRouter();
@@ -243,7 +243,7 @@ function ModalAgregarRequisito({
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="mt-4 w-full rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+          className="mt-4 w-full rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
         >
           {guardando ? "Guardando…" : "Agregar"}
         </button>
@@ -312,7 +312,7 @@ function ModalEditarRequisito({ requisito, onClose, onSaved }: { requisito: Requ
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="mt-4 w-full rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+          className="mt-4 w-full rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
         >
           {guardando ? "Guardando…" : "Guardar"}
         </button>

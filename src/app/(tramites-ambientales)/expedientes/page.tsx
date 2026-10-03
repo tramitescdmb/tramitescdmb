@@ -151,7 +151,7 @@ export default async function ExpedientesPage({
                 key={anio}
                 href={conFiltro({ desde: `${anio}-01-01`, hasta: `${anio}-12-31` })}
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  activa ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  activa ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                 }`}
               >
                 {anio}
@@ -172,7 +172,7 @@ export default async function ExpedientesPage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="Número, solicitante o identificación…"
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </div>
         <div className="min-w-[200px]">
@@ -180,7 +180,7 @@ export default async function ExpedientesPage({
           <select
             name="tramite"
             defaultValue={tramite ?? ""}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           >
             <option value="">Todos los trámites</option>
             {tramites.map((t) => (
@@ -195,7 +195,7 @@ export default async function ExpedientesPage({
           <select
             name="municipio"
             defaultValue={municipio ?? ""}
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           >
             <option value="">Todos</option>
             {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
@@ -207,7 +207,7 @@ export default async function ExpedientesPage({
         </div>
         <button
           type="submit"
-          className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700"
+          className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600"
         >
           Buscar
         </button>
@@ -225,7 +225,7 @@ export default async function ExpedientesPage({
         <Link
           href={conFiltro({ estado: undefined })}
           className={`rounded-full px-3 py-1 text-xs font-medium ${
-            !estado ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+            !estado ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
           }`}
         >
           Todos
@@ -235,7 +235,7 @@ export default async function ExpedientesPage({
             key={e}
             href={conFiltro({ estado: e })}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              estado === e ? "bg-cdmb-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              estado === e ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
             }`}
           >
             {e.replaceAll("_", " ")}

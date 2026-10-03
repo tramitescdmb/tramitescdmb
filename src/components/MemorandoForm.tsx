@@ -111,7 +111,7 @@ export function MemorandoForm({
     }
   }
 
-  const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500";
+  const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
   return (
     <div className="space-y-4">
@@ -223,7 +223,7 @@ export function MemorandoForm({
           type="button"
           onClick={radicarYFirmar}
           disabled={enviando}
-          className="inline-flex items-center gap-2 rounded-md bg-cdmb-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-md bg-acento-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-acento-600 disabled:opacity-60"
         >
           {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />}
           {enviando ? "Radicando y firmando…" : "Radicar y firmar"}

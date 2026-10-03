@@ -47,7 +47,7 @@ export function CampoMoneda({
   }
 
   return (
-    <div className={`flex items-center rounded-lg border border-stone-200 focus-within:border-cdmb-500 focus-within:ring-1 focus-within:ring-cdmb-500 ${className ?? ""}`}>
+    <div className={`flex items-center rounded-lg border border-stone-200 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500 ${className ?? ""}`}>
       <span className="pl-3 text-sm text-stone-400">$</span>
       <input
         ref={inputRef}

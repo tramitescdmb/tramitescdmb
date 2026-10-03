@@ -81,7 +81,7 @@ export function RespuestaFuncionarioForm({
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           rows={5}
-          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           placeholder="Contenido de la respuesta…"
         />
       </div>
@@ -111,7 +111,7 @@ export function RespuestaFuncionarioForm({
         type="button"
         onClick={guardar}
         disabled={enviando}
-        className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 disabled:opacity-60"
       >
         {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <MessageSquareText className="h-3.5 w-3.5" aria-hidden />}
         {enviando ? "Guardando…" : "Guardar respuesta"}

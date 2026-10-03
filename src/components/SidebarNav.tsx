@@ -86,7 +86,7 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
   return (
     <div>
       {titulo && !colapsado && (
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-graphite-400">{titulo}</p>
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{titulo}</p>
       )}
       <ul className="space-y-1">
         {items.map((item) => (
@@ -108,11 +108,11 @@ function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; c
       title={colapsado ? item.label : undefined}
       className={`flex items-center whitespace-nowrap rounded-xl text-sm font-medium transition-all ${
         colapsado ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
-      } ${activo ? "bg-cdmb-50 text-cdmb-800" : "text-graphite-600 hover:bg-graphite-50 hover:text-graphite-900"}`}
+      } ${activo ? "bg-menu-500 text-stone-900" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
     >
       <span
         className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg transition-colors ${
-          activo ? "bg-white text-cdmb-600 shadow-sm" : "text-graphite-400"
+          activo ? "bg-white/60 text-stone-900" : "text-white/70"
         }`}
       >
         <Icon className="h-[17px] w-[17px]" aria-hidden />

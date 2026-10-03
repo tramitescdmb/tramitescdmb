@@ -338,7 +338,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
                   href={`/api/vital-documentos/${doc.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-cdmb-600 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden />
                   Abrir

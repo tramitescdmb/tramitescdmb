@@ -193,7 +193,7 @@ function Editor({
             type="button"
             onClick={guardar}
             disabled={!sucio || guardando}
-            className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-cdmb-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-acento-600 disabled:opacity-40"
           >
             <Save className="h-3.5 w-3.5" aria-hidden /> {guardando ? "Guardando…" : "Guardar diagrama"}
           </button>

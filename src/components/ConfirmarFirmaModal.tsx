@@ -173,7 +173,7 @@ export function ConfirmarFirmaModal({
                     type="button"
                     onClick={confirmar}
                     disabled={cargando}
-                    className="inline-flex items-center gap-1 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600 disabled:opacity-50"
                   >
                     <PenLine className="h-3.5 w-3.5" aria-hidden />
                     {cargando ? "Guardando…" : rol === "FIRMA" ? "Confirmar firma" : "Confirmar visto bueno"}

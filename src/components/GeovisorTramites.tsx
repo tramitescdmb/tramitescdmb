@@ -352,7 +352,7 @@ export function GeovisorTramites({ expedientes, tramites }: { expedientes: Punto
           municipiosDatosRef.current = geojson;
           const capa = L.geoJSON(geojson, {
             pane: "limites",
-            style: { color: "#14532d", weight: 2, fillColor: "#166534", fillOpacity: 0.05 },
+            style: { color: "#026b4d", weight: 2, fillColor: "#166534", fillOpacity: 0.05 },
             onEachFeature: (feature, layer) => {
               const nombre = feature.properties?.nombre;
               if (nombre) layer.bindTooltip(nombre, { sticky: true, className: "text-xs" });
@@ -949,7 +949,7 @@ function BotonPestana({ activa, onClick, icon, label }: { activa: boolean; onCli
       type="button"
       onClick={onClick}
       className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${
-        activa ? "bg-cdmb-600 text-white" : "text-stone-500 hover:bg-stone-100"
+        activa ? "bg-menu-500 text-stone-900" : "text-stone-500 hover:bg-stone-100"
       }`}
     >
       {icon}
@@ -1288,14 +1288,14 @@ function PanelMedir({
             <button
               type="button"
               onClick={() => onMedirArea(false)}
-              className={`flex-1 rounded px-2 py-1 ${!medirArea ? "bg-cdmb-600 text-white" : "text-stone-600"}`}
+              className={`flex-1 rounded px-2 py-1 ${!medirArea ? "bg-menu-500 text-stone-900" : "text-stone-600"}`}
             >
               Distancia
             </button>
             <button
               type="button"
               onClick={() => onMedirArea(true)}
-              className={`flex-1 rounded px-2 py-1 ${medirArea ? "bg-cdmb-600 text-white" : "text-stone-600"}`}
+              className={`flex-1 rounded px-2 py-1 ${medirArea ? "bg-menu-500 text-stone-900" : "text-stone-600"}`}
             >
               Zona / área
             </button>
@@ -1373,7 +1373,7 @@ function PanelMedir({
               <button
                 type="button"
                 onClick={onDescargarZona}
-                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700"
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
               >
                 <Download className="h-3.5 w-3.5" aria-hidden />
                 Descargar zona (GeoJSON)
@@ -1435,7 +1435,7 @@ function PanelMedir({
                   type="button"
                   onClick={() => onRadioCerca(r)}
                   className={`rounded-full border px-2.5 py-1 text-[11px] ${
-                    radioCerca === r ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                    radioCerca === r ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 text-stone-600 hover:bg-stone-50"
                   }`}
                 >
                   {fmtDist(r)}

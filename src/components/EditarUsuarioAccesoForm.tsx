@@ -354,7 +354,7 @@ export function EditarUsuarioAccesoForm({
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Nombre y apellidos"
-          className="w-full max-w-sm rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full max-w-sm rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         {directorioActivo && (
           <p className="mt-2 text-xs text-stone-400">
@@ -377,7 +377,7 @@ export function EditarUsuarioAccesoForm({
                 value={tipoIdentificacionFirma}
                 onChange={(e) => setTipoIdentificacionFirma(e.target.value)}
                 aria-label="Tipo de documento"
-                className="flex-none rounded-lg border border-stone-200 px-2 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="flex-none rounded-lg border border-stone-200 px-2 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               >
                 {TIPOS_IDENTIFICACION_FIRMA.map((tipo) => (
                   <option key={tipo} value={tipo}>
@@ -390,7 +390,7 @@ export function EditarUsuarioAccesoForm({
                 onChange={(e) => setCedulaONit(e.target.value)}
                 aria-label="Número de documento"
                 placeholder={tipoIdentificacionFirma === "NIT" ? "Ej. 900123456-1" : "Ej. 91234567"}
-                className="block w-full min-w-0 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="block w-full min-w-0 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </div>
             <span className="mt-1 block font-normal text-stone-400">En la firma solo se imprime el tipo elegido.</span>
@@ -401,7 +401,7 @@ export function EditarUsuarioAccesoForm({
               type="email"
               value={correoNotificacion}
               onChange={(e) => setCorreoNotificacion(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </label>
         </div>
@@ -411,7 +411,7 @@ export function EditarUsuarioAccesoForm({
             <select
               value={sexo}
               onChange={(e) => setSexo(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             >
               <option value="">— Sin especificar —</option>
               {SEXOS.map((s) => (
@@ -424,7 +424,7 @@ export function EditarUsuarioAccesoForm({
             <select
               value={denominacionEmpleo}
               onChange={(e) => setDenominacionEmpleo(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             >
               <option value="">— Sin denominación —</option>
               {CLAVES_DENOMINACION_EMPLEO.map((clave) => (
@@ -441,7 +441,7 @@ export function EditarUsuarioAccesoForm({
               onChange={(e) => setDenominacionComplemento(e.target.value)}
               maxLength={120}
               placeholder="en Tecnologías de Información"
-              className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+              className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
           </label>
         </div>
@@ -494,7 +494,7 @@ export function EditarUsuarioAccesoForm({
                 placeholder={`Nueva contraseña (mín. ${politicaPassword.longitudMinima} caracteres)`}
                 autoComplete="new-password"
                 maxLength={politicaPassword.longitudMaxima}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 pr-9 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-lg border border-stone-200 px-3 py-2 pr-9 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
               <button
                 type="button"
@@ -564,7 +564,7 @@ export function EditarUsuarioAccesoForm({
         <select
           value={dependenciaId}
           onChange={(e) => setDependenciaId(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+          className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         >
           <option value="">— Sin dependencia —</option>
           {(dependencias ?? []).map((d) => (
@@ -614,7 +614,7 @@ export function EditarUsuarioAccesoForm({
                 title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                   activo
-                    ? "border-cdmb-600 bg-cdmb-600 text-white"
+                    ? "border-menu-500 bg-menu-500 text-stone-900"
                     : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                 }`}
               >
@@ -661,7 +661,7 @@ export function EditarUsuarioAccesoForm({
                     title={s.ayuda}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       activo
-                        ? "border-cdmb-600 bg-cdmb-600 text-white"
+                        ? "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                     }`}
                   >
@@ -703,7 +703,7 @@ export function EditarUsuarioAccesoForm({
                       activo
                         ? s.valor === "SINCA_MINERIA"
                           ? "border-amber-600 bg-amber-600 text-white"
-                          : "border-cdmb-600 bg-cdmb-600 text-white"
+                          : "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                     }`}
                   >
@@ -746,7 +746,7 @@ export function EditarUsuarioAccesoForm({
                   title={r.ayuda}
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                     rolCorrespondencia === r.valor
-                      ? "border-cdmb-600 bg-cdmb-600 text-white"
+                      ? "border-menu-500 bg-menu-500 text-stone-900"
                       : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                   }`}
                 >
@@ -796,7 +796,7 @@ export function EditarUsuarioAccesoForm({
               title={r.ayuda}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                 rolContratacion === r.valor
-                  ? "border-cdmb-600 bg-cdmb-600 text-white"
+                  ? "border-menu-500 bg-menu-500 text-stone-900"
                   : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
               }`}
             >
@@ -827,7 +827,7 @@ export function EditarUsuarioAccesoForm({
               <input
                 value={contratistaIdentificacion}
                 onChange={(e) => setContratistaIdentificacion(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </label>
             <label className="text-xs font-medium text-stone-600 sm:col-span-1">
@@ -835,7 +835,7 @@ export function EditarUsuarioAccesoForm({
               <input
                 value={contratistaNombre}
                 onChange={(e) => setContratistaNombre(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </label>
             <label className="text-xs font-medium text-stone-600 sm:col-span-1">
@@ -843,7 +843,7 @@ export function EditarUsuarioAccesoForm({
               <select
                 value={contratistaTipoPersona}
                 onChange={(e) => setContratistaTipoPersona(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               >
                 <option value="NATURAL">Persona natural</option>
                 <option value="JURIDICA">Persona jurídica</option>
@@ -936,7 +936,7 @@ export function EditarUsuarioAccesoForm({
                             type="button"
                             onClick={() => ponerNivel(t.id, "EDITAR")}
                             title="Editar: además puede radicar, avanzar pasos, subir documentos y comentar"
-                            className={`${BOTON_BASE} ${nivel === "EDITAR" ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 text-stone-500 hover:bg-cdmb-50"}`}
+                            className={`${BOTON_BASE} ${nivel === "EDITAR" ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 text-stone-500 hover:bg-cdmb-50"}`}
                           >
                             Editar
                           </button>
@@ -961,7 +961,7 @@ export function EditarUsuarioAccesoForm({
           onClick={guardar}
           disabled={guardando}
           title="Guarda todos los cambios de esta página"
-          className="flex-none rounded-md bg-cdmb-600 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex-none rounded-md bg-acento-500 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {guardando ? "Guardando…" : "Guardar cambios"}
         </button>

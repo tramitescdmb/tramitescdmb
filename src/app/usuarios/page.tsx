@@ -153,10 +153,10 @@ export default async function UsuariosPage({
             name="q"
             defaultValue={busqueda ?? ""}
             placeholder="Nombre o correo…"
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </div>
-        <button type="submit" className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700">
+        <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
           Buscar
         </button>
         {busqueda && (
@@ -397,7 +397,7 @@ export default async function UsuariosPage({
               <input
                 name="nombre"
                 required
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
             <Field label="Correo institucional" required icon={<IconMail className={iconSm} />} help="Con este correo va a iniciar sesión.">
@@ -405,7 +405,7 @@ export default async function UsuariosPage({
                 type="email"
                 name="email"
                 required
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
                 placeholder="nombre@cdmb.gov.co"
               />
             </Field>
@@ -421,13 +421,13 @@ export default async function UsuariosPage({
                 required
                 minLength={config.passwordLongitudMinima}
                 maxLength={config.passwordLongitudMaxima}
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </Field>
             <Field label="Rol" required icon={<IconShieldCheck className={iconSm} />} help="Qué puede hacer este usuario dentro de la app.">
               <select
                 name="rol"
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               >
                 <option value="FUNCIONARIO">Funcionario</option>
                 <option value="ADMIN">Administrador</option>
@@ -437,19 +437,19 @@ export default async function UsuariosPage({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Sexo" help="Solo se usa para la forma de la denominación en la firma.">
-              <select name="sexo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500">
+              <select name="sexo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500">
                 <option value="">— Sin especificar —</option>
                 {SEXOS.map((s) => (<option key={s.valor} value={s.valor}>{s.etiqueta}</option>))}
               </select>
             </Field>
             <Field label="Denominación del empleo" help="Cargo nominal (Decreto 1083/2015) — aparece en el sello de firma electrónica.">
-              <select name="denominacionEmpleo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500">
+              <select name="denominacionEmpleo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500">
                 <option value="">— Sin denominación —</option>
                 {CLAVES_DENOMINACION_EMPLEO.map((c) => (<option key={c} value={c}>{DENOMINACIONES_EMPLEO[c].m}</option>))}
               </select>
             </Field>
             <Field label="Complemento" help="Opcional, ej. «en Tecnologías de Información».">
-              <input name="denominacionComplemento" maxLength={120} placeholder="en Tecnologías de Información" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-cdmb-500 focus:outline-none focus:ring-1 focus:ring-cdmb-500" />
+              <input name="denominacionComplemento" maxLength={120} placeholder="en Tecnologías de Información" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500" />
             </Field>
           </div>
 
@@ -477,7 +477,7 @@ export default async function UsuariosPage({
 
           <button
             type="submit"
-            className="rounded-md bg-cdmb-600 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-cdmb-700 active:scale-95"
+            className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
           >
             Crear usuario
           </button>

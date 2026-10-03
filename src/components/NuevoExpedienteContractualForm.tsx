@@ -31,7 +31,7 @@ type TipoPersona = "NATURAL" | "JURIDICA";
 
 const campoCls =
   "w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
-  "transition-shadow focus:border-cdmb-500 focus:outline-none focus:ring-4 focus:ring-cdmb-500/15";
+  "transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15";
 
 function SeccionFormulario({
   n,
@@ -424,7 +424,7 @@ export function NuevoExpedienteContractualForm({
                         aria-pressed={activo}
                         className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
                           activo
-                            ? "border-cdmb-600 bg-cdmb-600 text-white shadow-sm"
+                            ? "border-menu-500 bg-menu-500 text-stone-900 shadow-sm"
                             : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:bg-cdmb-50"
                         }`}
                       >
@@ -459,7 +459,7 @@ export function NuevoExpedienteContractualForm({
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-cdmb-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cdmb-700 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-acento-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-acento-600 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {guardando ? "Creando…" : "Crear expediente"}
           {!guardando && <ArrowRight className="h-4 w-4" aria-hidden />}
