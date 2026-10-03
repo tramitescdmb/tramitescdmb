@@ -13,7 +13,23 @@ export type PuntoReporte = {
   fechaRadicacion: string;
   lat: number;
   lon: number;
+  plataforma?: string;
+  enlace?: string;
 };
+
+export const PLATAFORMA_TRAMITES_2 = "Trámites ambientales 2.0";
+
+function plataformaDe(p: PuntoReporte): string {
+  return p.plataforma ?? PLATAFORMA_TRAMITES_2;
+}
+
+function enlaceDe(p: PuntoReporte, origen: string): string {
+  return `${origen}${p.enlace ?? `/expedientes/${p.id}`}`;
+}
+
+function tramiteDe(p: PuntoReporte): string {
+  return p.tramiteCodigo ? `${p.tramiteCodigo} — ${p.tramiteNombre}` : p.tramiteNombre;
+}
 
 export type CapaContextoReporte = { titulo: string; elementos: string[] };
 
@@ -34,18 +50,19 @@ function csvCampo(v: string): string {
 
 export function csvTramites(puntos: PuntoReporte[], origen: string): string {
   const filas = [
-    "numero,tramite,solicitante,municipio,estado,fecha_radicacion,latitud,longitud,ficha",
+    "plataforma,numero,tramite,solicitante,municipio,estado,fecha_radicacion,latitud,longitud,ficha",
     ...puntos.map((p) =>
       [
+        csvCampo(plataformaDe(p)),
         csvCampo(p.numero),
-        csvCampo(`${p.tramiteCodigo} — ${p.tramiteNombre}`),
+        csvCampo(tramiteDe(p)),
         csvCampo(p.solicitanteNombre),
         csvCampo(p.municipio),
         csvCampo(p.estado.replaceAll("_", " ")),
         csvCampo(p.fechaRadicacion.slice(0, 10)),
         p.lat.toFixed(6),
         p.lon.toFixed(6),
-        `${origen}/expedientes/${p.id}`,
+        enlaceDe(p, origen),
       ].join(","),
     ),
   ];
@@ -56,12 +73,13 @@ function featureTramite(p: PuntoReporte, origen: string) {
   return {
     type: "Feature" as const,
     properties: {
+      plataforma: plataformaDe(p),
       numero: p.numero,
-      tramite: `${p.tramiteCodigo} — ${p.tramiteNombre}`,
+      tramite: tramiteDe(p),
       solicitante: p.solicitanteNombre,
       municipio: p.municipio,
       estado: p.estado,
-      ficha: `${origen}/expedientes/${p.id}`,
+      ficha: enlaceDe(p, origen),
     },
     geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] },
   };
@@ -141,7 +159,7 @@ export function htmlReporte(opts: {
 }): string {
   const { titulo, puntos, zona = [], areaM2, perimetroM, contexto = [], origen } = opts;
   const hoy = new Date().toISOString().slice(0, 10);
-  const marcadores = puntos.map((p) => [p.lat, p.lon, `${p.numero} — ${p.tramiteCodigo}`]);
+  const marcadores = puntos.map((p) => [p.lat, p.lon, `${plataformaDe(p)}: ${p.numero} — ${tramiteDe(p)}`]);
   const zonaJs = JSON.stringify(zona);
   const marcadoresJs = JSON.stringify(marcadores);
   const hayMapa = zona.length > 0 || marcadores.length > 0;
@@ -176,17 +194,20 @@ export function htmlReporte(opts: {
 })();
 </script>`;
 
+  const conteoPlataforma = new Map<string, number>();
+  for (const p of puntos) conteoPlataforma.set(plataformaDe(p), (conteoPlataforma.get(plataformaDe(p)) ?? 0) + 1);
+  const porPlataforma = conteoPlataforma.size > 1 ? [...conteoPlataforma.entries()] : [];
   const porMunicipio = new Map<string, number>();
   for (const p of puntos) porMunicipio.set(p.municipio, (porMunicipio.get(p.municipio) ?? 0) + 1);
   const munOrd = [...porMunicipio.entries()].sort((a, b) => b[1] - a[1]);
 
-  const ordenados = [...puntos].sort((a, b) => a.numero.localeCompare(b.numero));
+  const ordenados = [...puntos].sort((a, b) => plataformaDe(a).localeCompare(plataformaDe(b)) || a.numero.localeCompare(b.numero));
   const filas = ordenados
     .map(
       (p) =>
-        `<tr><td>${esc(p.numero)}</td><td>${esc(p.tramiteCodigo)} — ${esc(p.tramiteNombre)}</td>` +
+        `<tr><td>${esc(plataformaDe(p))}</td><td>${esc(p.numero)}</td><td>${esc(tramiteDe(p))}</td>` +
         `<td>${esc(p.solicitanteNombre)}</td><td>${esc(p.municipio)}</td><td>${esc(p.estado.replaceAll("_", " "))}</td>` +
-        `<td><a href="${origen}/expedientes/${p.id}">ver expediente</a></td></tr>`,
+        `<td><a href="${enlaceDe(p, origen)}">ver en ${esc(plataformaDe(p))}</a></td></tr>`,
     )
     .join("\n");
 
@@ -215,6 +236,7 @@ export function htmlReporte(opts: {
 ${mapa}
 <div class="kpis">
   <div class="kpi"><b>${puntos.length}</b>trámites</div>
+${porPlataforma.map(([pl, n]) => `  <div class="kpi"><b>${n}</b>${esc(pl)}</div>`).join("\n")}
   <div class="kpi"><b>${munOrd.length}</b>municipios</div>
 ${areaM2 !== undefined ? `  <div class="kpi"><b>${(areaM2 / 1e6).toFixed(2)}</b>km² de área</div>` : ""}
 ${perimetroM !== undefined ? `  <div class="kpi"><b>${(perimetroM / 1000).toFixed(2)}</b>km de perímetro</div>` : ""}
@@ -224,7 +246,7 @@ ${bloqueContexto(contexto)}
 <h2>Fuentes de las capas</h2>
 <ul>${FUENTES_CAPAS_EXTERNAS.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
 <h2>Trámites (${puntos.length})</h2>
-<table><thead><tr><th>Número</th><th>Trámite</th><th>Solicitante</th><th>Municipio</th><th>Estado</th><th></th></tr></thead>
+<table><thead><tr><th>Plataforma</th><th>Número</th><th>Trámite</th><th>Solicitante</th><th>Municipio</th><th>Estado</th><th></th></tr></thead>
 <tbody>
 ${filas}
 </tbody></table>

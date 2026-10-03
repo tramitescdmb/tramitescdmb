@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { listarResoluciones, obtenerResolucionDetalle, type SincaResolucionApi } from "@/lib/sinca";
+import { puntoDesdeTexto } from "@/lib/coordenadas-texto";
 
 const POR_PAGINA = 500;
 
@@ -32,6 +33,8 @@ function coordenadas(row: SincaResolucionApi): { lat: number | null; lon: number
   if (Array.isArray(c) && c.length === 2 && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
     return { lon: c[0], lat: c[1] };
   }
+  const delTexto = puntoDesdeTexto(row.proyecto_sol);
+  if (delTexto) return { lat: delTexto.lat, lon: delTexto.lon };
   return { lat: null, lon: null };
 }
 

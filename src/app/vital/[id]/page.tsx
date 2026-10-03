@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
+import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
@@ -245,6 +246,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
     include: { documentos: { orderBy: { createdAt: "desc" } } },
   });
   if (!solicitud) notFound();
+  const punto = puntoDesdeCampos(solicitud.camposTramite);
 
   const interesados: Interesado[] = dedupeInteresados(
     Array.isArray(solicitud.solicitanteRaw)
@@ -291,6 +293,17 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
             v={solicitud.idTramiteAutoridad != null ? String(solicitud.idTramiteAutoridad) : null}
           />
         </dl>
+        {punto && (
+          <p className="mt-3 text-xs text-stone-600">
+            <span className="font-medium text-stone-500">Ubicación ({ETIQUETA_ORIGEN_COORDENADA[punto.origen]}): </span>
+            <span className="font-mono">
+              {punto.lat.toFixed(6)}, {punto.lon.toFixed(6)}
+            </span>{" "}
+            <Link href={`/geovisor?capa=vital&punto=${encodeURIComponent(solicitud.idVital)}`} className="font-medium text-cdmb-700 hover:underline">
+              Ver en el visor de trámites →
+            </Link>
+          </p>
+        )}
       </div>
 
       <Tarjeta

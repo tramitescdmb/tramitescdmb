@@ -45,11 +45,20 @@ describe("csvTramites", () => {
   it("incluye encabezado y una fila por punto, con el trámite y la ficha armados", () => {
     const csv = csvTramites([punto], "https://tramites.cdmb.gov.co");
     const [encabezado, fila] = csv.trim().split("\n");
-    expect(encabezado).toBe("numero,tramite,solicitante,municipio,estado,fecha_radicacion,latitud,longitud,ficha");
+    expect(encabezado).toBe("plataforma,numero,tramite,solicitante,municipio,estado,fecha_radicacion,latitud,longitud,ficha");
+    expect(fila.startsWith("Trámites ambientales 2.0,")).toBe(true);
     expect(fila).toContain("M-DA-PR39-2026-0001");
     expect(fila).toContain("M-DA-PR39 — Permiso de Ocupación de Cauces");
     expect(fila).toContain("EN TRAMITE");
     expect(fila).toContain("https://tramites.cdmb.gov.co/expedientes/abc123");
+  });
+
+  it("usa la plataforma y el enlace propios de un punto externo", () => {
+    const externo = { ...punto, plataforma: "SINCA 1.0", enlace: "/historico/solicitudes/18625", tramiteCodigo: "" };
+    const fila = csvTramites([externo], "https://x").trim().split("\n")[1];
+    expect(fila.startsWith("SINCA 1.0,")).toBe(true);
+    expect(fila).toContain("https://x/historico/solicitudes/18625");
+    expect(fila).not.toContain(" — ");
   });
 
   it("entrecomilla campos que traen coma", () => {

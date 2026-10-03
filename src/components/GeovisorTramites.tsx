@@ -28,7 +28,17 @@ import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/mun
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
 import { estiloEstado, svgIconoEstado, svgPinEstado } from "@/lib/estados-expediente-estilo";
 import { normalizar } from "@/lib/cargos";
-import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, type CapaContextoReporte } from "@/lib/geovisor-exportar";
+import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, type CapaContextoReporte, type PuntoReporte } from "@/lib/geovisor-exportar";
+import {
+  clasificarPorTipo,
+  FORMA_PLATAFORMA,
+  puntoExternoAReporte,
+  svgMarcadorExterno,
+  type CapaExterna,
+  type GrupoTipo,
+  type PlataformaExterna,
+  type PuntoExterno,
+} from "@/lib/geovisor-capas-externas";
 
 export type PuntoTramite = {
   id: string;
@@ -44,16 +54,7 @@ export type PuntoTramite = {
   lon: number;
 };
 
-export type PuntoSinca = {
-  nroSolicitud: number;
-  numeroResolucion: string | null;
-  tipo: string | null;
-  municipio: string | null;
-  estado: string | null;
-  fecha: string | null;
-  lat: number;
-  lon: number;
-};
+type PuntoExternoVisible = { capa: CapaExterna; punto: PuntoExterno; grupo: GrupoTipo };
 
 type TramiteOpcion = { id: string; nombre: string; codigo: string };
 type Pestana = "filtrar" | "capas" | "medir";
@@ -212,18 +213,41 @@ function descargarTexto(contenido: string, nombreArchivo: string, tipoMime: stri
 export function GeovisorTramites({
   expedientes,
   tramites,
-  puntosSinca = [],
+  capasExternas = [],
 }: {
   expedientes: PuntoTramite[];
   tramites: TramiteOpcion[];
-  puntosSinca?: PuntoSinca[];
+  capasExternas?: CapaExterna[];
 }) {
   const searchParams = useSearchParams();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const puntoSincaInicial = useMemo(() => Number(searchParams.get("punto")) || null, []);
-  const sincaCapaRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const destacadoInicial = useMemo(() => ({ capa: searchParams.get("capa"), punto: searchParams.get("punto") }), []);
+  const capasExternasRef = useRef<Partial<Record<PlataformaExterna, import("leaflet").LayerGroup>>>({});
   const [mapaListo, setMapaListo] = useState(false);
-  const [capaSinca, setCapaSinca] = useState(() => searchParams.get("capa") === "sinca" && puntosSinca.length > 0);
+  const [externasOn, setExternasOn] = useState<Partial<Record<PlataformaExterna, boolean>>>(() =>
+    Object.fromEntries(capasExternas.map((c) => [c.id, destacadoInicial.capa === c.id && c.puntos.length > 0])),
+  );
+  const [gruposOcultos, setGruposOcultos] = useState<Partial<Record<PlataformaExterna, Set<string>>>>({});
+
+  const clasificacionExterna = useMemo(
+    () => new Map(capasExternas.map((c) => [c.id, clasificarPorTipo(c.puntos)])),
+    [capasExternas],
+  );
+
+  const externosVisibles = useMemo(() => {
+    const out: PuntoExternoVisible[] = [];
+    for (const capa of capasExternas) {
+      if (!externasOn[capa.id]) continue;
+      const clasif = clasificacionExterna.get(capa.id)!;
+      const ocultos = gruposOcultos[capa.id];
+      for (const punto of capa.puntos) {
+        const grupo = clasif.grupoDe(punto.tipo);
+        if (ocultos?.has(grupo.clave)) continue;
+        out.push({ capa, punto, grupo });
+      }
+    }
+    return out;
+  }, [capasExternas, externasOn, gruposOcultos, clasificacionExterna]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se usa una vez, al montar (inicializador de useState)
   const zonaInicial = useMemo(() => parseZonaParam(searchParams.get("zona")), []);
   const contenedorRef = useRef<HTMLDivElement>(null);
@@ -320,6 +344,23 @@ export function GeovisorTramites({
       .map(({ e, d }) => ({ ...e, distanciaM: d }));
   }, [expedientesVisibles, puntoCerca, radioCerca]);
 
+  const externosEnZona = useMemo(() => {
+    if (medida.length < 3) return [];
+    return externosVisibles.filter((x) => puntoEnPoligono([x.punto.lat, x.punto.lon], medida));
+  }, [externosVisibles, medida]);
+
+  const externosCerca = useMemo(() => {
+    if (!puntoCerca) return [];
+    return externosVisibles
+      .map((x) => ({ ...x, distanciaM: distanciaM(puntoCerca, [x.punto.lat, x.punto.lon]) }))
+      .filter((x) => x.distanciaM <= radioCerca)
+      .sort((a, b) => a.distanciaM - b.distanciaM);
+  }, [externosVisibles, puntoCerca, radioCerca]);
+
+  function paraReporte(tramites2: PuntoTramite[], externos: PuntoExternoVisible[]): PuntoReporte[] {
+    return [...tramites2, ...externos.map((x) => puntoExternoAReporte(x.capa, x.punto))];
+  }
+
   const distanciaLinea = useMemo(() => {
     let t = 0;
     for (let i = 0; i < medida.length - 1; i++) t += distanciaM(medida[i]!, medida[i + 1]!);
@@ -368,7 +409,6 @@ export function GeovisorTramites({
       });
       map.on("zoomend", () => setZoomActual(map.getZoom()));
 
-      sincaCapaRef.current = L.layerGroup();
       mapRef.current = map;
       setMapaListo(true);
 
@@ -441,42 +481,62 @@ export function GeovisorTramites({
     else map.removeLayer(cluster);
   }, [capaTramites]);
 
+  const destacadoMostradoRef = useRef(false);
   useEffect(() => {
     const L = leafletRef.current;
     const map = mapRef.current;
-    const capa = sincaCapaRef.current;
-    if (!mapaListo || !L || !map || !capa) return;
-    capa.clearLayers();
-    if (!capaSinca) {
-      map.removeLayer(capa);
-      return;
-    }
+    if (!mapaListo || !L || !map) return;
+    const porCapa = new Map<PlataformaExterna, PuntoExternoVisible[]>();
+    for (const x of externosVisibles) porCapa.set(x.capa.id, [...(porCapa.get(x.capa.id) ?? []), x]);
     let destacado: import("leaflet").Marker | null = null;
-    for (const p of puntosSinca) {
-      const marker = L.marker([p.lat, p.lon], { icon: iconoSinca(L), zIndexOffset: 500 });
-      const contenedor = document.createElement("div");
-      contenedor.className = "text-xs leading-relaxed";
-      contenedor.innerHTML = `
-        <p class="font-semibold text-stone-500">SINCA 1.0 · solicitud ${p.nroSolicitud}</p>
-        <p class="font-mono font-semibold text-stone-800">Resolución ${escapeHtml(p.numeroResolucion ?? "—")}</p>
-        <p class="text-stone-700">${escapeHtml(p.tipo ?? "Sin tipo")}</p>
-        <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>
-      `;
-      const enlace = document.createElement("a");
-      enlace.href = `/historico/solicitudes/${p.nroSolicitud}`;
-      enlace.className = "mt-1 inline-block font-medium text-cdmb-700 hover:underline";
-      enlace.textContent = "Ver en SINCA 1.0 →";
-      contenedor.appendChild(enlace);
-      marker.bindPopup(contenedor);
-      capa.addLayer(marker);
-      if (puntoSincaInicial && p.nroSolicitud === puntoSincaInicial) destacado = marker;
+    for (const capaCfg of capasExternas) {
+      let capa = capasExternasRef.current[capaCfg.id];
+      if (!capa) {
+        capa = L.layerGroup();
+        capasExternasRef.current[capaCfg.id] = capa;
+      }
+      capa.clearLayers();
+      if (!externasOn[capaCfg.id]) {
+        map.removeLayer(capa);
+        continue;
+      }
+      for (const { punto: p, grupo } of porCapa.get(capaCfg.id) ?? []) {
+        const marker = L.marker([p.lat, p.lon], {
+          icon: L.divIcon({
+            className: "",
+            html: svgMarcadorExterno(FORMA_PLATAFORMA[capaCfg.id], grupo.color),
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+            popupAnchor: [0, -10],
+          }),
+          zIndexOffset: 500,
+        });
+        const contenedor = document.createElement("div");
+        contenedor.className = "text-xs leading-relaxed";
+        contenedor.innerHTML = `
+          <p class="font-semibold text-stone-500">${escapeHtml(capaCfg.nombre)}</p>
+          <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
+          <p class="flex items-start gap-1 text-stone-700"><span class="mt-0.5 flex-none">${svgMarcadorExterno(FORMA_PLATAFORMA[capaCfg.id], grupo.color, 12)}</span>${escapeHtml(p.tipo)}</p>
+          ${p.detalle ? `<p class="text-stone-600">${escapeHtml(p.detalle)}</p>` : ""}
+          <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>
+        `;
+        const enlace = document.createElement("a");
+        enlace.href = p.enlace;
+        enlace.className = "mt-1 inline-block font-medium text-cdmb-700 hover:underline";
+        enlace.textContent = `Ver en ${capaCfg.nombre} →`;
+        contenedor.appendChild(enlace);
+        marker.bindPopup(contenedor);
+        capa.addLayer(marker);
+        if (!destacadoMostradoRef.current && destacadoInicial.capa === capaCfg.id && destacadoInicial.punto === p.clave) destacado = marker;
+      }
+      map.addLayer(capa);
     }
-    map.addLayer(capa);
     if (destacado) {
+      destacadoMostradoRef.current = true;
       map.setView(destacado.getLatLng(), 16);
       destacado.openPopup();
     }
-  }, [mapaListo, capaSinca, puntosSinca, puntoSincaInicial]);
+  }, [mapaListo, capasExternas, externasOn, externosVisibles, destacadoInicial]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -713,7 +773,7 @@ export function GeovisorTramites({
     if (!puntoCerca) return;
     const origen = window.location.origin;
     const zona = circuloComoPoligono(puntoCerca, radioCerca);
-    const contenido = geoJsonTramites(tramitesCerca, {
+    const contenido = geoJsonTramites(paraReporte(tramitesCerca, externosCerca), {
       zona,
       areaM2: Math.PI * radioCerca ** 2,
       contexto: contextoDeZona(zona),
@@ -738,7 +798,7 @@ export function GeovisorTramites({
     if (medida.length >= 3) {
       contenido = htmlReporte({
         titulo: "Reporte de zona seleccionada",
-        puntos: tramitesEnZona,
+        puntos: paraReporte(tramitesEnZona, externosEnZona),
         zona: medida,
         areaM2: area,
         perimetroM: perimetro,
@@ -749,7 +809,7 @@ export function GeovisorTramites({
       const zona = circuloComoPoligono(puntoCerca, radioCerca);
       contenido = htmlReporte({
         titulo: `Trámites a menos de ${fmtDist(radioCerca)} de un punto`,
-        puntos: tramitesCerca,
+        puntos: paraReporte(tramitesCerca, externosCerca),
         zona,
         areaM2: Math.PI * radioCerca ** 2,
         contexto: contextoDeZona(zona),
@@ -758,7 +818,7 @@ export function GeovisorTramites({
     } else {
       contenido = htmlReporte({
         titulo: municipioSel ? `Trámites de ${municipioSel}` : "Trámites — vista actual",
-        puntos: expedientesVisibles,
+        puntos: paraReporte(expedientesVisibles, externosVisibles),
         origen,
       });
     }
@@ -767,10 +827,11 @@ export function GeovisorTramites({
 
   function descargarVisibles(csv: boolean) {
     const origen = window.location.origin;
+    const puntos = paraReporte(expedientesVisibles, externosVisibles);
     if (csv) {
-      descargarTexto(csvTramites(expedientesVisibles, origen), nombreArchivo("tramites", "csv"), "text/csv;charset=utf-8");
+      descargarTexto(csvTramites(puntos, origen), nombreArchivo("tramites", "csv"), "text/csv;charset=utf-8");
     } else {
-      descargarTexto(geoJsonTramites(expedientesVisibles, { origen }), nombreArchivo("tramites", "geojson"), "application/geo+json;charset=utf-8");
+      descargarTexto(geoJsonTramites(puntos, { origen }), nombreArchivo("tramites", "geojson"), "application/geo+json;charset=utf-8");
     }
   }
 
@@ -791,7 +852,7 @@ export function GeovisorTramites({
   }
 
   function descargarZona() {
-    const contenido = geoJsonTramites(tramitesEnZona, {
+    const contenido = geoJsonTramites(paraReporte(tramitesEnZona, externosEnZona), {
       zona: medida,
       areaM2: area,
       perimetroM: perimetro,
@@ -861,9 +922,19 @@ export function GeovisorTramites({
                 capaTramites={capaTramites}
                 onCapaTramites={setCapaTramites}
                 totalTramites={expedientesVisibles.length}
-                capaSinca={capaSinca}
-                onCapaSinca={setCapaSinca}
-                totalSinca={puntosSinca.length}
+                capasExternas={capasExternas}
+                clasificacionExterna={clasificacionExterna}
+                externasOn={externasOn}
+                onExterna={(id, v) => setExternasOn((prev) => ({ ...prev, [id]: v }))}
+                gruposOcultos={gruposOcultos}
+                onToggleGrupo={(id, clave) =>
+                  setGruposOcultos((prev) => {
+                    const next = new Set(prev[id]);
+                    if (next.has(clave)) next.delete(clave);
+                    else next.add(clave);
+                    return { ...prev, [id]: next };
+                  })
+                }
                 capaMunicipios={capaMunicipios}
                 onCapaMunicipios={setCapaMunicipios}
                 capaEtiquetas={capaEtiquetas}
@@ -886,6 +957,7 @@ export function GeovisorTramites({
                 perimetro={perimetro}
                 area={area}
                 tramitesEnZona={tramitesEnZona}
+                externosEnZona={externosEnZona}
                 onDescargarZona={descargarZona}
                 modoCerca={modoCerca}
                 onModoCerca={activarCerca}
@@ -893,12 +965,13 @@ export function GeovisorTramites({
                 radioCerca={radioCerca}
                 onRadioCerca={setRadioCerca}
                 tramitesCerca={tramitesCerca}
+                externosCerca={externosCerca}
                 onUsarMiUbicacion={usarMiUbicacionEnCerca}
                 buscandoUbicacion={buscandoUbicacion}
                 onDescargarCerca={descargarCerca}
                 onCopiarEnlace={copiarEnlaceZona}
                 onDescargarReporte={descargarReporte}
-                totalVisibles={expedientesVisibles.length}
+                totalVisibles={expedientesVisibles.length + externosVisibles.length}
                 onDescargarVisibles={descargarVisibles}
               />
             )}
@@ -992,20 +1065,6 @@ function iconoTramite(L: typeof import("leaflet"), estado: string): import("leaf
     iconSize: [28, 38],
     iconAnchor: [14, 38],
     popupAnchor: [0, -34],
-  });
-}
-
-function iconoSinca(L: typeof import("leaflet")): import("leaflet").DivIcon {
-  return L.divIcon({
-    className: "",
-    html:
-      '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">' +
-      '<rect x="3" y="3" width="20" height="20" rx="3" transform="rotate(45 13 13)" fill="#20272a" stroke="#ffffff" stroke-width="1.5"/>' +
-      '<text x="13" y="16.5" text-anchor="middle" font-family="Work Sans, sans-serif" font-size="9" font-weight="700" fill="#85c800">S1</text>' +
-      "</svg>",
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -12],
   });
 }
 
@@ -1134,9 +1193,12 @@ function PanelCapas({
   capaTramites,
   onCapaTramites,
   totalTramites,
-  capaSinca,
-  onCapaSinca,
-  totalSinca,
+  capasExternas,
+  clasificacionExterna,
+  externasOn,
+  onExterna,
+  gruposOcultos,
+  onToggleGrupo,
   capaMunicipios,
   onCapaMunicipios,
   capaEtiquetas,
@@ -1148,9 +1210,12 @@ function PanelCapas({
   capaTramites: boolean;
   onCapaTramites: (v: boolean) => void;
   totalTramites: number;
-  capaSinca: boolean;
-  onCapaSinca: (v: boolean) => void;
-  totalSinca: number;
+  capasExternas: CapaExterna[];
+  clasificacionExterna: Map<PlataformaExterna, { grupos: GrupoTipo[] }>;
+  externasOn: Partial<Record<PlataformaExterna, boolean>>;
+  onExterna: (id: PlataformaExterna, v: boolean) => void;
+  gruposOcultos: Partial<Record<PlataformaExterna, Set<string>>>;
+  onToggleGrupo: (id: PlataformaExterna, clave: string) => void;
   capaMunicipios: boolean;
   onCapaMunicipios: (v: boolean) => void;
   capaEtiquetas: boolean;
@@ -1165,19 +1230,39 @@ function PanelCapas({
         <input type="checkbox" checked={capaTramites} onChange={(e) => onCapaTramites(e.target.checked)} />
         Trámites ambientales 2.0 ({totalTramites})
       </label>
-      {totalSinca > 0 && (
-        <div>
-          <label className="flex items-center gap-2 text-sm text-stone-700">
-            <input type="checkbox" checked={capaSinca} onChange={(e) => onCapaSinca(e.target.checked)} />
-            <span className="inline-flex h-4 w-4 flex-none rotate-45 items-center justify-center rounded-sm bg-[#20272a]" aria-hidden />
-            Trámites SINCA 1.0 ({totalSinca})
-          </label>
-          <p className="ml-6 text-[11px] text-stone-400">
-            Resoluciones históricas de SINCA 1.0 que registraron coordenadas. Capa independiente: no se mezcla con los filtros,
-            mediciones ni descargas de Trámites ambientales 2.0.
-          </p>
-        </div>
-      )}
+      {capasExternas
+        .filter((c) => c.puntos.length > 0)
+        .map((c) => {
+          const grupos = clasificacionExterna.get(c.id)?.grupos ?? [];
+          const ocultos = gruposOcultos[c.id];
+          const forma = FORMA_PLATAFORMA[c.id];
+          return (
+            <div key={c.id}>
+              <label className="flex items-center gap-2 text-sm text-stone-700">
+                <input type="checkbox" checked={Boolean(externasOn[c.id])} onChange={(e) => onExterna(c.id, e.target.checked)} />
+                <span className="flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, "#52514e", 16) }} />
+                {c.nombre} ({c.puntos.length})
+              </label>
+              <p className="ml-6 text-[11px] text-stone-400">{c.descripcion}</p>
+              {externasOn[c.id] && (
+                <ul className="ml-6 mt-1.5 space-y-1 border-l border-stone-100 pl-2">
+                  {grupos.map((g) => (
+                    <li key={g.clave}>
+                      <label className="flex items-start justify-between gap-2 text-[11.5px] text-stone-600">
+                        <span className="flex items-start gap-1.5">
+                          <input type="checkbox" className="mt-0.5" checked={!ocultos?.has(g.clave)} onChange={() => onToggleGrupo(c.id, g.clave)} />
+                          <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, g.color, 13) }} />
+                          <span className="leading-tight">{g.etiqueta}</span>
+                        </span>
+                        <span className="flex-none text-stone-400">{g.total}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
       <label className="flex items-center gap-2 text-sm text-stone-700">
         <input type="checkbox" checked={capaMunicipios} onChange={(e) => onCapaMunicipios(e.target.checked)} />
         Límites municipales
@@ -1334,6 +1419,7 @@ function PanelMedir({
   perimetro,
   area,
   tramitesEnZona,
+  externosEnZona,
   onDescargarZona,
   modoCerca,
   onModoCerca,
@@ -1341,6 +1427,7 @@ function PanelMedir({
   radioCerca,
   onRadioCerca,
   tramitesCerca,
+  externosCerca,
   onUsarMiUbicacion,
   buscandoUbicacion,
   onDescargarCerca,
@@ -1360,6 +1447,7 @@ function PanelMedir({
   perimetro: number;
   area: number;
   tramitesEnZona: PuntoTramite[];
+  externosEnZona: PuntoExternoVisible[];
   onDescargarZona: () => void;
   modoCerca: boolean;
   onModoCerca: (v: boolean) => void;
@@ -1367,6 +1455,7 @@ function PanelMedir({
   radioCerca: number;
   onRadioCerca: (v: number) => void;
   tramitesCerca: (PuntoTramite & { distanciaM: number })[];
+  externosCerca: (PuntoExternoVisible & { distanciaM: number })[];
   onUsarMiUbicacion: () => void;
   buscandoUbicacion: boolean;
   onDescargarCerca: () => void;
@@ -1416,7 +1505,7 @@ function PanelMedir({
                   <br />
                   Área: {fmtArea(area)}
                   <br />
-                  Trámites dentro: {tramitesEnZona.length}
+                  Trámites dentro: {tramitesEnZona.length + externosEnZona.length}
                 </>
               )}
             </p>
@@ -1458,15 +1547,18 @@ function PanelMedir({
 
           {medirArea && medida.length >= 3 && (
             <>
-              {tramitesEnZona.length > 0 && (
-                <ul className="max-h-32 space-y-1 overflow-y-auto rounded-md border border-stone-100 bg-stone-50/60 p-2 text-[11px]">
+              {tramitesEnZona.length + externosEnZona.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-100 bg-stone-50/60 p-2 text-[11px]">
                   {tramitesEnZona.map((t) => (
                     <li key={t.id}>
                       <a href={`/expedientes/${t.id}`} className="font-mono text-cdmb-700 hover:underline">
                         {t.numero}
                       </a>{" "}
-                      — {t.tramiteCodigo}
+                      — {t.tramiteCodigo} <span className="text-stone-400">· Trámites 2.0</span>
                     </li>
+                  ))}
+                  {externosEnZona.map((x) => (
+                    <FilaExterna key={`${x.capa.id}-${x.punto.clave}`} x={x} />
                   ))}
                 </ul>
               )}
@@ -1515,7 +1607,9 @@ function PanelMedir({
           <div className="mt-2 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-medium text-stone-600">
-                {puntoCerca ? `${tramitesCerca.length} trámite${tramitesCerca.length === 1 ? "" : "s"} a menos de ${fmtDist(radioCerca)}` : "Toque el mapa para elegir un punto."}
+                {puntoCerca
+                  ? `${tramitesCerca.length + externosCerca.length} trámite${tramitesCerca.length + externosCerca.length === 1 ? "" : "s"} a menos de ${fmtDist(radioCerca)}`
+                  : "Toque el mapa para elegir un punto."}
               </p>
               <button
                 type="button"
@@ -1558,10 +1652,18 @@ function PanelMedir({
                     {tramitesCerca.length > 20 && <li className="text-stone-400">… y {tramitesCerca.length - 20} más</li>}
                   </ul>
                 )}
+                {externosCerca.length > 0 && (
+                  <ul className="max-h-32 space-y-1 overflow-y-auto rounded-md border border-stone-100 bg-stone-50/60 p-2 text-[11px]">
+                    {externosCerca.slice(0, 20).map((x) => (
+                      <FilaExterna key={`${x.capa.id}-${x.punto.clave}`} x={x} distancia={fmtDist(x.distanciaM)} />
+                    ))}
+                    {externosCerca.length > 20 && <li className="text-stone-400">… y {externosCerca.length - 20} más</li>}
+                  </ul>
+                )}
                 <button
                   type="button"
                   onClick={onDescargarCerca}
-                  disabled={tramitesCerca.length === 0}
+                  disabled={tramitesCerca.length + externosCerca.length === 0}
                   className="flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden />
@@ -1604,9 +1706,28 @@ function PanelMedir({
             Reporte
           </button>
         </div>
-        <p className="mt-1.5 text-[10.5px] text-stone-400">Respeta los filtros activos de la pestaña Filtrar.</p>
+        <p className="mt-1.5 text-[10.5px] text-stone-400">
+          Respeta los filtros activos de la pestaña Filtrar y las capas SINCA 1.0 / VITAL encendidas; cada punto indica la plataforma de la que proviene.
+        </p>
       </div>
     </div>
+  );
+}
+
+function FilaExterna({ x, distancia }: { x: PuntoExternoVisible; distancia?: string }) {
+  return (
+    <li className="flex items-start justify-between gap-2">
+      <span className="flex min-w-0 items-start gap-1">
+        <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(FORMA_PLATAFORMA[x.capa.id], x.grupo.color, 12) }} />
+        <span className="min-w-0">
+          <a href={x.punto.enlace} className="font-mono text-cdmb-700 hover:underline">
+            {x.punto.numero}
+          </a>{" "}
+          — {x.punto.tipo} <span className="text-stone-400">· {x.capa.nombre}</span>
+        </span>
+      </span>
+      {distancia && <span className="flex-none text-stone-400">{distancia}</span>}
+    </li>
   );
 }
 
@@ -1634,6 +1755,10 @@ function PanelAyuda({ onCerrar }: { onCerrar: () => void }) {
           <SeccionAyuda titulo='Pestaña "Filtrar"'>
             <p>Busque por número de expediente o solicitante. Filtre por trámite, por municipio (con el conteo de cada uno) o por estado.</p>
             <p>&quot;Ver todo&quot; quita todos los filtros activos.</p>
+          </SeccionAyuda>
+          <SeccionAyuda titulo="Capas SINCA 1.0 y VITAL">
+            <p>Son capas independientes de Trámites ambientales 2.0: SINCA 1.0 se dibuja con rombos y VITAL con cuadrados. Cada tipo de trámite tiene su color y puede encenderse o apagarse por separado en la pestaña Capas.</p>
+            <p>Si están encendidas, sus puntos se incluyen en la zona medida, en &quot;cerca de un punto&quot; y en las descargas y reportes, indicando la plataforma de origen de cada uno.</p>
           </SeccionAyuda>
           <SeccionAyuda titulo='Pestaña "Capas"'>
             <p>Encienda o apague: los trámites, los límites municipales y las capas de contexto. Estas últimas vienen de la entidad externa que las produce, señalada entre paréntesis: áreas protegidas (RUNAP), páramos delimitados (MADS), veredas (DANE), hidrografía y subzonas hidrográficas (IDEAM), áreas de conservación de aves (Humboldt) y bosque seco tropical (MADS).</p>
