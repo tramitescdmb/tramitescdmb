@@ -28,7 +28,7 @@ export default async function RootLayout({
 }>) {
   const pathname = (await headers()).get("x-pathname") ?? "";
   const publico =
-    pathname === "/pqrsd" || pathname.startsWith("/pqrsd/") || pathname.startsWith("/verificar/");
+    pathname === "/pqrsd" || pathname.startsWith("/pqrsd/") || pathname.startsWith("/verificar/") || pathname === "/validar-firma";
 
   return (
     <html lang="es" className={workSans.variable}>

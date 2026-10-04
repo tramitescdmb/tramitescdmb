@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
-import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
@@ -212,6 +212,7 @@ export function NuevoExpedienteForm({
         mimeType: string;
         tamanoBytes: number;
         documentoRequeridoId?: string;
+        hashSha256?: string | null;
       }> = [];
 
       for (const doc of documentosRequeridos) {
@@ -220,14 +221,14 @@ export function NuevoExpedienteForm({
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
           const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
-          documentos.push({ ...subido, descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre, documentoRequeridoId: doc.id });
+          documentos.push({ ...subido, hashSha256: await sha256Hex(file), descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre, documentoRequeridoId: doc.id });
         }
       }
 
       for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
         const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
-        documentos.push({ ...subido, descripcion: "Documento adicional aportado por el solicitante." });
+        documentos.push({ ...subido, hashSha256: await sha256Hex(file), descripcion: "Documento adicional aportado por el solicitante." });
       }
 
       setProgreso("Guardando expediente…");

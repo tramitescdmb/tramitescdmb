@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { refreshSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/sinca/sincronizar", "/api/admin/vital/sincronizar"];
-const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/api/fondo-historico"];
+const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

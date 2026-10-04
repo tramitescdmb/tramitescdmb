@@ -14,6 +14,7 @@ type DocumentoInput = {
   mimeType: string;
   tamanoBytes: number;
   documentoRequeridoId?: string;
+  hashSha256?: string | null;
 };
 
 export async function POST(req: NextRequest) {
@@ -249,6 +250,7 @@ export async function POST(req: NextRequest) {
           storagePath: d.path,
           mimeType: d.mimeType || "application/octet-stream",
           tamanoBytes: d.tamanoBytes || 0,
+          hashSha256: typeof d.hashSha256 === "string" && /^[0-9a-f]{64}$/.test(d.hashSha256) ? d.hashSha256 : null,
           subidoPorId: session.userId,
         })),
     });

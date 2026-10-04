@@ -4,6 +4,57 @@ import { CheckCircle2, XCircle, FileSignature } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatearFechaHoraLarga as fechaHora, formatearFecha } from "@/lib/fecha";
 import { ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import {
+  documentosFirmadosDeContrato,
+  documentosFirmadosDeExpedienteTramite,
+  firmasDeComunicacion,
+  type FirmaPublica,
+} from "@/lib/validar-firma";
+
+function ListaFirmas({ firmas }: { firmas: FirmaPublica[] }) {
+  return (
+    <ul className="divide-y divide-emerald-100">
+      {firmas.map((f) => (
+        <li key={f.id} className="py-1.5 text-sm">
+          <p className="font-medium text-stone-900">
+            {f.nombre} <span className="font-normal text-stone-500">— {f.cargo}</span>
+          </p>
+          <p className="text-xs text-stone-500">
+            {f.calidad} · {fechaHora(f.fechaHora)}
+            {f.selloTiempoEn && " · con sello de tiempo"}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FirmasPublicas({ grupos }: { grupos: { documento: string | null; firmas: FirmaPublica[] }[] }) {
+  const conFirmas = grupos.filter((g) => g.firmas.length > 0);
+  return (
+    <div className="mt-4 border-t border-emerald-200/70 pt-3">
+      <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+        <FileSignature className="h-4 w-4 text-emerald-600" aria-hidden />
+        Firmas electrónicas
+      </h2>
+      {conFirmas.length === 0 ? (
+        <p className="mt-1 text-xs text-stone-500">No registra firmas electrónicas.</p>
+      ) : (
+        <div className="mt-2 space-y-3">
+          {conFirmas.map((g, i) => (
+            <div key={i}>
+              {g.documento && <p className="text-xs font-semibold text-stone-600">{g.documento}</p>}
+              <ListaFirmas firmas={g.firmas} />
+            </div>
+          ))}
+        </div>
+      )}
+      <Link href="/validar-firma" className="mt-3 inline-block text-xs font-medium text-cdmb-700 hover:underline">
+        Validar un archivo firmado →
+      </Link>
+    </div>
+  );
+}
 
 export const metadata: Metadata = { title: "Verificación de radicado — CDMB" };
 
@@ -85,6 +136,8 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
           de acceso a la información (Ley 1712 de 2014).
         </p>
 
+        <FirmasPublicas grupos={[{ documento: null, firmas: await firmasDeComunicacion(c.id) }]} />
+
         <Link
           href={`/correspondencia/${c.id}/ficha-firma`}
           className="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
@@ -150,6 +203,8 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
           contrato ni datos del contratista, sujetos a las reglas de acceso a la información (Ley 1712 de 2014).
         </p>
 
+        <FirmasPublicas grupos={await documentosFirmadosDeContrato(e.id)} />
+
         <Link
           href={`/contratacion/expedientes/${e.id}/ficha-firma`}
           className="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
@@ -214,6 +269,8 @@ async function VerificarExpedienteTramite({ numero }: { numero: string }) {
           Esta página confirma la existencia y el estado del expediente; no revela los datos del solicitante ni
           del predio, sujetos a las reglas de acceso a la información (Ley 1712 de 2014).
         </p>
+
+        <FirmasPublicas grupos={await documentosFirmadosDeExpedienteTramite(e.id)} />
 
         <Link
           href={`/expedientes/${e.id}/ficha-firma`}

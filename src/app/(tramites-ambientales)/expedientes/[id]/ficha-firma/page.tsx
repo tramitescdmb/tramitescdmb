@@ -142,7 +142,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                           <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
                           <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
                           <Dato k="Algoritmo / formato" v={etiquetaFormatoFirma(f.formato)} />
-                          <Dato k="Proveedor" v={f.proveedor} />
+                          <Dato k="Proveedor" v="CDMB" />
                           <Dato k="Hash SHA-256 del contenido" v={f.hashContenido} mono />
                           <Dato k="Dirección IP" v={f.ip ?? "no disponible"} mono />
                           <Dato k="Agente de usuario" v={f.userAgent ?? "no disponible"} mono />
@@ -180,8 +180,7 @@ export default async function FichaFirmaExpedienteTramitePage({
 
         <p className="mt-4 border-t border-stone-100 pt-3 text-[11px] leading-relaxed text-stone-400">
           Firma electrónica conforme a la Ley 527 de 1999 (art. 7) y el Decreto 1074 de 2015 — hash SHA-256,
-          identidad del firmante y sello de tiempo. Documento de uso interno; contiene datos personales
-          (Ley 1581 de 2012), no debe publicarse sin control de acceso.
+          identidad del firmante y sello de tiempo. La autenticidad de cada documento puede comprobarse en el validador público de firmas de la CDMB.
         </p>
       </div>
     </section>
