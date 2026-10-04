@@ -19,6 +19,7 @@ export type FilaExpediente = {
   municipio: string;
   pasoActualNumero: number;
   totalPasos: number;
+  pasosAvance?: number;
   estado: string;
   fechaUltimoMovimiento: string;
 };
@@ -56,7 +57,7 @@ export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
             </td>
             <td className="truncate px-2.5 py-2 text-stone-500">{f.municipio}</td>
             <td className="px-2.5 py-2">
-              <ProgresoExpediente pasoActualNumero={f.pasoActualNumero} totalPasos={f.totalPasos} estado={f.estado} />
+              <ProgresoExpediente pasoActualNumero={f.pasoActualNumero} totalPasos={f.totalPasos} pasosAvance={f.pasosAvance} estado={f.estado} />
             </td>
             <td className="truncate px-2.5 py-2">
               <EstadoBadge estado={f.estado} />

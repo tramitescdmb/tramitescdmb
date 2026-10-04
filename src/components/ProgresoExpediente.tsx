@@ -1,14 +1,30 @@
 const ESTADOS_TERMINALES = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
 const ESTADOS_EN_PAUSA = ["SUSPENDIDO", "INFORMACION_ADICIONAL_REQUERIDA"];
 
+export function pasosParaAvance(titulos: string[]): number {
+  const ultimo = titulos[titulos.length - 1] ?? "";
+  return titulos.length > 1 && /seguimiento/i.test(ultimo) ? titulos.length - 1 : titulos.length;
+}
+
+export function calcularAvance(pasoActualNumero: number, totalPasos: number, estado: string, pasosAvance = totalPasos) {
+  const cierreAnticipado = ESTADOS_TERMINALES.includes(estado) && estado !== "APROBADO";
+  const pasoActual = Math.min(Math.max(pasoActualNumero, 1), totalPasos);
+  const completados = cierreAnticipado ? totalPasos : pasoActual - 1;
+  const base = Math.max(1, Math.min(pasosAvance, totalPasos));
+  const pct = cierreAnticipado ? 100 : Math.min(100, Math.round((completados / base) * 100));
+  return { cierreAnticipado, pasoActual, completados, pct };
+}
+
 export function ProgresoExpediente({
   pasoActualNumero,
   totalPasos,
+  pasosAvance,
   estado,
   tamaño = "chico",
 }: {
   pasoActualNumero: number;
   totalPasos: number;
+  pasosAvance?: number;
   estado: string;
   tamaño?: "chico" | "grande";
 }) {
@@ -16,15 +32,11 @@ export function ProgresoExpediente({
 
   const terminal = ESTADOS_TERMINALES.includes(estado);
   const enPausa = ESTADOS_EN_PAUSA.includes(estado);
-
-  const pasoActual = Math.min(Math.max(pasoActualNumero, 1), totalPasos);
-  const completados = terminal ? totalPasos : pasoActual - 1;
-  const pasosAlcanzados = terminal ? totalPasos : pasoActual;
-  const pct = Math.round((pasosAlcanzados / totalPasos) * 100);
+  const { cierreAnticipado, pasoActual, completados, pct } = calcularAvance(pasoActualNumero, totalPasos, estado, pasosAvance);
 
   const paleta = terminal
     ? estado === "APROBADO"
-      ? { lleno: "bg-emerald-500", actual: "bg-emerald-500", texto: "text-emerald-700", etiqueta: "Trámite aprobado" }
+      ? { lleno: "bg-emerald-500", actual: "bg-emerald-600 ring-2 ring-emerald-200", texto: "text-emerald-700", etiqueta: `Trámite aprobado · paso ${pasoActual} de ${totalPasos}` }
       : estado === "NEGADO" || estado === "RECHAZADO"
         ? { lleno: "bg-red-400", actual: "bg-red-400", texto: "text-red-700", etiqueta: "Trámite negado" }
         : { lleno: "bg-stone-300", actual: "bg-stone-300", texto: "text-stone-500", etiqueta: estado === "DESISTIDO" ? "Trámite desistido" : "Trámite archivado" }
@@ -41,7 +53,7 @@ export function ProgresoExpediente({
     <div
       className="w-full"
       role="img"
-      aria-label={`${paleta.etiqueta}. Avance del procedimiento: ${pct}% (${pasosAlcanzados} de ${totalPasos} pasos).`}
+      aria-label={`${paleta.etiqueta}. Avance del procedimiento: ${pct}% (${completados} de ${totalPasos} pasos completados).`}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className={`min-w-0 truncate font-medium ${paleta.texto} ${textoTamaño}`}>{paleta.etiqueta}</span>
@@ -50,9 +62,9 @@ export function ProgresoExpediente({
       <div className={`flex w-full gap-[2px] ${alto}`} aria-hidden>
         {Array.from({ length: totalPasos }, (_, i) => {
           const n = i + 1;
-          const esActual = !terminal && n === pasoActual;
+          const esActual = !cierreAnticipado && n === pasoActual;
           const lleno = n <= completados;
-          const clase = terminal || lleno ? paleta.lleno : esActual ? paleta.actual : "bg-stone-200";
+          const clase = cierreAnticipado || lleno ? paleta.lleno : esActual ? paleta.actual : "bg-stone-200";
           return (
             <span
               key={n}

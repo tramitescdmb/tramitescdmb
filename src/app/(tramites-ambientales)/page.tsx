@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, ArrowRight } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
-import { ProgresoExpediente } from "@/components/ProgresoExpediente";
+import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -165,6 +165,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   <ProgresoExpediente
                     pasoActualNumero={exp.pasoActualNumero}
                     totalPasos={exp.flujo.pasos.length}
+                    pasosAvance={pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo))}
                     estado={exp.estado}
                   />
                 </div>

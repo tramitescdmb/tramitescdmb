@@ -10,7 +10,7 @@ import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
 import { SubirDocumentoPasoForm } from "@/components/SubirDocumentoPasoForm";
 import { cargoCoincideConPaso, cargoCanonico, cargosEnTexto, puedeGestionarPaso } from "@/lib/cargos";
-import { ProgresoExpediente } from "@/components/ProgresoExpediente";
+import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import {
   obtenerPermisosUsuario,
@@ -316,7 +316,13 @@ export default async function ExpedienteDetallePage({
           · Flujo: {expediente.flujo.nombre}
         </p>
         <div className="mt-3 max-w-md">
-          <ProgresoExpediente pasoActualNumero={expediente.pasoActualNumero} totalPasos={pasos.length} estado={expediente.estado} tamaño="grande" />
+          <ProgresoExpediente
+            pasoActualNumero={expediente.pasoActualNumero}
+            totalPasos={pasos.length}
+            pasosAvance={pasosParaAvance(pasos.map((p) => p.titulo))}
+            estado={expediente.estado}
+            tamaño="grande"
+          />
         </div>
       </div>
 

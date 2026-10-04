@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { pasosParaAvance } from "@/components/ProgresoExpediente";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
@@ -61,7 +62,7 @@ export default async function ExpedientesPage({
     db.expediente.findMany({
       where,
       orderBy: { fechaUltimoMovimiento: "desc" },
-      include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true } } } } },
+      include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true, titulo: true }, orderBy: { numero: "asc" } } } } },
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
     }),
@@ -264,6 +265,7 @@ export default async function ExpedientesPage({
                 municipio: exp.municipio,
                 pasoActualNumero: exp.pasoActualNumero,
                 totalPasos: exp.flujo.pasos.length,
+                pasosAvance: pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo)),
                 estado: exp.estado,
                 fechaUltimoMovimiento: formatearFecha(exp.fechaUltimoMovimiento),
               }))}

@@ -57,7 +57,7 @@ export async function getDashboardData(
         where: filtroTramite,
         take: 8,
         orderBy: { fechaUltimoMovimiento: "desc" },
-        include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true } } } } },
+        include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true, titulo: true }, orderBy: { numero: "asc" } } } } },
       }),
       db.expediente.groupBy({
         by: ["municipio"],
