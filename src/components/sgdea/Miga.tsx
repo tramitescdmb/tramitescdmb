@@ -1,9 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ChevronRight, Home } from "lucide-react";
+import { MigaModulo, type RutaMiga } from "@/components/MigaModulo";
 
 const INICIO_GRUPO: Record<string, string> = {
   Panel: "/correspondencia/panel",
@@ -16,7 +13,7 @@ const INICIO_GRUPO: Record<string, string> = {
   Ayuda: "/correspondencia/ayuda",
 };
 
-const RUTAS: { re: RegExp; trail: string[] }[] = [
+const RUTAS: RutaMiga[] = [
   { re: /^\/correspondencia\/panel\/correspondencia$/, trail: ["Panel", "Correspondencia"] },
   { re: /^\/correspondencia\/panel\/archivo$/, trail: ["Panel", "Expedientes y archivo"] },
   { re: /^\/correspondencia\/panel\/sistema$/, trail: ["Panel", "Sistema"] },
@@ -47,36 +44,5 @@ const RUTAS: { re: RegExp; trail: string[] }[] = [
 ];
 
 export function MigaSgdea() {
-  const pathname = usePathname();
-  const match = RUTAS.find((r) => r.re.test(pathname));
-  const trail = match?.trail ?? [];
-
-  return (
-    <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-stone-400">
-      <Link prefetch={false} href="/correspondencia/panel" className="flex items-center gap-1 hover:text-cdmb-700">
-        <Home className="h-3.5 w-3.5" aria-hidden />
-        SGDEA
-      </Link>
-      {trail.map((paso, i) => {
-        const ultimo = i === trail.length - 1;
-        const href = i === 0 ? INICIO_GRUPO[paso] : undefined;
-        return (
-          <Fragment key={`${paso}-${i}`}>
-            <ChevronRight className="h-3.5 w-3.5 flex-none text-stone-300" aria-hidden />
-            {ultimo ? (
-              <span className="font-medium text-stone-600" aria-current="page">
-                {paso}
-              </span>
-            ) : href ? (
-              <Link prefetch={false} href={href} className="hover:text-cdmb-700">
-                {paso}
-              </Link>
-            ) : (
-              <span>{paso}</span>
-            )}
-          </Fragment>
-        );
-      })}
-    </nav>
-  );
+  return <MigaModulo inicio={{ label: "SGDEA", href: "/correspondencia/panel" }} inicioGrupo={INICIO_GRUPO} rutas={RUTAS} />;
 }

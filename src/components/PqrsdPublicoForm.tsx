@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, Upload, X, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, X, CheckCircle2, ListChecks, UserRound, MessageSquareText, Paperclip } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { subirArchivoPublico, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
@@ -167,7 +168,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       </label>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Tipo de solicitud</h2>
+        <EncabezadoPaso numero={1} icono={<ListChecks className="h-4 w-4" aria-hidden />} titulo="Tipo de solicitud" />
         <SectionHelp>
           Elija la que mejor describa lo que quiere: una petición pide algo, una queja se refiere a la conducta de un
           servidor, un reclamo exige corregir algo mal hecho, una sugerencia propone una mejora y una denuncia
@@ -181,7 +182,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Sus datos</h2>
+        <EncabezadoPaso numero={2} icono={<UserRound className="h-4 w-4" aria-hidden />} titulo="Sus datos" />
         {!anonima && (
           <SectionHelp>
             Necesitamos su identificación, municipio y un medio de contacto para poder responderle y para que después
@@ -248,7 +249,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Su solicitud</h2>
+        <EncabezadoPaso numero={3} icono={<MessageSquareText className="h-4 w-4" aria-hidden />} titulo="Su solicitud" />
         <div className="space-y-3">
           <Field label="Asunto" required help="Resumen de una línea de lo que necesita.">
             <input value={asunto} onChange={(e) => setAsunto(e.target.value)} className={inputCls} />
@@ -260,7 +261,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="mb-3 text-sm font-semibold text-stone-900">Documentos de soporte (opcional)</h2>
+        <EncabezadoPaso numero={4} icono={<Paperclip className="h-4 w-4" aria-hidden />} titulo="Documentos de soporte" descripcion="Opcional." />
         <p className="mb-2 text-xs text-stone-500">
           Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí. Hasta {MAX_ARCHIVOS_LOTE} archivos,
           cada uno de máximo {TAMANO_MAXIMO_SGDEA_MB} MB.

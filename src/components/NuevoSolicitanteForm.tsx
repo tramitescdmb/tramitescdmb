@@ -9,6 +9,7 @@ import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/munic
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { IconUser, IconIdCard, IconMail, IconPhone, IconMapPin, IconBriefcase } from "@/components/icons";
 import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 
 const MUNICIPIOS_CON_FUERA = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
@@ -90,6 +91,7 @@ export function NuevoSolicitanteForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
+      <EncabezadoPaso numero={1} icono={<IconIdCard className={iconSm} />} titulo="Identificación" />
       <Field label="Tipo de solicitante" required icon={<IconUser className={iconSm} />} help="Defina si corresponde a persona natural o a empresa/entidad. Esta selección determina si se solicita cédula o NIT.">
         <select
           value={tipo}
@@ -149,6 +151,9 @@ export function NuevoSolicitanteForm() {
         </div>
       )}
 
+      <div className="border-t border-stone-100 pt-4">
+        <EncabezadoPaso numero={2} icono={<IconMapPin className={iconSm} />} titulo="Contacto y ubicación" />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Correo electrónico" icon={<IconMail className={iconSm} />} help="">
           <input
@@ -189,6 +194,9 @@ export function NuevoSolicitanteForm() {
         </Field>
       </div>
 
+      <div className="border-t border-stone-100 pt-4">
+        <EncabezadoPaso numero={3} icono={<IconBriefcase className={iconSm} />} titulo="Información tributaria" descripcion="Opcional." />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field
           label="Régimen tributario (opcional)"

@@ -24,6 +24,7 @@ import {
   IconBriefcase,
   IconBuilding,
 } from "@/components/icons";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 
 function numeroONulo(valor: string): number | null {
   const limpio = valor.trim();
@@ -291,7 +292,7 @@ export function NuevoExpedienteForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
-        <h2 className="text-sm font-semibold text-stone-900">1. Datos del solicitante</h2>
+        <EncabezadoPaso numero={1} icono={<IconUser className="h-4 w-4" />} titulo="Datos del solicitante" />
 
         {flujos.length > 1 && (
           <Field
@@ -526,7 +527,7 @@ export function NuevoExpedienteForm({
       </section>
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
-        <h2 className="text-sm font-semibold text-stone-900">2. Lugar del trámite</h2>
+        <EncabezadoPaso numero={2} icono={<IconMapPin className="h-4 w-4" />} titulo="Lugar del trámite" />
 
         <Field
           label="Municipio donde se adelanta el trámite"
@@ -683,7 +684,7 @@ export function NuevoExpedienteForm({
 
       <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
         <div>
-          <h2 className="text-sm font-semibold text-stone-900">3. Documentos</h2>
+          <EncabezadoPaso numero={3} icono={<IconDocument className="h-4 w-4" />} titulo="Documentos" />
           <p className="text-xs text-stone-500">
             Cargue los documentos aportados por el solicitante — sin importar el tamaño del archivo, se
             almacena directamente en el sistema. Los marcados como <strong>Obligatorio</strong> (por

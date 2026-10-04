@@ -19,6 +19,7 @@ export type GrupoMenu = {
   label: string;
   icon: LucideIcon;
   href?: string;
+  coincide?: RegExp;
   items?: ItemMenu[];
   lado?: "izquierda" | "derecha";
   bloqueadoPara?: string;
@@ -47,6 +48,7 @@ export function BarraModulo({
 
   const grupoActivo = (g: GrupoMenu) => {
     if (g.bloqueadoPara) return false;
+    if (g.coincide) return g.coincide.test(pathname);
     if (g.href) {
       const ruta = rutaDe(g.href);
       return pathname === ruta || pathname.startsWith(ruta + "/");

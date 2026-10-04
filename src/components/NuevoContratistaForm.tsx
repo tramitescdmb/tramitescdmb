@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
+import { IdCard, MapPin, Landmark, KeyRound } from "lucide-react";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 
 const inputCls = "w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
@@ -78,6 +80,7 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
 
   return (
     <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+      <EncabezadoPaso numero={1} icono={<IdCard className="h-4 w-4" aria-hidden />} titulo="Identificación" />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Identificación (NIT/cédula)" required>
           <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
@@ -105,6 +108,9 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         </div>
       )}
 
+      <div className="border-t border-stone-100 pt-4">
+        <EncabezadoPaso numero={2} icono={<MapPin className="h-4 w-4" aria-hidden />} titulo="Contacto y ubicación" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Correo electrónico">
           <input type="email" value={contactoEmail} onChange={(e) => setContactoEmail(e.target.value)} className={inputCls} />
@@ -126,6 +132,9 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         </Field>
       </div>
 
+      <div className="border-t border-stone-100 pt-4">
+        <EncabezadoPaso numero={3} icono={<Landmark className="h-4 w-4" aria-hidden />} titulo="Información tributaria" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Régimen tributario">
           <select value={regimenTributario} onChange={(e) => setRegimenTributario(e.target.value)} className={inputCls}>
@@ -143,6 +152,9 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         </div>
       </div>
 
+      <div className="border-t border-stone-100 pt-4">
+        <EncabezadoPaso numero={4} icono={<KeyRound className="h-4 w-4" aria-hidden />} titulo="Acceso a la plataforma" descripcion="Opcional." />
+      </div>
       <Field
         label="Usuario de red (Directorio Activo)"
         help="Opcional. Si la persona no tiene cuenta todavía, se le crea una — el día que inicie sesión de verdad con ese mismo usuario, entra a esta misma cuenta. Vincula este contratista con el usuario de dominio, para que sus expedientes también queden asociados a él."
