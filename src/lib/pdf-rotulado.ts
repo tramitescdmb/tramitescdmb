@@ -24,9 +24,11 @@ export type MetadatosDocumentoPdf = {
   plataforma: string;
   referencia: string;
   hashArchivo: string | null;
+  disenio: number;
 };
 
 const ENTIDAD_EMISORA = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
+const CORREO_CONTACTO = "info@cdmb.gov.co";
 
 function partirTexto(texto: string, font: PDFFont, size: number, ancho: number): string[] {
   const lineas: string[] = [];
@@ -65,105 +67,143 @@ async function agregarDiligencia(
   const [ancho, alto] = primera ? [primera.getWidth(), primera.getHeight()] : [612, 792];
   const margen = 54;
   const util = ancho - margen * 2;
+  const NEGRO = rgb(0.1, 0.1, 0.1);
+  const BORDE = rgb(0.25, 0.25, 0.25);
+  const altoPie = 150;
+  const limiteInferior = margen + altoPie;
   const paginasOriginales = pdf.getPageCount();
+  const paginasDiligencia: PDFPage[] = [];
   let page = pdf.addPage([ancho, alto]);
+  paginasDiligencia.push(page);
   let y = alto - margen;
-  let paginasDiligencia = 1;
 
+  const centrado = (texto: string, size: number, f: PDFFont, color = NEGRO) => {
+    page.drawText(texto, { x: (ancho - f.widthOfTextAtSize(texto, size)) / 2, y, size, font: f, color });
+  };
   const nuevaPagina = () => {
     page = pdf.addPage([ancho, alto]);
-    paginasDiligencia++;
+    paginasDiligencia.push(page);
     y = alto - margen;
-    page.drawText("DILIGENCIA DE DOCUMENTO ELECTRÓNICO (continuación)", { x: margen, y, size: 9, font: fontBold, color: VERDE });
-    y -= 22;
+    centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO (continuación)", 10, fontBold);
+    y -= 24;
   };
-  const asegurar = (necesario: number) => {
-    if (y - necesario < margen + 10) nuevaPagina();
-  };
-  const titulo = (texto: string) => {
-    asegurar(30);
-    y -= 6;
-    page.drawText(texto, { x: margen, y, size: 8.5, font: fontBold, color: VERDE });
-    y -= 4;
-    page.drawLine({ start: { x: margen, y }, end: { x: ancho - margen, y }, thickness: 0.5, color: VERDE });
-    y -= 12;
-  };
-  const dato = (etiqueta: string, valor: string) => {
-    const e = `${etiqueta}: `;
-    const anchoEtiqueta = fontBold.widthOfTextAtSize(e, 7.5);
-    const lineas = partirTexto(valor || "—", font, 7.5, util - anchoEtiqueta);
-    asegurar(lineas.length * 10 + 2);
-    page.drawText(e, { x: margen, y, size: 7.5, font: fontBold, color: GRIS });
-    lineas.forEach((l, i) => {
-      page.drawText(l, { x: margen + anchoEtiqueta, y: y - i * 10, size: 7.5, font, color: GRIS });
+
+  type Linea = { etiqueta: string; valor: string };
+  const TAM = 8;
+  const INTERLINEA = 11.5;
+  const lineasDeDatos = (datos: Linea[]) =>
+    datos.flatMap((d) => {
+      const e = `${d.etiqueta}: `;
+      const anchoEtiqueta = font.widthOfTextAtSize(e, TAM);
+      return partirTexto(d.valor || "—", fontBold, TAM, util - 16 - anchoEtiqueta).map((v, i) => ({ e: i === 0 ? e : "", anchoEtiqueta, v }));
     });
-    y -= lineas.length * 10 + 2;
-  };
-  const parrafo = (texto: string, size = 7) => {
-    const lineas = partirTexto(texto, font, size, util);
+
+  const seccion = (titulo: string, datos: Linea[]) => {
+    const lineas = lineasDeDatos(datos);
+    const altoCaja = lineas.length * INTERLINEA + 10;
+    if (y - (altoCaja + 18) < limiteInferior) nuevaPagina();
+    page.drawText(titulo, { x: margen, y, size: 7.8, font: fontBold, color: NEGRO });
+    y -= 6;
+    page.drawRectangle({ x: margen, y: y - altoCaja, width: util, height: altoCaja, borderColor: BORDE, borderWidth: 0.6 });
+    let ly = y - 13;
+    const primeraLinea = ly;
     for (const l of lineas) {
-      asegurar(size + 3);
-      page.drawText(l, { x: margen, y, size, font, color: GRIS_CLARO });
-      y -= size + 3;
+      if (l.e) page.drawText(l.e, { x: margen + 8, y: ly, size: TAM, font, color: NEGRO });
+      page.drawText(l.v, { x: margen + 8 + l.anchoEtiqueta, y: ly, size: TAM, font: fontBold, color: NEGRO });
+      ly -= INTERLINEA;
     }
+    y -= altoCaja + 16;
+    return { pagina: page, primeraLinea };
   };
 
-  const qrSize = 72;
-  page.drawImage(qr, { x: ancho - margen - qrSize, y: y - qrSize + 10, width: qrSize, height: qrSize });
-  page.drawText("DILIGENCIA DE DOCUMENTO ELECTRÓNICO", { x: margen, y, size: 13, font: fontBold, color: VERDE });
-  y -= 16;
-  page.drawText("Metadatos del documento", { x: margen, y, size: 9, font, color: GRIS });
+  centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO", 13, fontBold);
+  y -= 22;
+  for (const l of partirTexto(
+    `El presente documento se expide conforme a las disposiciones sobre firma electrónica establecidas en el artículo 7 de la Ley 527 de 1999, reglamentado por el Decreto 2364 de 2012 (compilado en el Decreto 1074 de 2015). Contiene un código seguro de verificación (CSV) que permite contrastar la autenticidad e integridad de cualquier copia del mismo, ya sea electrónica o en papel.\nPara realizar la verificación deberá accederse a la dirección ${meta.urlBaseValidador} y facilitar el CSV que figura en esta diligencia (o en el margen de cualquier página del documento firmado), o leer el código QR. Obtendrá los datos del documento original y de las firmas electrónicas registradas.`,
+    font,
+    7.8,
+    util,
+  )) {
+    page.drawText(l, { x: margen, y, size: 7.8, font, color: NEGRO });
+    y -= 10.5;
+  }
   y -= 14;
-  page.drawText(ENTIDAD_EMISORA, { x: margen, y, size: 7.5, font, color: GRIS_CLARO });
-  y = Math.min(y - 20, alto - margen - qrSize - 8);
+  centrado("Metadatos del documento:", 10.5, fontBold);
+  y -= 20;
 
-  titulo("Información para verificación");
-  dato("Código seguro de verificación (CSV)", meta.csv);
-  dato("Dirección de verificación del documento", meta.urlBaseValidador);
-  dato("Entidad emisora", ENTIDAD_EMISORA);
-  dato("Plataforma", meta.plataforma);
-
-  titulo("Información asociada al contenido del documento firmado");
-  dato("Documento", meta.documento);
-  dato("Radicado o expediente", meta.referencia);
-  dato("Formato del documento", "PDF");
-  if (meta.hashArchivo) dato("Huella SHA-256 del documento original", meta.hashArchivo);
-  const yNumeroPaginas = y;
-  const paginaNumero = page;
-  dato("Número de páginas (incluida esta diligencia)", "    ");
-
-  titulo("Información asociada a la firma");
-  dato("Tipo de firma", "Firma electrónica (artículo 7 de la Ley 527 de 1999; Decreto 2364 de 2012, compilado en el Decreto 1074 de 2015)");
-  dato("Mecanismo", "Autenticación del firmante en la plataforma, huella SHA-256 del contenido y sello de tiempo");
-  dato("Emisor de la firma", "CDMB — firma electrónica de la plataforma institucional; no corresponde a un certificado digital de una entidad de certificación");
+  seccion("Información para verificación:", [
+    { etiqueta: "Código seguro de verificación (CSV)", valor: meta.csv },
+    { etiqueta: "Dirección de verificación del documento", valor: meta.urlBaseValidador },
+    { etiqueta: "Correo electrónico de contacto del emisor", valor: CORREO_CONTACTO },
+  ]);
 
   const ordenadas = ordenarPorCalidad(firmas, (f) => f.calidad, (f) => f.nivel ?? 4);
   ordenadas.forEach((f, i) => {
-    asegurar(7 * 12 + 34);
-    titulo(`Firmante ${i + 1} de ${ordenadas.length}`);
     const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
-    dato("Nombre del firmante", f.nombre);
-    if (cargo) dato("Cargo del firmante", cargo);
-    dato("Organización", ENTIDAD_EMISORA);
-    if (f.dependencia) dato("Dependencia", f.dependencia);
-    dato("Calidad", nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }));
-    if (f.fechaHora) dato("Fecha y hora de la firma", f.fechaHora);
-    if (f.hash) dato("Huella de la firma (SHA-256)", f.hash);
+    seccion(ordenadas.length > 1 ? `Información asociada al firmante ${i + 1} de ${ordenadas.length}:` : "Información asociada al firmante del documento:", [
+      { etiqueta: "Nombre del firmante", valor: f.nombre },
+      ...(cargo ? [{ etiqueta: "Cargo del firmante", valor: cargo }] : []),
+      { etiqueta: "Organización", valor: ENTIDAD_EMISORA },
+      ...(f.dependencia ? [{ etiqueta: "Dependencia", valor: f.dependencia }] : []),
+      { etiqueta: "Calidad", valor: nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }) },
+      ...(f.fechaHora ? [{ etiqueta: "Fecha y hora de la firma", valor: f.fechaHora }] : []),
+      ...(f.hash ? [{ etiqueta: "Huella de la firma (SHA-256)", valor: f.hash }] : []),
+    ]);
   });
 
-  titulo("Validez");
-  parrafo(
-    `El presente documento se expide conforme a las disposiciones sobre firma electrónica del artículo 7 de la Ley 527 de 1999, reglamentado por el Decreto 2364 de 2012 (compilado en el Decreto 1074 de 2015). Contiene un código seguro de verificación (CSV) que permite contrastar la autenticidad e integridad de cualquier copia, electrónica o en papel. Para verificarlo, ingrese a ${meta.urlBaseValidador} y digite el CSV que figura en esta diligencia y en el margen de cada página, o lea el código QR. Obtendrá los datos del documento original y de las firmas registradas.`,
-  );
+  const datosContenido: Linea[] = [
+    { etiqueta: "Documento", valor: meta.documento },
+    { etiqueta: "Plataforma", valor: meta.plataforma },
+    { etiqueta: "Radicado o expediente", valor: meta.referencia },
+    { etiqueta: "Formato del documento", valor: "PDF" },
+    { etiqueta: "Tipo de firma", valor: "Firma electrónica (Ley 527 de 1999, art. 7)" },
+    { etiqueta: "Emisor de la firma electrónica", valor: "CDMB" },
+    ...(meta.hashArchivo ? [{ etiqueta: "Huella SHA-256 del documento original", valor: meta.hashArchivo }] : []),
+  ];
+  const contenido = seccion("Información asociada al contenido del documento firmado:", [
+    ...datosContenido,
+    { etiqueta: "Número de páginas del documento (incluida esta diligencia)", valor: "   " },
+  ]);
 
-  const total = paginasOriginales + paginasDiligencia;
-  paginaNumero.drawText(String(total), {
-    x: margen + fontBold.widthOfTextAtSize("Número de páginas (incluida esta diligencia): ", 7.5),
-    y: yNumeroPaginas,
-    size: 7.5,
-    font,
-    color: GRIS,
+  const total = paginasOriginales + paginasDiligencia.length;
+  const etiquetaPaginas = "Número de páginas del documento (incluida esta diligencia): ";
+  const lineasContenido = lineasDeDatos(datosContenido).length;
+  contenido.pagina.drawText(String(total), {
+    x: margen + 8 + font.widthOfTextAtSize(etiquetaPaginas, TAM),
+    y: contenido.primeraLinea - lineasContenido * INTERLINEA,
+    size: TAM,
+    font: fontBold,
+    color: NEGRO,
   });
+
+  const nombresFirmantes = ordenadas.filter((f) => nivelSello(f.calidad) !== "visto").map((f) => f.nombre).join(", ") || ordenadas.map((f) => f.nombre).join(", ");
+  for (const p of paginasDiligencia) {
+    const arriba = margen + 128;
+    const abajo = margen + 36;
+    for (const yLinea of [arriba, abajo]) {
+      p.drawLine({ start: { x: margen, y: yLinea }, end: { x: ancho - margen, y: yLinea }, thickness: 1, color: BORDE, dashArray: [1, 2.5] });
+    }
+    const qrSize = 74;
+    p.drawImage(qr, { x: margen, y: abajo + 9, width: qrSize, height: qrSize });
+    const tx = margen + qrSize + 12;
+    const anchoTexto = ancho - margen - tx;
+    let ty = arriba - 18;
+    p.drawText("Código seguro de verificación (CSV): ", { x: tx, y: ty, size: 8, font, color: NEGRO });
+    p.drawText(meta.csv, { x: tx + font.widthOfTextAtSize("Código seguro de verificación (CSV): ", 8), y: ty, size: 8, font: fontBold, color: VERDE });
+    ty -= 14;
+    for (const l of partirTexto(`La autenticidad de este documento electrónico puede ser contrastada a través de la siguiente dirección: ${meta.urlBaseValidador}`, font, 7, anchoTexto)) {
+      p.drawText(l, { x: tx, y: ty, size: 7, font, color: NEGRO });
+      ty -= 9.5;
+    }
+    ty -= 5;
+    const lineasFirmantes = partirTexto(`Firmante${ordenadas.length > 1 ? "s" : ""}: ${nombresFirmantes}`, fontBold, 7, anchoTexto).slice(0, 3);
+    for (const l of lineasFirmantes) {
+      p.drawText(l, { x: tx, y: ty, size: 7, font: fontBold, color: NEGRO });
+      ty -= 9.5;
+    }
+    const contacto = `Para información adicional puede contactar a la CDMB a través del correo electrónico ${CORREO_CONTACTO}`;
+    p.drawText(contacto, { x: (ancho - font.widthOfTextAtSize(contacto, 7.5)) / 2, y: margen + 10, size: 7.5, font, color: NEGRO });
+  }
   return total;
 }
 
