@@ -26,6 +26,6 @@ export function metadatosPdf(datos: {
     plataforma: PLATAFORMA_POR_TIPO[datos.tipo],
     referencia: datos.referencia,
     hashArchivo: datos.hashArchivo,
-    disenio: 2,
+    disenio: 3,
   };
 }

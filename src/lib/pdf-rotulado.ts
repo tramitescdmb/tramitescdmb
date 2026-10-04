@@ -176,7 +176,21 @@ async function agregarDiligencia(
     color: NEGRO,
   });
 
-  const nombresFirmantes = ordenadas.filter((f) => nivelSello(f.calidad) !== "visto").map((f) => f.nombre).join(", ") || ordenadas.map((f) => f.nombre).join(", ");
+  const etiquetaDe = (f: FirmaRotuloPdf) => (nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }));
+  const resumen = (lista: FirmaRotuloPdf[]) => {
+    const grupos = new Map<string, string[]>();
+    for (const f of lista) grupos.set(etiquetaDe(f), [...(grupos.get(etiquetaDe(f)) ?? []), f.nombre]);
+    return [...grupos.entries()].map(([e, nombres]) => `${e}: ${nombres.join(", ")}`).join("  ·  ");
+  };
+  const lineasResumenFirmantes = (anchoTexto: number, maxLineas: number): string[] => {
+    for (let n = ordenadas.length; n >= 1; n--) {
+      const resto = ordenadas.length - n;
+      const texto = resumen(ordenadas.slice(0, n)) + (resto > 0 ? `  ·  y ${resto} más (ver metadatos)` : "");
+      const lineas = partirTexto(texto, fontBold, 7, anchoTexto);
+      if (lineas.length <= maxLineas) return lineas;
+    }
+    return partirTexto(`${ordenadas.length} firmantes (ver metadatos)`, fontBold, 7, anchoTexto);
+  };
   for (const p of paginasDiligencia) {
     const arriba = margen + 128;
     const abajo = margen + 36;
@@ -196,8 +210,8 @@ async function agregarDiligencia(
       ty -= 9.5;
     }
     ty -= 5;
-    const lineasFirmantes = partirTexto(`Firmante${ordenadas.length > 1 ? "s" : ""}: ${nombresFirmantes}`, fontBold, 7, anchoTexto).slice(0, 3);
-    for (const l of lineasFirmantes) {
+    const maxLineas = Math.max(1, Math.floor((ty - (abajo + 6)) / 9.5));
+    for (const l of lineasResumenFirmantes(anchoTexto, maxLineas)) {
       p.drawText(l, { x: tx, y: ty, size: 7, font: fontBold, color: NEGRO });
       ty -= 9.5;
     }
