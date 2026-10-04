@@ -23,13 +23,15 @@ function ListaFirmas({ firmas }: { firmas: FirmaPublica[] }) {
             {f.calidad} · {fechaHora(f.fechaHora)}
             {f.selloTiempoEn && " · con sello de tiempo"}
           </p>
+          <p className="text-xs text-stone-500">Entidad: {f.entidad}</p>
+          {f.hashFirma && <p className="break-all font-mono text-[10.5px] text-stone-400">Huella de la firma: {f.hashFirma}</p>}
         </li>
       ))}
     </ul>
   );
 }
 
-function FirmasPublicas({ grupos }: { grupos: { documento: string | null; firmas: FirmaPublica[] }[] }) {
+function FirmasPublicas({ grupos }: { grupos: { documento: string | null; hashArchivo?: string | null; firmas: FirmaPublica[] }[] }) {
   const conFirmas = grupos.filter((g) => g.firmas.length > 0);
   return (
     <div className="mt-4 border-t border-emerald-200/70 pt-3">
@@ -44,6 +46,7 @@ function FirmasPublicas({ grupos }: { grupos: { documento: string | null; firmas
           {conFirmas.map((g, i) => (
             <div key={i}>
               {g.documento && <p className="text-xs font-semibold text-stone-600">{g.documento}</p>}
+              {g.hashArchivo && <p className="break-all font-mono text-[10.5px] text-stone-400">SHA-256 del documento: {g.hashArchivo}</p>}
               <ListaFirmas firmas={g.firmas} />
             </div>
           ))}

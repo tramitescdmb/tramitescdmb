@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { EtapaContratacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
 import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { datosPeticion } from "@/lib/auditoria-doc";
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       periodoEventualId: body.periodoEventualId ? String(body.periodoEventualId) : null,
       ip,
       userAgent,
+      cualquierEtapa: puedeSubirEnCualquierEtapaContrato(permisos),
     });
     return NextResponse.json({ id: documento.id }, { status: 201 });
   } catch (err) {

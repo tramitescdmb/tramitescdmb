@@ -380,6 +380,7 @@ export async function agregarDocumentoContrato(datos: {
   periodoEventualId?: string | null;
   ip?: string | null;
   userAgent?: string | null;
+  cualquierEtapa?: boolean;
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
@@ -387,7 +388,12 @@ export async function agregarDocumentoContrato(datos: {
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
-  if (!etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
+  if (!datos.cualquierEtapa && !etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
+  const posicion = ETAPAS_ORDEN.indexOf(datos.etapa) - ETAPAS_ORDEN.indexOf(expediente.etapaActual);
+  const notaEtapa =
+    posicion === 0
+      ? ""
+      : ` — etapa ${posicion > 0 ? "posterior" : "anterior"} a la actual (${ETIQUETA_ETAPA[expediente.etapaActual]})`;
 
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;
@@ -451,7 +457,7 @@ export async function agregarDocumentoContrato(datos: {
   await registrarEventoContratacion(
     datos.expedienteId,
     "DOCUMENTO_SUBIDO",
-    `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]})`,
+    `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]})${notaEtapa}`,
     datos.subidoPorId
   );
   await registrarAuditoriaDoc({
@@ -461,7 +467,7 @@ export async function agregarDocumentoContrato(datos: {
     usuarioId: datos.subidoPorId,
     ip: datos.ip ?? null,
     userAgent: datos.userAgent ?? null,
-    detalle: `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]}) al expediente`,
+    detalle: `Se subió "${nombre}" (${ETIQUETA_ETAPA[datos.etapa]}) al expediente${notaEtapa}`,
   });
   return documento;
 }

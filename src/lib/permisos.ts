@@ -315,6 +315,10 @@ export function puedeAsignarPersonalContrato(permisos: PermisosUsuario): boolean
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
+export function puedeSubirEnCualquierEtapaContrato(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || permisos.contratacion === "FUNCIONARIO_CONTRATACION";
+}
+
 export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario, expediente: { id: string }): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") return permisos.asignadoExpedientes.has(expediente.id);

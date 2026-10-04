@@ -9,12 +9,15 @@ export type FirmaPublica = {
   calidad: string;
   fechaHora: Date;
   selloTiempoEn: Date | null;
+  hashFirma: string | null;
+  entidad: string;
 };
 
 export type DocumentoFirmadoPublico = {
   plataforma: string;
   referencia: string;
   documento: string;
+  hashArchivo: string | null;
   firmas: FirmaPublica[];
 };
 
@@ -28,8 +31,10 @@ const SELECT_PERSONA = {
 
 type Persona = { nombre: string; denominacionEmpleo: string | null; denominacionComplemento: string | null; sexo: string | null; rolContratacion: string | null };
 
-type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; usuario: Persona };
+type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; usuario: Persona };
 type VistoFila = { id: string; completadoEn: Date | null; usuarioAsignado: Persona };
+
+const ENTIDAD = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
 
 function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma): FirmaPublica[] {
   return [
@@ -40,6 +45,8 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
       calidad: etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }),
       fechaHora: f.fechaHora,
       selloTiempoEn: f.selloTiempoEn,
+      hashFirma: f.hashContenido,
+      entidad: ENTIDAD,
     })),
     ...vistos
       .filter((v) => v.completadoEn)
@@ -50,11 +57,13 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
         calidad: "Visto bueno",
         fechaHora: v.completadoEn!,
         selloTiempoEn: null,
+        hashFirma: null,
+        entidad: ENTIDAD,
       })),
   ].sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime());
 }
 
-const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, usuario: { select: SELECT_PERSONA } } as const;
+const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, hashContenido: true, usuario: { select: SELECT_PERSONA } } as const;
 const SELECT_VISTOS = {
   where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
   select: { id: true, completadoEn: true, usuarioAsignado: { select: SELECT_PERSONA } },
@@ -72,32 +81,34 @@ export async function documentosFirmadosPorHash(hashSha256: string): Promise<Doc
   const [tramites, contratos, archivo, comunicaciones] = await Promise.all([
     db.expedienteDocumento.findMany({
       where: { hashSha256: hash },
-      select: { nombre: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
     }),
     db.documentoContrato.findMany({
       where: { hashSha256: hash },
-      select: { nombre: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
     }),
     db.documentoArchivo.findMany({
       where: { hashSha256: hash, retiradoEn: null },
-      select: { nombre: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
     }),
     db.comunicacionDocumento.findMany({
       where: { hashSha256: hash },
       select: {
         nombre: true,
+        hashSha256: true,
         comunicacion: { select: { radicado: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS } },
       },
     }),
   ]);
   return [
-    ...tramites.map((d) => ({ plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
-    ...contratos.map((d) => ({ plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
-    ...archivo.map((d) => ({ plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
+    ...tramites.map((d) => ({ plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
+    ...contratos.map((d) => ({ plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
+    ...archivo.map((d) => ({ plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
     ...comunicaciones.map((d) => ({
       plataforma: PLATAFORMA_FIRMA.sgdea,
       referencia: d.comunicacion.radicado,
       documento: d.nombre,
+      hashArchivo: d.hashSha256,
       firmas: aPublicas(d.comunicacion.firmas, d.comunicacion.solicitudesFirma, "SGDEA"),
     })),
   ];
@@ -111,20 +122,20 @@ export async function firmasDeComunicacion(comunicacionId: string): Promise<Firm
   return c ? aPublicas(c.firmas, c.solicitudesFirma, "SGDEA") : [];
 }
 
-export async function documentosFirmadosDeExpedienteTramite(expedienteId: string): Promise<{ documento: string; firmas: FirmaPublica[] }[]> {
+export async function documentosFirmadosDeExpedienteTramite(expedienteId: string): Promise<{ documento: string; hashArchivo: string | null; firmas: FirmaPublica[] }[]> {
   const docs = await db.expedienteDocumento.findMany({
     where: { expedienteId, firmas: { some: {} } },
     orderBy: { createdAt: "asc" },
-    select: { nombre: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+    select: { nombre: true, hashSha256: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
   });
-  return docs.map((d) => ({ documento: d.nombre, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") }));
+  return docs.map((d) => ({ documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") }));
 }
 
-export async function documentosFirmadosDeContrato(expedienteId: string): Promise<{ documento: string; firmas: FirmaPublica[] }[]> {
+export async function documentosFirmadosDeContrato(expedienteId: string): Promise<{ documento: string; hashArchivo: string | null; firmas: FirmaPublica[] }[]> {
   const docs = await db.documentoContrato.findMany({
     where: { expedienteId, firmas: { some: {} } },
     orderBy: { createdAt: "asc" },
-    select: { nombre: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+    select: { nombre: true, hashSha256: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
   });
-  return docs.map((d) => ({ documento: d.nombre, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") }));
+  return docs.map((d) => ({ documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") }));
 }

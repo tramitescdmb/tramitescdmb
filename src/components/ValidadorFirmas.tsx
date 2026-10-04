@@ -3,8 +3,17 @@
 import { useState } from "react";
 import { FileSearch, ShieldCheck, ShieldX, Loader2, Hash, Upload } from "lucide-react";
 
-type Firma = { id: string; nombre: string; cargo: string; calidad: string; fechaHora: string; selloTiempoEn: string | null };
-type Documento = { plataforma: string; referencia: string; documento: string; firmas: Firma[] };
+type Firma = {
+  id: string;
+  nombre: string;
+  cargo: string;
+  calidad: string;
+  fechaHora: string;
+  selloTiempoEn: string | null;
+  hashFirma: string | null;
+  entidad: string;
+};
+type Documento = { plataforma: string; referencia: string; documento: string; hashArchivo: string | null; firmas: Firma[] };
 
 const formato = new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" });
 
@@ -101,6 +110,7 @@ export function ValidadorFirmas() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-cdmb-700">{d.plataforma}</p>
                 <p className="text-sm font-medium text-stone-900">{d.documento}</p>
                 <p className="font-mono text-xs text-stone-500">{d.referencia}</p>
+                {d.hashArchivo && <p className="mt-1 break-all font-mono text-[10.5px] text-stone-400">SHA-256 del documento: {d.hashArchivo}</p>}
                 {d.firmas.length > 0 && (
                   <ul className="mt-2 divide-y divide-stone-100 border-t border-stone-100">
                     {d.firmas.map((f) => (
@@ -113,6 +123,11 @@ export function ValidadorFirmas() {
                         <p className="text-xs text-stone-500">
                           {f.calidad} · {formato.format(new Date(f.fechaHora))}
                           {f.selloTiempoEn && " · con sello de tiempo"}
+                        </p>
+                        <p className="text-xs text-stone-500">Entidad: {f.entidad}</p>
+                        <p className="break-all font-mono text-[10.5px] text-stone-400">
+                          Identificador: {f.id}
+                          {f.hashFirma && <> · Huella de la firma: {f.hashFirma}</>}
                         </p>
                       </li>
                     ))}

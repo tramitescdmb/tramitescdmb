@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
 import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const etapa = (body?.etapa && typeof body.etapa === "string" ? body.etapa : expediente.etapaActual) as EtapaContratacion;
   if (!(ETAPAS_ORDEN as string[]).includes(etapa)) return NextResponse.json({ error: "Etapa inválida." }, { status: 400 });
-  if (!etapaHabilitada(expediente.etapaActual, etapa)) {
+  if (!puedeSubirEnCualquierEtapaContrato(permisos) && !etapaHabilitada(expediente.etapaActual, etapa)) {
     return NextResponse.json({ error: mensajeEtapaNoHabilitada(etapa) }, { status: 409 });
   }
   if (!puedeSubirDocumentoContrato(permisos, expediente, etapa)) {

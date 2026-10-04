@@ -23,6 +23,7 @@ import {
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
   puedeGestionarExpedienteCompleto,
+  puedeSubirEnCualquierEtapaContrato,
   puedeAsignarPersonalContrato,
   puedeGestionarPeriodosInforme,
   puedeValidarDocumentoContrato,
@@ -702,7 +703,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 const checklist = checklistsPorEtapa.get(etapa) ?? [];
                 const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
                 const puedeSubir =
-                  estado !== "bloqueada" &&
+                  (estado !== "bloqueada" || puedeSubirEnCualquierEtapaContrato(permisos)) &&
                   (estado === "actual" || puedeGestionarPrivilegiado) &&
                   !expediente.cerrado &&
                   puedeSubirDocumentoContrato(permisos, expediente, etapa);
