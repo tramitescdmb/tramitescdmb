@@ -16,6 +16,7 @@ export async function accesoDocumentoArchivo(permisos: PermisosUsuario, usuarioI
       nombre: true,
       mimeType: true,
       storagePath: true,
+      hashSha256: true,
       retiradoEn: true,
       expedienteDocumentalId: true,
       expediente: { select: { numero: true, asunto: true, estado: true, dependenciaId: true, nivelAcceso: true } },

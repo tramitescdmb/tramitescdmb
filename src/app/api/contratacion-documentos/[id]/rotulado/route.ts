@@ -6,6 +6,7 @@ import { obtenerPermisosUsuario, puedeVerDocumentoContrato, tieneSolicitudFirmaE
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
+import { metadatosPdf } from "@/lib/metadatos-pdf";
 import { identidadFirmante } from "@/lib/contratacion";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
     select: {
+      hashSha256: true,
       storagePath: true,
       nombre: true,
       mimeType: true,
@@ -94,7 +96,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const h = await headers();
   const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
 
-  const datos = { numeroExpediente: doc.expediente.numero, baseUrl: base };
+  const datos = {
+    numeroExpediente: doc.expediente.numero,
+    baseUrl: base,
+    metadatos: metadatosPdf({ tipo: "G", id, baseUrl: base, documento: doc.nombre, referencia: doc.expediente.numero, hashArchivo: doc.hashSha256 }),
+  };
   const firmantes = [
     ...doc.firmas.map((f) => ({
       nombre: f.usuario.nombre,

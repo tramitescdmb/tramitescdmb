@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparRotulo } from "@/lib/pdf-rotulado";
+import { metadatosPdf } from "@/lib/metadatos-pdf";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { id },
     select: {
       storagePath: true,
+      hashSha256: true,
       nombre: true,
       mimeType: true,
       comunicacionId: true,
@@ -76,6 +78,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     folios: c.folios,
     serieCodigo: c.serie?.codigo ?? null,
     baseUrl: base,
+    metadatos: metadatosPdf({ tipo: "C", id, baseUrl: base, documento: doc.nombre, referencia: c.radicado, hashArchivo: doc.hashSha256 }),
   };
   const firmantes = c.firmas.map((f) => ({
     nombre: f.usuario.nombre,

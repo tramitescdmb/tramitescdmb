@@ -1,7 +1,7 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
-import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello } from "@/lib/calidad-firma";
+import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 
 const VERDE = rgb(0.012, 0.561, 0.404);
@@ -16,6 +16,182 @@ async function pngQr(url: string): Promise<Buffer> {
   return bwipjs.toBuffer({ bcid: "qrcode", text: url, scale: 4 });
 }
 
+export type MetadatosDocumentoPdf = {
+  csv: string;
+  urlValidacion: string;
+  urlBaseValidador: string;
+  documento: string;
+  plataforma: string;
+  referencia: string;
+  hashArchivo: string | null;
+};
+
+const ENTIDAD_EMISORA = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
+
+function partirTexto(texto: string, font: PDFFont, size: number, ancho: number): string[] {
+  const lineas: string[] = [];
+  for (const parrafo of texto.split("\n")) {
+    let actual = "";
+    for (const palabra of parrafo.split(/\s+/).filter(Boolean)) {
+      const candidata = actual ? `${actual} ${palabra}` : palabra;
+      if (font.widthOfTextAtSize(candidata, size) <= ancho) {
+        actual = candidata;
+        continue;
+      }
+      if (actual) lineas.push(actual);
+      let resto = palabra;
+      while (font.widthOfTextAtSize(resto, size) > ancho && resto.length > 1) {
+        let corte = resto.length - 1;
+        while (corte > 1 && font.widthOfTextAtSize(resto.slice(0, corte), size) > ancho) corte--;
+        lineas.push(resto.slice(0, corte));
+        resto = resto.slice(corte);
+      }
+      actual = resto;
+    }
+    lineas.push(actual);
+  }
+  return lineas;
+}
+
+async function agregarDiligencia(
+  pdf: PDFDocument,
+  font: PDFFont,
+  fontBold: PDFFont,
+  qr: PDFImage,
+  meta: MetadatosDocumentoPdf,
+  firmas: FirmaRotuloPdf[],
+): Promise<number> {
+  const primera = pdf.getPages()[0];
+  const [ancho, alto] = primera ? [primera.getWidth(), primera.getHeight()] : [612, 792];
+  const margen = 54;
+  const util = ancho - margen * 2;
+  const paginasOriginales = pdf.getPageCount();
+  let page = pdf.addPage([ancho, alto]);
+  let y = alto - margen;
+  let paginasDiligencia = 1;
+
+  const nuevaPagina = () => {
+    page = pdf.addPage([ancho, alto]);
+    paginasDiligencia++;
+    y = alto - margen;
+    page.drawText("DILIGENCIA DE DOCUMENTO ELECTRÓNICO (continuación)", { x: margen, y, size: 9, font: fontBold, color: VERDE });
+    y -= 22;
+  };
+  const asegurar = (necesario: number) => {
+    if (y - necesario < margen + 10) nuevaPagina();
+  };
+  const titulo = (texto: string) => {
+    asegurar(30);
+    y -= 6;
+    page.drawText(texto, { x: margen, y, size: 8.5, font: fontBold, color: VERDE });
+    y -= 4;
+    page.drawLine({ start: { x: margen, y }, end: { x: ancho - margen, y }, thickness: 0.5, color: VERDE });
+    y -= 12;
+  };
+  const dato = (etiqueta: string, valor: string) => {
+    const e = `${etiqueta}: `;
+    const anchoEtiqueta = fontBold.widthOfTextAtSize(e, 7.5);
+    const lineas = partirTexto(valor || "—", font, 7.5, util - anchoEtiqueta);
+    asegurar(lineas.length * 10 + 2);
+    page.drawText(e, { x: margen, y, size: 7.5, font: fontBold, color: GRIS });
+    lineas.forEach((l, i) => {
+      page.drawText(l, { x: margen + anchoEtiqueta, y: y - i * 10, size: 7.5, font, color: GRIS });
+    });
+    y -= lineas.length * 10 + 2;
+  };
+  const parrafo = (texto: string, size = 7) => {
+    const lineas = partirTexto(texto, font, size, util);
+    for (const l of lineas) {
+      asegurar(size + 3);
+      page.drawText(l, { x: margen, y, size, font, color: GRIS_CLARO });
+      y -= size + 3;
+    }
+  };
+
+  const qrSize = 72;
+  page.drawImage(qr, { x: ancho - margen - qrSize, y: y - qrSize + 10, width: qrSize, height: qrSize });
+  page.drawText("DILIGENCIA DE DOCUMENTO ELECTRÓNICO", { x: margen, y, size: 13, font: fontBold, color: VERDE });
+  y -= 16;
+  page.drawText("Metadatos del documento", { x: margen, y, size: 9, font, color: GRIS });
+  y -= 14;
+  page.drawText(ENTIDAD_EMISORA, { x: margen, y, size: 7.5, font, color: GRIS_CLARO });
+  y = Math.min(y - 20, alto - margen - qrSize - 8);
+
+  titulo("Información para verificación");
+  dato("Código seguro de verificación (CSV)", meta.csv);
+  dato("Dirección de verificación del documento", meta.urlBaseValidador);
+  dato("Entidad emisora", ENTIDAD_EMISORA);
+  dato("Plataforma", meta.plataforma);
+
+  titulo("Información asociada al contenido del documento firmado");
+  dato("Documento", meta.documento);
+  dato("Radicado o expediente", meta.referencia);
+  dato("Formato del documento", "PDF");
+  if (meta.hashArchivo) dato("Huella SHA-256 del documento original", meta.hashArchivo);
+  const yNumeroPaginas = y;
+  const paginaNumero = page;
+  dato("Número de páginas (incluida esta diligencia)", "    ");
+
+  titulo("Información asociada a la firma");
+  dato("Tipo de firma", "Firma electrónica (artículo 7 de la Ley 527 de 1999; Decreto 2364 de 2012, compilado en el Decreto 1074 de 2015)");
+  dato("Mecanismo", "Autenticación del firmante en la plataforma, huella SHA-256 del contenido y sello de tiempo");
+  dato("Emisor de la firma", "CDMB — firma electrónica de la plataforma institucional; no corresponde a un certificado digital de una entidad de certificación");
+
+  const ordenadas = ordenarPorCalidad(firmas, (f) => f.calidad, (f) => f.nivel ?? 4);
+  ordenadas.forEach((f, i) => {
+    asegurar(7 * 12 + 34);
+    titulo(`Firmante ${i + 1} de ${ordenadas.length}`);
+    const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
+    dato("Nombre del firmante", f.nombre);
+    if (cargo) dato("Cargo del firmante", cargo);
+    dato("Organización", ENTIDAD_EMISORA);
+    if (f.dependencia) dato("Dependencia", f.dependencia);
+    dato("Calidad", nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }));
+    if (f.fechaHora) dato("Fecha y hora de la firma", f.fechaHora);
+    if (f.hash) dato("Huella de la firma (SHA-256)", f.hash);
+  });
+
+  titulo("Validez");
+  parrafo(
+    `El presente documento se expide conforme a las disposiciones sobre firma electrónica del artículo 7 de la Ley 527 de 1999, reglamentado por el Decreto 2364 de 2012 (compilado en el Decreto 1074 de 2015). Contiene un código seguro de verificación (CSV) que permite contrastar la autenticidad e integridad de cualquier copia, electrónica o en papel. Para verificarlo, ingrese a ${meta.urlBaseValidador} y digite el CSV que figura en esta diligencia y en el margen de cada página, o lea el código QR. Obtendrá los datos del documento original y de las firmas registradas.`,
+  );
+
+  const total = paginasOriginales + paginasDiligencia;
+  paginaNumero.drawText(String(total), {
+    x: margen + fontBold.widthOfTextAtSize("Número de páginas (incluida esta diligencia): ", 7.5),
+    y: yNumeroPaginas,
+    size: 7.5,
+    font,
+    color: GRIS,
+  });
+  return total;
+}
+
+function agregarBandasLaterales(pdf: PDFDocument, font: PDFFont, meta: MetadatosDocumentoPdf) {
+  const paginas = pdf.getPages();
+  paginas.forEach((page: PDFPage, i) => {
+    const texto = `CSV: ${meta.csv}  |  Documento firmado electrónicamente por la CDMB. Verifique su autenticidad en ${meta.urlBaseValidador}  |  Página ${i + 1} de ${paginas.length}`;
+    const size = 6;
+    const maxAncho = page.getHeight() - 60;
+    let t = texto;
+    while (font.widthOfTextAtSize(t, size) > maxAncho && t.length > 20) t = t.slice(0, -2);
+    page.drawText(t, { x: 14, y: 30, size, font, color: GRIS_CLARO, rotate: degrees(90) });
+  });
+}
+
+async function completarMetadatos(
+  pdf: PDFDocument,
+  font: PDFFont,
+  fontBold: PDFFont,
+  meta: MetadatosDocumentoPdf | undefined,
+  firmas: FirmaRotuloPdf[],
+) {
+  if (!meta) return;
+  const qr = await pdf.embedPng(await pngQr(meta.urlValidacion));
+  await agregarDiligencia(pdf, font, fontBold, qr, meta, firmas);
+  agregarBandasLaterales(pdf, font, meta);
+}
+
 export type DatosRotuloPdf = {
   radicado: string;
   tipoEtiqueta: string;
@@ -24,6 +200,7 @@ export type DatosRotuloPdf = {
   folios: number;
   serieCodigo: string | null;
   baseUrl: string;
+  metadatos?: MetadatosDocumentoPdf;
 };
 
 export type FirmaRotuloPdf = {
@@ -55,7 +232,7 @@ export async function estamparRotulo(
 
   const [barPngBytes, qrPngBytes] = await Promise.all([
     pngBarras(datos.radicado),
-    pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.radicado)}`),
+    pngQr(datos.metadatos?.urlValidacion ?? `${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.radicado)}`),
   ]);
   const bar = await pdf.embedPng(barPngBytes);
   const qr = await pdf.embedPng(qrPngBytes);
@@ -107,12 +284,14 @@ export async function estamparRotulo(
     page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
   }
 
+  await completarMetadatos(pdf, font, fontBold, datos.metadatos, firmas);
   return pdf.save();
 }
 
 export type DatosFirmaGecon = {
   numeroExpediente: string;
   baseUrl: string;
+  metadatos?: MetadatosDocumentoPdf;
 };
 
 export type DatosFirmaTramite = DatosFirmaGecon;
@@ -132,7 +311,7 @@ async function estamparFirmasExpediente(
   if (!page) return pdf.save();
   const { width, height } = page.getSize();
 
-  const qrPngBytes = await pngQr(`${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
+  const qrPngBytes = await pngQr(datos.metadatos?.urlValidacion ?? `${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
   const qr = await pdf.embedPng(qrPngBytes);
 
   const qrSize = 49;
@@ -213,6 +392,7 @@ async function estamparFirmasExpediente(
   }
   page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
 
+  await completarMetadatos(pdf, font, fontBold, datos.metadatos, firmas);
   return pdf.save();
 }
 
