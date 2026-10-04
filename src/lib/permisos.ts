@@ -33,6 +33,7 @@ type UsuarioFresco = {
   contratistaId: string | null;
   supervisaExpedientes: string[];
   asignadoExpedientes: string[];
+  terminosAceptadosEn: Date | null;
 } | null;
 
 const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco> => {
@@ -53,6 +54,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       contratista: { select: { id: true } },
       supervisionesContrato: { select: { expedienteId: true } },
       asignacionesContrato: { select: { expedienteId: true } },
+      terminosAceptadosEn: true,
     },
   });
   if (!usuario) return null;
@@ -71,8 +73,13 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     contratistaId: usuario.contratista?.id ?? null,
     supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
     asignadoExpedientes: usuario.asignacionesContrato.map((a) => a.expedienteId),
+    terminosAceptadosEn: usuario.terminosAceptadosEn,
   };
 });
+
+export async function terminosAceptados(userId: string): Promise<boolean> {
+  return Boolean((await obtenerUsuarioFresco(userId))?.terminosAceptadosEn);
+}
 
 export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
   const [usuario, config] = await Promise.all([obtenerUsuarioFresco(userId), getConfiguracionSitio()]);

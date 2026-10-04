@@ -2,11 +2,10 @@ import Link from "next/link";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
-import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion, terminosAceptados } from "@/lib/permisos";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { AvisoTratamientoDatos } from "@/components/AvisoTratamientoDatos";
-import { db } from "@/lib/db";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -17,9 +16,12 @@ export async function NavBar() {
   const session = await getSession();
   if (!session) return null;
 
-  const config = await getConfiguracionSitio();
+  const [config, permisos, aceptoTerminos] = await Promise.all([
+    getConfiguracionSitio(),
+    obtenerPermisosUsuario(session.userId),
+    terminosAceptados(session.userId),
+  ]);
   const esAdmin = session.rol === "ADMIN";
-  const permisos = await obtenerPermisosUsuario(session.userId);
   const mostrarTramites = esAdmin || config.tramitesVisibleFuncionarios;
   const mostrarVital = puedeAccederSeccion(permisos, "VITAL_BASE") || puedeAccederSeccion(permisos, "VITAL_DASHBOARD");
   const mostrarSinca =
@@ -30,7 +32,6 @@ export async function NavBar() {
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
   const subtitulo = session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario";
-  const usuarioTerminos = await db.usuario.findUnique({ where: { id: session.userId }, select: { terminosAceptadosEn: true } });
 
   const marca = (
     <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-white">
@@ -48,7 +49,7 @@ export async function NavBar() {
 
   return (
     <>
-      <AvisoTratamientoDatos abierto={!usuarioTerminos?.terminosAceptadosEn} />
+      <AvisoTratamientoDatos abierto={!aceptoTerminos} />
 
       <Sidebar
         logoUrl={config.logoUrl}

@@ -22,6 +22,7 @@ import { construirFilasFirmantes } from "@/lib/panel-firmas";
 import { PanelFirmas } from "@/components/PanelFirmas";
 import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ProveedorUsuariosFirma } from "@/components/UsuariosFirmaContexto";
 import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 
 const ETIQUETA_ACCION: Record<string, string> = {
@@ -155,6 +156,7 @@ export default async function ExpedienteDetallePage({
   const puedePrestar = puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
 
   return (
+    <ProveedorUsuariosFirma usuarios={opcionesFirmantes}>
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Link href="/correspondencia/expedientes" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
@@ -429,7 +431,6 @@ export default async function ExpedienteDetallePage({
                                   {abierto && puedeEditar && (
                                     <AsignarFirmantesModal
                                       endpointAsignar={`/api/documentos-archivo/${doc.id}/solicitudes-firma`}
-                                      usuarios={opcionesFirmantes}
                                       conCalidad
                                       firmantesActuales={doc.solicitudesFirma.map((x) => ({
                                         id: x.id,
@@ -808,5 +809,6 @@ export default async function ExpedienteDetallePage({
         ]}
       />
     </div>
+    </ProveedorUsuariosFirma>
   );
 }

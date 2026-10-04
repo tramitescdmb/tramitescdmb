@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, X } from "lucide-react";
 import { OPCIONES_CALIDAD_ASIGNACION, ETIQUETA_CALIDAD_FIRMA, rotuloCalidadFirma, type CalidadPresentacion } from "@/lib/calidad-firma";
 import { ETIQUETA_NIVEL_FIRMA, type NivelFirma } from "@/lib/jerarquia-firma";
+import { useUsuariosFirma, type UsuarioFirmaOpcion } from "@/components/UsuariosFirmaContexto";
 
 function etiquetaTurno(orden: number): string {
   return ETIQUETA_NIVEL_FIRMA[orden as NivelFirma] ?? `Turno ${orden}`;
@@ -44,7 +45,7 @@ export type FirmanteAsignado = {
 
 export function AsignarFirmantesModal({
   endpointAsignar,
-  usuarios,
+  usuarios: usuariosPropios,
   firmantesActuales,
   conCalidad = false,
   contratistaPrincipal = false,
@@ -52,9 +53,10 @@ export function AsignarFirmantesModal({
   endpointAsignar: string;
   conCalidad?: boolean;
   contratistaPrincipal?: boolean;
-  usuarios: { id: string; nombre: string; dependenciaNombre?: string | null }[];
+  usuarios?: UsuarioFirmaOpcion[];
   firmantesActuales: FirmanteAsignado[];
 }) {
+  const usuarios = useUsuariosFirma(usuariosPropios);
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [usuarioId, setUsuarioId] = useState("");

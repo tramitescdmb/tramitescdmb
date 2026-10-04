@@ -50,6 +50,7 @@ import { SubirDocumentosContratoForm } from "@/components/SubirDocumentosContrat
 import { SubirDocumentoRequisitoForm } from "@/components/SubirDocumentoRequisitoForm";
 import { EditarEliminarDocumentoContrato } from "@/components/AccionesDocumentoContrato";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
+import { ProveedorUsuariosFirma } from "@/components/UsuariosFirmaContexto";
 import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { AprobarEtapaContratoBoton } from "@/components/AprobarEtapaContratoBoton";
 import { RetrocederEtapaBoton } from "@/components/RetrocederEtapaBoton";
@@ -295,7 +296,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
           />
         )}
         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-          <AsignarFirmantesModal conCalidad contratistaPrincipal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} usuarios={usuariosOpciones} firmantesActuales={solicitudes} />
+          <AsignarFirmantesModal conCalidad contratistaPrincipal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} firmantesActuales={solicitudes} />
         )}
         {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
           <EditarEliminarDocumentoContrato
@@ -426,6 +427,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
   };
 
   return (
+    <ProveedorUsuariosFirma usuarios={usuariosOpciones}>
     <section className="space-y-5">
       <TituloSeccion icon={Briefcase}>
         <span className="font-mono text-base">{expediente.numero}</span>
@@ -851,7 +853,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                               {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                 <AsignarFirmantesModal conCalidad contratistaPrincipal
                                   endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
-                                  usuarios={usuariosOpciones}
+                                 
                                   firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
                                     id: s.id,
                                     usuarioAsignadoId: s.usuarioAsignadoId,
@@ -976,7 +978,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                                 {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                   <AsignarFirmantesModal conCalidad contratistaPrincipal
                                     endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
-                                    usuarios={usuariosOpciones}
+                                   
                                     firmantesActuales={solicitudes}
                                   />
                                 )}
@@ -1052,5 +1054,6 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         ]}
       />
     </section>
+    </ProveedorUsuariosFirma>
   );
 }

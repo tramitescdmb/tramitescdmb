@@ -1,5 +1,6 @@
 import { buscarNits } from "@/lib/sinca";
 import { agruparEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 
 const VERSION_SNAPSHOT = 3;
@@ -43,6 +44,15 @@ export async function refrescarSnapshotNit(): Promise<SnapshotNit> {
   return snapshot;
 }
 
+let refrescoEnCurso: Promise<SnapshotNit> | null = null;
+
+function refrescarUnaVez(): Promise<SnapshotNit> {
+  refrescoEnCurso ??= refrescarSnapshotNit().finally(() => {
+    refrescoEnCurso = null;
+  });
+  return refrescoEnCurso;
+}
+
 export async function obtenerSnapshotNit(): Promise<SnapshotNit> {
   if (vigente(enMemoria?.snapshot) && enMemoria && Date.now() < enMemoria.hasta) return enMemoria.snapshot;
 
@@ -52,6 +62,10 @@ export async function obtenerSnapshotNit(): Promise<SnapshotNit> {
     enMemoria = { snapshot: snapshotGuardado, hasta: Date.now() + VIGENCIA_MS };
     return snapshotGuardado;
   }
+  if (vigente(snapshotGuardado)) {
+    after(() => refrescarUnaVez().catch(() => {}));
+    return snapshotGuardado;
+  }
 
-  return refrescarSnapshotNit();
+  return refrescarUnaVez();
 }
