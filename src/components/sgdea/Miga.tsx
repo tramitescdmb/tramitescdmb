@@ -26,6 +26,8 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/correspondencia\/expedientes\/[^/]+/, trail: ["Expedientes y archivo", "Expedientes", "Expediente"] },
   { re: /^\/correspondencia\/expedientes/, trail: ["Expedientes y archivo", "Expedientes"] },
   { re: /^\/correspondencia\/disposicion/, trail: ["Expedientes y archivo", "Disposición final"] },
+  { re: /^\/correspondencia\/fondo\/[^/]+/, trail: ["Expedientes y archivo", "Fondo histórico", "Documento"] },
+  { re: /^\/correspondencia\/fondo/, trail: ["Expedientes y archivo", "Fondo histórico"] },
   { re: /^\/correspondencia\/plantillas/, trail: ["Plantillas"] },
   { re: /^\/correspondencia\/admin\/vocabulario/, trail: ["Configuración", "Vocabulario controlado"] },
   { re: /^\/correspondencia\/admin\/metadatos/, trail: ["Configuración", "Campos de metadato"] },

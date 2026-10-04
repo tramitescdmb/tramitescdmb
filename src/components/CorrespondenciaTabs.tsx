@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, Archive, PenLine } from "lucide-react";
+import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, PenLine } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 import { textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -50,17 +50,6 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
         ...(permitido.distribuir ? [{ href: "/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO", label: "Distribución y reparto" }] : []),
       ],
     },
-    permitido.expedientes
-      ? {
-          label: "Expedientes y archivo",
-          icon: FolderOpen,
-          items: [
-            { href: "/correspondencia/expedientes", label: "Expedientes documentales", prefijo: true },
-            { href: "/correspondencia/expedientes/nuevo", label: "Abrir expediente" },
-            paraAdmin(permitido, { href: "/correspondencia/disposicion", label: "Disposición final", prefijo: true }),
-          ],
-        }
-      : null,
     {
       label: "Firmas",
       icon: PenLine,
@@ -71,8 +60,25 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
       ],
       insignia: insigniaFirmas,
     },
+    permitido.expedientes || permitido.fondoHistorico
+      ? {
+          label: "Expedientes y archivo",
+          icon: FolderOpen,
+          items: [
+            ...(permitido.expedientes
+              ? [
+                  { href: "/correspondencia/expedientes", label: "Expedientes documentales", prefijo: true },
+                  { href: "/correspondencia/expedientes/nuevo", label: "Abrir expediente" },
+                  paraAdmin(permitido, { href: "/correspondencia/disposicion", label: "Disposición final", prefijo: true }),
+                ]
+              : []),
+            ...(permitido.fondoHistorico
+              ? [{ href: "/correspondencia/fondo", label: "Fondo histórico (consulta)", prefijo: true, separador: permitido.expedientes }]
+              : []),
+          ],
+        }
+      : null,
     { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
-    permitido.fondoHistorico ? { label: "Fondo histórico", icon: Archive, href: "/correspondencia/fondo" } : null,
     {
       label: "Administración",
       icon: Settings2,
