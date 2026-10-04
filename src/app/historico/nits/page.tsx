@@ -93,10 +93,6 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
     <div className="space-y-4">
       <div>
         <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
-        <p className="text-sm text-stone-500">
-          Terceros de SINCA 1.0 (personas y empresas), agrupados por NIT o cédula — entre a uno para ver sus
-          solicitudes vinculadas.
-        </p>
       </div>
 
       {filtros.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}

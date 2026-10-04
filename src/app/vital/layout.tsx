@@ -34,10 +34,6 @@ export default async function VitalLayout({ children }: { children: ReactNode })
             </p>
           </details>
         </div>
-        <p className="mt-1 text-sm text-stone-500">
-          Solicitudes radicadas por el ciudadano en la Ventanilla Integral de Trámites Ambientales en Línea
-          (VITAL) de MinAmbiente.
-        </p>
       </div>
 
       <VitalTabs permitido={permitido} />

@@ -19,7 +19,7 @@ function recortar(texto: string, max: number): string {
 
 export default async function GeovisorPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;
-  const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
+  const { rango } = resolverPeriodo(sp);
 
   const [todosLosTramites, session] = await Promise.all([
     db.tramiteTipo.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, codigo: true } }),
@@ -130,19 +130,11 @@ export default async function GeovisorPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-stone-900">Visor de trámites</h2>
-          <p className="text-sm text-stone-500">
-            Trámites con ubicación registrada, sobre la jurisdicción de la CDMB
-            {rango ? ` — radicados entre ${etiquetaPeriodo}` : ""}.
-          </p>
-        </div>
+        <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
         <Link href="/expedientes" className="text-sm font-medium text-cdmb-700 hover:underline">
           Ver como lista →
         </Link>
       </div>
-
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
       <GeovisorTramites
         tramites={tramites}

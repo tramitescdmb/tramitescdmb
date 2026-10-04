@@ -48,12 +48,17 @@ export function clasificarPorTipo(puntos: { tipo: string }[]): { grupos: GrupoTi
   return { grupos, grupoDe: (tipo) => porTipo.get(tipo) ?? otros };
 }
 
-export function svgMarcadorExterno(forma: "rombo" | "cuadrado", color: string, tamano = 22): string {
+export const LETRA_PLATAFORMA: Record<PlataformaExterna, string> = { sinca: "S", vital: "V" };
+
+export function svgMarcadorExterno(forma: "rombo" | "cuadrado", color: string, tamano = 22, letra?: string): string {
   const figura =
     forma === "rombo"
-      ? `<rect x="5" y="5" width="14" height="14" rx="2" transform="rotate(45 12 12)" fill="${color}" stroke="#ffffff" stroke-width="2"/>`
-      : `<rect x="4" y="4" width="16" height="16" rx="3" fill="${color}" stroke="#ffffff" stroke-width="2"/>`;
-  return `<svg width="${tamano}" height="${tamano}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))">${figura}</svg>`;
+      ? `<rect x="4" y="4" width="16" height="16" rx="2" transform="rotate(45 12 12)" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`
+      : `<rect x="3" y="3" width="18" height="18" rx="3" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`;
+  const texto = letra
+    ? `<text x="12" y="16" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="2" paint-order="stroke">${letra}</text>`
+    : "";
+  return `<svg width="${tamano}" height="${tamano}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))">${figura}${texto}</svg>`;
 }
 
 export function puntoExternoAReporte(capa: Pick<CapaExterna, "nombre">, p: PuntoExterno): PuntoReporte {

@@ -167,7 +167,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
             <p className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-2 text-xs text-stone-600">
               <Crosshair className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
               Latitud {base.lat.toFixed(6)} · Longitud {base.lon.toFixed(6)} (WGS84) ·
-              <Link href={`/geovisor?capa=sinca&punto=${base.nroSolicitud}`} className="text-cdmb-700 underline">
+              <Link href={`/visor-tramites?capa=sinca&punto=${base.nroSolicitud}`} className="text-cdmb-700 underline">
                 ver en el visor de trámites
               </Link>
             </p>

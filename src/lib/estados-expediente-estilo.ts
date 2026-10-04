@@ -56,13 +56,18 @@ export function estiloEstado(estado: string): EstiloEstado {
   return ESTILO_ESTADO_EXPEDIENTE[estado] ?? { ...ESTILO_DESCONOCIDO, etiqueta: estado.replaceAll("_", " ") };
 }
 
-export function svgPinEstado(estado: string): string {
+export function svgPinEstado(estado: string, letra?: string): string {
   const { color, glifo } = estiloEstado(estado);
+  const insignia = letra
+    ? '<circle cx="27" cy="3" r="6.5" fill="#1b2a20" stroke="#ffffff" stroke-width="1.5"/>' +
+      `<text x="27" y="6.3" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="9" font-weight="700" fill="#ffffff">${letra}</text>`
+    : "";
   return (
-    '<svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">' +
+    '<svg width="34" height="42" viewBox="0 -4 34 42" xmlns="http://www.w3.org/2000/svg">' +
     `<path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>` +
     '<circle cx="14" cy="14" r="9" fill="#ffffff"/>' +
     `<g transform="translate(7.5 7.5) scale(0.54)" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${glifo}</g>` +
+    insignia +
     "</svg>"
   );
 }

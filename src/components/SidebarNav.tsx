@@ -23,7 +23,7 @@ const ITEM_TRAMITES: Item = {
   href: "/",
   label: "Trámites ambientales 2.0",
   icon: Leaf,
-  prefijo: ["/", "/tramites", "/expedientes", "/solicitantes", "/geovisor", "/firmas"],
+  prefijo: ["/", "/tramites", "/expedientes", "/solicitantes", "/visor-tramites", "/firmas"],
 };
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };

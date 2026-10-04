@@ -299,7 +299,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
             <span className="font-mono">
               {punto.lat.toFixed(6)}, {punto.lon.toFixed(6)}
             </span>{" "}
-            <Link href={`/geovisor?capa=vital&punto=${encodeURIComponent(solicitud.idVital)}`} className="font-medium text-cdmb-700 hover:underline">
+            <Link href={`/visor-tramites?capa=vital&punto=${encodeURIComponent(solicitud.idVital)}`} className="font-medium text-cdmb-700 hover:underline">
               Ver en el visor de trámites →
             </Link>
           </p>

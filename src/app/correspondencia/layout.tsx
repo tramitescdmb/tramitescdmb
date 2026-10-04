@@ -67,10 +67,6 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             Ayuda
           </Link>
         </div>
-        <p className="mt-1 text-sm text-stone-500">
-          Sistema de Gestión de Documentos Electrónicos de Archivo — Acuerdo Único de la Función Archivística
-          (Acuerdo 001/2024 AGN) y Acuerdo 060/2001 AGN.
-        </p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <a
             href="/pqrsd"

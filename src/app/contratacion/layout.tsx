@@ -36,11 +36,6 @@ export default async function ContratacionLayout({ children }: { children: React
             Ayuda
           </Link>
         </div>
-        <p className="mt-1 text-sm text-stone-500">
-          Sistema Integrado de Gestión de Expedientes de Contratación — expediente, flujo documental, firma
-          selectiva y control de acceso por rol. No reemplaza SECOP II ni valida cuantías o reglas jurídicas de
-          cada modalidad de selección (Manual de Contratación A-BS-MA01).
-        </p>
       </div>
 
       <ContratacionTabs

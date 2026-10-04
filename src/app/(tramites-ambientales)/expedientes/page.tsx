@@ -85,7 +85,7 @@ export default async function ExpedientesPage({
       if (v) params.set(k, v);
     }
     const qs = params.toString();
-    return qs ? `/geovisor?${qs}` : "/geovisor";
+    return qs ? `/visor-tramites?${qs}` : "/visor-tramites";
   };
   const hrefExportar = (formato: "xlsx" | "csv") => {
     const params = new URLSearchParams();
@@ -125,7 +125,7 @@ export default async function ExpedientesPage({
             </Link>
           )}
           <Link href={hrefGeovisor()} className="text-sm font-medium text-cdmb-700 hover:underline">
-            Ver en el geovisor →
+            Ver en el visor de trámites →
           </Link>
         </div>
       </div>

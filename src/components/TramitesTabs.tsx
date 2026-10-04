@@ -30,7 +30,7 @@ export function TramitesTabs({
         { href: "/expedientes/disposicion", label: "Disposición final (TRD)", prefijo: true, separador: true },
       ],
     },
-    { label: "Visor de trámites", icon: Map, href: "/geovisor" },
+    { label: "Visor de trámites", icon: Map, href: "/visor-tramites" },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),
     ...(mostrarFirmas
       ? [

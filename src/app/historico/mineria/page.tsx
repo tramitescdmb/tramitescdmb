@@ -44,7 +44,7 @@ function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale;
 
 export default async function MineriaPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tipo?: string }> }) {
   const sp = await searchParams;
-  const { rango, etiqueta } = resolverPeriodo(sp);
+  const { rango } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -81,11 +81,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
           <Sparkles className="h-4 w-4 text-cdmb-600" aria-hidden />
           Minería de datos y descubrimiento de conocimiento (KDD)
         </h2>
-        <p className="mt-1 text-sm text-stone-500">
-          Inferencia estadística y aprendizaje automático sobre las {a.total.toLocaleString("es-CO")} resoluciones de fondo
-          {rango ? ` del período seleccionado (${etiqueta}).` : " del histórico."} Los algoritmos corren en el servidor y
-          están implementados sin librerías externas para que sean auditables.
-        </p>
         <div className="mt-3">
           <PipelineKDD />
         </div>

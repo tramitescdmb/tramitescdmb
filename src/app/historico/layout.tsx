@@ -35,7 +35,6 @@ export default async function HistoricoLayout({ children }: { children: ReactNod
             </p>
           </details>
         </div>
-        <p className="mt-1 text-sm text-stone-500">Consulta histórica de las solicitudes registradas en el sistema anterior de la CDMB (SINCA 1.0).</p>
       </div>
 
       <HistoricoTabs permitido={permitido} />

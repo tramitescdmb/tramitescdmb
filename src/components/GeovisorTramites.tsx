@@ -23,6 +23,9 @@ import {
   Loader2,
   Link2,
   FileText,
+  FilterX,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
@@ -32,6 +35,7 @@ import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, 
 import {
   clasificarPorTipo,
   FORMA_PLATAFORMA,
+  LETRA_PLATAFORMA,
   puntoExternoAReporte,
   svgMarcadorExterno,
   type CapaExterna,
@@ -222,7 +226,7 @@ export function GeovisorTramites({
   const searchParams = useSearchParams();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const destacadoInicial = useMemo(() => ({ capa: searchParams.get("capa"), punto: searchParams.get("punto") }), []);
-  const capasExternasRef = useRef<Partial<Record<PlataformaExterna, import("leaflet").LayerGroup>>>({});
+  const capasExternasRef = useRef<Partial<Record<PlataformaExterna, import("leaflet").MarkerClusterGroup>>>({});
   const [mapaListo, setMapaListo] = useState(false);
   const [externasOn, setExternasOn] = useState<Partial<Record<PlataformaExterna, boolean>>>(() =>
     Object.fromEntries(capasExternas.map((c) => [c.id, destacadoInicial.capa === c.id && c.puntos.length > 0])),
@@ -458,6 +462,7 @@ export function GeovisorTramites({
       const contenedor = document.createElement("div");
       contenedor.className = "text-xs leading-relaxed";
       contenedor.innerHTML = `
+        <p class="mb-1 border-b border-stone-200 pb-1 font-semibold uppercase tracking-wide text-cdmb-700">Trámites ambientales 2.0</p>
         <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
         <p class="text-stone-700">${escapeHtml(p.tramiteCodigo)} — ${escapeHtml(p.tramiteNombre)}</p>
         <p class="text-stone-500">${escapeHtml(p.municipio)}</p>
@@ -492,7 +497,20 @@ export function GeovisorTramites({
     for (const capaCfg of capasExternas) {
       let capa = capasExternasRef.current[capaCfg.id];
       if (!capa) {
-        capa = L.layerGroup();
+        const forma = FORMA_PLATAFORMA[capaCfg.id];
+        const letra = LETRA_PLATAFORMA[capaCfg.id];
+        capa = L.markerClusterGroup({
+          maxClusterRadius: 18,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          iconCreateFunction: (c) =>
+            L.divIcon({
+              className: "",
+              html: `<div style="position:relative;width:26px;height:26px">${svgMarcadorExterno(forma, "#52514e", 26, letra)}<span style="position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:9999px;background:#ffffff;color:#1b2a20;font:700 10px/16px 'Work Sans',Arial,sans-serif;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.4)">${c.getChildCount()}</span></div>`,
+              iconSize: [26, 26],
+              iconAnchor: [13, 13],
+            }),
+        });
         capasExternasRef.current[capaCfg.id] = capa;
       }
       capa.clearLayers();
@@ -504,9 +522,9 @@ export function GeovisorTramites({
         const marker = L.marker([p.lat, p.lon], {
           icon: L.divIcon({
             className: "",
-            html: svgMarcadorExterno(FORMA_PLATAFORMA[capaCfg.id], grupo.color),
-            iconSize: [22, 22],
-            iconAnchor: [11, 11],
+            html: svgMarcadorExterno(FORMA_PLATAFORMA[capaCfg.id], grupo.color, 24, LETRA_PLATAFORMA[capaCfg.id]),
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
             popupAnchor: [0, -10],
           }),
           zIndexOffset: 500,
@@ -514,7 +532,7 @@ export function GeovisorTramites({
         const contenedor = document.createElement("div");
         contenedor.className = "text-xs leading-relaxed";
         contenedor.innerHTML = `
-          <p class="font-semibold text-stone-500">${escapeHtml(capaCfg.nombre)}</p>
+          <p class="mb-1 border-b border-stone-200 pb-1 font-semibold uppercase tracking-wide text-cdmb-700">${escapeHtml(capaCfg.nombre)}</p>
           <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
           <p class="flex items-start gap-1 text-stone-700"><span class="mt-0.5 flex-none">${svgMarcadorExterno(FORMA_PLATAFORMA[capaCfg.id], grupo.color, 12)}</span>${escapeHtml(p.tipo)}</p>
           ${p.detalle ? `<p class="text-stone-600">${escapeHtml(p.detalle)}</p>` : ""}
@@ -532,9 +550,12 @@ export function GeovisorTramites({
       map.addLayer(capa);
     }
     if (destacado) {
+      const marcador: import("leaflet").Marker = destacado;
       destacadoMostradoRef.current = true;
-      map.setView(destacado.getLatLng(), 16);
-      destacado.openPopup();
+      map.setView(marcador.getLatLng(), 16);
+      const capaDestacada = capasExternasRef.current[destacadoInicial.capa as PlataformaExterna];
+      if (capaDestacada) capaDestacada.zoomToShowLayer(marcador, () => marcador.openPopup());
+      else marcador.openPopup();
     }
   }, [mapaListo, capasExternas, externasOn, externosVisibles, destacadoInicial]);
 
@@ -785,7 +806,7 @@ export function GeovisorTramites({
   function copiarEnlaceZona() {
     const z = zonaAParam(medida);
     if (!z) return;
-    const url = `${window.location.origin}/geovisor?zona=${encodeURIComponent(z)}`;
+    const url = `${window.location.origin}/visor-tramites?zona=${encodeURIComponent(z)}`;
     navigator.clipboard
       .writeText(url)
       .then(() => mostrarMensaje("Enlace de la zona copiado."))
@@ -914,6 +935,7 @@ export function GeovisorTramites({
                     return next;
                   })
                 }
+                onEstadosOcultos={setEstadosOcultos}
                 conteoEstado={conteoEstado}
               />
             )}
@@ -935,6 +957,7 @@ export function GeovisorTramites({
                     return { ...prev, [id]: next };
                   })
                 }
+                onGruposOcultos={(id, claves) => setGruposOcultos((prev) => ({ ...prev, [id]: new Set(claves) }))}
                 capaMunicipios={capaMunicipios}
                 onCapaMunicipios={setCapaMunicipios}
                 capaEtiquetas={capaEtiquetas}
@@ -1061,10 +1084,10 @@ function estiloCapaContexto(cfg: (typeof CAPAS_CONTEXTO)[number], feature?: Feat
 function iconoTramite(L: typeof import("leaflet"), estado: string): import("leaflet").DivIcon {
   return L.divIcon({
     className: "",
-    html: svgPinEstado(estado),
-    iconSize: [28, 38],
-    iconAnchor: [14, 38],
-    popupAnchor: [0, -34],
+    html: svgPinEstado(estado, "T"),
+    iconSize: [34, 42],
+    iconAnchor: [14, 42],
+    popupAnchor: [0, -38],
   });
 }
 
@@ -1096,6 +1119,21 @@ function BotonPestana({ activa, onClick, icon, label }: { activa: boolean; onCli
   );
 }
 
+function TodosNinguno({ onTodos, onNinguno }: { onTodos: () => void; onNinguno: () => void }) {
+  return (
+    <span className="flex items-center gap-1 text-[11px]">
+      <button type="button" onClick={onTodos} className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-medium text-cdmb-700 hover:bg-cdmb-50">
+        <CheckSquare className="h-3 w-3" aria-hidden />
+        Todos
+      </button>
+      <button type="button" onClick={onNinguno} className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-medium text-stone-500 hover:bg-stone-100">
+        <Square className="h-3 w-3" aria-hidden />
+        Ninguno
+      </button>
+    </span>
+  );
+}
+
 function PanelFiltrar({
   busqueda,
   onBusqueda,
@@ -1109,8 +1147,10 @@ function PanelFiltrar({
   conteoMunicipio,
   estadosOcultos,
   onToggleEstado,
+  onEstadosOcultos,
   conteoEstado,
 }: {
+  onEstadosOcultos: (ocultos: Set<string>) => void;
   busqueda: string;
   onBusqueda: (v: string) => void;
   hayFiltro: boolean;
@@ -1127,12 +1167,24 @@ function PanelFiltrar({
 }) {
   return (
     <div className="space-y-3">
-      <input
-        value={busqueda}
-        onChange={(e) => onBusqueda(e.target.value)}
-        placeholder="Buscar por número o solicitante…"
-        className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm"
-      />
+      <div className="flex gap-1.5">
+        <input
+          value={busqueda}
+          onChange={(e) => onBusqueda(e.target.value)}
+          placeholder="Buscar por número o solicitante…"
+          className="min-w-0 flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-sm"
+        />
+        <button
+          type="button"
+          onClick={onVerTodo}
+          disabled={!hayFiltro}
+          title="Quitar todos los filtros"
+          aria-label="Quitar todos los filtros"
+          className="flex flex-none items-center justify-center rounded-md border border-stone-200 px-2 text-stone-500 hover:bg-stone-50 hover:text-red-600 disabled:opacity-40 disabled:hover:text-stone-500"
+        >
+          <FilterX className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
       <select value={tramiteSel} onChange={(e) => onTramiteSel(e.target.value)} className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm">
         <option value="">Todos los trámites</option>
         {tramites.map((t) => (
@@ -1141,11 +1193,6 @@ function PanelFiltrar({
           </option>
         ))}
       </select>
-      {hayFiltro && (
-        <button type="button" onClick={onVerTodo} className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
-          Ver todo (quitar filtros)
-        </button>
-      )}
 
       <div className="border-t border-stone-100 pt-3">
         <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-400">Por municipio</p>
@@ -1168,7 +1215,10 @@ function PanelFiltrar({
       </div>
 
       <div className="border-t border-stone-100 pt-3">
-        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-stone-400">Por estado</p>
+        <div className="mb-1.5 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Por estado</p>
+          <TodosNinguno onTodos={() => onEstadosOcultos(new Set())} onNinguno={() => onEstadosOcultos(new Set(ESTADOS_EXPEDIENTE))} />
+        </div>
         <ul className="space-y-1">
           {ESTADOS_EXPEDIENTE.map((e) => (
             <li key={e}>
@@ -1199,6 +1249,7 @@ function PanelCapas({
   onExterna,
   gruposOcultos,
   onToggleGrupo,
+  onGruposOcultos,
   capaMunicipios,
   onCapaMunicipios,
   capaEtiquetas,
@@ -1216,6 +1267,7 @@ function PanelCapas({
   onExterna: (id: PlataformaExterna, v: boolean) => void;
   gruposOcultos: Partial<Record<PlataformaExterna, Set<string>>>;
   onToggleGrupo: (id: PlataformaExterna, clave: string) => void;
+  onGruposOcultos: (id: PlataformaExterna, claves: string[]) => void;
   capaMunicipios: boolean;
   onCapaMunicipios: (v: boolean) => void;
   capaEtiquetas: boolean;
@@ -1228,6 +1280,9 @@ function PanelCapas({
     <div className="space-y-3">
       <label className="flex items-center gap-2 text-sm text-stone-700">
         <input type="checkbox" checked={capaTramites} onChange={(e) => onCapaTramites(e.target.checked)} />
+        <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-graphite-900 text-[10px] font-bold text-white" aria-hidden>
+          T
+        </span>
         Trámites ambientales 2.0 ({totalTramites})
       </label>
       {capasExternas
@@ -1240,10 +1295,14 @@ function PanelCapas({
             <div key={c.id}>
               <label className="flex items-center gap-2 text-sm text-stone-700">
                 <input type="checkbox" checked={Boolean(externasOn[c.id])} onChange={(e) => onExterna(c.id, e.target.checked)} />
-                <span className="flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, "#52514e", 16) }} />
+                <span className="flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, "#52514e", 20, LETRA_PLATAFORMA[c.id]) }} />
                 {c.nombre} ({c.puntos.length})
               </label>
-              <p className="ml-6 text-[11px] text-stone-400">{c.descripcion}</p>
+              {externasOn[c.id] && grupos.length > 1 && (
+                <div className="ml-6 mt-1">
+                  <TodosNinguno onTodos={() => onGruposOcultos(c.id, [])} onNinguno={() => onGruposOcultos(c.id, grupos.map((g) => g.clave))} />
+                </div>
+              )}
               {externasOn[c.id] && (
                 <ul className="ml-6 mt-1.5 space-y-1 border-l border-stone-100 pl-2">
                   {grupos.map((g) => (
@@ -1275,8 +1334,7 @@ function PanelCapas({
       )}
 
       <div className="border-t border-stone-100 pt-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Capas de contexto</p>
-        <p className="mb-2 mt-0.5 text-[11px] text-stone-400">Cada capa viene de la entidad externa que la produce (entre paréntesis) y se carga al encenderla.</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Capas de contexto</p>
         <ul className="space-y-1">
           {CAPAS_CONTEXTO.map((cfg) => {
             const estado = capas[cfg.id];
@@ -1588,10 +1646,6 @@ function PanelMedir({
                   Reporte (HTML)
                 </button>
               </div>
-              <p className="text-[10.5px] text-stone-400">
-                El GeoJSON incluye la zona y los trámites de adentro; se abre en QGIS, ArcGIS o Google Earth. El reporte es una página lista para
-                imprimir o guardar como PDF.
-              </p>
             </>
           )}
         </>
@@ -1706,9 +1760,6 @@ function PanelMedir({
             Reporte
           </button>
         </div>
-        <p className="mt-1.5 text-[10.5px] text-stone-400">
-          Respeta los filtros activos de la pestaña Filtrar y las capas SINCA 1.0 / VITAL encendidas; cada punto indica la plataforma de la que proviene.
-        </p>
       </div>
     </div>
   );
