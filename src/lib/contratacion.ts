@@ -391,7 +391,7 @@ export async function agregarDocumentoContrato(datos: {
   if (!datos.cualquierEtapa && !etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
   const posicion = ETAPAS_ORDEN.indexOf(datos.etapa) - ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const notaEtapa =
-    posicion === 0
+    posicion === 0 || datos.cualquierEtapa
       ? ""
       : ` — etapa ${posicion > 0 ? "posterior" : "anterior"} a la actual (${ETIQUETA_ETAPA[expediente.etapaActual]})`;
 

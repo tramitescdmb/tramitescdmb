@@ -198,7 +198,10 @@ export function htmlReporte(opts: {
   for (const p of puntos) conteoPlataforma.set(plataformaDe(p), (conteoPlataforma.get(plataformaDe(p)) ?? 0) + 1);
   const porPlataforma = conteoPlataforma.size > 1 ? [...conteoPlataforma.entries()] : [];
   const porMunicipio = new Map<string, number>();
-  for (const p of puntos) porMunicipio.set(p.municipio, (porMunicipio.get(p.municipio) ?? 0) + 1);
+  for (const p of puntos) {
+    const m = p.municipio || "Sin municipio registrado";
+    porMunicipio.set(m, (porMunicipio.get(m) ?? 0) + 1);
+  }
   const munOrd = [...porMunicipio.entries()].sort((a, b) => b[1] - a[1]);
 
   const ordenados = [...puntos].sort((a, b) => plataformaDe(a).localeCompare(plataformaDe(b)) || a.numero.localeCompare(b.numero));

@@ -10,6 +10,7 @@ import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { GeovisorTramites } from "@/components/GeovisorTramites";
 import { NOMBRE_TRAMITE_VITAL } from "@/lib/vital";
 import { puntoDesdeCampos } from "@/lib/coordenadas-texto";
+import { estadoDeCamposVital, municipioDeCamposVital } from "@/lib/vital-campos";
 import type { CapaExterna } from "@/lib/geovisor-capas-externas";
 
 function recortar(texto: string, max: number): string {
@@ -97,8 +98,8 @@ export default async function GeovisorPage({ searchParams }: { searchParams: Pro
             numero: s.idVital,
             tipo: NOMBRE_TRAMITE_VITAL[s.idTramiteVital] ?? `Trámite ${s.idTramiteVital}`,
             detalle: [s.nombreActividad, s.solicitanteNombre].filter(Boolean).join(" · ") || null,
-            municipio: null,
-            estado: null,
+            municipio: municipioDeCamposVital(s.camposTramite),
+            estado: estadoDeCamposVital(s.camposTramite),
             fecha: s.fechaRadicacion ? formatearFecha(s.fechaRadicacion) : null,
             lat: punto.lat,
             lon: punto.lon,

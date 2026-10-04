@@ -16,6 +16,22 @@ export const MUNICIPIOS_JURISDICCION_CDMB = [
 
 export type MunicipioCdmb = (typeof MUNICIPIOS_JURISDICCION_CDMB)[number];
 
+export const MUNICIPIO_POR_CODIGO_DANE: Record<string, MunicipioCdmb> = {
+  "68001": "Bucaramanga",
+  "68276": "Floridablanca",
+  "68307": "Girón",
+  "68547": "Piedecuesta",
+  "68867": "Vetas",
+  "68132": "California",
+  "68780": "Suratá",
+  "68444": "Matanza",
+  "68167": "Charta",
+  "68820": "Tona",
+  "68255": "El Playón",
+  "68615": "Rionegro",
+  "68406": "Lebrija",
+};
+
 export function esMunicipioValido(valor: string): valor is MunicipioCdmb {
   return (MUNICIPIOS_JURISDICCION_CDMB as readonly string[]).includes(valor);
 }

@@ -27,7 +27,8 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
-import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
+import { CENTRO_CDMB_POR_DEFECTO, MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
+import { puntoEnGeometria, type GeometriaPoligono } from "@/lib/jurisdiccion-cdmb";
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
 import { estiloEstado, svgIconoEstado, svgPinEstado } from "@/lib/estados-expediente-estilo";
 import { normalizar } from "@/lib/cargos";
@@ -217,7 +218,7 @@ function descargarTexto(contenido: string, nombreArchivo: string, tipoMime: stri
 export function GeovisorTramites({
   expedientes,
   tramites,
-  capasExternas = [],
+  capasExternas: capasExternasEntrada = [],
 }: {
   expedientes: PuntoTramite[];
   tramites: TramiteOpcion[];
@@ -228,6 +229,20 @@ export function GeovisorTramites({
   const destacadoInicial = useMemo(() => ({ capa: searchParams.get("capa"), punto: searchParams.get("punto") }), []);
   const capasExternasRef = useRef<Partial<Record<PlataformaExterna, import("leaflet").MarkerClusterGroup>>>({});
   const [mapaListo, setMapaListo] = useState(false);
+  const [municipiosGeo, setMunicipiosGeo] = useState<FeatureCollection | null>(null);
+  const capasExternas = useMemo(() => {
+    if (!municipiosGeo) return capasExternasEntrada;
+    const municipioDe = (lat: number, lon: number) => {
+      const f = municipiosGeo.features.find(
+        (x) => (x.geometry?.type === "Polygon" || x.geometry?.type === "MultiPolygon") && puntoEnGeometria(lat, lon, x.geometry as GeometriaPoligono),
+      );
+      return (f?.properties?.nombre as string | undefined) ?? FUERA_DE_JURISDICCION;
+    };
+    return capasExternasEntrada.map((c) => ({
+      ...c,
+      puntos: c.puntos.map((p) => (p.municipio ? p : { ...p, municipio: municipioDe(p.lat, p.lon) })),
+    }));
+  }, [capasExternasEntrada, municipiosGeo]);
   const [externasOn, setExternasOn] = useState<Partial<Record<PlataformaExterna, boolean>>>(() =>
     Object.fromEntries(capasExternas.map((c) => [c.id, destacadoInicial.capa === c.id && c.puntos.length > 0])),
   );
@@ -421,6 +436,7 @@ export function GeovisorTramites({
         .then((geojson: FeatureCollection) => {
           if (cancelado || !mapRef.current) return;
           municipiosDatosRef.current = geojson;
+          setMunicipiosGeo(geojson);
           const capa = L.geoJSON(geojson, {
             pane: "limites",
             style: { color: "#026b4d", weight: 2, fillColor: "#166534", fillOpacity: 0.05 },
@@ -1334,7 +1350,27 @@ function PanelCapas({
       )}
 
       <div className="border-t border-stone-100 pt-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Capas de contexto</p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Capas de contexto</p>
+          <span className="flex items-center gap-1 text-[11px]">
+            <button
+              type="button"
+              onClick={() => CAPAS_CONTEXTO.forEach((cfg) => !capas[cfg.id].on && onToggleCapa(cfg.id, true))}
+              className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-medium text-cdmb-700 hover:bg-cdmb-50"
+            >
+              <Layers className="h-3 w-3" aria-hidden />
+              Cargar todas
+            </button>
+            <button
+              type="button"
+              onClick={() => CAPAS_CONTEXTO.forEach((cfg) => capas[cfg.id].on && onToggleCapa(cfg.id, false))}
+              className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-medium text-stone-500 hover:bg-stone-100"
+            >
+              <Square className="h-3 w-3" aria-hidden />
+              Quitar todas
+            </button>
+          </span>
+        </div>
         <ul className="space-y-1">
           {CAPAS_CONTEXTO.map((cfg) => {
             const estado = capas[cfg.id];
