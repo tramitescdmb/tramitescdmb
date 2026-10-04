@@ -60,7 +60,7 @@ export function TablaSincaSolicitudes({ filas, sinResultadosTexto }: { filas: Fi
               </td>
               <td className="truncate px-2.5 py-2 text-graphite-600">{f.municipio ?? "—"}</td>
               <td className="truncate px-2.5 py-2">
-                <span className="rounded-full bg-techblue-50 px-2 py-0.5 text-xs font-medium text-techblue-700">{f.estado ?? "—"}</span>
+                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700">{f.estado ?? "—"}</span>
               </td>
               <td className="truncate px-2.5 py-2">
                 {f.nit ? (

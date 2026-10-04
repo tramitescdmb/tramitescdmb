@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Field } from "@/components/Field";
+import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { CampoMoneda } from "@/components/CampoMoneda";
 import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
@@ -38,29 +39,17 @@ function SeccionFormulario({
   icon: Icon,
   titulo,
   subtitulo,
-  tono = "cdmb",
   children,
 }: {
   n: number;
   icon: typeof FileText;
   titulo: string;
   subtitulo?: string;
-  tono?: "cdmb" | "techblue";
   children: ReactNode;
 }) {
-  const insignia = tono === "techblue" ? "bg-techblue-600" : "bg-cdmb-600";
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg text-xs font-bold text-white ${insignia}`}>{n}</span>
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-            <Icon className="h-4 w-4 text-stone-400" aria-hidden />
-            {titulo}
-          </h2>
-          {subtitulo && <p className="text-xs text-stone-500">{subtitulo}</p>}
-        </div>
-      </div>
+      <EncabezadoPaso numero={n} icono={<Icon className="h-4 w-4" aria-hidden />} titulo={titulo} descripcion={subtitulo} />
       <div className="space-y-2.5 pl-9">{children}</div>
     </div>
   );
@@ -318,9 +307,8 @@ export function NuevoExpedienteContractualForm({
             icon={UserSearch}
             titulo="Contratista"
             subtitulo="Opcional en esta etapa."
-            tono="techblue"
           >
-            <div className="rounded-xl border border-techblue-100 bg-techblue-50/40 p-3.5">
+            <div className="rounded-xl border border-cdmb-100 bg-cdmb-50/40 p-3.5">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   value={contratistaIdentificacion}
@@ -337,7 +325,7 @@ export function NuevoExpedienteContractualForm({
                   type="button"
                   onClick={buscarContratista}
                   disabled={buscandoContratista || !contratistaIdentificacion.trim()}
-                  className="rounded-xl border border-techblue-200 bg-white px-3 py-2.5 text-xs font-medium text-techblue-700 transition hover:bg-techblue-50 disabled:opacity-50"
+                  className="rounded-xl border border-cdmb-200 bg-white px-3 py-2.5 text-xs font-medium text-cdmb-700 transition hover:bg-cdmb-50 disabled:opacity-50"
                 >
                   {buscandoContratista ? "Buscando…" : "Buscar"}
                 </button>
@@ -346,7 +334,7 @@ export function NuevoExpedienteContractualForm({
                   target="_blank"
                   rel="noreferrer"
                   title="Abre el registro completo de contratistas en una pestaña nueva, sin perder este formulario"
-                  className="inline-flex items-center gap-1 rounded-xl border border-techblue-200 bg-white px-3 py-2.5 text-xs font-medium text-techblue-700 transition hover:bg-techblue-50"
+                  className="inline-flex items-center gap-1 rounded-xl border border-cdmb-200 bg-white px-3 py-2.5 text-xs font-medium text-cdmb-700 transition hover:bg-cdmb-50"
                 >
                   <UserPlus className="h-3.5 w-3.5" aria-hidden />
                   Crear contratista

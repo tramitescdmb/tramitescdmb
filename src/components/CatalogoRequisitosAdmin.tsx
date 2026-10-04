@@ -62,7 +62,7 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
             type="button"
             onClick={() => setModalidad(m)}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              modalidad === m ? "bg-white text-techblue-700 shadow-soft ring-1 ring-techblue-200" : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
+              modalidad === m ? "bg-white text-cdmb-700 shadow-soft ring-1 ring-cdmb-200" : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
             }`}
           >
             {ETIQUETA_MODALIDAD[m]}
@@ -84,7 +84,7 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); setAgregarEn(etapa); }}
-                className="inline-flex items-center gap-1 rounded-md border border-techblue-200 bg-techblue-50 px-2.5 py-1 text-xs font-medium text-techblue-700 hover:bg-techblue-100"
+                className="inline-flex items-center gap-1 rounded-md border border-cdmb-200 bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-100"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden />
                 Agregar requisito
