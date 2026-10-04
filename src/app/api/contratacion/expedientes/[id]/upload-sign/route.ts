@@ -5,6 +5,8 @@ import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permi
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
 import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
+import type { EtapaContratacion } from "@prisma/client";
+import { ETAPAS_ORDEN, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,7 +25,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const fileName = body?.fileName ? String(body.fileName) : "";
   if (!fileName) return NextResponse.json({ error: "Falta fileName." }, { status: 400 });
 
-  const etapa = body?.etapa && typeof body.etapa === "string" ? body.etapa : expediente.etapaActual;
+  const etapa = (body?.etapa && typeof body.etapa === "string" ? body.etapa : expediente.etapaActual) as EtapaContratacion;
+  if (!(ETAPAS_ORDEN as string[]).includes(etapa)) return NextResponse.json({ error: "Etapa inválida." }, { status: 400 });
+  if (!etapaHabilitada(expediente.etapaActual, etapa)) {
+    return NextResponse.json({ error: mensajeEtapaNoHabilitada(etapa) }, { status: 409 });
+  }
   if (!puedeSubirDocumentoContrato(permisos, expediente, etapa)) {
     return NextResponse.json({ error: "No tiene permiso para subir documentos en esta etapa de este expediente." }, { status: 403 });
   }

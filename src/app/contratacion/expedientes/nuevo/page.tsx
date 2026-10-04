@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { catalogoSeriesBuscablesCacheado, subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
@@ -17,7 +17,8 @@ export default async function NuevoExpedienteContractualPage() {
     return <AccesoRestringido titulo="Nuevo expediente" quien="administrador o jefe de contratación" volverHref="/contratacion/expedientes" volverLabel="Ver expedientes" />;
   }
 
-  const [series, subseriePorModalidad, dependencias, supervisores] = await Promise.all([
+  const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
+  const [series, subseriePorModalidad, dependencias, supervisores, personal] = await Promise.all([
     catalogoSeriesBuscablesCacheado(),
     subseriesPorModalidad(),
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
@@ -26,6 +27,13 @@ export default async function NuevoExpedienteContractualPage() {
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
     }),
+    puedeAsignarPersonal
+      ? db.usuario.findMany({
+          where: { rolContratacion: "FUNCIONARIO_CONTRATACION", activo: true },
+          orderBy: { nombre: "asc" },
+          select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
+        })
+      : [],
   ]);
   const supervisoresOpciones = supervisores.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
@@ -37,6 +45,8 @@ export default async function NuevoExpedienteContractualPage() {
         subseriePorModalidad={subseriePorModalidad}
         dependencias={dependencias}
         supervisores={supervisoresOpciones}
+        personal={personal.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }))}
+        puedeAsignarPersonal={puedeAsignarPersonal}
         modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
       />
     </section>

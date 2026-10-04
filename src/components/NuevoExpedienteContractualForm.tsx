@@ -17,6 +17,8 @@ import {
   FolderTree,
   CheckCircle2,
   ArrowRight,
+  UserCog,
+  X,
 } from "lucide-react";
 import { Field } from "@/components/Field";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
@@ -58,10 +60,14 @@ function SeccionFormulario({
 export function NuevoExpedienteContractualForm({
   dependencias,
   supervisores,
+  personal,
+  puedeAsignarPersonal,
   modalidades,
   series,
   subseriePorModalidad,
 }: {
+  personal: SupervisorOpcion[];
+  puedeAsignarPersonal: boolean;
   series: SerieBuscable[];
   subseriePorModalidad: Record<string, string>;
   dependencias: Opcion[];
@@ -92,6 +98,26 @@ export function NuevoExpedienteContractualForm({
   const [nuevoTipoPersona, setNuevoTipoPersona] = useState<TipoPersona>("NATURAL");
   const [nuevoNombreORazonSocial, setNuevoNombreORazonSocial] = useState("");
   const [creandoContratista, setCreandoContratista] = useState(false);
+  const [personalIds, setPersonalIds] = useState<Set<string>>(new Set());
+  const [filtroPersonal, setFiltroPersonal] = useState("");
+  const qPersonal = filtroPersonal.trim().toLowerCase();
+  const personalFiltrado = personal.filter((s) => personalIds.has(s.id) || (qPersonal && s.nombre.toLowerCase().includes(qPersonal)));
+
+  function alternarPersonal(id: string) {
+    setPersonalIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function quitarContratista() {
+    setContratistaId(null);
+    setContratistaNombre(null);
+    setContratistaNoEncontrado(false);
+    setContratistaIdentificacion("");
+  }
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +215,7 @@ export function NuevoExpedienteContractualForm({
           dependenciaSolicitanteId,
           contratistaId,
           supervisorUsuarioIds: Array.from(supervisorUsuarioIds),
+          personalAsignadoIds: Array.from(personalIds),
           subserieId: subserieTrdId || null,
         }),
       });
@@ -288,7 +315,7 @@ export function NuevoExpedienteContractualForm({
                   className={campoCls}
                 />
               </Field>
-              <Field label="Fecha de suscripción" icon={<CalendarRange className="h-4 w-4" />} help="Fecha del contrato (firma), anterior o igual a la fecha de inicio.">
+              <Field label="Fecha de suscripción" icon={<CalendarRange className="h-4 w-4" />} help="Fecha de suscripción del contrato.">
                 <input type="date" value={fechaSuscripcion} onChange={(e) => setFechaSuscripcion(e.target.value)} className={campoCls} />
               </Field>
               <Field label="Fecha de inicio" icon={<CalendarRange className="h-4 w-4" />} help="Acta de inicio. De aquí se calculan plazos y vencimientos.">
@@ -305,10 +332,31 @@ export function NuevoExpedienteContractualForm({
           <SeccionFormulario
             n={4}
             icon={UserSearch}
-            titulo="Contratista"
+            titulo={puedeAsignarPersonal ? "Contratista y personal asignado" : "Contratista"}
             subtitulo="Opcional en esta etapa."
           >
             <div className="rounded-xl border border-cdmb-100 bg-cdmb-50/40 p-3.5">
+              <p className="mb-2 text-xs font-semibold text-stone-700">Contratista</p>
+              {contratistaId && contratistaNombre ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-300 bg-white px-3 py-2.5">
+                  <span className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 flex-none text-emerald-600" aria-hidden />
+                    <span>
+                      <span className="font-semibold text-stone-900">{contratistaNombre}</span>
+                      <span className="text-stone-500"> · {contratistaIdentificacion}</span>
+                      <span className="block text-xs text-emerald-700">Seleccionado como contratista del expediente</span>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={quitarContratista}
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                    Cambiar
+                  </button>
+                </div>
+              ) : (
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   value={contratistaIdentificacion}
@@ -317,6 +365,12 @@ export function NuevoExpedienteContractualForm({
                     setContratistaId(null);
                     setContratistaNombre(null);
                     setContratistaNoEncontrado(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      buscarContratista();
+                    }
                   }}
                   placeholder="NIT o cédula"
                   className={`${campoCls} w-36 bg-white`}
@@ -340,12 +394,6 @@ export function NuevoExpedienteContractualForm({
                   Crear contratista
                 </Link>
               </div>
-
-              {contratistaId && contratistaNombre && (
-                <span className="mt-2 flex w-fit items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-800">
-                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                  {contratistaNoEncontrado ? "Creado: " : "Encontrado: "}{contratistaNombre}
-                </span>
               )}
 
               {contratistaNoEncontrado && !contratistaId && (
@@ -381,6 +429,55 @@ export function NuevoExpedienteContractualForm({
                 </div>
               )}
             </div>
+
+            {puedeAsignarPersonal && (
+              <div className="rounded-xl border border-stone-200 p-3.5">
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-stone-700">
+                  <UserCog className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
+                  Personal de contratación asignado
+                </p>
+                {personal.length === 0 ? (
+                  <p className="text-xs text-stone-400">No hay usuarios activos con el rol Personal de Contratación.</p>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={filtroPersonal}
+                      onChange={(e) => setFiltroPersonal(e.target.value)}
+                      placeholder="Buscar por nombre…"
+                      className={campoCls}
+                    />
+                    {personalFiltrado.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {personalFiltrado.map((s) => {
+                          const activo = personalIds.has(s.id);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => alternarPersonal(s.id)}
+                              aria-pressed={activo}
+                              className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                                activo
+                                  ? "border-menu-500 bg-menu-500 text-stone-900 shadow-sm"
+                                  : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:bg-cdmb-50"
+                              }`}
+                            >
+                              {s.nombre}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {personalIds.size > 0 && (
+                      <p className="mt-2 text-xs font-medium text-cdmb-700">
+                        {personalIds.size} persona{personalIds.size === 1 ? "" : "s"} asignada{personalIds.size === 1 ? "" : "s"}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </SeccionFormulario>
 
           {supervisores.length > 0 && (

@@ -8,7 +8,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
-import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
+import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 
 export * from "@/lib/contratacion-etiquetas";
@@ -289,6 +289,7 @@ export async function crearExpedienteContractual(datos: {
   dependenciaSolicitanteId: string;
   contratistaId?: string | null;
   supervisorUsuarioIds?: string[];
+  personalAsignadoIds?: string[];
   subserieId?: string | null;
   creadoPorId: string;
 }) {
@@ -324,6 +325,9 @@ export async function crearExpedienteContractual(datos: {
       etapas: { create: { etapa: "PRECONTRACTUAL" } },
       supervisores: datos.supervisorUsuarioIds?.length
         ? { create: datos.supervisorUsuarioIds.map((usuarioId) => ({ usuarioId })) }
+        : undefined,
+      asignados: datos.personalAsignadoIds?.length
+        ? { create: datos.personalAsignadoIds.map((usuarioId) => ({ usuarioId, asignadoPorId: datos.creadoPorId })) }
         : undefined,
     },
   });
@@ -379,10 +383,11 @@ export async function agregarDocumentoContrato(datos: {
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
-    select: { cerrado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true },
+    select: { cerrado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true, etapaActual: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
+  if (!etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
 
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;

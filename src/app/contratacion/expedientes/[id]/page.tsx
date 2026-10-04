@@ -701,7 +701,11 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
                 const checklist = checklistsPorEtapa.get(etapa) ?? [];
                 const documentosLibres = expediente.documentos.filter((d) => d.etapa === etapa && !d.requisitoId);
-                const puedeSubir = (estado === "actual" || puedeGestionarPrivilegiado) && !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
+                const puedeSubir =
+                  estado !== "bloqueada" &&
+                  (estado === "actual" || puedeGestionarPrivilegiado) &&
+                  !expediente.cerrado &&
+                  puedeSubirDocumentoContrato(permisos, expediente, etapa);
                 const etapaInfo =
                   estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
                 const puedeGestionarEtapaCerrada =

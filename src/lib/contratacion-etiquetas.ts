@@ -2,6 +2,14 @@ import type { EtapaContratacion, ModalidadSeleccion, RolContratacion } from "@pr
 
 export const ETAPAS_ORDEN: EtapaContratacion[] = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"];
 
+export function etapaHabilitada(etapaActual: EtapaContratacion, etapa: EtapaContratacion): boolean {
+  return ETAPAS_ORDEN.indexOf(etapa) <= ETAPAS_ORDEN.indexOf(etapaActual);
+}
+
+export function mensajeEtapaNoHabilitada(etapa: EtapaContratacion): string {
+  return `La etapa ${ETIQUETA_ETAPA[etapa]} aún no está habilitada: primero debe aprobarse la etapa anterior.`;
+}
+
 export const ETIQUETA_ETAPA: Record<EtapaContratacion, string> = {
   PRECONTRACTUAL: "Precontractual",
   CONTRACTUAL: "Contractual",

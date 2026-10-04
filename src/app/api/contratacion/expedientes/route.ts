@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
 import { crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
@@ -35,6 +35,19 @@ export async function POST(req: NextRequest) {
     ? body.supervisorUsuarioIds.filter((v: unknown): v is string => typeof v === "string" && v.trim() !== "")
     : [];
 
+  const personalAsignadoIds: string[] = Array.isArray(body.personalAsignadoIds)
+    ? [...new Set<string>(body.personalAsignadoIds.filter((v: unknown): v is string => typeof v === "string" && v.trim() !== ""))]
+    : [];
+  if (personalAsignadoIds.length > 0) {
+    if (!puedeAsignarPersonalContrato(permisos)) {
+      return NextResponse.json({ error: "No tiene permiso para asignar personal de contratación." }, { status: 403 });
+    }
+    const validos = await db.usuario.count({ where: { id: { in: personalAsignadoIds }, activo: true, rolContratacion: "FUNCIONARIO_CONTRATACION" } });
+    if (validos !== personalAsignadoIds.length) {
+      return NextResponse.json({ error: "Alguno de los usuarios elegidos no existe, está inactivo o no tiene el rol Personal de Contratación." }, { status: 400 });
+    }
+  }
+
   try {
     const expediente = await crearExpedienteContractual({
       objeto,
@@ -48,6 +61,7 @@ export async function POST(req: NextRequest) {
       dependenciaSolicitanteId,
       contratistaId: body.contratistaId ? String(body.contratistaId) : null,
       supervisorUsuarioIds,
+      personalAsignadoIds,
       subserieId: body.subserieId ? String(body.subserieId) : null,
       creadoPorId: session.userId,
     });
