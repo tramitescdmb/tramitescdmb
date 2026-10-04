@@ -4,7 +4,15 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export type GrupoPestana = { id: string; label: string; icono?: ReactNode; contador?: number; oculta?: boolean; contenido: ReactNode };
 
-export function PestanasDetalle({ grupos, inicial }: { grupos: GrupoPestana[]; inicial?: string }) {
+export function PestanasDetalle({
+  grupos,
+  inicial,
+  etiqueta = "Secciones del detalle",
+}: {
+  grupos: GrupoPestana[];
+  inicial?: string;
+  etiqueta?: string;
+}) {
   const visibles = grupos.filter((g) => !g.oculta);
   const [activo, setActivo] = useState(inicial && visibles.some((g) => g.id === inicial) ? inicial : (visibles[0]?.id ?? ""));
   const contenedor = useRef<HTMLDivElement>(null);
@@ -28,7 +36,7 @@ export function PestanasDetalle({ grupos, inicial }: { grupos: GrupoPestana[]; i
     <div ref={contenedor} className="space-y-4">
       <div
         role="tablist"
-        aria-label="Secciones de la comunicación"
+        aria-label={etiqueta}
         className="sticky top-0 z-10 flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-soft print:hidden"
       >
         {visibles.map((g) => {
@@ -47,7 +55,7 @@ export function PestanasDetalle({ grupos, inicial }: { grupos: GrupoPestana[]; i
               {g.icono}
               {g.label}
               {g.contador !== undefined && (
-                <span className={`rounded-full px-1.5 text-[11px] ${sel ? "bg-white/20 text-white" : "bg-stone-100 text-stone-500"}`}>{g.contador}</span>
+                <span className={`rounded-full px-1.5 text-[11px] ${sel ? "bg-white/60 text-stone-900" : "bg-stone-100 text-stone-500"}`}>{g.contador}</span>
               )}
             </button>
           );
