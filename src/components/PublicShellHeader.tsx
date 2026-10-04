@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
+import { MenuPublico } from "@/components/MenuPublico";
 
 export async function PublicShellHeader() {
   const config = await getConfiguracionSitio();
 
   return (
     <header className="border-b-[3px] border-menu-500 bg-white">
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link prefetch={false} href="/pqrsd" className="flex min-w-0 items-center gap-2.5">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -21,14 +22,7 @@ export async function PublicShellHeader() {
             <span className="block truncate text-[11px] text-stone-500">Ventanilla de atención al ciudadano</span>
           </span>
         </Link>
-        <nav className="flex flex-none items-center gap-1 text-sm">
-          <Link prefetch={false} href="/pqrsd" className="rounded-md px-3 py-1.5 font-medium text-stone-900 hover:bg-menu-500">
-            Radicar PQRSD
-          </Link>
-          <Link prefetch={false} href="/pqrsd/consultar" className="rounded-md px-3 py-1.5 font-medium text-stone-900 hover:bg-menu-500">
-            Consultar estado
-          </Link>
-        </nav>
+        <MenuPublico />
       </div>
     </header>
   );

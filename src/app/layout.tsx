@@ -42,7 +42,13 @@ export default async function RootLayout({
             <div className="print:hidden">
               <PublicShellHeader />
             </div>
-            <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 lg:py-8 print:max-w-none print:p-0">{children}</main>
+            <main
+              className={`mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:py-8 print:max-w-none print:p-0 ${
+                pathname === "/validar-firma" ? "max-w-6xl" : "max-w-3xl"
+              }`}
+            >
+              {children}
+            </main>
             <div className="print:hidden">
               <Footer />
             </div>

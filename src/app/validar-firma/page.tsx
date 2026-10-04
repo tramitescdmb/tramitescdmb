@@ -4,7 +4,8 @@ import { ValidadorFirmas } from "@/components/ValidadorFirmas";
 
 export const metadata: Metadata = { title: "Validador de firmas electrónicas — CDMB" };
 
-export default function ValidarFirmaPage() {
+export default async function ValidarFirmaPage({ searchParams }: { searchParams: Promise<{ csv?: string }> }) {
+  const { csv } = await searchParams;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -13,7 +14,7 @@ export default function ValidarFirmaPage() {
         </span>
         <h1 className="text-xl font-semibold text-stone-900">Validador de firmas electrónicas</h1>
       </div>
-      <ValidadorFirmas />
+      <ValidadorFirmas csvInicial={typeof csv === "string" ? csv : ""} />
     </div>
   );
 }

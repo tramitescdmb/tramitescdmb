@@ -14,6 +14,7 @@ export type FirmaPublica = {
 };
 
 export type DocumentoFirmadoPublico = {
+  codigo: string;
   plataforma: string;
   referencia: string;
   documento: string;
@@ -75,36 +76,61 @@ export const PLATAFORMA_FIRMA = {
   sgdea: "SGDEA — Correspondencia y Archivo",
 } as const;
 
-export async function documentosFirmadosPorHash(hashSha256: string): Promise<DocumentoFirmadoPublico[]> {
-  const hash = hashSha256.trim().toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(hash)) return [];
+export type TipoDocumentoCsv = "T" | "G" | "A" | "C";
+
+export function codigoVerificacion(tipo: TipoDocumentoCsv, id: string): string {
+  const grupos = id.toUpperCase().match(/.{1,5}/g) ?? [];
+  return `${tipo}-${grupos.join("-")}`;
+}
+
+export function parsearCodigoVerificacion(csv: string): { tipo: TipoDocumentoCsv; id: string } | null {
+  const limpio = csv.trim().replace(/[^A-Za-z0-9]/g, "");
+  const tipo = limpio.charAt(0).toUpperCase();
+  const id = limpio.slice(1).toLowerCase();
+  if (!["T", "G", "A", "C"].includes(tipo) || !/^[a-z0-9]{20,40}$/.test(id)) return null;
+  return { tipo: tipo as TipoDocumentoCsv, id };
+}
+
+async function buscarDocumentos(filtro: { hash: string } | { tipo: TipoDocumentoCsv; id: string }): Promise<DocumentoFirmadoPublico[]> {
+  const por = (t: TipoDocumentoCsv) => ("hash" in filtro ? { hashSha256: filtro.hash } : filtro.tipo === t ? { id: filtro.id } : null);
+  const vacio = Promise.resolve([] as never[]);
   const [tramites, contratos, archivo, comunicaciones] = await Promise.all([
-    db.expedienteDocumento.findMany({
-      where: { hashSha256: hash },
-      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
-    }),
-    db.documentoContrato.findMany({
-      where: { hashSha256: hash },
-      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
-    }),
-    db.documentoArchivo.findMany({
-      where: { hashSha256: hash, retiradoEn: null },
-      select: { nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
-    }),
-    db.comunicacionDocumento.findMany({
-      where: { hashSha256: hash },
-      select: {
-        nombre: true,
-        hashSha256: true,
-        comunicacion: { select: { radicado: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS } },
-      },
-    }),
+    por("T")
+      ? db.expedienteDocumento.findMany({
+          where: por("T")!,
+          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+        })
+      : vacio,
+    por("G")
+      ? db.documentoContrato.findMany({
+          where: por("G")!,
+          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+        })
+      : vacio,
+    por("A")
+      ? db.documentoArchivo.findMany({
+          where: { ...por("A")!, retiradoEn: null },
+          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+        })
+      : vacio,
+    por("C")
+      ? db.comunicacionDocumento.findMany({
+          where: por("C")!,
+          select: {
+            id: true,
+            nombre: true,
+            hashSha256: true,
+            comunicacion: { select: { radicado: true, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS } },
+          },
+        })
+      : vacio,
   ]);
   return [
-    ...tramites.map((d) => ({ plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
-    ...contratos.map((d) => ({ plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
-    ...archivo.map((d) => ({ plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
+    ...tramites.map((d) => ({ codigo: codigoVerificacion("T", d.id), plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
+    ...contratos.map((d) => ({ codigo: codigoVerificacion("G", d.id), plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
+    ...archivo.map((d) => ({ codigo: codigoVerificacion("A", d.id), plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
     ...comunicaciones.map((d) => ({
+      codigo: codigoVerificacion("C", d.id),
       plataforma: PLATAFORMA_FIRMA.sgdea,
       referencia: d.comunicacion.radicado,
       documento: d.nombre,
@@ -112,6 +138,17 @@ export async function documentosFirmadosPorHash(hashSha256: string): Promise<Doc
       firmas: aPublicas(d.comunicacion.firmas, d.comunicacion.solicitudesFirma, "SGDEA"),
     })),
   ];
+}
+
+export async function documentosFirmadosPorHash(hashSha256: string): Promise<DocumentoFirmadoPublico[]> {
+  const hash = hashSha256.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(hash)) return [];
+  return buscarDocumentos({ hash });
+}
+
+export async function documentoFirmadoPorCodigo(csv: string): Promise<DocumentoFirmadoPublico[]> {
+  const p = parsearCodigoVerificacion(csv);
+  return p ? buscarDocumentos(p) : [];
 }
 
 export async function firmasDeComunicacion(comunicacionId: string): Promise<FirmaPublica[]> {

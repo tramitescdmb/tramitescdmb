@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { FileSearch, ShieldCheck, ShieldX, Loader2, Hash, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FileSearch, ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2 } from "lucide-react";
 
 type Firma = {
   id: string;
@@ -13,36 +13,47 @@ type Firma = {
   hashFirma: string | null;
   entidad: string;
 };
-type Documento = { plataforma: string; referencia: string; documento: string; hashArchivo: string | null; firmas: Firma[] };
+type Documento = { codigo: string; plataforma: string; referencia: string; documento: string; hashArchivo: string | null; firmas: Firma[] };
 
 const formato = new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" });
 
 async function sha256Hex(archivo: File): Promise<string> {
-  const buffer = await archivo.arrayBuffer();
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  const digest = await crypto.subtle.digest("SHA-256", await archivo.arrayBuffer());
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function ValidadorFirmas() {
+function Paso({ n, icono, titulo }: { n: number; icono: React.ReactNode; titulo: string }) {
+  return (
+    <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
+      <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-cdmb-600 text-xs font-semibold text-white">{n}</span>
+      <span className="text-cdmb-600">{icono}</span>
+      {titulo}
+    </h2>
+  );
+}
+
+export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [hash, setHash] = useState<string | null>(null);
+  const [csv, setCsv] = useState(csvInicial);
+  const [numero, setNumero] = useState("");
   const [documentos, setDocumentos] = useState<Documento[] | null>(null);
+  const [consulta, setConsulta] = useState<"archivo" | "csv" | null>(null);
   const [validando, setValidando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [numero, setNumero] = useState("");
+  const resultado = useRef<HTMLDivElement>(null);
 
-  async function validar(f: File) {
-    setArchivo(f);
+  async function consultar(cuerpo: { hash: string } | { csv: string }, tipo: "archivo" | "csv") {
     setValidando(true);
     setError(null);
     setDocumentos(null);
+    setConsulta(tipo);
     try {
-      const h = await sha256Hex(f);
-      setHash(h);
-      const res = await fetch("/api/validar-firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hash: h }) });
+      const res = await fetch("/api/validar-firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo validar el documento.");
       setDocumentos(body.documentos ?? []);
+      requestAnimationFrame(() => resultado.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo validar el documento.");
     } finally {
@@ -50,36 +61,83 @@ export function ValidadorFirmas() {
     }
   }
 
+  async function validarArchivo(f: File) {
+    setArchivo(f);
+    const h = await sha256Hex(f);
+    setHash(h);
+    await consultar({ hash: h }, "archivo");
+  }
+
+  useEffect(() => {
+    if (csvInicial) consultar({ csv: csvInicial }, "csv");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const conFirmas = documentos?.filter((d) => d.firmas.length > 0) ?? [];
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cdmb-600 text-xs font-semibold text-white">1</span>
-          <Upload className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Documento a validar
-        </h2>
-        <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-cdmb-200 bg-cdmb-50/40 px-4 py-8 text-center hover:bg-cdmb-50">
-          <FileSearch className="h-8 w-8 text-cdmb-600" aria-hidden />
-          <span className="text-sm font-medium text-stone-800">{archivo ? archivo.name : "Seleccione el archivo firmado"}</span>
-          <span className="text-xs text-stone-500">El archivo no sale de su equipo: solo se compara su huella digital SHA-256.</span>
-          <input
-            type="file"
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) validar(f);
-            }}
-          />
-        </label>
-        {hash && (
-          <p className="mt-2 flex items-start gap-1.5 break-all font-mono text-[11px] text-stone-500">
-            <Hash className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
-            {hash}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+          <Paso n={1} icono={<FileSearch className="h-4 w-4" aria-hidden />} titulo="Validar el archivo" />
+          <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-cdmb-200 bg-cdmb-50/40 px-4 py-6 text-center hover:bg-cdmb-50">
+            <FileSearch className="h-7 w-7 text-cdmb-600" aria-hidden />
+            <span className="text-sm font-medium text-stone-800">{archivo ? archivo.name : "Seleccione el archivo original firmado"}</span>
+            <span className="text-xs text-stone-500">El archivo no sale de su equipo: solo se compara su huella SHA-256.</span>
+            <input
+              type="file"
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) validarArchivo(f);
+              }}
+            />
+          </label>
+          {hash && <p className="mt-2 break-all font-mono text-[11px] text-stone-500">SHA-256: {hash}</p>}
+        </section>
+
+        <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+          <Paso n={2} icono={<KeyRound className="h-4 w-4" aria-hidden />} titulo="Validar por código seguro de verificación (CSV)" />
+          <p className="mt-2 text-xs text-stone-500">
+            El código aparece en el margen de cada página del documento firmado y en su hoja de metadatos. También puede leer el código QR.
           </p>
-        )}
-      </section>
+          <form
+            className="mt-3 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (csv.trim()) consultar({ csv: csv.trim() }, "csv");
+            }}
+          >
+            <input
+              value={csv}
+              onChange={(e) => setCsv(e.target.value)}
+              placeholder="Ej. G-CMUE2-RYCS0-003KZ-04ZE4-7IUHB"
+              className="min-w-0 flex-1 rounded-md border border-stone-200 px-3 py-2 font-mono text-sm uppercase"
+            />
+            <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
+              Validar
+            </button>
+          </form>
+          <form
+            className="mt-3 flex items-center gap-2 border-t border-stone-100 pt-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (numero.trim()) window.location.href = `/verificar/${encodeURIComponent(numero.trim())}`;
+            }}
+          >
+            <span className="flex-none text-xs text-stone-500">O por radicado / expediente:</span>
+            <input
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              placeholder="Ej. CDMB-R-2026-000123"
+              className="min-w-0 flex-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-xs"
+            />
+            <button type="submit" className="rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
+              Consultar
+            </button>
+          </form>
+        </section>
+      </div>
 
       {validando && (
         <p className="flex items-center gap-2 text-sm text-stone-600">
@@ -90,78 +148,80 @@ export function ValidadorFirmas() {
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {documentos && !validando && (
-        <section
-          className={`rounded-xl border p-5 shadow-soft ${conFirmas.length > 0 ? "border-emerald-200 bg-emerald-50/40" : "border-red-200 bg-red-50/40"}`}
-        >
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cdmb-600 text-xs font-semibold text-white">2</span>
-            {conFirmas.length > 0 ? <ShieldCheck className="h-5 w-5 text-emerald-600" aria-hidden /> : <ShieldX className="h-5 w-5 text-red-600" aria-hidden />}
-            {conFirmas.length > 0 ? "Documento auténtico y firmado electrónicamente" : documentos.length > 0 ? "Documento registrado, sin firmas electrónicas" : "No coincide con ningún documento firmado"}
-          </h2>
-          {documentos.length === 0 && (
-            <p className="mt-2 text-sm text-stone-600">
-              El archivo no corresponde, byte a byte, a ningún original registrado en las plataformas de la CDMB. Si se trata de una copia con
-              sello de firma impreso, valídela con el código QR del sello o con el número de radicado o expediente.
-            </p>
-          )}
-          <ul className="mt-3 space-y-3">
-            {documentos.map((d, i) => (
-              <li key={`${d.referencia}-${i}`} className="rounded-lg border border-stone-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-cdmb-700">{d.plataforma}</p>
-                <p className="text-sm font-medium text-stone-900">{d.documento}</p>
-                <p className="font-mono text-xs text-stone-500">{d.referencia}</p>
-                {d.hashArchivo && <p className="mt-1 break-all font-mono text-[10.5px] text-stone-400">SHA-256 del documento: {d.hashArchivo}</p>}
-                {d.firmas.length > 0 && (
-                  <ul className="mt-2 divide-y divide-stone-100 border-t border-stone-100">
-                    {d.firmas.map((f) => (
-                      <li key={f.id} className="py-2 text-sm">
-                        <p className="flex items-center gap-1.5 font-medium text-stone-900">
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
-                          {f.nombre}
-                          <span className="font-normal text-stone-500">— {f.cargo}</span>
-                        </p>
-                        <p className="text-xs text-stone-500">
-                          {f.calidad} · {formato.format(new Date(f.fechaHora))}
-                          {f.selloTiempoEn && " · con sello de tiempo"}
-                        </p>
-                        <p className="text-xs text-stone-500">Entidad: {f.entidad}</p>
-                        <p className="break-all font-mono text-[10.5px] text-stone-400">
-                          Identificador: {f.id}
-                          {f.hashFirma && <> · Huella de la firma: {f.hashFirma}</>}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+        <div ref={resultado} className="space-y-3">
+          <div
+            className={`flex items-start gap-3 rounded-xl border p-4 ${conFirmas.length > 0 ? "border-emerald-200 bg-emerald-50/60" : "border-red-200 bg-red-50/60"}`}
+          >
+            {conFirmas.length > 0 ? <ShieldCheck className="h-7 w-7 flex-none text-emerald-600" aria-hidden /> : <ShieldX className="h-7 w-7 flex-none text-red-600" aria-hidden />}
+            <div>
+              <p className="text-base font-semibold text-stone-900">
+                {conFirmas.length > 0
+                  ? "Documento auténtico, firmado electrónicamente"
+                  : documentos.length > 0
+                    ? "Documento registrado, sin firmas electrónicas"
+                    : consulta === "csv"
+                      ? "El código no corresponde a ningún documento"
+                      : "El archivo no coincide con ningún original firmado"}
+              </p>
+              {documentos.length === 0 && consulta === "archivo" && (
+                <p className="text-sm text-stone-600">
+                  Una copia con el sello de firma estampado no es idéntica al original: valídela con el código CSV de su margen o con el código QR.
+                </p>
+              )}
+            </div>
+          </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <Hash className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Validar por número de radicado o expediente
-        </h2>
-        <form
-          className="mt-3 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (numero.trim()) window.location.href = `/verificar/${encodeURIComponent(numero.trim())}`;
-          }}
-        >
-          <input
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            placeholder="Ej. CDMB-R-2026-000123"
-            className="min-w-0 flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm"
-          />
-          <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
-            Validar
-          </button>
-        </form>
-      </section>
+          {documentos.map((d) => (
+            <article key={d.codigo} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+              <div className="grid gap-x-6 gap-y-2 border-b border-stone-100 bg-stone-50/70 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <Dato icono={<FileText className="h-3.5 w-3.5" />} k="Documento" v={d.documento} />
+                <Dato icono={<Building2 className="h-3.5 w-3.5" />} k="Plataforma" v={d.plataforma} />
+                <Dato icono={<Hash className="h-3.5 w-3.5" />} k="Radicado / expediente" v={d.referencia} mono />
+                <Dato icono={<KeyRound className="h-3.5 w-3.5" />} k="Código seguro de verificación" v={d.codigo} mono />
+                {d.hashArchivo && (
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <Dato icono={<Hash className="h-3.5 w-3.5" />} k="SHA-256 del documento original" v={d.hashArchivo} mono />
+                  </div>
+                )}
+              </div>
+              {d.firmas.length > 0 && (
+                <ul className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+                  {d.firmas.map((f) => (
+                    <li key={f.id} className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 text-sm">
+                      <p className="flex items-center gap-1.5 font-semibold text-stone-900">
+                        <ShieldCheck className="h-4 w-4 flex-none text-emerald-600" aria-hidden />
+                        {f.nombre}
+                      </p>
+                      <p className="text-xs text-stone-600">{f.cargo}</p>
+                      <p className="text-xs text-stone-600">{f.entidad}</p>
+                      <p className="mt-1 text-xs text-stone-500">
+                        {f.calidad} · {formato.format(new Date(f.fechaHora))}
+                        {f.selloTiempoEn && " · con sello de tiempo"}
+                      </p>
+                      <p className="mt-1 break-all font-mono text-[10.5px] text-stone-400">
+                        Id: {f.id}
+                        {f.hashFirma && <> · Huella: {f.hashFirma}</>}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Dato({ icono, k, v, mono }: { icono: React.ReactNode; k: string; v: string; mono?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <p className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-stone-400">
+        {icono}
+        {k}
+      </p>
+      <p className={`break-words text-stone-800 ${mono ? "break-all font-mono text-xs" : ""}`}>{v}</p>
     </div>
   );
 }
