@@ -518,7 +518,6 @@ export function GeovisorTramites({
     for (const capaCfg of capasExternas) {
       let capa = capasExternasRef.current[capaCfg.id];
       if (!capa) {
-        const forma = FORMA_PLATAFORMA[capaCfg.id];
         const letra = LETRA_PLATAFORMA[capaCfg.id];
         capa = L.markerClusterGroup({
           maxClusterRadius: 18,
@@ -528,9 +527,9 @@ export function GeovisorTramites({
           iconCreateFunction: (c) =>
             L.divIcon({
               className: "",
-              html: `<div style="position:relative;width:26px;height:26px">${svgMarcadorExterno(forma, "#52514e", 26, letra)}<span style="position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:9999px;background:#ffffff;color:#1b2a20;font:700 10px/16px 'Work Sans',Arial,sans-serif;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.4)">${c.getChildCount()}</span></div>`,
-              iconSize: [26, 26],
-              iconAnchor: [13, 13],
+              html: `<div title="${c.getChildCount()} trámites en este sitio: haga clic para separarlos" style="display:flex;align-items:center;justify-content:center;gap:2px;width:34px;height:34px;border-radius:9999px;background:#1b2a20;border:2px solid #ffffff;color:#ffffff;font:700 11px/1 'Work Sans',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.5)"><span style="font-size:9px;opacity:.75">${letra}</span>${c.getChildCount()}</div>`,
+              iconSize: [34, 34],
+              iconAnchor: [17, 17],
             }),
         });
         capasExternasRef.current[capaCfg.id] = capa;

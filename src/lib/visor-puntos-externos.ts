@@ -52,17 +52,13 @@ function puntoSinca(p: FilaSinca, lat: number, lon: number, municipio: string | 
   };
 }
 
-export async function puntosSinca(): Promise<{ puntos: PuntoExterno[]; ordenTipos: string[] }> {
-  const [conCoordenadas, porTipo] = await Promise.all([
-    db.sincaResolucion.findMany({ where: { lat: { not: null }, lon: { not: null } }, orderBy: { fechaResolucion: "desc" }, select: SELECT_SINCA }),
-    db.sincaResolucion.groupBy({ by: ["tipoSolicitudNombre", "tipoSolicitud"], _count: true }),
-  ]);
-  const conteo = new Map<string, number>();
-  for (const g of porTipo) conteo.set(tipoSinca(g), (conteo.get(tipoSinca(g)) ?? 0) + g._count);
-  return {
-    puntos: conCoordenadas.map((p) => puntoSinca(p, p.lat!, p.lon!, p.municipio)),
-    ordenTipos: [...conteo.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t),
-  };
+export async function puntosSinca(): Promise<{ puntos: PuntoExterno[] }> {
+  const conCoordenadas = await db.sincaResolucion.findMany({
+    where: { lat: { not: null }, lon: { not: null } },
+    orderBy: { fechaResolucion: "desc" },
+    select: SELECT_SINCA,
+  });
+  return { puntos: conCoordenadas.map((p) => puntoSinca(p, p.lat!, p.lon!, p.municipio)) };
 }
 
 async function filasVital() {
@@ -87,15 +83,12 @@ function puntoVital(s: Awaited<ReturnType<typeof filasVital>>[number], lat: numb
   };
 }
 
-export async function puntosVital(): Promise<{ puntos: PuntoExterno[]; ordenTipos: string[] }> {
+export async function puntosVital(): Promise<{ puntos: PuntoExterno[] }> {
   const filas = await filasVital();
-  const conteo = new Map<string, number>();
-  for (const s of filas) conteo.set(tipoVital(s.idTramiteVital), (conteo.get(tipoVital(s.idTramiteVital)) ?? 0) + 1);
   return {
     puntos: filas.flatMap((s) => {
       const p = puntoDesdeCampos(s.camposTramite);
       return p ? [puntoVital(s, p.lat, p.lon, municipioDeCamposVital(s.camposTramite))] : [];
     }),
-    ordenTipos: [...conteo.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t),
   };
 }
