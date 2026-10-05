@@ -50,7 +50,7 @@ function FirmasPublicas({ grupos }: { grupos: { documento: string | null; hashAr
         </div>
       )}
       <p className="mt-3 text-xs text-stone-500">
-        Para ver quién firmó cada documento, valídelo con su código seguro de verificación (CSV) o con el archivo original.
+        Para ver quién firmó cada documento, valídelo con su código seguro de verificación (CSV).
       </p>
       <Link href="/validar-firma" className="mt-1 inline-block text-xs font-medium text-cdmb-700 hover:underline">
         Ir al validador de firmas →

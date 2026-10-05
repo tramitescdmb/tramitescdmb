@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileSearch, ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2 } from "lucide-react";
-import { sha256Hex } from "@/lib/uploads-client";
+import { ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2 } from "lucide-react";
 
 type Firma = {
   id: string;
@@ -30,23 +29,19 @@ function Paso({ n, icono, titulo }: { n: number; icono: React.ReactNode; titulo:
 }
 
 export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [hash, setHash] = useState<string | null>(null);
   const [csv, setCsv] = useState(csvInicial);
   const [numero, setNumero] = useState("");
   const [documentos, setDocumentos] = useState<Documento[] | null>(null);
-  const [consulta, setConsulta] = useState<"archivo" | "csv" | null>(null);
   const [validando, setValidando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resultado = useRef<HTMLDivElement>(null);
 
-  async function consultar(cuerpo: { hash: string } | { csv: string }, tipo: "archivo" | "csv") {
+  async function consultar(codigo: string) {
     setValidando(true);
     setError(null);
     setDocumentos(null);
-    setConsulta(tipo);
     try {
-      const res = await fetch("/api/validar-firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+      const res = await fetch("/api/validar-firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv: codigo }) });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo validar el documento.");
       setDocumentos(body.documentos ?? []);
@@ -58,20 +53,8 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
     }
   }
 
-  async function validarArchivo(f: File) {
-    setArchivo(f);
-    setDocumentos(null);
-    const h = await sha256Hex(f);
-    setHash(h);
-    if (!h) {
-      setError("No se pudo calcular la huella de este archivo (puede ser demasiado grande). Valídelo con el código CSV.");
-      return;
-    }
-    await consultar({ hash: h }, "archivo");
-  }
-
   useEffect(() => {
-    if (csvInicial) consultar({ csv: csvInicial }, "csv");
+    if (csvInicial) consultar(csvInicial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -79,27 +62,9 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div>
         <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-          <Paso n={1} icono={<FileSearch className="h-4 w-4" aria-hidden />} titulo="Validar el archivo" />
-          <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-cdmb-200 bg-cdmb-50/40 px-4 py-6 text-center hover:bg-cdmb-50">
-            <FileSearch className="h-7 w-7 text-cdmb-600" aria-hidden />
-            <span className="text-sm font-medium text-stone-800">{archivo ? archivo.name : "Seleccione el archivo original firmado"}</span>
-            <span className="text-xs text-stone-500">El archivo no sale de su equipo: solo se compara su huella SHA-256.</span>
-            <input
-              type="file"
-              className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) validarArchivo(f);
-              }}
-            />
-          </label>
-          {hash && <p className="mt-2 break-all font-mono text-[11px] text-stone-500">SHA-256: {hash}</p>}
-        </section>
-
-        <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-          <Paso n={2} icono={<KeyRound className="h-4 w-4" aria-hidden />} titulo="Validar por código seguro de verificación (CSV)" />
+          <Paso n={1} icono={<KeyRound className="h-4 w-4" aria-hidden />} titulo="Validar por código seguro de verificación (CSV)" />
           <p className="mt-2 text-xs text-stone-500">
             El código aparece en el margen de cada página del documento firmado y en su hoja de metadatos. También puede leer el código QR.
           </p>
@@ -107,7 +72,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
             className="mt-3 flex gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              if (csv.trim()) consultar({ csv: csv.trim() }, "csv");
+              if (csv.trim()) consultar(csv.trim());
             }}
           >
             <input
@@ -161,15 +126,8 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
                   ? "Documento auténtico, firmado electrónicamente"
                   : documentos.length > 0
                     ? "Documento registrado, sin firmas electrónicas"
-                    : consulta === "csv"
-                      ? "El código no corresponde a ningún documento"
-                      : "El archivo no coincide con ningún original firmado"}
+                    : "El código no corresponde a ningún documento"}
               </p>
-              {documentos.length === 0 && consulta === "archivo" && (
-                <p className="text-sm text-stone-600">
-                  Una copia con el sello de firma estampado no es idéntica al original: valídela con el código CSV de su margen o con el código QR.
-                </p>
-              )}
             </div>
           </div>
 

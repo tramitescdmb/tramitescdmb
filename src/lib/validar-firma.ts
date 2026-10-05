@@ -37,6 +37,8 @@ type VistoFila = { id: string; completadoEn: Date | null; usuarioAsignado: Perso
 
 const ENTIDAD = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
 
+const entidadDe = (cargo: string) => (/contratista/i.test(cargo) ? `Contratista de la ${ENTIDAD}` : ENTIDAD);
+
 function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma): FirmaPublica[] {
   return [
     ...firmas.map((f) => ({
@@ -47,7 +49,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
       fechaHora: f.fechaHora,
       selloTiempoEn: f.selloTiempoEn,
       hashFirma: f.hashContenido,
-      entidad: ENTIDAD,
+      entidad: entidadDe(cargoDelFirmante(f.usuario, modulo)),
     })),
     ...vistos
       .filter((v) => v.completadoEn)
@@ -59,7 +61,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
         fechaHora: v.completadoEn!,
         selloTiempoEn: null,
         hashFirma: null,
-        entidad: ENTIDAD,
+        entidad: entidadDe(cargoDelFirmante(v.usuarioAsignado, modulo)),
       })),
   ].sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime());
 }
@@ -91,8 +93,8 @@ export function parsearCodigoVerificacion(csv: string): { tipo: TipoDocumentoCsv
   return { tipo: tipo as TipoDocumentoCsv, id };
 }
 
-async function buscarDocumentos(filtro: { hash: string } | { tipo: TipoDocumentoCsv; id: string }): Promise<DocumentoFirmadoPublico[]> {
-  const por = (t: TipoDocumentoCsv) => ("hash" in filtro ? { hashSha256: filtro.hash } : filtro.tipo === t ? { id: filtro.id } : null);
+async function buscarDocumentos(filtro: { tipo: TipoDocumentoCsv; id: string }): Promise<DocumentoFirmadoPublico[]> {
+  const por = (t: TipoDocumentoCsv) => (filtro.tipo === t ? { id: filtro.id } : null);
   const vacio = Promise.resolve([] as never[]);
   const [tramites, contratos, archivo, comunicaciones] = await Promise.all([
     por("T")
@@ -138,12 +140,6 @@ async function buscarDocumentos(filtro: { hash: string } | { tipo: TipoDocumento
       firmas: aPublicas(d.comunicacion.firmas, d.comunicacion.solicitudesFirma, "SGDEA"),
     })),
   ];
-}
-
-export async function documentosFirmadosPorHash(hashSha256: string): Promise<DocumentoFirmadoPublico[]> {
-  const hash = hashSha256.trim().toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(hash)) return [];
-  return buscarDocumentos({ hash });
 }
 
 export async function documentoFirmadoPorCodigo(csv: string): Promise<DocumentoFirmadoPublico[]> {
