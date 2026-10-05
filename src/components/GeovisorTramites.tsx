@@ -231,6 +231,7 @@ export function GeovisorTramites({
   const destacadoInicial = useMemo(() => ({ capa: searchParams.get("capa"), punto: searchParams.get("punto") }), []);
   const capasExternasRef = useRef<Partial<Record<PlataformaExterna, import("leaflet").MarkerClusterGroup>>>({});
   const [mapaListo, setMapaListo] = useState(false);
+  const [errorMapa, setErrorMapa] = useState(false);
   const [municipiosGeo, setMunicipiosGeo] = useState<FeatureCollection | null>(null);
   const capasExternas = useMemo(() => {
     if (!municipiosGeo) return capasExternasEntrada;
@@ -396,21 +397,51 @@ export function GeovisorTramites({
   // --- inicialización del mapa (una sola vez) ---
   useEffect(() => {
     let cancelado = false;
-    import("leaflet").then(async (L) => {
+    let observador: ResizeObserver | null = null;
+    const cargarLeaflet = async () => {
+      const L = await import("leaflet");
       (window as unknown as { L: typeof L }).L = L;
       await import("leaflet.markercluster");
-      if (cancelado || !contenedorRef.current || mapRef.current) return;
+      return L;
+    };
+    cargarLeaflet()
+      .catch(() => new Promise<typeof import("leaflet")>((resolve, reject) => setTimeout(() => cargarLeaflet().then(resolve, reject), 1500)))
+      .catch(() => {
+        if (!cancelado) setErrorMapa(true);
+        return null;
+      })
+      .then(async (L) => {
+      if (!L || cancelado || !contenedorRef.current || mapRef.current) return;
       leafletRef.current = L;
 
       const map = L.map(contenedorRef.current, { fadeAnimation: false, zoomControl: false }).setView(CENTRO_CDMB_POR_DEFECTO, 10);
       // Zoom a la derecha: la izquierda ya tiene la barra de 4 botones propia (ocultar panel,
       // mi ubicación, descargar imagen, ayuda) y ambos quedaban encimados en la misma esquina.
       L.control.zoom({ position: "topright" }).addTo(map);
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      const fondoOsm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
         crossOrigin: true,
       }).addTo(map);
+      let erroresFondo = 0;
+      let teselasCargadas = 0;
+      const usarFondoAlterno = () => {
+        if (!map.hasLayer(fondoOsm)) return;
+        map.removeLayer(fondoOsm);
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Teselas &copy; Esri — Esri, HERE, Garmin, OpenStreetMap",
+          maxZoom: 19,
+          crossOrigin: true,
+        }).addTo(map);
+      };
+      fondoOsm.on("tileload", () => teselasCargadas++);
+      fondoOsm.on("tileerror", () => {
+        erroresFondo++;
+        if (erroresFondo >= 3 && erroresFondo > teselasCargadas) usarFondoAlterno();
+      });
+      setTimeout(() => {
+        if (!cancelado && teselasCargadas === 0) usarFondoAlterno();
+      }, 6000);
 
       // Pane propio con z-index por encima de las capas de contexto (overlayPane=400):
       // así el límite municipal nunca queda tapado por el relleno de otra capa.
@@ -435,6 +466,10 @@ export function GeovisorTramites({
 
       mapRef.current = map;
       setMapaListo(true);
+      if (typeof ResizeObserver !== "undefined" && contenedorRef.current) {
+        observador = new ResizeObserver(() => mapRef.current?.invalidateSize());
+        observador.observe(contenedorRef.current);
+      }
 
       fetch("/geo/municipios_cdmb.geojson")
         .then((r) => r.json())
@@ -457,6 +492,7 @@ export function GeovisorTramites({
     });
     return () => {
       cancelado = true;
+      observador?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -1063,6 +1099,21 @@ export function GeovisorTramites({
           </div>
         )}
         {ayudaAbierta && <PanelAyuda onCerrar={() => setAyudaAbierta(false)} />}
+        {errorMapa && (
+          <div className="absolute inset-0 z-[650] flex items-center justify-center bg-white/85 p-6">
+            <div className="max-w-sm rounded-xl border border-stone-200 bg-white p-5 text-center shadow-soft">
+              <p className="text-sm font-semibold text-stone-900">No se pudo cargar el mapa</p>
+              <p className="mt-1 text-xs text-stone-500">Es posible que la plataforma se haya actualizado mientras la tenía abierta.</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600"
+              >
+                Recargar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
