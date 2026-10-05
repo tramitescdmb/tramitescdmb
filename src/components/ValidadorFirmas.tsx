@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileSearch, ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2 } from "lucide-react";
+import { sha256Hex } from "@/lib/uploads-client";
 
 type Firma = {
   id: string;
@@ -17,10 +18,6 @@ type Documento = { codigo: string; plataforma: string; referencia: string; docum
 
 const formato = new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" });
 
-async function sha256Hex(archivo: File): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await archivo.arrayBuffer());
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 function Paso({ n, icono, titulo }: { n: number; icono: React.ReactNode; titulo: string }) {
   return (
@@ -63,8 +60,13 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
 
   async function validarArchivo(f: File) {
     setArchivo(f);
+    setDocumentos(null);
     const h = await sha256Hex(f);
     setHash(h);
+    if (!h) {
+      setError("No se pudo calcular la huella de este archivo (puede ser demasiado grande). Valídelo con el código CSV.");
+      return;
+    }
     await consultar({ hash: h }, "archivo");
   }
 

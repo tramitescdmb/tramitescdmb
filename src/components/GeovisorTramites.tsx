@@ -61,6 +61,8 @@ export type PuntoTramite = {
 
 type PuntoExternoVisible = { capa: CapaExterna; punto: PuntoExterno; grupo: GrupoTipo };
 
+const SIN_CAPAS_EXTERNAS: CapaExterna[] = [];
+
 type TramiteOpcion = { id: string; nombre: string; codigo: string };
 type Pestana = "filtrar" | "capas" | "medir";
 type CapaContextoId = "areas" | "paramos" | "veredas" | "hidro" | "aicas" | "bosque_seco" | "subzonas";
@@ -218,7 +220,7 @@ function descargarTexto(contenido: string, nombreArchivo: string, tipoMime: stri
 export function GeovisorTramites({
   expedientes,
   tramites,
-  capasExternas: capasExternasEntrada = [],
+  capasExternas: capasExternasEntrada = SIN_CAPAS_EXTERNAS,
 }: {
   expedientes: PuntoTramite[];
   tramites: TramiteOpcion[];

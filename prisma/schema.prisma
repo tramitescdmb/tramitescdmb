@@ -653,6 +653,7 @@ model ExpedienteDocumento {
   @@index([expedienteId])
   @@index([requisitoId])
   @@index([tipoDocumentalId])
+  @@index([hashSha256])
 }
 
 enum EstadoValidacionDocumento {
@@ -1256,6 +1257,7 @@ model ComunicacionDocumento {
   subidoPor    Usuario?     @relation("ComunicacionDocumentoSubidoPor", fields: [subidoPorId], references: [id])
 
   @@index([comunicacionId])
+  @@index([hashSha256])
 }
 
 model Distribucion {
@@ -1473,6 +1475,7 @@ model DocumentoArchivo {
   avisosRechazo    AvisoRechazoDocumento[]
 
   @@index([expedienteDocumentalId])
+  @@index([hashSha256])
 }
 
 model AuditoriaDoc {
@@ -1864,6 +1867,7 @@ model DocumentoContrato {
   @@index([requisitoId])
   @@index([periodoEventualId])
   @@index([tipoDocumentalId])
+  @@index([hashSha256])
 }
 
 model AvisoRechazoDocumento {

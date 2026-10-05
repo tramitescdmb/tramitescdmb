@@ -103,7 +103,7 @@ async function buscarDocumentos(filtro: { hash: string } | { tipo: TipoDocumento
       : vacio,
     por("G")
       ? db.documentoContrato.findMany({
-          where: por("G")!,
+          where: { ...por("G")!, expediente: { eliminado: false } },
           select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
         })
       : vacio,

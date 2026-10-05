@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { documentoFirmadoPorCodigo, documentosFirmadosPorHash } from "@/lib/validar-firma";
+import { verificarLimiteEnvio } from "@/lib/anti-abuso";
+import { datosPeticion } from "@/lib/auditoria-doc";
 
 export async function POST(req: NextRequest) {
+  const { ip } = datosPeticion(req.headers);
+  const limite = await verificarLimiteEnvio(ip, "validar-firma", { porHora: 60, porDia: 300 });
+  if (!limite.permitido) return NextResponse.json({ error: limite.motivo }, { status: 429 });
   const body = await req.json().catch(() => null);
   const hash = typeof body?.hash === "string" ? body.hash.trim().toLowerCase() : "";
   const csv = typeof body?.csv === "string" ? body.csv.trim() : "";

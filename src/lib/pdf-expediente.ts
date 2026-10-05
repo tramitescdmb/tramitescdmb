@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { limpiarCadenasPdf } from "@/lib/caracteres-pdf";
 
 const VERDE = rgb(0.012, 0.561, 0.404);
 const GRIS = rgb(0.33, 0.33, 0.33);
@@ -70,7 +71,9 @@ function pieDePagina(page: PDFPage, font: PDFFont, texto: string) {
   page.drawText(texto.slice(0, 110), { x: MARGEN, y: 24, size: 7, font, color: GRIS_CLARO });
 }
 
-export async function generarExpedientePdf(datos: DatosExpedientePdf, piezas: PiezaExpediente[]): Promise<Uint8Array> {
+export async function generarExpedientePdf(datosOriginales: DatosExpedientePdf, piezasOriginales: PiezaExpediente[]): Promise<Uint8Array> {
+  const datos = limpiarCadenasPdf(datosOriginales);
+  const piezas = limpiarCadenasPdf(piezasOriginales);
   const pdf = await PDFDocument.create();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);

@@ -17,7 +17,10 @@ export type ArchivoSubido = {
 
 export type DocumentoSubido = ArchivoSubido & { hashSha256: string | null };
 
+const TAMANO_MAXIMO_HUELLA_BYTES = 300 * 1024 * 1024;
+
 export async function sha256Hex(file: File): Promise<string | null> {
+  if (file.size > TAMANO_MAXIMO_HUELLA_BYTES) return null;
   try {
     const buf = await file.arrayBuffer();
     const hash = await crypto.subtle.digest("SHA-256", buf);

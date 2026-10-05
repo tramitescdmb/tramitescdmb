@@ -3,6 +3,7 @@ import bwipjs from "bwip-js/node";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { ordenarPorCalidad, rotuloCalidadFirma, nivelSello, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
+import { limpiarCadenasPdf } from "@/lib/caracteres-pdf";
 
 const VERDE = rgb(0.012, 0.561, 0.404);
 const GRIS = rgb(0.35, 0.35, 0.35);
@@ -143,7 +144,7 @@ async function agregarDiligencia(
     seccion(ordenadas.length > 1 ? `Información asociada al firmante ${i + 1} de ${ordenadas.length}:` : "Información asociada al firmante del documento:", [
       { etiqueta: "Nombre del firmante", valor: f.nombre },
       ...(cargo ? [{ etiqueta: "Cargo del firmante", valor: cargo }] : []),
-      { etiqueta: "Organización", valor: ENTIDAD_EMISORA },
+      { etiqueta: "Organización", valor: /contratista/i.test(cargo ?? "") ? `Contratista de la ${ENTIDAD_EMISORA}` : ENTIDAD_EMISORA },
       ...(f.dependencia ? [{ etiqueta: "Dependencia", valor: f.dependencia }] : []),
       { etiqueta: "Calidad", valor: nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }) },
       ...(f.fechaHora ? [{ etiqueta: "Fecha y hora de la firma", valor: f.fechaHora }] : []),
@@ -240,7 +241,7 @@ async function completarMetadatos(
   meta: MetadatosDocumentoPdf | undefined,
   firmas: FirmaRotuloPdf[],
 ) {
-  if (!meta) return;
+  if (!meta || firmas.length === 0) return;
   const qr = await pdf.embedPng(await pngQr(meta.urlValidacion));
   await agregarDiligencia(pdf, font, fontBold, qr, meta, firmas);
   agregarBandasLaterales(pdf, font, meta);
@@ -272,11 +273,15 @@ export type FirmaRotuloPdf = {
   nivel?: number;
 };
 
+const limpiarCadenas = limpiarCadenasPdf;
+
 export async function estamparRotulo(
   pdfBytes: Buffer | Uint8Array,
-  datos: DatosRotuloPdf,
-  firmas: FirmaRotuloPdf[],
+  datosOriginales: DatosRotuloPdf,
+  firmasOriginales: FirmaRotuloPdf[],
 ): Promise<Uint8Array> {
+  const datos = limpiarCadenas(datosOriginales);
+  const firmas = limpiarCadenas(firmasOriginales);
   const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -286,7 +291,11 @@ export async function estamparRotulo(
 
   const [barPngBytes, qrPngBytes] = await Promise.all([
     pngBarras(datos.radicado),
-    pngQr(datos.metadatos?.urlValidacion ?? `${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.radicado)}`),
+    pngQr(
+      firmas.length > 0 && datos.metadatos
+        ? datos.metadatos.urlValidacion
+        : `${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.radicado)}`,
+    ),
   ]);
   const bar = await pdf.embedPng(barPngBytes);
   const qr = await pdf.embedPng(qrPngBytes);
@@ -352,9 +361,11 @@ export type DatosFirmaTramite = DatosFirmaGecon;
 
 async function estamparFirmasExpediente(
   pdfBytes: Buffer | Uint8Array,
-  datos: DatosFirmaGecon,
-  firmasSinOrden: FirmaRotuloPdf[],
+  datosOriginales: DatosFirmaGecon,
+  firmasOriginales: FirmaRotuloPdf[],
 ): Promise<Uint8Array> {
+  const datos = limpiarCadenas(datosOriginales);
+  const firmasSinOrden = limpiarCadenas(firmasOriginales);
   const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   if (firmasSinOrden.length === 0) return pdf.save();
   const firmas = ordenarPorCalidad(firmasSinOrden, (f) => f.calidad, (f) => f.nivel ?? 4);

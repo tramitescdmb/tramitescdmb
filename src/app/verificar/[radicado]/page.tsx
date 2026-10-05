@@ -16,14 +16,11 @@ function ListaFirmas({ firmas }: { firmas: FirmaPublica[] }) {
     <ul className="divide-y divide-emerald-100">
       {firmas.map((f) => (
         <li key={f.id} className="py-1.5 text-sm">
-          <p className="font-medium text-stone-900">
-            {f.nombre} <span className="font-normal text-stone-500">— {f.cargo}</span>
-          </p>
+          <p className="font-medium text-stone-900">{f.calidad}</p>
           <p className="text-xs text-stone-500">
-            {f.calidad} · {fechaHora(f.fechaHora)}
-            {f.selloTiempoEn && " · con sello de tiempo"}
+            {fechaHora(f.fechaHora)}
+            {f.selloTiempoEn && " · con sello de tiempo"} · {f.entidad}
           </p>
-          <p className="text-xs text-stone-500">Entidad: {f.entidad}</p>
           {f.hashFirma && <p className="break-all font-mono text-[10.5px] text-stone-400">Huella de la firma: {f.hashFirma}</p>}
         </li>
       ))}
@@ -45,15 +42,18 @@ function FirmasPublicas({ grupos }: { grupos: { documento: string | null; hashAr
         <div className="mt-2 space-y-3">
           {conFirmas.map((g, i) => (
             <div key={i}>
-              {g.documento && <p className="text-xs font-semibold text-stone-600">{g.documento}</p>}
+              {conFirmas.length > 1 && <p className="text-xs font-semibold text-stone-600">Documento firmado {i + 1}</p>}
               {g.hashArchivo && <p className="break-all font-mono text-[10.5px] text-stone-400">SHA-256 del documento: {g.hashArchivo}</p>}
               <ListaFirmas firmas={g.firmas} />
             </div>
           ))}
         </div>
       )}
-      <Link href="/validar-firma" className="mt-3 inline-block text-xs font-medium text-cdmb-700 hover:underline">
-        Validar un archivo firmado →
+      <p className="mt-3 text-xs text-stone-500">
+        Para ver quién firmó cada documento, valídelo con su código seguro de verificación (CSV) o con el archivo original.
+      </p>
+      <Link href="/validar-firma" className="mt-1 inline-block text-xs font-medium text-cdmb-700 hover:underline">
+        Ir al validador de firmas →
       </Link>
     </div>
   );
@@ -156,10 +156,10 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
 async function VerificarExpedienteContractual({ numero }: { numero: string }) {
   const e = await db.expedienteContractual.findUnique({
     where: { numero },
-    select: { id: true, numero: true, modalidadSeleccion: true, etapaActual: true, cerrado: true, createdAt: true },
+    select: { id: true, numero: true, modalidadSeleccion: true, etapaActual: true, cerrado: true, createdAt: true, eliminado: true },
   });
 
-  if (!e) {
+  if (!e || e.eliminado) {
     return (
       <div className="mx-auto max-w-md">
         <div className="rounded-xl border border-red-200 bg-red-50/50 p-6 text-center">
