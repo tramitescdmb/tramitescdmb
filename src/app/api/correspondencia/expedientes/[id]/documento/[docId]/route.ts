@@ -5,6 +5,7 @@ import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@
 import { editarDocumentoArchivo, retirarDocumentoArchivo } from "@/lib/expedientes-documentales";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { ETIQUETA_CORTA_ORIGEN, mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; docId: string }> }) {
   const { id, docId } = await params;
@@ -15,10 +16,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const doc = await db.documentoArchivo.findUnique({
     where: { id: docId },
-    select: { expedienteDocumentalId: true, nombre: true, expediente: { select: { numero: true, dependenciaId: true } } },
+    select: { expedienteDocumentalId: true, nombre: true, expediente: { select: { numero: true, dependenciaId: true, origen: true } } },
   });
   if (!doc || doc.expedienteDocumentalId !== id) {
     volver.searchParams.set("error", "El documento no pertenece a este expediente.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (doc.expediente.origen !== "SGDEA") {
+    await registrarAccesoDenegadoAccion(`corregir o retirar desde el SGDEA un archivo de un expediente de ${ETIQUETA_CORTA_ORIGEN[doc.expediente.origen]}`, id, session, req.headers);
+    volver.searchParams.set("error", mensajeSoloEnModulo(doc.expediente.origen));
     return NextResponse.redirect(volver, { status: 303 });
   }
   if (!puedeGestionarExpedienteDeDependencia(permisos, doc.expediente.dependenciaId)) {

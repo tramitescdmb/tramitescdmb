@@ -20,6 +20,7 @@ import {
 } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
+import { MENSAJE_EXPEDIENTE_CERRADO, contratoCerrado, sincronizarArchivoContrato } from "@/lib/archivo-central";
 
 const MODALIDADES_VALIDAS = new Set(Object.keys(ETIQUETA_MODALIDAD));
 
@@ -31,6 +32,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
+
+  const CAMPOS_CONTENIDO = [
+    "contratistaId",
+    "numeroContrato",
+    "numeroProcesoSecop",
+    "fechaSuscripcion",
+    "fechaInicio",
+    "fechaFinEstimada",
+    "modalidadSeleccion",
+    "valor",
+    "dependenciaSolicitanteId",
+    "expedienteRelacionadoId",
+  ];
+  if (CAMPOS_CONTENIDO.some((c) => c in body) && (await contratoCerrado(id))) {
+    return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
+  }
 
   if ("contratistaId" in body) {
     if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
@@ -142,6 +159,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
     await registrarEventoContratacion(id, "DATOS_CONTRATO_ACTUALIZADOS", "Se actualizaron los datos generales del expediente.", session.userId);
     if (reclasificacion) await registrarEventoContratacion(id, "RECLASIFICACION_TRD", reclasificacion.detalle, session.userId);
+    await sincronizarArchivoContrato(id);
     return NextResponse.json({ ok: true });
   }
 

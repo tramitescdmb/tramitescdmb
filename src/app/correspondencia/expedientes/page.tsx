@@ -16,6 +16,9 @@ import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { CarpetaExpediente, CajonDependencia } from "@/components/sgdea/CarpetaExpediente";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
+import { ETIQUETA_ORIGEN_EXPEDIENTE, ETIQUETA_CORTA_ORIGEN, CLASE_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
+import type { OrigenExpedienteDocumental } from "@prisma/client";
+const ORIGENES = Object.keys(ETIQUETA_ORIGEN_EXPEDIENTE) as OrigenExpedienteDocumental[];
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
 
 export default async function ExpedientesPage({ searchParams }: { searchParams: Promise<FiltrosExpedienteDocumental & { error?: string; modo?: string }> }) {
@@ -37,8 +40,9 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   const abiertos = resumen.find((r) => r.estado === "ABIERTO")?._count._all ?? 0;
   const cerrados = resumen.find((r) => r.estado === "CERRADO")?._count._all ?? 0;
 
-  const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId || sp.serieId);
-  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId", "modo"] as const;
+  const origenFiltro = ORIGENES.find((o) => o === sp.origen);
+  const hayFiltros = Boolean(sp.q || sp.estado || sp.dependenciaId || sp.serieId || origenFiltro);
+  const CAMPOS_FILTRO = ["q", "estado", "dependenciaId", "serieId", "origen", "modo"] as const;
   const modo = sp.modo === "tabla" ? "tabla" : "carpetas";
 
   const porDependencia = new Map<string, typeof expedientes>();
@@ -62,6 +66,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
     if (dep) clausulas.push(`de ${dep.nombre}`);
   }
   if (serieFiltro) clausulas.push(`de la serie "${serieFiltro.codigo} — ${serieFiltro.nombre}"`);
+  if (origenFiltro) clausulas.push(`con origen ${ETIQUETA_ORIGEN_EXPEDIENTE[origenFiltro]}`);
   if (sp.q) clausulas.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulas.join(" ");
 
@@ -126,6 +131,12 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
             <option key={d.id} value={d.id}>{d.nombre}</option>
           ))}
         </select>
+        <select name="origen" defaultValue={origenFiltro ?? ""} className="flex-none rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
+          <option value="">Todos los orígenes</option>
+          {ORIGENES.map((o) => (
+            <option key={o} value={o}>{ETIQUETA_ORIGEN_EXPEDIENTE[o]}</option>
+          ))}
+        </select>
         <button type="submit" className="flex-none rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">Filtrar</button>
         {hayFiltros && (
           <Link prefetch={false} href="/correspondencia/expedientes" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">Limpiar</Link>
@@ -180,10 +191,11 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                     serie: e.serie ? `${e.serie.codigo} — ${e.serie.nombre}` : null,
                     estado: e.estado,
                     nivelAcceso: e.nivelAcceso,
-                    documentos: e._count.documentos,
+                    documentos: e.origen === "SGDEA" ? e._count.documentos : e.origenDocumentos,
                     comunicaciones: e._count.comunicaciones,
                     folios: null,
                     coincidencias: e.documentos.map((d) => d.nombre),
+                    origen: e.origen,
                   }}
                 />
               ))}
@@ -219,9 +231,16 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                 {expedientes.map((e) => (
                   <tr key={e.id} className="hover:bg-stone-50">
                     <td className="px-4 py-2">
-                      <Link prefetch={false} href={`/correspondencia/expedientes/${e.id}`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
-                        {e.numero}
-                      </Link>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <Link prefetch={false} href={`/correspondencia/expedientes/${e.id}`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
+                          {e.numero}
+                        </Link>
+                        {e.origen !== "SGDEA" && (
+                          <span title={ETIQUETA_ORIGEN_EXPEDIENTE[e.origen]} className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ORIGEN_EXPEDIENTE[e.origen]}`}>
+                            {ETIQUETA_CORTA_ORIGEN[e.origen]}
+                          </span>
+                        )}
+                      </span>
                     </td>
                     <td className="max-w-xs px-4 py-2 text-stone-700">
                       <p className="truncate" title={e.asunto}>{e.asunto}</p>
@@ -234,7 +253,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                     </td>
                     <td className="px-4 py-2 text-stone-600">{e.dependencia.nombre}</td>
                     <td className="px-4 py-2 text-xs text-stone-500">{e.serie ? `${e.serie.codigo} — ${e.serie.nombre}` : "Sin clasificar"}</td>
-                    <td className="px-4 py-2 text-right tabular-nums text-stone-500">{e._count.documentos}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-stone-500">{e.origen === "SGDEA" ? e._count.documentos : e.origenDocumentos}</td>
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span

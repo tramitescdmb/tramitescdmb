@@ -155,6 +155,7 @@ model Usuario {
   expedientesContractualesCreados    ExpedienteContractual[]           @relation("ExpContractualCreadoPor")
   expedientesContractualesEliminados ExpedienteContractual[]           @relation("ExpContractualEliminadoPor")
   supervisionesContrato              ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
+  expedientesTramiteArchivados       Expediente[]                      @relation("ExpedienteTramiteArchivadoPor")
   asignacionesContrato               ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
   asignacionesContratoHechas         ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
   etapasContratacionAprobadas        EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
@@ -583,11 +584,20 @@ model Expediente {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  tramiteTipo       TramiteTipo  @relation(fields: [tramiteTipoId], references: [id])
-  flujo             Flujo        @relation(fields: [flujoId], references: [id])
-  creadoPor         Usuario      @relation("CreadoPor", fields: [createdById], references: [id])
-  responsableActual Usuario?     @relation("ResponsableActual", fields: [responsableActualId], references: [id])
-  solicitante       Solicitante? @relation(fields: [solicitanteId], references: [id])
+  subserieId            String?
+  nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
+  fundamentoNivelAcceso String?                @db.Text
+  archivado             Boolean                @default(false)
+  archivadoEn           DateTime?
+  archivadoPorId        String?
+
+  subserie          SubserieDocumental? @relation("ExpedienteTramiteSubserie", fields: [subserieId], references: [id])
+  archivadoPor      Usuario?            @relation("ExpedienteTramiteArchivadoPor", fields: [archivadoPorId], references: [id])
+  tramiteTipo       TramiteTipo         @relation(fields: [tramiteTipoId], references: [id])
+  flujo             Flujo               @relation(fields: [flujoId], references: [id])
+  creadoPor         Usuario             @relation("CreadoPor", fields: [createdById], references: [id])
+  responsableActual Usuario?            @relation("ResponsableActual", fields: [responsableActualId], references: [id])
+  solicitante       Solicitante?        @relation(fields: [solicitanteId], references: [id])
 
   documentos      ExpedienteDocumento[]
   eventos         ExpedienteEvento[]
@@ -614,6 +624,7 @@ model Expediente {
   @@index([estado])
   @@index([municipio])
   @@index([solicitanteId])
+  @@index([subserieId])
 }
 
 model ExpedienteDocumento {
@@ -700,6 +711,10 @@ enum TipoEvento {
   VISITA_REGISTRADA
   FIRMA_SOLICITADA
   VISTO_BUENO_DADO
+  TRD_RECLASIFICADA
+  NIVEL_ACCESO_CAMBIADO
+  EXPEDIENTE_ARCHIVADO
+  EXPEDIENTE_REABIERTO
 }
 
 model ExpedienteEvento {
@@ -1010,6 +1025,7 @@ model SubserieDocumental {
   configuracionesSitio     ConfiguracionSitio[]
   expedientesContractuales ExpedienteContractual[]
   modalidadesContratacion  TrdModalidadContratacion[]
+  expedientesTramite       Expediente[]               @relation("ExpedienteTramiteSubserie")
 
   @@unique([serieId, codigo])
   @@index([serieId])
@@ -1384,6 +1400,12 @@ enum EstadoExpedienteDocumental {
   CERRADO
 }
 
+enum OrigenExpedienteDocumental {
+  SGDEA
+  TRAMITES
+  GECON
+}
+
 model ExpedienteDocumental {
   id          String                     @id @default(cuid())
   numero      String                     @unique
@@ -1407,6 +1429,10 @@ model ExpedienteDocumental {
   palabrasClave String[] @default([])
   metadatos     Json?
 
+  origen           OrigenExpedienteDocumental @default(SGDEA)
+  origenId         String?                    @unique
+  origenDocumentos Int                        @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1423,6 +1449,7 @@ model ExpedienteDocumental {
   @@index([dependenciaId])
   @@index([serieId])
   @@index([estado])
+  @@index([origen])
 }
 
 model PrestamoExpediente {
@@ -1720,6 +1747,9 @@ model ExpedienteContractual {
   updatedAt                DateTime           @updatedAt
 
   expedienteRelacionadoId String?
+
+  nivelAcceso           NivelAccesoInformacion @default(PUBLICA)
+  fundamentoNivelAcceso String?                @db.Text
 
   eliminado         Boolean   @default(false)
   eliminadoEn       DateTime?

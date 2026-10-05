@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { cambiarNivelAccesoExpediente } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { ETIQUETA_CORTA_ORIGEN, mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 const NIVELES_VALIDOS: NivelAccesoInformacion[] = ["PUBLICA", "CLASIFICADA", "RESERVADA"];
 
@@ -20,9 +21,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { numero: true } });
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { numero: true, origen: true } });
   if (!expediente) {
     volver.searchParams.set("error", "El expediente no existe.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (expediente.origen !== "SGDEA") {
+    await registrarAccesoDenegadoAccion(`cambiar desde el SGDEA el nivel de acceso de un expediente de ${ETIQUETA_CORTA_ORIGEN[expediente.origen]}`, id, session, req.headers);
+    volver.searchParams.set("error", mensajeSoloEnModulo(expediente.origen));
     return NextResponse.redirect(volver, { status: 303 });
   }
 

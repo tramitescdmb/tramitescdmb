@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { editarExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { ETIQUETA_CORTA_ORIGEN, mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,9 +13,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { numero: true, asunto: true, dependenciaId: true } });
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { numero: true, asunto: true, dependenciaId: true, origen: true } });
   if (!expediente) {
     volver.searchParams.set("error", "El expediente no existe.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (expediente.origen !== "SGDEA") {
+    await registrarAccesoDenegadoAccion(`editar desde el SGDEA un expediente de ${ETIQUETA_CORTA_ORIGEN[expediente.origen]}`, id, session, req.headers);
+    volver.searchParams.set("error", mensajeSoloEnModulo(expediente.origen));
     return NextResponse.redirect(volver, { status: 303 });
   }
   if (!puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)) {

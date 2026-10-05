@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { ESTADOS_EXPEDIENTE, ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { tramiteCerrado } from "@/lib/archivo-central";
 
 const ESTADOS_VALIDOS: string[] = [...ESTADOS_EXPEDIENTE];
 
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (session.rol !== "ADMIN") {
     const url = new URL(`/expedientes/${id}`, req.url);
     url.searchParams.set("error", "sin-permiso-estado");
+    return NextResponse.redirect(url, { status: 303 });
+  }
+  if (await tramiteCerrado(id)) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "cerrado");
     return NextResponse.redirect(url, { status: 303 });
   }
 

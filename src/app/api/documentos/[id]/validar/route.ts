@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeValidarDocumentoTramite } from "@/lib/permisos";
 import { validarDocumentoTramite } from "@/lib/tramites-firma";
 import { datosPeticion } from "@/lib/auditoria-doc";
+import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,8 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No tiene permiso para validar documentos." }, { status: 403 });
   }
 
-  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true } });
+  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true, expediente: { select: { archivado: true } } } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (doc.expediente.archivado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   try {
     await validarDocumentoTramite(id, session.userId, datosPeticion(req.headers));

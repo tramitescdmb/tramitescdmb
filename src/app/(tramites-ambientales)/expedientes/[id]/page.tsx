@@ -32,6 +32,12 @@ import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
+import { PanelGestionDocumental, BotonCerrarExpediente } from "@/components/gestion-documental/PanelGestionDocumental";
+import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
+import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
+import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
+import { MENSAJE_EXPEDIENTE_CERRADO, fichaArchivoDe, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
+import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -90,10 +96,10 @@ export default async function ExpedienteDetallePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, ok } = await searchParams;
 
   const [expediente, usuariosActivos, cargos] = await Promise.all([
     db.expediente.findUnique({
@@ -116,6 +122,18 @@ export default async function ExpedienteDetallePage({
         usuariosAsignados: true,
         cargosAsignados: true,
         solicitante: true,
+        archivadoPor: { select: { nombre: true } },
+        subserie: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            retencionGestionAnios: true,
+            retencionCentralAnios: true,
+            disposicionesFinal: true,
+            serie: { select: { codigo: true, nombre: true, dependencia: { select: { nombre: true } } } },
+          },
+        },
         comunicaciones: { orderBy: { fechaRadicacion: "desc" }, select: { id: true, tipo: true, radicado: true, asunto: true, fechaRadicacion: true, estado: true } },
       },
     }),
@@ -130,16 +148,24 @@ export default async function ExpedienteDetallePage({
   if (!expediente) notFound();
 
   const session = await getSession();
-  let puedeEditar = true;
+  const cerrado = expediente.archivado;
+  let puedeEditarPorRol = true;
   let puedeAsignarFirmantes = false;
   let puedeValidar = false;
+  let puedeCorrespondencia = false;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
-    puedeEditar = puedeEditarTramite(permisos, expediente.tramiteTipoId);
-    puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoTramite(permisos);
-    puedeValidar = puedeValidarDocumentoTramite(permisos);
+    puedeEditarPorRol = puedeEditarTramite(permisos, expediente.tramiteTipoId);
+    puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
+    puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
+    puedeCorrespondencia = permisos.esAdmin || permisos.correspondencia !== null;
   }
+  const puedeEditar = puedeEditarPorRol && !cerrado;
+  const [fichaSgdea, firmasPendientes] = await Promise.all([
+    fichaArchivoDe(expediente.id),
+    cerrado ? Promise.resolve(0) : firmasPendientesTramite(expediente.id),
+  ]);
 
   const idsDocumentos = expediente.documentos.map((d) => d.id);
   const trazabilidad =
@@ -198,7 +224,7 @@ export default async function ExpedienteDetallePage({
     const miSolicitud = session
       ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
       : undefined;
-    const puedeActuarYo = miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
+    const puedeActuarYo = !cerrado && miSolicitud && puedeActuarSolicitud(solicitudes, miSolicitud);
     const firmado = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA"));
     return (
       <li key={doc.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
@@ -301,6 +327,15 @@ export default async function ExpedienteDetallePage({
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold text-stone-900">{expediente.numero}</h1>
           <EstadoBadge estado={expediente.estado} />
+          {cerrado && (
+            <a
+              href="#gestion-documental"
+              className="inline-flex items-center gap-1 rounded-full bg-stone-800 px-2.5 py-0.5 text-xs font-medium text-white hover:bg-stone-700"
+            >
+              <Lock className="h-3 w-3" aria-hidden />
+              Cerrado y archivado
+            </a>
+          )}
           <Link
             href={`/expedientes/${expediente.id}/ficha-firma`}
             className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
@@ -326,7 +361,11 @@ export default async function ExpedienteDetallePage({
         </div>
       </div>
 
-      {!puedeEditar && (
+      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
+      {error && !["sin-permiso-paso", "sin-permiso-estado"].includes(error) && (
+        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error === "cerrado" ? MENSAJE_EXPEDIENTE_CERRADO : error}</div>
+      )}
+      {!puedeEditarPorRol && (
         <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
           <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
           Solo puede consultar este expediente — su acceso a este trámite es de solo lectura. No puede
@@ -358,11 +397,23 @@ export default async function ExpedienteDetallePage({
             icono: <Footprints className="h-4 w-4" aria-hidden />,
             contenido: (
               <>
-              {esTerminal && (
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
-                  Este expediente ya llegó a un estado final (<EstadoBadge estado={expediente.estado} />) — se
-                  puede seguir documentando (por ejemplo, el seguimiento posterior), pero ya no está activo.
+              {cerrado ? (
+                <div className="flex items-start gap-2 rounded-xl border border-stone-300 bg-stone-50 p-4 text-sm text-stone-700">
+                  <Lock className="mt-0.5 h-4 w-4 flex-none text-stone-500" aria-hidden />
+                  <span>
+                    Expediente cerrado
+                    {expediente.archivadoEn && <> el {formatearFechaHora(expediente.archivadoEn)}</>}
+                    {expediente.archivadoPor && <> por {expediente.archivadoPor.nombre}</>} y archivado en el SGDEA. Se
+                    consulta en modo lectura; para modificarlo debe reabrirse desde Administración.
+                  </span>
                 </div>
+              ) : (
+                esTerminal && (
+                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+                    Este expediente ya llegó a un estado final (<EstadoBadge estado={expediente.estado} />). Cuando
+                    termine de documentarse, ciérrelo desde Administración para archivarlo en el SGDEA.
+                  </div>
+                )
               )}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-start">
                 <div className="rounded-xl md:col-span-1 border border-stone-200 bg-white shadow-soft p-4 text-xs text-stone-500">
@@ -519,7 +570,12 @@ export default async function ExpedienteDetallePage({
                   </div>
 
                   <div className="mt-4 border-t border-stone-100 pt-4">
-                    {!puedeEditar ? (
+                    {cerrado ? (
+                      <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                        <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                        Expediente cerrado: no admite cambios.
+                      </p>
+                    ) : !puedeEditar ? (
                       <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                         <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
                         Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
@@ -923,12 +979,58 @@ export default async function ExpedienteDetallePage({
             icono: <Settings2 className="h-4 w-4" aria-hidden />,
             contenido: (
               <>
+              <PanelGestionDocumental
+                accion={`/api/expedientes/${expediente.id}/gestion-documental`}
+                clasificacion={
+                  expediente.subserie
+                    ? {
+                        dependencia: expediente.subserie.serie.dependencia?.nombre ?? null,
+                        serie: `${expediente.subserie.serie.codigo} — ${expediente.subserie.serie.nombre}`,
+                        subserie: `${expediente.subserie.codigo} — ${expediente.subserie.nombre}`,
+                        retencion: resumenRetencion(subserieBuscable(expediente.subserie)),
+                      }
+                    : null
+                }
+                formularioTrd={
+                  <DetallesPerezosos className="text-xs" abiertoInicial={!expediente.subserie} resumen={expediente.subserie ? "Cambiar clasificación" : "Clasificar este expediente"}>
+                    <ReclasificarTrdForm
+                      action={`/api/expedientes/${expediente.id}/gestion-documental?accion=trd`}
+                      ayudaMotivo="Queda en la historia del expediente."
+                    />
+                  </DetallesPerezosos>
+                }
+                nivelAcceso={expediente.nivelAcceso}
+                fundamentoNivelAcceso={expediente.fundamentoNivelAcceso}
+                puedeEditar={puedeEditarPorRol}
+                cerrado={cerrado}
+                cerradoEn={expediente.archivadoEn}
+                cerradoPor={expediente.archivadoPor?.nombre ?? null}
+                fichaSgdea={puedeCorrespondencia && fichaSgdea ? fichaSgdea : null}
+                puedeReabrir={session?.rol === "ADMIN"}
+                cierre={{
+                  descripcion:
+                    "Al cerrarlo, el expediente queda en solo lectura y se archiva en el SGDEA con su clasificación TRD, sin copiar los documentos. Requiere estado final del trámite, clasificación TRD y ninguna firma pendiente.",
+                  bloqueo: !esTerminal
+                    ? `El trámite aún no tiene un estado final (${(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).map((e) => e.toLowerCase()).join(", ")}).`
+                    : !expediente.subserieId
+                      ? "Asigne la clasificación TRD."
+                      : firmasPendientes > 0
+                        ? mensajeFirmasPendientes(firmasPendientes)
+                        : null,
+                  control: puedeEditarPorRol ? (
+                    <BotonCerrarExpediente
+                      accion={`/api/expedientes/${expediente.id}/gestion-documental`}
+                      deshabilitado={!esTerminal || !expediente.subserieId || firmasPendientes > 0}
+                    />
+                  ) : null,
+                }}
+              />
+              {!cerrado && (
               <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
                 <p className="mb-3 text-xs text-stone-500">
-                  Utilice esta opción para cerrar el expediente cuando el flujo no cuenta con un botón de
-                  decisión que corresponda (por ejemplo, un archivo por desistimiento tácito, o para
-                  suspenderlo mientras se espera información externa).
+                  Para definir el estado cuando el flujo no tiene una decisión que corresponda (por ejemplo, un
+                  archivo por desistimiento tácito o una suspensión mientras llega información externa).
                 </p>
                 {session?.rol !== "ADMIN" ? (
                   <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
@@ -966,6 +1068,7 @@ export default async function ExpedienteDetallePage({
                 </form>
                 )}
               </section>
+              )}
               </>
             ),
           },

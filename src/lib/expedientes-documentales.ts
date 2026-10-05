@@ -294,6 +294,7 @@ export type FiltrosExpedienteDocumental = {
   estado?: string;
   dependenciaId?: string;
   serieId?: string;
+  origen?: string;
   page?: string;
   vista?: string;
 };
@@ -311,6 +312,7 @@ export function construirWhereExpedienteDocumental(
   if (f.estado === "ABIERTO" || f.estado === "CERRADO") and.push({ estado: f.estado });
   if (f.dependenciaId) and.push({ dependenciaId: f.dependenciaId });
   if (f.serieId) and.push({ serieId: f.serieId });
+  if (f.origen === "SGDEA" || f.origen === "TRAMITES" || f.origen === "GECON") and.push({ origen: f.origen });
   if (f.q?.trim()) {
     const q = f.q.trim();
     and.push({

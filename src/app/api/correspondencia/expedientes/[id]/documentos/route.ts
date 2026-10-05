@@ -6,6 +6,7 @@ import { agregarDocumentoArchivo } from "@/lib/expedientes-documentales";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
+import { mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 type DocumentoSubido = { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
 
@@ -15,8 +16,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { id: true, numero: true, dependenciaId: true } });
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { id: true, numero: true, dependenciaId: true, origen: true } });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+  if (expediente.origen !== "SGDEA") return NextResponse.json({ error: mensajeSoloEnModulo(expediente.origen) }, { status: 409 });
   if (!puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)) {
     return NextResponse.json({ error: "No tiene permiso para agregar documentos a este expediente." }, { status: 403 });
   }

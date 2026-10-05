@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeGestionarPaso } from "@/lib/cargos";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { tramiteCerrado } from "@/lib/archivo-central";
 
 const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   if (!(await puedeEditarExpediente(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
+  }
+  if (await tramiteCerrado(id)) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "cerrado");
+    return NextResponse.redirect(url, { status: 303 });
   }
 
   const form = await req.formData();

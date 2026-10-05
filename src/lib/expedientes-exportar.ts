@@ -1,5 +1,3 @@
-// Generación de la exportación de expedientes (XLSX/CSV) — servidor únicamente (ExcelJS usa Buffer/Node).
-// Ítem 3 del prompt SEYCA: "encabezados en español, fecha de generación y los filtros aplicados".
 import ExcelJS from "exceljs";
 
 export type FilaExportExpediente = {
@@ -10,6 +8,7 @@ export type FilaExportExpediente = {
   solicitanteIdentificacion: string;
   municipio: string;
   estado: string;
+  archivado: boolean;
   fechaRadicacion: Date;
   fechaUltimoMovimiento: Date;
 };
@@ -22,6 +21,7 @@ const COLUMNAS: { header: string; key: keyof FilaExportExpediente; width: number
   { header: "Identificación", key: "solicitanteIdentificacion", width: 16 },
   { header: "Municipio", key: "municipio", width: 16 },
   { header: "Estado", key: "estado", width: 24 },
+  { header: "Cerrado y archivado", key: "archivado", width: 18 },
   { header: "Fecha de radicación", key: "fechaRadicacion", width: 18 },
   { header: "Último movimiento", key: "fechaUltimoMovimiento", width: 18 },
 ];
@@ -37,6 +37,7 @@ function formatearGeneradoEl(d: Date): string {
 function valorColumna(f: FilaExportExpediente, key: keyof FilaExportExpediente): string {
   if (key === "fechaRadicacion" || key === "fechaUltimoMovimiento") return formatearFechaCorta(f[key] as Date);
   if (key === "estado") return String(f.estado).replaceAll("_", " ");
+  if (key === "archivado") return f.archivado ? "Sí" : "No";
   return String(f[key] ?? "");
 }
 

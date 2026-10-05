@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
+import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
 import { metadatosPdf } from "@/lib/metadatos-pdf";
@@ -68,7 +69,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, doc.expediente.tramiteTipoId) && !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id))) {
+  if (
+    !puedeAccederTramite(permisos, doc.expediente.tramiteTipoId) &&
+    !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id)) &&
+    !(await accesoDesdeArchivoSgdea({
+      permisos,
+      origen: "TRAMITES",
+      origenId: doc.expediente.id,
+      usuarioId: session.userId,
+      documento: doc.nombre,
+      headers: req.headers,
+    }))
+  ) {
     return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
   }
   if (doc.mimeType !== "application/pdf") {

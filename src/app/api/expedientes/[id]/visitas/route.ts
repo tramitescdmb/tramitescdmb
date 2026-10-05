@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { puntoEnJurisdiccionCdmb } from "@/lib/jurisdiccion-cdmb-servidor";
+import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!(await puedeEditarExpediente(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
   }
+  if (await tramiteCerrado(id)) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });

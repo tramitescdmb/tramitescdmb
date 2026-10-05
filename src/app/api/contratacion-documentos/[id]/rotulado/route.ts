@@ -11,6 +11,7 @@ import { identidadFirmante } from "@/lib/contratacion";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
+import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -80,12 +81,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
-  if (
-    doc.expediente.eliminado ||
-    (!puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) &&
-      !(await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) &&
-      !(await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id)))
-  ) {
+  const permitido =
+    !doc.expediente.eliminado &&
+    (puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) ||
+      (await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) ||
+      (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id)) ||
+      (!(permisos.contratacion === "CONTRATISTA" && doc.etapa === "PRECONTRACTUAL") &&
+        (await accesoDesdeArchivoSgdea({
+          permisos,
+          origen: "GECON",
+          origenId: doc.expediente.id,
+          usuarioId: session.userId,
+          documento: doc.nombre,
+          headers: req.headers,
+        }))));
+  if (!permitido) {
     await registrarAccesoDenegadoAccion("descargar el rótulo firmado de un documento de contratación", id, session, req.headers);
     return NextResponse.json({ error: "No tiene acceso a este expediente." }, { status: 403 });
   }

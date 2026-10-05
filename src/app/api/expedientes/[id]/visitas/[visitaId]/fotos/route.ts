@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { MAX_FOTOS_VISITA, TAMANO_MAXIMO_FOTO_VISITA_BYTES, mensajeFotoGrande, mensajeDemasiadasFotos } from "@/lib/visita-tecnica-fotos";
+import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -11,6 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!(await puedeEditarExpediente(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
   }
+  if (await tramiteCerrado(id)) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   const visita = await db.visitaTecnica.findUnique({ where: { id: visitaId }, select: { expedienteId: true, _count: { select: { fotos: true } } } });
   if (!visita || visita.expedienteId !== id) {

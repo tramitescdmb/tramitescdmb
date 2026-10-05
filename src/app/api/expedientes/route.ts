@@ -218,6 +218,7 @@ export async function POST(req: NextRequest) {
       claseSolicitud: claseSolicitud || null,
       municipio,
       ...datosUbicacion,
+      subserieId: tramite.subserieId,
       estado: "RADICADO",
       pasoActualNumero: primerPaso,
       createdById: session.userId,

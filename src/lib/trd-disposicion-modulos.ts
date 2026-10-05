@@ -1,8 +1,3 @@
-// Reporte de "próximos a transferencia o disposición final" para Trámites 2.0 y GECON — ítem TRD
-// del prompt SEYCA. Reusa calcularFaseArchivistica() de disposicion-final.ts (ya construido para el
-// SGDEA), solo con la fecha de CIERRE del expediente como referencia en vez de la de radicación: acá
-// el expediente sigue activo (creciendo) hasta que se cierra, así que la retención no debería contarse
-// antes de eso.
 import { db } from "@/lib/db";
 import { calcularFaseArchivistica, type FaseArchivistica } from "@/lib/disposicion-final";
 
@@ -16,32 +11,37 @@ export type ExpedienteEnDisposicion = {
   subserie: string;
 };
 
+const SELECT_RETENCION = { nombre: true, retencionGestionAnios: true, retencionCentralAnios: true } as const;
+
 export async function tramitesEnDisposicion(): Promise<{ clasificados: ExpedienteEnDisposicion[]; sinClasificar: number }> {
   const expedientes = await db.expediente.findMany({
-    where: { fechaCierre: { not: null } },
+    where: { OR: [{ archivadoEn: { not: null } }, { fechaCierre: { not: null } }] },
     select: {
       id: true,
       numero: true,
       fechaCierre: true,
-      tramiteTipo: { select: { nombre: true, subserie: { select: { nombre: true, retencionGestionAnios: true, retencionCentralAnios: true } } } },
+      archivadoEn: true,
+      subserie: { select: SELECT_RETENCION },
+      tramiteTipo: { select: { subserie: { select: SELECT_RETENCION } } },
     },
   });
   const ahora = new Date();
   const clasificados: ExpedienteEnDisposicion[] = [];
   let sinClasificar = 0;
   for (const e of expedientes) {
-    const subserie = e.tramiteTipo.subserie;
-    if (!subserie || !e.fechaCierre) {
+    const subserie = e.subserie ?? e.tramiteTipo.subserie;
+    const fechaBase = e.archivadoEn ?? e.fechaCierre;
+    if (!subserie || !fechaBase) {
       sinClasificar++;
       continue;
     }
     const { fase, fechaFinGestion, fechaFinCentral } = calcularFaseArchivistica(
-      e.fechaCierre,
+      fechaBase,
       subserie.retencionGestionAnios,
       subserie.retencionCentralAnios,
       ahora
     );
-    clasificados.push({ id: e.id, numero: e.numero, fechaCierre: e.fechaCierre, fase, fechaFinGestion, fechaFinCentral, subserie: subserie.nombre });
+    clasificados.push({ id: e.id, numero: e.numero, fechaCierre: fechaBase, fase, fechaFinGestion, fechaFinCentral, subserie: subserie.nombre });
   }
   return { clasificados, sinClasificar };
 }
@@ -49,7 +49,7 @@ export async function tramitesEnDisposicion(): Promise<{ clasificados: Expedient
 export async function contratosEnDisposicion(): Promise<{ clasificados: ExpedienteEnDisposicion[]; sinClasificar: number }> {
   const config = await db.configuracionSitio.findUnique({
     where: { id: "singleton" },
-    select: { subserieContratacion: { select: { nombre: true, retencionGestionAnios: true, retencionCentralAnios: true } } },
+    select: { subserieContratacion: { select: SELECT_RETENCION } },
   });
   const subserie = config?.subserieContratacion;
 
@@ -59,7 +59,7 @@ export async function contratosEnDisposicion(): Promise<{ clasificados: Expedien
       id: true,
       numero: true,
       fechaCierre: true,
-      subserie: { select: { nombre: true, retencionGestionAnios: true, retencionCentralAnios: true } },
+      subserie: { select: SELECT_RETENCION },
     },
   });
   const ahora = new Date();

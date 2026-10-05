@@ -12,6 +12,7 @@ import {
 } from "@/lib/contratacion";
 import { deleteDocumento } from "@/lib/storage";
 import { datosPeticion } from "@/lib/auditoria-doc";
+import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,8 +20,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true } });
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true, expediente: { select: { cerrado: true } } } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (doc.expediente.cerrado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
   const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId }, doc.etapa);
@@ -68,8 +70,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true } });
+  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true, expediente: { select: { cerrado: true } } } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (doc.expediente.cerrado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   const sinTraza = puedeEditarSinTrazaDocumentoContrato(permisos);
   const conTraza = !sinTraza && puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId }, doc.etapa);

@@ -5,7 +5,8 @@ import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarExpedienteDeDependencia, puedeCerrarExpediente, puedeAdministrarArchivo, puedeVerNivelAccesoExpediente, puedeAccederTramite, puedeVerExpedienteContractual } from "@/lib/permisos";
+import { ExpedienteDeModulo } from "@/components/sgdea/ExpedienteDeModulo";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { calcularHashIndice, ordenarDocumentosExpediente, ETIQUETA_CRITERIO_ORDEN, CRITERIOS_ORDEN } from "@/lib/expedientes-documentales";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
@@ -91,6 +92,21 @@ export default async function ExpedienteDetallePage({
   }
 
   after(() => registrarAuditoriaDoc({ entidad: "ExpedienteDocumental", entidadId: id, accion: "LEE", usuarioId: session.userId, ip, userAgent, detalle: `Consultó ${expediente.numero}` }));
+
+  if (expediente.origen !== "SGDEA") {
+    let puedeAbrirModulo = false;
+    if (expediente.origenId && expediente.origen === "TRAMITES") {
+      const tramite = await db.expediente.findUnique({ where: { id: expediente.origenId }, select: { tramiteTipoId: true } });
+      puedeAbrirModulo = Boolean(tramite && puedeAccederTramite(permisos, tramite.tramiteTipoId));
+    } else if (expediente.origenId && expediente.origen === "GECON") {
+      const contrato = await db.expedienteContractual.findUnique({
+        where: { id: expediente.origenId },
+        select: { id: true, contratistaId: true, dependenciaSolicitanteId: true, etapaActual: true, eliminado: true },
+      });
+      puedeAbrirModulo = Boolean(contrato && puedeVerExpedienteContractual(permisos, contrato));
+    }
+    return <ExpedienteDeModulo expediente={expediente} puedeAbrirModulo={puedeAbrirModulo} ok={sp.ok} error={sp.error} />;
+  }
 
   const bitacoraPage = Math.max(1, parseInt(sp.bp ?? "1", 10) || 1);
   const puedeReclasificar =

@@ -1,4 +1,4 @@
-import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, type LucideIcon } from "lucide-react";
+import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, type LucideIcon } from "lucide-react";
 
 const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: string }> = {
   CREACION: { icono: FilePlus, etiqueta: "Creación del expediente", clase: "bg-cdmb-100 text-cdmb-700" },
@@ -15,6 +15,10 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   COMENTARIO: { icono: MessageSquare, etiqueta: "Comentario", clase: "bg-stone-200 text-stone-600" },
   ASIGNACION_CAMBIADA: { icono: Users, etiqueta: "Asignación cambiada", clase: "bg-teal-100 text-teal-700" },
   VISITA_REGISTRADA: { icono: MapPin, etiqueta: "Visita técnica registrada", clase: "bg-emerald-100 text-emerald-700" },
+  TRD_RECLASIFICADA: { icono: FolderTree, etiqueta: "Clasificación TRD", clase: "bg-cdmb-100 text-cdmb-700" },
+  NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, etiqueta: "Nivel de acceso", clase: "bg-amber-100 text-amber-700" },
+  EXPEDIENTE_ARCHIVADO: { icono: Archive, etiqueta: "Expediente cerrado y archivado", clase: "bg-stone-200 text-stone-700" },
+  EXPEDIENTE_REABIERTO: { icono: LockOpen, etiqueta: "Expediente reabierto", clase: "bg-amber-100 text-amber-700" },
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };
 

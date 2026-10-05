@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { construirWhereExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { ETIQUETA_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
 
 const LIMITE_MAXIMO = 5000;
 
@@ -28,8 +29,9 @@ export async function GET(req: NextRequest) {
   const estado = estadoRaw === "ABIERTO" || estadoRaw === "CERRADO" ? estadoRaw : undefined;
   const dependenciaId = sp.get("dependenciaId") || undefined;
   const serieId = sp.get("serieId") || undefined;
+  const origen = sp.get("origen") || undefined;
 
-  const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId, serieId }, permisos);
+  const where = construirWhereExpedienteDocumental({ q, estado, dependenciaId, serieId, origen }, permisos);
 
   const expedientes = await db.expedienteDocumental.findMany({
     where,
@@ -67,10 +69,15 @@ export async function GET(req: NextRequest) {
     "Soporte",
     "Frecuencia de consulta",
     "Nivel de acceso",
+    "Origen",
   ];
 
-  const filasCsv = expedientes.map((e, i) =>
-    [
+  const filasCsv = expedientes.map((e, i) => {
+    const deModulo = e.origen !== "SGDEA";
+    const documentos = deModulo ? e.origenDocumentos : e._count.documentos;
+    const folios = deModulo ? e.origenDocumentos : e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0);
+    const max = e.serie?.maxFoliosPorTomo ?? 0;
+    return [
       i + 1,
       e.dependencia.nombre,
       e.serie ? `${e.serie.codigo} — ${e.serie.nombre}` : "Sin clasificar",
@@ -80,20 +87,17 @@ export async function GET(req: NextRequest) {
       fecha(e.fechaApertura),
       e.fechaCierre ? fecha(e.fechaCierre) : "En trámite",
       e.estado === "ABIERTO" ? "Abierto" : "Cerrado",
-      e._count.documentos,
-      e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0),
-      (() => {
-        const folios = e.documentos.reduce((acc, d) => acc + d.numeroFolios, 0);
-        const max = e.serie?.maxFoliosPorTomo ?? 0;
-        return max > 0 && folios > max ? Math.ceil(folios / max) : 1;
-      })(),
+      documentos,
+      folios,
+      max > 0 && folios > max ? Math.ceil(folios / max) : 1,
       "Electrónico",
       consultasPorId.get(e.id) ?? 0,
       e.nivelAcceso,
+      ETIQUETA_ORIGEN_EXPEDIENTE[e.origen],
     ]
       .map(celda)
-      .join(";")
-  );
+      .join(";");
+  });
 
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({

@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { archivarComunicacionEnExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { ETIQUETA_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,9 +24,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  const expediente = await db.expedienteDocumental.findUnique({ where: { numero: numeroExpediente }, select: { id: true, numero: true } });
+  const expediente = await db.expedienteDocumental.findUnique({ where: { numero: numeroExpediente }, select: { id: true, numero: true, origen: true } });
   if (!expediente) {
     volver.searchParams.set("error", `No existe ningún expediente documental con el número ${numeroExpediente}.`);
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (expediente.origen !== "SGDEA") {
+    volver.searchParams.set(
+      "error",
+      `La comunicación no puede archivarse en ${expediente.numero}: el expediente proviene de ${ETIQUETA_ORIGEN_EXPEDIENTE[expediente.origen]} y solo se modifica desde ese módulo.`,
+    );
     return NextResponse.redirect(volver, { status: 303 });
   }
 

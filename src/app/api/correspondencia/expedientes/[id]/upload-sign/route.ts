@@ -5,6 +5,7 @@ import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
 import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
+import { mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,8 +13,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { id: true, dependenciaId: true, estado: true } });
+  const expediente = await db.expedienteDocumental.findUnique({ where: { id }, select: { id: true, dependenciaId: true, estado: true, origen: true } });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+  if (expediente.origen !== "SGDEA") return NextResponse.json({ error: mensajeSoloEnModulo(expediente.origen) }, { status: 409 });
   if (expediente.estado === "CERRADO") return NextResponse.json({ error: "Este expediente está cerrado." }, { status: 409 });
   if (!puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)) {
     return NextResponse.json({ error: "No tiene permiso para subir documentos a este expediente." }, { status: 403 });

@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { calcularHashIndice } from "@/lib/expedientes-documentales";
+import { mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+  if (expediente.origen !== "SGDEA") return NextResponse.json({ error: mensajeSoloEnModulo(expediente.origen) }, { status: 409 });
 
   const hashVerificacion = calcularHashIndice(expediente.documentos);
 

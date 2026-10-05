@@ -267,6 +267,7 @@ export default async function ExpedientesPage({
                 totalPasos: exp.flujo.pasos.length,
                 pasosAvance: pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo)),
                 estado: exp.estado,
+                archivado: exp.archivado,
                 fechaUltimoMovimiento: formatearFecha(exp.fechaUltimoMovimiento),
               }))}
             />

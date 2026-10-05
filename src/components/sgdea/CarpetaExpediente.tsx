@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { FolderOpen, FolderCheck, Lock, FileText, Files, Mail } from "lucide-react";
+import type { OrigenExpedienteDocumental } from "@prisma/client";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
+import { ETIQUETA_CORTA_ORIGEN, ETIQUETA_ORIGEN_EXPEDIENTE, CLASE_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
 
 export type CarpetaData = {
   id: string;
@@ -14,6 +16,7 @@ export type CarpetaData = {
   comunicaciones: number;
   folios: number | null;
   coincidencias?: string[];
+  origen?: OrigenExpedienteDocumental;
 };
 
 export function CarpetaExpediente({ c }: { c: CarpetaData }) {
@@ -38,14 +41,24 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
       </span>
 
       <div className="flex items-start justify-between gap-2">
-        <span className={`font-mono text-sm font-semibold ${cerrada ? "text-stone-600" : "text-cdmb-800"}`}>{c.numero}</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className={`font-mono text-sm font-semibold ${cerrada ? "text-stone-600" : "text-cdmb-800"}`}>{c.numero}</span>
+          {c.origen && c.origen !== "SGDEA" && (
+            <span
+              title={ETIQUETA_ORIGEN_EXPEDIENTE[c.origen]}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ORIGEN_EXPEDIENTE[c.origen]}`}
+            >
+              {ETIQUETA_CORTA_ORIGEN[c.origen]}
+            </span>
+          )}
+        </span>
         <span
           className={`inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
             cerrada ? "bg-stone-200/70 text-stone-600" : "bg-emerald-100 text-emerald-800"
           }`}
         >
           {cerrada ? <Lock className="h-2.5 w-2.5" aria-hidden /> : <FolderOpen className="h-2.5 w-2.5" aria-hidden />}
-          {cerrada ? "Cerrada" : "Abierta"}
+          {cerrada ? "Cerrada" : c.origen && c.origen !== "SGDEA" ? "Reabierta" : "Abierta"}
         </span>
       </div>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia, puedeAdministrarArchivo } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { ETIQUETA_CORTA_ORIGEN, mensajeSoloEnModulo } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,11 +17,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       numero: true,
       estado: true,
       dependenciaId: true,
+      origen: true,
       subserie: { select: { codigo: true, nombre: true } },
     },
   });
   if (!expediente) {
     volver.searchParams.set("error", "El expediente no existe.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+  if (expediente.origen !== "SGDEA") {
+    await registrarAccesoDenegadoAccion(`reclasificar desde el SGDEA un expediente de ${ETIQUETA_CORTA_ORIGEN[expediente.origen]}`, id, session, req.headers);
+    volver.searchParams.set("error", mensajeSoloEnModulo(expediente.origen));
     return NextResponse.redirect(volver, { status: 303 });
   }
   const archivo = puedeAdministrarArchivo(permisos);

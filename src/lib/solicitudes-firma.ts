@@ -40,6 +40,32 @@ export function moduloDeObjetivo(tipo: TipoObjetivo): ModuloFirma {
 }
 
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
+const MENSAJE_FIRMA_EXPEDIENTE_CERRADO = "El expediente está cerrado: sus documentos ya no se pueden firmar.";
+
+async function validarObjetivoAbierto(objetivo: ObjetivoSolicitud) {
+  if (objetivo.tipo === "documentoExpediente") {
+    const d = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { archivado: true } } } });
+    if (d?.expediente.archivado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
+  } else if (objetivo.tipo === "documentoContrato") {
+    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { cerrado: true } } } });
+    if (d?.expediente.cerrado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
+  } else if (objetivo.tipo === "documentoArchivo") {
+    const d = await db.documentoArchivo.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { estado: true } } } });
+    if (d && d.expediente.estado !== "ABIERTO") throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
+  }
+}
+
+function objetivoDeSolicitud(s: {
+  comunicacionId: string | null;
+  documentoContratoId: string | null;
+  documentoExpedienteId: string | null;
+  documentoArchivoId: string | null;
+}): ObjetivoSolicitud {
+  if (s.comunicacionId) return { tipo: "comunicacion", id: s.comunicacionId };
+  if (s.documentoContratoId) return { tipo: "documentoContrato", id: s.documentoContratoId };
+  if (s.documentoArchivoId) return { tipo: "documentoArchivo", id: s.documentoArchivoId };
+  return { tipo: "documentoExpediente", id: s.documentoExpedienteId! };
+}
 
 async function usuariosQueYaFirmaron(objetivo: ObjetivoSolicitud, usuarioIds: string[]): Promise<string[]> {
   const where = { usuarioId: { in: usuarioIds } };
@@ -63,6 +89,7 @@ export async function asignarFirmantes(
   userAgent: string | null = null
 ) {
   if (firmantes.length === 0) throw new Error("Debe indicar al menos una persona.");
+  await validarObjetivoAbierto(objetivo);
 
   const modulo = moduloDeObjetivo(objetivo.tipo);
   const selectPersona = { id: true, nombre: true, activo: true, denominacionEmpleo: true, rolContratacion: true } as const;
@@ -249,6 +276,7 @@ export async function completarSolicitudFirma(
   if (solicitud.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   if (solicitud.rol === "LECTURA") throw new Error("Un acceso de solo lectura no requiere ninguna acción.");
+  await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
 
   const hermanas = await db.solicitudFirma.findMany({
     where: solicitud.comunicacionId
@@ -513,6 +541,7 @@ export async function rechazarSolicitudFirma(
   if (!solicitud) throw new Error("La solicitud no existe.");
   if (solicitud.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
+  await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
 
   await db.solicitudFirma.update({
     where: { id: solicitudId },

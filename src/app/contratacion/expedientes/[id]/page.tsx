@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2 } from "lucide-react";
+import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
+import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
@@ -118,8 +120,15 @@ const CLASE_ACCION_AUDITORIA: Record<string, string> = {
   VALIDA: "bg-emerald-50 text-emerald-700",
 };
 
-export default async function DetalleExpedienteContractualPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DetalleExpedienteContractualPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -166,13 +175,15 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     redirect("/contratacion");
   }
 
+  const cerrado = expediente.cerrado;
   const puedeGestionar = puedeGestionarContratistas(permisos);
-  const puedeEditarDatosGenerales = puedeGestionarExpedienteCompleto(permisos, expediente);
+  const puedeGestionDocumental = puedeGestionarExpedienteCompleto(permisos, expediente);
+  const puedeEditarDatosGenerales = puedeGestionDocumental && !cerrado;
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
   const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
-  const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias] = await Promise.all([
+  const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeGestionar
       ? db.usuario.findMany({
@@ -212,6 +223,15 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
     puedeEditarDatosGenerales
       ? db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
       : Promise.resolve([]),
+    permisos.esAdmin || permisos.correspondencia !== null ? fichaArchivoDe(id) : Promise.resolve(null),
+    cerrado ? Promise.resolve(0) : firmasPendientesContrato(id),
+    cerrado
+      ? db.eventoContratacion.findFirst({
+          where: { expedienteId: id, tipo: "EXPEDIENTE_CERRADO" },
+          orderBy: { createdAt: "desc" },
+          select: { usuario: { select: { nombre: true } } },
+        })
+      : Promise.resolve(null),
   ]);
   const usuariosOpciones = usuariosOpcionesCrudo.map((u) => ({ id: u.id, nombre: u.nombre, dependenciaNombre: u.dependencia?.nombre ?? null }));
   const supervisoresOpciones = supervisoresDisponibles.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
@@ -222,10 +242,10 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
-  const puedeAsignarFirmantes = puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
-  const puedeValidar = puedeValidarDocumentoContrato(permisos, expediente);
-  const puedeGestionarSecop = puedeSubirDocumentoContrato(permisos, expediente, "PRECONTRACTUAL");
-  const puedeRetroceder = puedeGestionarEtapasContratacion(permisos) && (idxActual > 0 || expediente.cerrado);
+  const puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
+  const puedeValidar = !cerrado && puedeValidarDocumentoContrato(permisos, expediente);
+  const puedeGestionarSecop = !cerrado && puedeSubirDocumentoContrato(permisos, expediente, "PRECONTRACTUAL");
+  const puedeRetroceder = !cerrado && puedeGestionarEtapasContratacion(permisos) && idxActual > 0;
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
   const faltaContratista = !expediente.contratista && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado;
@@ -434,6 +454,9 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
         <span className="font-mono text-base">{expediente.numero}</span>
       </TituloSeccion>
 
+      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
       <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <p className="max-w-2xl text-sm text-stone-800">{expediente.objeto}</p>
@@ -473,7 +496,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 fechaFinEstimadaActual={expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null}
               />
             )}
-            {puedeEliminarExpedienteContractual(permisos) && (
+            {!cerrado && puedeEliminarExpedienteContractual(permisos) && (
               <EliminarExpedienteBoton expedienteId={id} numero={expediente.numero} numeroContrato={expediente.numeroContrato} />
             )}
           </div>
@@ -547,23 +570,12 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
             ) : (
               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin clasificar</span>
             )}
+            {permisos.contratacion !== "CONTRATISTA" && (
+              <a href="#gestion-documental" className="text-xs font-medium text-cdmb-700 hover:underline">
+                {puedeEditarDatosGenerales ? (expediente.subserie ? "Reclasificar" : "Clasificar") : "Gestión documental"}
+              </a>
+            )}
           </div>
-          {puedeEditarDatosGenerales && (
-            <DetallesPerezosos
-              className="mt-2 text-xs"
-              abiertoInicial={!expediente.subserie}
-              resumen={expediente.subserie ? "Reclasificar" : "Clasificar este expediente"}
-            >
-              <ReclasificarTrdContratoForm
-                expedienteId={id}
-                subseriePorModalidad={subseriePorModalidadTrd}
-                modalidad={expediente.modalidadSeleccion}
-                modalidadEtiqueta={ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}
-                serieIdActual={expediente.subserie?.serieId ?? null}
-                subserieIdActual={expediente.subserieId}
-              />
-            </DetallesPerezosos>
-          )}
         </div>
 
         {(expediente.expedienteRelacionado || expediente.expedientesQueLoReferencian.length > 0 || (puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0)) && (
@@ -580,7 +592,7 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 ))}
               </span>
             )}
-            {puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0 && (
+            {!cerrado && puedeGestionarContratistas(permisos) && otrosContratosDelContratista.length > 0 && (
               <VincularExpedienteRelacionadoForm
                 expedienteId={id}
                 opciones={otrosContratosDelContratista}
@@ -710,7 +722,8 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                 const etapaInfo =
                   estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
                 const puedeGestionarEtapaCerrada =
-                  estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id));
+                  !cerrado &&
+                  (estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
 
                 return (
                   <details key={etapa} open className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
@@ -1054,6 +1067,66 @@ export default async function DetalleExpedienteContractualPage({ params }: { par
                     ))}
                   </ul>
                 </details>
+            ),
+          },
+          {
+            id: "administracion",
+            label: "Administración",
+            icono: <Settings2 className="h-4 w-4" aria-hidden />,
+            oculta: permisos.contratacion === "CONTRATISTA",
+            contenido: (
+              <PanelGestionDocumental
+                accion={`/api/contratacion/expedientes/${id}/gestion-documental`}
+                clasificacion={
+                  expediente.subserie
+                    ? {
+                        dependencia: expediente.subserie.serie.dependencia?.nombre ?? null,
+                        serie: expediente.subserie.serie.nombre,
+                        subserie: `${expediente.subserie.codigo} — ${expediente.subserie.nombre}`,
+                        retencion: resumenRetencion(subserieBuscable({ id: expediente.subserieId!, ...expediente.subserie })),
+                      }
+                    : null
+                }
+                formularioTrd={
+                  <DetallesPerezosos
+                    className="text-xs"
+                    abiertoInicial={!expediente.subserie}
+                    resumen={expediente.subserie ? "Cambiar clasificación" : "Clasificar este expediente"}
+                  >
+                    <ReclasificarTrdContratoForm
+                      expedienteId={id}
+                      subseriePorModalidad={subseriePorModalidadTrd}
+                      modalidad={expediente.modalidadSeleccion}
+                      modalidadEtiqueta={ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}
+                      serieIdActual={expediente.subserie?.serieId ?? null}
+                      subserieIdActual={expediente.subserieId}
+                    />
+                  </DetallesPerezosos>
+                }
+                nivelAcceso={expediente.nivelAcceso}
+                fundamentoNivelAcceso={expediente.fundamentoNivelAcceso}
+                puedeEditar={puedeGestionDocumental}
+                cerrado={cerrado}
+                cerradoEn={expediente.fechaCierre}
+                cerradoPor={eventoCierre?.usuario?.nombre ?? null}
+                fichaSgdea={fichaSgdea}
+                puedeReabrir={puedeGestionarEtapasContratacion(permisos)}
+                cierre={{
+                  descripcion:
+                    "El expediente se cierra al aprobar la etapa Postcontractual. Al cerrarlo queda en solo lectura y se archiva en el SGDEA con su clasificación TRD, sin copiar los documentos. Requiere clasificación TRD y ninguna firma pendiente.",
+                  bloqueo: !esUltimaEtapa
+                    ? "Disponible al llegar a la etapa Postcontractual."
+                    : !expediente.subserieId
+                      ? "Asigne la clasificación TRD."
+                      : firmasPendientes > 0
+                        ? mensajeFirmasPendientes(firmasPendientes)
+                        : null,
+                  control:
+                    esUltimaEtapa && puedeAprobar && expediente.subserieId && firmasPendientes === 0 ? (
+                      <AprobarEtapaContratoBoton expedienteId={id} etiquetaSiguiente="Cierre del expediente" />
+                    ) : null,
+                }}
+              />
             ),
           },
         ]}

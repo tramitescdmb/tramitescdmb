@@ -9,6 +9,7 @@ const fila: FilaExportExpediente = {
   solicitanteIdentificacion: "12345678",
   municipio: "Bucaramanga",
   estado: "EN_TRAMITE",
+  archivado: false,
   fechaRadicacion: new Date("2026-01-15T00:00:00.000Z"),
   fechaUltimoMovimiento: new Date("2026-02-01T00:00:00.000Z"),
 };
@@ -21,7 +22,7 @@ describe("csvExpedientes", () => {
     expect(lineas[1]).toContain("Generado el");
     expect(lineas[2]).toContain('Filtros: estado ""EN TRAMITE""; municipio Bucaramanga');
     expect(lineas[3]).toBe("Total de registros: 1");
-    expect(lineas[5]).toBe("Número de expediente,Código de trámite,Trámite,Solicitante,Identificación,Municipio,Estado,Fecha de radicación,Último movimiento");
+    expect(lineas[5]).toBe("Número de expediente,Código de trámite,Trámite,Solicitante,Identificación,Municipio,Estado,Cerrado y archivado,Fecha de radicación,Último movimiento");
   });
 
   it("entrecomilla el nombre del trámite (trae coma) y normaliza el estado con espacios", () => {
@@ -29,6 +30,12 @@ describe("csvExpedientes", () => {
     const filaDatos = csv.trim().split("\n")[6];
     expect(filaDatos).toContain('"Permiso de Ocupación de Cauces, Playas y Lechos"');
     expect(filaDatos).toContain("EN TRAMITE");
+  });
+
+  it("indica si el expediente está cerrado y archivado", () => {
+    const [abierto, cerrado] = csvExpedientes([fila, { ...fila, archivado: true }], "").trim().split("\n").slice(6);
+    expect(abierto).toContain("EN TRAMITE,No,");
+    expect(cerrado).toContain("EN TRAMITE,Sí,");
   });
 
   it("sin filtros, deja explícito que es el histórico completo", () => {

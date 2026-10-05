@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeSubirDocumentoContrato } from "@/lib/permisos";
 import { verificarRecepcionDocumentoContrato } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,9 +14,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
-    select: { expediente: { select: { id: true, contratistaId: true } } },
+    select: { expediente: { select: { id: true, contratistaId: true, cerrado: true } } },
   });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (doc.expediente.cerrado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
   if (!puedeSubirDocumentoContrato(permisos, doc.expediente, "PRECONTRACTUAL")) {
     await registrarAccesoDenegadoAccion("verificar la recepción de un documento precontractual", id, session, req.headers);
     return NextResponse.json({ error: "No tiene permiso para verificar este documento." }, { status: 403 });

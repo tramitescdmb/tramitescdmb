@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { deleteDocumento } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,9 +16,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const documento = await db.expedienteDocumento.findUnique({
     where: { id },
-    include: { expediente: { select: { pasoActualNumero: true } } },
+    include: { expediente: { select: { pasoActualNumero: true, archivado: true } } },
   });
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  if (documento.expediente.archivado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
   const etapaAbierta = documentoEtapaAbierta(documento.pasoNumero, documento.expediente.pasoActualNumero);
   const esAdmin = session.rol === "ADMIN";

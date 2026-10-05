@@ -10,6 +10,14 @@ import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
+import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
+import {
+  MENSAJE_EXPEDIENTE_CERRADO,
+  firmasPendientesContrato,
+  mensajeFirmasPendientes,
+  sincronizarArchivoContrato,
+  validarFundamentoNivelAcceso,
+} from "@/lib/archivo-central";
 
 export * from "@/lib/contratacion-etiquetas";
 
@@ -354,14 +362,61 @@ export async function reclasificarTrdContrato(expedienteId: string, subserieId: 
   if (!motivo.trim()) throw new Error("Indique el motivo de la reclasificación.");
   const actual = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { eliminado: true, subserie: { select: { codigo: true, nombre: true } } },
+    select: { eliminado: true, cerrado: true, subserie: { select: { codigo: true, nombre: true } } },
   });
   if (!actual || actual.eliminado) throw new Error("El expediente no existe.");
+  if (actual.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
   const nueva = await validarSubserieContrato(subserieId);
   await db.expedienteContractual.update({ where: { id: expedienteId }, data: { subserieId: nueva.id } });
   const anterior = actual.subserie ? `${actual.subserie.codigo} — ${actual.subserie.nombre}` : "sin clasificación";
   await registrarEventoContratacion(expedienteId, "RECLASIFICACION_TRD", `TRD: ${anterior} → ${nueva.etiqueta}. Motivo: ${motivo.trim()}`, usuarioId);
+  await sincronizarArchivoContrato(expedienteId);
   return nueva;
+}
+
+export async function cambiarNivelAccesoContrato(
+  expedienteId: string,
+  nivelAcceso: "PUBLICA" | "CLASIFICADA" | "RESERVADA",
+  fundamento: string,
+  usuarioId: string
+) {
+  validarFundamentoNivelAcceso(nivelAcceso, fundamento);
+  const actual = await db.expedienteContractual.findUnique({
+    where: { id: expedienteId },
+    select: { eliminado: true, cerrado: true, nivelAcceso: true },
+  });
+  if (!actual || actual.eliminado) throw new Error("El expediente no existe.");
+  if (actual.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
+  await db.expedienteContractual.update({
+    where: { id: expedienteId },
+    data: { nivelAcceso, fundamentoNivelAcceso: nivelAcceso === "PUBLICA" ? null : fundamento.trim() },
+  });
+  await registrarEventoContratacion(
+    expedienteId,
+    "NIVEL_ACCESO_CAMBIADO",
+    `Nivel de acceso: ${ETIQUETA_NIVEL_ACCESO[actual.nivelAcceso]} → ${ETIQUETA_NIVEL_ACCESO[nivelAcceso]}${
+      nivelAcceso === "PUBLICA" ? "" : `. Fundamento: ${fundamento.trim()}`
+    }`,
+    usuarioId
+  );
+  await sincronizarArchivoContrato(expedienteId);
+}
+
+export async function reabrirExpedienteContractual(expedienteId: string, motivo: string, usuarioId: string) {
+  if (!motivo.trim()) throw new Error("Reabrir un expediente cerrado exige indicar el motivo.");
+  const expediente = await db.expedienteContractual.findUnique({
+    where: { id: expedienteId },
+    select: { eliminado: true, cerrado: true, etapaActual: true },
+  });
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
+  if (!expediente.cerrado) throw new Error("Este expediente no está cerrado.");
+  await db.expedienteContractual.update({ where: { id: expedienteId }, data: { cerrado: false, fechaCierre: null } });
+  await db.etapaExpedienteContractual.updateMany({
+    where: { expedienteId, etapa: expediente.etapaActual },
+    data: { completadaEn: null, aprobadaPorId: null },
+  });
+  await registrarEventoContratacion(expedienteId, "EXPEDIENTE_REABIERTO", `Expediente reabierto. Motivo: ${motivo.trim()}`, usuarioId);
+  await sincronizarArchivoContrato(expedienteId);
 }
 
 export async function agregarDocumentoContrato(datos: {
@@ -649,7 +704,7 @@ export class FaltanRequisitosError extends Error {
 export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, contratistaId: true },
+    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, contratistaId: true, subserieId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
@@ -658,6 +713,11 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     throw new Error(
       "No se puede pasar a la etapa Contractual sin conocer al contratista (persona natural o jurídica). Vincúlelo primero desde el expediente."
     );
+  }
+  if (ETAPAS_ORDEN.indexOf(expediente.etapaActual) === ETAPAS_ORDEN.length - 1) {
+    if (!expediente.subserieId) throw new Error("Asigne la clasificación TRD (pestaña Administración) antes de cerrar el expediente.");
+    const pendientes = await firmasPendientesContrato(expedienteId);
+    if (pendientes > 0) throw new Error(mensajeFirmasPendientes(pendientes));
   }
 
   const documentosEtapa = await db.documentoContrato.findMany({
@@ -713,7 +773,25 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
 
   if (idx === ETAPAS_ORDEN.length - 1) {
     await db.expedienteContractual.update({ where: { id: expedienteId }, data: { cerrado: true, fechaCierre: new Date() } });
-    await registrarEventoContratacion(expedienteId, "EXPEDIENTE_CERRADO", "Se cerró el expediente contractual (fin de Postcontractual).", usuarioId);
+    const evento = await db.eventoContratacion.create({
+      data: {
+        expedienteId,
+        tipo: "EXPEDIENTE_CERRADO",
+        detalle: "Se cerró el expediente contractual (fin de Postcontractual) y quedó archivado en el SGDEA.",
+        usuarioId,
+      },
+    });
+    try {
+      await sincronizarArchivoContrato(expedienteId);
+    } catch (err) {
+      await db.eventoContratacion.delete({ where: { id: evento.id } });
+      await db.expedienteContractual.update({ where: { id: expedienteId }, data: { cerrado: false, fechaCierre: null } });
+      await db.etapaExpedienteContractual.updateMany({
+        where: { expedienteId, etapa: expediente.etapaActual },
+        data: { completadaEn: null, aprobadaPorId: null },
+      });
+      throw err;
+    }
     return;
   }
 
@@ -739,14 +817,15 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
     select: { etapaActual: true, cerrado: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
+  if (expediente.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
 
-  const idxEfectivo = expediente.cerrado ? ETAPAS_ORDEN.length - 1 : ETAPAS_ORDEN.indexOf(expediente.etapaActual);
+  const idxEfectivo = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   if (idxEfectivo === 0) throw new Error("El expediente ya está en la primera etapa (Precontractual).");
 
   const anterior = ETAPAS_ORDEN[idxEfectivo - 1]!;
   await db.expedienteContractual.update({
     where: { id: expedienteId },
-    data: { etapaActual: anterior, cerrado: false, fechaCierre: null },
+    data: { etapaActual: anterior },
   });
   await db.etapaExpedienteContractual.upsert({
     where: { expedienteId_etapa: { expedienteId, etapa: anterior } },
@@ -756,20 +835,22 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
   await registrarEventoContratacion(
     expedienteId,
     "ETAPA_RETROCEDIDA",
-    `Se retrocedió de ${expediente.cerrado ? "Cerrado" : ETIQUETA_ETAPA[expediente.etapaActual]} a ${ETIQUETA_ETAPA[anterior]}: ${motivo.trim()}`,
+    `Se retrocedió de ${ETIQUETA_ETAPA[expediente.etapaActual]} a ${ETIQUETA_ETAPA[anterior]}: ${motivo.trim()}`,
     usuarioId
   );
 }
 
 export async function eliminarExpedienteContractualCompleto(expedienteId: string, usuarioId: string, motivo: string): Promise<void> {
-  const expediente = await db.expedienteContractual.findUnique({ where: { id: expedienteId }, select: { eliminado: true, numero: true } });
+  const expediente = await db.expedienteContractual.findUnique({ where: { id: expedienteId }, select: { eliminado: true, cerrado: true, numero: true } });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.eliminado) throw new Error("Este expediente ya fue eliminado.");
+  if (expediente.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
   await db.expedienteContractual.update({
     where: { id: expedienteId },
     data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
   });
   await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
+  await sincronizarArchivoContrato(expedienteId);
 }
 
 export async function vincularContratistaAUsuario(

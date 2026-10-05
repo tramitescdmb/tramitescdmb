@@ -7,7 +7,9 @@ import { obtenerPermisosUsuario, puedeVerNivelAccesoExpediente } from "@/lib/per
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { BotonImprimir } from "@/components/BotonImprimir";
-import { formatearFechaHoraLarga as fechaHora } from "@/lib/fecha";
+import { formatearFechaHoraLarga as fechaHora, formatearFecha } from "@/lib/fecha";
+import { ETIQUETA_ORIGEN_EXPEDIENTE, mensajeSoloEnModulo } from "@/lib/archivo-central";
+import { listarDocumentosDeModulo } from "@/components/sgdea/ExpedienteDeModulo";
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
@@ -40,6 +42,15 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
   ]);
   if (!expediente) notFound();
   if (!puedeVerNivelAccesoExpediente(permisos, expediente)) redirect("/correspondencia/expedientes");
+
+  const deModulo = expediente.origen !== "SGDEA";
+  let consecutivo = 0;
+  const gruposModulo = (deModulo ? await listarDocumentosDeModulo(expediente.origen, expediente.origenId) : []).map((g) => ({
+    ...g,
+    documentos: g.documentos.map((d) => ({ ...d, orden: ++consecutivo })),
+  }));
+  const totalDocumentos = deModulo ? consecutivo : expediente.documentos.length;
+  const estado = expediente.estado === "CERRADO" ? "Cerrado" : deModulo ? "Reabierto en el módulo" : "Abierto";
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -74,22 +85,57 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
         <div className="divide-y divide-stone-100">
           <Dato etiqueta="Asunto" valor={expediente.asunto} />
           <Dato etiqueta="Descripción" valor={expediente.descripcion} />
+          <Dato etiqueta="Origen" valor={ETIQUETA_ORIGEN_EXPEDIENTE[expediente.origen]} />
           <Dato etiqueta="Dependencia" valor={expediente.dependencia.nombre} />
           <Dato etiqueta="Clasificación (TRD)" valor={expediente.serie ? `${expediente.serie.codigo} — ${expediente.serie.nombre}${expediente.subserie ? ` / ${expediente.subserie.nombre}` : ""}` : "Sin clasificar"} />
-          <Dato etiqueta="Estado" valor={expediente.estado === "ABIERTO" ? "Abierto" : "Cerrado"} />
+          <Dato etiqueta="Estado" valor={estado} />
           {expediente.estado === "CERRADO" && (
             <>
               <Dato etiqueta="Fecha de cierre" valor={expediente.fechaCierre ? fechaHora(expediente.fechaCierre) : null} />
               <Dato etiqueta="Cerrado por" valor={expediente.cerradoPor?.nombre} />
-              <Dato etiqueta="Hash del índice (SHA-256)" valor={expediente.indiceHash ? <span className="font-mono text-xs">{expediente.indiceHash}</span> : null} />
+              {!deModulo && (
+                <Dato etiqueta="Hash del índice (SHA-256)" valor={expediente.indiceHash ? <span className="font-mono text-xs">{expediente.indiceHash}</span> : null} />
+              )}
             </>
           )}
           <Dato etiqueta="Nivel de acceso (Ley 1712/2014)" valor={ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]} />
+          {expediente.fundamentoNivelAcceso && <Dato etiqueta="Fundamento" valor={expediente.fundamentoNivelAcceso} />}
           <Dato etiqueta="Abierto por" valor={expediente.creadoPor.nombre} />
-          <Dato etiqueta="Total de documentos" valor={expediente.documentos.length} />
+          <Dato etiqueta="Total de documentos" valor={totalDocumentos} />
         </div>
 
-        {expediente.documentos.length > 0 && (
+        {deModulo && totalDocumentos > 0 && (
+          <div className="mt-6 border-t border-stone-200 pt-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Documentos en {ETIQUETA_ORIGEN_EXPEDIENTE[expediente.origen]}</p>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-stone-200 text-left text-stone-500">
+                  <th className="py-1 pr-2 font-medium">No.</th>
+                  <th className="py-1 pr-2 font-medium">Nombre</th>
+                  <th className="py-1 pr-2 font-medium">Fecha</th>
+                  <th className="py-1 font-medium">SHA-256</th>
+                </tr>
+              </thead>
+              {gruposModulo.map((g) => (
+                <tbody key={g.clave} className="divide-y divide-stone-100">
+                  <tr>
+                    <td colSpan={4} className="pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-stone-500">{g.titulo}</td>
+                  </tr>
+                  {g.documentos.map((d) => (
+                    <tr key={d.id}>
+                      <td className="py-1 pr-2 font-mono text-stone-500">{String(d.orden).padStart(3, "0")}</td>
+                      <td className="py-1 pr-2 text-stone-800">{d.nombre}</td>
+                      <td className="whitespace-nowrap py-1 pr-2 text-stone-500">{formatearFecha(d.createdAt)}</td>
+                      <td className="py-1 font-mono text-stone-400">{d.hashSha256 ? `${d.hashSha256.slice(0, 16)}…` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
+          </div>
+        )}
+
+        {!deModulo && expediente.documentos.length > 0 && (
           <div className="mt-6 border-t border-stone-200 pt-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Índice de documentos</p>
             <table className="w-full text-xs">
@@ -119,6 +165,7 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
           Esta ficha certifica el estado del expediente electrónico de archivo en el Sistema de Gestión de
           Documentos Electrónicos de Archivo (SGDEA) de la CDMB (Art. 4.3.2 Acuerdo 001/2024 AGN). Toda
           actuación sobre este expediente queda registrada en una bitácora de auditoría inalterable.
+          {deModulo && ` ${mensajeSoloEnModulo(expediente.origen)}`}
         </p>
       </div>
     </div>

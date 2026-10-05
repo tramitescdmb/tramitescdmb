@@ -7,15 +7,8 @@ import { csvExpedientes, xlsxExpedientes, type FilaExportExpediente } from "@/li
 import { resolverPeriodo } from "@/lib/periodo-dashboard";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-// Ítem 3 del prompt SEYCA ("Filtro por vigencias y exportación"). Tarea 4 (no exportar campos
-// reservados si el usuario no tiene permiso) queda pendiente de terminar: las columnas exportadas
-// aquí son exactamente las mismas que ya se ven en la tabla de /expedientes para cualquier
-// funcionario con acceso al trámite, así que no hay ninguna exposición nueva — pero falta aplicar
-// la clasificación y el enmascaramiento reales del ítem 2 (protección de datos), todavía en
-// validación con el usuario.
-
 const TAMANO_LOTE = 1000;
-const TOPE_REGISTROS = 50_000; // salvaguarda para no generar un archivo descontrolado
+const TOPE_REGISTROS = 50_000;
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -62,6 +55,7 @@ export async function GET(req: NextRequest) {
       select: {
         numero: true,
         estado: true,
+        archivado: true,
         municipio: true,
         solicitanteNombre: true,
         solicitanteIdentificacion: true,
@@ -79,6 +73,7 @@ export async function GET(req: NextRequest) {
         solicitanteIdentificacion: e.solicitanteIdentificacion,
         municipio: e.municipio,
         estado: e.estado,
+        archivado: e.archivado,
         fechaRadicacion: e.fechaRadicacion,
         fechaUltimoMovimiento: e.fechaUltimoMovimiento,
       });
