@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { Mail, ShieldCheck, ExternalLink, HelpCircle } from "lucide-react";
+import { Mail, ShieldCheck, ExternalLink, HelpCircle, ListChecks } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { MigaSgdea } from "@/components/sgdea/Miga";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -77,15 +77,14 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             <ExternalLink className="h-3 w-3" aria-hidden />
             Ver formulario público de PQRSD
           </a>
-          <a
-            href="https://claude.ai/code/artifact/d14c3aa6-f64f-4fe1-9db9-64ee523f80e0"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            prefetch={false}
+            href="/correspondencia/matriz-moreq"
             className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
           >
-            <ExternalLink className="h-3 w-3" aria-hidden />
-            Matriz de cumplimiento MoReq/AGN
-          </a>
+            <ListChecks className="h-3 w-3" aria-hidden />
+            Matriz de cumplimiento MoReq
+          </Link>
           <a
             href="https://claude.ai/code/artifact/bdfae6f0-2c31-4a2d-972a-85c4f457f5e9"
             target="_blank"

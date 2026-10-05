@@ -16,7 +16,7 @@ type Permitido = {
 
 const NO_BANDEJA = [
   "nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes",
-  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos",
+  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq",
 ];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
@@ -90,6 +90,7 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
         paraAdmin(permitido, { href: "/correspondencia/admin/vocabulario", label: "Vocabulario controlado", prefijo: true }),
         paraAdmin(permitido, { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true }),
         paraAdmin(permitido, { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA", separador: true }),
+        { href: "/correspondencia/matriz-moreq", label: "Matriz de cumplimiento MoReq" },
         paraAdminSistema(permitido, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true }),

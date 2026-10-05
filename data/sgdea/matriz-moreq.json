@@ -1,0 +1,1674 @@
+[
+  {
+    "numero": "1.1",
+    "categoria": 1,
+    "orden": 1,
+    "titulo": "Crear, importar, versionar y administrar la TRD desde plantillas o archivos planos",
+    "estado": "COMPLETO",
+    "nota": "Importador CSV con control de versión; nunca se borra la anterior"
+  },
+  {
+    "numero": "1.2",
+    "categoria": 1,
+    "orden": 2,
+    "titulo": "TRD con descripción, versión, fecha de actualización e identificador único",
+    "estado": "COMPLETO",
+    "nota": "Descripción/justificación por serie (editable al crear o por CSV), versión, fecha de última actualización e id únicos"
+  },
+  {
+    "numero": "1.3",
+    "categoria": 1,
+    "orden": 3,
+    "titulo": "Documentos ya radicados mantienen los tiempos/disposición de SU versión de TRD",
+    "estado": "COMPLETO",
+    "nota": "Cada comunicación queda ligada a la subserie exacta con la que se clasificó"
+  },
+  {
+    "numero": "1.4",
+    "categoria": 1,
+    "orden": 4,
+    "titulo": "Organización de expedientes/documentos a partir del CCD",
+    "estado": "COMPLETO",
+    "nota": "Dependencia → Serie → Subserie → Tipo documental"
+  },
+  {
+    "numero": "1.5",
+    "categoria": 1,
+    "orden": 5,
+    "titulo": "Múltiples niveles en el esquema del CCD",
+    "estado": "COMPLETO",
+    "nota": "Organigrama jerárquico más tres niveles documentales"
+  },
+  {
+    "numero": "1.6",
+    "categoria": 1,
+    "orden": 6,
+    "titulo": "Validar la información de la TRD con alertas o asistentes",
+    "estado": "COMPLETO",
+    "nota": "El importador valida columnas obligatorias y ahora también detecta duplicados similares dentro del propio archivo (mismo código de serie/subserie con un nombre distinto en otra fila, típico error de digitación); los avisos se muestran en pantalla, no solo en el log del servidor"
+  },
+  {
+    "numero": "1.7",
+    "categoria": 1,
+    "orden": 7,
+    "titulo": "Importar y exportar la TRD en formato abierto y editable",
+    "estado": "COMPLETO",
+    "nota": "Se puede descargar la TRD completa en el mismo formato CSV con el que se importa"
+  },
+  {
+    "numero": "1.8",
+    "categoria": 1,
+    "orden": 8,
+    "titulo": "Import/export de TRD generan reporte y quedan en auditoría",
+    "estado": "COMPLETO",
+    "nota": "Cada import/export queda también en la bitácora inalterable (antes solo en el registro de cuenta)"
+  },
+  {
+    "numero": "1.9",
+    "categoria": 1,
+    "orden": 9,
+    "titulo": "Usuarios autorizados seleccionan y usan distintas versiones de la TRD",
+    "estado": "COMPLETO",
+    "nota": "Cada serie puede tener varias versiones vigentes en paralelo"
+  },
+  {
+    "numero": "1.10",
+    "categoria": 1,
+    "orden": 10,
+    "titulo": "Integración con servidores de correo electrónico",
+    "estado": "PENDIENTE",
+    "nota": "No hay proveedor de correo configurado en el proyecto"
+  },
+  {
+    "numero": "1.11",
+    "categoria": 1,
+    "orden": 11,
+    "titulo": "Documentos heredan metadatos de su serie/subserie",
+    "estado": "COMPLETO",
+    "nota": "Cada documento hereda de su expediente la dependencia, la serie, la subserie y el tipo documental de la TRD — la metadata archivística que gobierna su ciclo de vida; un esquema de metadatos adicionales definible por el usuario sigue fuera de alcance"
+  },
+  {
+    "numero": "1.12",
+    "categoria": 1,
+    "orden": 12,
+    "titulo": "Exportar el directorio completo de una serie y su contenido",
+    "estado": "COMPLETO",
+    "nota": "Exporta a CSV todo lo clasificado bajo una serie (comunicaciones y expedientes documentales de cualquiera de sus subseries), desde un botón en el explorador de la TRD"
+  },
+  {
+    "numero": "1.13",
+    "categoria": 1,
+    "orden": 13,
+    "titulo": "Cierre de expediente manual o automático al finalizar el trámite",
+    "estado": "COMPLETO",
+    "nota": "Cierre manual gateado a ADMIN_ARCHIVO (Art. 4.3.2.4 Acuerdo 001/2024 AGN): firma el índice electrónico con hash SHA-256 y deja de admitir documentos. Los expedientes de los módulos funcionales también se cierran al terminar su trámite —en Trámites ambientales 2.0 desde Administración, una vez el trámite tiene estado final; en GECON al aprobar la etapa Postcontractual— y quedan archivados en el SGDEA. En los tres casos el cierre exige clasificación TRD y que no haya firmas ni vistos buenos pendientes"
+  },
+  {
+    "numero": "1.14",
+    "categoria": 1,
+    "orden": 14,
+    "titulo": "Restringir cambios tras el cierre, con reapertura auditada por un rol admin",
+    "estado": "COMPLETO",
+    "nota": "Un expediente CERRADO rechaza subir/editar/retirar documentos, editar asunto/descripción y archivar comunicaciones — el índice quedó firmado. Mientras está ABIERTO sí se puede corregir la metadata de un archivo y retirar del índice uno subido por error (con motivo, auditado; el archivo no se borra, queda como constancia fuera del índice y del hash). Reabrir uno cerrado exige el mismo rol admin, motivo obligatorio y queda en la bitácora (acción REABRE); al volver a cerrarlo se firma un índice nuevo. La misma regla rige en Trámites ambientales 2.0 y GECON: un expediente cerrado no admite documentos, firmas, validaciones, comentarios ni cambios de datos, y solo se reabre desde su propio módulo (administrador en Trámites; Jefe de Contratación o administrador en GECON), con motivo registrado en su historia. Desde el SGDEA esas fichas son de solo lectura"
+  },
+  {
+    "numero": "1.15",
+    "categoria": 1,
+    "orden": 15,
+    "titulo": "Contenido del expediente accesible según roles y permisos",
+    "estado": "COMPLETO",
+    "nota": "Acceso denegado por defecto en todo el módulo"
+  },
+  {
+    "numero": "1.16",
+    "categoria": 1,
+    "orden": 16,
+    "titulo": "Impedir eliminar un expediente salvo por TRD o rol admin auditado",
+    "estado": "COMPLETO",
+    "nota": "La disposición final nunca borra; solo un administrador de archivo la ejecuta"
+  },
+  {
+    "numero": "1.17",
+    "categoria": 1,
+    "orden": 17,
+    "titulo": "Vocabulario controlado y normalizado compatible con estándares",
+    "estado": "COMPLETO",
+    "nota": "Vocabulario controlado administrable (término + categoría + activo) en /correspondencia/admin/vocabulario; al etiquetar una comunicación solo se admiten términos de esa lista — los valores fuera del vocabulario se ignoran y se avisan"
+  },
+  {
+    "numero": "1.18",
+    "categoria": 1,
+    "orden": 18,
+    "titulo": "Informes estadísticos de actividad de la TRD para administradores",
+    "estado": "COMPLETO",
+    "nota": "Pestaña Reportes: series/subseries vigentes, expedientes y documentos del archivo"
+  },
+  {
+    "numero": "1.19",
+    "categoria": 1,
+    "orden": 19,
+    "titulo": "Expediente con documento, foliado, índice electrónico firmado y metadatos",
+    "estado": "COMPLETO",
+    "nota": "Índice electrónico firmado y metadatos, más foliación real: quien sube un documento declara su número de hojas (por defecto 1), el índice calcula y muestra el rango acumulado por documento (\"Folio N\" / \"Folios N-M\") sobre el orden real que respalda el hash"
+  },
+  {
+    "numero": "1.20",
+    "categoria": 1,
+    "orden": 20,
+    "titulo": "Documentos del expediente heredan los tiempos de conservación de la TRD",
+    "estado": "COMPLETO",
+    "nota": "Vía la subserie asociada"
+  },
+  {
+    "numero": "1.21",
+    "categoria": 1,
+    "orden": 21,
+    "titulo": "Metadatos de ubicación para expedientes híbridos",
+    "estado": "PENDIENTE",
+    "nota": "No existe el concepto de expediente híbrido físico/electrónico"
+  },
+  {
+    "numero": "1.22",
+    "categoria": 1,
+    "orden": 22,
+    "titulo": "Historial de eventos del expediente consultable",
+    "estado": "COMPLETO",
+    "nota": "Bitácora inalterable más historia del expediente de trámites"
+  },
+  {
+    "numero": "1.23",
+    "categoria": 1,
+    "orden": 23,
+    "titulo": "Historial exportable en XML, Excel y PDF",
+    "estado": "COMPLETO",
+    "nota": "La bitácora se exporta a CSV (abre en Excel) y a XML con los filtros de la pantalla, y ahora tiene vista de impresión (encabezado con corte y filtros, sin controles) que el navegador guarda como PDF — el mismo criterio de \"imprimible, no PDF generado por el servidor\" que usan la constancia de radicación y la ficha de expediente"
+  },
+  {
+    "numero": "1.24",
+    "categoria": 1,
+    "orden": 24,
+    "titulo": "Transferir la estructura de la TRD mediante un archivo XML",
+    "estado": "COMPLETO",
+    "nota": "El importador/exportador de la TRD ahora acepta XML además de CSV, mismas columnas — el formato se detecta por la extensión del archivo"
+  },
+  {
+    "numero": "1.25",
+    "categoria": 1,
+    "orden": 25,
+    "titulo": "Firma electrónica para el índice del expediente",
+    "estado": "COMPLETO",
+    "nota": "Al cerrar un expediente documental se calcula y guarda el hash SHA-256 del índice (orden + nombre + huella de cada documento) junto con quién y cuándo lo cerró — misma firma electrónica con hash (Ley 527/1999) usada en el resto del proyecto; Art. 4.3.2.4 Acuerdo 001/2024 AGN"
+  },
+  {
+    "numero": "1.26",
+    "categoria": 1,
+    "orden": 26,
+    "titulo": "Cotejar la composición de documentos del expediente (integridad/autenticidad)",
+    "estado": "COMPLETO",
+    "nota": "Hash SHA-256 por documento más verificación consolidada: al ver un expediente cerrado se recalcula el hash del índice contra las filas actuales y se compara con el firmado al cerrar, con alerta si no coincide"
+  },
+  {
+    "numero": "1.27",
+    "categoria": 1,
+    "orden": 27,
+    "titulo": "Registrar fecha y hora de carga de un documento como metadato",
+    "estado": "COMPLETO",
+    "nota": "Queda como fecha de creación del documento"
+  },
+  {
+    "numero": "1.28",
+    "categoria": 1,
+    "orden": 28,
+    "titulo": "Trazabilidad de qué, quién, cuándo y cómo en el CCD",
+    "estado": "COMPLETO",
+    "nota": "Bitácora con cadena de hash"
+  },
+  {
+    "numero": "1.29",
+    "categoria": 1,
+    "orden": 29,
+    "titulo": "CCD y TRD controlados solo por un rol administrador",
+    "estado": "COMPLETO",
+    "nota": "Gateado por el permiso de administrar archivo"
+  },
+  {
+    "numero": "1.30",
+    "categoria": 1,
+    "orden": 30,
+    "titulo": "Reubicar una carpeta/documento a otro lugar de la clasificación",
+    "estado": "COMPLETO",
+    "nota": "Reclasificar en el detalle de la comunicación, gateado a administrador de archivo"
+  },
+  {
+    "numero": "1.31",
+    "categoria": 1,
+    "orden": 31,
+    "titulo": "Registrar en auditoría la reubicación",
+    "estado": "COMPLETO",
+    "nota": "Bitácora inalterable: acción CLASIFICA con clasificación anterior y nueva"
+  },
+  {
+    "numero": "1.32",
+    "categoria": 1,
+    "orden": 32,
+    "titulo": "Registrar el motivo de la reubicación",
+    "estado": "COMPLETO",
+    "nota": "Motivo obligatorio, queda en la bitácora"
+  },
+  {
+    "numero": "1.33",
+    "categoria": 1,
+    "orden": 33,
+    "titulo": "Un documento en varias partes de la clasificación sin duplicarse",
+    "estado": "PARCIAL",
+    "nota": "Una comunicación puede quedar archivada a la vez en un expediente de Trámites 2.0 y en un expediente documental, como referencia (no se copia el archivo). Los expedientes cerrados de Trámites 2.0 y GECON aparecen en el archivo del SGDEA como fichas que enlazan a sus documentos en el módulo de origen, sin duplicarlos. No admite todavía estar en un número arbitrario de ubicaciones ni en varias subseries"
+  },
+  {
+    "numero": "1.34",
+    "categoria": 1,
+    "orden": 34,
+    "titulo": "Garantizar que todo documento capturado se asocie a una TRD",
+    "estado": "COMPLETO",
+    "nota": "Aviso en Administración con las comunicaciones sin serie o sin subserie y enlace directo al detalle de cada una para reclasificarla — la clasificación incompleta deja de pasar desapercibida. En los módulos funcionales la TRD se asigna sola (en Trámites 2.0 se hereda del tipo de trámite al radicar; en GECON, de la modalidad de selección), se puede cambiar en cualquier etapa y es obligatoria para cerrar el expediente"
+  },
+  {
+    "numero": "1.35",
+    "categoria": 1,
+    "orden": 35,
+    "titulo": "Niveles de seguridad del expediente según la entidad",
+    "estado": "COMPLETO",
+    "nota": "Nivel de acceso (pública/clasificada/reservada, Ley 1712/2014); una clasificada/reservada se oculta del listado y del FUID, y bloquea el detalle con auditoría, para quien no pertenece a esa dependencia. Trámites 2.0 y GECON asignan el mismo nivel de acceso a cada expediente desde su pestaña Administración; pasa a la ficha del SGDEA y rige también la descarga de sus documentos desde el archivo, con cada consulta registrada en la bitácora"
+  },
+  {
+    "numero": "1.36",
+    "categoria": 1,
+    "orden": 36,
+    "titulo": "Número único de identificación al cargar un documento",
+    "estado": "COMPLETO",
+    "nota": "Identificador propio más hash SHA-256"
+  },
+  {
+    "numero": "1.37",
+    "categoria": 1,
+    "orden": 37,
+    "titulo": "Múltiples firmas electrónicas o digitales por documento",
+    "estado": "COMPLETO",
+    "nota": "Co-firma: varios funcionarios pueden firmar el mismo oficio o memorando ya radicado — cada firma es electrónica con hash SHA-256 sobre el mismo contenido, con su propio sello de tiempo, y todas se listan en el detalle. Sigue siendo una firma por comunicación, no por cada documento adjunto por separado"
+  },
+  {
+    "numero": "1.38",
+    "categoria": 1,
+    "orden": 38,
+    "titulo": "Conversión de documentos a formatos del AGN",
+    "estado": "PENDIENTE",
+    "nota": "Sin conversor de preservación (PDF/A)"
+  },
+  {
+    "numero": "1.39",
+    "categoria": 1,
+    "orden": 39,
+    "titulo": "Modificar tiempos de retención para un conjunto de series/expedientes",
+    "estado": "COMPLETO",
+    "nota": "Selección múltiple de subseries, incluso de distintas series o dependencias, con edición en lote de retención y disposición"
+  },
+  {
+    "numero": "1.40",
+    "categoria": 1,
+    "orden": 40,
+    "titulo": "Datos de localización de un expediente híbrido",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "1.41",
+    "categoria": 1,
+    "orden": 41,
+    "titulo": "No limitar expedientes asociados a una serie/subserie",
+    "estado": "COMPLETO",
+    "nota": "Sin límites artificiales en el modelo"
+  },
+  {
+    "numero": "1.42",
+    "categoria": 1,
+    "orden": 42,
+    "titulo": "Asociar cada documento a serie, subserie, expediente y tipo documental desde la captura",
+    "estado": "COMPLETO",
+    "nota": "Serie/subserie/expediente se heredan del expediente al capturar; el tipo documental (de los definidos en la TRD para esa subserie) ahora se puede elegir al subir cada documento, opcional, validado contra la subserie del expediente"
+  },
+  {
+    "numero": "1.43",
+    "categoria": 1,
+    "orden": 43,
+    "titulo": "Conformar tomos (carpeta N de N) por tamaño configurado",
+    "estado": "PARCIAL",
+    "nota": "Cada serie tiene un «máximo de folios por tomo» configurable; el FUID calcula y muestra el número de tomos de cada expediente (folios ÷ máximo, redondeado hacia arriba). Todavía no parte físicamente el índice electrónico en tomos numerados ni firma cada tomo por separado"
+  },
+  {
+    "numero": "1.44",
+    "categoria": 1,
+    "orden": 44,
+    "titulo": "Consultar expedientes según tiempos de retención y disposición",
+    "estado": "COMPLETO",
+    "nota": "Panel de disposición final"
+  },
+  {
+    "numero": "1.45",
+    "categoria": 1,
+    "orden": 45,
+    "titulo": "Ordenar documentos del expediente por fecha de trámite ascendente",
+    "estado": "COMPLETO",
+    "nota": "Fecha del documento propia (distinta de la de carga si hace falta); el índice se ve ordenado por ella de forma ascendente"
+  },
+  {
+    "numero": "1.46",
+    "categoria": 1,
+    "orden": 46,
+    "titulo": "Configurar criterios de ordenación por serie documental",
+    "estado": "COMPLETO",
+    "nota": "Criterio de orden por serie (fecha del documento / orden de incorporación / nombre), editable desde el detalle del expediente por un administrador de archivo y auditado; el número de índice que respalda el hash firmado no cambia, solo el orden visual"
+  },
+  {
+    "numero": "1.47",
+    "categoria": 1,
+    "orden": 47,
+    "titulo": "Índice electrónico en XML y hoja de cálculo con metadatos mínimos",
+    "estado": "COMPLETO",
+    "nota": "Se exporta a CSV (hoja de cálculo) y también a XML, con orden, nombre, tamaño, hash y quién lo subió"
+  },
+  {
+    "numero": "1.48",
+    "categoria": 1,
+    "orden": 48,
+    "titulo": "El índice mantiene el orden de los documentos del expediente",
+    "estado": "COMPLETO",
+    "nota": "Cada documento queda con su posición (ordenIndice) al agregarse"
+  },
+  {
+    "numero": "1.49",
+    "categoria": 1,
+    "orden": 49,
+    "titulo": "Índice electrónico disponible desde la creación del expediente",
+    "estado": "COMPLETO",
+    "nota": "El expediente documental lo muestra desde que se abre, aunque esté vacío"
+  },
+  {
+    "numero": "1.50",
+    "categoria": 1,
+    "orden": 50,
+    "titulo": "Todo expediente con índice firmado al cerrarse",
+    "estado": "COMPLETO",
+    "nota": "Al cerrar el expediente documental se calcula y guarda el hash del índice (Art. 4.3.2.4 Acuerdo 001/2024 AGN)"
+  },
+  {
+    "numero": "1.51",
+    "categoria": 1,
+    "orden": 51,
+    "titulo": "Inventario documental (FUID) exportable con metadatos mínimos",
+    "estado": "COMPLETO",
+    "nota": "Exportación dedicada con las columnas del formato oficial (AGN Acuerdo 042/2002, Anexo 3); la columna Folios ahora suma el número real de folios declarado por documento (ya no el conteo de documentos como aproximación). Incluye los expedientes archivados desde Trámites 2.0 y GECON, con una columna Origen y filtro por origen"
+  },
+  {
+    "numero": "1.52",
+    "categoria": 1,
+    "orden": 52,
+    "titulo": "El FUID disponible en cualquier momento",
+    "estado": "COMPLETO",
+    "nota": "Botón de descarga en Expedientes, bajo demanda y con los mismos filtros de la pantalla"
+  },
+  {
+    "numero": "1.53",
+    "categoria": 1,
+    "orden": 53,
+    "titulo": "Validar integridad de un documento (hash) con mensaje de resultado",
+    "estado": "COMPLETO",
+    "nota": "SHA-256 visible en el detalle del documento"
+  },
+  {
+    "numero": "1.54",
+    "categoria": 1,
+    "orden": 54,
+    "titulo": "Conformar expedientes con electrónicos y referenciar físicos digitalizados",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "1.55",
+    "categoria": 1,
+    "orden": 55,
+    "titulo": "Expedientes híbridos (electrónicos + físicos)",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "1.56",
+    "categoria": 1,
+    "orden": 56,
+    "titulo": "Referenciar documentos físicos mediante metadatos en el índice",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "1.57",
+    "categoria": 1,
+    "orden": 57,
+    "titulo": "Notificar cumplimiento del período de retención para físicos",
+    "estado": "PARCIAL",
+    "nota": "Panel de consulta activa; no notificación push o por correo"
+  },
+  {
+    "numero": "1.58",
+    "categoria": 1,
+    "orden": 58,
+    "titulo": "Alertar existencia/ubicación de expedientes por transferir, exportar o eliminar",
+    "estado": "COMPLETO",
+    "nota": "Panel de pendientes de disposición final"
+  },
+  {
+    "numero": "1.59",
+    "categoria": 1,
+    "orden": 59,
+    "titulo": "Pedir confirmación a un usuario autorizado antes de transferir/exportar/eliminar",
+    "estado": "COMPLETO",
+    "nota": "Formulario explícito con motivo obligatorio"
+  },
+  {
+    "numero": "1.60",
+    "categoria": 1,
+    "orden": 60,
+    "titulo": "Imprimir y reconocer códigos de barra para documentos físicos",
+    "estado": "PARCIAL",
+    "nota": "El sistema genera e imprime el rótulo de radicación con código de barras Code 128 y un QR — derivados automáticamente del número de radicado — para adherir al documento físico; el QR resuelve a una página pública de verificación del radicado. Falta el reconocimiento por lectura óptica (cámara/escáner) de un código impreso al recibir un documento"
+  },
+  {
+    "numero": "2.1",
+    "categoria": 2,
+    "orden": 1,
+    "titulo": "Solo un rol administrador crea/parametriza reglas de disposición y retención",
+    "estado": "COMPLETO",
+    "nota": "Gateado por el permiso de administrar archivo"
+  },
+  {
+    "numero": "2.2",
+    "categoria": 2,
+    "orden": 2,
+    "titulo": "Historia inalterable de cambios a retención/disposición (fecha y usuario)",
+    "estado": "COMPLETO",
+    "nota": "Crear o editar una serie/subserie (incluida la edición en lote) queda en la bitácora con cadena de hash, además del registro de cuenta"
+  },
+  {
+    "numero": "2.3",
+    "categoria": 2,
+    "orden": 3,
+    "titulo": "Un cambio de retención se aplica de inmediato a las series/subseries asignadas",
+    "estado": "COMPLETO",
+    "nota": "Es una referencia, no una copia: el cambio aplica al instante"
+  },
+  {
+    "numero": "2.4",
+    "categoria": 2,
+    "orden": 4,
+    "titulo": "Disposiciones mínimas: conservación, eliminación automática, transferencia, eliminación autorizada, selección",
+    "estado": "PARCIAL",
+    "nota": "Cubre conservación, eliminación, selección, microfilmación y transferencia; ninguna eliminación es automática sin confirmación humana"
+  },
+  {
+    "numero": "2.5",
+    "categoria": 2,
+    "orden": 5,
+    "titulo": "No limitar la duración de los tiempos de retención",
+    "estado": "COMPLETO",
+    "nota": "Sin tope superior en el modelo"
+  },
+  {
+    "numero": "2.6",
+    "categoria": 2,
+    "orden": 6,
+    "titulo": "Activar el período de retención desde el cierre del expediente",
+    "estado": "COMPLETO",
+    "nota": "Configurable por serie: la retención cuenta desde la radicación de cada documento (por defecto) o desde el cierre del expediente donde queda archivado. Con la segunda opción, una comunicación no entra a disposición final hasta que el expediente que la contiene se cierra; el cálculo usa la fecha de cierre real"
+  },
+  {
+    "numero": "2.7",
+    "categoria": 2,
+    "orden": 7,
+    "titulo": "Reemplazar una versión de TRD por otra sin destruir la anterior",
+    "estado": "COMPLETO",
+    "nota": "El import de una TRD vigente cierra la anterior; nunca la borra"
+  },
+  {
+    "numero": "2.8",
+    "categoria": 2,
+    "orden": 8,
+    "titulo": "Inspeccionar expedientes pendientes de disposición, agrupables por CCD/versión/fecha",
+    "estado": "COMPLETO",
+    "nota": "Panel de pendientes ordenado por fecha, agrupable también por serie o subserie del CCD"
+  },
+  {
+    "numero": "2.9",
+    "categoria": 2,
+    "orden": 9,
+    "titulo": "Selección de expedientes vencidos, individual o por lotes, con comentario",
+    "estado": "COMPLETO",
+    "nota": "Selección múltiple con motivación compartida; las que exigen acta quedan bajo una sola"
+  },
+  {
+    "numero": "2.10",
+    "categoria": 2,
+    "orden": 10,
+    "titulo": "Alertar automáticamente al administrador cuando se acerca el vencimiento",
+    "estado": "COMPLETO",
+    "nota": "Además del semáforo visual, un aviso en la pestaña Disposición final lista las comunicaciones que entran en disposición final dentro de los próximos 90 días; sin correo/SMS (no hay proveedor), el aviso es visible para quien administra el archivo"
+  },
+  {
+    "numero": "2.11",
+    "categoria": 2,
+    "orden": 11,
+    "titulo": "Aplazar la eliminación de una serie/expediente con motivo auditado",
+    "estado": "COMPLETO",
+    "nota": "Un administrador de archivo puede aplazar la disposición final de una comunicación ya vencida a una fecha futura, con motivo obligatorio, registrado en la bitácora inalterable"
+  },
+  {
+    "numero": "2.12",
+    "categoria": 2,
+    "orden": 12,
+    "titulo": "Transferir/exportar el documento completo cuando hay referencias cruzadas",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "2.13",
+    "categoria": 2,
+    "orden": 13,
+    "titulo": "Alertar al administrador si un documento a eliminar está vinculado a otro expediente",
+    "estado": "COMPLETO",
+    "nota": "La disposición final por lote omite (con motivo explícito) cualquier comunicación cuya disposición exija acta si sigue archivada en un expediente"
+  },
+  {
+    "numero": "2.14",
+    "categoria": 2,
+    "orden": 14,
+    "titulo": "Garantizar integridad del expediente al exportar/transferir/migrar por obsolescencia",
+    "estado": "COMPLETO",
+    "nota": "Hash SHA-256 por documento, más un hash de verificación del índice completo (orden + nombre + huella de cada documento) que la exportación CSV/XML del índice electrónico incluye SIEMPRE — no solo cuando el expediente está cerrado — para que el sistema que reciba el archivo pueda cotejar la integridad"
+  },
+  {
+    "numero": "2.15",
+    "categoria": 2,
+    "orden": 15,
+    "titulo": "Reportes de las reglas aplicadas al migrar entre sistemas",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "2.16",
+    "categoria": 2,
+    "orden": 16,
+    "titulo": "Reporte del estado de la transferencia/exportación realizada",
+    "estado": "COMPLETO",
+    "nota": "Sección \"Transferencias a archivo central\" en Disposición final (tabla con fecha de transferencia, fecha de confirmación y quién confirmó) más una tarjeta de estado en Reportes: registradas / con recepción confirmada / pendientes de confirmar"
+  },
+  {
+    "numero": "2.17",
+    "categoria": 2,
+    "orden": 17,
+    "titulo": "Conservar los documentos transferidos hasta confirmar que el proceso concluyó",
+    "estado": "COMPLETO",
+    "nota": "Una transferencia registrada se conserva hasta que un administrador de archivo confirma la recepción en el archivo central; mientras no se confirme, la comunicación no avanza a disposición final aunque ya haya cumplido su retención (la disposición final por lote la omite con motivo explícito)"
+  },
+  {
+    "numero": "3.1",
+    "categoria": 3,
+    "orden": 1,
+    "titulo": "Definir y parametrizar formatos de captura según el AGN",
+    "estado": "COMPLETO",
+    "nota": "Lista de extensiones permitidas configurable desde Administración → Seguridad, exigida por el servidor en toda subida"
+  },
+  {
+    "numero": "3.2",
+    "categoria": 3,
+    "orden": 2,
+    "titulo": "Gestionar video/audio/imagen igual que documentos de texto",
+    "estado": "COMPLETO",
+    "nota": "Cualquier formato permitido se sube igual"
+  },
+  {
+    "numero": "3.3",
+    "categoria": 3,
+    "orden": 3,
+    "titulo": "Controles para garantizar que el documento se asocia a la TRD",
+    "estado": "COMPLETO",
+    "nota": "Toda comunicación puede clasificarse con serie y subserie"
+  },
+  {
+    "numero": "3.4",
+    "categoria": 3,
+    "orden": 4,
+    "titulo": "No limitar documentos por serie/subserie/expediente",
+    "estado": "COMPLETO",
+    "nota": "Sin límites artificiales"
+  },
+  {
+    "numero": "3.5",
+    "categoria": 3,
+    "orden": 5,
+    "titulo": "Adjuntos gestionados como unidad, sin permitir comprimidos",
+    "estado": "COMPLETO",
+    "nota": "Se suben hasta 10 archivos por comunicación (máx. 2 MB c/u, validado en cliente y servidor), gestionados como el conjunto de adjuntos de ese radicado; la lista de formatos permitidos nunca incluye comprimidos (.zip, .rar, etc.) y el servidor la exige siempre"
+  },
+  {
+    "numero": "3.6",
+    "categoria": 3,
+    "orden": 6,
+    "titulo": "Vínculo archivístico al capturar un adjunto por separado",
+    "estado": "COMPLETO",
+    "nota": "Cada documento queda ligado a su comunicación"
+  },
+  {
+    "numero": "3.7",
+    "categoria": 3,
+    "orden": 7,
+    "titulo": "Restringir y alertar formatos no configurados",
+    "estado": "COMPLETO",
+    "nota": "Validado en el navegador y en el servidor"
+  },
+  {
+    "numero": "3.8",
+    "categoria": 3,
+    "orden": 8,
+    "titulo": "Notificaciones y avisos por correo electrónico",
+    "estado": "PENDIENTE",
+    "nota": "Sin proveedor de correo"
+  },
+  {
+    "numero": "3.9",
+    "categoria": 3,
+    "orden": 9,
+    "titulo": "Elegir cómo tratar un documento con varias versiones",
+    "estado": "COMPLETO",
+    "nota": "Al subir un documento se puede indicar que reemplaza a uno ya existente del mismo expediente; ninguna versión se borra, el índice muestra la cadena completa (\"Versión de\"/\"Reemplazado por\")"
+  },
+  {
+    "numero": "3.10",
+    "categoria": 3,
+    "orden": 10,
+    "titulo": "Alerta al capturar un registro incompleto o vacío",
+    "estado": "COMPLETO",
+    "nota": "Validación de campos obligatorios en cada formulario"
+  },
+  {
+    "numero": "3.11",
+    "categoria": 3,
+    "orden": 11,
+    "titulo": "Estándares de interoperabilidad OAI-PMH y CMIS-OASIS",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "3.12",
+    "categoria": 3,
+    "orden": 12,
+    "titulo": "Administrar colas de entrada en captura masiva",
+    "estado": "PENDIENTE",
+    "nota": "No hay concepto de cola de ingesta"
+  },
+  {
+    "numero": "3.13",
+    "categoria": 3,
+    "orden": 13,
+    "titulo": "Integración con digitalización (escaneo, OCR/ICR/OMR, código de barras)",
+    "estado": "PARCIAL",
+    "nota": "La parte de código de barras está: se genera Code 128 + QR del radicado y se estampan sobre el PDF adjunto. Falta la integración con hardware/servicios de escaneo y con OCR/ICR/OMR"
+  },
+  {
+    "numero": "3.14",
+    "categoria": 3,
+    "orden": 14,
+    "titulo": "Captura automática de metadatos de correos y adjuntos",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.15",
+    "categoria": 3,
+    "orden": 15,
+    "titulo": "Capturar un correo asignándolo a una serie/subserie/expediente",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.16",
+    "categoria": 3,
+    "orden": 16,
+    "titulo": "Capturar varios correos en una sola operación",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.17",
+    "categoria": 3,
+    "orden": 17,
+    "titulo": "Parametrizar firmas individuales, múltiples, masivas o por lotes",
+    "estado": "COMPLETO",
+    "nota": "Firma individual automática al radicar, co-firma de varios funcionarios sobre la misma comunicación, y firma en lote desde la bandeja: se marcan varios oficios/memorandos sin la firma del usuario y se firman de una sola acción (omite los que no aplican sin abortar el lote), cada uno con su hash y su registro en la bitácora"
+  },
+  {
+    "numero": "3.18",
+    "categoria": 3,
+    "orden": 18,
+    "titulo": "Integración con firma digital, estampado cronológico, encriptación",
+    "estado": "COMPLETO",
+    "nota": "Los tres mecanismos están integrados: (1) firma electrónica con hash SHA-256 (Ley 527/1999, Decreto 1074/2015) y una abstracción de proveedor de firma con el punto de conexión listo para una entidad de certificación digital acreditada; (2) estampado cronológico — cliente RFC-3161 que pide un token verificable a una TSA configurable, más un sello interno por la bitácora encadenada por hash cuando no hay TSA; (3) encriptación — documentos y base de datos cifrados en reposo (AES-256) y todo el tráfico sobre TLS. Contratar una CA para firma digital es un acto administrativo, no una brecha del sistema"
+  },
+  {
+    "numero": "3.19",
+    "categoria": 3,
+    "orden": 19,
+    "titulo": "Integración con mensajería expresa y correo certificado",
+    "estado": "PARCIAL",
+    "nota": "El oficio de salida tiene un paso de despacho efectivo que registra el medio (correo electrónico, físico, mensajería / correo certificado, entrega personal), el destino y la fecha, con el número de guía en la observación y constancia en la bitácora (acción DESPACHA) — ese paso, no la radicación, cierra el ciclo de la comunicación recibida. Falta la integración con la API de una empresa de mensajería para traer el estado del envío de forma automática"
+  },
+  {
+    "numero": "3.20",
+    "categoria": 3,
+    "orden": 20,
+    "titulo": "Formatos de firma digital CAdES, PAdES, XAdES",
+    "estado": "PARCIAL",
+    "nota": "El modelo de datos de la firma y la abstracción de proveedor contemplan los formatos PAdES y CAdES (campo formato); producirlos requiere integrar una entidad de certificación digital acreditada (contrato de la CDMB). XAdES no está contemplado"
+  },
+  {
+    "numero": "3.21",
+    "categoria": 3,
+    "orden": 21,
+    "titulo": "Ver documentos sin necesitar la aplicación que los generó",
+    "estado": "COMPLETO",
+    "nota": "Visor propio (modal) para PDF/imágenes; otros tipos se descargan para abrirse con su aplicación"
+  },
+  {
+    "numero": "3.22",
+    "categoria": 3,
+    "orden": 22,
+    "titulo": "Modificar registros guardados temporalmente antes de completarlos",
+    "estado": "COMPLETO",
+    "nota": "El borrador de respuesta de una recibida se guarda, se reabre precargado y se reedita hasta que se radica como oficio de salida (ahí queda bloqueado). En un expediente ABIERTO se corrige la metadata de cada archivo (nombre, tipo documental, folios, fecha) y se retira del índice un archivo subido por error — todo mientras no se cierre el expediente, momento en que se firma el índice"
+  },
+  {
+    "numero": "3.23",
+    "categoria": 3,
+    "orden": 23,
+    "titulo": "Lista de correos gestionados de forma automatizada",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.24",
+    "categoria": 3,
+    "orden": 24,
+    "titulo": "Activar/desactivar cuentas de correo gestionadas automáticamente",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.25",
+    "categoria": 3,
+    "orden": 25,
+    "titulo": "Capturar correos de entrada/salida con o sin adjuntos como un solo documento",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.26",
+    "categoria": 3,
+    "orden": 26,
+    "titulo": "Extraer metadatos básicos del encabezado de un correo",
+    "estado": "PENDIENTE",
+    "nota": "Sin integración de correo"
+  },
+  {
+    "numero": "3.27",
+    "categoria": 3,
+    "orden": 27,
+    "titulo": "Plataforma XML para importar información de otros sistemas",
+    "estado": "COMPLETO",
+    "nota": "Puntos de intercambio XML en las piezas clave del SGDEA: la TRD se importa y exporta en XML, y se exportan en XML el organigrama de dependencias, el vocabulario controlado, el índice electrónico de cada expediente y la bitácora de auditoría — todos con esquema propio y estable"
+  },
+  {
+    "numero": "3.28",
+    "categoria": 3,
+    "orden": 28,
+    "titulo": "Admin corrige metadatos de datos importados con inconsistencias, con auditoría propia",
+    "estado": "COMPLETO",
+    "nota": "La edición de subseries (individual o en lote) queda en la bitácora con cadena de hash, independiente del registro de auditoría de cuenta"
+  },
+  {
+    "numero": "3.29",
+    "categoria": 3,
+    "orden": 29,
+    "titulo": "Convertir el formato de un documento a uno parametrizado al capturarlo",
+    "estado": "PENDIENTE",
+    "nota": "Relacionado con la brecha de PDF/A"
+  },
+  {
+    "numero": "3.30",
+    "categoria": 3,
+    "orden": 30,
+    "titulo": "Crear documentos desde plantillas y formularios preestablecidos",
+    "estado": "COMPLETO",
+    "nota": "Plantillas administrables de asunto y cuerpo, con marcadores que se rellenan solos al cargar ([FECHA], [DESTINATARIO], [RADICADO]…), organizadas por categoría; se cargan al redactar un oficio, un memorando, una respuesta o la descripción de un expediente, y quedan editables antes de radicar y firmar"
+  },
+  {
+    "numero": "3.31",
+    "categoria": 3,
+    "orden": 31,
+    "titulo": "Herramienta de edición/diseño de plantillas",
+    "estado": "COMPLETO",
+    "nota": "Pestaña propia \"Plantillas\" en el módulo: crear, editar asunto/cuerpo, categorizar, duplicar y activar/desactivar (gateado al administrador de archivo), con vista previa y contador de uso"
+  },
+  {
+    "numero": "4.1",
+    "categoria": 4,
+    "orden": 1,
+    "titulo": "Buscar y recuperar información dentro de documentos, listas y metadatos según el perfil",
+    "estado": "COMPLETO",
+    "nota": "Búsqueda por campos y permisos, más el contenido real de los adjuntos en PDF: al cargarlos se extrae su texto en segundo plano y el mismo buscador de la bandeja y de expedientes documentales lo indexa junto con radicado, asunto, remitente y nombre de archivo. Un PDF sin capa de texto (escaneado como imagen pura) no aporta contenido buscable"
+  },
+  {
+    "numero": "4.2",
+    "categoria": 4,
+    "orden": 2,
+    "titulo": "Combinar operadores booleanos, comodines, rangos de tiempo, autocompletar",
+    "estado": "COMPLETO",
+    "nota": "La búsqueda de la bandeja combina varias palabras con Y (todas deben aparecer), admite \"frase exacta\" entre comillas y -palabra para excluir; el * actúa como comodín. El rango de tiempo tiene su propio control de período"
+  },
+  {
+    "numero": "4.3",
+    "categoria": 4,
+    "orden": 3,
+    "titulo": "Ver resultados, documentos de un resultado, expedientes de una serie, miniaturas",
+    "estado": "COMPLETO",
+    "nota": "Listado de resultados, documentos de un resultado, expedientes de una serie (enlace directo), miniatura de cada imagen adjunta, y una vista de «carpetas» que muestra los expedientes agrupados en cajones por dependencia (como un archivador físico) con sus datos de ubicación — incluidos los que provienen de Trámites 2.0 y GECON, con una etiqueta de origen y filtro por origen; vista de audio/video no aplica"
+  },
+  {
+    "numero": "4.4",
+    "categoria": 4,
+    "orden": 4,
+    "titulo": "Herramientas para generar informes y reportes",
+    "estado": "COMPLETO",
+    "nota": "Pestaña Reportes: volumen, tendencia mensual, por dependencia/tipo/estado y bitácora filtrable"
+  },
+  {
+    "numero": "4.5",
+    "categoria": 4,
+    "orden": 5,
+    "titulo": "Informes con gráficos y tablas como mínimo",
+    "estado": "COMPLETO",
+    "nota": "Gráfico de tendencia mensual, barras por dependencia/tipo/estado, y tabla de bitácora"
+  },
+  {
+    "numero": "4.6",
+    "categoria": 4,
+    "orden": 6,
+    "titulo": "Informes sobre errores del sistema (cargues fallidos, intentos fallidos)",
+    "estado": "COMPLETO",
+    "nota": "Muestra intentos fallidos de acceso Y cargues de documentos rechazados de los últimos 30 días (nueva acción CARGA_FALLIDA en la bitácora inalterable, tarjeta dedicada en Reportes)"
+  },
+  {
+    "numero": "4.7",
+    "categoria": 4,
+    "orden": 7,
+    "titulo": "Buscar dentro de los niveles de jerarquía del CCD",
+    "estado": "COMPLETO",
+    "nota": "Filtro por dependencia en la bandeja, más un buscador de serie documental por código/nombre/dependencia (combobox con sugerencias, sin el desplegable plano de 237 opciones que se había descartado por mala UX)"
+  },
+  {
+    "numero": "4.8",
+    "categoria": 4,
+    "orden": 8,
+    "titulo": "Formas flexibles de imprimir documentos y sus metadatos",
+    "estado": "COMPLETO",
+    "nota": "Constancia imprimible por comunicación, ficha imprimible por expediente (metadatos + índice con hash), rótulo de radicación, y «PDF consolidado» del expediente: un solo documento con portada, índice y cada pieza foliada (respuestas con rótulo y sello de firma, luego solicitudes con adjuntos), armado al vuelo sin tocar los originales"
+  },
+  {
+    "numero": "4.9",
+    "categoria": 4,
+    "orden": 9,
+    "titulo": "Imprimir listas de resultados de búsqueda",
+    "estado": "COMPLETO",
+    "nota": "Botón dedicado en bandeja y expedientes: oculta navegación/filtros/botones y deja solo un encabezado de contexto y la tabla de resultados"
+  },
+  {
+    "numero": "4.10",
+    "categoria": 4,
+    "orden": 10,
+    "titulo": "Visualizar documentos recuperados sin cargar la aplicación asociada",
+    "estado": "COMPLETO",
+    "nota": "Vista previa incrustada (PDF/imágenes) en un modal propio, sin salir de la página"
+  },
+  {
+    "numero": "4.11",
+    "categoria": 4,
+    "orden": 11,
+    "titulo": "Búsqueda de texto libre y metadatos integrada",
+    "estado": "COMPLETO",
+    "nota": "Un mismo cuadro busca por metadatos (radicado, asunto, tercero, nombre de adjunto) Y por el contenido real: el cuerpo firmado de una enviada/memorando, el borrador de respuesta de una recibida, y el texto extraído de los PDF adjuntos (ver 4.1)"
+  },
+  {
+    "numero": "4.12",
+    "categoria": 4,
+    "orden": 12,
+    "titulo": "Los resultados solo muestran lo que el perfil del usuario permite",
+    "estado": "COMPLETO",
+    "nota": "Acceso denegado por defecto en todo el módulo"
+  },
+  {
+    "numero": "4.13",
+    "categoria": 4,
+    "orden": 13,
+    "titulo": "Clasificar resultados por pertinencia, fecha, autor, tamaño, etc.",
+    "estado": "COMPLETO",
+    "nota": "Selector de orden en la bandeja: más reciente, más antiguo, asunto o remitente/destinatario (A-Z)"
+  },
+  {
+    "numero": "4.14",
+    "categoria": 4,
+    "orden": 14,
+    "titulo": "Ninguna búsqueda revela información restringida por permisos",
+    "estado": "COMPLETO",
+    "nota": "El modelo de permisos aplica de forma uniforme"
+  },
+  {
+    "numero": "4.15",
+    "categoria": 4,
+    "orden": 15,
+    "titulo": "Previsualizar un documento sin descargarlo",
+    "estado": "COMPLETO",
+    "nota": "Botón «Vista previa» abre el PDF/imagen en un modal; otros tipos avisan y ofrecen «Abrir» para descargar"
+  },
+  {
+    "numero": "5.1",
+    "categoria": 5,
+    "orden": 1,
+    "titulo": "Incorporar diferentes esquemas de metadatos",
+    "estado": "COMPLETO",
+    "nota": "El administrador de archivo define campos de metadato adicionales desde la interfaz (texto, número, fecha, lista de opciones, sí/no), con ámbito (comunicación / expediente / ambos) y, opcionalmente, ligados a una serie — un esquema de metadatos configurable sobre el esquema fijo de fábrica"
+  },
+  {
+    "numero": "5.2",
+    "categoria": 5,
+    "orden": 2,
+    "titulo": "Usuario autorizado parametriza y modifica reglas de metadatos",
+    "estado": "COMPLETO",
+    "nota": "Pantalla de administración de campos de metadato: crear, editar (nombre, ayuda, opciones, obligatoriedad, ámbito, serie, valor por defecto), activar/desactivar y eliminar — desactivar o borrar no toca los valores ya guardados"
+  },
+  {
+    "numero": "5.3",
+    "categoria": 5,
+    "orden": 3,
+    "titulo": "Metadatos heredados automáticamente del nivel superior",
+    "estado": "COMPLETO",
+    "nota": "La clasificación (dependencia/serie/subserie/tipo documental) se hereda del expediente; y un campo de metadato ligado a una serie aporta su «valor por defecto» como valor inicial heredado a toda comunicación de esa serie"
+  },
+  {
+    "numero": "5.4",
+    "categoria": 5,
+    "orden": 4,
+    "titulo": "Presentar en pantalla los metadatos de los documentos capturados",
+    "estado": "COMPLETO",
+    "nota": "El detalle de la comunicación los muestra todos"
+  },
+  {
+    "numero": "5.5",
+    "categoria": 5,
+    "orden": 5,
+    "titulo": "Palabras clave a series/subseries/documentos desde tesauros",
+    "estado": "COMPLETO",
+    "nota": "Palabras clave del vocabulario controlado en cada comunicación (y campo listo en el expediente documental), editables desde el detalle por quien distribuye; se muestran como etiquetas y entran a la búsqueda de texto libre"
+  },
+  {
+    "numero": "5.6",
+    "categoria": 5,
+    "orden": 6,
+    "titulo": "Ingresar metadatos adicionales al capturar o después",
+    "estado": "COMPLETO",
+    "nota": "Además de las palabras clave del vocabulario controlado, la ficha de una comunicación tiene los campos de metadato adicionales que definió el administrador — se llenan y modifican en cualquier momento desde el detalle, validados por tipo y obligatoriedad, y quedan en la bitácora"
+  },
+  {
+    "numero": "5.7",
+    "categoria": 5,
+    "orden": 7,
+    "titulo": "Validar y controlar los metadatos mínimos obligatorios",
+    "estado": "COMPLETO",
+    "nota": "Validación de campos requeridos en cada formulario"
+  },
+  {
+    "numero": "5.8",
+    "categoria": 5,
+    "orden": 8,
+    "titulo": "Extracción automática de metadatos al capturar",
+    "estado": "COMPLETO",
+    "nota": "Al capturar un documento se extraen automáticamente su huella SHA-256 (calculada en el navegador), el tamaño y el tipo (MIME). No lee metadatos embebidos del archivo (EXIF de una foto, propiedades de un PDF) — eso exigiría una librería de extracción que el proyecto no tiene"
+  },
+  {
+    "numero": "6.1",
+    "categoria": 6,
+    "orden": 1,
+    "titulo": "Crear y administrar usuarios, roles y permisos",
+    "estado": "COMPLETO",
+    "nota": "Ya existente en la plataforma base"
+  },
+  {
+    "numero": "6.2",
+    "categoria": 6,
+    "orden": 2,
+    "titulo": "Revocar privilegios de un grupo o de usuarios puntuales",
+    "estado": "COMPLETO",
+    "nota": "Quitar el rol o desactivar la cuenta"
+  },
+  {
+    "numero": "6.3",
+    "categoria": 6,
+    "orden": 3,
+    "titulo": "Asignar o quitar roles automáticamente tras un período",
+    "estado": "COMPLETO",
+    "nota": "Vigencia opcional del rol de correspondencia — pasada la fecha, se pierde el acceso automáticamente en cada solicitud, sin job programado ni intervención de un administrador"
+  },
+  {
+    "numero": "6.4",
+    "categoria": 6,
+    "orden": 4,
+    "titulo": "Restringir el acceso según los perfiles que configure el administrador",
+    "estado": "COMPLETO",
+    "nota": "Denegado por defecto"
+  },
+  {
+    "numero": "6.5",
+    "categoria": 6,
+    "orden": 5,
+    "titulo": "Soportar distintos mecanismos de autenticación",
+    "estado": "COMPLETO",
+    "nota": "Directorio activo institucional o cuenta propia"
+  },
+  {
+    "numero": "6.6",
+    "categoria": 6,
+    "orden": 6,
+    "titulo": "Pistas de auditoría inalterables de las acciones de cada usuario",
+    "estado": "COMPLETO",
+    "nota": "Bitácora con cadena de hash SHA-256"
+  },
+  {
+    "numero": "6.7",
+    "categoria": 6,
+    "orden": 7,
+    "titulo": "Auditoría con acción, usuario, fecha/hora, IP, país, navegador, dispositivo",
+    "estado": "COMPLETO",
+    "nota": "Acción, usuario, fecha/hora, IP y navegador + dispositivo (interpretados del User-Agent y visibles como columna \"Origen\" en la bitácora y en su exportación). Sin país geolocalizado — requeriría contratar un servicio externo de GeoIP"
+  },
+  {
+    "numero": "6.8",
+    "categoria": 6,
+    "orden": 8,
+    "titulo": "Mantener las pistas de auditoría el tiempo que definan las políticas",
+    "estado": "COMPLETO",
+    "nota": "No se eliminan nunca"
+  },
+  {
+    "numero": "6.9",
+    "categoria": 6,
+    "orden": 9,
+    "titulo": "Registrar intentos de violar los controles de acceso",
+    "estado": "COMPLETO",
+    "nota": "Queda en la bitácora inalterable el intento de entrar sin rol al módulo, a una sección administrativa sin permiso, a un expediente clasificado/reservado, y ahora también el intento de EJECUTAR una acción sensible sin permiso (transferir, anular, disponer, reclasificar, suspender/reactivar término, distribuir, catalogar, cerrar/reabrir/editar expediente, cambiar nivel de acceso o criterio de orden)"
+  },
+  {
+    "numero": "6.10",
+    "categoria": 6,
+    "orden": 10,
+    "titulo": "Impedir desactivar la generación de pistas de auditoría",
+    "estado": "COMPLETO",
+    "nota": "No existe ninguna opción para apagarla"
+  },
+  {
+    "numero": "6.11",
+    "categoria": 6,
+    "orden": 11,
+    "titulo": "Las pistas de auditoría permiten identificar errores de ejecución",
+    "estado": "COMPLETO",
+    "nota": "registrarErrorEjecucion(): las acciones archivísticas que modifican estado (disposición por lote, transferencia, confirmación, anulación, aplazamiento, reclasificación) dejan constancia en la bitácora inalterable si fallan a mitad de camino (acción ERROR_EJECUCION), con tarjeta dedicada en Reportes"
+  },
+  {
+    "numero": "6.12",
+    "categoria": 6,
+    "orden": 12,
+    "titulo": "Parametrizar el número de intentos fallidos de inicio de sesión",
+    "estado": "COMPLETO",
+    "nota": "Configurable desde Administración → Seguridad (intentos y minutos de espera)"
+  },
+  {
+    "numero": "6.13",
+    "categoria": 6,
+    "orden": 13,
+    "titulo": "Bloquear al usuario tras exceder los intentos fallidos, con alerta",
+    "estado": "COMPLETO",
+    "nota": "Bloquea la cuenta de forma persistente (no solo la ventana de tiempo) hasta que un administrador la habilite, y al entrar a /usuarios el administrador ve una alerta destacada con todas las cuentas bloqueadas por intentos fallidos y un enlace directo a cada una — sin correo/SMS (no hay proveedor en el proyecto), la alerta es visible en la app para quien tiene que actuar sobre ella"
+  },
+  {
+    "numero": "6.14",
+    "categoria": 6,
+    "orden": 14,
+    "titulo": "Informes con los datos de auditoría, con filtros",
+    "estado": "COMPLETO",
+    "nota": "Bitácora filtrable por acción, tipo de registro y rango de fechas, con paginación (pestaña Reportes)"
+  },
+  {
+    "numero": "6.15",
+    "categoria": 6,
+    "orden": 15,
+    "titulo": "Programar copias de seguridad y su recuperación",
+    "estado": "PENDIENTE",
+    "nota": "No hay una función de respaldo propia de la aplicación"
+  },
+  {
+    "numero": "6.16",
+    "categoria": 6,
+    "orden": 16,
+    "titulo": "Parametrizar copias de seguridad junto con los metadatos",
+    "estado": "PENDIENTE",
+    "nota": "No implementado"
+  },
+  {
+    "numero": "6.17",
+    "categoria": 6,
+    "orden": 17,
+    "titulo": "Notificar al encargado fallas críticas del sistema al instante",
+    "estado": "PARCIAL",
+    "nota": "El panel «Sistema» del tablero destaca en rojo las fallas críticas (errores de ejecución y cargues rechazados) de las últimas 24 horas para que el administrador de archivo actúe; sin canal de notificación instantánea (correo/SMS) porque no hay proveedor en el proyecto"
+  },
+  {
+    "numero": "6.18",
+    "categoria": 6,
+    "orden": 18,
+    "titulo": "Niveles de clasificación de información (clasificada, reservada, confidencial)",
+    "estado": "COMPLETO",
+    "nota": "Pública/clasificada/reservada (la taxonomía real de la Ley 1712/2014 colombiana; “confidencial” no es una categoría legal aquí), con fundamento obligatorio al restringir"
+  },
+  {
+    "numero": "6.19",
+    "categoria": 6,
+    "orden": 19,
+    "titulo": "Proteger las operaciones contra adulteración, supresión u ocultamiento",
+    "estado": "COMPLETO",
+    "nota": "La cadena de hash detecta cualquier alteración"
+  },
+  {
+    "numero": "6.20",
+    "categoria": 6,
+    "orden": 20,
+    "titulo": "Mecanismos de recuperación de credenciales de acceso",
+    "estado": "COMPLETO",
+    "nota": "Tres vías: el usuario cambia su propia contraseña desde «Mi cuenta»; un administrador restablece la de una cuenta local (con la política de contraseñas y el histórico aplicados); y las cuentas de directorio activo las recupera el AD institucional de la Corporación. Sin autoservicio por correo (no hay proveedor)"
+  },
+  {
+    "numero": "6.21",
+    "categoria": 6,
+    "orden": 21,
+    "titulo": "Controlar tiempos de inactividad y bloqueo de sesión",
+    "estado": "COMPLETO",
+    "nota": "Sesión deslizante: se cierra tras 30 minutos sin actividad; tope absoluto de 7 días"
+  },
+  {
+    "numero": "6.22",
+    "categoria": 6,
+    "orden": 22,
+    "titulo": "Revertir (rollback) operaciones que fallen a mitad de camino",
+    "estado": "COMPLETO",
+    "nota": "Las acciones críticas usan transacciones de base de datos"
+  },
+  {
+    "numero": "6.23",
+    "categoria": 6,
+    "orden": 23,
+    "titulo": "Aplicar técnicas criptográficas en operaciones sensibles",
+    "estado": "COMPLETO",
+    "nota": "Hash SHA-256 para firma e integridad; contraseñas con bcrypt"
+  },
+  {
+    "numero": "6.24",
+    "categoria": 6,
+    "orden": 24,
+    "titulo": "Import/export por interfaces seguras con protocolos de seguridad",
+    "estado": "COMPLETO",
+    "nota": "HTTPS y autenticación en todo el módulo salvo la ventanilla pública declarada"
+  },
+  {
+    "numero": "6.25",
+    "categoria": 6,
+    "orden": 25,
+    "titulo": "No limitar el número de roles o grupos configurables",
+    "estado": "PARCIAL",
+    "nota": "Cuatro roles de correspondencia definidos de fábrica, no roles arbitrarios nuevos"
+  },
+  {
+    "numero": "6.26",
+    "categoria": 6,
+    "orden": 26,
+    "titulo": "Marcar un usuario como inactivo sin eliminarlo",
+    "estado": "COMPLETO",
+    "nota": "Ya existente en la plataforma base"
+  },
+  {
+    "numero": "6.27",
+    "categoria": 6,
+    "orden": 27,
+    "titulo": "Generar hashes que validen la integridad de los registros de seguridad",
+    "estado": "COMPLETO",
+    "nota": "La propia bitácora es una cadena de hash"
+  },
+  {
+    "numero": "6.28",
+    "categoria": 6,
+    "orden": 28,
+    "titulo": "Rótulo de nivel de clasificación en los reportes generados",
+    "estado": "COMPLETO",
+    "nota": "Visible en el detalle, en el listado de expedientes, y como columna en las exportaciones CSV/XML"
+  },
+  {
+    "numero": "6.29",
+    "categoria": 6,
+    "orden": 29,
+    "titulo": "Definir por parámetro la longitud mínima y máxima de contraseñas",
+    "estado": "COMPLETO",
+    "nota": "Configurable desde Administración → Seguridad"
+  },
+  {
+    "numero": "6.30",
+    "categoria": 6,
+    "orden": 30,
+    "titulo": "Recordar un histórico de contraseñas usadas",
+    "estado": "COMPLETO",
+    "nota": "Cantidad configurable; rechaza reutilizar una contraseña ya usada al restablecerla"
+  },
+  {
+    "numero": "6.31",
+    "categoria": 6,
+    "orden": 31,
+    "titulo": "Diccionario de contraseñas no válidas",
+    "estado": "COMPLETO",
+    "nota": "Lista de contraseñas obviamente débiles, rechazada siempre sin importar la configuración"
+  },
+  {
+    "numero": "6.32",
+    "categoria": 6,
+    "orden": 32,
+    "titulo": "Controlar por parámetro la complejidad de la contraseña",
+    "estado": "COMPLETO",
+    "nota": "Mayúscula, número y carácter especial, cada uno activable por separado"
+  },
+  {
+    "numero": "6.33",
+    "categoria": 6,
+    "orden": 33,
+    "titulo": "Contraseñas nunca en texto plano, cifradas con algoritmo de una vía",
+    "estado": "COMPLETO",
+    "nota": "bcrypt — más robusto que el MD5/SHA mínimo exigido"
+  },
+  {
+    "numero": "6.34",
+    "categoria": 6,
+    "orden": 34,
+    "titulo": "Desconectar usuarios inactivos tras un tiempo definido",
+    "estado": "COMPLETO",
+    "nota": "Middleware renueva la sesión en cada petición activa; sin actividad, la siguiente petición exige volver a iniciar sesión"
+  },
+  {
+    "numero": "6.35",
+    "categoria": 6,
+    "orden": 35,
+    "titulo": "Definir vigencia mínima, máxima y aviso de vencimiento de contraseñas",
+    "estado": "COMPLETO",
+    "nota": "Vigencia mínima y máxima configurables, con aviso en la ficha; y ahora cualquier usuario puede cambiar su propia contraseña desde «Mi cuenta»"
+  },
+  {
+    "numero": "6.36",
+    "categoria": 6,
+    "orden": 36,
+    "titulo": "Estados de cuenta: habilitado, deshabilitado, bloqueado, suspendido",
+    "estado": "COMPLETO",
+    "nota": "Los cuatro estados existen, se muestran y se editan desde /usuarios; «bloqueada» la fija el propio sistema al exceder los intentos fallidos de inicio de sesión"
+  },
+  {
+    "numero": "6.37",
+    "categoria": 6,
+    "orden": 37,
+    "titulo": "Rastrear automáticamente todas las acciones sin intervención manual",
+    "estado": "COMPLETO",
+    "nota": "La bitácora se registra sola en cada acción del código"
+  },
+  {
+    "numero": "6.38",
+    "categoria": 6,
+    "orden": 38,
+    "titulo": "Copias de seguridad automáticas de todos los elementos del sistema",
+    "estado": "PARCIAL",
+    "nota": "Cubierto a nivel de infraestructura (Supabase), no como función propia de la aplicación"
+  },
+  {
+    "numero": "6.39",
+    "categoria": 6,
+    "orden": 39,
+    "titulo": "Notificar fallas durante la restauración de copias de seguridad",
+    "estado": "PENDIENTE",
+    "nota": "Depende de la infraestructura, no de la aplicación"
+  },
+  {
+    "numero": "7.1",
+    "categoria": 7,
+    "orden": 1,
+    "titulo": "Crear, administrar y ejecutar flujos de trabajo electrónicos",
+    "estado": "COMPLETO",
+    "nota": "Motor de flujos configurable: el administrador de archivo crea un flujo (pasos + transiciones + responsable por paso) desde Configuración → Flujos de trabajo, lo activa y lo aplica a una comunicación desde su detalle; desde ahí se avanza paso a paso eligiendo la transición, con constancia de cada movimiento en la bitácora inalterable (acción FLUJO)"
+  },
+  {
+    "numero": "7.2",
+    "categoria": 7,
+    "orden": 2,
+    "titulo": "Diagramar y modelar flujos de trabajo",
+    "estado": "COMPLETO",
+    "nota": "Editor visual de lienzo (React Flow, librería libre MIT): se arrastran los pasos para colocarlos, se tira desde un paso hasta otro para crear la transición, y un panel lateral renombra / cambia el tipo / edita la etiqueta de la conexión o borra. Los pasos tienen forma según su tipo (tarea/revisión/decisión/fin). Validación estructural (paso sin salida, inalcanzable, cierre no alcanzable). Cuando el flujo corre sobre una comunicación se muestra además como flujograma (Mermaid) con el paso actual y los completados resaltados"
+  },
+  {
+    "numero": "7.3",
+    "categoria": 7,
+    "orden": 3,
+    "titulo": "Diagramar las tareas que componen un procedimiento",
+    "estado": "COMPLETO",
+    "nota": "Cada tarea/revisión/decisión del procedimiento es un nodo del lienzo con su forma propia; las transiciones nombradas (arrastrables) conectan los nodos. La posición de cada paso se guarda; el término sugerido, el responsable y las instrucciones se editan en el detalle del paso"
+  },
+  {
+    "numero": "7.4",
+    "categoria": 7,
+    "orden": 4,
+    "titulo": "Parametrizar los tiempos de ejecución y respuesta de los procesos",
+    "estado": "COMPLETO",
+    "nota": "Cada paso del flujo tiene un término sugerido en días hábiles editable por el administrador. El término de ley de una PQRSD sigue fijo en código a propósito (Ley 1755/2015: 15/10/30 días según el tipo) — hacerlo editable abriría la puerta a incumplir la norma; el SLA por paso es la política organizacional interna, que sí se parametriza"
+  },
+  {
+    "numero": "7.5",
+    "categoria": 7,
+    "orden": 5,
+    "titulo": "Mecanismo de simulación de flujos modelados",
+    "estado": "PARCIAL",
+    "nota": "El editor tiene un simulador que recorre el flujo desde el paso inicial eligiendo la salida en cada bifurcación y muestra el camino resultante, sin tocar ninguna comunicación real; falta simular con datos de entrada y tiempos"
+  },
+  {
+    "numero": "7.6",
+    "categoria": 7,
+    "orden": 6,
+    "titulo": "Parametrizar reglas de estados, validación de actividades y asignación de usuarios",
+    "estado": "COMPLETO",
+    "nota": "Los pasos del flujo (que son sus estados) y la regla de asignación de responsable de cada uno (dependencia de la comunicación / dependencia fija / cargo / quien radicó / responsable del paso anterior / manual) las define el administrador desde la interfaz"
+  },
+  {
+    "numero": "7.7",
+    "categoria": 7,
+    "orden": 7,
+    "titulo": "Administrar procesos por lotes y automáticos programados",
+    "estado": "PARCIAL",
+    "nota": "Procesos por lotes sí: firma en lote, disposición final por lote y edición masiva de retención/disposición en la TRD. Procesos automáticos programados (sin intervención humana, en un horario) no"
+  },
+  {
+    "numero": "7.8",
+    "categoria": 7,
+    "orden": 8,
+    "titulo": "Parametrizar accesos de usuarios/grupos sobre los flujos",
+    "estado": "COMPLETO",
+    "nota": "Cada flujo puede restringirse a una o varias dependencias: solo un funcionario de una de ellas (más el administrador de archivo) puede iniciarlo o avanzarlo. Sin dependencias marcadas, lo opera cualquiera con permiso de distribución"
+  },
+  {
+    "numero": "7.9",
+    "categoria": 7,
+    "orden": 9,
+    "titulo": "Ver actividades pendientes, priorizar y ver desempeño en tiempo real",
+    "estado": "COMPLETO",
+    "nota": "El panel muestra expedientes/pasos pendientes; el detalle de cada comunicación calcula el paso siguiente del ciclo (repartir / redactar / radicar salida / despachar) con el rol responsable; y Reportes suma el tiempo promedio de respuesta (días entre radicación y respuesta formal), general y por dependencia — identifica dónde hay cuellos de botella"
+  },
+  {
+    "numero": "7.10",
+    "categoria": 7,
+    "orden": 10,
+    "titulo": "Visualizar gráficamente el estado de cada flujo",
+    "estado": "COMPLETO",
+    "nota": "Barra de progreso por etapas en trámites y correspondencia"
+  },
+  {
+    "numero": "7.11",
+    "categoria": 7,
+    "orden": 11,
+    "titulo": "No limitar las acciones que componen un flujo",
+    "estado": "COMPLETO",
+    "nota": "Un flujo admite cualquier número de pasos y de transiciones entre ellos, incluidos ciclos (devolver a un paso anterior) — sin tope en el modelo"
+  },
+  {
+    "numero": "7.12",
+    "categoria": 7,
+    "orden": 12,
+    "titulo": "Múltiples versiones de un mismo proceso, con la última seleccionable",
+    "estado": "PARCIAL",
+    "nota": "«Duplicar» crea una copia inactiva y editable del flujo (pasos, transiciones y posiciones) para trabajar una versión nueva sin tocar la que está en uso; falta un historial de versiones formal con selección de la vigente"
+  },
+  {
+    "numero": "7.13",
+    "categoria": 7,
+    "orden": 13,
+    "titulo": "Generar los flujos en un formato estándar (ej. BPMN)",
+    "estado": "COMPLETO",
+    "nota": "«Descargar BPMN» genera un XML BPMN 2.0 válido del flujo (startEvent, userTask por paso, endEvent, sequenceFlow con nombre y sección de diagrama con las posiciones del lienzo) que abre en cualquier herramienta BPMN"
+  },
+  {
+    "numero": "7.14",
+    "categoria": 7,
+    "orden": 14,
+    "titulo": "Identificador único por flujo de trabajo",
+    "estado": "COMPLETO",
+    "nota": "El radicado (consecutivo atómico, formato CDMB-{R|E|I}-AAAA-NNNNNN) identifica de forma única el ciclo completo de cada comunicación — no existe una entidad \"flujo\" separada de la comunicación misma, así que su propio identificador cumple el requisito"
+  },
+  {
+    "numero": "7.15",
+    "categoria": 7,
+    "orden": 15,
+    "titulo": "Trazabilidad de las acciones del flujo en la auditoría",
+    "estado": "COMPLETO",
+    "nota": "Bitácora de expediente y de comunicación"
+  },
+  {
+    "numero": "7.16",
+    "categoria": 7,
+    "orden": 16,
+    "titulo": "Solo un rol administrador crea y ejecuta los flujos",
+    "estado": "COMPLETO",
+    "nota": "La definición de flujos está gateada al administrador de archivo (MoReq 7.16); la ejecución sobre una comunicación, a quien tiene permiso de distribución"
+  },
+  {
+    "numero": "7.17",
+    "categoria": 7,
+    "orden": 17,
+    "titulo": "Definir flujos de trabajo basados en plantillas",
+    "estado": "COMPLETO",
+    "nota": "4 flujos precargados (PQRSD con visto bueno, oficio de salida con revisión, memorando interno, ruta básica genérica) que se cargan con un botón y quedan como flujos normales, editables y activables"
+  },
+  {
+    "numero": "7.18",
+    "categoria": 7,
+    "orden": 18,
+    "titulo": "Detener un flujo de trabajo en curso",
+    "estado": "COMPLETO",
+    "nota": "Cualquier comunicación recibida en trámite se puede DETENER con un motivo obligatorio, y reanudar después. Si es una PQRSD, además suspende/reanuda el término de ley por los días hábiles que faltaban (Art. 17 CPACA); si no, es una pausa administrativa. Enviada/memorando quedan definitivos al radicarse (no hay flujo posterior que detener)"
+  },
+  {
+    "numero": "7.19",
+    "categoria": 7,
+    "orden": 19,
+    "titulo": "Tiempos límite con notificación de incumplimiento",
+    "estado": "COMPLETO",
+    "nota": "Aviso en la bandeja con las comunicaciones cuyo término de ley venció y siguen sin cerrarse, más un filtro \"Término de ley\" (vencidas / por vencer en 3 días); sin correo/SMS, el aviso es visible para quien tramita"
+  },
+  {
+    "numero": "7.20",
+    "categoria": 7,
+    "orden": 20,
+    "titulo": "Semáforos que muestran el cumplimiento de tiempos por actividad",
+    "estado": "COMPLETO",
+    "nota": "Colores gris, ámbar y rojo según cercanía al vencimiento"
+  },
+  {
+    "numero": "8.1",
+    "categoria": 8,
+    "orden": 1,
+    "titulo": "Inactividad no prevista menor a 10h/trimestre y 40h/año",
+    "estado": "PARCIAL",
+    "nota": "Depende del SLA de la infraestructura de hosting, no verificado formalmente"
+  },
+  {
+    "numero": "8.2",
+    "categoria": 8,
+    "orden": 2,
+    "titulo": "Disponibilidad 24/7/365",
+    "estado": "PARCIAL",
+    "nota": "Depende de la infraestructura de hosting"
+  },
+  {
+    "numero": "8.3",
+    "categoria": 8,
+    "orden": 3,
+    "titulo": "Recuperar el sistema en menos de 2 horas tras una falla",
+    "estado": "PARCIAL",
+    "nota": "Depende de la infraestructura, sin procedimiento documentado propio"
+  },
+  {
+    "numero": "8.4",
+    "categoria": 8,
+    "orden": 4,
+    "titulo": "Búsqueda sencilla en 3s y compleja en 5s sin importar el volumen",
+    "estado": "PARCIAL",
+    "nota": "No se ha hecho una prueba de carga formal"
+  },
+  {
+    "numero": "8.5",
+    "categoria": 8,
+    "orden": 5,
+    "titulo": "Toda funcionalidad responde en menos de 5 segundos",
+    "estado": "PARCIAL",
+    "nota": "No verificado formalmente con pruebas de carga"
+  },
+  {
+    "numero": "8.6",
+    "categoria": 8,
+    "orden": 6,
+    "titulo": "Escalable sin degradar el servicio al crecer",
+    "estado": "PARCIAL",
+    "nota": "La arquitectura es escalable por diseño; sin prueba bajo carga real"
+  },
+  {
+    "numero": "8.7",
+    "categoria": 8,
+    "orden": 7,
+    "titulo": "100% web, administrado desde el navegador",
+    "estado": "COMPLETO",
+    "nota": "Sin cliente de escritorio"
+  },
+  {
+    "numero": "8.8",
+    "categoria": 8,
+    "orden": 8,
+    "titulo": "Soporte de almacenamiento tipo NAS, DAS y SAN",
+    "estado": "PENDIENTE",
+    "nota": "Usa almacenamiento en la nube (Supabase Storage), arquitectura distinta"
+  },
+  {
+    "numero": "8.9",
+    "categoria": 8,
+    "orden": 9,
+    "titulo": "Fácil instalación y despliegue de plugins y desarrollos propios",
+    "estado": "PENDIENTE",
+    "nota": "No hay sistema de plugins"
+  },
+  {
+    "numero": "8.10",
+    "categoria": 8,
+    "orden": 10,
+    "titulo": "Máxima flexibilidad para parametrizar tipos de datos sin tocar código",
+    "estado": "PENDIENTE",
+    "nota": "El modelo de datos lo cambia solo el equipo de desarrollo"
+  },
+  {
+    "numero": "8.11",
+    "categoria": 8,
+    "orden": 11,
+    "titulo": "Al menos dos interfaces: por comandos y gráfica",
+    "estado": "PENDIENTE",
+    "nota": "Solo interfaz web gráfica"
+  },
+  {
+    "numero": "8.12",
+    "categoria": 8,
+    "orden": 12,
+    "titulo": "Funciones fáciles e intuitivas de usar",
+    "estado": "COMPLETO",
+    "nota": "Enfoque explícito de esta fase: explicar cada campo y proceso"
+  },
+  {
+    "numero": "8.13",
+    "categoria": 8,
+    "orden": 13,
+    "titulo": "Manuales de usuario estructurados",
+    "estado": "COMPLETO",
+    "nota": "Manual en /correspondencia/ayuda con índice, el ciclo completo de cada tipo de radicado y expediente, y secciones de administración (TRD/dependencias/roles) y disposición final para quien administra el archivo"
+  },
+  {
+    "numero": "8.14",
+    "categoria": 8,
+    "orden": 14,
+    "titulo": "Módulo de ayuda en línea",
+    "estado": "COMPLETO",
+    "nota": "Ayuda contextual por pantalla más una guía centralizada (/correspondencia/ayuda, enlazada desde el encabezado en toda pantalla) con el ciclo completo explicado, y una caja de \"qué sigue\" en cada comunicación con enlace directo a la acción pendiente"
+  },
+  {
+    "numero": "8.15",
+    "categoria": 8,
+    "orden": 15,
+    "titulo": "Diseño responsive para computador, tableta y celular",
+    "estado": "COMPLETO",
+    "nota": "Basado en Tailwind CSS"
+  },
+  {
+    "numero": "8.16",
+    "categoria": 8,
+    "orden": 16,
+    "titulo": "El usuario personaliza menús, colores, atajos y disposición de pantallas",
+    "estado": "PENDIENTE",
+    "nota": "Interfaz fija, sin personalización por usuario"
+  },
+  {
+    "numero": "8.17",
+    "categoria": 8,
+    "orden": 17,
+    "titulo": "Acceso a todas las funciones por teclado",
+    "estado": "COMPLETO",
+    "nota": "Los formularios y la navegación por pestañas son operables por teclado, el visor de documentos se cierra con Esc, y hay un enlace \"Saltar al contenido\" al inicio de cada pantalla del módulo; sin atajos de teclado configurables"
+  },
+  {
+    "numero": "8.18",
+    "categoria": 8,
+    "orden": 18,
+    "titulo": "Información de contexto y estado del usuario en todo momento",
+    "estado": "COMPLETO",
+    "nota": "Barra de navegación con el usuario conectado"
+  },
+  {
+    "numero": "8.19",
+    "categoria": 8,
+    "orden": 19,
+    "titulo": "Gestionar ventanas (tamaño, posición) guardado en el perfil del usuario",
+    "estado": "PENDIENTE",
+    "nota": "No aplica a una aplicación web (no es de escritorio)"
+  }
+]

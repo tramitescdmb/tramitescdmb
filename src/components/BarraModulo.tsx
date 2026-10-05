@@ -172,7 +172,9 @@ function MenuGrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: bo
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className="absolute right-0 top-full z-20 mt-2 min-w-[16rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 sm:left-0 sm:right-auto"
+          className={`absolute right-0 top-full z-20 mt-2 min-w-[16rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
+            grupo.lado === "derecha" ? "" : "sm:left-0 sm:right-auto"
+          }`}
         >
           {items.map((it) => {
             const leyenda = it.bloqueadoPara ?? grupo.bloqueadoPara;

@@ -156,6 +156,7 @@ model Usuario {
   expedientesContractualesEliminados ExpedienteContractual[]           @relation("ExpContractualEliminadoPor")
   supervisionesContrato              ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
   expedientesTramiteArchivados       Expediente[]                      @relation("ExpedienteTramiteArchivadoPor")
+  requisitosMoreqActualizados        RequisitoMoreq[]                  @relation("RequisitoMoreqActualizadoPor")
   asignacionesContrato               ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
   asignacionesContratoHechas         ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
   etapasContratacionAprobadas        EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
@@ -1404,6 +1405,29 @@ enum OrigenExpedienteDocumental {
   SGDEA
   TRAMITES
   GECON
+}
+
+enum EstadoRequisitoMoreq {
+  COMPLETO
+  PARCIAL
+  PENDIENTE
+}
+
+model RequisitoMoreq {
+  id               String               @id @default(cuid())
+  numero           String               @unique
+  categoria        Int
+  orden            Int
+  titulo           String               @db.Text
+  estado           EstadoRequisitoMoreq
+  nota             String               @db.Text
+  actualizadoEn    DateTime?
+  actualizadoPorId String?
+  createdAt        DateTime             @default(now())
+
+  actualizadoPor Usuario? @relation("RequisitoMoreqActualizadoPor", fields: [actualizadoPorId], references: [id])
+
+  @@index([categoria, orden])
 }
 
 model ExpedienteDocumental {
