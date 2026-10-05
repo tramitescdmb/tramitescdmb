@@ -37,7 +37,6 @@ import {
   clasificarPorTipo,
   FORMA_PLATAFORMA,
   LETRA_PLATAFORMA,
-  SUFIJO_SIN_COORDENADAS,
   puntoExternoAReporte,
   svgMarcadorExterno,
   type CapaExterna,
@@ -61,14 +60,6 @@ export type PuntoTramite = {
 };
 
 type PuntoExternoVisible = { capa: CapaExterna; punto: PuntoExterno; grupo: GrupoTipo };
-type VistaCapa = { con: boolean; sin: boolean };
-type ModoCapa = "todos" | "con" | "sin" | "ninguno";
-
-function modoDeVista(v: VistaCapa, encendida: boolean): ModoCapa {
-  if (!encendida || (!v.con && !v.sin)) return "ninguno";
-  if (v.con && v.sin) return "todos";
-  return v.con ? "con" : "sin";
-}
 
 const SIN_CAPAS_EXTERNAS: CapaExterna[] = [];
 
@@ -261,57 +252,26 @@ export function GeovisorTramites({
     Object.fromEntries(capasExternas.map((c) => [c.id, destacadoInicial.capa === c.id && c.puntos.length > 0])),
   );
   const [gruposOcultos, setGruposOcultos] = useState<Partial<Record<PlataformaExterna, Set<string>>>>({});
-  const [vistas, setVistas] = useState<Partial<Record<PlataformaExterna, VistaCapa>>>({});
-  const [sinCoordenadas, setSinCoordenadas] = useState<Partial<Record<PlataformaExterna, { cargando: boolean; puntos: PuntoExterno[] | null }>>>({});
-  const vistaDe = (id: PlataformaExterna): VistaCapa => vistas[id] ?? { con: true, sin: false };
-
-  function cargarSinCoordenadas(id: PlataformaExterna) {
-    const actual = sinCoordenadas[id];
-    if (actual?.cargando || actual?.puntos) return;
-    setSinCoordenadas((prev) => ({ ...prev, [id]: { cargando: true, puntos: null } }));
-    fetch(`/api/visor-tramites/sin-coordenadas?capa=${id}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { puntos: PuntoExterno[] }) => setSinCoordenadas((prev) => ({ ...prev, [id]: { cargando: false, puntos: d.puntos } })))
-      .catch(() => {
-        setSinCoordenadas((prev) => ({ ...prev, [id]: { cargando: false, puntos: null } }));
-        mostrarMensaje("No se pudieron cargar los trámites sin coordenadas.");
-      });
-  }
-
-  function aplicarModo(id: PlataformaExterna, modo: ModoCapa) {
-    const vista = { con: modo === "todos" || modo === "con", sin: modo === "todos" || modo === "sin" };
-    if (vista.sin) cargarSinCoordenadas(id);
-    setVistas((prev) => ({ ...prev, [id]: vista }));
-    setGruposOcultos((prev) => ({ ...prev, [id]: new Set() }));
-    if (modo !== "ninguno") setExternasOn((prev) => ({ ...prev, [id]: true }));
-  }
-
-  const puntosDeCapa = (c: CapaExterna) => [...c.puntos, ...(sinCoordenadas[c.id]?.puntos ?? [])];
-
   const clasificacionExterna = useMemo(
-    () => new Map(capasExternas.map((c) => [c.id, clasificarPorTipo(puntosDeCapa(c), c.ordenTipos)])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [capasExternas, sinCoordenadas],
+    () => new Map(capasExternas.map((c) => [c.id, clasificarPorTipo(c.puntos, c.ordenTipos)])),
+    [capasExternas],
   );
 
   const externosVisibles = useMemo(() => {
     const out: PuntoExternoVisible[] = [];
     for (const capa of capasExternas) {
       if (!externasOn[capa.id]) continue;
-      const vista = vistas[capa.id] ?? { con: true, sin: false };
       const clasif = clasificacionExterna.get(capa.id)!;
       const ocultos = gruposOcultos[capa.id];
-      for (const punto of [...capa.puntos, ...(sinCoordenadas[capa.id]?.puntos ?? [])]) {
-        if (punto.aproximado ? !vista.sin : !vista.con) continue;
+      for (const punto of capa.puntos) {
         const grupo = clasif.grupoDe(punto.tipo);
-        if (ocultos?.has(punto.aproximado ? grupo.clave + SUFIJO_SIN_COORDENADAS : grupo.clave)) continue;
+        if (ocultos?.has(grupo.clave)) continue;
         out.push({ capa, punto, grupo });
       }
     }
     return out;
-  }, [capasExternas, externasOn, gruposOcultos, clasificacionExterna, vistas, sinCoordenadas]);
+  }, [capasExternas, externasOn, gruposOcultos, clasificacionExterna]);
 
-  const externosUbicados = useMemo(() => externosVisibles.filter((x) => !x.punto.aproximado), [externosVisibles]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se usa una vez, al montar (inicializador de useState)
   const zonaInicial = useMemo(() => parseZonaParam(searchParams.get("zona")), []);
   const contenedorRef = useRef<HTMLDivElement>(null);
@@ -410,19 +370,19 @@ export function GeovisorTramites({
 
   const externosEnZona = useMemo(() => {
     if (medida.length < 3) return [];
-    return externosUbicados.filter((x) => puntoEnPoligono([x.punto.lat, x.punto.lon], medida));
-  }, [externosUbicados, medida]);
+    return externosVisibles.filter((x) => puntoEnPoligono([x.punto.lat, x.punto.lon], medida));
+  }, [externosVisibles, medida]);
 
   const externosCerca = useMemo(() => {
     if (!puntoCerca) return [];
-    return externosUbicados
+    return externosVisibles
       .map((x) => ({ ...x, distanciaM: distanciaM(puntoCerca, [x.punto.lat, x.punto.lon]) }))
       .filter((x) => x.distanciaM <= radioCerca)
       .sort((a, b) => a.distanciaM - b.distanciaM);
-  }, [externosUbicados, puntoCerca, radioCerca]);
+  }, [externosVisibles, puntoCerca, radioCerca]);
 
   function paraReporte(tramites2: PuntoTramite[], externos: PuntoExternoVisible[]): PuntoReporte[] {
-    return [...tramites2, ...externos.filter((x) => !x.punto.aproximado).map((x) => puntoExternoAReporte(x.capa, x.punto))];
+    return [...tramites2, ...externos.map((x) => puntoExternoAReporte(x.capa, x.punto))];
   }
 
   const distanciaLinea = useMemo(() => {
@@ -583,29 +543,26 @@ export function GeovisorTramites({
       const forma = FORMA_PLATAFORMA[capaCfg.id];
       const letra = LETRA_PLATAFORMA[capaCfg.id];
       const iconos = new Map<string, import("leaflet").DivIcon>();
-      const iconoDe = (color: string, hueco: boolean) => {
-        const k = `${color}${hueco}`;
-        let icono = iconos.get(k);
+      const iconoDe = (color: string) => {
+        let icono = iconos.get(color);
         if (!icono) {
-          icono = L.divIcon({ className: "", html: svgMarcadorExterno(forma, color, 24, letra, hueco), iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -10] });
-          iconos.set(k, icono);
+          icono = L.divIcon({ className: "", html: svgMarcadorExterno(forma, color, 24, letra), iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -10] });
+          iconos.set(color, icono);
         }
         return icono;
       };
       const marcadores: import("leaflet").Marker[] = [];
       for (const { punto: p, grupo } of porCapa.get(capaCfg.id) ?? []) {
-        const marker = L.marker([p.lat, p.lon], { icon: iconoDe(grupo.color, Boolean(p.aproximado)), zIndexOffset: p.aproximado ? 300 : 500 });
+        const marker = L.marker([p.lat, p.lon], { icon: iconoDe(grupo.color), zIndexOffset: 500 });
         marker.bindPopup(() => {
           const contenedor = document.createElement("div");
           contenedor.className = "text-xs leading-relaxed";
           contenedor.innerHTML = `
             <p class="mb-1 border-b border-stone-200 pb-1 font-semibold uppercase tracking-wide text-cdmb-700">${escapeHtml(capaCfg.nombre)}</p>
             <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
-            <p class="flex items-start gap-1 text-stone-700"><span class="mt-0.5 flex-none">${svgMarcadorExterno(forma, grupo.color, 12, undefined, Boolean(p.aproximado))}</span>${escapeHtml(p.tipo)}</p>
+            <p class="flex items-start gap-1 text-stone-700"><span class="mt-0.5 flex-none">${svgMarcadorExterno(forma, grupo.color, 12)}</span>${escapeHtml(p.tipo)}</p>
             ${p.detalle ? `<p class="text-stone-600">${escapeHtml(p.detalle)}</p>` : ""}
-            <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>
-            ${p.aproximado ? `<p class="mt-1 rounded bg-amber-50 px-1.5 py-1 text-amber-800">Sin coordenadas registradas: se muestra en la cabecera municipal de ${escapeHtml(p.municipio ?? "")} como ubicación aproximada.</p>` : ""}
-          `;
+            <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>          `;
           const enlace = document.createElement("a");
           enlace.href = p.enlace;
           enlace.className = "mt-1 inline-block font-medium text-cdmb-700 hover:underline";
@@ -614,7 +571,7 @@ export function GeovisorTramites({
           return contenedor;
         });
         marcadores.push(marker);
-        if (!destacadoMostradoRef.current && destacadoInicial.capa === capaCfg.id && destacadoInicial.punto === p.clave && !p.aproximado) destacado = marker;
+        if (!destacadoMostradoRef.current && destacadoInicial.capa === capaCfg.id && destacadoInicial.punto === p.clave) destacado = marker;
       }
       capa.addLayers(marcadores);
       map.addLayer(capa);
@@ -1027,9 +984,7 @@ export function GeovisorTramites({
                     return { ...prev, [id]: next };
                   })
                 }
-                vistaDe={vistaDe}
-                sinCoordenadas={sinCoordenadas}
-                onModo={aplicarModo}
+                onGruposOcultos={(id, claves) => setGruposOcultos((prev) => ({ ...prev, [id]: new Set(claves) }))}
                 capaMunicipios={capaMunicipios}
                 onCapaMunicipios={setCapaMunicipios}
                 capaEtiquetas={capaEtiquetas}
@@ -1354,9 +1309,7 @@ function PanelCapas({
   onExterna,
   gruposOcultos,
   onToggleGrupo,
-  vistaDe,
-  sinCoordenadas,
-  onModo,
+  onGruposOcultos,
   capaMunicipios,
   onCapaMunicipios,
   capaEtiquetas,
@@ -1374,9 +1327,7 @@ function PanelCapas({
   onExterna: (id: PlataformaExterna, v: boolean) => void;
   gruposOcultos: Partial<Record<PlataformaExterna, Set<string>>>;
   onToggleGrupo: (id: PlataformaExterna, clave: string) => void;
-  vistaDe: (id: PlataformaExterna) => VistaCapa;
-  sinCoordenadas: Partial<Record<PlataformaExterna, { cargando: boolean; puntos: PuntoExterno[] | null }>>;
-  onModo: (id: PlataformaExterna, modo: ModoCapa) => void;
+  onGruposOcultos: (id: PlataformaExterna, claves: string[]) => void;
   capaMunicipios: boolean;
   onCapaMunicipios: (v: boolean) => void;
   capaEtiquetas: boolean;
@@ -1398,71 +1349,48 @@ function PanelCapas({
         const grupos = clasificacionExterna.get(c.id)?.grupos ?? [];
         const ocultos = gruposOcultos[c.id];
         const forma = FORMA_PLATAFORMA[c.id];
-        const vista = vistaDe(c.id);
-        const sin = sinCoordenadas[c.id];
-        const totalSin = sin?.puntos?.length;
-        const modo = modoDeVista(vista, Boolean(externasOn[c.id]));
+        const encendida = Boolean(externasOn[c.id]);
+        const activa = !encendida || grupos.every((g) => ocultos?.has(g.clave)) ? "ninguno" : !ocultos || ocultos.size === 0 ? "todos" : null;
         return (
           <div key={c.id}>
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" checked={Boolean(externasOn[c.id])} onChange={(e) => onExterna(c.id, e.target.checked)} />
+              <input type="checkbox" checked={encendida} onChange={(e) => onExterna(c.id, e.target.checked)} />
               <span className="flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, "#52514e", 20, LETRA_PLATAFORMA[c.id]) }} />
-              <span>
-                {c.nombre} ({c.puntos.length} con coordenadas{totalSin !== undefined ? ` · ${totalSin} sin coordenadas` : ""})
-              </span>
+              {c.nombre} ({c.puntos.length})
             </label>
-            <div className="ml-6 mt-1.5">
-              <SelectorOpciones<ModoCapa>
-                opciones={[
-                  { valor: "todos", etiqueta: "Todos" },
-                  { valor: "con", etiqueta: "Con coordenadas" },
-                  { valor: "sin", etiqueta: "Sin coordenadas" },
-                  { valor: "ninguno", etiqueta: "Ninguno" },
-                ]}
-                activa={modo}
-                cargando={sin?.cargando ? (vista.con ? "todos" : "sin") : null}
-                onElegir={(m) => (m === "ninguno" ? onExterna(c.id, false) : onModo(c.id, m))}
-              />
-            </div>
+            {grupos.length > 0 && (
+              <div className="ml-6 mt-1.5">
+                <SelectorOpciones
+                  opciones={[
+                    { valor: "todos", etiqueta: "Todos" },
+                    { valor: "ninguno", etiqueta: "Ninguno" },
+                  ]}
+                  activa={activa}
+                  onElegir={(v) => {
+                    if (v === "todos") {
+                      onExterna(c.id, true);
+                      onGruposOcultos(c.id, []);
+                    } else {
+                      onExterna(c.id, false);
+                    }
+                  }}
+                />
+              </div>
+            )}
             {externasOn[c.id] && (
               <ul className="ml-6 mt-1.5 space-y-1 border-l border-stone-100 pl-2">
-                {grupos.map((g) => {
-                  const verCon = vista.con && g.total > 0;
-                  const verSin = vista.sin && g.totalSin > 0;
-                  if (!verCon && !verSin) return null;
-                  const claveSin = g.clave + SUFIJO_SIN_COORDENADAS;
-                  return (
-                    <li key={g.clave}>
-                      {verCon ? (
-                        <label className="flex items-start justify-between gap-2 text-[11.5px] text-stone-600">
-                          <span className="flex items-start gap-1.5">
-                            <input type="checkbox" className="mt-0.5" checked={!ocultos?.has(g.clave)} onChange={() => onToggleGrupo(c.id, g.clave)} />
-                            <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, g.color, 13) }} />
-                            <span className="leading-tight">{g.etiqueta}</span>
-                          </span>
-                          <span className="flex-none text-stone-400">{g.total}</span>
-                        </label>
-                      ) : (
-                        <p className="flex items-start gap-1.5 text-[11.5px] text-stone-600">
-                          <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, g.color, 13) }} />
-                          <span className="leading-tight">{g.etiqueta}</span>
-                        </p>
-                      )}
-                      {verSin && (
-                        <label className="ml-5 mt-0.5 flex items-start justify-between gap-2 text-[11px] text-stone-500">
-                          <span className="flex items-start gap-1.5">
-                            <input type="checkbox" className="mt-0.5" checked={!ocultos?.has(claveSin)} onChange={() => onToggleGrupo(c.id, claveSin)} />
-                            <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, g.color, 12, undefined, true) }} />
-                            <span className="leading-tight" title="Se muestran en la cabecera municipal como ubicación aproximada">
-                              Sin coordenadas
-                            </span>
-                          </span>
-                          <span className="flex-none text-stone-400">{g.totalSin}</span>
-                        </label>
-                      )}
-                    </li>
-                  );
-                })}
+                {grupos.map((g) => (
+                  <li key={g.clave}>
+                    <label className="flex items-start justify-between gap-2 text-[11.5px] text-stone-600">
+                      <span className="flex items-start gap-1.5">
+                        <input type="checkbox" className="mt-0.5" checked={!ocultos?.has(g.clave)} onChange={() => onToggleGrupo(c.id, g.clave)} />
+                        <span className="mt-0.5 flex-none" aria-hidden dangerouslySetInnerHTML={{ __html: svgMarcadorExterno(forma, g.color, 13) }} />
+                        <span className="leading-tight">{g.etiqueta}</span>
+                      </span>
+                      <span className="flex-none text-stone-400">{g.total}</span>
+                    </label>
+                  </li>
+                ))}
               </ul>
             )}
           </div>

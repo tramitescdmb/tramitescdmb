@@ -13,7 +13,6 @@ export type PuntoExterno = {
   lat: number;
   lon: number;
   enlace: string;
-  aproximado?: boolean;
 };
 
 export type CapaExterna = {
@@ -24,9 +23,7 @@ export type CapaExterna = {
   ordenTipos?: string[];
 };
 
-export type GrupoTipo = { clave: string; etiqueta: string; color: string; total: number; totalSin: number };
-
-export const SUFIJO_SIN_COORDENADAS = "::sin";
+export type GrupoTipo = { clave: string; etiqueta: string; color: string; total: number };
 
 export const PALETA_TIPOS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
 export const COLOR_OTROS_TIPOS = "#898781";
@@ -34,18 +31,11 @@ export const CLAVE_OTROS_TIPOS = "__otros__";
 
 export const FORMA_PLATAFORMA: Record<PlataformaExterna, "rombo" | "cuadrado"> = { sinca: "rombo", vital: "cuadrado" };
 
-export function clasificarPorTipo(
-  puntos: { tipo: string; aproximado?: boolean }[],
-  ordenTipos?: string[],
-): { grupos: GrupoTipo[]; grupoDe: (tipo: string) => GrupoTipo } {
+export function clasificarPorTipo(puntos: { tipo: string }[], ordenTipos?: string[]): { grupos: GrupoTipo[]; grupoDe: (tipo: string) => GrupoTipo } {
   const exactos = new Map<string, number>();
-  const sin = new Map<string, number>();
-  for (const p of puntos) {
-    const m = p.aproximado ? sin : exactos;
-    m.set(p.tipo, (m.get(p.tipo) ?? 0) + 1);
-  }
-  const total = (t: string) => (exactos.get(t) ?? 0) + (sin.get(t) ?? 0);
-  const tipos = [...new Set([...(ordenTipos ?? []), ...exactos.keys(), ...sin.keys()])];
+  for (const p of puntos) exactos.set(p.tipo, (exactos.get(p.tipo) ?? 0) + 1);
+  const total = (t: string) => exactos.get(t) ?? 0;
+  const tipos = [...new Set([...(ordenTipos ?? []), ...exactos.keys()])];
   const orden = ordenTipos
     ? tipos.sort((a, b) => {
         const ia = ordenTipos.indexOf(a);
@@ -59,36 +49,30 @@ export function clasificarPorTipo(
     clave: tipo,
     etiqueta: tipo,
     color: PALETA_TIPOS[i]!,
-    total: exactos.get(tipo) ?? 0,
-    totalSin: sin.get(tipo) ?? 0,
+    total: total(tipo),
   }));
+  const restoConPuntos = resto.filter((t) => total(t) > 0);
   const otros: GrupoTipo = {
     clave: CLAVE_OTROS_TIPOS,
-    etiqueta: `Otros tipos (${resto.length})`,
+    etiqueta: `Otros tipos (${restoConPuntos.length})`,
     color: COLOR_OTROS_TIPOS,
-    total: resto.reduce((s, t) => s + (exactos.get(t) ?? 0), 0),
-    totalSin: resto.reduce((s, t) => s + (sin.get(t) ?? 0), 0),
+    total: restoConPuntos.reduce((s, t) => s + total(t), 0),
   };
-  if (resto.length > 0) todos.push(otros);
-  const grupos = todos.filter((g) => g.total + g.totalSin > 0);
+  if (restoConPuntos.length > 0) todos.push(otros);
+  const grupos = todos.filter((g) => g.total > 0);
   const porTipo = new Map(todos.map((g) => [g.clave, g]));
   return { grupos, grupoDe: (tipo) => porTipo.get(tipo) ?? otros };
 }
 
 export const LETRA_PLATAFORMA: Record<PlataformaExterna, string> = { sinca: "S", vital: "V" };
 
-export function svgMarcadorExterno(forma: "rombo" | "cuadrado", color: string, tamano = 22, letra?: string, hueco = false): string {
-  const relleno = hueco ? "#ffffff" : color;
-  const borde = hueco ? color : "#ffffff";
-  const grosor = hueco ? 2.6 : 1.6;
+export function svgMarcadorExterno(forma: "rombo" | "cuadrado", color: string, tamano = 22, letra?: string): string {
   const figura =
     forma === "rombo"
-      ? `<rect x="4.5" y="4.5" width="15" height="15" rx="2" transform="rotate(45 12 12)" fill="${relleno}" stroke="${borde}" stroke-width="${grosor}"${hueco ? ' stroke-dasharray="3 1.6"' : ""}/>`
-      : `<rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="${relleno}" stroke="${borde}" stroke-width="${grosor}"${hueco ? ' stroke-dasharray="3 1.6"' : ""}/>`;
+      ? `<rect x="4.5" y="4.5" width="15" height="15" rx="2" transform="rotate(45 12 12)" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`
+      : `<rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`;
   const texto = letra
-    ? hueco
-      ? `<text x="12" y="16" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="${color}">${letra}</text>`
-      : `<text x="12" y="16" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="2" paint-order="stroke">${letra}</text>`
+    ? `<text x="12" y="16" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="2" paint-order="stroke">${letra}</text>`
     : "";
   return `<svg width="${tamano}" height="${tamano}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))">${figura}${texto}</svg>`;
 }

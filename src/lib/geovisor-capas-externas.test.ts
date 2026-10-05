@@ -19,14 +19,10 @@ describe("clasificarPorTipo", () => {
     expect(grupoDe("T9").color).toBe(COLOR_OTROS_TIPOS);
   });
 
-  it("cuenta aparte los sin coordenadas y mantiene el color fijo según el orden dado", () => {
-    const orden = ["B", "A"];
-    const solo = clasificarPorTipo([{ tipo: "A" }], orden);
-    const conSin = clasificarPorTipo([{ tipo: "A" }, { tipo: "A", aproximado: true }, { tipo: "B", aproximado: true }], orden);
-    expect(solo.grupoDe("A").color).toBe(conSin.grupoDe("A").color);
-    expect(conSin.grupoDe("A")).toMatchObject({ total: 1, totalSin: 1 });
-    expect(conSin.grupoDe("B")).toMatchObject({ total: 0, totalSin: 1, color: PALETA_TIPOS[0] });
-    expect(solo.grupos.map((g) => g.clave)).toEqual(["A"]);
+  it("mantiene el color según el orden dado y solo lista tipos con puntos", () => {
+    const { grupos, grupoDe } = clasificarPorTipo([{ tipo: "A" }], ["B", "A"]);
+    expect(grupoDe("A").color).toBe(PALETA_TIPOS[1]);
+    expect(grupos.map((g) => g.clave)).toEqual(["A"]);
   });
 });
 

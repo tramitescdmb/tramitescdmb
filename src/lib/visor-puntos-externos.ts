@@ -3,7 +3,6 @@ import { formatearFecha } from "@/lib/fecha";
 import { NOMBRE_TRAMITE_VITAL } from "@/lib/vital";
 import { puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { estadoDeCamposVital, municipioDeCamposVital } from "@/lib/vital-campos";
-import { cabeceraDeMunicipio } from "@/lib/cabeceras-cdmb";
 import type { PuntoExterno } from "@/lib/geovisor-capas-externas";
 
 function recortar(texto: string, max: number): string {
@@ -38,7 +37,7 @@ type FilaSinca = {
   fechaResolucion: Date | null;
 };
 
-function puntoSinca(p: FilaSinca, lat: number, lon: number, municipio: string | null, aproximado: boolean): PuntoExterno {
+function puntoSinca(p: FilaSinca, lat: number, lon: number, municipio: string | null): PuntoExterno {
   return {
     clave: String(p.nroSolicitud),
     numero: p.numeroResolucion ? `Res. ${p.numeroResolucion}` : `Solicitud ${p.nroSolicitud}`,
@@ -50,7 +49,6 @@ function puntoSinca(p: FilaSinca, lat: number, lon: number, municipio: string | 
     lat,
     lon,
     enlace: `/historico/solicitudes/${p.nroSolicitud}`,
-    ...(aproximado ? { aproximado: true } : {}),
   };
 }
 
@@ -62,17 +60,9 @@ export async function puntosSinca(): Promise<{ puntos: PuntoExterno[]; ordenTipo
   const conteo = new Map<string, number>();
   for (const g of porTipo) conteo.set(tipoSinca(g), (conteo.get(tipoSinca(g)) ?? 0) + g._count);
   return {
-    puntos: conCoordenadas.map((p) => puntoSinca(p, p.lat!, p.lon!, p.municipio, false)),
+    puntos: conCoordenadas.map((p) => puntoSinca(p, p.lat!, p.lon!, p.municipio)),
     ordenTipos: [...conteo.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t),
   };
-}
-
-export async function puntosSincaSinCoordenadas(): Promise<PuntoExterno[]> {
-  const filas = await db.sincaResolucion.findMany({ where: { OR: [{ lat: null }, { lon: null }] }, select: SELECT_SINCA });
-  return filas.flatMap((p) => {
-    const cabecera = cabeceraDeMunicipio(p.municipio);
-    return cabecera ? [puntoSinca(p, cabecera.lat, cabecera.lon, cabecera.municipio, true)] : [];
-  });
 }
 
 async function filasVital() {
@@ -82,7 +72,7 @@ async function filasVital() {
   });
 }
 
-function puntoVital(s: Awaited<ReturnType<typeof filasVital>>[number], lat: number, lon: number, municipio: string | null, aproximado: boolean): PuntoExterno {
+function puntoVital(s: Awaited<ReturnType<typeof filasVital>>[number], lat: number, lon: number, municipio: string | null): PuntoExterno {
   return {
     clave: s.idVital,
     numero: s.idVital,
@@ -94,7 +84,6 @@ function puntoVital(s: Awaited<ReturnType<typeof filasVital>>[number], lat: numb
     lat,
     lon,
     enlace: `/vital/${s.id}`,
-    ...(aproximado ? { aproximado: true } : {}),
   };
 }
 
@@ -105,17 +94,8 @@ export async function puntosVital(): Promise<{ puntos: PuntoExterno[]; ordenTipo
   return {
     puntos: filas.flatMap((s) => {
       const p = puntoDesdeCampos(s.camposTramite);
-      return p ? [puntoVital(s, p.lat, p.lon, municipioDeCamposVital(s.camposTramite), false)] : [];
+      return p ? [puntoVital(s, p.lat, p.lon, municipioDeCamposVital(s.camposTramite))] : [];
     }),
     ordenTipos: [...conteo.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t),
   };
-}
-
-export async function puntosVitalSinCoordenadas(): Promise<PuntoExterno[]> {
-  const filas = await filasVital();
-  return filas.flatMap((s) => {
-    if (puntoDesdeCampos(s.camposTramite)) return [];
-    const cabecera = cabeceraDeMunicipio(municipioDeCamposVital(s.camposTramite));
-    return cabecera ? [puntoVital(s, cabecera.lat, cabecera.lon, cabecera.municipio, true)] : [];
-  });
 }
