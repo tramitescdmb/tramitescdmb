@@ -120,6 +120,8 @@ model Usuario {
   eventos               ExpedienteEvento[]
   registrosAuditoria    RegistroAuditoria[]
   visitasTecnicas       VisitaTecnica[]
+  visitasProgramadas    VisitaProgramada[]         @relation("VisitaProgramadaProfesional")
+  visitasQueProgramo    VisitaProgramada[]         @relation("VisitaProgramadaPor")
   historialPasswords    HistorialPassword[]
 
   dependenciaId                  String?
@@ -604,6 +606,7 @@ model Expediente {
   documentos      ExpedienteDocumento[]
   eventos         ExpedienteEvento[]
   visitasTecnicas VisitaTecnica[]
+  visitasProgramadas VisitaProgramada[]
 
   /**
    * Asignación del expediente completo (distinta de `responsableActual`, que
@@ -717,6 +720,7 @@ enum TipoEvento {
   NIVEL_ACCESO_CAMBIADO
   EXPEDIENTE_ARCHIVADO
   EXPEDIENTE_REABIERTO
+  VISITA_PROGRAMADA
 }
 
 model ExpedienteEvento {
@@ -772,6 +776,34 @@ model VisitaTecnica {
   capturadoPor Usuario             @relation(fields: [capturadoPorId], references: [id])
   fotos        VisitaTecnicaFoto[]
 
+  @@index([expedienteId])
+}
+
+enum EstadoVisitaProgramada {
+  PROGRAMADA
+  REALIZADA
+  CANCELADA
+}
+
+model VisitaProgramada {
+  id              String                 @id @default(cuid())
+  expedienteId    String
+  fechaHora       DateTime
+  lugar           String
+  profesionalId   String
+  observaciones   String?                @db.Text
+  estado          EstadoVisitaProgramada @default(PROGRAMADA)
+  motivoCambio    String?                @db.Text
+  programadaPorId String
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  expediente    Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  profesional   Usuario    @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
+  programadaPor Usuario    @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
+
+  @@index([fechaHora])
+  @@index([profesionalId, fechaHora])
   @@index([expedienteId])
 }
 

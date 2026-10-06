@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map } from "lucide-react";
+import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map, CalendarDays } from "lucide-react";
 import { BarraModulo, type GrupoMenu } from "@/components/BarraModulo";
 import { SIN_PENDIENTES_FIRMA, textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -31,6 +31,7 @@ export function TramitesTabs({
       ],
     },
     { label: "Visor de trámites", icon: Map, href: "/visor-tramites" },
+    { label: "Planeador", icon: CalendarDays, href: "/planeador" },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),
     ...(mostrarFirmas
       ? [

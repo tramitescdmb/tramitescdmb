@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2 } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -18,11 +18,15 @@ import {
   puedeEditarTramite,
   puedeAsignarFirmantesDocumentoTramite,
   puedeValidarDocumentoTramite,
+  puedePlanearVisitas,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
-import { AsignacionExpedienteForm } from "@/components/AsignacionExpedienteForm";
+import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsignadoTramiteForm";
+import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
+import { AccionesVisita } from "@/components/planeador/AccionesVisita";
+import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -117,6 +121,10 @@ export default async function ExpedienteDetallePage({
         },
         eventos: { orderBy: { createdAt: "asc" }, include: { usuario: true } },
         visitasTecnicas: { orderBy: { createdAt: "desc" }, include: { capturadoPor: true } },
+        visitasProgramadas: {
+          orderBy: { fechaHora: "asc" },
+          include: { profesional: { select: { nombre: true } }, programadaPor: { select: { nombre: true } } },
+        },
         creadoPor: true,
         responsableActual: true,
         usuariosAsignados: true,
@@ -153,6 +161,7 @@ export default async function ExpedienteDetallePage({
   let puedeAsignarFirmantes = false;
   let puedeValidar = false;
   let puedeCorrespondencia = false;
+  let planificador = false;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
@@ -160,7 +169,12 @@ export default async function ExpedienteDetallePage({
     puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
     puedeCorrespondencia = permisos.esAdmin || permisos.correspondencia !== null;
+    planificador = puedePlanearVisitas(permisos);
   }
+  const enEjecucion = expedienteEnEjecucion(expediente);
+  const visitasPendientes = expediente.visitasProgramadas.filter((v) => v.estado === "PROGRAMADA").length;
+  const profesionalesAsignados = expediente.usuariosAsignados.map((u) => ({ id: u.id, nombre: u.nombre }));
+  const manana = partesColombia(new Date(Date.now() + 24 * 60 * 60 * 1000)).fecha;
   const puedeEditar = puedeEditarPorRol && !cerrado;
   const [fichaSgdea, firmasPendientes] = await Promise.all([
     fichaArchivoDe(expediente.id),
@@ -431,11 +445,13 @@ export default async function ExpedienteDetallePage({
                   )}
                 </div>
                 <div className="rounded-xl md:col-span-2 border border-stone-200 bg-white shadow-soft p-4">
-                  <h3 className="text-sm font-semibold text-stone-900">Asignado a</h3>
-                  <p className="mb-2 text-xs text-stone-500">
-                    Quién(es) deben trabajar este expediente — usuarios puntuales y/o cargos completos.
-                    Es informativo: cualquier funcionario sigue pudiendo actuar sobre el expediente.
-                  </p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-stone-900">Personal asignado</h3>
+                    <a href="#planeador" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                      Planeador
+                    </a>
+                  </div>
                   {expediente.usuariosAsignados.length === 0 && expediente.cargosAsignados.length === 0 ? (
                     <p className="text-sm text-stone-400">Sin asignar todavía.</p>
                   ) : (
@@ -453,21 +469,6 @@ export default async function ExpedienteDetallePage({
                         </span>
                       ))}
                     </div>
-                  )}
-
-                  {session?.rol === "ADMIN" && (
-                    <details className="mt-3 group">
-                      <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
-                        Editar asignación
-                      </summary>
-                      <AsignacionExpedienteForm
-                        expedienteId={expediente.id}
-                        usuarios={usuariosActivos.map((u) => ({ id: u.id, nombre: u.nombre, detalle: u.cargos.map((c) => c.nombre).join(", ") || null }))}
-                        cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
-                        usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}
-                        cargosIniciales={expediente.cargosAsignados.map((c) => c.id)}
-                      />
-                    </details>
                   )}
                 </div>
               </div>
@@ -654,6 +655,143 @@ export default async function ExpedienteDetallePage({
                 <SectionHelp>Este expediente no tiene un paso activo (el flujo no tiene pasos definidos).</SectionHelp>
               )}
               </>
+            ),
+          },
+          {
+            id: "planeador",
+            label: "Planeador",
+            icono: <CalendarDays className="h-4 w-4" aria-hidden />,
+            contador: visitasPendientes,
+            contenido: (
+              <div id="planeador" className="space-y-4 scroll-mt-20">
+                <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-stone-900">Personal asignado</h2>
+                    {planificador && !cerrado && (
+                      <PersonalAsignadoTramiteForm
+                        expedienteId={expediente.id}
+                        usuarios={usuariosActivos.map((u) => ({
+                          id: u.id,
+                          nombre: u.nombre,
+                          cargos: u.cargos.map((c) => c.nombre),
+                          dependenciaNombre: u.dependencia?.nombre ?? null,
+                        }))}
+                        cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
+                        usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}
+                        cargosIniciales={expediente.cargosAsignados.map((c) => c.id)}
+                      />
+                    )}
+                  </div>
+                  {expediente.usuariosAsignados.length === 0 && expediente.cargosAsignados.length === 0 ? (
+                    <p className="text-sm text-stone-400">Sin personal asignado.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {expediente.usuariosAsignados.map((u) => (
+                        <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
+                          <User className="h-3 w-3" aria-hidden />
+                          {u.nombre}
+                        </span>
+                      ))}
+                      {expediente.cargosAsignados.map((c) => (
+                        <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
+                          <Tag className="h-3 w-3" aria-hidden />
+                          {c.nombre}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-stone-900">Visitas técnicas programadas</h2>
+                    {planificador && enEjecucion && profesionalesAsignados.length > 0 && (
+                      <ProgramarVisitaForm
+                        modo="nueva"
+                        metodo="POST"
+                        endpoint={`/api/expedientes/${expediente.id}/visitas-programadas`}
+                        profesionales={profesionalesAsignados}
+                        iniciales={{
+                          fecha: manana,
+                          hora: "08:00",
+                          lugar: lugarSugerido(expediente),
+                          profesionalId: profesionalesAsignados.length === 1 ? profesionalesAsignados[0]!.id : "",
+                          observaciones: "",
+                        }}
+                      />
+                    )}
+                  </div>
+                  {planificador && enEjecucion && profesionalesAsignados.length === 0 && (
+                    <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Asigne personal al trámite para poder programar la visita.
+                    </p>
+                  )}
+                  {!enEjecucion && (
+                    <p className="mb-3 rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-500">
+                      El trámite no está en ejecución: no admite nuevas visitas.
+                    </p>
+                  )}
+                  {expediente.visitasProgramadas.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-400">
+                      Sin visitas programadas.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-stone-100 rounded-lg border border-stone-100">
+                      {expediente.visitasProgramadas.map((v) => {
+                        const editable = enEjecucion && v.estado === "PROGRAMADA";
+                        const partes = partesColombia(v.fechaHora);
+                        return (
+                          <li key={v.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0">
+                              <p className="font-medium text-stone-800">
+                                {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)}
+                                <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
+                                  {ETIQUETA_ESTADO_VISITA[v.estado]}
+                                </span>
+                              </p>
+                              <p className="flex items-center gap-1 text-xs text-stone-600">
+                                <MapPin className="h-3 w-3 flex-none" aria-hidden />
+                                {v.lugar}
+                              </p>
+                              <p className="flex items-center gap-1 text-xs text-stone-600">
+                                <User className="h-3 w-3 flex-none" aria-hidden />
+                                {v.profesional.nombre}
+                              </p>
+                              {v.observaciones && <p className="text-xs text-stone-500">{v.observaciones}</p>}
+                              {v.motivoCambio && <p className="text-xs text-stone-500">Motivo: {v.motivoCambio}</p>}
+                              <p className="text-[11px] text-stone-400">Programó: {v.programadaPor.nombre}</p>
+                            </div>
+                            {editable && (
+                              <div className="flex flex-wrap items-center gap-1.5 lg:max-w-[50%] lg:justify-end">
+                                {planificador && (
+                                  <ProgramarVisitaForm
+                                    modo="reprogramar"
+                                    metodo="PATCH"
+                                    endpoint={`/api/visitas-programadas/${v.id}`}
+                                    profesionales={profesionalesAsignados}
+                                    iniciales={{
+                                      fecha: partes.fecha,
+                                      hora: partes.hora,
+                                      lugar: v.lugar,
+                                      profesionalId: v.profesionalId,
+                                      observaciones: v.observaciones ?? "",
+                                    }}
+                                  />
+                                )}
+                                <AccionesVisita
+                                  visitaId={v.id}
+                                  puedeMarcar={planificador || session?.userId === v.profesionalId}
+                                  puedeCancelar={planificador}
+                                />
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+              </div>
             ),
           },
           {

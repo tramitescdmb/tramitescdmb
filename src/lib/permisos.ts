@@ -413,3 +413,12 @@ export function puedeAsignarFirmantesDocumentoTramite(permisos: PermisosUsuario)
 export function puedeValidarDocumentoTramite(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || tieneCargoEspecifico(permisos);
 }
+
+export const CARGOS_PLANEADOR = [
+  "Coordinador(a) de Evaluación para la Sostenibilidad",
+  "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)",
+];
+
+export function puedePlanearVisitas(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || CARGOS_PLANEADOR.some((c) => permisos.cargos.has(c));
+}

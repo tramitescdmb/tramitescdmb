@@ -1,4 +1,4 @@
-import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, type LucideIcon } from "lucide-react";
+import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, CalendarClock, type LucideIcon } from "lucide-react";
 
 const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: string }> = {
   CREACION: { icono: FilePlus, etiqueta: "Creación del expediente", clase: "bg-cdmb-100 text-cdmb-700" },
@@ -19,6 +19,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, etiqueta: "Nivel de acceso", clase: "bg-amber-100 text-amber-700" },
   EXPEDIENTE_ARCHIVADO: { icono: Archive, etiqueta: "Expediente cerrado y archivado", clase: "bg-stone-200 text-stone-700" },
   EXPEDIENTE_REABIERTO: { icono: LockOpen, etiqueta: "Expediente reabierto", clase: "bg-amber-100 text-amber-700" },
+  VISITA_PROGRAMADA: { icono: CalendarClock, etiqueta: "Visita técnica programada", clase: "bg-sky-100 text-sky-700" },
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };
 
