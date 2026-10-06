@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { verificarSesion as getSession } from "@/lib/permisos";
+import { ETIQUETA_CACHE_VISOR_VITAL } from "@/lib/visor-puntos-externos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
@@ -59,6 +61,7 @@ export async function GET(req: NextRequest) {
       resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
     }
   }
+  if (!probe) revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
   return NextResponse.json({ ok, ventana: { desde, hasta }, descubiertos, resultados }, { status: ok ? 200 : 500 });
 }
 
@@ -93,6 +96,7 @@ export async function POST(req: NextRequest) {
       total += resultado.total;
       errores.push(...resultado.errores);
     }
+    revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
     await registrarAuditoria({
       tipo: "CONFIGURACION_ACTUALIZADA",
       descripcion: `${session.nombre} sincronizó VITAL (${todos ? `todos los trámites (${tramites.length})` : `trámite ${idTramiteRaw}`}, ${fechaInicio}–${fechaFin}): ${total} solicitudes${errores.length ? `, ${errores.length} con error` : ""}.`,

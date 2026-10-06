@@ -152,8 +152,7 @@ async function publicarFicha(f: FichaArchivo) {
     origenId: f.origenId,
     origenDocumentos: f.documentos,
   };
-  if (existente) await db.expedienteDocumental.update({ where: { id: existente.id }, data: datos });
-  else await db.expedienteDocumental.create({ data: datos });
+  await db.expedienteDocumental.upsert({ where: { origenId: f.origenId }, create: datos, update: datos });
 }
 
 export async function sincronizarArchivoTramite(expedienteId: string) {

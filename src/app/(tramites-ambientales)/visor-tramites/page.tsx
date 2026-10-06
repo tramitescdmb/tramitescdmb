@@ -8,7 +8,7 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { GeovisorTramites } from "@/components/GeovisorTramites";
 import type { CapaExterna } from "@/lib/geovisor-capas-externas";
-import { puntosSinca, puntosVital } from "@/lib/visor-puntos-externos";
+import { puntosSincaCacheado, puntosVitalCacheado } from "@/lib/visor-puntos-externos";
 
 export default async function GeovisorPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo> }) {
   const sp = await searchParams;
@@ -29,7 +29,7 @@ export default async function GeovisorPage({ searchParams }: { searchParams: Pro
 
   const veSinca = sincaConfigurado() && (permisos ? puedeAccederSeccion(permisos, "SINCA_BASE") : false);
   const veVital = permisos ? puedeAccederSeccion(permisos, "VITAL_BASE") : false;
-  const [sinca, vital] = await Promise.all([veSinca ? puntosSinca() : null, veVital ? puntosVital() : null]);
+  const [sinca, vital] = await Promise.all([veSinca ? puntosSincaCacheado() : null, veVital ? puntosVitalCacheado() : null]);
 
   const capasExternas: CapaExterna[] = [];
   if (sinca) capasExternas.push({ id: "sinca", nombre: "SINCA 1.0", descripcion: "", ...sinca });

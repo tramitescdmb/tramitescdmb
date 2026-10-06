@@ -470,6 +470,7 @@ async function usosSubserie(subserieId: string): Promise<{ total: number }> {
   const conteos = await Promise.all([
     db.comunicacion.count({ where: { subserieId } }),
     db.expedienteDocumental.count({ where: { subserieId } }),
+    db.expediente.count({ where: { subserieId } }),
     db.tramiteTipo.count({ where: { subserieId } }),
     db.configuracionSitio.count({ where: { subserieContratacionId: subserieId } }),
     db.expedienteContractual.count({ where: { subserieId } }),
@@ -497,6 +498,7 @@ async function moverClasificacion(desdeId: string, haciaId: string): Promise<voi
   await db.$transaction([
     db.comunicacion.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
     db.expedienteDocumental.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
+    db.expediente.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
     db.tramiteTipo.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),
     db.configuracionSitio.updateMany({ where: { subserieContratacionId: desdeId }, data: { subserieContratacionId: haciaId } }),
     db.expedienteContractual.updateMany({ where: { subserieId: desdeId }, data: { subserieId: haciaId } }),

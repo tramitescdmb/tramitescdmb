@@ -28,7 +28,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
 
   const sp = await searchParams;
-  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias, serieFiltro, resumen, prestamosActivos, documentosTotal] =
+  const [{ filas: expedientes, total, page, totalPaginas, porPagina, vista }, dependencias, serieFiltro, resumen, prestamosActivos, documentosSgdea, documentosModulos] =
     await Promise.all([
       listarExpedientesDocumentales(sp, permisos),
       listarDependenciasActivas(),
@@ -36,7 +36,9 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       db.expedienteDocumental.groupBy({ by: ["estado"], _count: { _all: true } }),
       db.prestamoExpediente.count({ where: { fechaDevolucionReal: null } }),
       db.documentoArchivo.count({ where: { retiradoEn: null } }),
+      db.expedienteDocumental.aggregate({ where: { origen: { not: "SGDEA" } }, _sum: { origenDocumentos: true } }),
     ]);
+  const documentosTotal = documentosSgdea + (documentosModulos._sum.origenDocumentos ?? 0);
   const abiertos = resumen.find((r) => r.estado === "ABIERTO")?._count._all ?? 0;
   const cerrados = resumen.find((r) => r.estado === "CERRADO")?._count._all ?? 0;
 

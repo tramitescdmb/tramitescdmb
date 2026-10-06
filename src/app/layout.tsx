@@ -54,7 +54,7 @@ export default async function RootLayout({
             </div>
           </div>
         ) : (
-          <div className="flex flex-1">
+          <div className="flex flex-1 flex-col lg:flex-row">
             <div className="print:hidden">
               <NavBar />
             </div>

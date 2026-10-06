@@ -35,7 +35,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
 
-  await archivarEnExpediente(id, expediente.id);
+  try {
+    await archivarEnExpediente(id, expediente.id);
+  } catch (err) {
+    volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo archivar.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
 
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({

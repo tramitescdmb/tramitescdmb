@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { formatearFecha } from "@/lib/fecha";
 import { NOMBRE_TRAMITE_VITAL } from "@/lib/vital";
@@ -64,7 +65,7 @@ export async function puntosSinca(): Promise<{ puntos: PuntoExterno[] }> {
 async function filasVital() {
   return db.solicitudVital.findMany({
     orderBy: { fechaRadicacion: "desc" },
-    select: { id: true, idVital: true, idTramiteVital: true, nombreActividad: true, solicitanteNombre: true, fechaRadicacion: true, camposTramite: true },
+    select: { id: true, idVital: true, idTramiteVital: true, nombreActividad: true, fechaRadicacion: true, camposTramite: true },
   });
 }
 
@@ -73,7 +74,7 @@ function puntoVital(s: Awaited<ReturnType<typeof filasVital>>[number], lat: numb
     clave: s.idVital,
     numero: s.idVital,
     tipo: tipoVital(s.idTramiteVital),
-    detalle: [s.nombreActividad, s.solicitanteNombre].filter(Boolean).join(" · ") || null,
+    detalle: s.nombreActividad ? recortar(s.nombreActividad, 140) : null,
     municipio,
     estado: estadoDeCamposVital(s.camposTramite),
     fecha: s.fechaRadicacion ? formatearFecha(s.fechaRadicacion) : null,
@@ -92,3 +93,9 @@ export async function puntosVital(): Promise<{ puntos: PuntoExterno[] }> {
     }),
   };
 }
+
+export const ETIQUETA_CACHE_VISOR_VITAL = "visor-vital";
+
+export const puntosSincaCacheado = unstable_cache(puntosSinca, ["visor-puntos-sinca"], { revalidate: 900, tags: ["sinca-analitica"] });
+
+export const puntosVitalCacheado = unstable_cache(puntosVital, ["visor-puntos-vital"], { revalidate: 900, tags: [ETIQUETA_CACHE_VISOR_VITAL] });

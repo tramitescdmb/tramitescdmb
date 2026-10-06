@@ -643,8 +643,9 @@ export async function cambiarNivelAccesoComunicacion(comunicacionId: string, niv
 }
 
 export async function archivarEnExpediente(comunicacionId: string, expedienteId: string) {
-  const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true } });
+  const expediente = await db.expediente.findUnique({ where: { id: expedienteId }, select: { id: true, archivado: true } });
   if (!expediente) throw new Error("El expediente no existe.");
+  if (expediente.archivado) throw new Error("El expediente está cerrado y archivado: no admite más comunicaciones mientras no se reabra.");
   return db.comunicacion.update({ where: { id: comunicacionId }, data: { expedienteId } });
 }
 

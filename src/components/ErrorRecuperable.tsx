@@ -7,7 +7,7 @@ const CLAVE_RECARGA = "recarga-por-version";
 
 function esErrorDeVersion(error: Error): boolean {
   const texto = `${error.name} ${error.message}`;
-  return /ChunkLoadError|Loading chunk|Loading CSS chunk|dynamically imported module|Failed to fetch/i.test(texto);
+  return /ChunkLoadError|Loading chunk|Loading CSS chunk|dynamically imported module/i.test(texto);
 }
 
 export function ErrorRecuperable({ error, reset }: { error: Error & { digest?: string }; reset?: () => void }) {
@@ -22,7 +22,7 @@ export function ErrorRecuperable({ error, reset }: { error: Error & { digest?: s
         window.location.reload();
       }
     } catch {
-      window.location.reload();
+      return;
     }
   }, [deVersion]);
 
