@@ -1,0 +1,292 @@
+[
+  {
+    "orden": 1,
+    "etiqueta": "Radicación",
+    "titulo": "Radicación de la solicitud",
+    "tituloIndice": "Radicación de la solicitud",
+    "ubicacion": "`/pqrsd` (ventanilla pública, sin cuenta) o, dentro del SGDEA, `Correspondencia → Radicar recibida`.",
+    "resumen": "Un ciudadano radica una PQRSD sin crear cuenta. La ventanilla también puede radicarla en su nombre cuando la solicitud llega de forma presencial o por correo.",
+    "pasos": [
+      "Se abre `/pqrsd`. El recuadro «Su derecho» cita el artículo 23 de la Constitución y la Ley 1755 de 2015, con los términos de 15, 10 y 30 días hábiles según el tipo de petición.",
+      "El peticionario diligencia el formulario, clasifica el tipo de PQRSD y adjunta los documentos de soporte. Las quejas y denuncias admiten radicación anónima (Ley 1474 de 2011): en ese caso el sistema entrega un código de seguimiento en lugar de exigir datos de identificación.",
+      "Al enviar, el sistema asigna el consecutivo, registra la fecha y hora, y calcula la fecha límite de ley en días hábiles con el calendario de la Corporación.",
+      "La consulta de estado en `/pqrsd` → «Consultar estado» requiere el número de radicado y la identificación del peticionario."
+    ],
+    "ejemplo": "En «Consultar estado» se introduce `CDMB-R-2026-000002` y `1098765432`. El sistema muestra el estado «Radicada», la fecha de radicación y la fecha de vencimiento.\n\nEn el SGDEA, el detalle del mismo radicado muestra el consecutivo `CDMB-R-2026-000002`, la fecha y hora inalterables y la fecha límite calculada.",
+    "detalle": "El radicado es un consecutivo atómico: dos solicitudes que entran en el mismo segundo no comparten número y la serie no presenta huecos. El formato `CDMB-{R|E|I}-año-######` indica si la comunicación es recibida, enviada o memorando interno.\n\nLa fecha de vencimiento no se digita: resulta de la tabla de términos por tipo de PQRSD y del calendario laboral, contando solo días hábiles y descontando festivos y días compensados.",
+    "fundamento": "Acuerdo 060 de 2001 AGN (ventanilla única, consecutivo) · Ley 1755 de 2015 y artículo 14 CPACA (términos) · artículo 38 de la Ley 190 de 1995 y Ley 1474 de 2011 (radicación anónima)."
+  },
+  {
+    "orden": 2,
+    "etiqueta": "Rótulo",
+    "titulo": "Rótulo con código de barras y verificación pública",
+    "tituloIndice": "Rótulo y verificación pública",
+    "ubicacion": "detalle del radicado → `Rótulo con código de barras`. Página pública: `/verificar/<radicado>`.",
+    "resumen": "El rótulo enlaza el documento físico con su registro electrónico. Cualquier persona verifica la existencia de un radicado desde su teléfono, sin acceder al contenido.",
+    "pasos": [
+      "Se abre «Rótulo con código de barras». El sistema genera una etiqueta de 105 × 65 mm lista para imprimir, con el número, la fecha, un código **Code 128** y un **código QR**, todos derivados del radicado.",
+      "El rótulo se imprime y se adhiere al documento físico.",
+      "Al escanear el QR —o abrir `/verificar/<radicado>`— la página pública confirma que el radicado existe y muestra el tipo, la fecha, el estado y el número de folios, sin revelar el contenido.",
+      "En un adjunto en PDF, el botón «Con rótulo» descarga una copia con el rótulo —y, si el documento está firmado, el sello de firma— estampados en la primera página. El archivo original no se modifica."
+    ],
+    "ejemplo": "Para `CDMB-R-2026-000002`, la página `/verificar/CDMB-R-2026-000002` responde: «Radicado válido — Recibida — 2026, 1 folio». No aparece el asunto ni ningún dato del peticionario.",
+    "detalle": "El código de barras es automático: no se imprime ni se pega por separado. Para el documento físico se imprime el rótulo; para el documento electrónico, el mismo código se estampa sobre el PDF.\n\nLa página de verificación es pública de forma deliberada: aporta transparencia al ciudadano sin exponer información reservada. Confirma existencia y estado, nada más.",
+    "fundamento": "Acuerdo 060 de 2001 AGN (rótulo de radicación) · Ley 1712 de 2014 (la verificación no revela contenido) · Ley 594 de 2000 (el original se conserva tal como se recibió)."
+  },
+  {
+    "orden": 3,
+    "etiqueta": "Reparto",
+    "titulo": "Reparto del trámite",
+    "tituloIndice": "Reparto del trámite",
+    "ubicacion": "detalle del radicado → tarjeta `Distribución / reparto`.",
+    "resumen": "La ventanilla decide quién atiende cada trámite. El reparto es centralizado y puede dirigirse a varias personas a la vez.",
+    "pasos": [
+      "En «Distribución / reparto» se selecciona una **dependencia** y, en la lista con filtro de texto, se marcan uno o varios **funcionarios**.",
+      "De forma opcional se fija un término interno en días y unas instrucciones. Al confirmar, el radicado pasa al estado «Asignada».",
+      "Un reparto posterior reemplaza al anterior, salvo que se marque la casilla «sumar», en cuyo caso se añade a los ya asignados.",
+      "Todos los repartos, activos e históricos, quedan registrados en la propia tarjeta."
+    ],
+    "ejemplo": "La ventanilla reparte `CDMB-R-2026-000002` a la Subdirección de Administración del Sistema Ambiental, funcionaria asignada, con término interno de 8 días e instrucción «Proyectar respuesta con copia del acto administrativo». El radicado pasa a «Asignada».",
+    "detalle": "El reparto está centralizado en la ventanilla: ni el jefe de dependencia ni el funcionario reparten. El control de qué entra y hacia dónde va permanece en un único punto.\n\nLa ventanilla ve toda la información y todos los metadatos del radicado. Lo único que no ve es el espacio para redactar la respuesta, que corresponde al funcionario asignado.",
+    "fundamento": "MoReq 7.6 y 7.8 (asignación y accesos por proceso). El reparto y las acciones archivísticas están restringidos por rol."
+  },
+  {
+    "orden": 4,
+    "etiqueta": "Devolución",
+    "titulo": "Devolución de un reparto que no corresponde",
+    "tituloIndice": "Devolución de un reparto",
+    "ubicacion": "detalle del radicado, con la sesión del funcionario asignado → tarjeta de reparto → `Devolver a la ventanilla`.",
+    "resumen": "El funcionario al que se repartió un trámite que no le compete puede devolverlo a la ventanilla, con una restricción: no puede hacerlo cerca del vencimiento.",
+    "pasos": [
+      "Con la sesión del funcionario asignado, la tarjeta de reparto muestra el campo «Devolver a la ventanilla — motivo».",
+      "Se escribe el motivo y se confirma. El radicado vuelve al estado «En reparto», se descarta el borrador de respuesta y queda la constancia de la devolución con su motivo.",
+      "La ventanilla vuelve a repartir el trámite.",
+      "Si faltan **3 días hábiles o menos** para el vencimiento, el sistema bloquea la devolución y muestra el aviso correspondiente."
+    ],
+    "ejemplo": "La funcionaria asignada a `CDMB-R-2026-000002` devuelve el trámite con el motivo «El predio no pertenece a la jurisdicción de esta subdirección». El radicado regresa a «En reparto». Si en lugar de 8 días quedaran 2 días hábiles, el sistema no permitiría la devolución.",
+    "detalle": "La devolución no puede convertirse en una forma de eludir un trámite. Cerca del plazo, quien lo tiene asignado debe atenderlo o escalarlo, no reasignarlo. El sistema hace cumplir esta regla; no depende de la voluntad de cada usuario.\n\nToda devolución queda en la bitácora con el usuario, la fecha, la hora y el motivo.",
+    "fundamento": "se apoya en el mismo cálculo de días hábiles de la Ley 1755 de 2015. Es una regla de servicio interna que el sistema no permite omitir; queda consignada en la pestaña «Reglas y decisiones» del manual de referencia."
+  },
+  {
+    "orden": 5,
+    "etiqueta": "Respuesta",
+    "titulo": "Respuesta del funcionario asignado",
+    "tituloIndice": "Respuesta del funcionario",
+    "ubicacion": "detalle del radicado → tarjeta `Respuesta del funcionario`.",
+    "resumen": "El funcionario asignado redacta la respuesta y la firma, junto con quienes deben revisarla o suscribirla. No la radica: eso corresponde a gestión documental.",
+    "pasos": [
+      "La tarjeta de respuesta solo aparece después de que el trámite ha sido repartido, y el espacio de redacción solo es visible para el funcionario asignado.",
+      "Se carga una **plantilla** de respuesta. El asunto y el cuerpo incluyen marcadores que el sistema rellena automáticamente (`[FECHA]`, `[DESTINATARIO]`, `[RADICADO]`, entre otros).",
+      "Se adjunta el documento ya redactado, si se dispone de él: hasta 10 archivos, 2 MB cada uno.",
+      "Se guarda la respuesta. Puede reabrirse y editarse mientras no se haya radicado como oficio de salida.",
+      "En «Firmas de la respuesta» el funcionario firma y solicita las firmas que correspondan (**Proyectó**, **Revisó**, **Firma principal**). El orden de firma lo fija el cargo de cada firmante; quien está después solo firma cuando el anterior ya lo hizo."
+    ],
+    "ejemplo": "La funcionaria asignada a `CDMB-R-2026-000002` carga la plantilla «Respuesta a solicitud de copia», que genera el asunto «Respuesta a su solicitud radicada CDMB-R-2026-000002». Redacta el texto, adjunta el oficio en PDF y guarda. Luego firma como «Proyectó» y solicita la firma principal a su jefe; cuando este firma, la respuesta queda lista para radicar.",
+    "detalle": "El sistema separa las funciones: quien conoce el trámite redacta la respuesta y la firma con su jefe; gestión documental la radica con su consecutivo y la despacha, sin firmarla. Un número de radicado no depende de quien escribió el texto, y una firma no depende de quien radica.\n\nLa respuesta solo puede radicarse cuando tiene la firma principal y ninguna firma pendiente.",
+    "fundamento": "MoReq 3.22 (modificación de un registro temporal antes de completarlo) · 3.30 y 3.31 (plantillas y formularios)."
+  },
+  {
+    "orden": 6,
+    "etiqueta": "Firma",
+    "titulo": "Radicación del oficio de salida firmado",
+    "tituloIndice": "Radicación del oficio de salida",
+    "ubicacion": "tarjeta de respuesta → `Radicar como oficio de salida` (gestión documental: ventanilla o archivo).",
+    "resumen": "Gestión documental radica como comunicación enviada la respuesta ya firmada. La firma electrónica tiene plena validez jurídica en Colombia y se verifica sin iniciar sesión.",
+    "pasos": [
+      "Con la firma principal completa y ninguna firma pendiente, aparece «Radicar como oficio de salida». El formulario de la enviada se abre precargado con los datos de la recibida y de la respuesta.",
+      "Al radicar, el sistema asigna el consecutivo `CDMB-E-2026-######` y la recibida pasa al estado «Respondida». Quien radica no firma: el oficio conserva las firmas de la respuesta.",
+      "El botón «Con rótulo» descarga el PDF con el rótulo de radicación y el bloque de firmas: nombre, identificación, cargo, dependencia, fecha y hora y huella SHA-256 de cada firmante. Cada página lleva el **código seguro de verificación** y al final se agrega una diligencia con los datos del documento.",
+      "Cualquier persona comprueba la firma en `/validar-firma` con el código seguro de verificación, o escaneando el QR del documento, sin iniciar sesión. El resultado muestra los firmantes y las huellas, nunca datos personales como el correo o la dirección IP.",
+      "El **estampado cronológico** es, por defecto, la bitácora encadenada por hash. Si se configura una autoridad de sello de tiempo RFC-3161, cada firma incorpora además un token verificable por un tercero."
+    ],
+    "ejemplo": "La respuesta a `CDMB-R-2026-000002` ya tiene la firma principal. La ventanilla de salida la radica: el sistema asigna `CDMB-E-2026-000014` y marca la recibida como «Respondida». En el PDF con rótulo aparecen las firmas «Proyectó» y «Firma principal», y al pie de cada página el código seguro de verificación con el que se valida en `/validar-firma`.",
+    "detalle": "La firma electrónica identifica al firmante, fija el momento y vincula el contenido mediante una huella SHA-256. Tiene la misma validez que la firma manuscrita para la gestión documental. La firma digital con certificado de una entidad de certificación acreditada es distinta —requiere contrato— y el sistema ya dispone del punto de integración para cuando la Corporación lo tenga.\n\nUn mismo documento puede llevar varias firmas con distinta calidad (Proyectó, Revisó, Firma principal), cada una con su huella y su sello de tiempo.",
+    "fundamento": "Ley 527 de 1999, artículo 7 (firma electrónica) · Decreto 1074 de 2015 · Decreto 333 de 2014 (firma digital con CA, fuera de alcance por ahora) · MoReq 1.37, 3.17 y 3.18."
+  },
+  {
+    "orden": 7,
+    "etiqueta": "Despacho",
+    "titulo": "Despacho efectivo y cierre del ciclo",
+    "tituloIndice": "Despacho efectivo",
+    "ubicacion": "detalle del oficio de salida → tarjeta `Despacho — envío efectivo`.",
+    "resumen": "Radicar y firmar no significa que el oficio salió. La ventanilla de salida registra el envío efectivo, y ese registro cierra el ciclo del trámite.",
+    "pasos": [
+      "En la tarjeta de despacho se selecciona el **medio** (correo electrónico, físico, mensajería o correo certificado, entrega personal), el destino y la fecha de envío.",
+      "Se deja marcada la casilla «Archivar la recibida y esta respuesta en un expediente documental de la subserie».",
+      "Al confirmar, el ciclo de la PQRSD queda cerrado. En la bandeja aparece el vínculo entrada ↔ salida con el indicador de «despachada».",
+      "El Panel muestra el aviso «N oficios de salida radicados y firmados sin despachar», y la bandeja incorpora el filtro «Despacho»."
+    ],
+    "ejemplo": "La ventanilla despacha `CDMB-E-2026-000014` por correo electrónico a la dirección del peticionario, con fecha de hoy, y marca el archivado en expediente. El estado del trámite pasa a «Cerrada — despachada». En la bandeja, `CDMB-R-2026-000002` y `CDMB-E-2026-000014` aparecen enlazados.",
+    "detalle": "El paso de despacho distingue «radicado y firmado» de «efectivamente enviado al peticionario». Es una responsabilidad demasiado relevante para depender de que alguien lo recuerde: por eso existe un paso explícito, con su aviso, y es el que cierra el ciclo.\n\nAl despachar, la comunicación recibida y su respuesta quedan archivadas juntas en un expediente de la subserie: el trámite completo pasa a ser una unidad documental.",
+    "fundamento": "MoReq 7.19 (tiempos límite con notificación) · Acuerdo 001 de 2024 AGN, artículo 4.3.2 (el expediente es la unidad de la actuación administrativa)."
+  },
+  {
+    "orden": 8,
+    "etiqueta": "Expediente",
+    "titulo": "El expediente electrónico",
+    "tituloIndice": "Expediente electrónico",
+    "ubicacion": "`Expedientes y archivo → Expedientes documentales`.",
+    "resumen": "El componente archivístico central del sistema: carpetas por dependencia, índice electrónico firmado y PDF consolidado bajo demanda.",
+    "pasos": [
+      "En la **vista de carpetas**, los expedientes se presentan como carpetas en cajones por dependencia, con número, asunto, clasificación, número de archivos y estado (abierta, o cerrada con candado). El botón «Tabla» alterna a la vista de filas.",
+      "Al abrir un expediente, el **índice electrónico** lista cada archivo con su orden, su rango de folios acumulado y su huella SHA-256.",
+      "En «Corregir o retirar» de un archivo, con el expediente **abierto**, se corrige el nombre, el tipo documental o el número de folios, o se **retira del índice** un archivo cargado por error, indicando el motivo. El archivo no se borra: permanece como constancia, fuera del índice y del cálculo del hash.",
+      "El botón «PDF consolidado» genera un único documento con portada, índice y cada archivo foliado: primero las respuestas con su rótulo y firma, después las solicitudes con sus adjuntos.",
+      "Al **cerrar el expediente** (rol de archivo), el sistema firma el índice con su hash. La reapertura exige motivo: al reabrir se descarta el hash firmado, y al volver a cerrar se firma uno nuevo. En un expediente cerrado, el sistema recalcula el hash y advierte si algún documento cambió después del cierre."
+    ],
+    "ejemplo": "El expediente de `CDMB-R-2026-000002` contiene tres archivos: la solicitud del ciudadano (folios 1–1), el oficio de respuesta firmado (folios 2–3) y la copia del acto administrativo (folios 4–9). El índice muestra los tres con sus huellas. Al cerrarlo, el índice se firma; su hash queda como referencia de integridad.",
+    "detalle": "Cada archivo se conserva por separado, con su hash, su tipo documental y su lugar en el índice, de modo que uno puede versionarse o corregirse sin afectar a los demás. El «PDF consolidado» es una vista compuesta al vuelo para impresión o entrega; no reemplaza a los originales.\n\nMientras el expediente está abierto se admiten correcciones. Al cerrarlo se firma el índice y queda inmutable. Si un documento se alterara por fuera del sistema, el recálculo del hash lo evidencia.",
+    "fundamento": "Acuerdo 001 de 2024 AGN, artículos 4.3.2.1 a 4.3.2.6 (expediente electrónico, índice, firma del índice) · Acuerdo 042 de 2002 AGN (FUID) · MoReq 1.19, 1.25, 1.26 y 1.51."
+  },
+  {
+    "orden": 9,
+    "etiqueta": "Flujos",
+    "titulo": "Flujos de trabajo configurables",
+    "tituloIndice": "Flujos de trabajo configurables",
+    "ubicacion": "`Configuración → Flujos de trabajo`.",
+    "resumen": "Un motor de procesos que se configura desde la interfaz, con diagrama arrastrable, sin intervención de desarrollo.",
+    "pasos": [
+      "Al abrir un flujo, el **lienzo** permite arrastrar los pasos, trazar transiciones de uno a otro y, en el panel lateral, renombrar un paso, cambiar su tipo o editar su etiqueta.",
+      "El **simulador** recorre el flujo eligiendo la salida en cada bifurcación, sin afectar ninguna comunicación real.",
+      "El botón de exportación genera el **BPMN 2.0** del flujo, que abre en cualquier herramienta de modelado estándar.",
+      "Un flujo se aplica a un trámite desde su detalle: aparece el flujograma con el paso actual, el responsable resuelto y el término del paso, con indicador de color (verde, ámbar, rojo)."
+    ],
+    "ejemplo": "El flujo «PQRSD — petición general» tiene los pasos Radicación → Reparto → Proyección → Revisión jefe → Firma → Despacho. Aplicado a `CDMB-R-2026-000002`, el flujograma marca «Proyección» como paso actual, con la funcionaria asignada como responsable y el término del paso en verde.",
+    "detalle": "El comité de archivo puede modelar sus procedimientos —pasos, responsables, términos y reglas de asignación— sin solicitudes a sistemas. El término de ley de una PQRSD, en cambio, permanece fijo en código de forma deliberada, para que no pueda editarse y derivar en un incumplimiento normativo.",
+    "fundamento": "MoReq capítulo 7 (flujos de trabajo electrónicos) · 7.2, 7.4 y 7.13 (diagramación, parametrización de tiempos, exportación en formato estándar)."
+  },
+  {
+    "orden": 10,
+    "etiqueta": "TRD",
+    "titulo": "TRD, CCD, metadatos y vocabulario controlado",
+    "tituloIndice": "TRD, metadatos y vocabulario controlado",
+    "ubicacion": "`Configuración → Dependencias y TRD` · `Campos de metadato` · `Vocabulario controlado`.",
+    "resumen": "La estructura archivística real de la CDMB, editable y versionada.",
+    "pasos": [
+      "El explorador presenta la **TRD vigente** (29 dependencias, unas 235 series y 395 subseries), agrupada por dependencia y con buscador.",
+      "La TRD se importa y exporta en **CSV o XML**. Reimportar el mismo código actualiza la serie en lugar de duplicarla. El sistema admite **versiones** con vigencia, de modo que la TRD anterior y la nueva coexisten durante la transición.",
+      "Al clasificar un radicado se usa el **buscador de subserie**, que acepta código o nombre de la serie, de la subserie o de la dependencia. Una serie sin subserie no se admite.",
+      "En «Campos de metadato» se crea un campo adicional (texto, número, fecha, lista o sí/no) que a partir de entonces aparece en el detalle de las comunicaciones de esa serie."
+    ],
+    "ejemplo": "Para `CDMB-R-2026-000002` se busca «petición» en el clasificador y se selecciona la subserie «Derechos de petición» de la serie «PQRSD». Al guardar, el sistema toma de esa subserie el tiempo de retención en gestión y en archivo central y la disposición final.",
+    "detalle": "La clasificación gobierna todo el ciclo de vida: de la subserie proceden los tiempos de retención y la disposición final. Por ello el sistema exige clasificación completa: o se asigna serie y subserie, o la comunicación queda sin clasificar y aparece en un aviso para corregir. No admite una clasificación parcial.",
+    "fundamento": "Ley 594 de 2000 y Acuerdo 004 de 2019 AGN (TRD) · MoReq 1.1 a 1.9, 1.34 y 1.42 · capítulo 5 (metadatos) · 1.17 (vocabulario controlado)."
+  },
+  {
+    "orden": 11,
+    "etiqueta": "Disposición",
+    "titulo": "Retención y disposición final",
+    "tituloIndice": "Retención y disposición final",
+    "ubicacion": "`Expedientes y archivo → Disposición final`.",
+    "resumen": "El ciclo de vida completo, hasta la conservación permanente o la eliminación con acta.",
+    "pasos": [
+      "El sistema muestra las tres fases —**gestión → archivo central → disposición final**— contadas desde la radicación o, según la configuración de cada serie, desde el cierre del expediente.",
+      "El panel de pendientes se agrupa por serie o subserie y avisa de lo que entra en disposición dentro de los 90 días siguientes.",
+      "Una disposición por **lote** agrupa en **una sola acta** los expedientes que exigen eliminación o selección; los de conservación permanente solo se marcan. Ningún registro se borra de la base de datos.",
+      "El sistema distingue **aplazar** una disposición vencida (por ejemplo, por un proceso judicial en curso) de **suspender** un término de ley (artículo 17 CPACA)."
+    ],
+    "ejemplo": "La subserie «Derechos de petición» tiene retención de 2 años en gestión y 8 en archivo central, con disposición final de selección. El expediente de `CDMB-R-2026-000002`, cerrado en 2026, entra al panel de disposición en 2036. Cuando llegue, se seleccionará una muestra y el resto se eliminará mediante acta.",
+    "detalle": "Ninguna eliminación es automática: siempre media una confirmación humana y un acta. Aunque el original físico se destruya, el registro de que existió y bajo qué autorización se dispuso permanece en el sistema.",
+    "fundamento": "Acuerdo 004 de 2019 AGN (transferencias y disposición) · Ley 594 de 2000 · MoReq capítulo 2."
+  },
+  {
+    "orden": 12,
+    "etiqueta": "Bitácora",
+    "titulo": "La bitácora inalterable",
+    "tituloIndice": "Bitácora inalterable",
+    "ubicacion": "`Administración → Bitácora del SGDEA`, y la bitácora incluida en cada detalle.",
+    "resumen": "La garantía de trazabilidad del sistema: una cadena de hash que no admite edición ni depuración.",
+    "pasos": [
+      "La bitácora de un trámite lista cada evento —radicación, consultas, reparto, respuesta, firma, despacho, archivo— con el usuario, la fecha y hora, la dirección IP y el navegador.",
+      "Cada fila incorpora el **hash SHA-256 de la fila anterior**: alterar o borrar una rompe la cadena y queda en evidencia.",
+      "El sistema registra también las lecturas y las exportaciones. La bitácora se exporta a CSV y XML, y dispone de vista de impresión."
+    ],
+    "ejemplo": "La bitácora de `CDMB-R-2026-000002` muestra, en orden: «Radicada» por el sistema público; tres «Consulta de estado» desde distintas IP; «Repartida» por la ventanilla; «Respuesta guardada» por la funcionaria; «Radicada como CDMB-E-2026-000014 y firmada»; «Despachada por correo electrónico»; «Archivada en expediente». Cada línea encadena el hash de la anterior.",
+    "detalle": "No existe ninguna opción para desactivar la bitácora, y no puede editarse ni depurarse. Ni siquiera al limpiar datos de prueba se elimina una fila: es una cadena, y su ruptura es detectable. Un usuario de prueba que ya figura en la bitácora se desactiva, no se elimina.",
+    "fundamento": "MoReq 6.6 a 6.11, 6.19 y 6.27 (pistas de auditoría inalterables) · Ley 594 de 2000."
+  },
+  {
+    "orden": 13,
+    "etiqueta": "Panel",
+    "titulo": "Panel de trabajo y reportes",
+    "tituloIndice": "Panel y reportes",
+    "ubicacion": "`Panel` · `Reportes`.",
+    "resumen": "La vista operativa del día para cada funcionario, y las métricas de gestión para la dirección.",
+    "pasos": [
+      "«Mi trabajo pendiente» reúne lo asignado al funcionario en sesión, con lo vencido y lo que vence dentro de 3 días hábiles.",
+      "Los avisos del Panel muestran: recibidas **sin repartir** y cuántas fueron devueltas, oficios **sin despachar**, comunicaciones **sin clasificación TRD**, flujos con el paso vencido y fallas críticas del sistema en las últimas 24 horas.",
+      "En «Reportes»: volumen, tendencia mensual por tipo, distribución por dependencia y **tiempo promedio de respuesta**, general y por dependencia, para identificar los cuellos de botella."
+    ],
+    "ejemplo": "Con la sesión de la funcionaria asignada, «Mi trabajo pendiente» muestra `CDMB-R-2026-000002` con «vence en 8 días hábiles». Tras el despacho, el trámite sale de su lista. En Reportes, la respuesta cuenta para el tiempo promedio de la Subdirección de Administración del Sistema Ambiental.",
+    "detalle": "Al no haber un proveedor de correo configurado, ningún aviso se envía por correo electrónico: todos residen en la aplicación, en el lugar donde la persona que debe actuar los verá. Es una decisión consciente, consignada como tal.",
+    "fundamento": "MoReq 4.4 y 4.5 (informes) · 7.9, 7.19 y 7.20 (actividades pendientes, semáforos, incumplimiento) · 6.17 (fallas críticas)."
+  },
+  {
+    "orden": 14,
+    "etiqueta": "Seguridad",
+    "titulo": "Seguridad y control de acceso",
+    "tituloIndice": "Seguridad y control de acceso",
+    "ubicacion": "`Administración → Usuarios y roles` · `Seguridad`.",
+    "resumen": "El control de acceso es efectivo, no una etiqueta: denegado por defecto y niveles de acceso que ocultan realmente la información.",
+    "pasos": [
+      "El módulo define **cuatro roles** —operador de ventanilla, funcionario, jefe de dependencia y administrador de archivo—. Sin un rol asignado no se accede al módulo, y el intento queda auditado.",
+      "Un radicado o expediente puede marcarse en nivel **«Clasificada» o «Reservada»** (Ley 1712 de 2014) con su fundamento. Deja de aparecer en el listado y en el FUID para quien no pertenece a esa dependencia, y todo intento de abrirlo queda auditado.",
+      "En «Seguridad» se configura la política de contraseñas (longitud, complejidad, histórico, vigencia, diccionario de contraseñas débiles), el bloqueo por intentos fallidos y el **«locker»**, que oculta todo el SGDEA a los funcionarios mientras se despliega.",
+      "De forma opcional se registra la URL de una **autoridad de sello de tiempo RFC-3161** para el estampado cronológico de las firmas."
+    ],
+    "ejemplo": "El expediente de `CDMB-R-2026-000002` se marca «Clasificada» con fundamento «datos personales del peticionario, art. 18 Ley 1712 de 2014». Un funcionario de otra dependencia deja de verlo en el listado; si intenta abrir su URL directa, el sistema lo deniega y registra el intento en la bitácora.",
+    "detalle": "El nivel de acceso a la información no es un sello visual: una comunicación reservada se oculta de forma efectiva, y el sistema registra a quién intentó consultarla sin permiso.",
+    "fundamento": "Ley 1712 de 2014 (información clasificada y reservada, con fundamento) · MoReq capítulo 6 · 6.29 a 6.35 (política de contraseñas)."
+  },
+  {
+    "orden": 15,
+    "etiqueta": "Cumplimiento",
+    "titulo": "Cumplimiento normativo y hoja de ruta",
+    "tituloIndice": "Cumplimiento y hoja de ruta",
+    "ubicacion": "`Administración → Matriz de cumplimiento MoReq` ([/correspondencia/matriz-moreq](/correspondencia/matriz-moreq)).",
+    "resumen": "El mapa completo del cumplimiento y una descripción explícita de lo que queda pendiente.",
+    "pasos": [
+      "La matriz recoge los **209 requisitos** del MOREQ de la Función Pública, adaptados a la CDMB, con evidencia concreta por fila. Cumplimiento general **81 %**: 160 completos, 20 parciales, 29 pendientes. Se filtra por estado, se busca por número o texto, se imprime y se exporta a CSV.",
+      "El administrador de archivo actualiza en línea el estado y la nota de cada requisito. Cada cambio guarda quién y cuándo lo hizo, y queda en la bitácora inalterable, consultable desde «Historial de cambios».",
+      "Lo que figura como «pendiente» son **exclusiones conscientes**: proveedor de correo saliente, PDF/A, expedientes híbridos físicos, integración de escaneo y OCR, X-Road como proveedor.",
+      "Las siguientes fases, cuando la Corporación lo decida, contemplan la firma digital con una entidad de certificación acreditada (requiere contrato) y el fondo documental histórico de solo consulta."
+    ],
+    "ejemplo": "La fila 1.19 «Índice electrónico del expediente con foliación» figura como completa, con la evidencia «expediente `CDMB-R-2026-000002`: índice firmado, folios 1–9, hash SHA-256 por archivo». La fila «Notificación por correo electrónico» figura como pendiente, con la nota «sin proveedor de correo; todos los avisos residen en la aplicación».",
+    "detalle": "El sistema no se autocertifica: la matriz existe para que el comité de archivo la revise fila por fila. El porcentaje es inferior al de un ECM comercial de forma deliberada, porque el MOREQ evalúa contra la totalidad del modelo, incluidas funciones que un módulo de correspondencia no tiene por qué cubrir.\n\nLa pestaña «Reglas y decisiones» del manual de referencia consigna todo lo que el sistema hace, o impide hacer, de forma deliberada, con su razón, para que con el tiempo no se pierda el motivo de cada restricción.",
+    "fundamento": "Modelo de requisitos MOREQ (DAFP, versión 5, diciembre de 2025) · Acuerdo 001 de 2024 AGN."
+  },
+  {
+    "orden": 16,
+    "etiqueta": "Búsqueda",
+    "titulo": "Búsqueda por el contenido de los PDF adjuntos",
+    "tituloIndice": "Búsqueda dentro de los PDF adjuntos",
+    "ubicacion": "el mismo cuadro de búsqueda de la bandeja de radicados y del listado de expedientes documentales.",
+    "resumen": "La búsqueda ya no se limita al asunto, al remitente o al nombre del archivo: también encuentra una palabra que solo aparece dentro del texto de un PDF adjunto.",
+    "pasos": [
+      "Al radicar una comunicación o agregar un documento a un expediente, si el archivo es un PDF el sistema extrae su texto de forma automática, en segundo plano, sin intervención del usuario.",
+      "El mismo cuadro de búsqueda de siempre revisa ese texto junto con el radicado, el asunto, el remitente y el nombre del archivo — una sola consulta, sin un modo especial de «buscar en documentos».",
+      "Un PDF escaneado como imagen, sin capa de texto, no aporta contenido buscable: el sistema no rechaza la carga, simplemente no hay texto que indexar en ese archivo."
+    ],
+    "ejemplo": "En el buscador se escribe «servidumbre», un término que no aparece en el asunto ni en el nombre del archivo de `CDMB-R-2026-000002`, pero sí en el cuerpo del acto administrativo adjunto en PDF. El radicado aparece igual en los resultados.",
+    "detalle": "La extracción ocurre una sola vez, al cargar el documento, y el texto queda guardado junto a él — no se vuelve a leer el PDF en cada búsqueda. Los documentos que ya existían antes de esta función se procesaron aparte, una sola vez, con un script de mantenimiento.",
+    "fundamento": "MoReq 4.1 (búsqueda dentro de documentos, listas y metadatos según el perfil) y 4.11 (búsqueda de texto libre y metadatos integrada)."
+  },
+  {
+    "orden": 17,
+    "etiqueta": "Archivo central",
+    "titulo": "Expedientes que llegan desde los módulos funcionales",
+    "tituloIndice": "Expedientes de los módulos (Trámites 2.0 y GECON)",
+    "ubicacion": "en el módulo, pestaña `Administración` del expediente (Trámites ambientales 2.0 y GECON). En el SGDEA, `Expedientes y archivo → Expedientes documentales`, con el filtro «Origen».",
+    "resumen": "Los expedientes que producen Trámites ambientales 2.0 y GECON se gestionan en su módulo y, al cerrarse, quedan en el archivo del SGDEA con una etiqueta de origen, sin copiar sus documentos.",
+    "pasos": [
+      "En el módulo, la pestaña «Administración» del expediente reúne la gestión documental, igual en ambos módulos: **clasificación TRD**, **nivel de acceso a la información** y **cierre o reapertura**.",
+      "La clasificación TRD se asigna sola —en Trámites ambientales 2.0 se hereda del tipo de trámite al radicar; en GECON, de la modalidad de selección— y puede cambiarse en cualquier etapa con la cascada Dependencia → Serie → Subserie y un motivo que queda en la historia del expediente.",
+      "El cierre exige clasificación TRD y que no haya firmas ni vistos buenos pendientes. En Trámites ambientales 2.0 se cierra desde «Administración» cuando el trámite ya tiene un estado final; en GECON, al aprobar la etapa Postcontractual.",
+      "Al cerrarse, el expediente queda en solo lectura en su módulo y aparece en el SGDEA, en el cajón de la dependencia productora según la TRD, con la etiqueta «Trámites 2.0» o «GECON». Desde la ficha se consultan sus documentos —enlazados al módulo, no copiados—, el historial y la ficha imprimible, y se abre el expediente en su módulo.",
+      "Para modificarlo, se reabre desde su módulo con motivo: un administrador en Trámites ambientales 2.0; el Jefe de Contratación o un administrador en GECON. Desde el SGDEA no puede editarse, cerrarse, prestarse ni reclasificarse."
+    ],
+    "ejemplo": "El permiso de ocupación de cauces `M-DA-PR39-2026-0001`, en estado «Aprobado», hereda la subserie 540.7 «Permisos de ocupación de cauce, playas y lechos». Desde «Administración» se cierra y archiva: aparece en el SGDEA en el cajón de SEYCA – Grupo Seguimiento para la Sostenibilidad, con la etiqueta «Trámites 2.0» y sus 7 documentos.\n\nDel mismo modo, el contrato `CDMB-CTO-2026-000034`, al aprobarse su etapa Postcontractual, queda en el cajón de la Oficina de Contratación con la etiqueta «GECON» y la subserie 210.8 «Contratos de prestación de servicios».",
+    "detalle": "La Corporación tiene un solo archivo: los expedientes de los módulos usan la misma TRD, el mismo nivel de acceso y las mismas reglas de cierre que los del SGDEA, y se listan, filtran e inventarían (FUID) junto a ellos. Cada consulta de uno de sus documentos desde el archivo queda en la bitácora inalterable.\n\nLos documentos no se duplican: el original y sus firmas permanecen en el módulo que los produjo y el SGDEA los enlaza. No existen dos versiones de un mismo documento que puedan diferir.",
+    "fundamento": "Acuerdo 001 de 2024 AGN, artículo 4.3.2 (expediente electrónico y su cierre) · Acuerdo 004 de 2019 AGN (TRD; la retención se cuenta desde el cierre del expediente) · Ley 1712 de 2014 (nivel de acceso) · MoReq 1.13, 1.14, 1.33 y 1.35."
+  }
+]

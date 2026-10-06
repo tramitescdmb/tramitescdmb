@@ -157,6 +157,7 @@ model Usuario {
   supervisionesContrato              ExpedienteContractualSupervisor[] @relation("SupervisorDeExpediente")
   expedientesTramiteArchivados       Expediente[]                      @relation("ExpedienteTramiteArchivadoPor")
   requisitosMoreqActualizados        RequisitoMoreq[]                  @relation("RequisitoMoreqActualizadoPor")
+  apartadosManualActualizados        ApartadoManualDemostracion[]      @relation("ApartadoManualActualizadoPor")
   asignacionesContrato               ExpedienteContractualAsignado[]   @relation("AsignadoDeExpediente")
   asignacionesContratoHechas         ExpedienteContractualAsignado[]   @relation("AsignadoDeExpedientePor")
   etapasContratacionAprobadas        EtapaExpedienteContractual[]      @relation("EtapaContratacionAprobadaPor")
@@ -1428,6 +1429,27 @@ model RequisitoMoreq {
   actualizadoPor Usuario? @relation("RequisitoMoreqActualizadoPor", fields: [actualizadoPorId], references: [id])
 
   @@index([categoria, orden])
+}
+
+model ApartadoManualDemostracion {
+  id               String    @id @default(cuid())
+  orden            Int
+  etiqueta         String
+  titulo           String
+  tituloIndice     String
+  ubicacion        String    @db.Text
+  resumen          String    @db.Text
+  pasos            String[]
+  ejemplo          String    @db.Text
+  detalle          String    @db.Text
+  fundamento       String    @db.Text
+  actualizadoEn    DateTime?
+  actualizadoPorId String?
+  createdAt        DateTime  @default(now())
+
+  actualizadoPor Usuario? @relation("ApartadoManualActualizadoPor", fields: [actualizadoPorId], references: [id])
+
+  @@index([orden])
 }
 
 model ExpedienteDocumental {

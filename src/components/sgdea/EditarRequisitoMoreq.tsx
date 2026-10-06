@@ -66,11 +66,11 @@ export function EditarRequisitoMoreq({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="mt-1.5 flex w-fit items-center gap-1 text-[11px] font-medium text-cdmb-700 hover:underline print:hidden"
+        className="ml-1 inline-flex rounded p-0.5 align-middle text-stone-400 hover:bg-cdmb-50 hover:text-cdmb-700 print:hidden"
         aria-label={`Editar el requisito ${numero}`}
+        title="Editar"
       >
         <Pencil className="h-3 w-3" aria-hidden />
-        Editar
       </button>
     );
   }
@@ -83,7 +83,7 @@ export function EditarRequisitoMoreq({
           value={valorTitulo}
           onChange={(e) => setValorTitulo(e.target.value)}
           required
-          className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm text-stone-800"
+          className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-800"
         />
       </label>
       <label className="block text-[11px] font-medium text-stone-600">
@@ -91,7 +91,7 @@ export function EditarRequisitoMoreq({
         <select
           value={valorEstado}
           onChange={(e) => setValorEstado(e.target.value as EstadoRequisitoMoreq)}
-          className="mt-0.5 block rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm text-stone-800"
+          className="mt-0.5 block rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-800"
         >
           {ESTADOS.map((o) => (
             <option key={o.valor} value={o.valor}>
@@ -107,7 +107,7 @@ export function EditarRequisitoMoreq({
           onChange={(e) => setValorNota(e.target.value)}
           required
           rows={5}
-          className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm text-stone-800"
+          className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-800"
         />
       </label>
       {error && <p className="text-xs text-red-700">{error}</p>}

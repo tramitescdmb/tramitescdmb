@@ -37,6 +37,7 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/correspondencia\/calendario-laboral/, trail: ["Configuración", "Calendario laboral"] },
   { re: /^\/correspondencia\/bitacora/, trail: ["Administración", "Bitácora"] },
   { re: /^\/correspondencia\/matriz-moreq/, trail: ["Administración", "Matriz de cumplimiento MoReq"] },
+  { re: /^\/correspondencia\/manual-demostracion/, trail: ["Administración", "Manual de demostración"] },
   { re: /^\/correspondencia\/ayuda/, trail: ["Ayuda"] },
   { re: /^\/correspondencia\/[^/]+\/constancia/, trail: ["Correspondencia", "Constancia de radicación"] },
   { re: /^\/correspondencia\/buzon/, trail: ["Firmas", "Buzón de firmas"] },

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CheckCircle2, CircleAlert, CircleDashed, Gauge, History, ListChecks, Search } from "lucide-react";
+import { CheckCircle2, CircleAlert, CircleDashed, Gauge, History, ListChecks, Search, type LucideIcon } from "lucide-react";
 import type { EstadoRequisitoMoreq } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -12,7 +12,7 @@ import {
   ETIQUETA_ESTADO_MOREQ,
   esEstadoMoreq,
 } from "@/lib/matriz-moreq";
-import { TituloSeccion, TarjetaKpi } from "@/components/sgdea/ui";
+import { TituloSeccion } from "@/components/sgdea/ui";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { EditarRequisitoMoreq } from "@/components/sgdea/EditarRequisitoMoreq";
@@ -30,6 +30,37 @@ function normalizar(texto: string): string {
 
 function anclaRequisito(numero: string): string {
   return `req-${numero.replace(/\./g, "-")}`;
+}
+
+function Indicador({
+  icon: Icon,
+  etiqueta,
+  valor,
+  clase,
+  barra,
+}: {
+  icon: LucideIcon;
+  etiqueta: string;
+  valor: number | string;
+  clase: string;
+  barra?: number;
+}) {
+  return (
+    <div className="rounded-xl border border-stone-100 bg-white px-3.5 py-3 shadow-soft">
+      <div className="flex items-center gap-1.5 text-stone-400">
+        <Icon className={`h-3.5 w-3.5 ${clase}`} aria-hidden />
+        <span className="text-[10px] uppercase tracking-wide">{etiqueta}</span>
+      </div>
+      <p className="mt-0.5 text-lg font-semibold tabular-nums text-stone-900">
+        {typeof valor === "number" ? valor.toLocaleString("es-CO") : valor}
+      </p>
+      {barra !== undefined && (
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-stone-100" aria-hidden>
+          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${barra}%` }} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default async function MatrizMoreqPage({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string }> }) {
@@ -80,7 +111,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
                 <Link
                   prefetch={false}
                   href="/correspondencia/bitacora?entidad=RequisitoMoreq"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50"
                 >
                   <History className="h-3.5 w-3.5" aria-hidden />
                   Historial de cambios
@@ -93,35 +124,26 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
         >
           Matriz de cumplimiento MoReq
         </TituloSeccion>
-        <p className="mt-2 max-w-3xl text-sm text-stone-600">
+        <p className="mt-2 max-w-3xl text-xs leading-relaxed text-stone-500">
           Adaptación institucional del Modelo de requisitos MOREQ (Función Pública, versión 5, diciembre de 2025) aplicada al SGDEA de la CDMB,
           junto con el Acuerdo 001 de 2024 del AGN.
           {ultimaEdicion && <> Última actualización: {formatearFecha(ultimaEdicion)}.</>}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
-          <div className="flex items-center gap-2 text-stone-400">
-            <Gauge className="h-4 w-4 text-cdmb-600" aria-hidden />
-            <span className="text-xs uppercase tracking-wide">Cumplimiento general</span>
-          </div>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-stone-900">{general.porcentaje} %</p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-100" aria-hidden>
-            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${general.porcentaje}%` }} />
-          </div>
-        </div>
-        <TarjetaKpi icon={CheckCircle2} label="Completos" value={general.completos} tono="verde" />
-        <TarjetaKpi icon={CircleDashed} label="Parciales" value={general.parciales} tono="ambar" />
-        <TarjetaKpi icon={CircleAlert} label="Pendientes" value={general.pendientes} tono="rojo" />
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <Indicador icon={Gauge} etiqueta="Cumplimiento general" valor={`${general.porcentaje} %`} clase="text-cdmb-600" barra={general.porcentaje} />
+        <Indicador icon={CheckCircle2} etiqueta="Completos" valor={general.completos} clase="text-emerald-600" />
+        <Indicador icon={CircleDashed} etiqueta="Parciales" valor={general.parciales} clase="text-amber-600" />
+        <Indicador icon={CircleAlert} etiqueta="Pendientes" valor={general.pendientes} clase="text-red-600" />
       </div>
 
-      <form method="get" className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-2.5 shadow-soft print:hidden">
+      <form method="get" className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-2 shadow-soft print:hidden">
         <span className="flex min-w-[220px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
-          <input type="text" name="q" defaultValue={q} placeholder="Número, requisito o nota" className="w-full text-sm outline-none" />
+          <input type="text" name="q" defaultValue={q} placeholder="Número, requisito o nota" className="w-full text-xs outline-none" />
         </span>
-        <select name="estado" defaultValue={estado ?? ""} className="flex-none rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
+        <select name="estado" defaultValue={estado ?? ""} className="flex-none rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs">
           <option value="">Todos los estados</option>
           {ESTADOS_MOREQ.map((e) => (
             <option key={e} value={e}>
@@ -129,11 +151,11 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
             </option>
           ))}
         </select>
-        <button type="submit" className="flex-none rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">
+        <button type="submit" className="flex-none rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600">
           Filtrar
         </button>
         {hayFiltros && (
-          <Link prefetch={false} href="/correspondencia/matriz-moreq" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50">
+          <Link prefetch={false} href="/correspondencia/matriz-moreq" className="flex-none rounded-md border border-stone-200 px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-50">
             Limpiar
           </Link>
         )}
@@ -144,15 +166,15 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
         )}
       </form>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr] lg:items-start">
-        <nav aria-label="Categorías de la matriz" className="space-y-1 lg:sticky lg:top-16 print:hidden">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[210px_1fr] lg:items-start">
+        <nav aria-label="Categorías de la matriz" className="space-y-0.5 lg:sticky lg:top-16 print:hidden">
           {categorias.map((c) => (
-            <a key={c.n} href={`#categoria-${c.n}`} className="block rounded-lg px-2.5 py-2 text-sm text-stone-600 hover:bg-white hover:text-stone-900">
+            <a key={c.n} href={`#categoria-${c.n}`} className="block rounded-lg px-2 py-1.5 text-xs text-stone-600 hover:bg-white hover:text-stone-900">
               <span className="block leading-snug">
                 {c.n} · {c.titulo}
               </span>
               <span className="mt-1 flex items-center gap-2">
-                <span className="w-9 flex-none text-[11px] tabular-nums text-stone-500">{c.cumplimiento.porcentaje} %</span>
+                <span className="w-8 flex-none text-[10px] tabular-nums text-stone-500">{c.cumplimiento.porcentaje} %</span>
                 <span className="h-1 flex-1 overflow-hidden rounded-full bg-stone-200" aria-hidden>
                   <span className="block h-full rounded-full bg-emerald-500" style={{ width: `${c.cumplimiento.porcentaje}%` }} />
                 </span>
@@ -161,9 +183,9 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
           ))}
         </nav>
 
-        <div className="min-w-0 space-y-8">
+        <div className="min-w-0 space-y-7">
           {visibles.length === 0 && (
-            <p className="rounded-xl border border-dashed border-stone-200 bg-white px-4 py-10 text-center text-sm text-stone-400">
+            <p className="rounded-xl border border-dashed border-stone-200 bg-white px-4 py-10 text-center text-xs text-stone-400">
               No hay requisitos que coincidan con el filtro.
             </p>
           )}
@@ -171,36 +193,36 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
             .filter((c) => c.filas.length > 0)
             .map((c) => (
               <section key={c.n} id={`categoria-${c.n}`} className="scroll-mt-16">
-                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-cdmb-600 pb-1.5">
-                  <h2 className="text-base font-semibold text-stone-900">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-cdmb-600 pb-1">
+                  <h2 className="text-sm font-semibold text-stone-900">
                     {c.n} · {c.titulo}
                   </h2>
-                  <span className="text-xs tabular-nums text-stone-500">
+                  <span className="text-[11px] tabular-nums text-stone-500">
                     {c.cumplimiento.porcentaje} % · {c.cumplimiento.completos} completos · {c.cumplimiento.parciales} parciales · {c.cumplimiento.pendientes} pendientes
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs text-stone-500">{c.descripcion}</p>
+                <p className="mt-1 text-[11px] text-stone-500">{c.descripcion}</p>
                 <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-stone-100 bg-stone-50 text-left text-[11px] uppercase tracking-wide text-stone-500">
+                  <table className="w-full text-xs">
+                    <thead className="border-b border-stone-100 bg-stone-50 text-left text-[10px] uppercase tracking-wide text-stone-500">
                       <tr>
-                        <th className="px-3 py-2 font-medium">No.</th>
-                        <th className="px-3 py-2 font-medium">Requisito</th>
-                        <th className="px-3 py-2 font-medium">Estado</th>
-                        <th className="px-3 py-2 font-medium">Nota</th>
+                        <th className="px-3 py-1.5 font-medium">No.</th>
+                        <th className="px-3 py-1.5 font-medium">Requisito</th>
+                        <th className="px-3 py-1.5 font-medium">Estado</th>
+                        <th className="px-3 py-1.5 font-medium">Nota</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                       {c.filas.map((r) => (
                         <tr key={r.id} id={anclaRequisito(r.numero)} className="scroll-mt-16 align-top target:bg-amber-50/70">
-                          <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-stone-500">{r.numero}</td>
-                          <td className="min-w-[200px] px-3 py-2.5 font-medium text-stone-800">{r.titulo}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${CLASE_ESTADO[r.estado]}`}>
+                          <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px] text-stone-500">{r.numero}</td>
+                          <td className="min-w-[220px] px-3 py-2 font-medium leading-snug text-stone-800">{r.titulo}</td>
+                          <td className="whitespace-nowrap px-3 py-2">
+                            <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${CLASE_ESTADO[r.estado]}`}>
                               {ETIQUETA_ESTADO_MOREQ[r.estado]}
                             </span>
                           </td>
-                          <td className="min-w-[260px] px-3 py-2.5 text-xs leading-relaxed text-stone-600">
+                          <td className="min-w-[260px] px-3 py-2 text-[11px] leading-relaxed text-stone-600">
                             {r.nota}
                             {r.actualizadoEn && (
                               <span className="mt-1 block text-[10px] text-stone-400">
@@ -227,9 +249,9 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
               </section>
             ))}
 
-          <details className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-600 shadow-soft">
+          <details className="rounded-xl border border-stone-200 bg-white p-3.5 text-xs leading-relaxed text-stone-600 shadow-soft">
             <summary className="cursor-pointer font-medium text-stone-800">Cómo leer el porcentaje</summary>
-            <div className="mt-3 space-y-2">
+            <div className="mt-2.5 space-y-2">
               <p>
                 El MOREQ de la Función Pública se usa como referencia técnica, adaptada al alcance de la CDMB. La norma vigente para toda entidad
                 pública es el Acuerdo 001 de 2024 del AGN (Acuerdo Único de la Función Archivística), de donde sale, por ejemplo, la definición de
@@ -246,7 +268,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
                 <li>Decisión consciente: firma electrónica con hash en lugar de firma digital con certificado; contraseñas con bcrypt en lugar de MD5 o SHA.</li>
                 <li>Brechas priorizables: PDF/A para preservación, avisos por correo o SMS y expedientes híbridos físico-electrónicos.</li>
               </ul>
-              <p className="text-xs text-stone-400">
+              <p className="text-[11px] text-stone-400">
                 Fuentes: Modelo de requisitos MOREQ, DAFP, versión 5 (2025-12-11) · Ley 594 de 2000 · Ley 1437 de 2011 (CPACA) · Ley 1712 de 2014 ·
                 Ley 527 de 1999 · Decreto 1080 de 2015 · Acuerdo 001 de 2024 AGN.
               </p>
