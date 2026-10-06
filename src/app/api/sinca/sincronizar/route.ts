@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
   }
 
   const resultado = await sincronizarResoluciones("cron");
-  if (resultado.ok) revalidateTag("sinca-analitica");
 
   let nit: { ok: boolean; error?: string } = { ok: true };
   try {
