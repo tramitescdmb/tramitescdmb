@@ -37,17 +37,6 @@ export function horaCorta(d: Date): string {
   return d.toLocaleTimeString("es-CO", { timeZone: ZONA_HORARIA, hour: "numeric", minute: "2-digit" });
 }
 
-export function mesValido(mes: string | undefined, hoy: Date = new Date()): { anio: number; mes: number } {
-  const m = mes && /^(\d{4})-(\d{2})$/.exec(mes);
-  if (m) {
-    const anio = Number(m[1]);
-    const mm = Number(m[2]);
-    if (anio >= 2000 && anio <= 2100 && mm >= 1 && mm <= 12) return { anio, mes: mm };
-  }
-  const { fecha } = partesColombia(hoy);
-  return { anio: Number(fecha.slice(0, 4)), mes: Number(fecha.slice(5, 7)) };
-}
-
 export function claveMes(anio: number, mes: number): string {
   return `${anio}-${String(mes).padStart(2, "0")}`;
 }
@@ -57,23 +46,89 @@ export function desplazarMes(anio: number, mes: number, delta: number): { anio: 
   return { anio: Math.floor(total / 12), mes: (total % 12) + 1 };
 }
 
-export function rangoMes(anio: number, mes: number): { desde: Date; hasta: Date } {
-  const sig = desplazarMes(anio, mes, 1);
-  return {
-    desde: fechaHoraColombia(`${claveMes(anio, mes)}-01`, "00:00")!,
-    hasta: fechaHoraColombia(`${claveMes(sig.anio, sig.mes)}-01`, "00:00")!,
-  };
+export type VistaCalendario = "dia" | "laboral" | "semana" | "mes" | "agenda";
+export const VISTAS_CALENDARIO: { id: VistaCalendario; etiqueta: string }[] = [
+  { id: "dia", etiqueta: "Día" },
+  { id: "laboral", etiqueta: "Semana laboral" },
+  { id: "semana", etiqueta: "Semana" },
+  { id: "mes", etiqueta: "Mes" },
+  { id: "agenda", etiqueta: "Agenda" },
+];
+
+export function vistaValida(v: string | undefined): VistaCalendario {
+  return VISTAS_CALENDARIO.some((x) => x.id === v) ? (v as VistaCalendario) : "semana";
 }
 
-export function semanasDelMes(anio: number, mes: number): (string | null)[][] {
-  const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
-  const primerDiaSemana = (new Date(Date.UTC(anio, mes - 1, 1)).getUTCDay() + 6) % 7;
-  const celdas: (string | null)[] = Array.from({ length: primerDiaSemana }, () => null);
-  for (let d = 1; d <= diasEnMes; d++) celdas.push(`${claveMes(anio, mes)}-${String(d).padStart(2, "0")}`);
-  while (celdas.length % 7 !== 0) celdas.push(null);
-  const semanas: (string | null)[][] = [];
-  for (let i = 0; i < celdas.length; i += 7) semanas.push(celdas.slice(i, i + 7));
-  return semanas;
+export function fechaValida(f: string | undefined, hoy: string): string {
+  if (f && /^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(Date.parse(`${f}T00:00:00Z`))) return f;
+  return hoy;
+}
+
+export function sumarDias(fecha: string, dias: number): string {
+  const d = new Date(`${fecha}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+export function diaSemanaLunes(fecha: string): number {
+  return (new Date(`${fecha}T00:00:00Z`).getUTCDay() + 6) % 7;
+}
+
+export function lunesDe(fecha: string): string {
+  return sumarDias(fecha, -diaSemanaLunes(fecha));
+}
+
+export function sumarMeses(fecha: string, meses: number): string {
+  const { anio, mes } = desplazarMes(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)), meses);
+  const dia = Math.min(Number(fecha.slice(8, 10)), new Date(Date.UTC(anio, mes, 0)).getUTCDate());
+  return `${claveMes(anio, mes)}-${String(dia).padStart(2, "0")}`;
+}
+
+export function diasDeVista(vista: VistaCalendario, fecha: string): string[] {
+  if (vista === "dia") return [fecha];
+  if (vista === "laboral" || vista === "semana") {
+    const lunes = lunesDe(fecha);
+    return Array.from({ length: vista === "laboral" ? 5 : 7 }, (_, i) => sumarDias(lunes, i));
+  }
+  if (vista === "agenda") return Array.from({ length: 14 }, (_, i) => sumarDias(fecha, i));
+  const primero = `${fecha.slice(0, 7)}-01`;
+  const inicio = lunesDe(primero);
+  const ultimo = sumarDias(sumarMeses(primero, 1), -1);
+  const fin = sumarDias(lunesDe(ultimo), 6);
+  const dias: string[] = [];
+  for (let d = inicio; d <= fin; d = sumarDias(d, 1)) dias.push(d);
+  return dias;
+}
+
+export function desplazarVista(vista: VistaCalendario, fecha: string, sentido: 1 | -1): string {
+  if (vista === "dia") return sumarDias(fecha, sentido);
+  if (vista === "mes") return sumarMeses(fecha, sentido);
+  if (vista === "agenda") return sumarDias(fecha, 14 * sentido);
+  return sumarDias(fecha, 7 * sentido);
+}
+
+export type BloqueUbicado<T> = { item: T; columna: number; columnas: number };
+
+export function ubicarBloques<T extends { minutos: number }>(items: T[], duracionMin: number): BloqueUbicado<T>[] {
+  const orden = [...items].sort((a, b) => a.minutos - b.minutos);
+  const resultado: BloqueUbicado<T>[] = [];
+  let grupo: BloqueUbicado<T>[] = [];
+  let finGrupo = -Infinity;
+  const cerrar = () => {
+    const columnas = Math.max(1, ...grupo.map((g) => g.columna + 1));
+    for (const g of grupo) resultado.push({ ...g, columnas });
+    grupo = [];
+  };
+  for (const item of orden) {
+    if (item.minutos >= finGrupo && grupo.length) cerrar();
+    const ocupadas = new Set(grupo.filter((g) => g.item.minutos + duracionMin > item.minutos).map((g) => g.columna));
+    let columna = 0;
+    while (ocupadas.has(columna)) columna++;
+    grupo.push({ item, columna, columnas: 1 });
+    finGrupo = Math.max(finGrupo, item.minutos + duracionMin);
+  }
+  if (grupo.length) cerrar();
+  return resultado;
 }
 
 export function lugarSugerido(e: { predioDireccion: string | null; predioNombre: string | null; municipio: string }): string {

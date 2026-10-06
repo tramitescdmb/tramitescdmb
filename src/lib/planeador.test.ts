@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { desplazarMes, expedienteEnEjecucion, fechaHoraColombia, mesValido, partesColombia, rangoMes, semanasDelMes } from "./planeador";
+import { desplazarMes, desplazarVista, diasDeVista, fechaValida, ubicarBloques, vistaValida, expedienteEnEjecucion, fechaHoraColombia, partesColombia } from "./planeador";
 
 describe("fechaHoraColombia / partesColombia", () => {
   it("interpreta fecha y hora en hora de Colombia y la devuelve igual", () => {
@@ -25,22 +25,39 @@ describe("meses", () => {
     expect(desplazarMes(2026, 1, -1)).toEqual({ anio: 2025, mes: 12 });
   });
 
-  it("usa el mes actual si el parámetro no es válido", () => {
-    expect(mesValido("2026-13", new Date("2026-10-06T15:00:00Z"))).toEqual({ anio: 2026, mes: 10 });
-    expect(mesValido("2027-02")).toEqual({ anio: 2027, mes: 2 });
+});
+
+describe("vistas del calendario", () => {
+  it("arma la semana laboral y la semana completa desde el lunes", () => {
+    expect(diasDeVista("laboral", "2026-10-08")).toEqual(["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]);
+    expect(diasDeVista("semana", "2026-10-11").at(-1)).toBe("2026-10-11");
   });
 
-  it("calcula el rango del mes en hora de Colombia", () => {
-    const { desde, hasta } = rangoMes(2026, 10);
-    expect(desde.toISOString()).toBe("2026-10-01T05:00:00.000Z");
-    expect(hasta.toISOString()).toBe("2026-11-01T05:00:00.000Z");
+  it("cubre el mes con semanas completas", () => {
+    const dias = diasDeVista("mes", "2026-10-20");
+    expect(dias[0]).toBe("2026-09-28");
+    expect(dias.at(-1)).toBe("2026-11-01");
+    expect(dias.length % 7).toBe(0);
   });
 
-  it("arma semanas de lunes a domingo", () => {
-    const semanas = semanasDelMes(2026, 10);
-    expect(semanas[0]).toEqual([null, null, null, "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"]);
-    expect(semanas.flat().filter(Boolean)).toHaveLength(31);
-    expect(semanas.every((s) => s.length === 7)).toBe(true);
+  it("desplaza por la unidad de la vista y ajusta fin de mes", () => {
+    expect(desplazarVista("dia", "2026-12-31", 1)).toBe("2027-01-01");
+    expect(desplazarVista("semana", "2026-10-06", -1)).toBe("2026-09-29");
+    expect(desplazarVista("mes", "2026-01-31", 1)).toBe("2026-02-28");
+  });
+
+  it("valida vista y fecha", () => {
+    expect(vistaValida("xyz")).toBe("semana");
+    expect(fechaValida("2026-02-30x", "2026-10-06")).toBe("2026-10-06");
+  });
+
+  it("reparte en columnas los bloques que se cruzan", () => {
+    const r = ubicarBloques([{ minutos: 480 }, { minutos: 510 }, { minutos: 600 }], 60);
+    expect(r.map((b) => [b.item.minutos, b.columna, b.columnas])).toEqual([
+      [480, 0, 2],
+      [510, 1, 2],
+      [600, 0, 1],
+    ]);
   });
 });
 
