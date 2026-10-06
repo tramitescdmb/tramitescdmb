@@ -70,6 +70,31 @@ export function esPasoDeProgramarVisita(titulo: string): boolean {
   return /visita/i.test(titulo) && /(programar|asignar)/i.test(titulo);
 }
 
+export function pasoPermiteVisita(titulo: string, descripcion?: string | null): boolean {
+  if (esPasoDeVisita(titulo) || esPasoDeProgramarVisita(titulo)) return true;
+  const d = (descripcion ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return /realizara visitas? de verificacion|se procede a programar la visita|para programacion de visita/.test(d);
+}
+
+export type EstadoPasoVisita = { permite: boolean; motivo: string | null };
+
+export function evaluarPasoParaVisita(
+  pasos: { numero: number; titulo: string; descripcion?: string | null }[],
+  pasoActualNumero: number
+): EstadoPasoVisita {
+  const actual = pasos.find((p) => p.numero === pasoActualNumero);
+  if (actual && pasoPermiteVisita(actual.titulo, actual.descripcion)) return { permite: true, motivo: null };
+  const pasosVisita = pasos.filter((p) => pasoPermiteVisita(p.titulo, p.descripcion));
+  const donde = actual ? `El trámite está en el paso ${actual.numero} (${actual.titulo.toLowerCase()}).` : "El trámite no tiene un paso activo.";
+  if (pasosVisita.length === 0) return { permite: false, motivo: `${donde} Su procedimiento no contempla visitas técnicas.` };
+  const lista = pasosVisita.map((p) => `${p.numero} (${p.titulo.toLowerCase()})`).join(" o ");
+  return { permite: false, motivo: `${donde} Las visitas solo se programan cuando está en el paso ${lista}.` };
+}
+
+export function visitaHabilitadaParaRegistro(diaProgramado: string, hoy: string): boolean {
+  return diaProgramado <= hoy;
+}
+
 export function documentoCubiertoPorVisita(nombreDocumento: string, visita: { conFotos: boolean }): boolean {
   const n = nombreDocumento.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   if (/registro fotografico|fotografias/.test(n)) return visita.conFotos;

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
+import { evaluarPasoParaVisita } from "@/lib/temas-visita";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,12 +19,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const expediente = await db.expediente.findUnique({
     where: { id },
-    select: { id: true, numero: true, estado: true, archivado: true, usuariosAsignados: { select: { id: true, nombre: true } } },
+    select: {
+      id: true,
+      numero: true,
+      estado: true,
+      archivado: true,
+      pasoActualNumero: true,
+      flujo: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true } } } },
+      usuariosAsignados: { select: { id: true, nombre: true } },
+    },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado." }, { status: 404 });
   if (!expedienteEnEjecucion(expediente)) {
     return NextResponse.json({ error: "Solo se programan visitas en trámites en ejecución." }, { status: 409 });
   }
+  const paso = evaluarPasoParaVisita(expediente.flujo.pasos, expediente.pasoActualNumero);
+  if (!paso.permite) return NextResponse.json({ error: paso.motivo }, { status: 409 });
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const datos = leerDatosVisita(body);

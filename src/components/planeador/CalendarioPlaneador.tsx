@@ -28,6 +28,7 @@ export type VisitaCalendario = {
   minutos: number;
   duracion: number;
   tieneHoja: boolean;
+  habilitadaRegistro: boolean;
   puedeRegistrar: boolean;
   lugar: string;
   estado: string;
@@ -129,7 +130,7 @@ export function CalendarioPlaneador({
     return m;
   }, [visibles]);
   const seleccion = visitas.find((v) => v.id === seleccionId) ?? null;
-  const porProgramar = useMemo(() => expedientes.filter((e) => e.porProgramar), [expedientes]);
+  const porProgramar = useMemo(() => expedientes.filter((e) => e.porProgramar && e.permiteVisita), [expedientes]);
   const [busquedaPendientes, setBusquedaPendientes] = useState("");
   const pendientesFiltrados = useMemo(() => filtrarExpedientes(porProgramar, busquedaPendientes), [porProgramar, busquedaPendientes]);
 
@@ -783,7 +784,7 @@ function DetalleVisita({
             Abrir expediente
           </Link>
         )}
-        {v.expediente.puedeAbrir && (v.tieneHoja || (editable && v.puedeRegistrar)) && (
+        {v.expediente.puedeAbrir && (v.tieneHoja || (editable && v.puedeRegistrar && v.habilitadaRegistro)) && (
           <Link
             href={`/expedientes/${v.expediente.id}/visitas/${v.id}`}
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${
@@ -803,7 +804,13 @@ function DetalleVisita({
             iniciales={{ fecha: v.dia, hora: v.hora, horaFin: v.horaFin, lugar: v.lugar, profesionalId: v.profesionalId, observaciones: v.observaciones ?? "" }}
           />
         )}
-        {editable && <AccionesVisita visitaId={v.id} puedeNoRealizada={planificador || usuarioId === v.profesionalId} puedeCancelar={planificador} />}
+        {editable && (
+          <AccionesVisita
+            visitaId={v.id}
+            puedeNoRealizada={v.habilitadaRegistro && (planificador || usuarioId === v.profesionalId)}
+            puedeCancelar={planificador}
+          />
+        )}
       </div>
     </aside>
   );

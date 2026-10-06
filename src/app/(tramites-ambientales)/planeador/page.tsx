@@ -13,6 +13,7 @@ import {
   vistaValida,
 } from "@/lib/planeador";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { PALETA_TIPOS, COLOR_OTROS_TIPOS } from "@/lib/geovisor-capas-externas";
 import { CalendarioPlaneador, type VisitaCalendario } from "@/components/planeador/CalendarioPlaneador";
 import type { ExpedienteParaVisita } from "@/components/planeador/ProgramarVisitaForm";
@@ -83,6 +84,7 @@ export default async function PlaneadorPage({ searchParams }: { searchParams: Pr
       minutos,
       duracion: Math.max(30, Math.min(24 * 60 - minutos, Math.round((fin.getTime() - v.fechaHora.getTime()) / 60_000))),
       tieneHoja: Boolean(v.visitaTecnica),
+      habilitadaRegistro: visitaHabilitadaParaRegistro(dia, hoy),
       puedeRegistrar: planificador || v.profesionalId === session.userId,
       lugar: v.lugar,
       estado: v.estado,
@@ -133,6 +135,8 @@ async function expedientesEnEjecucion(tramitesPermitidos: string[] | null): Prom
       id: true,
       numero: true,
       municipio: true,
+      flujoId: true,
+      pasoActualNumero: true,
       predioDireccion: true,
       predioNombre: true,
       predioCatastral: true,
@@ -144,8 +148,19 @@ async function expedientesEnEjecucion(tramitesPermitidos: string[] | null): Prom
       _count: { select: { visitasProgramadas: { where: { estado: "PROGRAMADA" } } } },
     },
   });
-  return expedientes.map((e) => ({
+  const flujoIds = [...new Set(expedientes.map((e) => e.flujoId))];
+  const pasos = flujoIds.length
+    ? await db.pasoDefinicion.findMany({ where: { flujoId: { in: flujoIds } }, select: { flujoId: true, numero: true, titulo: true, descripcion: true } })
+    : [];
+  return expedientes.map((e) => {
+    const paso = evaluarPasoParaVisita(
+      pasos.filter((p) => p.flujoId === e.flujoId),
+      e.pasoActualNumero
+    );
+    return {
     id: e.id,
+    permiteVisita: paso.permite,
+    motivoBloqueo: paso.motivo,
     numero: e.numero,
     tramite: e.tramiteTipo.nombre,
     solicitante: e.solicitanteNombre,
@@ -155,5 +170,6 @@ async function expedientesEnEjecucion(tramitesPermitidos: string[] | null): Prom
     lugar: lugarSugerido(e),
     asignados: e.usuariosAsignados,
     porProgramar: e._count.visitasProgramadas === 0,
-  }));
+    };
+  });
 }

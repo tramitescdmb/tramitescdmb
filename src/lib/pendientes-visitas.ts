@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { finEfectivo, horaCorta, partesColombia, sumarDias } from "@/lib/planeador";
-import { esPasoDeProgramarVisita, esPasoDeVisita } from "@/lib/temas-visita";
+import { pasoPermiteVisita } from "@/lib/temas-visita";
 
 export type VisitaAlerta = {
   id: string;
@@ -22,6 +22,7 @@ export type ExpedienteAlerta = {
   tramite: string;
   pasoActualNumero: number;
   pasoTitulo: string | null;
+  pasoDescripcion?: string | null;
   visitas: { estado: string; inicio: Date }[];
   pasosConHoja: number[];
 };
@@ -97,7 +98,7 @@ export function clasificarVisitas({
         continue;
       }
       const titulo = e.pasoTitulo ?? "";
-      const enPasoDeVisita = esPasoDeProgramarVisita(titulo) || esPasoDeVisita(titulo);
+      const enPasoDeVisita = pasoPermiteVisita(titulo, e.pasoDescripcion);
       if (enPasoDeVisita && !e.pasosConHoja.includes(e.pasoActualNumero) && ultima?.estado !== "REALIZADA") {
         sinProgramar.push({ ...base, texto: `Paso ${e.pasoActualNumero}: ${titulo}` });
       }
@@ -158,9 +159,10 @@ export async function getPendientesVisitas(opts: { userId: string; planificador:
   const pasos = expedientes.length
     ? await db.pasoDefinicion.findMany({
         where: { OR: expedientes.map((e) => ({ flujoId: e.flujoId, numero: e.pasoActualNumero })) },
-        select: { flujoId: true, numero: true, titulo: true },
+        select: { flujoId: true, numero: true, titulo: true, descripcion: true },
       })
     : [];
+  const pasoDe = (e: { flujoId: string; pasoActualNumero: number }) => pasos.find((p) => p.flujoId === e.flujoId && p.numero === e.pasoActualNumero);
 
   return clasificarVisitas({
     userId: opts.userId,
@@ -183,7 +185,8 @@ export async function getPendientesVisitas(opts: { userId: string; planificador:
       numero: e.numero,
       tramite: e.tramiteTipo.nombre,
       pasoActualNumero: e.pasoActualNumero,
-      pasoTitulo: pasos.find((p) => p.flujoId === e.flujoId && p.numero === e.pasoActualNumero)?.titulo ?? null,
+      pasoTitulo: pasoDe(e)?.titulo ?? null,
+      pasoDescripcion: pasoDe(e)?.descripcion ?? null,
       visitas: e.visitasProgramadas.map((v) => ({ estado: v.estado, inicio: v.fechaHora })),
       pasosConHoja: e.visitasTecnicas.map((v) => v.pasoNumero),
     })),

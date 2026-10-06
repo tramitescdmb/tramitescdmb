@@ -3,9 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { CalendarClock, MapPin, User, AlertTriangle, ClipboardCheck, Info } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
-import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia } from "@/lib/planeador";
+import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia, sumarMinutosHora } from "@/lib/planeador";
 import { rangoTexto, temasDeVisita } from "@/lib/planeador-db";
-import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeVisita, ordenarTemasParaTramite } from "@/lib/temas-visita";
+import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeVisita, ordenarTemasParaTramite, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { formatearFechaHora } from "@/lib/fecha";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { RegistrarVisitaForm } from "@/components/planeador/RegistrarVisitaForm";
@@ -49,9 +49,9 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const planificador = puedePlanearVisitas(permisos);
   const esProfesional = session.userId === visita.profesionalId;
   const enEjecucion = expedienteEnEjecucion(visita.expediente);
-  const hoy = partesColombia(new Date()).fecha;
+  const ahora = partesColombia(new Date());
   const programada = partesColombia(visita.fechaHora);
-  const yaLlegoElDia = programada.fecha <= hoy;
+  const yaLlegoElDia = visitaHabilitadaParaRegistro(programada.fecha, ahora.fecha);
   const puedeRegistrar =
     visita.estado === "PROGRAMADA" && enEjecucion && (planificador || esProfesional) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
@@ -194,9 +194,9 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
                 sugeridos={sugeridos.map((t) => ({ id: t.id, nombre: t.nombre }))}
                 otros={otros.map((t) => ({ id: t.id, nombre: t.nombre }))}
                 iniciales={{
-                  fechaReal: programada.fecha,
-                  horaInicioReal: programada.hora,
-                  horaFinReal: partesColombia(finEfectivo(visita)).hora,
+                  fechaReal: ahora.fecha,
+                  horaInicioReal: ahora.hora,
+                  horaFinReal: sumarMinutosHora(ahora.hora, Math.round((finEfectivo(visita).getTime() - visita.fechaHora.getTime()) / 60_000)),
                 }}
               />
               <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3">

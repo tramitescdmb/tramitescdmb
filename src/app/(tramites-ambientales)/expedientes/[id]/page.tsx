@@ -27,7 +27,7 @@ import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsig
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
-import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
+import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -180,6 +180,8 @@ export default async function ExpedienteDetallePage({
   const visitasVigentes = expediente.visitasProgramadas.filter((v) => v.estado !== "CANCELADA").length;
   const profesionalesAsignados = expediente.usuariosAsignados.map((u) => ({ id: u.id, nombre: u.nombre }));
   const manana = partesColombia(new Date(Date.now() + 24 * 60 * 60 * 1000)).fecha;
+  const hoyColombia = partesColombia(new Date()).fecha;
+  const pasoVisita = evaluarPasoParaVisita(expediente.flujo.pasos, expediente.pasoActualNumero);
   const puedeEditar = puedeEditarPorRol && !cerrado;
   const [fichaSgdea, firmasPendientes] = await Promise.all([
     fichaArchivoDe(expediente.id),
@@ -716,7 +718,7 @@ export default async function ExpedienteDetallePage({
                 <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-stone-900">Visitas técnicas programadas</h2>
-                    {planificador && enEjecucion && profesionalesAsignados.length > 0 && (
+                    {planificador && enEjecucion && pasoVisita.permite && profesionalesAsignados.length > 0 && (
                       <ProgramarVisitaForm
                         modo="nueva"
                         metodo="POST"
@@ -733,7 +735,13 @@ export default async function ExpedienteDetallePage({
                       />
                     )}
                   </div>
-                  {planificador && enEjecucion && profesionalesAsignados.length === 0 && (
+                  {enEjecucion && !pasoVisita.permite && (
+                    <p className="mb-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+                      <span>No se pueden programar visitas en este momento. {pasoVisita.motivo}</span>
+                    </p>
+                  )}
+                  {planificador && enEjecucion && pasoVisita.permite && profesionalesAsignados.length === 0 && (
                     <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
                       Asigne personal al trámite para poder programar la visita.
                     </p>
@@ -752,7 +760,9 @@ export default async function ExpedienteDetallePage({
                       {expediente.visitasProgramadas.map((v) => {
                         const editable = enEjecucion && v.estado === "PROGRAMADA";
                         const partes = partesColombia(v.fechaHora);
-                        const puedeRegistrar = editable && (planificador || session?.userId === v.profesionalId) && puedeEditar;
+                        const llegoElDia = visitaHabilitadaParaRegistro(partes.fecha, hoyColombia);
+                        const esResponsable = planificador || session?.userId === v.profesionalId;
+                        const puedeRegistrar = editable && llegoElDia && esResponsable && puedeEditar;
                         return (
                           <li key={v.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0">
@@ -816,7 +826,7 @@ export default async function ExpedienteDetallePage({
                                 />
                               )}
                               {editable && (
-                                <AccionesVisita visitaId={v.id} puedeNoRealizada={planificador || session?.userId === v.profesionalId} puedeCancelar={planificador} />
+                                <AccionesVisita visitaId={v.id} puedeNoRealizada={llegoElDia && esResponsable} puedeCancelar={planificador} />
                               )}
                             </div>
                           </li>

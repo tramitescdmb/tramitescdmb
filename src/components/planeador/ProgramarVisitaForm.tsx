@@ -22,6 +22,8 @@ export type ExpedienteParaVisita = {
   lugar: string;
   asignados: { id: string; nombre: string }[];
   porProgramar: boolean;
+  permiteVisita: boolean;
+  motivoBloqueo: string | null;
 };
 
 export function ModalVisita({

@@ -24,11 +24,13 @@ export function BuscadorExpediente({
 
   const resultados = useMemo(() => {
     const filtrados = filtrarExpedientes(expedientes, consulta);
-    return [...filtrados.filter((e) => e.porProgramar), ...filtrados.filter((e) => !e.porProgramar)];
+    const rango = (e: ExpedienteParaVisita) => (e.permiteVisita ? (e.porProgramar ? 0 : 1) : 2);
+    return [...filtrados].sort((a, b) => rango(a) - rango(b));
   }, [expedientes, consulta]);
   const visibles = resultados.slice(0, MAX_RESULTADOS);
 
   function elegir(e: ExpedienteParaVisita) {
+    if (!e.permiteVisita) return;
     onSeleccionar(e.id);
     setConsulta("");
     setAbierto(false);
@@ -109,16 +111,19 @@ export function BuscadorExpediente({
           <li className="px-3 py-2 text-xs text-stone-400">Ningún trámite en ejecución coincide con la búsqueda.</li>
         ) : (
           visibles.map((e, i) => (
-            <li key={e.id} id={`${idLista}-${e.id}`} role="option" aria-selected={i === activo}>
+            <li key={e.id} id={`${idLista}-${e.id}`} role="option" aria-selected={i === activo} aria-disabled={!e.permiteVisita}>
               <button
                 type="button"
                 onMouseEnter={() => setActivo(i)}
                 onClick={() => elegir(e)}
-                className={`block w-full px-3 py-1.5 text-left text-xs ${i === activo ? "bg-cdmb-50" : ""}`}
+                disabled={!e.permiteVisita}
+                className={`block w-full px-3 py-1.5 text-left text-xs ${!e.permiteVisita ? "cursor-not-allowed bg-stone-50 opacity-70" : i === activo ? "bg-cdmb-50" : ""}`}
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-stone-900">{e.numero}</span>
-                  {e.porProgramar ? (
+                  {!e.permiteVisita ? (
+                    <span className="flex-none rounded-full bg-stone-200 px-1.5 py-0.5 text-[10px] font-medium text-stone-600">No admite visita</span>
+                  ) : e.porProgramar ? (
                     <span className="flex-none rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por programar</span>
                   ) : (
                     <span className="flex-none rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Con visita</span>
@@ -128,6 +133,7 @@ export function BuscadorExpediente({
                 <span className="block truncate text-stone-400">
                   {e.solicitante} · {e.identificacion} · {e.municipio}
                 </span>
+                {!e.permiteVisita && e.motivoBloqueo && <span className="mt-0.5 block whitespace-normal text-[11px] text-amber-800">{e.motivoBloqueo}</span>}
               </button>
             </li>
           ))
