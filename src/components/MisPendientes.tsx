@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { CheckCircle2, FolderOpen, Scale, ClipboardList, Paperclip, AlertTriangle } from "lucide-react";
+import { CheckCircle2, FolderOpen, Scale, ClipboardList, Paperclip, AlertTriangle, ClipboardCheck, CalendarClock, CalendarX, RotateCcw, CalendarPlus } from "lucide-react";
 import type { ItemPendiente, ResumenPendientes } from "@/lib/pendientes";
+import type { AlertaVisita, ResumenVisitas } from "@/lib/pendientes-visitas";
 
 const TOPE_LISTA = 5;
 
-export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }) {
+export function MisPendientes({ resumen, visitas }: { resumen: ResumenPendientes | null; visitas?: ResumenVisitas | null }) {
   if (!resumen) return null;
 
-  if (!resumen.hayAlgo) {
+  if (!resumen.hayAlgo && !visitas?.hayAlgo) {
     return (
       <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -34,6 +35,45 @@ export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }
       </div>
 
       <div className="divide-y divide-stone-100">
+        {visitas && (
+          <>
+            <SeccionVisitas
+              Icono={ClipboardCheck}
+              clase="bg-red-50 text-red-600"
+              titulo="Visitas por registrar"
+              ayuda="Visitas suyas cuya fecha ya pasó: registre la hoja de visita o indique que no se pudo realizar."
+              items={visitas.porRegistrar}
+            />
+            <SeccionVisitas
+              Icono={CalendarClock}
+              clase="bg-sky-50 text-sky-600"
+              titulo="Sus próximas visitas técnicas"
+              ayuda="Visitas programadas a su nombre para los próximos 7 días."
+              items={visitas.proximas}
+            />
+            <SeccionVisitas
+              Icono={CalendarX}
+              clase="bg-orange-50 text-orange-600"
+              titulo="Visitas del equipo sin registrar"
+              ayuda="Visitas vencidas de otros profesionales que aún no tienen hoja de visita."
+              items={visitas.equipoVencidas}
+            />
+            <SeccionVisitas
+              Icono={RotateCcw}
+              clase="bg-amber-50 text-amber-600"
+              titulo="Visitas por reprogramar"
+              ayuda="La última visita no se pudo realizar y no hay una nueva programada."
+              items={visitas.porReprogramar}
+            />
+            <SeccionVisitas
+              Icono={CalendarPlus}
+              clase="bg-violet-50 text-violet-600"
+              titulo="Trámites en paso de visita sin programar"
+              ayuda="El procedimiento está en el paso de programar o realizar la visita y no hay ninguna programada."
+              items={visitas.sinProgramar}
+            />
+          </>
+        )}
         {resumen.asignadosTotal > 0 && (
           <div className="flex items-center gap-3 px-5 py-3">
             <IconoSeccion Icono={FolderOpen} clase="bg-cdmb-50 text-cdmb-600" />
@@ -79,6 +119,54 @@ export function MisPendientes({ resumen }: { resumen: ResumenPendientes | null }
           ayuda="Expedientes en espera de que el solicitante aporte lo que se le pidió."
           items={resumen.informacionAdicional}
         />
+      </div>
+    </div>
+  );
+}
+
+function SeccionVisitas({
+  Icono,
+  clase,
+  titulo,
+  ayuda,
+  items,
+}: {
+  Icono: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  clase: string;
+  titulo: string;
+  ayuda: string;
+  items: AlertaVisita[];
+}) {
+  if (items.length === 0) return null;
+  const visibles = items.slice(0, TOPE_LISTA);
+  const restantes = items.length - visibles.length;
+  return (
+    <div className="flex gap-3 px-5 py-3">
+      <IconoSeccion Icono={Icono} clase={clase} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-stone-900">
+          {titulo} <span className="text-stone-400">({items.length})</span>
+        </p>
+        <p className="text-xs text-stone-500">{ayuda}</p>
+        <ul className="mt-2 space-y-1.5">
+          {visibles.map((it, i) => (
+            <li key={`${it.visitaId ?? it.expedienteId}-${i}`} className="text-sm">
+              <Link
+                href={it.visitaId ? `/expedientes/${it.expedienteId}/visitas/${it.visitaId}` : `/expedientes/${it.expedienteId}#planeador`}
+                className="font-medium text-cdmb-700 hover:underline"
+              >
+                {it.numero}
+              </Link>{" "}
+              <span className="text-stone-600">· {it.tramite}</span>{" "}
+              <span className={it.destacada ? "rounded bg-amber-100 px-1 font-medium text-amber-900" : "text-stone-400"}>— {it.texto}</span>
+            </li>
+          ))}
+        </ul>
+        {restantes > 0 && (
+          <Link href="/planeador" className="mt-1.5 inline-block text-xs text-cdmb-700 hover:underline">
+            y {restantes} más en el Planeador
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, CalendarClock, X, AlertTriangle } from "lucide-react";
 import { BuscadorExpediente } from "@/components/planeador/BuscadorExpediente";
+import { sumarMinutosHora } from "@/lib/planeador";
 
-export type ValoresVisita = { fecha: string; hora: string; lugar: string; profesionalId: string; observaciones: string };
+function minutos(hora: string) {
+  return Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
+}
+
+export type ValoresVisita = { fecha: string; hora: string; horaFin: string; lugar: string; profesionalId: string; observaciones: string };
 export type ExpedienteParaVisita = {
   id: string;
   numero: string;
@@ -54,7 +59,15 @@ export function ModalVisita({
   const destino = expedientes ? (expediente ? `/api/expedientes/${expediente.id}/visitas-programadas` : null) : endpoint;
 
   const campo = (k: keyof ValoresVisita) => (e: { target: { value: string } }) => {
-    setValores((v) => ({ ...v, [k]: e.target.value }));
+    const valor = e.target.value;
+    setValores((v) => {
+      const siguiente = { ...v, [k]: valor };
+      if (k === "hora" && valor && (!v.horaFin || v.horaFin <= valor)) {
+        const duracion = v.hora && v.horaFin > v.hora ? minutos(v.horaFin) - minutos(v.hora) : 60;
+        siguiente.horaFin = sumarMinutosHora(valor, duracion);
+      }
+      return siguiente;
+    });
     setCruce(false);
   };
 
@@ -116,14 +129,18 @@ export function ModalVisita({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <label className="text-xs font-medium text-stone-700">
             Fecha
             <input type="date" required value={valores.fecha} onChange={campo("fecha")} className={`mt-0.5 ${claseCampo}`} />
           </label>
           <label className="text-xs font-medium text-stone-700">
-            Hora
+            Desde
             <input type="time" required value={valores.hora} onChange={campo("hora")} className={`mt-0.5 ${claseCampo}`} />
+          </label>
+          <label className="text-xs font-medium text-stone-700">
+            Hasta
+            <input type="time" required min={valores.hora} value={valores.horaFin} onChange={campo("horaFin")} className={`mt-0.5 ${claseCampo}`} />
           </label>
         </div>
         <label className="block text-xs font-medium text-stone-700">

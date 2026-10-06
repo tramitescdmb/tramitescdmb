@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
-import { expedienteEnEjecucion, horaCorta } from "@/lib/planeador";
-import { buscarCruceVisita, leerDatosVisita } from "@/lib/planeador-db";
-import { formatearFecha } from "@/lib/fecha";
+import { expedienteEnEjecucion } from "@/lib/planeador";
+import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "La fecha de la visita no puede estar en el pasado." }, { status: 400 });
   }
   if (!body?.forzar) {
-    const cruce = await buscarCruceVisita(datos.profesionalId, datos.fechaHora);
+    const cruce = await buscarCruceVisita(datos.profesionalId, datos.fechaHora, datos.fechaHoraFin);
     if (cruce) return NextResponse.json({ error: cruce, cruce: true }, { status: 409 });
   }
 
@@ -50,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         expedienteId: id,
         tipo: "VISITA_PROGRAMADA",
-        descripcion: `${session.nombre} programó la visita técnica para el ${formatearFecha(datos.fechaHora)} a las ${horaCorta(datos.fechaHora)} en ${datos.lugar}, a cargo de ${profesional.nombre}.`,
+        descripcion: `${session.nombre} programó la visita técnica para el ${rangoTexto(datos.fechaHora, datos.fechaHoraFin)} en ${datos.lugar}, a cargo de ${profesional.nombre}.`,
         usuarioId: session.userId,
       },
     }),

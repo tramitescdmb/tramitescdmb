@@ -122,6 +122,7 @@ model Usuario {
   visitasTecnicas       VisitaTecnica[]
   visitasProgramadas    VisitaProgramada[]         @relation("VisitaProgramadaProfesional")
   visitasQueProgramo    VisitaProgramada[]         @relation("VisitaProgramadaPor")
+  temasVisitaCreados    TemaVisita[]               @relation("TemaVisitaCreadoPor")
   historialPasswords    HistorialPassword[]
 
   dependenciaId                  String?
@@ -772,9 +773,19 @@ model VisitaTecnica {
   capturadoEn       DateTime @default(now())
   createdAt         DateTime @default(now())
 
-  expediente   Expediente          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  capturadoPor Usuario             @relation(fields: [capturadoPorId], references: [id])
-  fotos        VisitaTecnicaFoto[]
+  visitaProgramadaId String?          @unique
+  inicioReal         DateTime?
+  finReal            DateTime?
+  atendidoPor        String?
+  hallazgos          String?          @db.Text
+  recomendaciones    String?          @db.Text
+  resultado          ResultadoVisita?
+
+  expediente       Expediente          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  capturadoPor     Usuario             @relation(fields: [capturadoPorId], references: [id])
+  fotos            VisitaTecnicaFoto[]
+  visitaProgramada VisitaProgramada?   @relation(fields: [visitaProgramadaId], references: [id], onDelete: SetNull)
+  temas            TemaVisita[]        @relation("VisitaTecnicaTemas")
 
   @@index([expedienteId])
 }
@@ -782,13 +793,34 @@ model VisitaTecnica {
 enum EstadoVisitaProgramada {
   PROGRAMADA
   REALIZADA
+  NO_REALIZADA
   CANCELADA
+}
+
+enum ResultadoVisita {
+  VIABLE
+  REQUIERE_INFORMACION
+  NO_VIABLE
+  EN_ANALISIS
+}
+
+model TemaVisita {
+  id             String          @id @default(cuid())
+  nombre         String          @unique
+  codigosTramite String[]        @default([])
+  base           Boolean         @default(false)
+  activo         Boolean         @default(true)
+  creadoPorId    String?
+  createdAt      DateTime        @default(now())
+  creadoPor      Usuario?        @relation("TemaVisitaCreadoPor", fields: [creadoPorId], references: [id])
+  visitas        VisitaTecnica[] @relation("VisitaTecnicaTemas")
 }
 
 model VisitaProgramada {
   id              String                 @id @default(cuid())
   expedienteId    String
   fechaHora       DateTime
+  fechaHoraFin    DateTime?
   lugar           String
   profesionalId   String
   observaciones   String?                @db.Text
@@ -801,6 +833,7 @@ model VisitaProgramada {
   expediente    Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   profesional   Usuario    @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
   programadaPor Usuario    @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
+  visitaTecnica VisitaTecnica?
 
   @@index([fechaHora])
   @@index([profesionalId, fechaHora])

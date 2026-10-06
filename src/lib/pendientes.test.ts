@@ -24,6 +24,15 @@ function expediente(over: Partial<ExpedientePendientes> = {}): ExpedientePendien
 const funcionario: SesionPendientes = { userId: "u1", rol: "FUNCIONARIO", cargos: [COORD_EVAL] };
 
 describe("clasificarPendientes", () => {
+  it("da por entregados la hoja de visita y el registro fotográfico cuando la visita se registró en el paso", () => {
+    const paso = { numero: 5, titulo: "REALIZAR VISITA TÉCNICA", responsables: ["Servidor técnico"], documentos: ["Hoja de Visita Institucional", "Registro fotográfico", "Informe Técnico"], esDecision: false };
+    const base = { pasoActualNumero: 5, pasos: [paso], usuariosAsignadosIds: ["u1"] };
+    const sinFotos = clasificarPendientes([expediente({ ...base, visitasRegistradas: [{ pasoNumero: 5, conFotos: false }] })], funcionario);
+    expect(sinFotos.documentos.map((d) => d.detalle)).toEqual(["Registro fotográfico", "Informe Técnico"]);
+    const conFotos = clasificarPendientes([expediente({ ...base, visitasRegistradas: [{ pasoNumero: 5, conFotos: true }] })], funcionario);
+    expect(conFotos.documentos.map((d) => d.detalle)).toEqual(["Informe Técnico"]);
+  });
+
   it("cuenta los expedientes activos asignados al usuario (por usuario o por cargo)", () => {
     const r = clasificarPendientes(
       [

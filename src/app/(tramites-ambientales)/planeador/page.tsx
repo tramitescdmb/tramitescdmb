@@ -6,6 +6,7 @@ import {
   expedienteEnEjecucion,
   fechaHoraColombia,
   fechaValida,
+  finEfectivo,
   lugarSugerido,
   partesColombia,
   sumarDias,
@@ -37,6 +38,7 @@ export default async function PlaneadorPage({ searchParams }: { searchParams: Pr
       include: {
         profesional: { select: { nombre: true } },
         programadaPor: { select: { nombre: true } },
+        visitaTecnica: { select: { id: true } },
         expediente: {
           select: {
             id: true,
@@ -71,11 +73,17 @@ export default async function PlaneadorPage({ searchParams }: { searchParams: Pr
 
   const datos: VisitaCalendario[] = visitas.map((v) => {
     const { fecha: dia, hora } = partesColombia(v.fechaHora);
+    const fin = finEfectivo(v);
+    const minutos = Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
     return {
       id: v.id,
       dia,
       hora,
-      minutos: Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5)),
+      horaFin: partesColombia(fin).hora,
+      minutos,
+      duracion: Math.max(30, Math.min(24 * 60 - minutos, Math.round((fin.getTime() - v.fechaHora.getTime()) / 60_000))),
+      tieneHoja: Boolean(v.visitaTecnica),
+      puedeRegistrar: planificador || v.profesionalId === session.userId,
       lugar: v.lugar,
       estado: v.estado,
       observaciones: v.observaciones,

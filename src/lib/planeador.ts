@@ -3,17 +3,18 @@ import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 
 const ZONA_HORARIA = "America/Bogota";
 const DESFASE_COLOMBIA = "-05:00";
-export const VENTANA_CRUCE_MIN = 90;
 
 export const ETIQUETA_ESTADO_VISITA: Record<string, string> = {
   PROGRAMADA: "Programada",
   REALIZADA: "Realizada",
+  NO_REALIZADA: "No realizada",
   CANCELADA: "Cancelada",
 };
 
 export const CLASE_ESTADO_VISITA: Record<string, string> = {
   PROGRAMADA: "bg-sky-50 text-sky-700",
   REALIZADA: "bg-emerald-50 text-emerald-700",
+  NO_REALIZADA: "bg-amber-50 text-amber-800",
   CANCELADA: "bg-stone-100 text-stone-500 line-through",
 };
 
@@ -109,8 +110,10 @@ export function desplazarVista(vista: VistaCalendario, fecha: string, sentido: 1
 
 export type BloqueUbicado<T> = { item: T; columna: number; columnas: number };
 
-export function ubicarBloques<T extends { minutos: number }>(items: T[], duracionMin: number): BloqueUbicado<T>[] {
-  const orden = [...items].sort((a, b) => a.minutos - b.minutos);
+export const DURACION_VISITA_DEFECTO_MIN = 60;
+
+export function ubicarBloques<T extends { minutos: number; duracion: number }>(items: T[]): BloqueUbicado<T>[] {
+  const orden = [...items].sort((a, b) => a.minutos - b.minutos || b.duracion - a.duracion);
   const resultado: BloqueUbicado<T>[] = [];
   let grupo: BloqueUbicado<T>[] = [];
   let finGrupo = -Infinity;
@@ -121,14 +124,27 @@ export function ubicarBloques<T extends { minutos: number }>(items: T[], duracio
   };
   for (const item of orden) {
     if (item.minutos >= finGrupo && grupo.length) cerrar();
-    const ocupadas = new Set(grupo.filter((g) => g.item.minutos + duracionMin > item.minutos).map((g) => g.columna));
+    const ocupadas = new Set(grupo.filter((g) => g.item.minutos + g.item.duracion > item.minutos).map((g) => g.columna));
     let columna = 0;
     while (ocupadas.has(columna)) columna++;
     grupo.push({ item, columna, columnas: 1 });
-    finGrupo = Math.max(finGrupo, item.minutos + duracionMin);
+    finGrupo = Math.max(finGrupo, item.minutos + item.duracion);
   }
   if (grupo.length) cerrar();
   return resultado;
+}
+
+export function finEfectivo(v: { fechaHora: Date; fechaHoraFin: Date | null }): Date {
+  return v.fechaHoraFin ?? new Date(v.fechaHora.getTime() + DURACION_VISITA_DEFECTO_MIN * 60_000);
+}
+
+export function intervalosSeCruzan(a: { inicio: Date; fin: Date }, b: { inicio: Date; fin: Date }): boolean {
+  return a.inicio < b.fin && b.inicio < a.fin;
+}
+
+export function sumarMinutosHora(hora: string, minutos: number): string {
+  const total = Math.min(23 * 60 + 59, Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5)) + minutos);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 function normalizarBusqueda(texto: string): string {

@@ -8,7 +8,8 @@ import { getDashboardData } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getPendientes } from "@/lib/pendientes";
-import { obtenerPermisosUsuario, puedeAccederFirmasTramite, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederFirmasTramite, puedeAccederTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { getPendientesVisitas } from "@/lib/pendientes-visitas";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { resumirPendientesFirma, rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
 import { GloboPendientes } from "@/components/GloboPendientes";
@@ -34,9 +35,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramiteIds = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
   const tramitesSeleccionados = sp.tramite?.split(",").filter(Boolean);
-  const [d, pendientes, buzonFirmas, todosLosTramites] = await Promise.all([
+  const [d, pendientes, visitas, buzonFirmas, todosLosTramites] = await Promise.all([
     getDashboardData(tramiteIds, rango, tramitesSeleccionados),
     getPendientes(session),
+    session && permisos
+      ? getPendientesVisitas({ userId: session.userId, planificador: puedePlanearVisitas(permisos), tramitesPermitidos: tramiteIds })
+      : Promise.resolve(null),
     session && permisos && puedeAccederFirmasTramite(permisos) ? listarBuzon(session.userId, "documentoExpediente") : Promise.resolve([]),
     db.tramiteTipo.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
   ]);
@@ -97,7 +101,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       )}
 
-      <MisPendientes resumen={pendientes} />
+      <MisPendientes resumen={pendientes} visitas={visitas} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard icon={LibraryBig} label="Trámites disponibles" value={d.totalTramites} href="/tramites" />

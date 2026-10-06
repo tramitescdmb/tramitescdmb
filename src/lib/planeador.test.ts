@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { desplazarMes, desplazarVista, diasDeVista, fechaValida, ubicarBloques, vistaValida, expedienteEnEjecucion, fechaHoraColombia, partesColombia, filtrarExpedientes } from "./planeador";
+import { desplazarMes, desplazarVista, diasDeVista, fechaValida, ubicarBloques, vistaValida, expedienteEnEjecucion, fechaHoraColombia, partesColombia, filtrarExpedientes, intervalosSeCruzan, sumarMinutosHora } from "./planeador";
 
 describe("fechaHoraColombia / partesColombia", () => {
   it("interpreta fecha y hora en hora de Colombia y la devuelve igual", () => {
@@ -51,13 +51,27 @@ describe("vistas del calendario", () => {
     expect(fechaValida("2026-02-30x", "2026-10-06")).toBe("2026-10-06");
   });
 
-  it("reparte en columnas los bloques que se cruzan", () => {
-    const r = ubicarBloques([{ minutos: 480 }, { minutos: 510 }, { minutos: 600 }], 60);
+  it("reparte en columnas los bloques que se cruzan según su duración", () => {
+    const r = ubicarBloques([
+      { minutos: 480, duracion: 120 },
+      { minutos: 540, duracion: 30 },
+      { minutos: 570, duracion: 60 },
+      { minutos: 660, duracion: 60 },
+    ]);
     expect(r.map((b) => [b.item.minutos, b.columna, b.columnas])).toEqual([
       [480, 0, 2],
-      [510, 1, 2],
-      [600, 0, 1],
+      [540, 1, 2],
+      [570, 1, 2],
+      [660, 0, 1],
     ]);
+  });
+
+  it("detecta cruces de intervalos y suma minutos a una hora", () => {
+    const h = (x: string) => new Date(`2026-10-07T${x}:00-05:00`);
+    expect(intervalosSeCruzan({ inicio: h("08:00"), fin: h("10:00") }, { inicio: h("09:30"), fin: h("11:00") })).toBe(true);
+    expect(intervalosSeCruzan({ inicio: h("08:00"), fin: h("10:00") }, { inicio: h("10:00"), fin: h("11:00") })).toBe(false);
+    expect(sumarMinutosHora("08:30", 90)).toBe("10:00");
+    expect(sumarMinutosHora("23:30", 90)).toBe("23:59");
   });
 });
 

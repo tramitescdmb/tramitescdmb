@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, User, X, Check, ExternalLink, PanelLeft, Clock, FileText, ClipboardList, Search } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, User, X, Check, ExternalLink, PanelLeft, Clock, FileText, ClipboardList, ClipboardCheck, Search } from "lucide-react";
 import {
   CLASE_ESTADO_VISITA,
   ETIQUETA_ESTADO_VISITA,
@@ -13,6 +13,7 @@ import {
   filtrarExpedientes,
   partesColombia,
   sumarMeses,
+  sumarMinutosHora,
   ubicarBloques,
   type VistaCalendario,
 } from "@/lib/planeador";
@@ -23,7 +24,11 @@ export type VisitaCalendario = {
   id: string;
   dia: string;
   hora: string;
+  horaFin: string;
   minutos: number;
+  duracion: number;
+  tieneHoja: boolean;
+  puedeRegistrar: boolean;
   lugar: string;
   estado: string;
   observaciones: string | null;
@@ -44,7 +49,6 @@ export type VisitaCalendario = {
 };
 
 const HORA_PX = 48;
-const DURACION_MIN = 60;
 const INICIO_JORNADA = 7;
 const FIN_JORNADA = 18;
 const SEMANA = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
@@ -349,7 +353,7 @@ export function CalendarioPlaneador({
           metodo="POST"
           expedientes={expedientes}
           expedienteInicial={nueva.expedienteId}
-          iniciales={{ fecha: nueva.fecha, hora: nueva.hora, lugar: "", profesionalId: "", observaciones: "" }}
+          iniciales={{ fecha: nueva.fecha, hora: nueva.hora, horaFin: sumarMinutosHora(nueva.hora, 120), lugar: "", profesionalId: "", observaciones: "" }}
           onCerrar={() => setNueva(null)}
         />
       )}
@@ -416,7 +420,7 @@ function BloqueVisita({ v, compacto, onClick }: { v: VisitaCalendario; compacto?
         e.stopPropagation();
         onClick();
       }}
-      title={`${hora12(v.hora)} · ${v.expediente.numero} · ${v.lugar} · ${v.profesional} · ${ETIQUETA_ESTADO_VISITA[v.estado]}`}
+      title={`${hora12(v.hora)} – ${hora12(v.horaFin)} · ${v.expediente.numero} · ${v.lugar} · ${v.profesional} · ${ETIQUETA_ESTADO_VISITA[v.estado]}`}
       className={`flex h-full w-full flex-col overflow-hidden rounded-[4px] border-l-[3px] px-1.5 py-0.5 text-left text-[11px] leading-tight text-stone-800 transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-cdmb-400 ${
         cancelada ? "opacity-60" : ""
       }`}
@@ -430,6 +434,11 @@ function BloqueVisita({ v, compacto, onClick }: { v: VisitaCalendario; compacto?
         {v.estado === "REALIZADA" && <Check className="h-3 w-3 flex-none text-emerald-700" aria-hidden />}
         <span className="truncate">{v.expediente.numero}</span>
       </span>
+      {!compacto && (
+        <span className="truncate text-stone-500">
+          {hora12(v.hora)} – {hora12(v.horaFin)}
+        </span>
+      )}
       {!compacto && <span className="truncate text-stone-600">{v.lugar}</span>}
       {!compacto && <span className="truncate text-stone-500">{v.profesional}</span>}
     </button>
@@ -504,7 +513,7 @@ function VistaHoras({
             )}
           </div>
           {dias.map((d) => {
-            const bloques = ubicarBloques(porDia.get(d) ?? [], DURACION_MIN);
+            const bloques = ubicarBloques(porDia.get(d) ?? []);
             return (
               <div
                 key={d}
@@ -528,12 +537,12 @@ function VistaHoras({
                     className="absolute z-10 p-px"
                     style={{
                       top: (v.minutos / 60) * HORA_PX,
-                      height: (DURACION_MIN / 60) * HORA_PX,
+                      height: (v.duracion / 60) * HORA_PX,
                       left: `${(columna / n) * 100}%`,
                       width: `${100 / n}%`,
                     }}
                   >
-                    <BloqueVisita v={v} compacto={n > 2} onClick={() => onSeleccionar(v.id)} />
+                    <BloqueVisita v={v} compacto={n > 2 || v.duracion < 60} onClick={() => onSeleccionar(v.id)} />
                   </div>
                 ))}
                 {d === hoy && (
@@ -668,7 +677,10 @@ function VistaAgenda({
                   onClick={() => onSeleccionar(v.id)}
                   className={`flex w-full items-stretch gap-3 px-4 py-2 text-left hover:bg-stone-50 ${v.estado === "CANCELADA" ? "opacity-60" : ""}`}
                 >
-                  <span className="w-16 flex-none pt-0.5 text-xs text-stone-500">{hora12(v.hora)}</span>
+                  <span className="w-16 flex-none pt-0.5 text-xs text-stone-500">
+                    {hora12(v.hora)}
+                    <span className="block text-stone-400">{hora12(v.horaFin)}</span>
+                  </span>
                   <span className="w-1 flex-none rounded-full" style={{ backgroundColor: v.color }} aria-hidden />
                   <span className="min-w-0 flex-1 text-xs">
                     <span className={`block font-semibold text-stone-900 ${v.estado === "CANCELADA" ? "line-through" : ""}`}>
@@ -730,7 +742,9 @@ function DetalleVisita({
             <Clock className="mt-0.5 h-4 w-4 flex-none text-stone-400" aria-hidden />
             <dd className="text-stone-800">
               {mayuscula(formato(v.dia, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}
-              <span className="block text-xs text-stone-500">{hora12(v.hora)}</span>
+              <span className="block text-xs text-stone-500">
+                {hora12(v.hora)} – {hora12(v.horaFin)}
+              </span>
             </dd>
           </div>
           <div className="flex gap-2.5">
@@ -769,16 +783,27 @@ function DetalleVisita({
             Abrir expediente
           </Link>
         )}
+        {v.expediente.puedeAbrir && (v.tieneHoja || (editable && v.puedeRegistrar)) && (
+          <Link
+            href={`/expedientes/${v.expediente.id}/visitas/${v.id}`}
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${
+              v.tieneHoja ? "border border-stone-200 bg-white text-cdmb-700 hover:bg-stone-50" : "bg-acento-500 text-white hover:bg-acento-600"
+            }`}
+          >
+            <ClipboardCheck className="h-3 w-3" aria-hidden />
+            {v.tieneHoja ? "Ver hoja de visita" : "Registrar visita"}
+          </Link>
+        )}
         {editable && planificador && (
           <ProgramarVisitaForm
             modo="reprogramar"
             metodo="PATCH"
             endpoint={`/api/visitas-programadas/${v.id}`}
             profesionales={v.expediente.asignados}
-            iniciales={{ fecha: v.dia, hora: v.hora, lugar: v.lugar, profesionalId: v.profesionalId, observaciones: v.observaciones ?? "" }}
+            iniciales={{ fecha: v.dia, hora: v.hora, horaFin: v.horaFin, lugar: v.lugar, profesionalId: v.profesionalId, observaciones: v.observaciones ?? "" }}
           />
         )}
-        {editable && <AccionesVisita visitaId={v.id} puedeMarcar={planificador || usuarioId === v.profesionalId} puedeCancelar={planificador} />}
+        {editable && <AccionesVisita visitaId={v.id} puedeNoRealizada={planificador || usuarioId === v.profesionalId} puedeCancelar={planificador} />}
       </div>
     </aside>
   );

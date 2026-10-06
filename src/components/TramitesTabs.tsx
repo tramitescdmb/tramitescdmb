@@ -8,10 +8,12 @@ export function TramitesTabs({
   mostrarSolicitantes = true,
   mostrarFirmas = true,
   pendientesFirma = SIN_PENDIENTES_FIRMA,
+  alertasPlaneador = 0,
 }: {
   mostrarSolicitantes?: boolean;
   mostrarFirmas?: boolean;
   pendientesFirma?: ResumenPendientesFirma;
+  alertasPlaneador?: number;
 }) {
   const insigniaFirmas = {
     valor: pendientesFirma.total,
@@ -31,7 +33,12 @@ export function TramitesTabs({
       ],
     },
     { label: "Visor de trámites", icon: Map, href: "/visor-tramites" },
-    { label: "Planeador", icon: CalendarDays, href: "/planeador" },
+    {
+      label: "Planeador",
+      icon: CalendarDays,
+      href: "/planeador",
+      insignia: { valor: alertasPlaneador, alerta: alertasPlaneador > 0, titulo: `${alertasPlaneador} visita(s) suya(s) para hoy, mañana o pendientes de registrar` },
+    },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),
     ...(mostrarFirmas
       ? [

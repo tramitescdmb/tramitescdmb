@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
-import { expedienteEnEjecucion, horaCorta } from "@/lib/planeador";
-import { buscarCruceVisita, leerDatosVisita } from "@/lib/planeador-db";
-import { formatearFecha } from "@/lib/fecha";
+import { expedienteEnEjecucion } from "@/lib/planeador";
+import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,19 +28,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const accion = body?.accion;
-  const cuando = `${formatearFecha(visita.fechaHora)} a las ${horaCorta(visita.fechaHora)}`;
+  const cuando = rangoTexto(visita.fechaHora, visita.fechaHoraFin);
+  const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
 
-  if (accion === "realizada") {
+  if (accion === "no_realizada") {
     if (!planificador && session.userId !== visita.profesionalId) {
-      return NextResponse.json({ error: "Solo el profesional asignado o quien planea las visitas puede marcarla como realizada." }, { status: 403 });
+      return NextResponse.json({ error: "Solo el profesional asignado o quien planea las visitas puede reportarla como no realizada." }, { status: 403 });
     }
+    if (!motivo) return NextResponse.json({ error: "Indique por qué no se pudo realizar la visita." }, { status: 400 });
     await db.$transaction([
-      db.visitaProgramada.update({ where: { id }, data: { estado: "REALIZADA" } }),
+      db.visitaProgramada.update({ where: { id }, data: { estado: "NO_REALIZADA", motivoCambio: motivo } }),
       db.expedienteEvento.create({
         data: {
           expedienteId: visita.expedienteId,
           tipo: "VISITA_PROGRAMADA",
-          descripcion: `${session.nombre} marcó como realizada la visita técnica del ${cuando} (${visita.profesional.nombre}).`,
+          descripcion: `${session.nombre} reportó que la visita técnica del ${cuando} (${visita.profesional.nombre}) no se pudo realizar. Motivo: ${motivo}`,
           usuarioId: session.userId,
         },
       }),
@@ -57,7 +58,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   if (accion === "cancelar") {
-    const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
     if (!motivo) return NextResponse.json({ error: "Indique el motivo de la cancelación." }, { status: 400 });
     await db.$transaction([
       db.visitaProgramada.update({ where: { id }, data: { estado: "CANCELADA", motivoCambio: motivo } }),
@@ -80,12 +80,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!profesional) {
       return NextResponse.json({ error: "El profesional debe estar en el personal asignado del expediente." }, { status: 400 });
     }
-    const cambioFecha = datos.fechaHora.getTime() !== visita.fechaHora.getTime();
-    if (cambioFecha && datos.fechaHora.getTime() < Date.now() - 60 * 60 * 1000) {
+    const cambioHorario =
+      datos.fechaHora.getTime() !== visita.fechaHora.getTime() || datos.fechaHoraFin.getTime() !== visita.fechaHoraFin?.getTime();
+    if (datos.fechaHora.getTime() !== visita.fechaHora.getTime() && datos.fechaHora.getTime() < Date.now() - 60 * 60 * 1000) {
       return NextResponse.json({ error: "La fecha de la visita no puede estar en el pasado." }, { status: 400 });
     }
-    if (!body?.forzar && (cambioFecha || datos.profesionalId !== visita.profesionalId)) {
-      const cruce = await buscarCruceVisita(datos.profesionalId, datos.fechaHora, id);
+    if (!body?.forzar && (cambioHorario || datos.profesionalId !== visita.profesionalId)) {
+      const cruce = await buscarCruceVisita(datos.profesionalId, datos.fechaHora, datos.fechaHoraFin, id);
       if (cruce) return NextResponse.json({ error: cruce, cruce: true }, { status: 409 });
     }
     await db.$transaction([
@@ -94,7 +95,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: {
           expedienteId: visita.expedienteId,
           tipo: "VISITA_PROGRAMADA",
-          descripcion: `${session.nombre} reprogramó la visita técnica del ${cuando}: ahora el ${formatearFecha(datos.fechaHora)} a las ${horaCorta(datos.fechaHora)} en ${datos.lugar}, a cargo de ${profesional.nombre}.`,
+          descripcion: `${session.nombre} reprogramó la visita técnica del ${cuando}: ahora el ${rangoTexto(datos.fechaHora, datos.fechaHoraFin)} en ${datos.lugar}, a cargo de ${profesional.nombre}.`,
           usuarioId: session.userId,
         },
       }),

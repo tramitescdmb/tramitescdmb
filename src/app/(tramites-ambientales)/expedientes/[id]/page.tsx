@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -26,7 +26,8 @@ import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsignadoTramiteForm";
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
-import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
+import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
+import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -123,7 +124,11 @@ export default async function ExpedienteDetallePage({
         visitasTecnicas: { orderBy: { createdAt: "desc" }, include: { capturadoPor: true } },
         visitasProgramadas: {
           orderBy: { fechaHora: "asc" },
-          include: { profesional: { select: { nombre: true } }, programadaPor: { select: { nombre: true } } },
+          include: {
+            profesional: { select: { nombre: true } },
+            programadaPor: { select: { nombre: true } },
+            visitaTecnica: { select: { id: true, resultado: true } },
+          },
         },
         creadoPor: true,
         responsableActual: true,
@@ -172,7 +177,7 @@ export default async function ExpedienteDetallePage({
     planificador = puedePlanearVisitas(permisos);
   }
   const enEjecucion = expedienteEnEjecucion(expediente);
-  const visitasPendientes = expediente.visitasProgramadas.filter((v) => v.estado === "PROGRAMADA").length;
+  const visitasVigentes = expediente.visitasProgramadas.filter((v) => v.estado !== "CANCELADA").length;
   const profesionalesAsignados = expediente.usuariosAsignados.map((u) => ({ id: u.id, nombre: u.nombre }));
   const manana = partesColombia(new Date(Date.now() + 24 * 60 * 60 * 1000)).fecha;
   const puedeEditar = puedeEditarPorRol && !cerrado;
@@ -560,6 +565,12 @@ export default async function ExpedienteDetallePage({
                               {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
                             </p>
                             {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
+                            {v.hallazgos && <p className="line-clamp-3 text-xs text-stone-600">Hallazgos: {v.hallazgos}</p>}
+                            {v.visitaProgramadaId && (
+                              <Link href={`/expedientes/${expediente.id}/visitas/${v.visitaProgramadaId}`} className="text-xs font-medium text-cdmb-700 hover:underline">
+                                Ver hoja de visita
+                              </Link>
+                            )}
                             <p className="mt-0.5 text-xs text-stone-400">
                               {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
                             </p>
@@ -661,7 +672,7 @@ export default async function ExpedienteDetallePage({
             id: "planeador",
             label: "Planeador",
             icono: <CalendarDays className="h-4 w-4" aria-hidden />,
-            contador: visitasPendientes,
+            contador: visitasVigentes,
             contenido: (
               <div id="planeador" className="space-y-4 scroll-mt-20">
                 <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
@@ -714,6 +725,7 @@ export default async function ExpedienteDetallePage({
                         iniciales={{
                           fecha: manana,
                           hora: "08:00",
+                          horaFin: "10:00",
                           lugar: lugarSugerido(expediente),
                           profesionalId: profesionalesAsignados.length === 1 ? profesionalesAsignados[0]!.id : "",
                           observaciones: "",
@@ -740,14 +752,20 @@ export default async function ExpedienteDetallePage({
                       {expediente.visitasProgramadas.map((v) => {
                         const editable = enEjecucion && v.estado === "PROGRAMADA";
                         const partes = partesColombia(v.fechaHora);
+                        const puedeRegistrar = editable && (planificador || session?.userId === v.profesionalId) && puedeEditar;
                         return (
                           <li key={v.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0">
                               <p className="font-medium text-stone-800">
-                                {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)}
+                                {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)} – {horaCorta(finEfectivo(v))}
                                 <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
                                   {ETIQUETA_ESTADO_VISITA[v.estado]}
                                 </span>
+                                {v.visitaTecnica?.resultado && (
+                                  <span className={`ml-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_RESULTADO_VISITA[v.visitaTecnica.resultado]}`}>
+                                    {ETIQUETA_RESULTADO_VISITA[v.visitaTecnica.resultado]}
+                                  </span>
+                                )}
                               </p>
                               <p className="flex items-center gap-1 text-xs text-stone-600">
                                 <MapPin className="h-3 w-3 flex-none" aria-hidden />
@@ -761,30 +779,46 @@ export default async function ExpedienteDetallePage({
                               {v.motivoCambio && <p className="text-xs text-stone-500">Motivo: {v.motivoCambio}</p>}
                               <p className="text-[11px] text-stone-400">Programó: {v.programadaPor.nombre}</p>
                             </div>
-                            {editable && (
-                              <div className="flex flex-wrap items-center gap-1.5 lg:max-w-[50%] lg:justify-end">
-                                {planificador && (
-                                  <ProgramarVisitaForm
-                                    modo="reprogramar"
-                                    metodo="PATCH"
-                                    endpoint={`/api/visitas-programadas/${v.id}`}
-                                    profesionales={profesionalesAsignados}
-                                    iniciales={{
-                                      fecha: partes.fecha,
-                                      hora: partes.hora,
-                                      lugar: v.lugar,
-                                      profesionalId: v.profesionalId,
-                                      observaciones: v.observaciones ?? "",
-                                    }}
-                                  />
-                                )}
-                                <AccionesVisita
-                                  visitaId={v.id}
-                                  puedeMarcar={planificador || session?.userId === v.profesionalId}
-                                  puedeCancelar={planificador}
+                            <div className="flex flex-wrap items-center gap-1.5 lg:max-w-[55%] lg:justify-end">
+                              {v.visitaTecnica ? (
+                                <Link
+                                  href={`/expedientes/${expediente.id}/visitas/${v.id}`}
+                                  className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-cdmb-700 hover:bg-stone-50"
+                                >
+                                  <ClipboardCheck className="h-3 w-3" aria-hidden />
+                                  Ver hoja de visita
+                                </Link>
+                              ) : (
+                                puedeRegistrar && (
+                                  <Link
+                                    href={`/expedientes/${expediente.id}/visitas/${v.id}`}
+                                    className="inline-flex items-center gap-1 rounded-md bg-acento-500 px-2 py-1 text-[11px] font-medium text-white hover:bg-acento-600"
+                                  >
+                                    <ClipboardCheck className="h-3 w-3" aria-hidden />
+                                    Registrar visita
+                                  </Link>
+                                )
+                              )}
+                              {editable && planificador && (
+                                <ProgramarVisitaForm
+                                  modo="reprogramar"
+                                  metodo="PATCH"
+                                  endpoint={`/api/visitas-programadas/${v.id}`}
+                                  profesionales={profesionalesAsignados}
+                                  iniciales={{
+                                    fecha: partes.fecha,
+                                    hora: partes.hora,
+                                    horaFin: partesColombia(finEfectivo(v)).hora,
+                                    lugar: v.lugar,
+                                    profesionalId: v.profesionalId,
+                                    observaciones: v.observaciones ?? "",
+                                  }}
                                 />
-                              </div>
-                            )}
+                              )}
+                              {editable && (
+                                <AccionesVisita visitaId={v.id} puedeNoRealizada={planificador || session?.userId === v.profesionalId} puedeCancelar={planificador} />
+                              )}
+                            </div>
                           </li>
                         );
                       })}

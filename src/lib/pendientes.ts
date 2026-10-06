@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { cargosEnTexto, normalizar } from "@/lib/cargos";
+import { documentoCubiertoPorVisita } from "@/lib/temas-visita";
 
 export type EstadoExp =
   | "RADICADO"
@@ -30,6 +31,7 @@ export type ExpedientePendientes = {
   tramiteNombre: string;
   pasos: PasoPendientes[];
   documentosCargados: { pasoNumero: number | null; descripcion: string | null; nombre: string }[];
+  visitasRegistradas?: { pasoNumero: number; conFotos: boolean }[];
   usuariosAsignadosIds: string[];
   cargosAsignadosNombres: string[];
 };
@@ -116,9 +118,9 @@ export function clasificarPendientes(
     if (mio) {
       for (const nombreDoc of paso.documentos) {
         const objetivo = clave(nombreDoc);
-        const yaEsta = e.documentosCargados.some(
-          (d) => (d.pasoNumero ?? 1) === paso.numero && clave(d.descripcion ?? d.nombre) === objetivo
-        );
+        const yaEsta =
+          e.documentosCargados.some((d) => (d.pasoNumero ?? 1) === paso.numero && clave(d.descripcion ?? d.nombre) === objetivo) ||
+          (e.visitasRegistradas ?? []).some((v) => v.pasoNumero === paso.numero && documentoCubiertoPorVisita(nombreDoc, v));
         if (!yaEsta) documentos.push(item(e, paso, nombreDoc));
       }
     }
@@ -158,6 +160,7 @@ export async function getPendientes(sesion: SesionPendientes | null): Promise<Re
         },
       },
       documentos: { select: { pasoNumero: true, descripcion: true, nombre: true } },
+      visitasTecnicas: { select: { pasoNumero: true, _count: { select: { fotos: true } } } },
       usuariosAsignados: { select: { id: true } },
       cargosAsignados: { select: { nombre: true } },
     },
@@ -171,6 +174,7 @@ export async function getPendientes(sesion: SesionPendientes | null): Promise<Re
     tramiteNombre: e.tramiteTipo.nombre,
     pasos: e.flujo.pasos,
     documentosCargados: e.documentos,
+    visitasRegistradas: e.visitasTecnicas.map((v) => ({ pasoNumero: v.pasoNumero, conFotos: v._count.fotos > 0 })),
     usuariosAsignadosIds: e.usuariosAsignados.map((u) => u.id),
     cargosAsignadosNombres: e.cargosAsignados.map((c) => c.nombre),
   }));
