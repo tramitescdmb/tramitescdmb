@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { desplazarMes, desplazarVista, diasDeVista, fechaValida, ubicarBloques, vistaValida, expedienteEnEjecucion, fechaHoraColombia, partesColombia } from "./planeador";
+import { desplazarMes, desplazarVista, diasDeVista, fechaValida, ubicarBloques, vistaValida, expedienteEnEjecucion, fechaHoraColombia, partesColombia, filtrarExpedientes } from "./planeador";
 
 describe("fechaHoraColombia / partesColombia", () => {
   it("interpreta fecha y hora en hora de Colombia y la devuelve igual", () => {
@@ -58,6 +58,30 @@ describe("vistas del calendario", () => {
       [510, 1, 2],
       [600, 0, 1],
     ]);
+  });
+});
+
+describe("filtrarExpedientes", () => {
+  const lista = [
+    { numero: "M-DA-PR39-2026-0002", tramite: "Permiso de Ocupación de Cauces", solicitante: "Acueducto S.A.", identificacion: "890.200.162-3", municipio: "Bucaramanga", otrosIdentificadores: ["68001010203"] },
+    { numero: "M-DA-PR05-2026-0010", tramite: "Concesión de Aguas Superficiales", solicitante: "José Pérez", identificacion: "91234567", municipio: "Girón", otrosIdentificadores: [] },
+  ];
+  const nums = (q: string) => filtrarExpedientes(lista, q).map((e) => e.numero);
+
+  it("busca por código, tipo de trámite y varios términos sin tildes", () => {
+    expect(nums("pr05")).toEqual(["M-DA-PR05-2026-0010"]);
+    expect(nums("ocupacion cauces")).toEqual(["M-DA-PR39-2026-0002"]);
+    expect(nums("concesion giron")).toEqual(["M-DA-PR05-2026-0010"]);
+  });
+
+  it("busca por NIT o cédula con o sin puntos y por catastral", () => {
+    expect(nums("890200162")).toEqual(["M-DA-PR39-2026-0002"]);
+    expect(nums("91234567")).toEqual(["M-DA-PR05-2026-0010"]);
+    expect(nums("68001010203")).toEqual(["M-DA-PR39-2026-0002"]);
+  });
+
+  it("sin consulta devuelve todo", () => {
+    expect(nums("  ")).toHaveLength(2);
   });
 });
 

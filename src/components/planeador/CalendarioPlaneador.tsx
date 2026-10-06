@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, User, X, Check, ExternalLink, PanelLeft, Clock, FileText, ClipboardList } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, User, X, Check, ExternalLink, PanelLeft, Clock, FileText, ClipboardList, Search } from "lucide-react";
 import {
   CLASE_ESTADO_VISITA,
   ETIQUETA_ESTADO_VISITA,
   VISTAS_CALENDARIO,
   desplazarVista,
   diasDeVista,
+  filtrarExpedientes,
   partesColombia,
   sumarMeses,
   ubicarBloques,
@@ -124,7 +125,9 @@ export function CalendarioPlaneador({
     return m;
   }, [visibles]);
   const seleccion = visitas.find((v) => v.id === seleccionId) ?? null;
-  const porProgramar = expedientes.filter((e) => e.porProgramar);
+  const porProgramar = useMemo(() => expedientes.filter((e) => e.porProgramar), [expedientes]);
+  const [busquedaPendientes, setBusquedaPendientes] = useState("");
+  const pendientesFiltrados = useMemo(() => filtrarExpedientes(porProgramar, busquedaPendientes), [porProgramar, busquedaPendientes]);
 
   const abrirNueva = (dia: string, hora: string, expedienteId?: string) => {
     if (!planificador) return;
@@ -199,8 +202,23 @@ export function CalendarioPlaneador({
           {porProgramar.length === 0 ? (
             <p className="px-1 text-xs text-stone-400">Todos los trámites en ejecución tienen visita pendiente.</p>
           ) : (
+            <>
+            {porProgramar.length > 5 && (
+              <div className="relative mb-1.5">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-stone-400" aria-hidden />
+                <input
+                  type="search"
+                  value={busquedaPendientes}
+                  onChange={(e) => setBusquedaPendientes(e.target.value)}
+                  placeholder="Buscar trámite…"
+                  aria-label="Buscar trámite por programar"
+                  className="w-full rounded-md border border-stone-200 bg-white py-1 pl-6 pr-2 text-[11px] focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+                />
+              </div>
+            )}
+            {pendientesFiltrados.length === 0 && <p className="px-1 text-[11px] text-stone-400">Sin coincidencias.</p>}
             <ul className="space-y-1">
-              {porProgramar.slice(0, 30).map((e) => (
+              {pendientesFiltrados.slice(0, 50).map((e) => (
                 <li key={e.id}>
                   <button
                     type="button"
@@ -214,6 +232,10 @@ export function CalendarioPlaneador({
                 </li>
               ))}
             </ul>
+            {pendientesFiltrados.length > 50 && (
+              <p className="mt-1 px-1 text-[11px] text-stone-400">{pendientesFiltrados.length - 50} más. Refine la búsqueda.</p>
+            )}
+            </>
           )}
         </div>
       )}

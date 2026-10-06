@@ -3,12 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, CalendarClock, X, AlertTriangle } from "lucide-react";
+import { BuscadorExpediente } from "@/components/planeador/BuscadorExpediente";
 
 export type ValoresVisita = { fecha: string; hora: string; lugar: string; profesionalId: string; observaciones: string };
 export type ExpedienteParaVisita = {
   id: string;
   numero: string;
   tramite: string;
+  solicitante: string;
+  identificacion: string;
+  municipio: string;
+  otrosIdentificadores: string[];
   lugar: string;
   asignados: { id: string; nombre: string }[];
   porProgramar: boolean;
@@ -86,13 +91,6 @@ export function ModalVisita({
   }
 
   const claseCampo = "w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
-  const porProgramar = expedientes?.filter((e) => e.porProgramar) ?? [];
-  const conVisita = expedientes?.filter((e) => !e.porProgramar) ?? [];
-  const opcionExpediente = (e: ExpedienteParaVisita) => (
-    <option key={e.id} value={e.id}>
-      {e.numero} — {e.tramite}
-    </option>
-  );
 
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onCerrar}>
@@ -112,14 +110,10 @@ export function ModalVisita({
         </div>
 
         {expedientes && (
-          <label className="block text-xs font-medium text-stone-700">
+          <div className="text-xs font-medium text-stone-700">
             Trámite en ejecución
-            <select required value={expedienteId} onChange={(e) => elegirExpediente(e.target.value)} className={`mt-0.5 ${claseCampo}`}>
-              <option value="">Seleccione…</option>
-              {porProgramar.length > 0 && <optgroup label="Sin visita pendiente">{porProgramar.map(opcionExpediente)}</optgroup>}
-              {conVisita.length > 0 && <optgroup label="Con visita pendiente">{conVisita.map(opcionExpediente)}</optgroup>}
-            </select>
-          </label>
+            <BuscadorExpediente expedientes={expedientes} seleccionado={expediente} onSeleccionar={elegirExpediente} />
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-2">

@@ -131,6 +131,23 @@ export function ubicarBloques<T extends { minutos: number }>(items: T[], duracio
   return resultado;
 }
 
+function normalizarBusqueda(texto: string): string {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+export function filtrarExpedientes<T extends { numero: string; tramite: string; solicitante: string; identificacion: string; municipio: string; otrosIdentificadores: string[] }>(
+  expedientes: T[],
+  consulta: string
+): T[] {
+  const terminos = normalizarBusqueda(consulta).split(/\s+/).filter(Boolean);
+  if (terminos.length === 0) return expedientes;
+  return expedientes.filter((e) => {
+    const texto = normalizarBusqueda([e.numero, e.tramite, e.solicitante, e.identificacion, e.municipio, ...e.otrosIdentificadores].join(" "));
+    const compacto = texto.replace(/[\s.\-_/]/g, "");
+    return terminos.every((t) => texto.includes(t) || compacto.includes(t.replace(/[.\-_/]/g, "")));
+  });
+}
+
 export function lugarSugerido(e: { predioDireccion: string | null; predioNombre: string | null; municipio: string }): string {
   return [e.predioNombre, e.predioDireccion, e.municipio].filter((x) => x && x.trim()).join(", ");
 }
