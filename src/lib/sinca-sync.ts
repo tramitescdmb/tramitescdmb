@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { listarResoluciones, obtenerResolucionDetalle, type SincaResolucionApi } from "@/lib/sinca";
-import { puntoDesdeTexto } from "@/lib/coordenadas-texto";
+import { listarResoluciones, listarSolicitudes, obtenerResolucionDetalle, type SincaResolucionApi, type SincaSolicitudApi } from "@/lib/sinca";
+import { dentroDeZonaCdmb, puntoDesdeNorteEste, puntoDesdeTexto } from "@/lib/coordenadas-texto";
 
 const POR_PAGINA = 500;
 
@@ -36,6 +36,104 @@ function coordenadas(row: SincaResolucionApi): { lat: number | null; lon: number
   const delTexto = puntoDesdeTexto(row.proyecto_sol);
   if (delTexto) return { lat: delTexto.lat, lon: delTexto.lon };
   return { lat: null, lon: null };
+}
+
+function numeroCampo(valor: unknown): number | null {
+  if (valor === null || valor === undefined || String(valor).trim() === "") return null;
+  const n = Number(String(valor).trim().replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+export function puntoDeSolicitud(row: SincaSolicitudApi): { lat: number; lon: number } | null {
+  const geo = row.geojson_GMS as { coordinates?: unknown } | null | undefined;
+  const c = geo?.coordinates;
+  if (Array.isArray(c) && c.length === 2 && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
+    return { lon: c[0] as number, lat: c[1] as number };
+  }
+  const norte = numeroCampo(row.coordx_sol);
+  const este = numeroCampo(row.coordy_sol);
+  if (norte && este) {
+    const p = puntoDesdeNorteEste(String(norte), String(este));
+    if (p && p.origen !== "geograficas") return { lat: p.lat, lon: p.lon };
+  }
+  const latG = numeroCampo(row.latgrados_sol);
+  const lonG = numeroCampo(row.longrados_sol);
+  if (latG && lonG) {
+    const lat = Math.abs(latG) + (numeroCampo(row.latmin_sol) ?? 0) / 60 + (numeroCampo(row.latseg_sol) ?? 0) / 3600;
+    const lon = -(Math.abs(lonG) + (numeroCampo(row.longmin_sol) ?? 0) / 60 + (numeroCampo(row.longseg_sol) ?? 0) / 3600);
+    if (dentroDeZonaCdmb(lat, lon)) return { lat, lon };
+  }
+  const delTexto = puntoDesdeTexto(typeof row.proyecto_sol === "string" ? row.proyecto_sol : null);
+  return delTexto ? { lat: delTexto.lat, lon: delTexto.lon } : null;
+}
+
+async function paginaSolicitudes(
+  page: number,
+  porPagina: number,
+  order: "ASC" | "DESC"
+): Promise<{ filas: SincaSolicitudApi[]; ultima: number | null; omitidas: number }> {
+  try {
+    const p = await listarSolicitudes({ perPage: porPagina, page, order });
+    return { filas: p.data, ultima: p.last_page, omitidas: 0 };
+  } catch {
+    if (porPagina <= 5) return { filas: [], ultima: null, omitidas: porPagina };
+    const menor = porPagina > 50 ? 50 : 5;
+    const factor = porPagina / menor;
+    const filas: SincaSolicitudApi[] = [];
+    let omitidas = 0;
+    for (let sub = (page - 1) * factor + 1; sub <= page * factor; sub++) {
+      const parte = await paginaSolicitudes(sub, menor, order);
+      filas.push(...parte.filas);
+      omitidas += parte.omitidas;
+    }
+    return { filas, ultima: null, omitidas };
+  }
+}
+
+export async function completarCoordenadasDesdeSolicitudes(
+  opts: { soloNros?: number[] } = {}
+): Promise<{ actualizados: number; omitidas: number }> {
+  const sinPunto = new Set(
+    (
+      await db.sincaResolucion.findMany({
+        where: { OR: [{ lat: null }, { lon: null }], ...(opts.soloNros ? { nroSolicitud: { in: opts.soloNros } } : {}) },
+        select: { nroSolicitud: true },
+      })
+    ).map((r) => r.nroSolicitud)
+  );
+  if (sinPunto.size === 0) return { actualizados: 0, omitidas: 0 };
+
+  const POR_PAGINA_SOLICITUDES = 500;
+  const menor = Math.min(...sinPunto);
+  const puntos = new Map<number, { lat: number; lon: number }>();
+  let omitidas = 0;
+  let page = 1;
+  let ultima = 1;
+  do {
+    const p = await paginaSolicitudes(page, POR_PAGINA_SOLICITUDES, "DESC");
+    if (p.ultima !== null) ultima = p.ultima;
+    else if (page === 1) ultima = Number.MAX_SAFE_INTEGER;
+    omitidas += p.omitidas;
+    if (p.filas.length === 0) break;
+    let minimoPagina = Number.POSITIVE_INFINITY;
+    for (const row of p.filas) {
+      const nro = Number(row.nrosolicitud_sol);
+      if (Number.isFinite(nro)) minimoPagina = Math.min(minimoPagina, nro);
+      if (!sinPunto.has(nro) || puntos.has(nro)) continue;
+      const punto = puntoDeSolicitud(row);
+      if (punto) puntos.set(nro, punto);
+    }
+    if (minimoPagina < menor) break;
+    page++;
+  } while (page <= ultima);
+
+  const cambios = [...puntos.entries()];
+  for (let i = 0; i < cambios.length; i += 200) {
+    await db.$transaction(
+      cambios.slice(i, i + 200).map(([nroSolicitud, p]) => db.sincaResolucion.update({ where: { nroSolicitud }, data: { lat: p.lat, lon: p.lon } }))
+    );
+  }
+  return { actualizados: cambios.length, omitidas };
 }
 
 function aFila(row: SincaResolucionApi): Prisma.SincaResolucionCreateManyInput {
@@ -78,6 +176,7 @@ export type ResultadoSincronizacion = {
   actualizados: number;
   eliminados: number;
   enriquecidos?: number;
+  coordenadasCompletadas?: number;
   duracionMs: number;
   error?: string;
 };
@@ -143,6 +242,8 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
         solicitanteNit: true,
         solicitanteNombre: true,
         enriquecidoEn: true,
+        lat: true,
+        lon: true,
       },
     });
     const idsExistentes = new Set(previos.map((r) => r.nroSolicitud));
@@ -166,6 +267,10 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
           fila.solicitanteNit = prev.solicitanteNit;
           fila.solicitanteNombre = prev.solicitanteNombre;
           fila.enriquecidoEn = prev.enriquecidoEn;
+        }
+        if ((fila.lat == null || fila.lon == null) && prev?.lat != null && prev.lon != null) {
+          fila.lat = prev.lat;
+          fila.lon = prev.lon;
         }
         filasPorId.set(row.nrosolicitud_sol, fila);
       }
@@ -191,6 +296,12 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
     const eliminados = [...idsExistentes].filter((id) => !filasPorId.has(id)).length;
     const actualizados = filas.length - creados;
 
+    let coordenadasCompletadas = 0;
+    try {
+      const nuevos = filas.filter((f) => !idsExistentes.has(f.nroSolicitud)).map((f) => f.nroSolicitud);
+      if (nuevos.length > 0) coordenadasCompletadas = (await completarCoordenadasDesdeSolicitudes({ soloNros: nuevos })).actualizados;
+    } catch {}
+
     const enriquecidos = await enriquecerResoluciones({ limite: 150 });
 
     const resultado: ResultadoSincronizacion = {
@@ -200,6 +311,7 @@ export async function sincronizarResoluciones(disparadoPor: string): Promise<Res
       actualizados,
       eliminados,
       enriquecidos,
+      coordenadasCompletadas,
       duracionMs: Date.now() - inicio,
     };
     await db.sincaSincronizacion.update({

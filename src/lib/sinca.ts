@@ -120,6 +120,24 @@ export async function listarResoluciones(opts: OpcionesListado = {}): Promise<Pa
   return cuerpo;
 }
 
+export type SincaSolicitudApi = Record<string, unknown> & { nrosolicitud_sol?: number | string | null };
+
+export async function listarSolicitudes(opts: { perPage: number; page: number; order?: "ASC" | "DESC" }): Promise<PaginadorApi<SincaSolicitudApi>> {
+  const params = new URLSearchParams({
+    per_page: String(opts.perPage),
+    page: String(opts.page),
+    column: "nrosolicitud_sol",
+    order: opts.order ?? "ASC",
+  });
+  const res = await fetchConToken(`/presinca/solicitud?${params.toString()}`);
+  const cuerpo = (await res.json().catch(() => null)) as PaginadorApi<SincaSolicitudApi> | { message?: string } | null;
+  if (!res.ok || !cuerpo || !("data" in cuerpo)) {
+    const msg = (cuerpo as { message?: string } | null)?.message ?? `HTTP ${res.status}`;
+    throw new Error(`SINCA 1.0 /presinca/solicitud falló: ${msg}`);
+  }
+  return cuerpo;
+}
+
 export type SincaDocumentoEmitido = {
   fechaemision_edc: string | null;
   fechavigencia_edc: string | null;
