@@ -9,11 +9,13 @@ export function TramitesTabs({
   mostrarFirmas = true,
   pendientesFirma = SIN_PENDIENTES_FIRMA,
   alertasPlaneador = 0,
+  avisosBuzon = 0,
 }: {
   mostrarSolicitantes?: boolean;
   mostrarFirmas?: boolean;
   pendientesFirma?: ResumenPendientesFirma;
   alertasPlaneador?: number;
+  avisosBuzon?: number;
 }) {
   const insigniaFirmas = {
     valor: pendientesFirma.total,
@@ -36,8 +38,23 @@ export function TramitesTabs({
     {
       label: "Planeador",
       icon: CalendarDays,
-      href: "/planeador",
-      insignia: { valor: alertasPlaneador, alerta: alertasPlaneador > 0, titulo: `${alertasPlaneador} visita(s) suya(s) para hoy, mañana o pendientes de registrar` },
+      insignia: {
+        valor: alertasPlaneador + avisosBuzon,
+        alerta: alertasPlaneador + avisosBuzon > 0,
+        titulo: `${avisosBuzon} aviso(s) sin leer y ${alertasPlaneador} visita(s) suya(s) para hoy, mañana o pendientes de registrar`,
+      },
+      items: [
+        {
+          href: "/planeador",
+          label: "Calendario",
+          insignia: { valor: alertasPlaneador, alerta: alertasPlaneador > 0, titulo: `${alertasPlaneador} visita(s) suya(s) para hoy, mañana o pendientes de registrar` },
+        },
+        {
+          href: "/planeador/buzon",
+          label: "Buzón de visitas",
+          insignia: { valor: avisosBuzon, alerta: avisosBuzon > 0, titulo: `${avisosBuzon} aviso(s) sin leer` },
+        },
+      ],
     },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),
     ...(mostrarFirmas
@@ -62,6 +79,7 @@ export function TramitesTabs({
       ariaLabel="Trámites ambientales"
       esItemActivo={(it, pathname) => {
         const ruta = it.href.split("?")[0]!;
+        if (ruta === "/planeador") return pathname === "/planeador";
         if (ruta === "/expedientes") return pathname === "/expedientes" || /^\/expedientes\/(?!disposicion)[^/]+/.test(pathname);
         return pathname === ruta || pathname.startsWith(ruta + "/");
       }}

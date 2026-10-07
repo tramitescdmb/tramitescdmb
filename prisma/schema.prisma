@@ -123,6 +123,7 @@ model Usuario {
   visitasProgramadas    VisitaProgramada[]         @relation("VisitaProgramadaProfesional")
   visitasQueProgramo    VisitaProgramada[]         @relation("VisitaProgramadaPor")
   temasVisitaCreados    TemaVisita[]               @relation("TemaVisitaCreadoPor")
+  notificaciones        Notificacion[]             @relation("NotificacionUsuario")
   historialPasswords    HistorialPassword[]
 
   dependenciaId                  String?
@@ -838,6 +839,36 @@ model VisitaProgramada {
   @@index([fechaHora])
   @@index([profesionalId, fechaHora])
   @@index([expedienteId])
+}
+
+enum TipoNotificacion {
+  VISITA_SIN_PROGRAMAR
+  VISITA_PROGRAMADA
+  VISITA_REPROGRAMADA
+  VISITA_CANCELADA
+  VISITA_POR_REGISTRAR
+  VISITA_NO_REALIZADA
+}
+
+model Notificacion {
+  id           String           @id @default(cuid())
+  usuarioId    String
+  tipo         TipoNotificacion
+  clave        String
+  titulo       String
+  mensaje      String           @db.Text
+  enlace       String
+  expedienteId String?
+  leidaEn      DateTime?
+  resueltaEn   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  usuario Usuario @relation("NotificacionUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, clave])
+  @@index([usuarioId, resueltaEn, leidaEn])
+  @@index([tipo, resueltaEn])
 }
 
 model VisitaTecnicaFoto {

@@ -6,6 +6,7 @@ import { puedeGestionarPaso } from "@/lib/cargos";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
+import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 
 const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       usuarioId: session.userId,
     },
   });
+  await sincronizarAvisoVisita(id);
 
   return NextResponse.redirect(new URL(`/expedientes/${id}`, req.url), { status: 303 });
 }

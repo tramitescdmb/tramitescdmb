@@ -34,7 +34,6 @@ import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
 import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
-import { CapturarVisitaTecnica } from "@/components/CapturarVisitaTecnica";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
 import { PanelGestionDocumental, BotonCerrarExpediente } from "@/components/gestion-documental/PanelGestionDocumental";
@@ -182,6 +181,8 @@ export default async function ExpedienteDetallePage({
   const manana = partesColombia(new Date(Date.now() + 24 * 60 * 60 * 1000)).fecha;
   const hoyColombia = partesColombia(new Date()).fecha;
   const pasoVisita = evaluarPasoParaVisita(expediente.flujo.pasos, expediente.pasoActualNumero);
+  const visitasVigentesLista = expediente.visitasProgramadas.filter((v) => v.estado !== "CANCELADA");
+  const requiereVisita = enEjecucion && pasoVisita.permite;
   const puedeEditar = puedeEditarPorRol && !cerrado;
   const [fichaSgdea, firmasPendientes] = await Promise.all([
     fichaArchivoDe(expediente.id),
@@ -553,13 +554,76 @@ export default async function ExpedienteDetallePage({
                     </div>
                   )}
 
+                  {(requiereVisita || visitasDelPasoActual.length > 0) && (
                   <div className="mt-4 border-t border-stone-100 pt-4">
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                      Geoposición de la visita técnica (opcional)
-                    </h3>
-                    {visitasDelPasoActual.length > 0 && (
-                      <ul className="mb-3 space-y-3">
-                        {visitasDelPasoActual.map((v) => (
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Visita técnica</h3>
+                      <a href="#planeador" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+                        <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                        Ver en el Planeador
+                      </a>
+                    </div>
+                    {requiereVisita &&
+                      (visitasVigentesLista.length === 0 ? (
+                        <p className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+                          Este paso requiere visita técnica y aún no está programada. La programan el Coordinador de Evaluación o el Subdirector SEYCA desde el Planeador.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {visitasVigentesLista.map((v) => {
+                            const habilitada = visitaHabilitadaParaRegistro(partesColombia(v.fechaHora).fecha, hoyColombia);
+                            const puedeRegistrarla =
+                              v.estado === "PROGRAMADA" && !v.visitaTecnica && habilitada && puedeEditar && (planificador || session?.userId === v.profesionalId);
+                            return (
+                              <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-xs">
+                                <span className="min-w-0 text-stone-700">
+                                  <span className="font-medium text-stone-900">
+                                    {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)} – {horaCorta(finEfectivo(v))}
+                                  </span>{" "}
+                                  · {v.profesional.nombre}
+                                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
+                                    {ETIQUETA_ESTADO_VISITA[v.estado]}
+                                  </span>
+                                </span>
+                                {v.visitaTecnica ? (
+                                  <Link href={`/expedientes/${expediente.id}/visitas/${v.id}`} className="font-medium text-cdmb-700 hover:underline">
+                                    Ver hoja de visita
+                                  </Link>
+                                ) : (
+                                  puedeRegistrarla && (
+                                    <Link
+                                      href={`/expedientes/${expediente.id}/visitas/${v.id}`}
+                                      className="rounded-md bg-acento-500 px-2 py-1 font-medium text-white hover:bg-acento-600"
+                                    >
+                                      Registrar visita
+                                    </Link>
+                                  )
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ))}
+                    {!requiereVisita && visitasDelPasoActual.some((v) => v.visitaProgramadaId) && (
+                      <ul className="space-y-1.5">
+                        {visitasDelPasoActual
+                          .filter((v) => v.visitaProgramadaId)
+                          .map((v) => (
+                            <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-xs">
+                              <span className="text-stone-700">
+                                Visita registrada el {formatearFecha(v.inicioReal ?? v.capturadoEn)} · {v.capturadoPor.nombre}
+                              </span>
+                              <Link href={`/expedientes/${expediente.id}/visitas/${v.visitaProgramadaId}`} className="font-medium text-cdmb-700 hover:underline">
+                                Ver hoja de visita
+                              </Link>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                    {visitasDelPasoActual.some((v) => !v.visitaProgramadaId) && (
+                      <ul className="mt-3 space-y-3">
+                        {visitasDelPasoActual.filter((v) => !v.visitaProgramadaId).map((v) => (
                           <li key={v.id} className="rounded-lg border border-stone-200 bg-stone-50/60 p-3">
                             <MapaSoloLectura lat={v.lat} lon={v.lon} />
                             <p className="mt-2 text-xs text-stone-600">
@@ -567,21 +631,15 @@ export default async function ExpedienteDetallePage({
                               {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
                             </p>
                             {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
-                            {v.hallazgos && <p className="line-clamp-3 text-xs text-stone-600">Hallazgos: {v.hallazgos}</p>}
-                            {v.visitaProgramadaId && (
-                              <Link href={`/expedientes/${expediente.id}/visitas/${v.visitaProgramadaId}`} className="text-xs font-medium text-cdmb-700 hover:underline">
-                                Ver hoja de visita
-                              </Link>
-                            )}
                             <p className="mt-0.5 text-xs text-stone-400">
-                              {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
+                              Registro de ubicación anterior al Planeador · {v.capturadoPor.nombre} · {formatoFechaHistoria.format(v.createdAt)}
                             </p>
                           </li>
                         ))}
                       </ul>
                     )}
-                    {puedeEditar && <CapturarVisitaTecnica expedienteId={expediente.id} pasoNumero={pasoActual.numero} />}
                   </div>
+                  )}
 
                   <div className="mt-4 border-t border-stone-100 pt-4">
                     {cerrado ? (
@@ -1036,6 +1094,18 @@ export default async function ExpedienteDetallePage({
                         <span className={estadoPaso === "completado" ? "line-through decoration-stone-300" : ""}>
                           {p.titulo}
                         </span>
+                        {expediente.visitasTecnicas
+                          .filter((v) => v.pasoNumero === p.numero && v.visitaProgramadaId)
+                          .map((v) => (
+                            <Link
+                              key={v.id}
+                              href={`/expedientes/${expediente.id}/visitas/${v.visitaProgramadaId}`}
+                              className="ml-auto inline-flex flex-none items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+                            >
+                              <ClipboardCheck className="h-3 w-3" aria-hidden />
+                              Hoja de visita · {formatearFecha(v.inicioReal ?? v.capturadoEn)}
+                            </Link>
+                          ))}
                       </li>
                     );
                   })}

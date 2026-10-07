@@ -6,6 +6,7 @@ import { puntoEnJurisdiccionCdmb } from "@/lib/jurisdiccion-cdmb-servidor";
 import { expedienteEnEjecucion, fechaHoraColombia } from "@/lib/planeador";
 import { rangoTexto } from "@/lib/planeador-db";
 import { codigoProcedimiento, normalizarNombreTema } from "@/lib/temas-visita";
+import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
 
 const RESULTADOS = ["VIABLE", "REQUIERE_INFORMACION", "NO_VIABLE", "EN_ANALISIS"] as const;
 
@@ -136,5 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     db.expediente.update({ where: { id: visita.expedienteId }, data: { fechaUltimoMovimiento: new Date() } }),
   ]);
 
+  await resolverNotificaciones({ clave: `visita:${id}` });
+  await sincronizarAvisoVisita(visita.expedienteId);
   return NextResponse.json({ id: visitaTecnica.id, expedienteId: visita.expedienteId });
 }

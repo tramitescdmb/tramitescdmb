@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
+import { avisarProfesionalVisita, resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,6 +48,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       }),
     ]);
+    await resolverNotificaciones({ clave: `visita:${id}` });
+    await sincronizarAvisoVisita(visita.expedienteId);
     return NextResponse.json({ ok: true });
   }
 
@@ -70,6 +73,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       }),
     ]);
+    await avisarProfesionalVisita(id, "VISITA_CANCELADA", session.userId);
+    await sincronizarAvisoVisita(visita.expedienteId);
     return NextResponse.json({ ok: true });
   }
 
@@ -100,6 +105,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       }),
     ]);
+    await resolverNotificaciones({ clave: `visita:${id}` });
+    await avisarProfesionalVisita(id, datos.profesionalId === visita.profesionalId ? "VISITA_REPROGRAMADA" : "VISITA_PROGRAMADA", session.userId);
     return NextResponse.json({ ok: true });
   }
 

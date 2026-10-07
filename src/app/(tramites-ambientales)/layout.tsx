@@ -8,6 +8,7 @@ import { SIN_PENDIENTES_FIRMA } from "@/lib/calidad-firma";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
+import { contarNoLeidas } from "@/lib/notificaciones";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite } from "@/lib/permisos";
 
 export default async function TramitesAmbientalesLayout({ children }: { children: ReactNode }) {
@@ -27,9 +28,10 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   }
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
-  const [pendientesFirma, alertasPlaneador] = await Promise.all([
+  const [pendientesFirma, alertasPlaneador, avisosBuzon] = await Promise.all([
     mostrarFirmas ? contarPendientesBuzonTramite(session.userId) : Promise.resolve(SIN_PENDIENTES_FIRMA),
     contarAlertasVisitasPropias(session.userId),
+    contarNoLeidas(session.userId),
   ]);
 
   return (
@@ -43,7 +45,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
         </div>
       </div>
 
-      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} />
+      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} />
 
       <MigaTramites />
 

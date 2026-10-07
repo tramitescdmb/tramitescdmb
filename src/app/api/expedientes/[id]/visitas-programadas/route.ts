@@ -4,6 +4,7 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisi
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
 import { evaluarPasoParaVisita } from "@/lib/temas-visita";
+import { avisarProfesionalVisita, sincronizarAvisoVisita } from "@/lib/notificaciones";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (cruce) return NextResponse.json({ error: cruce, cruce: true }, { status: 409 });
   }
 
-  await db.$transaction([
+  const [creada] = await db.$transaction([
     db.visitaProgramada.create({
       data: { expedienteId: id, ...datos, programadaPorId: session.userId },
     }),
@@ -65,6 +66,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     }),
   ]);
+  await sincronizarAvisoVisita(id);
+  await avisarProfesionalVisita(creada.id, "VISITA_PROGRAMADA", session.userId);
 
   return NextResponse.json({ ok: true });
 }
