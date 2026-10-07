@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { ESTADOS_EXPEDIENTE, ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
+import { evaluarCambioManualEstado } from "@/lib/reglas-estado";
 
 const ESTADOS_VALIDOS: string[] = [...ESTADOS_EXPEDIENTE];
 
@@ -30,8 +31,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
   }
 
-  const expediente = await db.expediente.findUnique({ where: { id } });
+  const expediente = await db.expediente.findUnique({
+    where: { id },
+    include: { flujo: { select: { pasos: { select: { numero: true, titulo: true, esDecision: true, opciones: true } } } } },
+  });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
+  const regla = evaluarCambioManualEstado(expediente.flujo.pasos, expediente.pasoActualNumero, nuevoEstado);
+  if (!regla.permitido) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", regla.motivo ?? "Ese estado no está permitido en el paso actual.");
+    return NextResponse.redirect(url, { status: 303 });
+  }
 
   const esTerminal = (ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(nuevoEstado);
   await db.expediente.update({

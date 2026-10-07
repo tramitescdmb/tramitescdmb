@@ -7,6 +7,7 @@ import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
+import { resultadosDelPaso } from "@/lib/reglas-estado";
 
 const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
@@ -52,9 +53,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     : false;
 
   const nuevoPasoNumero = siguienteExiste ? siguientePasoNumero! : expediente.pasoActualNumero;
-  const resultadoValido = resultado && esEstadoValido(resultado) && ESTADOS_TERMINALES.includes(resultado)
-    ? resultado
-    : null;
+  const resultadoValido =
+    resultado && esEstadoValido(resultado) && ESTADOS_TERMINALES.includes(resultado) && resultadosDelPaso(pasoActual).includes(resultado)
+      ? resultado
+      : null;
   const nuevoEstado: EstadoExpediente =
     resultadoValido ?? (expediente.estado === "RADICADO" ? "EN_TRAMITE" : expediente.estado);
 

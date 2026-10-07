@@ -27,6 +27,7 @@ import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsig
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
+import { evaluarCambioManualEstado } from "@/lib/reglas-estado";
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
@@ -183,6 +184,7 @@ export default async function ExpedienteDetallePage({
   const pasoVisita = evaluarPasoParaVisita(expediente.flujo.pasos, expediente.pasoActualNumero);
   const visitasVigentesLista = expediente.visitasProgramadas.filter((v) => v.estado !== "CANCELADA");
   const requiereVisita = enEjecucion && pasoVisita.permite;
+  const motivoBloqueoAprobacion = evaluarCambioManualEstado(expediente.flujo.pasos, expediente.pasoActualNumero, "APROBADO").motivo;
   const puedeEditar = puedeEditarPorRol && !cerrado;
   const [fichaSgdea, firmasPendientes] = await Promise.all([
     fichaArchivoDe(expediente.id),
@@ -1298,11 +1300,15 @@ export default async function ExpedienteDetallePage({
                       defaultValue={expediente.estado}
                       className="rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
                     >
-                      {ESTADOS.map((e) => (
-                        <option key={e} value={e}>
-                          {e.replaceAll("_", " ")}
-                        </option>
-                      ))}
+                      {ESTADOS.map((e) => {
+                        const bloqueado = !evaluarCambioManualEstado(pasos, expediente.pasoActualNumero, e).permitido;
+                        return (
+                          <option key={e} value={e} disabled={bloqueado}>
+                            {e.replaceAll("_", " ")}
+                            {bloqueado ? " (no disponible en este paso)" : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                   </Field>
                   <Field label="Motivo (opcional)" help="Queda registrado en la bitácora del expediente.">
@@ -1317,6 +1323,7 @@ export default async function ExpedienteDetallePage({
                   >
                     Guardar estado
                   </button>
+                  {motivoBloqueoAprobacion && <p className="w-full text-xs text-stone-500">{motivoBloqueoAprobacion}</p>}
                 </form>
                 )}
               </section>
