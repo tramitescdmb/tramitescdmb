@@ -148,7 +148,7 @@ export function EditarUsuarioAccesoForm({
   cedulaONitActual,
   tipoIdentificacionFirmaActual = null,
   correoNotificacionActual,
-  rolContratacionActual,
+  rolesContratacionActuales = [],
   rolContratacionVigenteHastaActual,
   contratistaActual,
 }: {
@@ -175,7 +175,7 @@ export function EditarUsuarioAccesoForm({
   politicaPassword: { longitudMinima: number; longitudMaxima: number };
   vigenciaPassword?: { vencida: boolean; diasRestantes: number | null };
   estadoCuentaActual: EstadoCuenta;
-  rolContratacionActual?: RolContratacion | null;
+  rolesContratacionActuales?: RolContratacion[];
   rolContratacionVigenteHastaActual?: string | null;
   contratistaActual?: { identificacion: string; nombreORazonSocial: string; tipoPersona: string } | null;
 }) {
@@ -196,7 +196,23 @@ export function EditarUsuarioAccesoForm({
   const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
   const [rolCorrespondencia, setRolCorrespondencia] = useState<RolCorrespondencia | "">(rolCorrespondenciaActual ?? "");
   const [rolCorrespondenciaVigenteHasta, setRolCorrespondenciaVigenteHasta] = useState(rolCorrespondenciaVigenteHastaActual ?? "");
-  const [rolContratacion, setRolContratacion] = useState<RolContratacion | "">(rolContratacionActual ?? "");
+  const [rolesContratacion, setRolesContratacion] = useState<Set<RolContratacion>>(new Set(rolesContratacionActuales));
+  const esContratista = rolesContratacion.has("CONTRATISTA");
+
+  function alternarRolContratacion(rolElegido: RolContratacion) {
+    setRolesContratacion((prev) => {
+      if (prev.has(rolElegido)) {
+        const next = new Set(prev);
+        next.delete(rolElegido);
+        return next;
+      }
+      if (rolElegido === "CONTRATISTA") return new Set<RolContratacion>(["CONTRATISTA"]);
+      const next = new Set(prev);
+      next.delete("CONTRATISTA");
+      next.add(rolElegido);
+      return next;
+    });
+  }
   const [rolContratacionVigenteHasta, setRolContratacionVigenteHasta] = useState(rolContratacionVigenteHastaActual ?? "");
   const [contratistaIdentificacion, setContratistaIdentificacion] = useState(contratistaActual?.identificacion ?? "");
   const [contratistaNombre, setContratistaNombre] = useState(contratistaActual?.nombreORazonSocial ?? "");
@@ -280,7 +296,7 @@ export function EditarUsuarioAccesoForm({
       setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
       return;
     }
-    if (rolContratacion === "CONTRATISTA" && !contratistaIdentificacion.trim()) {
+    if (esContratista && !contratistaIdentificacion.trim()) {
       setError("Indique la identificación (NIT/cédula) del contratista.");
       return;
     }
@@ -308,9 +324,9 @@ export function EditarUsuarioAccesoForm({
           dependenciaId: dependenciaId || null,
           rolCorrespondencia: rolCorrespondencia || null,
           rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
-          rolContratacion: rolContratacion || null,
-          rolContratacionVigenteHasta: rolContratacion ? (rolContratacionVigenteHasta || null) : null,
-          ...(rolContratacion === "CONTRATISTA"
+          rolesContratacion: Array.from(rolesContratacion),
+          rolContratacionVigenteHasta: rolesContratacion.size > 0 ? (rolContratacionVigenteHasta || null) : null,
+          ...(esContratista
             ? { contratistaIdentificacion: contratistaIdentificacion.trim(), contratistaNombre: contratistaNombre.trim(), contratistaTipoPersona }
             : {}),
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
@@ -773,16 +789,16 @@ export function EditarUsuarioAccesoForm({
       <section id="seccion-contratacion" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={Briefcase} titulo="Contratación" ayuda="Acceso al manejador de expedientes digitales de contratación." />
         <p className="mb-3 text-xs text-stone-400">
-          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba.
+          Puede tener varios roles a la vez (por ejemplo, Supervisor y Personal de Contratación). Contratista no se combina con otros.
         </p>
         <div className="mb-3 flex flex-wrap gap-1.5">
           <button
             type="button"
-            onClick={() => setRolContratacion("")}
-            aria-pressed={rolContratacion === ""}
+            onClick={() => setRolesContratacion(new Set())}
+            aria-pressed={rolesContratacion.size === 0}
             title="Sin acceso al módulo de Contratación"
             className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-              rolContratacion === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
+              rolesContratacion.size === 0 ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
             }`}
           >
             Sin acceso
@@ -791,21 +807,22 @@ export function EditarUsuarioAccesoForm({
             <button
               key={r.valor}
               type="button"
-              onClick={() => setRolContratacion(r.valor)}
-              aria-pressed={rolContratacion === r.valor}
+              onClick={() => alternarRolContratacion(r.valor)}
+              aria-pressed={rolesContratacion.has(r.valor)}
               title={r.ayuda}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                rolContratacion === r.valor
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                rolesContratacion.has(r.valor)
                   ? "border-menu-500 bg-menu-500 text-stone-900"
                   : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
               }`}
             >
+              {rolesContratacion.has(r.valor) && <Check className="h-3 w-3" aria-hidden />}
               {r.etiqueta}
             </button>
           ))}
         </div>
 
-        {rolContratacion !== "" && (
+        {rolesContratacion.size > 0 && (
           <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone-600">
             Vigente hasta
             <input
@@ -820,7 +837,7 @@ export function EditarUsuarioAccesoForm({
           </label>
         )}
 
-        {rolContratacion === "CONTRATISTA" && (
+        {esContratista && (
           <div className="grid gap-3 rounded-lg border border-stone-100 bg-stone-50/60 p-3 sm:grid-cols-3">
             <label className="text-xs font-medium text-stone-600 sm:col-span-1">
               <span className="mb-1 flex items-center gap-1"><Search className="h-3.5 w-3.5" aria-hidden /> Identificación (NIT/cédula)</span>

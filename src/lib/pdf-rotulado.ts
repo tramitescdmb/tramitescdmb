@@ -275,6 +275,11 @@ export type FirmaRotuloPdf = {
 
 const limpiarCadenas = limpiarCadenasPdf;
 
+function ultimaPagina(pdf: PDFDocument): PDFPage | undefined {
+  const paginas = pdf.getPages();
+  return paginas[paginas.length - 1];
+}
+
 export async function estamparRotulo(
   pdfBytes: Buffer | Uint8Array,
   datosOriginales: DatosRotuloPdf,
@@ -325,26 +330,28 @@ export async function estamparRotulo(
   ].filter(Boolean).join("  ·  ");
   page.drawText(pie.slice(0, 66), { x: x + 8, y: y + 8, size: 5.5, font, color: GRIS_CLARO });
 
+  const paginaFirma = ultimaPagina(pdf) ?? page;
   if (firmas.length > 0) {
+    const anchoFirma = paginaFirma.getWidth();
     const lh = 7.4;
     const altoBloque = 4 * lh + 3;
     let cy = 18 + 12 + firmas.length * altoBloque + 8;
-    page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
+    paginaFirma.drawLine({ start: { x: 24, y: cy }, end: { x: anchoFirma - 24, y: cy }, thickness: 0.5, color: VERDE });
     cy -= 9;
-    page.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
+    paginaFirma.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
     cy -= 11;
     for (const f of ordenarPorCalidad(firmas, (x) => x.calidad, (x) => x.nivel ?? 4)) {
       const cargo = f.cargo ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
       const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
       const rotulo = rotuloCalidadFirma(f.calidad);
       const nombreLinea = `${rotulo ? `${rotulo}: ` : ""}${identificacion ? `${f.nombre} — ${identificacion}` : f.nombre}`;
-      page.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
-      if (cargo) { page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
-      if (f.dependencia) { page.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
-      page.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+      paginaFirma.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
+      if (cargo) { paginaFirma.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
+      if (f.dependencia) { paginaFirma.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
+      paginaFirma.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
       cy -= lh + 3;
     }
-    page.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
+    paginaFirma.drawText("Firma electrónica · Ley 527 de 1999 · Decreto 1074 de 2015", { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
   }
 
   await completarMetadatos(pdf, font, fontBold, datos.metadatos, firmas);
@@ -354,7 +361,7 @@ export async function estamparRotulo(
 export type DatosFirmaGecon = {
   numeroExpediente: string;
   baseUrl: string;
-  metadatos?: MetadatosDocumentoPdf;
+  metadatos: MetadatosDocumentoPdf;
 };
 
 export type DatosFirmaTramite = DatosFirmaGecon;
@@ -372,18 +379,9 @@ async function estamparFirmasExpediente(
 
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const page = pdf.getPages()[0];
+  const page = ultimaPagina(pdf);
   if (!page) return pdf.save();
-  const { width, height } = page.getSize();
-
-  const qrPngBytes = await pngQr(datos.metadatos?.urlValidacion ?? `${datos.baseUrl.replace(/\/+$/, "")}/verificar/${encodeURIComponent(datos.numeroExpediente)}`);
-  const qr = await pdf.embedPng(qrPngBytes);
-
-  const qrSize = 49;
-  const qx = Math.max(12, width - qrSize - 20);
-  const qy = Math.max(12, height - qrSize - 20);
-  page.drawImage(qr, { x: qx, y: qy, width: qrSize, height: qrSize });
-  page.drawText("Verifique esta firma", { x: qx, y: qy - 9, size: 5.5, font, color: GRIS_CLARO });
+  const { width } = page.getSize();
 
   const PRINCIPAL = { nombre: 6.5, linea: 6, meta: 5.5, lh: 7.4 };
   const SECUNDARIA = { nombre: 5.4, linea: 4.8, meta: 4.4, lh: 6.6 };

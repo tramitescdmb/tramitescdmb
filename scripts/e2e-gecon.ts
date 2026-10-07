@@ -158,7 +158,7 @@ async function main() {
             passwordHash: hash,
             rol: "FUNCIONARIO",
             activo: true,
-            rolContratacion: u.rol,
+            rolesContratacion: u.rol ? [u.rol] : [],
             cedulaONit: u.cedula ?? null,
             correoNotificacion: u.cedula ? `notif-${clave}-${SUFIJO}@prueba.invalid` : null,
             terminosAceptadosEn: u.terminos ? new Date() : null,
@@ -488,7 +488,7 @@ async function main() {
     });
     await paso("Un supervisor ajeno no ve el expediente", async () => {
       const otro = await db.usuario.create({
-        data: { email: `e2e-gecon-ajeno-${SUFIJO}@prueba.invalid`, nombre: `E2E GECON ajeno ${SUFIJO}`, passwordHash: await hashPassword(PASSWORD), rol: "FUNCIONARIO", activo: true, rolContratacion: "SUPERVISOR_INTERVENTOR", terminosAceptadosEn: new Date() },
+        data: { email: `e2e-gecon-ajeno-${SUFIJO}@prueba.invalid`, nombre: `E2E GECON ajeno ${SUFIJO}`, passwordHash: await hashPassword(PASSWORD), rol: "FUNCIONARIO", activo: true, rolesContratacion: ["SUPERVISOR_INTERVENTOR"], terminosAceptadosEn: new Date() },
       });
       ids.ajeno = otro.id;
       const cli = new Cliente(otro.email);
@@ -613,7 +613,7 @@ async function main() {
       await db.contratista.deleteMany({ where: { OR: [{ id: ctx.contratistaId ?? "-" }, { identificacion: { startsWith: identificacion } }] } });
     });
     await paso("Desactiva los usuarios de prueba (no se borran: quedan en la bitácora de auditoría)", async () => {
-      const r = await db.usuario.updateMany({ where: { email: { startsWith: "e2e-gecon-", endsWith: `-${SUFIJO}@prueba.invalid` } }, data: { activo: false, rolContratacion: null } });
+      const r = await db.usuario.updateMany({ where: { email: { startsWith: "e2e-gecon-", endsWith: `-${SUFIJO}@prueba.invalid` } }, data: { activo: false, rolesContratacion: [] } });
       return `${r.count} usuarios`;
     });
     await navegador?.close();

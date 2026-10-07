@@ -82,7 +82,7 @@ export async function obtenerResumenSistemaContratacion() {
     db.expedienteContractual.count(),
     db.contratista.count(),
     db.documentoContrato.count({ where: { estadoValidacion: "PENDIENTE" } }),
-    db.usuario.count({ where: { activo: true, rolContratacion: { not: null } } }),
+    db.usuario.count({ where: { activo: true, rolesContratacion: { isEmpty: false } } }),
     db.eventoContratacion.findMany({
       orderBy: { createdAt: "desc" },
       take: 12,

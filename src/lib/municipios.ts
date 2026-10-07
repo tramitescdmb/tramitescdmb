@@ -25,7 +25,7 @@ export const MUNICIPIO_POR_CODIGO_DANE: Record<string, MunicipioCdmb> = {
   "68132": "California",
   "68780": "Suratá",
   "68444": "Matanza",
-  "68167": "Charta",
+  "68169": "Charta",
   "68820": "Tona",
   "68255": "El Playón",
   "68615": "Rionegro",

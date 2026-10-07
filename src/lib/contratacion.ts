@@ -909,16 +909,16 @@ export async function vincularUsuarioDominioAContratista(contratistaId: string, 
   const contratista = await db.contratista.findUnique({ where: { id: contratistaId }, select: { id: true, usuarioId: true, nombreORazonSocial: true } });
   if (!contratista) throw new Error("El contratista no existe.");
 
-  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, select: { id: true, nombre: true, rol: true, rolContratacion: true, contratista: { select: { id: true } } } });
+  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, select: { id: true, nombre: true, rol: true, rolesContratacion: true, contratista: { select: { id: true } } } });
 
   if (existente) {
     if (existente.contratista && existente.contratista.id === contratistaId) return existente;
     if (existente.contratista) throw new Error("Ese usuario de red ya está vinculado a otro contratista.");
-    if (existente.rol === "ADMIN" || (existente.rolContratacion && existente.rolContratacion !== "CONTRATISTA")) {
+    if (existente.rol === "ADMIN" || existente.rolesContratacion.some((r) => r !== "CONTRATISTA")) {
       throw new Error(`"${usuarioRed}" ya es una cuenta con otro rol en el sistema (${existente.nombre}) — revise que el usuario de red sea el correcto.`);
     }
     await db.$transaction([
-      db.usuario.update({ where: { id: existente.id }, data: { rolContratacion: "CONTRATISTA" } }),
+      db.usuario.update({ where: { id: existente.id }, data: { rolesContratacion: ["CONTRATISTA"] } }),
       db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: existente.id } }),
     ]);
     await registrarAuditoria({
@@ -936,7 +936,7 @@ export async function vincularUsuarioDominioAContratista(contratistaId: string, 
       passwordHash: "directorio-activo:sin-contrasena-local",
       rol: "FUNCIONARIO",
       directorioActivo: true,
-      rolContratacion: "CONTRATISTA",
+      rolesContratacion: ["CONTRATISTA"],
     },
   });
   await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: creado.id } });
@@ -963,22 +963,17 @@ export type FiltrosContratacion = {
 };
 
 function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.ExpedienteContractualWhereInput {
-  if (permisos.esAdmin || permisos.contratacion === "ADMINISTRADOR_CONTRATACION" || permisos.contratacion === "JEFE_CONTRATACION") {
-    return {};
+  const roles = permisos.rolesContratacion;
+  if (permisos.esAdmin || roles.has("ADMINISTRADOR_CONTRATACION") || roles.has("JEFE_CONTRATACION")) return {};
+  const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
+  if (roles.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(permisos.asignadoExpedientes) } });
+  if (roles.has("JEFE_DEPENDENCIA")) caminos.push({ dependenciaSolicitanteId: permisos.dependenciaId ?? "__sin_dependencia__" });
+  if (roles.has("SUPERVISOR_INTERVENTOR")) caminos.push({ id: { in: Array.from(permisos.supervisaExpedientes) } });
+  if (roles.has("CONTRATISTA")) {
+    caminos.push({ contratistaId: permisos.contratistaId ?? "__sin_contratista__", etapaActual: { not: "PRECONTRACTUAL" } });
   }
-  if (permisos.contratacion === "FUNCIONARIO_CONTRATACION") {
-    return { id: { in: Array.from(permisos.asignadoExpedientes) } };
-  }
-  if (permisos.contratacion === "JEFE_DEPENDENCIA") {
-    return { dependenciaSolicitanteId: permisos.dependenciaId ?? "__sin_dependencia__" };
-  }
-  if (permisos.contratacion === "SUPERVISOR_INTERVENTOR") {
-    return { id: { in: Array.from(permisos.supervisaExpedientes) } };
-  }
-  if (permisos.contratacion === "CONTRATISTA") {
-    return { contratistaId: permisos.contratistaId ?? "__sin_contratista__", etapaActual: { not: "PRECONTRACTUAL" } };
-  }
-  return { id: "__sin_acceso__" };
+  if (caminos.length === 0) return { id: "__sin_acceso__" };
+  return caminos.length === 1 ? caminos[0]! : { OR: caminos };
 }
 
 export function construirWhereExpedienteContractual(

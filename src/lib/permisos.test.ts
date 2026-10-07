@@ -17,10 +17,18 @@ import {
   puedeEliminarExpedienteContractual,
   puedeAsignarFirmantesComunicacion,
   puedeFirmarComunicacionDirecto,
+  puedeAsignarFirmantesDocumentoContrato,
   type PermisosUsuario,
 } from "./permisos";
+import type { RolContratacion } from "@prisma/client";
 
-const BASE_CONTRATACION = { contratacion: null, contratistaId: null, supervisaExpedientes: new Set<string>(), asignadoExpedientes: new Set<string>(), cargos: new Set<string>() } as const;
+const BASE_CONTRATACION = {
+  rolesContratacion: new Set<RolContratacion>(),
+  contratistaId: null,
+  supervisaExpedientes: new Set<string>(),
+  asignadoExpedientes: new Set<string>(),
+  cargos: new Set<string>(),
+};
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
 const sinAcceso: PermisosUsuario = { esAdmin: false, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: false, ...BASE_CONTRATACION };
@@ -186,14 +194,14 @@ describe("puedeResponderComoAsignado — solo el/los funcionario(s) del reparto 
   });
 });
 
-const permContrat = (contratacion: PermisosUsuario["contratacion"], extra: Partial<PermisosUsuario> = {}): PermisosUsuario => ({
+const permContrat = (roles: RolContratacion | RolContratacion[] | null, extra: Partial<PermisosUsuario> = {}): PermisosUsuario => ({
   esAdmin: false,
   tramites: new Map(),
   secciones: new Set(),
   correspondencia: null,
   dependenciaId: null,
   puedeFirmar: false,
-  contratacion,
+  rolesContratacion: new Set(roles === null ? [] : Array.isArray(roles) ? roles : [roles]),
   contratistaId: null,
   supervisaExpedientes: new Set<string>(),
   asignadoExpedientes: new Set<string>(),
@@ -254,6 +262,34 @@ describe("Acceso a expedientes contractuales (GECON) por etapa y asignación —
     it("sin ninguna asignación, no ve ningún expediente (denegado por defecto)", () => {
       const personalSinAsignar = permContrat("FUNCIONARIO_CONTRATACION");
       expect(puedeVerExpedienteContractual(personalSinAsignar, expedienteContractual)).toBe(false);
+    });
+  });
+
+  describe("(c) una misma persona con varios roles suma los accesos de cada uno", () => {
+    const supervisorYPersonal = permContrat(["SUPERVISOR_INTERVENTOR", "FUNCIONARIO_CONTRATACION"], {
+      supervisaExpedientes: new Set(["expSupervisado"]),
+      asignadoExpedientes: new Set(["expAsignado"]),
+    });
+
+    it("ve y gestiona tanto lo que supervisa como lo que tiene asignado como personal", () => {
+      for (const id of ["expSupervisado", "expAsignado"]) {
+        expect(puedeVerExpedienteContractual(supervisorYPersonal, { ...expedienteContractual, id })).toBe(true);
+        expect(puedeGestionarExpedienteCompleto(supervisorYPersonal, { id })).toBe(true);
+        expect(puedeAsignarFirmantesDocumentoContrato(supervisorYPersonal, { id, dependenciaSolicitanteId: "depA" })).toBe(true);
+      }
+      expect(puedeVerExpedienteContractual(supervisorYPersonal, { ...expedienteContractual, id: "expAjeno" })).toBe(false);
+    });
+
+    it("valida documentos solo donde actúa como personal asignado", () => {
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expAsignado" })).toBe(true);
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expSupervisado" })).toBe(false);
+    });
+
+    it("un jefe de dependencia que también supervisa ve los de su dependencia y los que supervisa", () => {
+      const jefeYSupervisor = permContrat(["JEFE_DEPENDENCIA", "SUPERVISOR_INTERVENTOR"], { dependenciaId: "depB", supervisaExpedientes: new Set(["expA"]) });
+      expect(puedeVerExpedienteContractual(jefeYSupervisor, expedienteContractual)).toBe(true);
+      expect(puedeVerExpedienteContractual(jefeYSupervisor, { ...expedienteContractual, id: "otro", dependenciaSolicitanteId: "depB" })).toBe(true);
+      expect(puedeVerExpedienteContractual(jefeYSupervisor, { ...expedienteContractual, id: "otro2", dependenciaSolicitanteId: "depC" })).toBe(false);
     });
   });
 
@@ -346,7 +382,7 @@ describe("firmas de comunicaciones del SGDEA", () => {
   });
 
   it("un contratista puede firmar pero no asignar firmas a nadie", () => {
-    const contratista = sgdea("FUNCIONARIO_DEPENDENCIA", { contratacion: "CONTRATISTA" });
+    const contratista = sgdea("FUNCIONARIO_DEPENDENCIA", { rolesContratacion: new Set(["CONTRATISTA"]) });
     expect(puedeFirmarComunicacionDirecto(contratista, recibida, "c-1")).toBe(true);
     expect(puedeAsignarFirmantesComunicacion(contratista, recibida, "c-1")).toBe(false);
   });

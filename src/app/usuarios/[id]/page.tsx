@@ -106,7 +106,7 @@ export default async function EditarUsuarioPage({
           usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)
         }
         estadoCuentaActual={usuario.estadoCuenta}
-        rolContratacionActual={usuario.rolContratacion}
+        rolesContratacionActuales={usuario.rolesContratacion}
         rolContratacionVigenteHastaActual={usuario.rolContratacionVigenteHasta ? usuario.rolContratacionVigenteHasta.toISOString().slice(0, 10) : null}
         contratistaActual={usuario.contratista}
       />

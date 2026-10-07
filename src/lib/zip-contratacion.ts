@@ -1,10 +1,10 @@
 ﻿import JSZip from "jszip";
 import { db } from "@/lib/db";
 import { descargarDocumento } from "@/lib/storage";
-import { ETIQUETA_ETAPA, identidadFirmante } from "@/lib/contratacion";
+import { ETIQUETA_ETAPA } from "@/lib/contratacion";
 import { conExtension } from "@/lib/uploads-config";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
-import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { SELECT_FIRMAS_DOCUMENTO_GECON, datosRotuloGecon, firmantesDocumentoGecon, supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 
 export const MAX_EXPEDIENTES_ZIP_MASIVO = 50;
 
@@ -37,56 +37,23 @@ async function agregarDocumentosExpediente(
   baseUrl: string,
   ocultarPrecontractual: boolean
 ) {
-  const documentos = await db.documentoContrato.findMany({
-    where: { expedienteId, ...(ocultarPrecontractual ? { etapa: { not: "PRECONTRACTUAL" } } : {}) },
-    orderBy: { createdAt: "asc" },
-    select: {
-      nombre: true,
-      mimeType: true,
-      etapa: true,
-      storagePath: true,
-      requisitoId: true,
-      firmas: {
-        orderBy: { fechaHora: "asc" },
-        select: {
-          fechaHora: true,
-          hashContenido: true,
-          calidad: true,
-          usuario: {
-            select: {
-              nombre: true,
-              cedulaONit: true,
-              tipoIdentificacionFirma: true,
-              denominacionEmpleo: true,
-              denominacionComplemento: true,
-              sexo: true,
-              dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
-            },
-          },
-        },
+  const [documentos, supervisores] = await Promise.all([
+    db.documentoContrato.findMany({
+      where: { expedienteId, ...(ocultarPrecontractual ? { etapa: { not: "PRECONTRACTUAL" } } : {}) },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        nombre: true,
+        mimeType: true,
+        etapa: true,
+        storagePath: true,
+        hashSha256: true,
+        requisitoId: true,
+        ...SELECT_FIRMAS_DOCUMENTO_GECON,
       },
-      solicitudesFirma: {
-        where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
-        orderBy: { completadoEn: "asc" },
-        select: {
-          completadoEn: true,
-          usuarioAsignado: {
-            select: {
-              nombre: true,
-              cedulaONit: true,
-              tipoIdentificacionFirma: true,
-              denominacionEmpleo: true,
-              denominacionComplemento: true,
-              sexo: true,
-              dependencia: { select: { nombre: true } },
-              contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
-            },
-          },
-        },
-      },
-    },
-  });
+    }),
+    supervisoresDelExpediente(expedienteId),
+  ]);
 
   const idsRequisito = [...new Set(documentos.map((d) => d.requisitoId).filter((id): id is string => Boolean(id)))];
   const requisitos = idsRequisito.length
@@ -117,36 +84,7 @@ async function agregarDocumentosExpediente(
     const original = await descargarDocumento(doc.storagePath);
     const contenido =
       doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0)
-        ? await estamparFirmaGecon(
-            original,
-            { numeroExpediente, baseUrl },
-            [
-            ...doc.firmas.map((f) => ({
-              nombre: f.usuario.nombre,
-              cedulaONit: identidadFirmante(f.usuario).cedulaONit,
-              tipoIdentificacion: identidadFirmante(f.usuario).tipoIdentificacion,
-              denominacionEmpleo: f.usuario.denominacionEmpleo,
-              denominacionComplemento: f.usuario.denominacionComplemento,
-              sexo: f.usuario.sexo,
-              dependencia: f.usuario.dependencia?.nombre ?? null,
-              fechaHora: formatearFechaHoraLarga(f.fechaHora),
-              hash: f.hashContenido,
-        calidad: f.calidad,
-            })),
-            ...doc.solicitudesFirma.map((s) => ({
-              nombre: s.usuarioAsignado.nombre,
-              cedulaONit: identidadFirmante(s.usuarioAsignado).cedulaONit,
-              tipoIdentificacion: identidadFirmante(s.usuarioAsignado).tipoIdentificacion,
-              denominacionEmpleo: s.usuarioAsignado.denominacionEmpleo,
-              denominacionComplemento: s.usuarioAsignado.denominacionComplemento,
-              sexo: s.usuarioAsignado.sexo,
-              dependencia: s.usuarioAsignado.dependencia?.nombre ?? null,
-              fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
-              hash: "",
-              calidad: "VISTO_BUENO",
-            })),
-            ]
-          )
+        ? await estamparFirmaGecon(original, datosRotuloGecon(doc, numeroExpediente, baseUrl), firmantesDocumentoGecon(doc, supervisores))
         : original;
     carpetaDestino.file(nombre, contenido);
   }

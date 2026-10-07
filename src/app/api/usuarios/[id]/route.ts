@@ -88,9 +88,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? (typeof body.rolCorrespondenciaVigenteHasta === "string" && body.rolCorrespondenciaVigenteHasta ? new Date(body.rolCorrespondenciaVigenteHasta) : null)
     : undefined;
 
-  const rolContratacion: RolContratacion | null | undefined = "rolContratacion" in body
-    ? (ROLES_CONTRATACION_VALIDOS.includes(body.rolContratacion) ? body.rolContratacion : null)
+  const rolesContratacion: RolContratacion[] | undefined = Array.isArray(body.rolesContratacion)
+    ? [...new Set<RolContratacion>(body.rolesContratacion.filter((r: unknown): r is RolContratacion => ROLES_CONTRATACION_VALIDOS.includes(r as RolContratacion)))]
     : undefined;
+  const esContratista = rolesContratacion?.includes("CONTRATISTA") ?? false;
   const rolContratacionVigenteHasta: Date | null | undefined = "rolContratacionVigenteHasta" in body
     ? (typeof body.rolContratacionVigenteHasta === "string" && body.rolContratacionVigenteHasta ? new Date(body.rolContratacionVigenteHasta) : null)
     : undefined;
@@ -98,7 +99,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const contratistaNombre = typeof body.contratistaNombre === "string" ? body.contratistaNombre.trim() : "";
   const contratistaTipoPersona: "NATURAL" | "JURIDICA" = body.contratistaTipoPersona === "JURIDICA" ? "JURIDICA" : "NATURAL";
 
-  if (rolContratacion === "CONTRATISTA" && !contratistaIdentificacion) {
+  if (esContratista && rolesContratacion!.length > 1) {
+    return NextResponse.json({ error: "El rol Contratista no se combina con otros roles de contratación." }, { status: 400 });
+  }
+  if (esContratista && !contratistaIdentificacion) {
     return NextResponse.json({ error: "Indique la identificación (NIT/cédula) del contratista." }, { status: 400 });
   }
 
@@ -155,7 +159,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
         ...(rolCorrespondenciaVigenteHasta !== undefined ? { rolCorrespondenciaVigenteHasta } : {}),
-        ...(rolContratacion !== undefined ? { rolContratacion } : {}),
+        ...(rolesContratacion !== undefined ? { rolesContratacion } : {}),
         ...(rolContratacionVigenteHasta !== undefined ? { rolContratacionVigenteHasta } : {}),
         ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
@@ -178,13 +182,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   });
 
-  if (rolContratacion === "CONTRATISTA") {
+  if (esContratista) {
     await vincularContratistaAUsuario(id, {
       identificacion: contratistaIdentificacion,
       nombreORazonSocial: contratistaNombre || undefined,
       tipoPersona: contratistaTipoPersona,
     });
-  } else if (rolContratacion !== undefined) {
+  } else if (rolesContratacion !== undefined) {
     await desvincularContratistaDeUsuario(id);
   }
 

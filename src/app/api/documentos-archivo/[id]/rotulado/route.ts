@@ -18,7 +18,7 @@ const USUARIO_SELLO = {
   denominacionEmpleo: true,
   denominacionComplemento: true,
   sexo: true,
-  rolContratacion: true,
+  rolesContratacion: true,
   dependencia: { select: { nombre: true } },
 } as const;
 

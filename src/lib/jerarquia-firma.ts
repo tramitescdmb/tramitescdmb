@@ -6,8 +6,13 @@ export type PersonaFirmante = {
   denominacionEmpleo: string | null;
   denominacionComplemento?: string | null;
   sexo?: string | null;
-  rolContratacion?: string | null;
+  rolesContratacion?: readonly string[] | null;
+  supervisaElExpediente?: boolean;
 };
+
+function tieneRol(p: PersonaFirmante, rol: string): boolean {
+  return (p.rolesContratacion ?? []).includes(rol);
+}
 
 export const NIVELES_FIRMA = {
   DIRECCION: 1,
@@ -38,7 +43,7 @@ const NIVEL_POR_DENOMINACION: Partial<Record<DenominacionEmpleoClave, NivelFirma
 };
 
 export function esContratista(p: PersonaFirmante): boolean {
-  return p.denominacionEmpleo === "CONTRATISTA" || p.rolContratacion === "CONTRATISTA";
+  return p.denominacionEmpleo === "CONTRATISTA" || tieneRol(p, "CONTRATISTA");
 }
 
 export function nivelFirma(p: PersonaFirmante): NivelFirma {
@@ -58,7 +63,7 @@ export function puedeSolicitarFirmas(p: PersonaFirmante): boolean {
 
 export function cargoDelFirmante(p: PersonaFirmante, modulo?: ModuloFirma): string {
   const denominacion = denominacionParaFirma(p.denominacionEmpleo, p.sexo, p.denominacionComplemento);
-  if (modulo === "GECON" && p.rolContratacion === "SUPERVISOR_INTERVENTOR") {
+  if (modulo === "GECON" && (p.supervisaElExpediente ?? tieneRol(p, "SUPERVISOR_INTERVENTOR"))) {
     return denominacion ? `${denominacion} · Supervisor` : "Supervisor";
   }
   if (denominacion) return denominacion;

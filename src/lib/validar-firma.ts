@@ -27,10 +27,10 @@ const SELECT_PERSONA = {
   denominacionEmpleo: true,
   denominacionComplemento: true,
   sexo: true,
-  rolContratacion: true,
+  rolesContratacion: true,
 } as const;
 
-type Persona = { nombre: string; denominacionEmpleo: string | null; denominacionComplemento: string | null; sexo: string | null; rolContratacion: string | null };
+type Persona = { nombre: string; denominacionEmpleo: string | null; denominacionComplemento: string | null; sexo: string | null; rolesContratacion: string[] };
 
 type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; usuario: Persona };
 type VistoFila = { id: string; completadoEn: Date | null; usuarioAsignado: Persona };

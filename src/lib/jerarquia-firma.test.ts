@@ -9,8 +9,9 @@ const jefa = { denominacionEmpleo: "JEFE_OFICINA", sexo: "F" };
 const profesional = { denominacionEmpleo: "PROFESIONAL_UNIVERSITARIO", sexo: "M" };
 const sinDenominacion = { denominacionEmpleo: null };
 const contratistaPorEmpleo = { denominacionEmpleo: "CONTRATISTA" };
-const contratistaPorRol = { denominacionEmpleo: null, rolContratacion: "CONTRATISTA" };
-const supervisor = { denominacionEmpleo: "PROFESIONAL_ESPECIALIZADO", sexo: "F", rolContratacion: "SUPERVISOR_INTERVENTOR" };
+const contratistaPorRol = { denominacionEmpleo: null, rolesContratacion: ["CONTRATISTA"] };
+const supervisor = { denominacionEmpleo: "PROFESIONAL_ESPECIALIZADO", sexo: "F", rolesContratacion: ["SUPERVISOR_INTERVENTOR"] };
+const supervisorYPersonal = { denominacionEmpleo: "PROFESIONAL_ESPECIALIZADO", sexo: "F", rolesContratacion: ["SUPERVISOR_INTERVENTOR", "FUNCIONARIO_CONTRATACION"] };
 
 describe("nivelFirma", () => {
   it("ordena Director, Secretaría General, jefaturas, funcionarios y contratistas", () => {
@@ -58,6 +59,11 @@ describe("cargoDelFirmante", () => {
     expect(cargoDelFirmante(supervisor, "GECON")).toBe("Profesional Especializada · Supervisor");
     expect(cargoDelFirmante(supervisor, "SGDEA")).toBe("Profesional Especializada");
     expect(cargoDelFirmante(contratistaPorRol)).toBe("Contratista");
+  });
+
+  it("con varios roles, en GECON solo dice Supervisor en los contratos que esa persona supervisa", () => {
+    expect(cargoDelFirmante({ ...supervisorYPersonal, supervisaElExpediente: true }, "GECON")).toBe("Profesional Especializada · Supervisor");
+    expect(cargoDelFirmante({ ...supervisorYPersonal, supervisaElExpediente: false }, "GECON")).toBe("Profesional Especializada");
   });
 });
 

@@ -131,6 +131,7 @@ model Usuario {
   rolCorrespondenciaVigenteHasta DateTime?
 
   rolContratacion             RolContratacion?
+  rolesContratacion           RolContratacion[]       @default([])
   rolContratacionVigenteHasta DateTime?
 
   dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])

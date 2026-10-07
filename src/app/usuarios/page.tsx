@@ -225,15 +225,16 @@ export default async function UsuariosPage({
                         {u.rolCorrespondenciaVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta)}`}
                       </span>
                     )}
-                    {u.rolContratacion && (
+                    {u.rolesContratacion.map((r) => (
                       <span
+                        key={r}
                         className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
                         title="Rol dentro del módulo de Contratación (GECON)"
                       >
-                        {ETIQUETA_ROL_CONTRATACION[u.rolContratacion] ?? u.rolContratacion}
+                        {ETIQUETA_ROL_CONTRATACION[r] ?? r}
                       </span>
-                    )}
-                    {u.rolContratacion && u.rolContratacionVigenteHasta && (
+                    ))}
+                    {u.rolesContratacion.length > 0 && u.rolContratacionVigenteHasta && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           u.rolContratacionVigenteHasta < new Date() ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"

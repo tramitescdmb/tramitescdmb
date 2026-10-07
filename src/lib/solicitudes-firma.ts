@@ -92,7 +92,7 @@ export async function asignarFirmantes(
   await validarObjetivoAbierto(objetivo);
 
   const modulo = moduloDeObjetivo(objetivo.tipo);
-  const selectPersona = { id: true, nombre: true, activo: true, denominacionEmpleo: true, rolContratacion: true } as const;
+  const selectPersona = { id: true, nombre: true, activo: true, denominacionEmpleo: true, rolesContratacion: true } as const;
   const asignador = await db.usuario.findUnique({ where: { id: asignadoPorId }, select: selectPersona });
   if (!asignador) throw new Error("El usuario que asigna no existe.");
   if (!puedeSolicitarFirmas(asignador) && firmantes.some((f) => f.usuarioId !== asignadoPorId)) {
@@ -513,7 +513,7 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
     await completarSolicitudFirma(propia.id, usuarioId, ip, userAgent);
     return;
   }
-  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
   if (!usuario) throw new Error("El usuario no existe.");
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");

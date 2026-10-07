@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario } from "@/lib/permisos";
+import { obtenerPermisosUsuario, esContratistaGecon } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, type FiltrosContratacion } from "@/lib/contratacion";
 import { construirZipMasivo, MAX_EXPEDIENTES_ZIP_MASIVO } from "@/lib/zip-contratacion";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       contentType: "application/zip",
       descargar: true,
       comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
-      generar: async () => new Uint8Array(await construirZipMasivo(expedientes, baseUrl, permisos.contratacion === "CONTRATISTA")),
+      generar: async () => new Uint8Array(await construirZipMasivo(expedientes, baseUrl, esContratistaGecon(permisos))),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });

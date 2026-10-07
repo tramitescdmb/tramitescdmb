@@ -29,6 +29,8 @@ import {
   puedeAsignarPersonalContrato,
   puedeGestionarPeriodosInforme,
   puedeValidarDocumentoContrato,
+  esContratistaGecon,
+  tieneRolContratacion,
 } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import {
@@ -181,20 +183,20 @@ export default async function DetalleExpedienteContractualPage({
   const puedeEditarDatosGenerales = puedeGestionDocumental && !cerrado;
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
-  const ocultaPrecontractualParaMi = permisos.contratacion === "CONTRATISTA";
+  const ocultaPrecontractualParaMi = esContratistaGecon(permisos);
   const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
   const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeGestionar
       ? db.usuario.findMany({
-          where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+          where: { rolesContratacion: { has: "SUPERVISOR_INTERVENTOR" }, activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })
       : Promise.resolve([]),
     puedeAsignarPersonal
       ? db.usuario.findMany({
-          where: { rolContratacion: "FUNCIONARIO_CONTRATACION", activo: true },
+          where: { rolesContratacion: { has: "FUNCIONARIO_CONTRATACION" }, activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })
@@ -570,7 +572,7 @@ export default async function DetalleExpedienteContractualPage({
             ) : (
               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin clasificar</span>
             )}
-            {permisos.contratacion !== "CONTRATISTA" && (
+            {!esContratistaGecon(permisos) && (
               <a href="#gestion-documental" className="text-xs font-medium text-cdmb-700 hover:underline">
                 {puedeEditarDatosGenerales ? (expediente.subserie ? "Reclasificar" : "Clasificar") : "Gestión documental"}
               </a>
@@ -683,7 +685,7 @@ export default async function DetalleExpedienteContractualPage({
                   !ocultaPorRol &&
                   (estado !== "bloqueada" ||
                     puedeGestionarPrivilegiado ||
-                    (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
+                    (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
 
                 if (!puedeVerEtapaCompleta) {
                   if (ocultaPorRol) {
@@ -723,7 +725,7 @@ export default async function DetalleExpedienteContractualPage({
                   estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
                 const puedeGestionarEtapaCerrada =
                   !cerrado &&
-                  (estado === "actual" || puedeGestionarPrivilegiado || (permisos.contratacion === "SUPERVISOR_INTERVENTOR" && permisos.supervisaExpedientes.has(expediente.id)));
+                  (estado === "actual" || puedeGestionarPrivilegiado || (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
 
                 return (
                   <details key={etapa} open className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>
@@ -1073,7 +1075,7 @@ export default async function DetalleExpedienteContractualPage({
             id: "administracion",
             label: "Administración",
             icono: <Settings2 className="h-4 w-4" aria-hidden />,
-            oculta: permisos.contratacion === "CONTRATISTA",
+            oculta: esContratistaGecon(permisos),
             contenido: (
               <PanelGestionDocumental
                 accion={`/api/contratacion/expedientes/${id}/gestion-documental`}

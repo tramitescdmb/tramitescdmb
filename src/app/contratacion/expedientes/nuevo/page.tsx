@@ -23,13 +23,13 @@ export default async function NuevoExpedienteContractualPage() {
     subseriesPorModalidad(),
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
     db.usuario.findMany({
-      where: { rolContratacion: "SUPERVISOR_INTERVENTOR", activo: true },
+      where: { rolesContratacion: { has: "SUPERVISOR_INTERVENTOR" }, activo: true },
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
     }),
     puedeAsignarPersonal
       ? db.usuario.findMany({
-          where: { rolContratacion: "FUNCIONARIO_CONTRATACION", activo: true },
+          where: { rolesContratacion: { has: "FUNCIONARIO_CONTRATACION" }, activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })

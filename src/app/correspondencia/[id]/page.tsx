@@ -180,11 +180,11 @@ export default async function CorrespondenciaDetallePage({
       despachadaPor: { select: { nombre: true } },
       firmas: {
         orderBy: { fechaHora: "asc" },
-        include: { usuario: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true, dependencia: { select: { nombre: true } } } } },
+        include: { usuario: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolesContratacion: true, dependencia: { select: { nombre: true } } } } },
       },
       solicitudesFirma: {
         orderBy: { orden: "asc" },
-        include: { usuarioAsignado: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolContratacion: true } }, asignadoPor: { select: { nombre: true } } },
+        include: { usuarioAsignado: { select: { id: true, nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, rolesContratacion: true } }, asignadoPor: { select: { nombre: true } } },
       },
       distribuciones: {
         orderBy: { fechaAsignacion: "desc" },

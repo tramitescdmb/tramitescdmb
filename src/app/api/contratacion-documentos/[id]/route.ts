@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerDocumentoContrato, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerDocumentoContrato, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato, esContratistaGecon } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     (puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) ||
       (await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) ||
       (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id)) ||
-      (!(permisos.contratacion === "CONTRATISTA" && doc.etapa === "PRECONTRACTUAL") &&
+      (!(esContratistaGecon(permisos) && doc.etapa === "PRECONTRACTUAL") &&
         (await accesoDesdeArchivoSgdea({
           permisos,
           origen: "GECON",

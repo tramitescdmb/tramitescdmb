@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato, esContratistaGecon } from "@/lib/permisos";
 import Link from "next/link";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { identidadFirmante } from "@/lib/contratacion";
@@ -39,7 +39,7 @@ export default async function FichaFirmaExpedienteContractualPage({
           AND: [
             { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
             ...(documentoId ? [{ id: documentoId }] : []),
-            ...(permisos.contratacion === "CONTRATISTA" && !documentoId ? [{ etapa: { not: "PRECONTRACTUAL" as const } }] : []),
+            ...(esContratistaGecon(permisos) && !documentoId ? [{ etapa: { not: "PRECONTRACTUAL" as const } }] : []),
           ],
         },
         orderBy: { createdAt: "asc" },
@@ -58,7 +58,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                   denominacionEmpleo: true,
                   denominacionComplemento: true,
                   sexo: true,
-                  rolContratacion: true,
+                  rolesContratacion: true,
                   contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
                 },
               },
@@ -77,7 +77,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                   denominacionEmpleo: true,
                   denominacionComplemento: true,
                   sexo: true,
-                  rolContratacion: true,
+                  rolesContratacion: true,
                   contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
                 },
               },

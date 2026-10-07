@@ -168,7 +168,7 @@ async function crearDocumentos(
 const SELLO_INTERNO = "Bitácora encadenada del SGDEA (SHA-256)";
 
 async function calidadFirmaPropia(usuarioId: string, cliente: Pick<Prisma.TransactionClient, "usuario"> = db): Promise<CalidadFirma> {
-  const u = await cliente.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  const u = await cliente.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
   return u && puedeSerFirmantePrincipal(u, "SGDEA") ? "PRINCIPAL" : "PROYECTO";
 }
 
@@ -260,7 +260,7 @@ export async function agregarCofirma(
     await completarSolicitudFirma(propia.id, usuarioId, ip, userAgent);
     return db.firma.findFirst({ where: { comunicacionId, usuarioId } });
   }
-  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolContratacion: true } });
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
   if (!usuario) throw new Error("El usuario no existe.");
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
