@@ -76,19 +76,26 @@ export function pasoPermiteVisita(titulo: string, descripcion?: string | null): 
   return /realizara visitas? de verificacion|se procede a programar la visita|para programacion de visita/.test(d);
 }
 
-export type EstadoPasoVisita = { permite: boolean; motivo: string | null };
+export type EstadoPasoVisita = { permite: boolean; motivo: string | null; motivoCorto: string | null };
 
 export function evaluarPasoParaVisita(
   pasos: { numero: number; titulo: string; descripcion?: string | null }[],
   pasoActualNumero: number
 ): EstadoPasoVisita {
   const actual = pasos.find((p) => p.numero === pasoActualNumero);
-  if (actual && pasoPermiteVisita(actual.titulo, actual.descripcion)) return { permite: true, motivo: null };
+  if (actual && pasoPermiteVisita(actual.titulo, actual.descripcion)) return { permite: true, motivo: null, motivoCorto: null };
   const pasosVisita = pasos.filter((p) => pasoPermiteVisita(p.titulo, p.descripcion));
   const donde = actual ? `El trámite está en el paso ${actual.numero} (${actual.titulo.toLowerCase()}).` : "El trámite no tiene un paso activo.";
-  if (pasosVisita.length === 0) return { permite: false, motivo: `${donde} Su procedimiento no contempla visitas técnicas.` };
+  const enPaso = actual ? `Está en el paso ${actual.numero}` : "Sin paso activo";
+  if (pasosVisita.length === 0) {
+    return { permite: false, motivo: `${donde} Su procedimiento no contempla visitas técnicas.`, motivoCorto: "Su procedimiento no contempla visitas" };
+  }
   const lista = pasosVisita.map((p) => `${p.numero} (${p.titulo.toLowerCase()})`).join(" o ");
-  return { permite: false, motivo: `${donde} Las visitas solo se programan cuando está en el paso ${lista}.` };
+  return {
+    permite: false,
+    motivo: `${donde} Las visitas solo se programan cuando está en el paso ${lista}.`,
+    motivoCorto: `${enPaso}; las visitas van en el paso ${pasosVisita.map((p) => p.numero).join(" o ")}`,
+  };
 }
 
 export function visitaHabilitadaParaRegistro(diaProgramado: string, hoy: string): boolean {

@@ -161,6 +161,7 @@ async function expedientesEnEjecucion(tramitesPermitidos: string[] | null): Prom
     id: e.id,
     permiteVisita: paso.permite,
     motivoBloqueo: paso.motivo,
+    motivoBloqueoCorto: paso.motivoCorto,
     numero: e.numero,
     tramite: e.tramiteTipo.nombre,
     solicitante: e.solicitanteNombre,

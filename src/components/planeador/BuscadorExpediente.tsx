@@ -1,11 +1,12 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Ban } from "lucide-react";
 import { filtrarExpedientes } from "@/lib/planeador";
 import type { ExpedienteParaVisita } from "@/components/planeador/ProgramarVisitaForm";
 
-const MAX_RESULTADOS = 40;
+const MAX_RESULTADOS = 30;
+const MAX_BLOQUEADOS = 3;
 
 export function BuscadorExpediente({
   expedientes,
@@ -21,16 +22,20 @@ export function BuscadorExpediente({
   const [activo, setActivo] = useState(0);
   const entrada = useRef<HTMLInputElement>(null);
   const idLista = useId();
+  const hayConsulta = consulta.trim().length > 0;
 
-  const resultados = useMemo(() => {
+  const { habilitados, bloqueados } = useMemo(() => {
     const filtrados = filtrarExpedientes(expedientes, consulta);
-    const rango = (e: ExpedienteParaVisita) => (e.permiteVisita ? (e.porProgramar ? 0 : 1) : 2);
-    return [...filtrados].sort((a, b) => rango(a) - rango(b));
+    const hab = filtrados.filter((e) => e.permiteVisita);
+    return {
+      habilitados: [...hab.filter((e) => e.porProgramar), ...hab.filter((e) => !e.porProgramar)],
+      bloqueados: filtrados.filter((e) => !e.permiteVisita),
+    };
   }, [expedientes, consulta]);
-  const visibles = resultados.slice(0, MAX_RESULTADOS);
+  const visibles = habilitados.slice(0, MAX_RESULTADOS);
+  const totalHabilitados = expedientes.filter((e) => e.permiteVisita).length;
 
   function elegir(e: ExpedienteParaVisita) {
-    if (!e.permiteVisita) return;
     onSeleccionar(e.id);
     setConsulta("");
     setAbierto(false);
@@ -68,7 +73,7 @@ export function BuscadorExpediente({
           ref={entrada}
           type="search"
           role="combobox"
-          aria-expanded="true"
+          aria-expanded={hayConsulta}
           aria-controls={idLista}
           aria-activedescendant={visibles[activo] ? `${idLista}-${visibles[activo]!.id}` : undefined}
           autoFocus
@@ -106,24 +111,26 @@ export function BuscadorExpediente({
           </button>
         )}
       </div>
-      <ul id={idLista} role="listbox" className="mt-1 max-h-56 overflow-y-auto rounded-md border border-stone-200 bg-white shadow-sm">
-        {visibles.length === 0 ? (
-          <li className="px-3 py-2 text-xs text-stone-400">Ningún trámite en ejecución coincide con la búsqueda.</li>
-        ) : (
-          visibles.map((e, i) => (
-            <li key={e.id} id={`${idLista}-${e.id}`} role="option" aria-selected={i === activo} aria-disabled={!e.permiteVisita}>
+      {!hayConsulta ? (
+        <p className="mt-1 px-1 text-[11px] text-stone-400">
+          {totalHabilitados === 0
+            ? "Ningún trámite en ejecución está hoy en un paso que admita visitas."
+            : `Escriba para buscar entre los ${totalHabilitados} trámite${totalHabilitados === 1 ? "" : "s"} que admiten visita.`}
+        </p>
+      ) : (
+      <div className="mt-1 max-h-56 overflow-y-auto rounded-md border border-stone-200 bg-white shadow-sm">
+        <ul id={idLista} role="listbox">
+          {visibles.map((e, i) => (
+            <li key={e.id} id={`${idLista}-${e.id}`} role="option" aria-selected={i === activo}>
               <button
                 type="button"
                 onMouseEnter={() => setActivo(i)}
                 onClick={() => elegir(e)}
-                disabled={!e.permiteVisita}
-                className={`block w-full px-3 py-1.5 text-left text-xs ${!e.permiteVisita ? "cursor-not-allowed bg-stone-50 opacity-70" : i === activo ? "bg-cdmb-50" : ""}`}
+                className={`block w-full px-3 py-1.5 text-left text-xs ${i === activo ? "bg-cdmb-50" : ""}`}
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-stone-900">{e.numero}</span>
-                  {!e.permiteVisita ? (
-                    <span className="flex-none rounded-full bg-stone-200 px-1.5 py-0.5 text-[10px] font-medium text-stone-600">No admite visita</span>
-                  ) : e.porProgramar ? (
+                  {e.porProgramar ? (
                     <span className="flex-none rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por programar</span>
                   ) : (
                     <span className="flex-none rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Con visita</span>
@@ -133,17 +140,34 @@ export function BuscadorExpediente({
                 <span className="block truncate text-stone-400">
                   {e.solicitante} · {e.identificacion} · {e.municipio}
                 </span>
-                {!e.permiteVisita && e.motivoBloqueo && <span className="mt-0.5 block whitespace-normal text-[11px] text-amber-800">{e.motivoBloqueo}</span>}
               </button>
             </li>
-          ))
+          ))}
+        </ul>
+        {visibles.length === 0 && <p className="px-3 py-2 text-xs text-stone-400">Ningún trámite habilitado para visita coincide con la búsqueda.</p>}
+        {habilitados.length > MAX_RESULTADOS && (
+          <p className="border-t border-stone-100 px-3 py-1.5 text-[11px] text-stone-400">
+            {habilitados.length - MAX_RESULTADOS} resultados más. Refine la búsqueda.
+          </p>
         )}
-        {resultados.length > MAX_RESULTADOS && (
-          <li className="border-t border-stone-100 px-3 py-1.5 text-[11px] text-stone-400">
-            {resultados.length - MAX_RESULTADOS} resultados más. Refine la búsqueda.
-          </li>
+        {hayConsulta && bloqueados.length > 0 && (
+          <div className="border-t border-stone-100 bg-stone-50 px-3 py-1.5">
+            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-400">No admiten visita en su paso actual</p>
+            <ul className="space-y-0.5">
+              {bloqueados.slice(0, MAX_BLOQUEADOS).map((e) => (
+                <li key={e.id} className="flex items-start gap-1 text-[11px] text-stone-500" title={e.motivoBloqueo ?? undefined}>
+                  <Ban className="mt-0.5 h-3 w-3 flex-none text-stone-400" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="font-medium text-stone-600">{e.numero}</span> — {e.motivoBloqueoCorto}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {bloqueados.length > MAX_BLOQUEADOS && <p className="text-[10px] text-stone-400">y {bloqueados.length - MAX_BLOQUEADOS} más</p>}
+          </div>
         )}
-      </ul>
+      </div>
+      )}
     </div>
   );
 }

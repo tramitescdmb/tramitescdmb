@@ -24,6 +24,7 @@ export type ExpedienteParaVisita = {
   porProgramar: boolean;
   permiteVisita: boolean;
   motivoBloqueo: string | null;
+  motivoBloqueoCorto: string | null;
 };
 
 export function ModalVisita({

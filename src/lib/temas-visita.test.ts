@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TEMAS_VISITA_BASE, documentoCubiertoPorVisita, esPasoDeProgramarVisita, esPasoDeVisita, normalizarNombreTema, ordenarTemasParaTramite, pasoPermiteVisita, visitaHabilitadaParaRegistro } from "./temas-visita";
+import { TEMAS_VISITA_BASE, documentoCubiertoPorVisita, esPasoDeProgramarVisita, esPasoDeVisita, normalizarNombreTema, ordenarTemasParaTramite, pasoPermiteVisita, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "./temas-visita";
 
 describe("temas de visita", () => {
   it("no repite nombres en el catálogo base", () => {
@@ -35,6 +35,17 @@ describe("temas de visita", () => {
     expect(pasoPermiteVisita("ELABORAR AUTO DE INICIO", "El Auto ordena la realización de la visita técnica de inspección ocular")).toBe(false);
     expect(pasoPermiteVisita("VERIFICAR LA INFORMACIÓN", "según sea necesario, realizará visitas de verificación a las instalaciones")).toBe(true);
     expect(pasoPermiteVisita("REGISTRAR SOLICITUD Y ASIGNAR FUNCIONARIO", "se asigna el trámite al profesional para programación de visita técnica")).toBe(true);
+  });
+
+  it("explica en corto por qué un trámite no admite visita", () => {
+    const pasos = [
+      { numero: 1, titulo: "RECIBIR Y RADICAR" },
+      { numero: 4, titulo: "NOTIFICAR EL AUTO Y PROGRAMAR LA VISITA" },
+      { numero: 5, titulo: "REALIZAR VISITA TÉCNICA" },
+    ];
+    expect(evaluarPasoParaVisita(pasos, 4)).toEqual({ permite: true, motivo: null, motivoCorto: null });
+    expect(evaluarPasoParaVisita(pasos, 1).motivoCorto).toBe("Está en el paso 1; las visitas van en el paso 4 o 5");
+    expect(evaluarPasoParaVisita([{ numero: 1, titulo: "LIQUIDAR TASA" }], 1).motivoCorto).toBe("Su procedimiento no contempla visitas");
   });
 
   it("habilita el registro desde el día programado", () => {
