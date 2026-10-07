@@ -9,7 +9,8 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
 import { NuevoExpedienteContractualForm } from "@/components/NuevoExpedienteContractualForm";
 
-export default async function NuevoExpedienteContractualPage() {
+export default async function NuevoExpedienteContractualPage({ searchParams }: { searchParams: Promise<{ contratistaId?: string }> }) {
+  const { contratistaId } = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -36,6 +37,9 @@ export default async function NuevoExpedienteContractualPage() {
       : [],
   ]);
   const supervisoresOpciones = supervisores.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
+  const contratista = contratistaId
+    ? await db.contratista.findUnique({ where: { id: contratistaId }, select: { id: true, nombreORazonSocial: true, identificacion: true } })
+    : null;
 
   return (
     <section className="mx-auto max-w-3xl space-y-4">
@@ -48,6 +52,8 @@ export default async function NuevoExpedienteContractualPage() {
         personal={personal.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }))}
         puedeAsignarPersonal={puedeAsignarPersonal}
         modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
+        contratistaInicial={contratista ? { id: contratista.id, nombre: contratista.nombreORazonSocial, identificacion: contratista.identificacion } : null}
+        enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null}
       />
     </section>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -57,6 +57,41 @@ function SeccionFormulario({
   );
 }
 
+const CLAVE_BORRADOR = "borrador-expediente-gecon";
+
+type Borrador = {
+  objeto: string;
+  modalidadSeleccion: string;
+  valor: string;
+  numeroContrato: string;
+  numeroProcesoSecop: string;
+  fechaSuscripcion: string;
+  fechaInicio: string;
+  fechaFinEstimada: string;
+  dependenciaSolicitanteId: string;
+  serieTrdId: string;
+  subserieTrdId: string;
+  supervisorUsuarioIds: string[];
+  personalIds: string[];
+  contratista: { id: string; nombre: string; identificacion: string } | null;
+};
+
+function leerBorrador(): Borrador | null {
+  try {
+    const raw = localStorage.getItem(CLAVE_BORRADOR);
+    return raw ? (JSON.parse(raw) as Borrador) : null;
+  } catch {
+    return null;
+  }
+}
+
+function escribirBorrador(b: Borrador | null) {
+  try {
+    if (b) localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(b));
+    else localStorage.removeItem(CLAVE_BORRADOR);
+  } catch {}
+}
+
 export function NuevoExpedienteContractualForm({
   dependencias,
   supervisores,
@@ -65,6 +100,8 @@ export function NuevoExpedienteContractualForm({
   modalidades,
   series,
   subseriePorModalidad,
+  contratistaInicial,
+  enlaceUsuarios,
 }: {
   personal: SupervisorOpcion[];
   puedeAsignarPersonal: boolean;
@@ -73,6 +110,8 @@ export function NuevoExpedienteContractualForm({
   dependencias: Opcion[];
   supervisores: SupervisorOpcion[];
   modalidades: ModalidadOpcion[];
+  contratistaInicial?: { id: string; nombre: string; identificacion: string } | null;
+  enlaceUsuarios?: string | null;
 }) {
   const router = useRouter();
   const [objeto, setObjeto] = useState("");
@@ -101,7 +140,10 @@ export function NuevoExpedienteContractualForm({
   const [personalIds, setPersonalIds] = useState<Set<string>>(new Set());
   const [filtroPersonal, setFiltroPersonal] = useState("");
   const qPersonal = filtroPersonal.trim().toLowerCase();
-  const personalFiltrado = personal.filter((s) => personalIds.has(s.id) || (qPersonal && s.nombre.toLowerCase().includes(qPersonal)));
+  const pocoPersonal = personal.length <= 12;
+  const personalFiltrado = personal.filter(
+    (s) => personalIds.has(s.id) || (qPersonal ? s.nombre.toLowerCase().includes(qPersonal) : pocoPersonal)
+  );
 
   function alternarPersonal(id: string) {
     setPersonalIds((prev) => {
@@ -121,6 +163,102 @@ export function NuevoExpedienteContractualForm({
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [borradorRecuperado, setBorradorRecuperado] = useState(false);
+  const borradorListo = useRef(false);
+
+  useEffect(() => {
+    if (borradorListo.current) return;
+    borradorListo.current = true;
+    const b = leerBorrador();
+    if (b) {
+      setObjeto(b.objeto);
+      if (modalidades.some((m) => m.valor === b.modalidadSeleccion)) setModalidadSeleccion(b.modalidadSeleccion);
+      setValor(b.valor);
+      setNumeroContrato(b.numeroContrato);
+      setNumeroProcesoSecop(b.numeroProcesoSecop);
+      setFechaSuscripcion(b.fechaSuscripcion);
+      setFechaInicio(b.fechaInicio);
+      setFechaFinEstimada(b.fechaFinEstimada);
+      setDependenciaSolicitanteId(b.dependenciaSolicitanteId);
+      setSerieTrdId(b.serieTrdId);
+      setSubserieTrdId(b.subserieTrdId);
+      setSupervisorUsuarioIds(new Set(b.supervisorUsuarioIds));
+      setPersonalIds(new Set(b.personalIds));
+      if (b.contratista) {
+        setContratistaId(b.contratista.id);
+        setContratistaNombre(b.contratista.nombre);
+        setContratistaIdentificacion(b.contratista.identificacion);
+      }
+      setBorradorRecuperado(true);
+    }
+    if (contratistaInicial) {
+      setContratistaId(contratistaInicial.id);
+      setContratistaNombre(contratistaInicial.nombre);
+      setContratistaIdentificacion(contratistaInicial.identificacion);
+      setContratistaNoEncontrado(false);
+    }
+  }, [contratistaInicial, modalidades]);
+
+  useEffect(() => {
+    if (!borradorListo.current) return;
+    const vacio = !objeto.trim() && !dependenciaSolicitanteId && !valor && !numeroContrato && !numeroProcesoSecop && !contratistaId;
+    escribirBorrador(
+      vacio
+        ? null
+        : {
+            objeto,
+            modalidadSeleccion,
+            valor,
+            numeroContrato,
+            numeroProcesoSecop,
+            fechaSuscripcion,
+            fechaInicio,
+            fechaFinEstimada,
+            dependenciaSolicitanteId,
+            serieTrdId,
+            subserieTrdId,
+            supervisorUsuarioIds: Array.from(supervisorUsuarioIds),
+            personalIds: Array.from(personalIds),
+            contratista: contratistaId && contratistaNombre ? { id: contratistaId, nombre: contratistaNombre, identificacion: contratistaIdentificacion } : null,
+          }
+    );
+  }, [
+    objeto,
+    modalidadSeleccion,
+    valor,
+    numeroContrato,
+    numeroProcesoSecop,
+    fechaSuscripcion,
+    fechaInicio,
+    fechaFinEstimada,
+    dependenciaSolicitanteId,
+    serieTrdId,
+    subserieTrdId,
+    supervisorUsuarioIds,
+    personalIds,
+    contratistaId,
+    contratistaNombre,
+    contratistaIdentificacion,
+  ]);
+
+  function descartarBorrador() {
+    setObjeto("");
+    setModalidadSeleccion(modalidades[0]?.valor ?? "");
+    setValor("");
+    setNumeroContrato("");
+    setNumeroProcesoSecop("");
+    setFechaSuscripcion("");
+    setFechaInicio("");
+    setFechaFinEstimada("");
+    setDependenciaSolicitanteId("");
+    setSerieTrdId("");
+    setSubserieTrdId("");
+    setSupervisorUsuarioIds(new Set());
+    setPersonalIds(new Set());
+    quitarContratista();
+    setBorradorRecuperado(false);
+    escribirBorrador(null);
+  }
 
   const dependenciasSupervisor = Array.from(new Set(supervisores.map((s) => s.dependenciaNombre).filter((d): d is string => Boolean(d)))).sort();
   const qSupervisor = filtroSupervisor.trim().toLowerCase();
@@ -221,6 +359,8 @@ export function NuevoExpedienteContractualForm({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo crear el expediente.");
+      borradorListo.current = false;
+      escribirBorrador(null);
       router.push(`/contratacion/expedientes/${body.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
@@ -229,8 +369,8 @@ export function NuevoExpedienteContractualForm({
     }
   }
 
-  const nuevoContratistaHref = `/contratacion/contratistas/nuevo${
-    contratistaIdentificacion.trim() ? `?identificacion=${encodeURIComponent(contratistaIdentificacion.trim())}` : ""
+  const nuevoContratistaHref = `/contratacion/contratistas/nuevo?retorno=expediente${
+    contratistaIdentificacion.trim() ? `&identificacion=${encodeURIComponent(contratistaIdentificacion.trim())}` : ""
   }`;
 
   return (
@@ -245,6 +385,14 @@ export function NuevoExpedienteContractualForm({
       </div>
 
       <div className="space-y-5 px-6 py-5">
+        {borradorRecuperado && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2.5 text-xs text-sky-900">
+            <span>Se recuperó lo que llevaba escrito en este formulario.</span>
+            <button type="button" onClick={descartarBorrador} className="font-medium underline hover:no-underline">
+              Empezar de nuevo
+            </button>
+          </div>
+        )}
         <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
             <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
               <textarea
@@ -329,12 +477,7 @@ export function NuevoExpedienteContractualForm({
 
           <div className="border-t border-dashed border-stone-100" />
 
-          <SeccionFormulario
-            n={4}
-            icon={UserSearch}
-            titulo={puedeAsignarPersonal ? "Contratista y personal asignado" : "Contratista"}
-            subtitulo="Opcional en esta etapa."
-          >
+          <SeccionFormulario n={4} icon={UserSearch} titulo="Contratista" subtitulo="Opcional en esta etapa.">
             <div className="rounded-xl border border-cdmb-100 bg-cdmb-50/40 p-3.5">
               <p className="mb-2 text-xs font-semibold text-stone-700">Contratista</p>
               {contratistaId && contratistaNombre ? (
@@ -385,9 +528,7 @@ export function NuevoExpedienteContractualForm({
                 </button>
                 <Link
                   href={nuevoContratistaHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Abre el registro completo de contratistas en una pestaña nueva, sin perder este formulario"
+                  title="Abre el registro completo del contratista; al guardarlo regresa a este formulario con lo que lleva escrito"
                   className="inline-flex items-center gap-1 rounded-xl border border-cdmb-200 bg-white px-3 py-2.5 text-xs font-medium text-cdmb-700 transition hover:bg-cdmb-50"
                 >
                   <UserPlus className="h-3.5 w-3.5" aria-hidden />
@@ -430,14 +571,28 @@ export function NuevoExpedienteContractualForm({
               )}
             </div>
 
-            {puedeAsignarPersonal && (
+          </SeccionFormulario>
+
+          {puedeAsignarPersonal && (
+            <>
+              <div className="border-t border-dashed border-stone-100" />
+              <SeccionFormulario
+                n={5}
+                icon={UserCog}
+                titulo="Gestión del expediente"
+                subtitulo="Personal de Contratación que gestiona este expediente. Solo quien esté asignado (además del Jefe y el Administrador de Contratación) lo ve y lo trabaja."
+              >
               <div className="rounded-xl border border-stone-200 p-3.5">
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-stone-700">
-                  <UserCog className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
-                  Personal de contratación asignado
-                </p>
                 {personal.length === 0 ? (
-                  <p className="text-xs text-stone-400">No hay usuarios activos con el rol Personal de Contratación.</p>
+                  <p className="flex flex-wrap items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-none" aria-hidden />
+                    Ningún usuario activo tiene el rol Personal de Contratación.
+                    {enlaceUsuarios && (
+                      <Link href={enlaceUsuarios} className="font-medium underline hover:no-underline">
+                        Asignarlo en Usuarios
+                      </Link>
+                    )}
+                  </p>
                 ) : (
                   <>
                     <input
@@ -477,13 +632,14 @@ export function NuevoExpedienteContractualForm({
                   </>
                 )}
               </div>
-            )}
-          </SeccionFormulario>
+              </SeccionFormulario>
+            </>
+          )}
 
           {supervisores.length > 0 && (
             <>
               <div className="border-t border-dashed border-stone-100" />
-              <SeccionFormulario n={5} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
+              <SeccionFormulario n={puedeAsignarPersonal ? 6 : 5} icon={Users} titulo="Supervisión" subtitulo="Opcional.">
               <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   type="text"

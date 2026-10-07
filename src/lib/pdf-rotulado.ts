@@ -275,9 +275,37 @@ export type FirmaRotuloPdf = {
 
 const limpiarCadenas = limpiarCadenasPdf;
 
-function ultimaPagina(pdf: PDFDocument): PDFPage | undefined {
-  const paginas = pdf.getPages();
-  return paginas[paginas.length - 1];
+const MARGEN_SELLO = 18;
+
+async function bordeInferiorDelTexto(pdfBytes: Buffer | Uint8Array, indicePagina: number): Promise<number | null> {
+  try {
+    const { getDocumentProxy } = await import("unpdf");
+    const doc = await getDocumentProxy(new Uint8Array(pdfBytes));
+    const pagina = await doc.getPage(indicePagina + 1);
+    const contenido = await pagina.getTextContent();
+    let minimo: number | null = null;
+    for (const item of contenido.items) {
+      if (!("str" in item) || !item.str.trim()) continue;
+      const base = item.transform[5] as number;
+      const tamano = Math.abs((item.transform[3] as number) || item.height || 10);
+      const borde = base - tamano * 0.3;
+      if (minimo === null || borde < minimo) minimo = borde;
+    }
+    return minimo;
+  } catch {
+    return null;
+  }
+}
+
+async function paginaParaSello(pdf: PDFDocument, pdfBytes: Buffer | Uint8Array, altoBloque: number): Promise<{ pagina: PDFPage; techo: number }> {
+  const indice = pdf.getPageCount() - 1;
+  const ultima = pdf.getPages()[indice]!;
+  const bordeTexto = await bordeInferiorDelTexto(pdfBytes, indice);
+  const techoAbajo = MARGEN_SELLO + altoBloque;
+  if (bordeTexto !== null && techoAbajo + 8 <= bordeTexto) return { pagina: ultima, techo: techoAbajo };
+  const { width, height } = ultima.getSize();
+  const nueva = pdf.insertPage(indice + 1, [width, height]);
+  return { pagina: nueva, techo: height - 60 };
 }
 
 export async function estamparRotulo(
@@ -330,12 +358,12 @@ export async function estamparRotulo(
   ].filter(Boolean).join("  ·  ");
   page.drawText(pie.slice(0, 66), { x: x + 8, y: y + 8, size: 5.5, font, color: GRIS_CLARO });
 
-  const paginaFirma = ultimaPagina(pdf) ?? page;
   if (firmas.length > 0) {
-    const anchoFirma = paginaFirma.getWidth();
     const lh = 7.4;
     const altoBloque = 4 * lh + 3;
-    let cy = 18 + 12 + firmas.length * altoBloque + 8;
+    const { pagina: paginaFirma, techo } = await paginaParaSello(pdf, pdfBytes, firmas.length * altoBloque + 20);
+    const anchoFirma = paginaFirma.getWidth();
+    let cy = techo;
     paginaFirma.drawLine({ start: { x: 24, y: cy }, end: { x: anchoFirma - 24, y: cy }, thickness: 0.5, color: VERDE });
     cy -= 9;
     paginaFirma.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });
@@ -379,9 +407,7 @@ async function estamparFirmasExpediente(
 
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const page = ultimaPagina(pdf);
-  if (!page) return pdf.save();
-  const { width } = page.getSize();
+  if (pdf.getPageCount() === 0) return pdf.save();
 
   const PRINCIPAL = { nombre: 6.5, linea: 6, meta: 5.5, lh: 7.4 };
   const SECUNDARIA = { nombre: 5.4, linea: 4.8, meta: 4.4, lh: 6.6 };
@@ -394,7 +420,9 @@ async function estamparFirmasExpediente(
   };
   const soloVistoBueno = firmas.every((f) => nivelSello(f.calidad) === "visto");
   const altoTotal = firmas.reduce((acc, f) => acc + altoDe(f), 0);
-  let cy = 18 + 12 + altoTotal + 8;
+  const { pagina: page, techo } = await paginaParaSello(pdf, pdfBytes, altoTotal + 20);
+  const { width } = page.getSize();
+  let cy = techo;
   page.drawLine({ start: { x: 24, y: cy }, end: { x: width - 24, y: cy }, thickness: 0.5, color: VERDE });
   cy -= 9;
   page.drawText(soloVistoBueno ? "VISTO BUENO ELECTRÓNICO" : "DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: 24, y: cy, size: 6, font: fontBold, color: VERDE });

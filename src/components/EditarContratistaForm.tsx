@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
+import { SelectorDepartamentoCiudad } from "@/components/SelectorDepartamentoCiudad";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
@@ -34,8 +35,7 @@ export function EditarContratistaForm({ contratista }: { contratista: Contratist
   const [contactoEmail, setContactoEmail] = useState(contratista.contactoEmail ?? "");
   const [contactoTelefono, setContactoTelefono] = useState(contratista.contactoTelefono ?? "");
   const [direccion, setDireccion] = useState(contratista.direccion ?? "");
-  const [departamento, setDepartamento] = useState(contratista.departamento ?? "");
-  const [ciudad, setCiudad] = useState(contratista.ciudad ?? "");
+  const [ubicacion, setUbicacion] = useState({ departamento: contratista.departamento ?? "", ciudad: contratista.ciudad ?? "" });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,8 +57,8 @@ export function EditarContratistaForm({ contratista }: { contratista: Contratist
           contactoEmail,
           contactoTelefono,
           direccion,
-          departamento,
-          ciudad,
+          departamento: ubicacion.departamento.trim(),
+          ciudad: ubicacion.ciudad.trim(),
         }),
       });
       if (!res.ok) {
@@ -103,17 +103,10 @@ export function EditarContratistaForm({ contratista }: { contratista: Contratist
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Field label="Dirección" help="">
-            <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-          </Field>
-          <Field label="Departamento" help="">
-            <input value={departamento} onChange={(e) => setDepartamento(e.target.value)} className={inputCls} />
-          </Field>
-          <Field label="Ciudad" help="">
-            <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} className={inputCls} />
-          </Field>
-        </div>
+        <Field label="Dirección" help="">
+          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
+        </Field>
+        <SelectorDepartamentoCiudad valor={ubicacion} onChange={setUbicacion} claseCampo={inputCls} />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Régimen tributario" help="">

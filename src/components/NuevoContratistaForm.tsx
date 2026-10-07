@@ -7,10 +7,13 @@ import { Field } from "@/components/Field";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { IdCard, MapPin, Landmark, KeyRound } from "lucide-react";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
+import { SelectorDepartamentoCiudad } from "@/components/SelectorDepartamentoCiudad";
+import { CIUDAD_POR_DEFECTO, DEPARTAMENTO_POR_DEFECTO } from "@/lib/divipola";
 
 const inputCls = "w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
-export function NuevoContratistaForm({ identificacionInicial = "" }: { identificacionInicial?: string }) {
+export function NuevoContratistaForm({ identificacionInicial = "", volverAlExpediente = false }: { identificacionInicial?: string; volverAlExpediente?: boolean }) {
+  const destinoTrasCrear = (id: string) => (volverAlExpediente ? `/contratacion/expedientes/nuevo?contratistaId=${encodeURIComponent(id)}` : `/contratacion/contratistas/${id}`);
   const router = useRouter();
   const [identificacion, setIdentificacion] = useState(identificacionInicial);
   const [tipoPersona, setTipoPersona] = useState<"NATURAL" | "JURIDICA">("NATURAL");
@@ -22,8 +25,7 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
   const [contactoEmail, setContactoEmail] = useState("");
   const [contactoTelefono, setContactoTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [departamento, setDepartamento] = useState("");
-  const [ciudad, setCiudad] = useState("");
+  const [ubicacion, setUbicacion] = useState({ departamento: DEPARTAMENTO_POR_DEFECTO, ciudad: CIUDAD_POR_DEFECTO });
   const [usuarioRed, setUsuarioRed] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,8 +57,8 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
           contactoEmail,
           contactoTelefono,
           direccion,
-          departamento,
-          ciudad,
+          departamento: ubicacion.departamento.trim(),
+          ciudad: ubicacion.ciudad.trim(),
           usuarioRed: usuarioRed.trim() || undefined,
         }),
       });
@@ -70,7 +72,7 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
       if (body.advertenciaUsuarioRed) {
         window.alert(`El contratista se creó, pero no se pudo vincular el usuario de red: ${body.advertenciaUsuarioRed}`);
       }
-      router.push(`/contratacion/contratistas/${body.id}`);
+      router.push(destinoTrasCrear(body.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
     } finally {
@@ -120,17 +122,10 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
         </Field>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Dirección">
-          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-        </Field>
-        <Field label="Departamento">
-          <input value={departamento} onChange={(e) => setDepartamento(e.target.value)} placeholder="Ej. Santander" className={inputCls} />
-        </Field>
-        <Field label="Ciudad">
-          <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej. Bucaramanga" className={inputCls} />
-        </Field>
-      </div>
+      <Field label="Dirección">
+        <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
+      </Field>
+      <SelectorDepartamentoCiudad valor={ubicacion} onChange={setUbicacion} claseCampo={inputCls} />
 
       <div className="border-t border-stone-100 pt-4">
         <EncabezadoPaso numero={3} icono={<Landmark className="h-4 w-4" aria-hidden />} titulo="Información tributaria" />
@@ -168,8 +163,11 @@ export function NuevoContratistaForm({ identificacionInicial = "" }: { identific
           {duplicadoId && (
             <>
               {" "}
-              <Link href={`/contratacion/contratistas/${duplicadoId}`} className="font-medium underline hover:no-underline">
-                Editar este contratista
+              <Link
+                href={volverAlExpediente ? destinoTrasCrear(duplicadoId) : `/contratacion/contratistas/${duplicadoId}`}
+                className="font-medium underline hover:no-underline"
+              >
+                {volverAlExpediente ? "Usar este contratista en el expediente" : "Editar este contratista"}
               </Link>
             </>
           )}
