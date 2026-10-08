@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
+import { correoValido, leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { datosSolicitante, errorSolicitante } from "@/lib/solicitante";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -16,41 +18,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existente = await db.solicitante.findUnique({ where: { id }, select: { tipo: true } });
   if (!existente) return NextResponse.json({ error: "Solicitante no encontrado." }, { status: 404 });
 
-  const esJuridica = existente.tipo === "JURIDICA";
-  const nombres = String(body.nombres || "").trim();
-  const apellidos = String(body.apellidos || "").trim();
-  const razonSocial = String(body.razonSocial || "").trim();
-  const municipio = String(body.municipio || "").trim();
+  const p = leerDatosPersona({ ...body.persona, tipoPersona: existente.tipo }, TIPOS_IDENTIFICACION_USUARIO);
+  const error = errorSolicitante(p);
+  if (error) return NextResponse.json({ error }, { status: 400 });
+  if (!correoValido(p.email)) return NextResponse.json({ error: "El correo electrónico no es válido." }, { status: 400 });
 
-  if (esJuridica ? !razonSocial : !nombres || !apellidos) {
-    return NextResponse.json(
-      { error: esJuridica ? "La razón social no puede quedar vacía." : "Los nombres y apellidos no pueden quedar vacíos." },
-      { status: 400 }
-    );
-  }
-  if (!municipio) {
-    return NextResponse.json({ error: "El municipio no puede quedar vacío." }, { status: 400 });
-  }
-
-  const actualizado = await db.solicitante
-    .update({
-      where: { id },
-      data: {
-        nombres: nombres || null,
-        apellidos: apellidos || null,
-        razonSocial: razonSocial || null,
-        email: String(body.email || "").trim() || null,
-        telefono: String(body.telefono || "").trim() || null,
-        direccion: String(body.direccion || "").trim() || null,
-        municipio,
-        departamento: String(body.departamento || "").trim() || null,
-        regimenTributario: body.regimenTributario || null,
-        granContribuyente: Boolean(body.granContribuyente),
-      },
-    })
-    .catch(() => null);
-
+  const actualizado = await db.solicitante.update({ where: { id }, data: datosSolicitante(p) }).catch(() => null);
   if (!actualizado) return NextResponse.json({ error: "Solicitante no encontrado." }, { status: 404 });
-
   return NextResponse.json(actualizado);
 }

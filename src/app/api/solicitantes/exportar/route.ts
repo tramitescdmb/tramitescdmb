@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
             ],
           }
         : {}),
-      ...(municipio ? { municipio } : {}),
+      ...(municipio ? { municipio: { contains: municipio, mode: "insensitive" as const } } : {}),
     },
     orderBy: [{ apellidos: "asc" }, { razonSocial: "asc" }],
     include: { _count: { select: { expedientes: true } } },

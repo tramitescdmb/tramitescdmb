@@ -11,7 +11,8 @@ import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorRecibidaPendiente } from "@/components/BuscadorRecibidaPendiente";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
-import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+import { BloqueTercero } from "@/components/BloqueTercero";
+import { nombreCompletoPersona, personaVacia, type DatosPersona } from "@/lib/datos-persona";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
@@ -31,29 +32,19 @@ const MEDIOS = [
 export function RadicarEnviadaForm({
   dependencias,
   series,
-  municipios,
   inicial,
   plantillas = [],
   usuarioNombre = "",
 }: {
   dependencias: Dependencia[];
   series: Serie[];
-  municipios: string[];
   inicial?: DatosRespuestaRecibida;
   plantillas?: PlantillaOpcion[];
   usuarioNombre?: string;
 }) {
   const router = useRouter();
-  const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">(inicial?.destinatarioTipo ?? "NATURAL");
-  const [tipoId, setTipoId] = useState(inicial?.destinatarioTipoIdentificacion ?? "CC");
-  const [identificacion, setIdentificacion] = useState(inicial?.destinatarioIdentificacion ?? "");
-  const [nombre, setNombre] = useState(inicial?.destinatarioNombre ?? "");
-  const [email, setEmail] = useState(inicial?.destinatarioEmail ?? "");
-  const [telefono, setTelefono] = useState(inicial?.destinatarioTelefono ?? "");
-  const [direccion, setDireccion] = useState(inicial?.destinatarioDireccion ?? "");
-  const [municipio, setMunicipio] = useState(inicial?.destinatarioMunicipio ?? "");
-  const [departamento, setDepartamento] = useState(inicial?.destinatarioDepartamento ?? "");
-  const [terceroCargado, setTerceroCargado] = useState(false);
+  const [persona, setPersona] = useState<DatosPersona>(inicial?.destinatario ?? personaVacia());
+  const nombre = nombreCompletoPersona(persona);
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState(inicial?.asunto ?? "");
   const [contenido, setContenido] = useState(inicial?.contenido ?? "");
@@ -69,22 +60,13 @@ export function RadicarEnviadaForm({
 
   function aplicarRecibida(d: DatosRespuestaRecibida) {
     setRecibida(d);
-    setTipo(d.destinatarioTipo ?? "NATURAL");
-    setTipoId(d.destinatarioTipoIdentificacion ?? "CC");
-    setIdentificacion(d.destinatarioIdentificacion ?? "");
-    setNombre(d.destinatarioNombre ?? "");
-    setEmail(d.destinatarioEmail ?? "");
-    setTelefono(d.destinatarioTelefono ?? "");
-    setDireccion(d.destinatarioDireccion ?? "");
-    setMunicipio(d.destinatarioMunicipio ?? "");
-    setDepartamento(d.destinatarioDepartamento ?? "");
+    setPersona(d.destinatario);
     setAsunto(d.asunto);
     setContenido(d.contenido);
     setDependenciaOrigenId(d.dependenciaOrigenId ?? "");
     setSerieId(d.serieId ?? "");
     setSubserieId(d.subserieId ?? "");
     setDestinatarioBloqueado(true);
-    setTerceroCargado(false);
   }
 
   async function elegirRecibida(id: string) {
@@ -116,25 +98,6 @@ export function RadicarEnviadaForm({
     setDependenciaOrigenId(nuevoId);
   }
 
-  async function buscarTercero() {
-    const idv = identificacion.trim();
-    if (idv.length < 4 || nombre.trim() || terceroCargado) return;
-    try {
-      const r = await fetch(`/api/correspondencia/tercero?identificacion=${encodeURIComponent(idv)}`);
-      if (!r.ok) return;
-      const { tercero } = await r.json();
-      if (!tercero) return;
-      setTipo(tercero.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
-      setNombre(tercero.nombre ?? "");
-      if (tercero.email) setEmail(tercero.email);
-      if (tercero.telefono) setTelefono(tercero.telefono);
-      if (tercero.direccion) setDireccion(tercero.direccion);
-      if (tercero.municipio) setMunicipio(tercero.municipio);
-      if (tercero.departamento) setDepartamento(tercero.departamento);
-      setTerceroCargado(true);
-    } catch {}
-  }
-
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
     const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
@@ -146,7 +109,7 @@ export function RadicarEnviadaForm({
     setError(null);
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
     if (!contenido.trim()) return setError("El contenido del oficio es obligatorio: es lo que queda firmado.");
-    if (!nombre.trim()) return setError("El nombre o razón social del destinatario es obligatorio.");
+    if (!nombre) return setError("El nombre o razón social del destinatario es obligatorio.");
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
     try {
@@ -166,15 +129,7 @@ export function RadicarEnviadaForm({
           contenido: contenido.trim(),
           folios,
           medio,
-          destinatarioTipo: tipo,
-          destinatarioTipoIdentificacion: tipoId,
-          destinatarioIdentificacion: identificacion.trim() || null,
-          destinatarioNombre: nombre.trim(),
-          destinatarioEmail: email.trim() || null,
-          destinatarioTelefono: telefono.trim() || null,
-          destinatarioDireccion: direccion.trim() || null,
-          destinatarioMunicipio: municipio.trim() || null,
-          destinatarioDepartamento: departamento.trim() || null,
+          destinatario: persona,
           dependenciaOrigenId: dependenciaOrigenId || null,
           serieId: serieId || null,
           subserieId: subserieId || null,
@@ -243,57 +198,7 @@ export function RadicarEnviadaForm({
             errores de digitación; use &quot;Corregir datos del destinatario&quot; solo si el peticionario informó un cambio.
           </SectionHelp>
         )}
-        <fieldset disabled={destinatarioBloqueado} className="grid grid-cols-1 gap-3 disabled:opacity-80 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Tipo de persona">
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
-              <option value="NATURAL">Natural</option>
-              <option value="JURIDICA">Jurídica</option>
-            </select>
-          </Field>
-          <Field label="Tipo de identificación">
-            <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
-              {["CC", "CE", "NIT", "PA", "TI", "OTRO"].map((t) => (<option key={t} value={t}>{t}</option>))}
-            </select>
-          </Field>
-          <Field label="Identificación" help="Al salir del campo se cargan los datos si es un destinatario recurrente.">
-            <input
-              value={identificacion}
-              onChange={(e) => { setIdentificacion(e.target.value); setTerceroCargado(false); }}
-              onBlur={buscarTercero}
-              className={inputCls}
-            />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field
-              label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"}
-              required
-              help={terceroCargado ? "Datos cargados de un radicado anterior — puede corregirlos." : undefined}
-            >
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-          <Field label="Municipio">
-            <MunicipioSelectorTercero
-              municipios={municipios}
-              municipio={municipio}
-              departamento={departamento}
-              onMunicipio={setMunicipio}
-              onDepartamento={setDepartamento}
-              inputCls={inputCls}
-            />
-          </Field>
-          <Field label="Correo electrónico">
-            <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
-          </Field>
-          <Field label="Teléfono">
-            <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Dirección" help="Si el medio de envío es físico.">
-              <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-        </fieldset>
+        <BloqueTercero valor={persona} onChange={setPersona} deshabilitado={destinatarioBloqueado} />
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">

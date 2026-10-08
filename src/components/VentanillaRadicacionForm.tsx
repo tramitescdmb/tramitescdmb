@@ -11,12 +11,12 @@ import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/l
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
-import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+import { BloqueTercero } from "@/components/BloqueTercero";
+import { nombreCompletoPersona, personaVacia, TIPOS_IDENTIFICACION_REMITENTE, type DatosPersona } from "@/lib/datos-persona";
 
 type Dependencia = { id: string; nombre: string };
 type Serie = SerieBuscable;
 
-const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI", "ANONIMO", "OTRO"];
 const TIPOS_PQRSD = [
   { value: "", label: "— No es PQRSD —" },
   { value: "PETICION_GENERAL", label: "Petición (15 días hábiles)" },
@@ -40,23 +40,12 @@ const MEDIOS = [
 export function VentanillaRadicacionForm({
   dependencias,
   series,
-  municipios,
 }: {
   dependencias: Dependencia[];
   series: Serie[];
-  municipios: string[];
 }) {
   const router = useRouter();
-  const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
-  const [tipoId, setTipoId] = useState("CC");
-  const [identificacion, setIdentificacion] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [municipio, setMunicipio] = useState("");
-  const [departamento, setDepartamento] = useState("");
-  const [terceroCargado, setTerceroCargado] = useState(false);
+  const [persona, setPersona] = useState<DatosPersona>(personaVacia());
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
@@ -75,25 +64,6 @@ export function VentanillaRadicacionForm({
     setDependenciaId(nuevoId);
   }
 
-  async function buscarTercero() {
-    const id = identificacion.trim();
-    if (id.length < 4 || nombre.trim() || terceroCargado) return;
-    try {
-      const r = await fetch(`/api/correspondencia/tercero?identificacion=${encodeURIComponent(id)}`);
-      if (!r.ok) return;
-      const { tercero } = await r.json();
-      if (!tercero) return;
-      setTipo(tercero.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
-      setNombre(tercero.nombre ?? "");
-      if (tercero.email) setEmail(tercero.email);
-      if (tercero.telefono) setTelefono(tercero.telefono);
-      if (tercero.direccion) setDireccion(tercero.direccion);
-      if (tercero.municipio) setMunicipio(tercero.municipio);
-      if (tercero.departamento) setDepartamento(tercero.departamento);
-      setTerceroCargado(true);
-    } catch {}
-  }
-
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
     const { validos, error: err } = filtrarLoteSGDEA(Array.from(lista), archivos.length);
@@ -104,7 +74,7 @@ export function VentanillaRadicacionForm({
   async function radicar() {
     setError(null);
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
-    if (!nombre.trim()) return setError("El nombre o razón social del remitente es obligatorio.");
+    if (!nombreCompletoPersona(persona)) return setError("El nombre o razón social del remitente es obligatorio.");
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
     try {
@@ -125,15 +95,7 @@ export function VentanillaRadicacionForm({
           folios,
           anexosDescripcion: anexos.trim() || null,
           medio,
-          terceroTipo: tipo,
-          terceroTipoIdentificacion: tipoId,
-          terceroIdentificacion: identificacion.trim() || null,
-          terceroNombre: nombre.trim(),
-          terceroEmail: email.trim() || null,
-          terceroTelefono: telefono.trim() || null,
-          terceroDireccion: direccion.trim() || null,
-          terceroMunicipio: municipio.trim() || null,
-          terceroDepartamento: departamento.trim() || null,
+          tercero: persona,
           dependenciaDestinoId: dependenciaId || null,
           tipoPqrsd: tipoPqrsd || null,
           serieId: serieId || null,
@@ -163,64 +125,9 @@ export function VentanillaRadicacionForm({
           numero={1}
           icono={<UserRound className="h-4 w-4" aria-hidden />}
           titulo="Remitente"
-          descripcion="Quién envía la comunicación. Escriba primero la identificación: si ya radicó antes, se cargan sus datos."
+          descripcion="Quién envía la comunicación. Si ya está registrado en Terceros, búsquelo y se cargan sus datos."
         />
-        <SectionHelp>
-          Si queda identificado (documento) y con municipio, se guarda en el registro maestro de terceros para no
-          volver a digitarlo en el próximo radicado.
-        </SectionHelp>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Tipo de persona">
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
-              <option value="NATURAL">Natural</option>
-              <option value="JURIDICA">Jurídica</option>
-            </select>
-          </Field>
-          <Field label="Tipo de identificación">
-            <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
-              {TIPOS_ID.map((t) => (<option key={t} value={t}>{t}</option>))}
-            </select>
-          </Field>
-          <Field label="Identificación" help="En blanco si el remitente es anónimo. Al salir del campo se cargan los datos si ya radicó antes.">
-            <input
-              value={identificacion}
-              onChange={(e) => { setIdentificacion(e.target.value); setTerceroCargado(false); }}
-              onBlur={buscarTercero}
-              className={inputCls}
-              placeholder="Cédula o NIT"
-            />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field
-              label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"}
-              required
-              help={terceroCargado ? "Datos cargados de un radicado anterior — puede corregirlos." : "Tal como debe quedar en la constancia y en la bitácora."}
-            >
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-          <Field label="Municipio">
-            <MunicipioSelectorTercero
-              municipios={municipios}
-              municipio={municipio}
-              departamento={departamento}
-              onMunicipio={setMunicipio}
-              onDepartamento={setDepartamento}
-              inputCls={inputCls}
-            />
-          </Field>
-          <Field label="Correo electrónico">
-            <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
-          </Field>
-          <Field label="Teléfono">
-            <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Dirección">
-              <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-        </div>
+        <BloqueTercero valor={persona} onChange={setPersona} tiposIdentificacion={TIPOS_IDENTIFICACION_REMITENTE} />
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">

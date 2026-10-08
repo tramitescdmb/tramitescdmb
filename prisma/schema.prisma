@@ -142,7 +142,7 @@ model Usuario {
   rolCorrespondencia             RolCorrespondencia?
   rolCorrespondenciaVigenteHasta DateTime?
 
-  rolesContratacion           RolContratacion[]       @default([])
+  rolesContratacion           RolContratacion[] @default([])
   rolContratacionVigenteHasta DateTime?
 
   dependencia                     Dependencia?            @relation("UsuarioDependencia", fields: [dependenciaId], references: [id])
@@ -500,10 +500,10 @@ enum TipoPersona {
 }
 
 model Tercero {
-  id                 String             @id @default(cuid())
-  tipo               TipoSolicitante    @default(NATURAL)
+  id                 String          @id @default(cuid())
+  tipo               TipoSolicitante @default(NATURAL)
   tipoIdentificacion String?
-  identificacion     String             @unique
+  identificacion     String          @unique
   nombres            String?
   apellidos          String?
   razonSocial        String?
@@ -514,8 +514,10 @@ model Tercero {
   departamento       String?
   ciudad             String?
   creadoPorId        String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  comunicaciones Comunicacion[]
 
   @@index([nombres])
   @@index([apellidos])
@@ -571,8 +573,7 @@ model Solicitante {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
-  expedientes    Expediente[]
-  comunicaciones Comunicacion[]
+  expedientes Expediente[]
 }
 
 model Expediente {
@@ -646,9 +647,9 @@ model Expediente {
   responsableActual Usuario?            @relation("ResponsableActual", fields: [responsableActualId], references: [id])
   solicitante       Solicitante?        @relation(fields: [solicitanteId], references: [id])
 
-  documentos      ExpedienteDocumento[]
-  eventos         ExpedienteEvento[]
-  visitasTecnicas VisitaTecnica[]
+  documentos         ExpedienteDocumento[]
+  eventos            ExpedienteEvento[]
+  visitasTecnicas    VisitaTecnica[]
   visitasProgramadas VisitaProgramada[]
 
   /**
@@ -872,9 +873,9 @@ model VisitaProgramada {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
-  expediente    Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  profesional   Usuario    @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
-  programadaPor Usuario    @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
+  expediente    Expediente     @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  profesional   Usuario        @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
+  programadaPor Usuario        @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
   visitaTecnica VisitaTecnica?
 
   @@index([fechaHora])
@@ -1344,7 +1345,7 @@ model Comunicacion {
   despachoDestino     String?
   despachoObservacion String?   @db.Text
 
-  tercero                    Solicitante?          @relation(fields: [terceroId], references: [id])
+  tercero                    Tercero?              @relation(fields: [terceroId], references: [id])
   dependenciaOrigen          Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
   dependenciaDestino         Dependencia?          @relation("ComunicacionDependenciaDestino", fields: [dependenciaDestinoId], references: [id])
   serie                      SerieDocumental?      @relation(fields: [serieId], references: [id])

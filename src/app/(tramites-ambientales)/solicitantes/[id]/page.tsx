@@ -8,6 +8,7 @@ import { EditarSolicitanteForm } from "@/components/EditarSolicitanteForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { formatearFecha } from "@/lib/fecha";
+import { personaVacia } from "@/lib/datos-persona";
 
 export default async function SolicitanteDetallePage({
   params,
@@ -78,12 +79,12 @@ export default async function SolicitanteDetallePage({
             <dd className="break-all text-stone-800">{solicitante.email ?? "—"}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-xs text-stone-400">Teléfono</dt>
-            <dd className="break-words text-stone-800">{solicitante.telefono ?? "—"}</dd>
+            <dt className="text-xs text-stone-400">Celular / teléfono</dt>
+            <dd className="break-words text-stone-800">{[solicitante.celular, solicitante.telefono].filter(Boolean).join(" · ") || "—"}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-xs text-stone-400">Municipio</dt>
-            <dd className="break-words text-stone-800">{solicitante.municipio}</dd>
+            <dt className="text-xs text-stone-400">Ciudad</dt>
+            <dd className="break-words text-stone-800">{[solicitante.municipio, solicitante.departamento].filter(Boolean).join(", ")}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-stone-400">Dirección</dt>
@@ -97,20 +98,23 @@ export default async function SolicitanteDetallePage({
 
         {session?.rol === "ADMIN" && (
           <EditarSolicitanteForm
-            solicitante={{
-              id: solicitante.id,
-              tipo: solicitante.tipo,
-              nombres: solicitante.nombres,
-              apellidos: solicitante.apellidos,
-              razonSocial: solicitante.razonSocial,
-              email: solicitante.email,
-              telefono: solicitante.telefono,
-              direccion: solicitante.direccion,
-              municipio: solicitante.municipio,
-              departamento: solicitante.departamento,
-              regimenTributario: solicitante.regimenTributario,
+            solicitanteId={solicitante.id}
+            persona={personaVacia({
+              tipoPersona: solicitante.tipo,
+              tipoIdentificacion: solicitante.tipo === "JURIDICA" ? "NIT" : "CC",
+              identificacion: solicitante.identificacion,
+              nombres: solicitante.nombres ?? "",
+              apellidos: solicitante.apellidos ?? "",
+              razonSocial: solicitante.razonSocial ?? "",
+              email: solicitante.email ?? "",
+              celular: solicitante.celular ?? "",
+              telefono: solicitante.telefono ?? "",
+              direccion: solicitante.direccion ?? "",
+              departamento: solicitante.departamento ?? "",
+              ciudad: solicitante.municipio,
+              regimenTributario: solicitante.regimenTributario ?? "",
               granContribuyente: solicitante.granContribuyente,
-            }}
+            })}
           />
         )}
       </section>

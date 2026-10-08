@@ -4,7 +4,6 @@ import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
-import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { VentanillaRadicacionForm } from "@/components/VentanillaRadicacionForm";
 
 export default async function NuevaRadicacionPage() {
@@ -14,7 +13,6 @@ export default async function NuevaRadicacionPage() {
   if (!puedeRadicar(permisos)) redirect("/correspondencia");
 
   const [dependencias, series] = await Promise.all([listarDependenciasActivas(), listarSeriesVigentes()]);
-  const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
   return (
     <div className="space-y-4">
@@ -35,7 +33,6 @@ export default async function NuevaRadicacionPage() {
           dependenciaNombre: s.dependencia?.nombre ?? null,
           subseries: s.subseries.map(subserieBuscable),
         }))}
-        municipios={municipios}
       />
     </div>
   );

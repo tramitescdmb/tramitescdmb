@@ -33,6 +33,8 @@ export const TIPOS_IDENTIFICACION_PERSONA: OpcionIdentificacion[] = [
   { valor: "OTRO", etiqueta: "Otro" },
 ];
 
+export const TIPOS_IDENTIFICACION_REMITENTE: OpcionIdentificacion[] = [...TIPOS_IDENTIFICACION_PERSONA, { valor: "ANONIMO", etiqueta: "Anónimo" }];
+
 export const TIPOS_IDENTIFICACION_USUARIO: OpcionIdentificacion[] = [
   { valor: "CC", etiqueta: "Cédula de ciudadanía" },
   { valor: "NIT", etiqueta: "NIT" },

@@ -204,11 +204,10 @@ export default async function CorrespondenciaAyudaPage() {
         </p>
         <p className="pt-1 text-xs font-medium uppercase tracking-wide text-stone-400">Datos del tercero y adjuntos</p>
         <p>
-          Al escribir la <strong>identificación</strong> de un remitente o destinatario que ya radicó antes, sus
-          datos (nombre, contacto, municipio) <strong>se cargan solos</strong> del maestro de terceros; si es la
-          primera vez, quedan guardados al radicar. El municipio se elige de los 13 de la jurisdicción de la CDMB,
-          o «Otro municipio…» para escribir a mano el <strong>departamento y el municipio</strong> de un tercero de
-          fuera. Los <strong>adjuntos</strong> admiten hasta 10 archivos por radicado, cada uno de máximo 2 MB
+          El remitente o destinatario se busca por <strong>documento, nombres, apellidos o razón social</strong> en el
+          registro de <strong>Terceros</strong> del SGDEA (base propia, distinta de los solicitantes de Trámites ambientales
+          2.0); al elegirlo se cargan sus datos. Si es la primera vez, quedan guardados al radicar. Departamento y ciudad
+          se eligen de la lista oficial del país. Los <strong>adjuntos</strong> admiten hasta 10 archivos por radicado, cada uno de máximo 2 MB
           (PDF, imagen, Word o Excel); de cada uno se calcula el hash SHA-256 al subirlo.
         </p>
       </Seccion>

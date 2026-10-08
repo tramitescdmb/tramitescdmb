@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
-import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { PqrsdPublicoForm } from "@/components/PqrsdPublicoForm";
 
 export const metadata: Metadata = {
@@ -10,7 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function PqrsdPublicoPage() {
-  const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
   return (
     <div className="space-y-5">
@@ -43,7 +41,7 @@ export default function PqrsdPublicoPage() {
         </p>
       </div>
 
-      <PqrsdPublicoForm municipios={municipios} />
+      <PqrsdPublicoForm />
     </div>
   );
 }

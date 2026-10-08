@@ -6,7 +6,6 @@ import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
-import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { RadicarEnviadaForm } from "@/components/RadicarEnviadaForm";
 
 export default async function NuevaEnviadaPage({ searchParams }: { searchParams: Promise<{ respondeAId?: string }> }) {
@@ -22,7 +21,6 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
     respondeAId ? datosRespuestaRecibida(respondeAId) : null,
     listarPlantillas("ENVIADA"),
   ]);
-  const municipios = [...MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION];
 
   return (
     <div className="space-y-4">
@@ -43,7 +41,6 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
           dependenciaNombre: s.dependencia?.nombre ?? null,
           subseries: s.subseries.map(subserieBuscable),
         }))}
-        municipios={municipios}
         inicial={inicial ?? undefined}
         plantillas={plantillas}
         usuarioNombre={session.nombre}

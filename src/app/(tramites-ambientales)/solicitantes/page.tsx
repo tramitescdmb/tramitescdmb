@@ -5,7 +5,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
-import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaSolicitantes } from "@/components/tablas/TablaSolicitantes";
@@ -38,7 +37,7 @@ export default async function SolicitantesPage({
           ],
         }
       : {}),
-    ...(municipio ? { municipio } : {}),
+    ...(municipio?.trim() ? { municipio: { contains: municipio.trim(), mode: "insensitive" as const } } : {}),
   };
 
   const [total, solicitantes] = await Promise.all([
@@ -107,20 +106,13 @@ export default async function SolicitantesPage({
           />
         </div>
         <div className="min-w-[200px]">
-          <label className="mb-1 block text-xs font-medium text-stone-600">Municipio</label>
-          <select
+          <label className="mb-1 block text-xs font-medium text-stone-600">Ciudad</label>
+          <input
             name="municipio"
             defaultValue={municipio ?? ""}
+            placeholder="Ej. Floridablanca"
             className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-          >
-            <option value="">Todos</option>
-            <option value={FUERA_DE_JURISDICCION}>{FUERA_DE_JURISDICCION}</option>
-            {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <button
           type="submit"

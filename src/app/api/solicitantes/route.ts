@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
+import { correoValido, leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { datosSolicitante, errorSolicitante } from "@/lib/solicitante";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -13,51 +15,18 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
+  const p = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
-  const identificacion = String(body.identificacion || "").trim();
-  const esJuridica = body.tipo === "JURIDICA";
-  const nombres = String(body.nombres || "").trim();
-  const apellidos = String(body.apellidos || "").trim();
-  const razonSocial = String(body.razonSocial || "").trim();
-  const municipio = String(body.municipio || "").trim();
+  if (!p.identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
+  const error = errorSolicitante(p);
+  if (error) return NextResponse.json({ error }, { status: 400 });
+  if (!correoValido(p.email)) return NextResponse.json({ error: "El correo electrónico no es válido." }, { status: 400 });
 
-  if (!identificacion) {
-    return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
-  }
-  if (esJuridica ? !razonSocial : !nombres || !apellidos) {
-    return NextResponse.json(
-      { error: esJuridica ? "La razón social es obligatoria." : "Los nombres y apellidos son obligatorios." },
-      { status: 400 }
-    );
-  }
-  if (!municipio) {
-    return NextResponse.json({ error: "El municipio es obligatorio." }, { status: 400 });
-  }
-
-  const existente = await db.solicitante.findUnique({ where: { identificacion } });
+  const existente = await db.solicitante.findUnique({ where: { identificacion: p.identificacion } });
   if (existente) {
-    return NextResponse.json(
-      { error: "Ya existe un solicitante con esta identificación.", id: existente.id },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Ya existe un solicitante con esta identificación.", id: existente.id }, { status: 409 });
   }
 
-  const creado = await db.solicitante.create({
-    data: {
-      tipo: esJuridica ? "JURIDICA" : "NATURAL",
-      identificacion,
-      nombres: nombres || null,
-      apellidos: apellidos || null,
-      razonSocial: razonSocial || null,
-      regimenTributario: body.regimenTributario || null,
-      granContribuyente: Boolean(body.granContribuyente),
-      email: String(body.email || "").trim() || null,
-      telefono: String(body.telefono || "").trim() || null,
-      direccion: String(body.direccion || "").trim() || null,
-      municipio,
-      departamento: String(body.departamento || "").trim() || null,
-    },
-  });
-
+  const creado = await db.solicitante.create({ data: { ...datosSolicitante(p), tipo: p.tipoPersona, identificacion: p.identificacion } });
   return NextResponse.json({ id: creado.id }, { status: 201 });
 }

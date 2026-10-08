@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, PenLine } from "lucide-react";
+import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, PenLine, Contact } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 import { textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -16,7 +16,7 @@ type Permitido = {
 
 const NO_BANDEJA = [
   "nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes",
-  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion",
+  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion", "terceros",
 ];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
@@ -78,6 +78,7 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
           ],
         }
       : null,
+    { label: "Terceros", icon: Contact, href: "/correspondencia/terceros", coincide: /^\/correspondencia\/terceros/ },
     { label: "Plantillas", icon: FileText, href: "/correspondencia/plantillas" },
     {
       label: "Administración",

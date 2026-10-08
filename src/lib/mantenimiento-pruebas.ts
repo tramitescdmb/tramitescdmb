@@ -39,17 +39,9 @@ export async function reiniciarDatosPruebaSgdea(): Promise<ResultadoReinicioPrue
 
   let solicitantes = 0;
   if (tercerosCandidatos.size > 0) {
-    const huerfanos = await db.solicitante.findMany({
-      where: {
-        id: { in: [...tercerosCandidatos] },
-        comunicaciones: { none: {} },
-        expedientes: { none: {} },
-      },
-      select: { id: true },
-    });
-    if (huerfanos.length > 0) {
-      ({ count: solicitantes } = await db.solicitante.deleteMany({ where: { id: { in: huerfanos.map((s) => s.id) } } }));
-    }
+    ({ count: solicitantes } = await db.tercero.deleteMany({
+      where: { id: { in: [...tercerosCandidatos] }, comunicaciones: { none: {} } },
+    }));
   }
 
   const { count: seriesConsecutivoReiniciadas } = await db.consecutivoRadicado.updateMany({

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
-import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { entradaTerceroDesdePersona, radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { leerDatosPersona, TIPOS_IDENTIFICACION_REMITENTE } from "@/lib/datos-persona";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
-import type { MedioComunicacion, TipoPQRSD, TipoSolicitante } from "@prisma/client";
+import type { MedioComunicacion, TipoPQRSD } from "@prisma/client";
 
 const MEDIOS: MedioComunicacion[] = ["FISICO", "CORREO_ELECTRONICO", "WEB", "FAX", "PRESENCIAL", "TELEFONICO", "OTRO"];
 const TIPOS_PQRSD = Object.keys(TERMINO_DIAS_HABILES) as TipoPQRSD[];
@@ -28,15 +29,14 @@ export async function POST(req: NextRequest) {
   const asunto = String(body.asunto ?? "").trim();
   const contenido = body.contenido ? String(body.contenido).trim() : null;
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
-  const terceroNombre = String((body.terceroNombre ?? "")).trim();
-  const terceroTipo = (body.terceroTipo === "JURIDICA" ? "JURIDICA" : "NATURAL") as TipoSolicitante;
+  const tercero = entradaTerceroDesdePersona(leerDatosPersona(body.tercero, TIPOS_IDENTIFICACION_REMITENTE));
   const medioRaw = String(body.medio ?? "");
   const medio = (MEDIOS as string[]).includes(medioRaw) ? (medioRaw as MedioComunicacion) : null;
   const tipoPqrsdRaw = String(body.tipoPqrsd ?? "");
   const tipoPqrsd = (TIPOS_PQRSD as string[]).includes(tipoPqrsdRaw) ? (tipoPqrsdRaw as TipoPQRSD) : null;
 
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
-  if (!terceroNombre) return NextResponse.json({ error: "El nombre/razón social del remitente es obligatorio." }, { status: 400 });
+  if (!tercero.nombre) return NextResponse.json({ error: "El nombre/razón social del remitente es obligatorio." }, { status: 400 });
 
   const documentos: EntradaDocumento[] = Array.isArray(body.documentos)
     ? (body.documentos as unknown[]).map((d) => {
@@ -62,17 +62,7 @@ export async function POST(req: NextRequest) {
       folios,
       anexosDescripcion: body.anexosDescripcion ? String(body.anexosDescripcion).trim() : null,
       medio,
-      tercero: {
-        tipo: terceroTipo,
-        tipoIdentificacion: body.terceroTipoIdentificacion ? String(body.terceroTipoIdentificacion).trim() : null,
-        identificacion: body.terceroIdentificacion ? String(body.terceroIdentificacion).trim() : null,
-        nombre: terceroNombre,
-        email: body.terceroEmail ? String(body.terceroEmail).trim() : null,
-        telefono: body.terceroTelefono ? String(body.terceroTelefono).trim() : null,
-        direccion: body.terceroDireccion ? String(body.terceroDireccion).trim() : null,
-        municipio: body.terceroMunicipio ? String(body.terceroMunicipio).trim() : null,
-        departamento: body.terceroDepartamento ? String(body.terceroDepartamento).trim() : null,
-      },
+      tercero,
       dependenciaDestinoId: body.dependenciaDestinoId ? String(body.dependenciaDestinoId) : null,
       serieId: body.serieId ? String(body.serieId) : null,
       subserieId: body.subserieId ? String(body.subserieId) : null,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { buscarTerceros } from "@/lib/terceros";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -10,36 +10,6 @@ export async function GET(req: NextRequest) {
   if (!puedeAccederCorrespondencia(permisos)) {
     return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
   }
-
-  const identificacion = (req.nextUrl.searchParams.get("identificacion") || "").trim();
-  if (identificacion.length < 4) return NextResponse.json({ tercero: null });
-
-  const s = await db.solicitante.findUnique({
-    where: { identificacion },
-    select: {
-      tipo: true,
-      razonSocial: true,
-      nombres: true,
-      apellidos: true,
-      email: true,
-      telefono: true,
-      direccion: true,
-      municipio: true,
-      departamento: true,
-    },
-  });
-  if (!s) return NextResponse.json({ tercero: null });
-
-  const nombre = s.razonSocial?.trim() || [s.nombres, s.apellidos].filter(Boolean).join(" ").trim() || "";
-  return NextResponse.json({
-    tercero: {
-      tipo: s.tipo,
-      nombre,
-      email: s.email ?? "",
-      telefono: s.telefono ?? "",
-      direccion: s.direccion ?? "",
-      municipio: s.municipio ?? "",
-      departamento: s.departamento ?? "",
-    },
-  });
+  const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 80);
+  return NextResponse.json({ resultados: await buscarTerceros(q) });
 }

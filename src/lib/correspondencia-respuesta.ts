@@ -1,19 +1,13 @@
 import { db } from "@/lib/db";
+import { personaVacia, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
+import { personaDesdeTercero } from "@/lib/terceros";
 
 export type DatosRespuestaRecibida = {
   respondeAId: string;
   respondeALabel: string;
   asunto: string;
   contenido: string;
-  destinatarioTipo?: "NATURAL" | "JURIDICA";
-  destinatarioTipoIdentificacion?: string;
-  destinatarioIdentificacion?: string;
-  destinatarioNombre?: string;
-  destinatarioEmail?: string;
-  destinatarioTelefono?: string;
-  destinatarioDireccion?: string;
-  destinatarioMunicipio?: string;
-  destinatarioDepartamento?: string;
+  destinatario: DatosPersona;
   dependenciaOrigenId?: string;
   serieId?: string;
   subserieId?: string;
@@ -42,6 +36,34 @@ export async function respuestasListasParaRadicar() {
   });
 }
 
+function personaDeComunicacion(r: {
+  terceroTipo: "NATURAL" | "JURIDICA" | null;
+  terceroTipoIdentificacion: string | null;
+  terceroIdentificacion: string | null;
+  terceroNombre: string | null;
+  terceroEmail: string | null;
+  terceroTelefono: string | null;
+  terceroDireccion: string | null;
+  terceroMunicipio: string | null;
+  terceroDepartamento: string | null;
+}): DatosPersona {
+  const juridica = r.terceroTipo === "JURIDICA";
+  const nombre = separarNombreCompleto(r.terceroNombre ?? "");
+  return personaVacia({
+    tipoPersona: juridica ? "JURIDICA" : "NATURAL",
+    tipoIdentificacion: r.terceroTipoIdentificacion ?? (juridica ? "NIT" : "CC"),
+    identificacion: r.terceroIdentificacion ?? "",
+    nombres: juridica ? "" : nombre.nombres,
+    apellidos: juridica ? "" : nombre.apellidos,
+    razonSocial: juridica ? (r.terceroNombre ?? "") : "",
+    email: r.terceroEmail ?? "",
+    telefono: r.terceroTelefono ?? "",
+    direccion: r.terceroDireccion ?? "",
+    departamento: r.terceroDepartamento ?? "",
+    ciudad: r.terceroMunicipio ?? "",
+  });
+}
+
 export async function datosRespuestaRecibida(id: string): Promise<DatosRespuestaRecibida | null> {
   const r = await db.comunicacion.findUnique({
     where: { id },
@@ -60,6 +82,7 @@ export async function datosRespuestaRecibida(id: string): Promise<DatosRespuesta
       terceroDireccion: true,
       terceroMunicipio: true,
       terceroDepartamento: true,
+      tercero: true,
       dependenciaDestinoId: true,
       serieId: true,
       subserieId: true,
@@ -76,15 +99,7 @@ export async function datosRespuestaRecibida(id: string): Promise<DatosRespuesta
     respondeALabel: `${r.radicado} — ${r.asunto.slice(0, 60)}${r.terceroNombre ? ` (${r.terceroNombre})` : ""}`,
     asunto: `Respuesta a ${r.radicado} — ${r.asunto}`,
     contenido: r.respuestaTexto ?? "",
-    destinatarioTipo: r.terceroTipo ?? undefined,
-    destinatarioTipoIdentificacion: r.terceroTipoIdentificacion ?? undefined,
-    destinatarioIdentificacion: r.terceroIdentificacion ?? undefined,
-    destinatarioNombre: r.terceroNombre ?? undefined,
-    destinatarioEmail: r.terceroEmail ?? undefined,
-    destinatarioTelefono: r.terceroTelefono ?? undefined,
-    destinatarioDireccion: r.terceroDireccion ?? undefined,
-    destinatarioMunicipio: r.terceroMunicipio ?? undefined,
-    destinatarioDepartamento: r.terceroDepartamento ?? undefined,
+    destinatario: r.tercero ? personaDesdeTercero(r.tercero) : personaDeComunicacion(r),
     dependenciaOrigenId,
     serieId: clasificacionValida ? r.serieId ?? undefined : undefined,
     subserieId: clasificacionValida ? r.subserieId ?? undefined : undefined,

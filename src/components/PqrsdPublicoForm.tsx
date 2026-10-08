@@ -8,7 +8,8 @@ import { subirArchivoPublico, subirDocumentosConProgreso } from "@/lib/uploads-c
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { Field, SectionHelp } from "@/components/Field";
-import { MunicipioSelectorTercero } from "@/components/MunicipioSelectorTercero";
+import { CamposPersona } from "@/components/CamposPersona";
+import { nombreCompletoPersona, personaVacia, type DatosPersona } from "@/lib/datos-persona";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { formatearFechaLarga } from "@/lib/fecha";
@@ -22,21 +23,11 @@ const TIPOS_PQRSD = [
   { value: "SUGERENCIA", label: "Sugerencia", ayuda: "Propone una idea o mejora para la entidad. Responde en 15 días hábiles." },
   { value: "DENUNCIA", label: "Denuncia", ayuda: "Pone en conocimiento un posible hecho irregular. Responde en 15 días hábiles." },
 ];
-const TIPOS_ID = ["CC", "CE", "NIT", "PA", "TI"];
-
-export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
+export function PqrsdPublicoForm() {
   const [tsCarga] = useState(() => Date.now());
   const [anonima, setAnonima] = useState(false);
   const [tipoPqrsd, setTipoPqrsd] = useState("");
-  const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
-  const [tipoId, setTipoId] = useState("CC");
-  const [identificacion, setIdentificacion] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [municipio, setMunicipio] = useState("");
-  const [departamento, setDepartamento] = useState("");
+  const [persona, setPersona] = useState<DatosPersona>(personaVacia());
   const [asunto, setAsunto] = useState("");
   const [contenido, setContenido] = useState("");
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -61,10 +52,12 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
     if (!contenido.trim()) return setError("Describa su solicitud.");
     if (!anonima) {
-      if (!nombre.trim()) return setError("El nombre o razón social es obligatorio.");
-      if (!identificacion.trim()) return setError("La identificación es obligatoria.");
-      if (!municipio) return setError("Seleccione su municipio.");
-      if (!email.trim() && !telefono.trim()) return setError("Indique al menos un medio de contacto (correo o teléfono).");
+      if (!nombreCompletoPersona(persona)) return setError("El nombre o razón social es obligatorio.");
+      if (!persona.identificacion.trim()) return setError("La identificación es obligatoria.");
+      if (!persona.departamento.trim() || !persona.ciudad.trim()) return setError("Indique su departamento y su ciudad.");
+      if (!persona.email.trim() && !persona.celular.trim() && !persona.telefono.trim()) {
+        return setError("Indique al menos un medio de contacto (correo, celular o teléfono).");
+      }
     }
 
     setEnviando(true);
@@ -81,14 +74,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
           asunto: asunto.trim(),
           contenido: contenido.trim(),
           anonima,
-          terceroTipo: tipo,
-          terceroTipoIdentificacion: anonima ? null : tipoId,
-          terceroIdentificacion: anonima ? "" : identificacion.trim(),
-          terceroNombre: anonima ? "" : nombre.trim(),
-          terceroEmail: anonima ? null : email.trim() || null,
-          terceroTelefono: anonima ? null : telefono.trim() || null,
-          terceroMunicipio: anonima ? "" : municipio.trim(),
-          terceroDepartamento: anonima ? null : departamento.trim() || null,
+          tercero: anonima ? null : persona,
           documentos,
           tsCarga,
           sitioWeb,
@@ -185,7 +171,7 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
         <EncabezadoPaso numero={2} icono={<UserRound className="h-4 w-4" aria-hidden />} titulo="Sus datos" />
         {!anonima && (
           <SectionHelp>
-            Necesitamos su identificación, municipio y un medio de contacto para poder responderle y para que después
+            Necesitamos su identificación, ciudad y un medio de contacto para poder responderle y para que después
             pueda consultar el estado de su solicitud con su radicado.
           </SectionHelp>
         )}
@@ -202,48 +188,9 @@ export function PqrsdPublicoForm({ municipios }: { municipios: string[] }) {
             sin notificación individual.
           </p>
         ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Tipo de persona" help="Natural: usted como persona. Jurídica: una empresa o entidad.">
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as "NATURAL" | "JURIDICA")} className={inputCls}>
-              <option value="NATURAL">Natural</option>
-              <option value="JURIDICA">Jurídica</option>
-            </select>
-          </Field>
-          <Field label="Tipo de identificación">
-            <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={inputCls}>
-              {TIPOS_ID.map((t) => (<option key={t} value={t}>{t}</option>))}
-            </select>
-          </Field>
-          <Field label="Identificación" required help="Número de documento o NIT.">
-            <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label={tipo === "JURIDICA" ? "Razón social" : "Nombre completo"} required>
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-          <Field label="Municipio" required>
-            <MunicipioSelectorTercero
-              municipios={municipios}
-              municipio={municipio}
-              departamento={departamento}
-              onMunicipio={setMunicipio}
-              onDepartamento={setDepartamento}
-              inputCls={inputCls}
-            />
-          </Field>
-          <Field label="Correo electrónico" help="Por aquí le avisamos la respuesta, si lo indica.">
-            <input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} type="email" />
-          </Field>
-          <Field label="Teléfono">
-            <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls} />
-          </Field>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Field label="Dirección">
-              <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-          <p className="mt-2 text-xs text-stone-400 sm:col-span-2 lg:col-span-3">Indique correo o teléfono: es el medio por el que la CDMB le responderá.</p>
+        <div className="space-y-2">
+          <CamposPersona valor={persona} onChange={setPersona} requeridos={{ identificacion: true, nombre: true, ubicacion: true }} />
+          <p className="text-xs text-stone-400">Indique correo, celular o teléfono: es el medio por el que la CDMB le responderá.</p>
         </div>
         )}
       </section>

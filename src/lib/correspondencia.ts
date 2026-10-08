@@ -15,18 +15,45 @@ import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
+import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
   tipoIdentificacion?: string | null;
   identificacion?: string | null;
   nombre: string;
+  nombres?: string | null;
+  apellidos?: string | null;
+  razonSocial?: string | null;
   email?: string | null;
+  celular?: string | null;
   telefono?: string | null;
   direccion?: string | null;
   municipio?: string | null;
   departamento?: string | null;
 };
+
+export function entradaTerceroDesdePersona(p: DatosPersona): EntradaTercero {
+  return {
+    tipo: p.tipoPersona,
+    tipoIdentificacion: p.tipoIdentificacion || null,
+    identificacion: nulo(p.identificacion),
+    nombre: nombreCompletoPersona(p),
+    nombres: nulo(p.nombres),
+    apellidos: nulo(p.apellidos),
+    razonSocial: nulo(p.razonSocial),
+    email: nulo(p.email),
+    celular: nulo(p.celular),
+    telefono: nulo(p.telefono),
+    direccion: nulo(p.direccion),
+    municipio: nulo(p.ciudad),
+    departamento: nulo(p.departamento),
+  };
+}
+
+function telefonosTercero(t: EntradaTercero): string | null {
+  return [t.celular, t.telefono].map((v) => v?.trim()).filter(Boolean).join(" / ") || null;
+}
 
 export type EntradaDocumento = {
   path: string;
@@ -53,32 +80,31 @@ export type EntradaRadicacionRecibida = {
   radicadoPorId: string | null;
 };
 
-async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: EntradaTercero): Promise<string | null> {
+async function resolverOCrearTercero(tx: Prisma.TransactionClient, tercero: EntradaTercero, creadoPorId: string | null): Promise<string | null> {
   const ident = tercero.identificacion?.trim() || null;
-  const muni = tercero.municipio?.trim() || null;
-  if (!ident || !muni) return null;
+  if (!ident || !tercero.tipoIdentificacion || tercero.tipoIdentificacion === "ANONIMO") return null;
   const esJuridica = tercero.tipo === "JURIDICA";
-  const solicitante = await tx.solicitante.upsert({
+  const separado = esJuridica || tercero.nombres || tercero.apellidos ? null : separarNombreCompleto(tercero.nombre);
+  const datos = {
+    tipo: tercero.tipo,
+    tipoIdentificacion: tercero.tipoIdentificacion,
+    nombres: esJuridica ? null : (tercero.nombres ?? separado?.nombres ?? null),
+    apellidos: esJuridica ? null : (tercero.apellidos ?? separado?.apellidos ?? null),
+    razonSocial: esJuridica ? (tercero.razonSocial ?? tercero.nombre) : null,
+    email: tercero.email ?? null,
+    celular: tercero.celular ?? null,
+    telefono: tercero.telefono ?? null,
+    direccion: tercero.direccion ?? null,
+    departamento: tercero.departamento?.trim() || null,
+    ciudad: tercero.municipio?.trim() || null,
+  };
+  const actualizar = Object.fromEntries(Object.entries(datos).filter(([, v]) => v !== null && v !== ""));
+  const registro = await tx.tercero.upsert({
     where: { identificacion: ident },
-    create: {
-      tipo: tercero.tipo,
-      identificacion: ident,
-      razonSocial: esJuridica ? tercero.nombre : null,
-      nombres: esJuridica ? null : tercero.nombre,
-      email: tercero.email ?? null,
-      telefono: tercero.telefono ?? null,
-      direccion: tercero.direccion ?? null,
-      municipio: muni,
-      departamento: tercero.departamento?.trim() || null,
-    },
-    update: {
-      email: tercero.email ?? undefined,
-      telefono: tercero.telefono ?? undefined,
-      direccion: tercero.direccion ?? undefined,
-      departamento: tercero.departamento?.trim() || undefined,
-    },
+    create: { ...datos, identificacion: ident, creadoPorId },
+    update: actualizar,
   });
-  return solicitante.id;
+  return registro.id;
 }
 
 function validarClasificacionTrd(serieId?: string | null, subserieId?: string | null) {
@@ -95,7 +121,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
     const { radicado, anio } = await generarRadicado("RECIBIDA", new Date().getFullYear(), tx);
     const ident = entrada.tercero.identificacion?.trim() || null;
     const muni = entrada.tercero.municipio?.trim() || null;
-    const terceroId = await resolverOCrearTercero(tx, entrada.tercero);
+    const terceroId = await resolverOCrearTercero(tx, entrada.tercero, entrada.radicadoPorId);
     const fechaRadicacion = new Date();
     const terminoDiasHabiles = entrada.tipoPqrsd ? TERMINO_DIAS_HABILES[entrada.tipoPqrsd] : null;
     const fechaVencimiento = entrada.tipoPqrsd ? calcularVencimiento(fechaRadicacion, entrada.tipoPqrsd, calendario) : null;
@@ -119,7 +145,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
         terceroIdentificacion: ident,
         terceroNombre: entrada.tercero.nombre,
         terceroEmail: entrada.tercero.email ?? null,
-        terceroTelefono: entrada.tercero.telefono ?? null,
+        terceroTelefono: telefonosTercero(entrada.tercero),
         terceroDireccion: entrada.tercero.direccion ?? null,
         terceroMunicipio: muni,
         terceroDepartamento: entrada.tercero.departamento?.trim() || null,
@@ -357,7 +383,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     const { radicado, anio } = await generarRadicado("ENVIADA", new Date().getFullYear(), tx);
     const ident = entrada.destinatario.identificacion?.trim() || null;
     const muni = entrada.destinatario.municipio?.trim() || null;
-    const terceroId = await resolverOCrearTercero(tx, entrada.destinatario);
+    const terceroId = await resolverOCrearTercero(tx, entrada.destinatario, entrada.radicadoPorId);
 
     let documentosRespuestaFuncionario: EntradaDocumento[] = [];
     let contenidoFirmado: string | null = null;
@@ -411,7 +437,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
         terceroIdentificacion: ident,
         terceroNombre: entrada.destinatario.nombre,
         terceroEmail: entrada.destinatario.email ?? null,
-        terceroTelefono: entrada.destinatario.telefono ?? null,
+        terceroTelefono: telefonosTercero(entrada.destinatario),
         terceroDireccion: entrada.destinatario.direccion ?? null,
         terceroMunicipio: muni,
         terceroDepartamento: entrada.destinatario.departamento?.trim() || null,

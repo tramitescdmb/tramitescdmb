@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
-import { radicarEnviada, type EntradaDocumento } from "@/lib/correspondencia";
+import { entradaTerceroDesdePersona, radicarEnviada, type EntradaDocumento } from "@/lib/correspondencia";
+import { leerDatosPersona } from "@/lib/datos-persona";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import type { MedioComunicacion, TipoSolicitante } from "@prisma/client";
+import type { MedioComunicacion } from "@prisma/client";
 
 const MEDIOS: MedioComunicacion[] = ["FISICO", "CORREO_ELECTRONICO", "WEB", "FAX", "PRESENCIAL", "TELEFONICO", "OTRO"];
 
@@ -26,14 +27,13 @@ export async function POST(req: NextRequest) {
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
-  const destinatarioNombre = String(body.destinatarioNombre ?? "").trim();
-  const destinatarioTipo = (body.destinatarioTipo === "JURIDICA" ? "JURIDICA" : "NATURAL") as TipoSolicitante;
+  const destinatario = entradaTerceroDesdePersona(leerDatosPersona(body.destinatario));
   const medioRaw = String(body.medio ?? "");
   const medio = (MEDIOS as string[]).includes(medioRaw) ? (medioRaw as MedioComunicacion) : null;
 
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
   if (!contenido) return NextResponse.json({ error: "El contenido del oficio es obligatorio (se firma junto con el radicado)." }, { status: 400 });
-  if (!destinatarioNombre) return NextResponse.json({ error: "El nombre/razón social del destinatario es obligatorio." }, { status: 400 });
+  if (!destinatario.nombre) return NextResponse.json({ error: "El nombre/razón social del destinatario es obligatorio." }, { status: 400 });
 
   const documentos: EntradaDocumento[] = Array.isArray(body.documentos)
     ? (body.documentos as unknown[])
@@ -61,17 +61,7 @@ export async function POST(req: NextRequest) {
       folios,
       anexosDescripcion: body.anexosDescripcion ? String(body.anexosDescripcion).trim() : null,
       medio,
-      destinatario: {
-        tipo: destinatarioTipo,
-        tipoIdentificacion: body.destinatarioTipoIdentificacion ? String(body.destinatarioTipoIdentificacion).trim() : null,
-        identificacion: body.destinatarioIdentificacion ? String(body.destinatarioIdentificacion).trim() : null,
-        nombre: destinatarioNombre,
-        email: body.destinatarioEmail ? String(body.destinatarioEmail).trim() : null,
-        telefono: body.destinatarioTelefono ? String(body.destinatarioTelefono).trim() : null,
-        direccion: body.destinatarioDireccion ? String(body.destinatarioDireccion).trim() : null,
-        municipio: body.destinatarioMunicipio ? String(body.destinatarioMunicipio).trim() : null,
-        departamento: body.destinatarioDepartamento ? String(body.destinatarioDepartamento).trim() : null,
-      },
+      destinatario,
       dependenciaOrigenId: body.dependenciaOrigenId ? String(body.dependenciaOrigenId) : null,
       serieId: body.serieId ? String(body.serieId) : null,
       subserieId: body.subserieId ? String(body.subserieId) : null,

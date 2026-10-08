@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomInt } from "node:crypto";
 import type { TipoPQRSD, TipoSolicitante } from "@prisma/client";
-import { radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { entradaTerceroDesdePersona, radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
+import { leerDatosPersona } from "@/lib/datos-persona";
 import { validarLoteDocumentosSGDEA, MAX_ARCHIVOS_LOTE } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { verificarLimiteEnvio, llenadoDemasiadoRapido } from "@/lib/anti-abuso";
@@ -39,12 +40,7 @@ export async function POST(req: NextRequest) {
   const tipoPqrsd = TIPOS_PQRSD.includes(body.tipoPqrsd as TipoPQRSD) ? (body.tipoPqrsd as TipoPQRSD) : null;
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
-  const nombre = String(body.terceroNombre ?? "").trim();
-  const terceroTipo = (body.terceroTipo === "JURIDICA" ? "JURIDICA" : "NATURAL") as TipoSolicitante;
-  const identificacion = String(body.terceroIdentificacion ?? "").trim();
-  const municipio = String(body.terceroMunicipio ?? "").trim();
-  const email = String(body.terceroEmail ?? "").trim();
-  const telefono = String(body.terceroTelefono ?? "").trim();
+  const tercero = entradaTerceroDesdePersona(leerDatosPersona(body.tercero));
 
   if (!tipoPqrsd) {
     return NextResponse.json({ error: "Seleccione el tipo de solicitud (petición, queja, reclamo, sugerencia o denuncia)." }, { status: 400 });
@@ -55,11 +51,11 @@ export async function POST(req: NextRequest) {
   const codigoSeguimiento = anonima ? generarCodigoSeguimiento() : null;
 
   if (!anonima) {
-    if (!nombre) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
-    if (!identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
-    if (!municipio) return NextResponse.json({ error: "El municipio es obligatorio." }, { status: 400 });
-    if (!email && !telefono) {
-      return NextResponse.json({ error: "Indique al menos un medio de contacto (correo o teléfono) para poder responderle." }, { status: 400 });
+    if (!tercero.nombre) return NextResponse.json({ error: "El nombre o razón social es obligatorio." }, { status: 400 });
+    if (!tercero.identificacion) return NextResponse.json({ error: "La identificación es obligatoria." }, { status: 400 });
+    if (!tercero.municipio || !tercero.departamento) return NextResponse.json({ error: "Indique el departamento y la ciudad." }, { status: 400 });
+    if (!tercero.email && !tercero.celular && !tercero.telefono) {
+      return NextResponse.json({ error: "Indique al menos un medio de contacto (correo, celular o teléfono) para poder responderle." }, { status: 400 });
     }
   }
 
@@ -99,16 +95,7 @@ export async function POST(req: NextRequest) {
             telefono: null,
             municipio: null,
           }
-        : {
-            tipo: terceroTipo,
-            tipoIdentificacion: body.terceroTipoIdentificacion ? String(body.terceroTipoIdentificacion).trim() : null,
-            identificacion,
-            nombre,
-            email: email || null,
-            telefono: telefono || null,
-            municipio,
-            departamento: body.terceroDepartamento ? String(body.terceroDepartamento).trim() : null,
-          },
+        : tercero,
       tipoPqrsd,
       documentos,
       radicadoPorId: null,
