@@ -106,7 +106,6 @@ export function NuevoExpedienteContractualForm({
   modalidades,
   series,
   subseriePorModalidad,
-  enlaceUsuarios,
 }: {
   personal: PersonaRol[];
   puedeAsignarPersonal: boolean;
@@ -115,7 +114,6 @@ export function NuevoExpedienteContractualForm({
   dependencias: Opcion[];
   supervisores: PersonaRol[];
   modalidades: ModalidadOpcion[];
-  enlaceUsuarios?: string | null;
 }) {
   const router = useRouter();
   const [objeto, setObjeto] = useState("");
@@ -385,7 +383,7 @@ export function NuevoExpedienteContractualForm({
                 </button>
               </div>
             ) : (
-              <BuscadorContratistaUsuario onElegir={setContratista} enlaceUsuarios={enlaceUsuarios} claseCampo={campoCls} />
+              <BuscadorContratistaUsuario onElegir={setContratista} claseCampo={campoCls} />
             )}
           </SeccionFormulario>
 

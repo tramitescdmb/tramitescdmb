@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { Building, Map, type LucideIcon } from "lucide-react";
 import { buscarDepartamentos, buscarMunicipios, type DatosDivipola, type OpcionMunicipio } from "@/lib/divipola";
 
 let cargaDatos: Promise<DatosDivipola> | null = null;
@@ -14,6 +15,7 @@ type Valor = { departamento: string; ciudad: string };
 
 function Autocompletar<T>({
   etiqueta,
+  icono: Icono,
   requerido,
   valor,
   placeholder,
@@ -26,6 +28,7 @@ function Autocompletar<T>({
   claseCampo,
 }: {
   etiqueta: string;
+  icono: LucideIcon;
   requerido?: boolean;
   valor: string;
   placeholder: string;
@@ -58,7 +61,8 @@ function Autocompletar<T>({
 
   return (
     <div ref={contenedor} className="relative">
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-stone-700">
+      <label htmlFor={id} className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+        <Icono className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
         {etiqueta}
         {requerido && <span className="ml-1 text-red-500">*</span>}
       </label>
@@ -144,6 +148,7 @@ export function SelectorDepartamentoCiudad({
     <div className="grid gap-3 sm:grid-cols-2">
         <Autocompletar
           etiqueta="Departamento"
+          icono={Map}
           requerido={requerido}
           valor={valor.departamento}
           placeholder="Escriba para buscar…"
@@ -156,6 +161,7 @@ export function SelectorDepartamentoCiudad({
         />
         <Autocompletar
           etiqueta="Ciudad o municipio"
+          icono={Building}
           requerido={requerido}
           valor={valor.ciudad}
           placeholder="Escriba para buscar…"

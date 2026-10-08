@@ -7,11 +7,9 @@ import { BuscadorContratistaUsuario, type ContratistaElegido } from "@/component
 export function VincularContratistaForm({
   expedienteId,
   contratistaActual,
-  enlaceUsuarios,
 }: {
   expedienteId: string;
   contratistaActual?: { nombreORazonSocial: string } | null;
-  enlaceUsuarios?: string | null;
 }) {
   const router = useRouter();
   const [guardando, setGuardando] = useState(false);
@@ -49,7 +47,7 @@ export function VincularContratistaForm({
       {guardando ? (
         <p className="text-xs text-stone-500">Vinculando…</p>
       ) : (
-        <BuscadorContratistaUsuario onElegir={vincular} enlaceUsuarios={enlaceUsuarios} />
+        <BuscadorContratistaUsuario onElegir={vincular} />
       )}
       {error && <p className="text-xs text-red-700">{error}</p>}
     </div>

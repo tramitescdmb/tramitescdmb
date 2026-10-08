@@ -613,7 +613,7 @@ export default async function DetalleExpedienteContractualPage({
                 jurídica).
               </span>
             </div>
-            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null} />}
+            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} />}
           </div>
         )}
 
@@ -626,7 +626,7 @@ export default async function DetalleExpedienteContractualPage({
               El contratista se elige entre los usuarios registrados. Con el vínculo puede consultar este expediente (Contractual y
               Postcontractual) y cargar sus documentos. El cambio queda en la bitácora.
             </p>
-            <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null} />
+            <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} />
           </details>
         )}
 

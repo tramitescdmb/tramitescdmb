@@ -52,7 +52,6 @@ export default async function NuevoExpedienteContractualPage() {
         personal={personal.map(aOpcion)}
         puedeAsignarPersonal={puedeAsignarPersonal}
         modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
-        enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null}
       />
     </section>
   );

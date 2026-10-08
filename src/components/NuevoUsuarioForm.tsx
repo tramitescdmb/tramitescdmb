@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Network, UserRound, ShieldCheck, Briefcase } from "lucide-react";
+import { AtSign, BadgeCheck, Briefcase, KeyRound, Lock, Network, PenLine, ShieldCheck, UserRound } from "lucide-react";
 import { CamposPersona, CLASE_CAMPO_PERSONA } from "@/components/CamposPersona";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { personaVacia, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
@@ -108,7 +108,8 @@ export function NuevoUsuarioForm({
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <AtSign className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
               {esRed ? "Usuario de red" : "Correo para iniciar sesión"} <span className="text-red-500">*</span>
             </span>
             <input
@@ -122,7 +123,8 @@ export function NuevoUsuarioForm({
           </label>
           {!esRed && (
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-stone-700">
+              <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <Lock className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
                 Contraseña temporal <span className="text-red-500">*</span>
               </span>
               <input
@@ -155,14 +157,16 @@ export function NuevoUsuarioForm({
         <EncabezadoPaso numero={3} icono={<ShieldCheck className="h-4 w-4" aria-hidden />} titulo="Rol y firma" />
         <div className="grid gap-3 sm:grid-cols-4">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">Rol</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <ShieldCheck className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Rol</span>
             <select value={rol} onChange={(e) => setRol(e.target.value as "FUNCIONARIO" | "ADMIN")} className={CLASE_CAMPO_PERSONA}>
               <option value="FUNCIONARIO">Funcionario</option>
               <option value="ADMIN">Administrador</option>
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">Sexo</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <UserRound className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Sexo</span>
             <select value={sexo} onChange={(e) => setSexo(e.target.value)} className={CLASE_CAMPO_PERSONA}>
               <option value="">Sin especificar</option>
               {SEXOS.map((s) => (
@@ -173,7 +177,8 @@ export function NuevoUsuarioForm({
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">Denominación del empleo</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <BadgeCheck className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Denominación del empleo</span>
             <select value={denominacionEmpleo} onChange={(e) => setDenominacionEmpleo(e.target.value)} className={CLASE_CAMPO_PERSONA}>
               <option value="">Sin denominación</option>
               {CLAVES_DENOMINACION_EMPLEO.map((c) => (
@@ -184,7 +189,8 @@ export function NuevoUsuarioForm({
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">Complemento</span>
+            <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
+              <PenLine className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Complemento</span>
             <input
               value={denominacionComplemento}
               onChange={(e) => setDenominacionComplemento(e.target.value)}
