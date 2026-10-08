@@ -25,7 +25,6 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/contratacion\/panel\/indicadores/, trail: ["Panel", "Indicadores"] },
   { re: /^\/contratacion\/panel\/sistema/, trail: ["Panel", "Sistema"] },
   { re: /^\/contratacion\/panel/, trail: ["Panel", "Mi trabajo pendiente"] },
-  { re: /^\/contratacion\/contratistas\/nuevo/, trail: ["Contratistas", "Nuevo contratista"] },
   { re: /^\/contratacion\/contratistas\/[^/]+/, trail: ["Contratistas", "Contratista"] },
   { re: /^\/contratacion\/contratistas$/, trail: ["Contratistas"] },
   { re: /^\/contratacion\/catalogo/, trail: ["Configuración", "Catálogo de requisitos"] },

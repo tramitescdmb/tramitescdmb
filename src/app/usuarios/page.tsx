@@ -3,9 +3,8 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { Field } from "@/components/Field";
-import { IconUser, IconMail, IconLock, IconShieldCheck } from "@/components/icons";
-import { UserPlus, Briefcase, Pencil, ChevronDown } from "lucide-react";
+import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";
+import { UserPlus, Pencil, ChevronDown } from "lucide-react";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -13,11 +12,9 @@ import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFecha } from "@/lib/fecha";
-import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
 import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
 
-const iconSm = "h-4 w-4";
 const POR_PAGINA = 15;
 
 function iniciales(nombre: string) {
@@ -81,10 +78,20 @@ export default async function UsuariosPage({
   const busqueda = q?.trim();
   const where = busqueda
     ? {
-        OR: [
-          { nombre: { contains: busqueda, mode: "insensitive" as const } },
-          { email: { contains: busqueda, mode: "insensitive" as const } },
-        ],
+        AND: busqueda
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 4)
+          .map((p) => ({
+            OR: [
+              { nombre: { contains: p, mode: "insensitive" as const } },
+              { email: { contains: p, mode: "insensitive" as const } },
+              { cedulaONit: { contains: p, mode: "insensitive" as const } },
+              { nombres: { contains: p, mode: "insensitive" as const } },
+              { apellidos: { contains: p, mode: "insensitive" as const } },
+              { razonSocial: { contains: p, mode: "insensitive" as const } },
+            ],
+          })),
       }
     : {};
 
@@ -152,7 +159,7 @@ export default async function UsuariosPage({
           <input
             name="q"
             defaultValue={busqueda ?? ""}
-            placeholder="Nombre o correo…"
+            placeholder="Nombre, apellidos, documento o usuario…"
             className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           />
         </div>
@@ -193,7 +200,11 @@ export default async function UsuariosPage({
                       </span>
                     )}
                   </p>
-                  <p className="truncate text-xs text-stone-400">{u.email}</p>
+                  <p className="truncate text-xs text-stone-400">
+                    {u.email}
+                    {u.cedulaONit ? ` · ${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : ""}
+                    {u.tipoPersona === "JURIDICA" ? " · Persona jurídica" : ""}
+                  </p>
                 </div>
               </div>
 
@@ -385,104 +396,11 @@ export default async function UsuariosPage({
           </span>
           <div className="flex-1">
             <h2 className="text-sm font-semibold text-stone-900">+ Crear usuario nuevo</h2>
-            <p className="text-xs text-stone-400">
-              Al guardar, pasa directo a la página de este usuario para asignarle los trámites y el acceso
-              a VITAL/SINCA 1.0.
-            </p>
+            <p className="text-xs text-stone-400">Funcionarios, contratistas y empresas. Al guardar se abre su ficha para asignar accesos.</p>
           </div>
           <ChevronDown className="h-4 w-4 flex-none text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
-        <form action="/api/usuarios" method="post" className="mt-5 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nombre completo" required icon={<IconUser className={iconSm} />} help="Como debe aparecer en la bitácora de los expedientes.">
-              <input
-                name="nombre"
-                required
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-            </Field>
-            <Field label="Correo institucional" required icon={<IconMail className={iconSm} />} help="Con este correo va a iniciar sesión.">
-              <input
-                type="email"
-                name="email"
-                required
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-                placeholder="nombre@cdmb.gov.co"
-              />
-            </Field>
-            <Field
-              label="Contraseña temporal"
-              required
-              icon={<IconLock className={iconSm} />}
-              help={`Mínimo ${config.passwordLongitudMinima} caracteres. Solo un administrador puede cambiarla después, desde la ficha del usuario.`}
-            >
-              <input
-                type="password"
-                name="password"
-                required
-                minLength={config.passwordLongitudMinima}
-                maxLength={config.passwordLongitudMaxima}
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-            </Field>
-            <Field label="Rol" required icon={<IconShieldCheck className={iconSm} />} help="Qué puede hacer este usuario dentro de la app.">
-              <select
-                name="rol"
-                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              >
-                <option value="FUNCIONARIO">Funcionario</option>
-                <option value="ADMIN">Administrador</option>
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Sexo" help="Solo se usa para la forma de la denominación en la firma.">
-              <select name="sexo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500">
-                <option value="">— Sin especificar —</option>
-                {SEXOS.map((s) => (<option key={s.valor} value={s.valor}>{s.etiqueta}</option>))}
-              </select>
-            </Field>
-            <Field label="Denominación del empleo" help="Cargo nominal (Decreto 1083/2015) — aparece en el sello de firma electrónica.">
-              <select name="denominacionEmpleo" defaultValue="" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500">
-                <option value="">— Sin denominación —</option>
-                {CLAVES_DENOMINACION_EMPLEO.map((c) => (<option key={c} value={c}>{DENOMINACIONES_EMPLEO[c].m}</option>))}
-              </select>
-            </Field>
-            <Field label="Complemento" help="Opcional, ej. «en Tecnologías de Información».">
-              <input name="denominacionComplemento" maxLength={120} placeholder="en Tecnologías de Información" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500" />
-            </Field>
-          </div>
-
-          <label className="flex items-center gap-2 text-sm text-stone-700">
-            <input type="checkbox" name="accesoFirma" defaultChecked className="rounded border-stone-200" />
-            Puede firmar electrónicamente oficios y memorandos
-          </label>
-
-          <Field
-            label="Cargo(s) para Trámites Ambientales 2.0"
-            icon={<Briefcase className={iconSm} />}
-            help="Solo aplica a Trámites ambientales 2.0: su(s) puesto(s) real(es) (Subdirector, Profesional en Derecho, etc.) se usan ahí para resaltarle qué pasos de un trámite le corresponden. No tiene efecto en SGDEA ni en GECON — esos módulos usan sus propios roles (Correspondencia / Contratación, abajo). Puede marcar uno, varios, o ninguno. Distinto de la denominación del empleo de arriba."
-          >
-            <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
-              {cargos.map((c) => (
-                <label key={c.id} className="cursor-pointer">
-                  <input type="checkbox" name="cargoIds" value={c.id} className="peer sr-only" />
-                  <span className="inline-block rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 transition hover:border-cdmb-300 hover:text-cdmb-700 peer-checked:border-cdmb-600 peer-checked:bg-cdmb-600 peer-checked:text-white">
-                    {c.nombre}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </Field>
-
-          <button
-            type="submit"
-            className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
-          >
-            Crear usuario
-          </button>
-        </form>
+        <NuevoUsuarioForm cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))} longitudMinima={config.passwordLongitudMinima} longitudMaxima={config.passwordLongitudMaxima} />
       </details>
     </div>
   );

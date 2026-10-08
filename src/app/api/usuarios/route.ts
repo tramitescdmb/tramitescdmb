@@ -6,6 +6,10 @@ import { validarPoliticaPassword } from "@/lib/password-policy";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
+import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
+
+const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -13,61 +17,66 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Solo un administrador puede crear usuarios." }, { status: 403 });
   }
 
-  const form = await req.formData();
-  const email = String(form.get("email") || "").trim().toLowerCase();
-  const nombre = String(form.get("nombre") || "").trim();
-  const password = String(form.get("password") || "");
-  const rol = String(form.get("rol") || "FUNCIONARIO") as "ADMIN" | "FUNCIONARIO";
-  const cargoIds = form.getAll("cargoIds").map(String);
-  const sexoRaw = String(form.get("sexo") || "");
-  const denomRaw = String(form.get("denominacionEmpleo") || "");
-  const sexo = esSexo(sexoRaw) ? sexoRaw : null;
-  const denominacionEmpleo = esClaveDenominacion(denomRaw) ? denomRaw : null;
-  const denominacionComplemento = String(form.get("denominacionComplemento") || "").trim().slice(0, 120) || null;
-  const accesoFirma = form.get("accesoFirma") === "on";
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
-  const url = new URL("/usuarios", req.url);
+  const directorioActivo = body.acceso === "DIRECTORIO_ACTIVO";
+  const email = String(body.email || "").trim().toLowerCase();
+  const password = String(body.password || "");
+  const rol = body.rol === "ADMIN" ? "ADMIN" : "FUNCIONARIO";
+  const cargoIds = Array.isArray(body.cargoIds) ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string") : [];
+  const sexo = esSexo(body.sexo) ? body.sexo : null;
+  const denominacionEmpleo = esClaveDenominacion(body.denominacionEmpleo) ? body.denominacionEmpleo : null;
+  const denominacionComplemento = typeof body.denominacionComplemento === "string" ? body.denominacionComplemento.trim().slice(0, 120) || null : null;
+  const accesoFirma = body.accesoFirma !== false;
+  const persona = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
-  if (!email || !nombre) {
-    url.searchParams.set("error", "Revisa los campos: correo y nombre son obligatorios.");
-    return NextResponse.redirect(url, { status: 303 });
+  if (!email) {
+    return NextResponse.json({ error: directorioActivo ? "Indique el usuario de red." : "Indique el correo con el que inicia sesión." }, { status: 400 });
+  }
+  if (directorioActivo && /[\s@]/.test(email)) {
+    return NextResponse.json({ error: "El usuario de red va sin espacios y sin @dominio (ej. jperez01)." }, { status: 400 });
+  }
+  if (!directorioActivo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "El correo para iniciar sesión no es válido." }, { status: 400 });
+  }
+  const errorPersona = errorPersonaUsuario(persona);
+  if (errorPersona) return NextResponse.json({ error: errorPersona }, { status: 400 });
+
+  if (!directorioActivo) {
+    const errorPassword = validarPoliticaPassword(password, await getConfiguracionSitio());
+    if (errorPassword) return NextResponse.json({ error: errorPassword }, { status: 400 });
   }
 
-  const config = await getConfiguracionSitio();
-  const errorPassword = validarPoliticaPassword(password, config);
-  if (errorPassword) {
-    url.searchParams.set("error", errorPassword);
-    return NextResponse.redirect(url, { status: 303 });
+  if (await db.usuario.findUnique({ where: { email }, select: { id: true } })) {
+    return NextResponse.json({ error: directorioActivo ? "Ese usuario de red ya tiene cuenta." : "Ya existe un usuario con ese correo." }, { status: 409 });
   }
-
-  const existente = await db.usuario.findUnique({ where: { email } });
-  if (existente) {
-    url.searchParams.set("error", "Ya existe un usuario con ese correo.");
-    return NextResponse.redirect(url, { status: 303 });
+  if (cargoIds.length > 0 && (await db.cargo.count({ where: { id: { in: cargoIds } } })) !== cargoIds.length) {
+    return NextResponse.json({ error: "Alguno de los cargos seleccionados no existe." }, { status: 400 });
   }
 
   const nuevo = await db.usuario.create({
     data: {
       email,
-      nombre,
       rol,
-      passwordHash: await hashPassword(password),
-      passwordCambiadaEn: new Date(),
+      directorioActivo,
+      passwordHash: directorioActivo ? SIN_CONTRASENA_LOCAL : await hashPassword(password),
+      passwordCambiadaEn: directorioActivo ? null : new Date(),
       sexo,
       denominacionEmpleo,
       denominacionComplemento,
       accesoFirma,
-      cargos: { connect: cargoIds.map((id) => ({ id })) },
+      ...dataUsuarioDesdePersona(persona),
+      cargos: { connect: cargoIds.map((id: string) => ({ id })) },
     },
+    select: { id: true, nombre: true, email: true },
   });
 
   await registrarAuditoria({
     tipo: "USUARIO_CREADO",
-    descripcion: `${session.nombre} creó el usuario "${nuevo.nombre}" (${nuevo.email}), rol ${rol}.`,
+    descripcion: `${session.nombre} creó el usuario "${nuevo.nombre}" (${nuevo.email}${directorioActivo ? ", directorio activo" : ""}), rol ${rol}.`,
     usuarioId: session.userId,
   });
 
-  const urlEditar = new URL(`/usuarios/${nuevo.id}`, req.url);
-  urlEditar.searchParams.set("ok", "Usuario creado. Configure sus trámites y accesos abajo.");
-  return NextResponse.redirect(urlEditar, { status: 303 });
+  return NextResponse.json({ id: nuevo.id }, { status: 201 });
 }

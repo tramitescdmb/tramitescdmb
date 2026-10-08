@@ -316,11 +316,17 @@ export default async function ContratacionAyudaPage() {
     <>
       <Seccion n={8} id="contratistas" icono={UserSquare2} titulo="Registro de Contratistas">
         <p>
-          Es una base <strong>propia de este módulo</strong>, separada del registro de Solicitantes de Trámites
-          ambientales 2.0 — no comparten identificación aunque ambos se busquen por NIT/cédula. Se administra
-          desde <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link>.
-          Al vincular un contratista a un expediente que aún no lo tiene, si la búsqueda no encuentra a nadie
-          con esa identificación, se puede crear ahí mismo y queda vinculado de una vez.
+          Todo contratista es un <strong>usuario de la plataforma</strong> (persona natural con su usuario de red, o persona
+          jurídica con cuenta local). Sus datos —documento, nombres y apellidos o razón social, correo, celular, teléfono,
+          dirección, departamento, ciudad e información tributaria— se registran una sola vez en Usuarios y GECON los toma
+          de ahí. Al crear un expediente se busca por documento, nombres o apellidos; para iniciar el contrato la persona debe
+          tener esos datos completos (celular y teléfono son opcionales). Si falta alguno, el Jefe o el Administrador de
+          Contratación pueden completarlo en el mismo formulario.
+        </p>
+        <p>
+          En <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link>{" "}
+          se consulta quién tiene contrato activo (en etapa Contractual) y cuántos contratos tiene cada uno por vigencia; la
+          ficha agrupa los contratos por vigencia con su periodo.
         </p>
         <p>
           Vincular un expediente a un contratista <strong>no es solo para firmas</strong>: el contratista con cuenta de
@@ -328,14 +334,7 @@ export default async function ContratacionAyudaPage() {
           La norma general es <strong>un contratista por expediente</strong>: el vínculo se hace una sola vez y puede
           hacerse <strong>en cualquier etapa</strong>, desde el detalle del expediente («Vincular un contratista») o desde la
           ficha del contratista («Vincular un expediente», que solo ofrece expedientes sin contratista); queda en la
-          bitácora. Para que el contratista pueda ingresar, su cuenta debe tener el rol Contratista (se asigna desde Usuarios).
-        </p>
-        <p>
-          Un contratista puede además vincularse a su <strong>usuario de red (Directorio Activo)</strong> — al
-          crearlo o después, desde su ficha. Es opcional y no depende de que la persona ya haya iniciado sesión:
-          si esa cuenta no existe todavía, se crea (sin permisos hasta que un administrador se los asigne); el
-          día que la persona entre de verdad con ese mismo usuario, cae en la misma cuenta. Así el expediente
-          queda relacionado también con la identidad de dominio del contratista, no solo con su registro.
+          bitácora. Al vincularlo, su cuenta recibe el rol Contratista si no tenía otro rol en GECON.
         </p>
         <p>
           Un contratista <strong>que no pertenece a ningún expediente</strong> puede eliminarse desde su ficha

@@ -8,11 +8,11 @@ export type ExpedienteVinculable = { id: string; numero: string; objeto: string;
 
 export function VincularExpedienteAContratistaForm({
   contratistaId,
-  tieneCuenta,
+  usuarioId,
   opciones,
 }: {
   contratistaId: string;
-  tieneCuenta: boolean;
+  usuarioId: string | null;
   opciones: ExpedienteVinculable[];
 }) {
   const router = useRouter();
@@ -28,7 +28,7 @@ export function VincularExpedienteAContratistaForm({
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contratistaId }),
+        body: JSON.stringify(usuarioId ? { contratistaUsuarioId: usuarioId } : { contratistaId }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo vincular el expediente.");
@@ -44,8 +44,7 @@ export function VincularExpedienteAContratistaForm({
   return (
     <div className="space-y-2">
       <p className="text-xs text-stone-500">
-        Al vincular un expediente, este contratista podrá consultarlo — incluidas las etapas Contractual y Postcontractual — y cargar en él sus documentos.
-        {!tieneCuenta && " Todavía no tiene cuenta de acceso: podrá verlo cuando se le asigne desde Usuarios."}
+        Al vincular un expediente, este contratista podrá consultarlo (Contractual y Postcontractual) y cargar en él sus documentos.
       </p>
       {opciones.length === 0 ? (
         <p className="text-xs text-stone-400">No hay expedientes sin contratista para vincular.</p>

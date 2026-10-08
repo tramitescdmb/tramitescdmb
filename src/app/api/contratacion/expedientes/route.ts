@@ -3,7 +3,7 @@ import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
-import { crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import { asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
 
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const contratistaUsuarioId = typeof body.contratistaUsuarioId === "string" ? body.contratistaUsuarioId.trim() : "";
+    const contratistaId = contratistaUsuarioId ? (await asegurarContratistaDeUsuario(contratistaUsuarioId)).id : null;
     const expediente = await crearExpedienteContractual({
       objeto,
       modalidadSeleccion,
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
       fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null,
       fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null,
       dependenciaSolicitanteId,
-      contratistaId: body.contratistaId ? String(body.contratistaId) : null,
+      contratistaId,
       supervisorUsuarioIds,
       personalAsignadoIds,
       subserieId: body.subserieId ? String(body.subserieId) : null,

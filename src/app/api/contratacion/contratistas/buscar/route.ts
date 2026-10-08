@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { buscarUsuariosParaContrato } from "@/lib/contratacion";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -11,11 +11,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "No tiene permiso." }, { status: 403 });
   }
 
-  const identificacion = req.nextUrl.searchParams.get("identificacion")?.trim();
-  if (!identificacion) return NextResponse.json({ error: "Falta la identificación." }, { status: 400 });
-
-  const contratista = await db.contratista.findUnique({ where: { identificacion } });
-  if (!contratista) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-
-  return NextResponse.json(contratista);
+  const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 80);
+  return NextResponse.json({ resultados: await buscarUsuariosParaContrato(q) });
 }

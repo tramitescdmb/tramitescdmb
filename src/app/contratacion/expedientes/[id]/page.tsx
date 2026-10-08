@@ -613,7 +613,7 @@ export default async function DetalleExpedienteContractualPage({
                 jurídica).
               </span>
             </div>
-            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} />}
+            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null} />}
           </div>
         )}
 
@@ -623,10 +623,10 @@ export default async function DetalleExpedienteContractualPage({
               {expediente.contratista ? "Cambiar el contratista" : "Vincular un contratista"}
             </summary>
             <p className="mt-1.5 text-stone-500">
-              El contratista vinculado (si tiene cuenta de acceso) puede consultar este expediente —incluidas las etapas Contractual y
-              Postcontractual— y cargar en él sus documentos. El vínculo (y cualquier cambio) queda en la bitácora.
+              El contratista se elige entre los usuarios registrados. Con el vínculo puede consultar este expediente (Contractual y
+              Postcontractual) y cargar sus documentos. El cambio queda en la bitácora.
             </p>
-            <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} />
+            <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} enlaceUsuarios={permisos.esAdmin ? "/usuarios" : null} />
           </details>
         )}
 

@@ -8,6 +8,7 @@ import { listarDependenciasActivas } from "@/lib/dependencias";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
+import { personaDesdeUsuario } from "@/lib/usuarios-persona";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -34,7 +35,6 @@ export default async function EditarUsuarioPage({
         cargos: true,
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
-        contratista: { select: { identificacion: true, nombreORazonSocial: true, tipoPersona: true } },
       },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
@@ -82,7 +82,8 @@ export default async function EditarUsuarioPage({
 
       <EditarUsuarioAccesoForm
         usuarioId={usuario.id}
-        nombreActual={usuario.nombre}
+        usuarioRed={usuario.email}
+        personaActual={personaDesdeUsuario(usuario)}
         directorioActivo={usuario.directorioActivo}
         rolActual={usuario.rol}
         cargoActualIds={usuario.cargos.map((c) => c.id)}
@@ -98,9 +99,6 @@ export default async function EditarUsuarioPage({
         denominacionEmpleoActual={usuario.denominacionEmpleo}
         denominacionComplementoActual={usuario.denominacionComplemento}
         accesoFirmaActual={usuario.accesoFirma}
-        cedulaONitActual={usuario.cedulaONit}
-        tipoIdentificacionFirmaActual={usuario.tipoIdentificacionFirma}
-        correoNotificacionActual={usuario.correoNotificacion}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={
           usuario.directorioActivo ? undefined : estadoVigenciaPassword(usuario.passwordCambiadaEn, config.passwordVigenciaDias)
@@ -108,7 +106,6 @@ export default async function EditarUsuarioPage({
         estadoCuentaActual={usuario.estadoCuenta}
         rolesContratacionActuales={usuario.rolesContratacion}
         rolContratacionVigenteHastaActual={usuario.rolContratacionVigenteHasta ? usuario.rolContratacionVigenteHasta.toISOString().slice(0, 10) : null}
-        contratistaActual={usuario.contratista}
       />
     </div>
   );

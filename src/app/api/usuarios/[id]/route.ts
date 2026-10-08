@@ -1,4 +1,3 @@
-import { esTipoIdentificacionFirma, type TipoIdentificacionFirmaValor } from "@/lib/identificacion-firma";
 import { NextRequest, NextResponse } from "next/server";
 import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -8,7 +7,9 @@ import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPasswor
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
-import { vincularContratistaAUsuario, desvincularContratistaDeUsuario } from "@/lib/contratacion";
+import { sincronizarContratistaDeUsuario } from "@/lib/contratacion";
+import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
 const SECCIONES_VALIDAS: SeccionSoloLectura[] = ["VITAL_BASE", "VITAL_DASHBOARD", "SINCA_BASE", "SINCA_DASHBOARD", "SINCA_MINERIA"];
@@ -21,6 +22,8 @@ const ROLES_CORRESPONDENCIA_VALIDOS: RolCorrespondencia[] = [
 const ROLES_CONTRATACION_VALIDOS: RolContratacion[] = [
   "ADMINISTRADOR_CONTRATACION",
   "JEFE_CONTRATACION",
+  "FUNCIONARIO_CONTRATACION",
+  "JEFE_DEPENDENCIA",
   "SUPERVISOR_INTERVENTOR",
   "CONTRATISTA",
 ];
@@ -40,7 +43,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   const rol = body.rol === "ADMIN" || body.rol === "FUNCIONARIO" ? body.rol : usuario.rol;
-  const nombre = typeof body.nombre === "string" && body.nombre.trim() ? body.nombre.trim() : undefined;
+  const persona = body.persona ? leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO) : null;
+  if (persona) {
+    const errorPersona = errorPersonaUsuario(persona);
+    if (errorPersona) return NextResponse.json({ error: errorPersona }, { status: 400 });
+  }
   const denominacionEmpleo: string | null | undefined = "denominacionEmpleo" in body
     ? (esClaveDenominacion(body.denominacionEmpleo) ? body.denominacionEmpleo : null)
     : undefined;
@@ -53,11 +60,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? (esSexo(body.sexo) ? body.sexo : null)
     : undefined;
   const accesoFirma: boolean | undefined = "accesoFirma" in body ? Boolean(body.accesoFirma) : undefined;
-  const cedulaONit: string | null | undefined = "cedulaONit" in body ? (String(body.cedulaONit || "").trim() || null) : undefined;
-  const tipoIdentificacionFirma: TipoIdentificacionFirmaValor | null | undefined = "tipoIdentificacionFirma" in body
-    ? (esTipoIdentificacionFirma(body.tipoIdentificacionFirma) ? body.tipoIdentificacionFirma : null)
-    : undefined;
-  const correoNotificacion: string | null | undefined = "correoNotificacion" in body ? (String(body.correoNotificacion || "").trim() || null) : undefined;
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
     : undefined;
@@ -95,15 +97,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const rolContratacionVigenteHasta: Date | null | undefined = "rolContratacionVigenteHasta" in body
     ? (typeof body.rolContratacionVigenteHasta === "string" && body.rolContratacionVigenteHasta ? new Date(body.rolContratacionVigenteHasta) : null)
     : undefined;
-  const contratistaIdentificacion = typeof body.contratistaIdentificacion === "string" ? body.contratistaIdentificacion.trim() : "";
-  const contratistaNombre = typeof body.contratistaNombre === "string" ? body.contratistaNombre.trim() : "";
-  const contratistaTipoPersona: "NATURAL" | "JURIDICA" = body.contratistaTipoPersona === "JURIDICA" ? "JURIDICA" : "NATURAL";
 
   if (esContratista && rolesContratacion!.length > 1) {
     return NextResponse.json({ error: "El rol Contratista no se combina con otros roles de contratación." }, { status: 400 });
-  }
-  if (esContratista && !contratistaIdentificacion) {
-    return NextResponse.json({ error: "Indique la identificación (NIT/cédula) del contratista." }, { status: 400 });
   }
 
   if (dependenciaId) {
@@ -141,19 +137,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await registrarHistorialPassword(usuario.id, usuario.passwordHash, config.passwordHistorialCantidad);
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.usuario.update({
+  await db.$transaction([
+    db.usuario.update({
       where: { id },
       data: {
         rol,
-        ...(nombre ? { nombre } : {}),
+        ...(persona ? dataUsuarioDesdePersona(persona) : {}),
         ...(denominacionEmpleo !== undefined ? { denominacionEmpleo } : {}),
         ...(denominacionComplemento !== undefined ? { denominacionComplemento } : {}),
         ...(sexo !== undefined ? { sexo } : {}),
         ...(accesoFirma !== undefined ? { accesoFirma } : {}),
-        ...(cedulaONit !== undefined ? { cedulaONit } : {}),
-        ...(tipoIdentificacionFirma !== undefined ? { tipoIdentificacionFirma } : {}),
-        ...(correoNotificacion !== undefined ? { correoNotificacion } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
@@ -163,34 +156,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(rolContratacionVigenteHasta !== undefined ? { rolContratacionVigenteHasta } : {}),
         ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
-    });
-    if (accesoTramites) {
-      await tx.usuarioTramiteAcceso.deleteMany({ where: { usuarioId: id } });
-      if (accesoTramites.length > 0) {
-        await tx.usuarioTramiteAcceso.createMany({
-          data: accesoTramites.map((a) => ({ usuarioId: id, tramiteTipoId: a.tramiteTipoId, nivel: a.nivel })),
-        });
-      }
-    }
-    if (secciones) {
-      await tx.usuarioSeccionAcceso.deleteMany({ where: { usuarioId: id } });
-      if (secciones.length > 0) {
-        await tx.usuarioSeccionAcceso.createMany({
-          data: secciones.map((seccion) => ({ usuarioId: id, seccion })),
-        });
-      }
-    }
-  });
+    }),
+    ...(accesoTramites
+      ? [
+          db.usuarioTramiteAcceso.deleteMany({ where: { usuarioId: id } }),
+          db.usuarioTramiteAcceso.createMany({
+            data: accesoTramites.map((a) => ({ usuarioId: id, tramiteTipoId: a.tramiteTipoId, nivel: a.nivel })),
+          }),
+        ]
+      : []),
+    ...(secciones
+      ? [
+          db.usuarioSeccionAcceso.deleteMany({ where: { usuarioId: id } }),
+          db.usuarioSeccionAcceso.createMany({ data: secciones.map((seccion) => ({ usuarioId: id, seccion })) }),
+        ]
+      : []),
+  ]);
 
-  if (esContratista) {
-    await vincularContratistaAUsuario(id, {
-      identificacion: contratistaIdentificacion,
-      nombreORazonSocial: contratistaNombre || undefined,
-      tipoPersona: contratistaTipoPersona,
-    });
-  } else if (rolesContratacion !== undefined) {
-    await desvincularContratistaDeUsuario(id);
-  }
+  if (persona) await sincronizarContratistaDeUsuario(id);
 
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",

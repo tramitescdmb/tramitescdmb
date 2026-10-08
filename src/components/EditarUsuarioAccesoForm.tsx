@@ -1,9 +1,11 @@
 "use client";
 
-import { TIPOS_IDENTIFICACION_FIRMA, ETIQUETA_TIPO_IDENTIFICACION, textoIdentificacionFirma } from "@/lib/identificacion-firma";
+import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine, Search } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
+import { CamposPersona } from "@/components/CamposPersona";
+import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
 
@@ -58,7 +60,7 @@ const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
 ];
 
 const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
-  { id: "seccion-nombre", etiqueta: "Nombre" },
+  { id: "seccion-nombre", etiqueta: "Datos personales" },
   { id: "seccion-firma", etiqueta: "Datos para la firma" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
@@ -126,7 +128,8 @@ function BotonAtajo({
 
 export function EditarUsuarioAccesoForm({
   usuarioId,
-  nombreActual,
+  usuarioRed,
+  personaActual,
   directorioActivo,
   rolActual,
   cargoActualIds,
@@ -145,23 +148,17 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual,
   denominacionComplementoActual,
   accesoFirmaActual,
-  cedulaONitActual,
-  tipoIdentificacionFirmaActual = null,
-  correoNotificacionActual,
   rolesContratacionActuales = [],
   rolContratacionVigenteHastaActual,
-  contratistaActual,
 }: {
   usuarioId: string;
-  nombreActual: string;
+  usuarioRed: string;
+  personaActual: DatosPersona;
   directorioActivo: boolean;
   sexoActual: string | null;
   denominacionEmpleoActual: string | null;
   denominacionComplementoActual: string | null;
   accesoFirmaActual: boolean;
-  cedulaONitActual: string | null;
-  tipoIdentificacionFirmaActual?: string | null;
-  correoNotificacionActual: string | null;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
@@ -177,17 +174,13 @@ export function EditarUsuarioAccesoForm({
   estadoCuentaActual: EstadoCuenta;
   rolesContratacionActuales?: RolContratacion[];
   rolContratacionVigenteHastaActual?: string | null;
-  contratistaActual?: { identificacion: string; nombreORazonSocial: string; tipoPersona: string } | null;
 }) {
   const router = useRouter();
-  const [nombre, setNombre] = useState(nombreActual);
+  const [persona, setPersona] = useState<DatosPersona>(personaActual);
   const [sexo, setSexo] = useState(sexoActual ?? "");
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
-  const [cedulaONit, setCedulaONit] = useState(cedulaONitActual ?? "");
-  const [tipoIdentificacionFirma, setTipoIdentificacionFirma] = useState<string>(tipoIdentificacionFirmaActual ?? "CC");
-  const [correoNotificacion, setCorreoNotificacion] = useState(correoNotificacionActual ?? "");
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
@@ -214,9 +207,6 @@ export function EditarUsuarioAccesoForm({
     });
   }
   const [rolContratacionVigenteHasta, setRolContratacionVigenteHasta] = useState(rolContratacionVigenteHastaActual ?? "");
-  const [contratistaIdentificacion, setContratistaIdentificacion] = useState(contratistaActual?.identificacion ?? "");
-  const [contratistaNombre, setContratistaNombre] = useState(contratistaActual?.nombreORazonSocial ?? "");
-  const [contratistaTipoPersona, setContratistaTipoPersona] = useState(contratistaActual?.tipoPersona ?? "NATURAL");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -288,16 +278,12 @@ export function EditarUsuarioAccesoForm({
   const todosLosTramites = tramitesPorCategoria.flatMap((g) => g.items);
 
   async function guardar() {
-    if (!nombre.trim()) {
-      setError("Debe indicarse el nombre completo.");
+    if (persona.tipoPersona === "JURIDICA" ? !persona.razonSocial.trim() : !persona.nombres.trim() || !persona.apellidos.trim()) {
+      setError(persona.tipoPersona === "JURIDICA" ? "Indique la razón social." : "Indique los nombres y los apellidos.");
       return;
     }
     if (nuevaContrasena && nuevaContrasena.length < politicaPassword.longitudMinima) {
       setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
-      return;
-    }
-    if (esContratista && !contratistaIdentificacion.trim()) {
-      setError("Indique la identificación (NIT/cédula) del contratista.");
       return;
     }
     setGuardando(true);
@@ -308,11 +294,8 @@ export function EditarUsuarioAccesoForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre: nombre.trim(),
+          persona,
           sexo: sexo || null,
-          cedulaONit: cedulaONit.trim() || null,
-          tipoIdentificacionFirma,
-          correoNotificacion: correoNotificacion.trim() || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
           accesoFirma,
@@ -326,9 +309,6 @@ export function EditarUsuarioAccesoForm({
           rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
           rolesContratacion: Array.from(rolesContratacion),
           rolContratacionVigenteHasta: rolesContratacion.size > 0 ? (rolContratacionVigenteHasta || null) : null,
-          ...(esContratista
-            ? { contratistaIdentificacion: contratistaIdentificacion.trim(), contratistaNombre: contratistaNombre.trim(), contratistaTipoPersona }
-            : {}),
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
       });
@@ -365,20 +345,21 @@ export function EditarUsuarioAccesoForm({
       </nav>
 
       <section id="seccion-nombre" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={UserRound} titulo="Nombre completo" ayuda="Nombre y apellidos que se muestran en toda la aplicación." />
-        <input
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          placeholder="Nombre y apellidos"
-          className="w-full max-w-sm rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+        <EncabezadoSeccion icono={UserRound} titulo="Datos personales" ayuda="Identificación, nombre, contacto, ubicación e información tributaria. GECON los usa cuando la persona es contratista." />
+        <CamposPersona
+          valor={persona}
+          onChange={setPersona}
+          tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
+          tributaria
+          requeridos={{ nombre: true }}
+          etiquetaCorreo="Correo de notificación"
         />
         {directorioActivo && (
           <p className="mt-2 text-xs text-stone-400">
-            Cuenta de Directorio Activo: el nombre se asignó de forma provisional al crearse. Verifíquelo o corríjalo.
+            Cuenta de directorio activo ({usuarioRed}): el nombre se asignó de forma provisional al crearse. Verifíquelo o corríjalo.
           </p>
         )}
       </section>
-
       <section id="seccion-firma" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion
           icono={PenLine}
@@ -386,42 +367,6 @@ export function EditarUsuarioAccesoForm({
           ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado."
         />
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="text-xs font-medium text-stone-600">
-            Documento de identificación
-            <div className="mt-1 flex gap-2">
-              <select
-                value={tipoIdentificacionFirma}
-                onChange={(e) => setTipoIdentificacionFirma(e.target.value)}
-                aria-label="Tipo de documento"
-                className="flex-none rounded-lg border border-stone-200 px-2 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              >
-                {TIPOS_IDENTIFICACION_FIRMA.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {ETIQUETA_TIPO_IDENTIFICACION[tipo]}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={cedulaONit}
-                onChange={(e) => setCedulaONit(e.target.value)}
-                aria-label="Número de documento"
-                placeholder={tipoIdentificacionFirma === "NIT" ? "Ej. 900123456-1" : "Ej. 91234567"}
-                className="block w-full min-w-0 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-            </div>
-            <span className="mt-1 block font-normal text-stone-400">En la firma solo se imprime el tipo elegido.</span>
-          </div>
-          <label className="text-xs font-medium text-stone-600">
-            Correo de notificación <span className="font-normal text-stone-400">(no se estampa)</span>
-            <input
-              type="email"
-              value={correoNotificacion}
-              onChange={(e) => setCorreoNotificacion(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-            />
-          </label>
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-stone-600">
             Sexo
             <select
@@ -474,14 +419,16 @@ export function EditarUsuarioAccesoForm({
         <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
           En la firma aparecerá:{" "}
           <span className="font-medium text-stone-800">
-            {nombre.trim() || "Nombre del funcionario"}
+            {nombreCompletoPersona(persona) || "Nombre del funcionario"}
             {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento) ? (
               <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento)}</>
             ) : null}
             {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
               ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
               : null}
-            {textoIdentificacionFirma(cedulaONit, tipoIdentificacionFirma) ? `, ${textoIdentificacionFirma(cedulaONit, tipoIdentificacionFirma)}` : null}
+            {textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)
+              ? `, ${textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}`
+              : null}
           </span>
         </p>
       </section>
@@ -838,39 +785,10 @@ export function EditarUsuarioAccesoForm({
         )}
 
         {esContratista && (
-          <div className="grid gap-3 rounded-lg border border-stone-100 bg-stone-50/60 p-3 sm:grid-cols-3">
-            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
-              <span className="mb-1 flex items-center gap-1"><Search className="h-3.5 w-3.5" aria-hidden /> Identificación (NIT/cédula)</span>
-              <input
-                value={contratistaIdentificacion}
-                onChange={(e) => setContratistaIdentificacion(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-            </label>
-            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
-              Nombre o razón social
-              <input
-                value={contratistaNombre}
-                onChange={(e) => setContratistaNombre(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-            </label>
-            <label className="text-xs font-medium text-stone-600 sm:col-span-1">
-              Tipo
-              <select
-                value={contratistaTipoPersona}
-                onChange={(e) => setContratistaTipoPersona(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              >
-                <option value="NATURAL">Persona natural</option>
-                <option value="JURIDICA">Persona jurídica</option>
-              </select>
-            </label>
-            <p className="text-[11px] text-stone-400 sm:col-span-3">
-              Vincula esta cuenta al registro de Contratista con esa identificación (lo crea si no existe). Al
-              iniciar sesión por Directorio Activo, este vínculo determina a qué expediente(s) tiene acceso.
-            </p>
-          </div>
+          <p className="rounded-lg border border-stone-100 bg-stone-50/60 px-3 py-2 text-xs text-stone-500">
+            Como contratista, GECON toma sus datos personales de esta página. Para iniciar un contrato debe tener completos
+            el documento, el nombre, el correo, la dirección, el departamento y la ciudad, y el régimen tributario.
+          </p>
         )}
       </section>
 

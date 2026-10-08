@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeVerRegistroContratistas } from "@/lib/permisos";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
+import { vigenciaDeExpediente } from "@/lib/contratacion";
+import { filtroContratistas } from "@/lib/contratistas-registro";
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);
@@ -17,20 +19,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "No tiene permiso para descargar este listado." }, { status: 403 });
   }
 
-  const busqueda = req.nextUrl.searchParams.get("q")?.trim();
-  const where = busqueda
-    ? {
-        OR: [
-          { identificacion: { contains: busqueda, mode: "insensitive" as const } },
-          { nombreORazonSocial: { contains: busqueda, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
+  const sp = req.nextUrl.searchParams;
+  const estado = sp.get("estado");
+  const where = filtroContratistas({
+    busqueda: sp.get("q")?.trim() ?? "",
+    vigencia: Number(sp.get("vigencia")) || null,
+    estado: estado === "activo" || estado === "inactivo" ? estado : "",
+  });
 
   const contratistas = await db.contratista.findMany({
     where,
     orderBy: { nombreORazonSocial: "asc" },
-    include: { _count: { select: { expedientes: true } } },
+    include: {
+      expedientes: { where: { eliminado: false }, select: { numero: true, fechaInicio: true, createdAt: true, etapaActual: true, cerrado: true } },
+    },
   });
 
   const encabezados = [
@@ -42,16 +44,24 @@ export async function GET(req: NextRequest) {
     "Régimen tributario",
     "Gran contribuyente",
     "Correo",
+    "Celular",
     "Teléfono",
     "Departamento",
     "Ciudad",
     "Dirección",
-    "Nro. de expedientes",
+    "Contratos por vigencia",
+    "Contrato activo",
     "Registrado desde",
   ];
 
-  const filas = contratistas.map((c) =>
-    [
+  const filas = contratistas.map((c) => {
+    const porVigencia = new Map<number, number>();
+    for (const e of c.expedientes) {
+      const v = vigenciaDeExpediente(e.fechaInicio, e.createdAt);
+      porVigencia.set(v, (porVigencia.get(v) ?? 0) + 1);
+    }
+    const activos = c.expedientes.filter((e) => !e.cerrado && e.etapaActual === "CONTRACTUAL").map((e) => e.numero);
+    return [
       c.identificacion,
       c.tipoPersona === "JURIDICA" ? "Persona jurídica" : "Persona natural",
       c.nombres,
@@ -60,16 +70,21 @@ export async function GET(req: NextRequest) {
       regimenTributarioLabel(c.regimenTributario),
       c.granContribuyente ? "Sí" : "No",
       c.contactoEmail,
+      c.contactoCelular,
       c.contactoTelefono,
       c.departamento,
       c.ciudad,
       c.direccion,
-      c._count.expedientes,
+      Array.from(porVigencia.entries())
+        .sort((a, b) => b[0] - a[0])
+        .map(([v, n]) => `${v}: ${n}`)
+        .join("; "),
+      activos.length > 0 ? activos.join("; ") : "No",
       c.createdAt.toISOString().slice(0, 10),
     ]
       .map(celda)
-      .join(";")
-  );
+      .join(";");
+  });
 
   const BOM = String.fromCharCode(0xfeff);
   const csv = BOM + [encabezados.map(celda).join(";"), ...filas].join("\r\n");

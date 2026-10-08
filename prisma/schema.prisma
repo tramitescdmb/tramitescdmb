@@ -108,6 +108,18 @@ model Usuario {
 
   directorioActivo Boolean @default(false)
 
+  tipoPersona       TipoPersona        @default(NATURAL)
+  nombres           String?
+  apellidos         String?
+  razonSocial       String?
+  celular           String?
+  telefono          String?
+  direccion         String?
+  departamento      String?
+  ciudad            String?
+  regimenTributario RegimenTributario?
+  granContribuyente Boolean            @default(false)
+
   cargos                Cargo[]
   tramitesAcceso        UsuarioTramiteAcceso[]
   seccionesAcceso       UsuarioSeccionAcceso[]
@@ -482,6 +494,34 @@ enum TipoSolicitante {
   JURIDICA
 }
 
+enum TipoPersona {
+  NATURAL
+  JURIDICA
+}
+
+model Tercero {
+  id                 String             @id @default(cuid())
+  tipo               TipoSolicitante    @default(NATURAL)
+  tipoIdentificacion String?
+  identificacion     String             @unique
+  nombres            String?
+  apellidos          String?
+  razonSocial        String?
+  email              String?
+  celular            String?
+  telefono           String?
+  direccion          String?
+  departamento       String?
+  ciudad             String?
+  creadoPorId        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([nombres])
+  @@index([apellidos])
+  @@index([razonSocial])
+}
+
 enum RegimenTributario {
   RESPONSABLE_IVA
   NO_RESPONSABLE_IVA
@@ -523,6 +563,7 @@ model Solicitante {
   regimenTributario RegimenTributario?
   granContribuyente Boolean            @default(false)
   email             String?
+  celular           String?
   telefono          String?
   direccion         String?
   municipio         String
@@ -1855,6 +1896,7 @@ model Contratista {
   regimenTributario  RegimenTributario?
   granContribuyente  Boolean                @default(false)
   contactoEmail      String?
+  contactoCelular    String?
   contactoTelefono   String?
   direccion          String?
   departamento       String?

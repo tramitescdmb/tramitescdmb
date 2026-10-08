@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { MapPin } from "lucide-react";
-import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
-import { buscarDepartamentos, buscarMunicipios, DEPARTAMENTO_POR_DEFECTO, type DatosDivipola, type OpcionMunicipio } from "@/lib/divipola";
+import { buscarDepartamentos, buscarMunicipios, type DatosDivipola, type OpcionMunicipio } from "@/lib/divipola";
 
 let cargaDatos: Promise<DatosDivipola> | null = null;
 
@@ -16,6 +14,7 @@ type Valor = { departamento: string; ciudad: string };
 
 function Autocompletar<T>({
   etiqueta,
+  requerido,
   valor,
   placeholder,
   sugerencias,
@@ -27,6 +26,7 @@ function Autocompletar<T>({
   claseCampo,
 }: {
   etiqueta: string;
+  requerido?: boolean;
   valor: string;
   placeholder: string;
   sugerencias: T[];
@@ -58,8 +58,9 @@ function Autocompletar<T>({
 
   return (
     <div ref={contenedor} className="relative">
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-stone-700">
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-stone-700">
         {etiqueta}
+        {requerido && <span className="ml-1 text-red-500">*</span>}
       </label>
       <input
         id={id}
@@ -123,10 +124,12 @@ export function SelectorDepartamentoCiudad({
   valor,
   onChange,
   claseCampo,
+  requerido = false,
 }: {
   valor: Valor;
   onChange: (v: Valor) => void;
   claseCampo: string;
+  requerido?: boolean;
 }) {
   const [datos, setDatos] = useState<DatosDivipola | null>(null);
   const cargar = () => {
@@ -137,32 +140,11 @@ export function SelectorDepartamentoCiudad({
   const enDepartamento: OpcionMunicipio[] = datos ? buscarMunicipios(datos, valor.ciudad, valor.departamento) : [];
   const municipios = datos && valor.ciudad.trim() && enDepartamento.length === 0 ? buscarMunicipios(datos, valor.ciudad, "") : enDepartamento;
 
-  const esRapida = (m: string) => valor.ciudad === m && valor.departamento === DEPARTAMENTO_POR_DEFECTO;
-
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="flex items-center gap-1 text-[11px] font-medium text-stone-500">
-          <MapPin className="h-3 w-3" aria-hidden />
-          Jurisdicción CDMB:
-        </span>
-        {MUNICIPIOS_JURISDICCION_CDMB.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onChange({ departamento: DEPARTAMENTO_POR_DEFECTO, ciudad: m })}
-            aria-pressed={esRapida(m)}
-            className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
-              esRapida(m) ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:bg-cdmb-50"
-            }`}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2">
         <Autocompletar
           etiqueta="Departamento"
+          requerido={requerido}
           valor={valor.departamento}
           placeholder="Escriba para buscar…"
           sugerencias={departamentos}
@@ -174,6 +156,7 @@ export function SelectorDepartamentoCiudad({
         />
         <Autocompletar
           etiqueta="Ciudad o municipio"
+          requerido={requerido}
           valor={valor.ciudad}
           placeholder="Escriba para buscar…"
           sugerencias={municipios}
@@ -184,7 +167,6 @@ export function SelectorDepartamentoCiudad({
           onElegir={(m) => onChange({ departamento: m.departamento, ciudad: m.nombre })}
           claseCampo={claseCampo}
         />
-      </div>
     </div>
   );
 }

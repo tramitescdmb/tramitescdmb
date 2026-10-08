@@ -47,7 +47,15 @@ export async function GET() {
 
   const encabezados = [
     "Nombre",
+    "Tipo de persona",
+    "Documento",
     "Correo",
+    "Correo de notificación",
+    "Celular",
+    "Teléfono",
+    "Dirección",
+    "Departamento",
+    "Ciudad",
     "Directorio activo",
     "Rol",
     "Cargo(s)",
@@ -66,7 +74,15 @@ export async function GET() {
     const secciones = u.seccionesAcceso.map((s) => ETIQUETAS_SECCION[s.seccion] ?? s.seccion);
     return [
       u.nombre,
+      u.tipoPersona === "JURIDICA" ? "Jurídica" : "Natural",
+      u.cedulaONit ? `${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : "",
       u.email,
+      u.correoNotificacion,
+      u.celular,
+      u.telefono,
+      u.direccion,
+      u.departamento,
+      u.ciudad,
       u.directorioActivo ? "Sí" : "No",
       esAdmin ? "Administrador" : "Funcionario",
       u.cargos.map((c) => c.nombre).join("; "),

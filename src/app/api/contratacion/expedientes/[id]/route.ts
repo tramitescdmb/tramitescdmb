@@ -10,6 +10,7 @@ import {
   puedeEliminarExpedienteContractual,
 } from "@/lib/permisos";
 import {
+  asegurarContratistaDeUsuario,
   eliminarExpedienteContractualCompleto,
   registrarEventoContratacion,
   ETIQUETA_MODALIDAD,
@@ -35,6 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const CAMPOS_CONTENIDO = [
     "contratistaId",
+    "contratistaUsuarioId",
     "numeroContrato",
     "numeroProcesoSecop",
     "fechaSuscripcion",
@@ -49,12 +51,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
   }
 
-  if ("contratistaId" in body) {
+  if ("contratistaId" in body || "contratistaUsuarioId" in body) {
     if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
       await registrarAccesoDenegadoAccion("vincular el contratista de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para vincular el contratista de este expediente." }, { status: 403 });
     }
-    const contratistaId = String(body.contratistaId || "").trim();
+    let contratistaId = String(body.contratistaId || "").trim();
+    const contratistaUsuarioId = String(body.contratistaUsuarioId || "").trim();
+    if (contratistaUsuarioId) {
+      try {
+        contratistaId = (await asegurarContratistaDeUsuario(contratistaUsuarioId)).id;
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo vincular el contratista." }, { status: 400 });
+      }
+    }
     if (!contratistaId) return NextResponse.json({ error: "Falta el contratista." }, { status: 400 });
     const [contratista, actual] = await Promise.all([
       db.contratista.findUnique({ where: { id: contratistaId }, select: { nombreORazonSocial: true } }),

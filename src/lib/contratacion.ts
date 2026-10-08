@@ -3,12 +3,12 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
-import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
-import { registrarAuditoria } from "@/lib/auditoria";
+import { camposFaltantes, nombreCompletoPersona, nulo, regimenONulo, REQUERIDOS_CONTRATISTA } from "@/lib/datos-persona";
+import { personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
-import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
+import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
@@ -853,104 +853,139 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
   await sincronizarArchivoContrato(expedienteId);
 }
 
-export async function vincularContratistaAUsuario(
-  usuarioId: string,
-  datos: { identificacion: string; nombreORazonSocial?: string; tipoPersona?: "NATURAL" | "JURIDICA" }
-) {
-  const identificacion = datos.identificacion.trim();
-  if (!identificacion) throw new Error("Indique la identificación (NIT/cédula) del contratista.");
+export const SELECT_USUARIO_CONTRATISTA = {
+  id: true,
+  activo: true,
+  rol: true,
+  email: true,
+  rolesContratacion: true,
+  ...SELECT_PERSONA_USUARIO,
+} as const;
 
-  const existentePorUsuario = await db.contratista.findUnique({ where: { usuarioId } });
-  if (existentePorUsuario) {
-    return db.contratista.update({
-      where: { id: existentePorUsuario.id },
-      data: {
-        identificacion,
-        ...(datos.nombreORazonSocial ? { nombreORazonSocial: datos.nombreORazonSocial.trim() } : {}),
-        ...(datos.tipoPersona ? { tipoPersona: datos.tipoPersona } : {}),
-      },
-    });
+type UsuarioContratista = Prisma.UsuarioGetPayload<{ select: typeof SELECT_USUARIO_CONTRATISTA }>;
+
+export function faltantesContratista(u: UsuarioContratista): string[] {
+  return camposFaltantes(personaDesdeUsuario(u, false), REQUERIDOS_CONTRATISTA);
+}
+
+export function motivoNoPuedeSerContratista(u: Pick<UsuarioContratista, "activo" | "rol" | "rolesContratacion">): string | null {
+  if (!u.activo) return "la cuenta está inactiva";
+  if (u.rol === "ADMIN") return "es administrador de la plataforma";
+  const otro = u.rolesContratacion.find((r) => r !== "CONTRATISTA");
+  if (otro) return `tiene el rol ${ETIQUETA_ROL_CONTRATACION[otro] ?? otro} en GECON`;
+  return null;
+}
+
+function datosContratistaDesdeUsuario(u: UsuarioContratista) {
+  const p = personaDesdeUsuario(u, false);
+  const esJuridica = p.tipoPersona === "JURIDICA";
+  return {
+    identificacion: p.identificacion.trim(),
+    tipoPersona: p.tipoPersona,
+    nombres: esJuridica ? null : nulo(p.nombres),
+    apellidos: esJuridica ? null : nulo(p.apellidos),
+    nombreORazonSocial: nombreCompletoPersona(p) || u.nombre,
+    regimenTributario: regimenONulo(p.regimenTributario),
+    granContribuyente: p.granContribuyente,
+    contactoEmail: nulo(p.email),
+    contactoCelular: nulo(p.celular),
+    contactoTelefono: nulo(p.telefono),
+    direccion: nulo(p.direccion),
+    departamento: nulo(p.departamento),
+    ciudad: nulo(p.ciudad),
+  };
+}
+
+export async function asegurarContratistaDeUsuario(usuarioId: string): Promise<{ id: string; nombre: string }> {
+  const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_USUARIO_CONTRATISTA });
+  if (!u) throw new Error("El usuario elegido no existe.");
+  const motivo = motivoNoPuedeSerContratista(u);
+  if (motivo) throw new Error(`${u.nombre} no puede ser contratista: ${motivo}.`);
+  const faltan = faltantesContratista(u);
+  if (faltan.length > 0) throw new Error(`Faltan datos de ${u.nombre} para iniciar el contrato: ${faltan.join(", ")}.`);
+
+  const datos = datosContratistaDesdeUsuario(u);
+  const [porUsuario, porIdentificacion] = await Promise.all([
+    db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
+    db.contratista.findUnique({ where: { identificacion: datos.identificacion }, select: { id: true, usuarioId: true } }),
+  ]);
+  if (porIdentificacion && porIdentificacion.id !== porUsuario?.id && (porIdentificacion.usuarioId || porUsuario)) {
+    throw new Error(`El documento ${datos.identificacion} ya corresponde a otro contratista registrado.`);
   }
 
-  const existentePorIdentificacion = await db.contratista.findUnique({ where: { identificacion } });
-  if (existentePorIdentificacion) {
-    if (existentePorIdentificacion.usuarioId && existentePorIdentificacion.usuarioId !== usuarioId) {
-      throw new Error("Esa identificación ya está vinculada a otro usuario.");
-    }
-    return db.contratista.update({
-      where: { id: existentePorIdentificacion.id },
-      data: {
-        usuarioId,
-        ...(datos.nombreORazonSocial ? { nombreORazonSocial: datos.nombreORazonSocial.trim() } : {}),
-        ...(datos.tipoPersona ? { tipoPersona: datos.tipoPersona } : {}),
-      },
-    });
+  let id: string;
+  if (porUsuario) {
+    await db.contratista.update({ where: { id: porUsuario.id }, data: datos });
+    id = porUsuario.id;
+  } else if (porIdentificacion) {
+    await db.contratista.update({ where: { id: porIdentificacion.id }, data: { ...datos, usuarioId } });
+    id = porIdentificacion.id;
+  } else {
+    id = (await db.contratista.create({ data: { ...datos, usuarioId }, select: { id: true } })).id;
   }
+  if (!u.rolesContratacion.includes("CONTRATISTA")) {
+    await db.usuario.update({ where: { id: usuarioId }, data: { rolesContratacion: ["CONTRATISTA"] } });
+  }
+  return { id, nombre: datos.nombreORazonSocial };
+}
 
-  return db.contratista.create({
-    data: {
-      identificacion,
-      nombreORazonSocial: datos.nombreORazonSocial?.trim() || "(sin nombre registrado)",
-      tipoPersona: datos.tipoPersona || "NATURAL",
-      usuarioId,
+export async function sincronizarContratistaDeUsuario(usuarioId: string): Promise<void> {
+  const [contratista, u] = await Promise.all([
+    db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
+    db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_USUARIO_CONTRATISTA }),
+  ]);
+  if (!contratista || !u) return;
+  const { identificacion, ...resto } = datosContratistaDesdeUsuario(u);
+  const ocupada = identificacion
+    ? await db.contratista.findFirst({ where: { identificacion, id: { not: contratista.id } }, select: { id: true } })
+    : null;
+  await db.contratista.update({
+    where: { id: contratista.id },
+    data: identificacion && !ocupada ? { ...resto, identificacion } : resto,
+  });
+}
+
+export function puedeEditarDatosDeContratista(u: Pick<UsuarioContratista, "rol" | "rolesContratacion">): boolean {
+  return u.rol !== "ADMIN" && u.rolesContratacion.every((r) => r === "CONTRATISTA");
+}
+
+export async function buscarUsuariosParaContrato(consulta: string, limite = 10) {
+  const q = consulta.trim();
+  if (q.length < 2) return [];
+  const palabras = q.split(/\s+/).filter(Boolean).slice(0, 4);
+  const usuarios = await db.usuario.findMany({
+    where: {
+      activo: true,
+      rol: { not: "ADMIN" },
+      NOT: { rolesContratacion: { hasSome: ["ADMINISTRADOR_CONTRATACION", "JEFE_CONTRATACION", "FUNCIONARIO_CONTRATACION", "JEFE_DEPENDENCIA", "SUPERVISOR_INTERVENTOR"] } },
+      AND: palabras.map((p) => ({
+        OR: [
+          { cedulaONit: { contains: p, mode: "insensitive" as const } },
+          { nombres: { contains: p, mode: "insensitive" as const } },
+          { apellidos: { contains: p, mode: "insensitive" as const } },
+          { razonSocial: { contains: p, mode: "insensitive" as const } },
+          { nombre: { contains: p, mode: "insensitive" as const } },
+        ],
+      })),
     },
+    orderBy: { nombre: "asc" },
+    take: limite,
+    select: { ...SELECT_USUARIO_CONTRATISTA, dependencia: { select: { nombre: true } }, contratista: { select: { id: true } } },
   });
+  return usuarios.map((u) => ({
+    usuarioId: u.id,
+    contratistaId: u.contratista?.id ?? null,
+    nombre: u.nombre,
+    tipoPersona: u.tipoPersona,
+    identificacion: u.cedulaONit ?? "",
+    ciudad: u.ciudad ?? "",
+    dependencia: u.dependencia?.nombre ?? null,
+    faltantes: faltantesContratista(u),
+    persona: personaDesdeUsuario(u),
+  }));
 }
 
-export async function desvincularContratistaDeUsuario(usuarioId: string) {
-  await db.contratista.updateMany({ where: { usuarioId }, data: { usuarioId: null } });
-}
-
-export async function vincularUsuarioDominioAContratista(contratistaId: string, usuarioRedCrudo: string, actorId: string) {
-  const usuarioRed = usuarioRedCrudo.trim().toLowerCase();
-  if (!usuarioRed) throw new Error("Escriba el usuario de red.");
-  if (/\s/.test(usuarioRed)) throw new Error("El usuario de red no debe contener espacios.");
-
-  const contratista = await db.contratista.findUnique({ where: { id: contratistaId }, select: { id: true, usuarioId: true, nombreORazonSocial: true } });
-  if (!contratista) throw new Error("El contratista no existe.");
-
-  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, select: { id: true, nombre: true, rol: true, rolesContratacion: true, contratista: { select: { id: true } } } });
-
-  if (existente) {
-    if (existente.contratista && existente.contratista.id === contratistaId) return existente;
-    if (existente.contratista) throw new Error("Ese usuario de red ya está vinculado a otro contratista.");
-    if (existente.rol === "ADMIN" || existente.rolesContratacion.some((r) => r !== "CONTRATISTA")) {
-      throw new Error(`"${usuarioRed}" ya es una cuenta con otro rol en el sistema (${existente.nombre}) — revise que el usuario de red sea el correcto.`);
-    }
-    await db.$transaction([
-      db.usuario.update({ where: { id: existente.id }, data: { rolesContratacion: ["CONTRATISTA"] } }),
-      db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: existente.id } }),
-    ]);
-    await registrarAuditoria({
-      tipo: "USUARIO_ACTUALIZADO",
-      descripcion: `${existente.nombre} (${usuarioRed}) se vinculó como usuario de dominio de ${contratista.nombreORazonSocial}.`,
-      usuarioId: actorId,
-    });
-    return existente;
-  }
-
-  const creado = await db.usuario.create({
-    data: {
-      email: usuarioRed,
-      nombre: nombreInicialDesdeUsuarioRed(usuarioRed),
-      passwordHash: "directorio-activo:sin-contrasena-local",
-      rol: "FUNCIONARIO",
-      directorioActivo: true,
-      rolesContratacion: ["CONTRATISTA"],
-    },
-  });
-  await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: creado.id } });
-  await registrarAuditoria({
-    tipo: "USUARIO_CREADO",
-    descripcion: `Cuenta de directorio activo "${usuarioRed}" pre-creada y vinculada como usuario de dominio de ${contratista.nombreORazonSocial} (todavía no ha iniciado sesión).`,
-    usuarioId: actorId,
-  });
-  return creado;
-}
-
-export async function desvincularUsuarioDominioDeContratista(contratistaId: string) {
-  await db.contratista.update({ where: { id: contratistaId }, data: { usuarioId: null } });
-}
+export type UsuarioParaContrato = Awaited<ReturnType<typeof buscarUsuariosParaContrato>>[number];
 
 export type FiltrosContratacion = {
   q?: string;
