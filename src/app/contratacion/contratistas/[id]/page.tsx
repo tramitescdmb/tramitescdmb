@@ -3,12 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas } from "@/lib/permisos";
-import { ETIQUETA_ETAPA, faltantesContratista, puedeEditarDatosDeContratista, SELECT_USUARIO_CONTRATISTA, vigenciaDeExpediente } from "@/lib/contratacion";
+import { ETIQUETA_ETAPA, faltantesContratista, SELECT_USUARIO_CONTRATISTA, vigenciaDeExpediente } from "@/lib/contratacion";
 import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedienteAContratistaForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
-import { EditarContratistaForm } from "@/components/EditarContratistaForm";
 import { EliminarContratistaBoton } from "@/components/EliminarContratistaBoton";
-import { personaDesdeUsuario } from "@/lib/usuarios-persona";
 import { formatearPesosCO } from "@/lib/moneda";
 
 function fechaCorta(d: Date): string {
@@ -49,7 +47,6 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
 
   const usuario = contratista.usuario;
   const faltan = usuario ? faltantesContratista(usuario) : [];
-  const editable = Boolean(usuario) && puedeGestionar && (permisos.esAdmin || puedeEditarDatosDeContratista(usuario!));
   const porVigencia = new Map<number, typeof contratista.expedientes>();
   for (const e of contratista.expedientes) {
     const v = vigenciaDeExpediente(e.fechaInicio, e.createdAt);
@@ -87,7 +84,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos personales</h2>
         {faltan.length > 0 && (
-          <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">Para iniciar un contrato faltan: {faltan.join(", ")}.</p>
+          <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">Para iniciar un contrato faltan: {faltan.join(", ")}. Los completa el administrador del sistema en Usuarios.</p>
         )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           <div className="min-w-0">
@@ -114,8 +111,6 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </dd>
           </div>
         </dl>
-
-        {editable && usuario && <EditarContratistaForm usuarioId={usuario.id} persona={personaDesdeUsuario(usuario)} />}
 
         {puedeGestionar && contratista.expedientes.length === 0 && (
           <div className="mt-4 border-t border-stone-100 pt-3">

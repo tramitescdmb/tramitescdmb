@@ -945,10 +945,6 @@ export async function sincronizarContratistaDeUsuario(usuarioId: string): Promis
   });
 }
 
-export function puedeEditarDatosDeContratista(u: Pick<UsuarioContratista, "rol" | "rolesContratacion">): boolean {
-  return u.rol !== "ADMIN" && u.rolesContratacion.every((r) => r === "CONTRATISTA");
-}
-
 export async function buscarUsuariosParaContrato(consulta: string, limite = 10) {
   const q = consulta.trim();
   if (q.length < 2) return [];

@@ -320,8 +320,8 @@ export default async function ContratacionAyudaPage() {
           jurídica con cuenta local). Sus datos —documento, nombres y apellidos o razón social, correo, celular, teléfono,
           dirección, departamento, ciudad e información tributaria— se registran una sola vez en Usuarios y GECON los toma
           de ahí. Al crear un expediente se busca por documento, nombres o apellidos; para iniciar el contrato la persona debe
-          tener esos datos completos (celular y teléfono son opcionales). Si falta alguno, el Jefe o el Administrador de
-          Contratación pueden completarlo en el mismo formulario.
+          tener esos datos completos (celular y teléfono son opcionales). Los usuarios los crea y completa únicamente el
+          administrador del sistema; GECON solo los busca y los vincula, igual que a los supervisores.
         </p>
         <p>
           En <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link>{" "}
