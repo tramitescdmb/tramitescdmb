@@ -130,7 +130,6 @@ model Usuario {
   rolCorrespondencia             RolCorrespondencia?
   rolCorrespondenciaVigenteHasta DateTime?
 
-  rolContratacion             RolContratacion?
   rolesContratacion           RolContratacion[]       @default([])
   rolContratacionVigenteHasta DateTime?
 
