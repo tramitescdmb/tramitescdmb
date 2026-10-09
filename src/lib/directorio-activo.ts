@@ -12,9 +12,55 @@ export function directorioActivoConfigurado() {
   return baseUrl() !== null;
 }
 
+export type PerfilDirectorio = {
+  nombres?: string;
+  apellidos?: string;
+  nombreCompleto?: string;
+  email?: string;
+  celular?: string;
+  telefono?: string;
+  documento?: string;
+};
+
 export type ResultadoAutenticacion =
-  | { ok: true; token: string }
+  | { ok: true; token: string; perfil: PerfilDirectorio }
   | { ok: false; mensaje: string };
+
+const CLAVES_PERFIL: Record<keyof PerfilDirectorio, string[]> = {
+  nombres: ["givenname", "nombres", "nombre", "first_name", "firstname"],
+  apellidos: ["sn", "surname", "apellidos", "apellido", "last_name", "lastname"],
+  nombreCompleto: ["displayname", "cn", "name", "nombre_completo", "fullname"],
+  email: ["mail", "email", "correo", "userprincipalname"],
+  celular: ["mobile", "celular", "movil", "telefono_movil"],
+  telefono: ["telephonenumber", "telefono", "phone"],
+  documento: ["employeeid", "employeenumber", "cedula", "documento", "identificacion"],
+};
+
+function aplanar(valor: unknown, prefijo = "", salida: Record<string, unknown> = {}, profundidad = 0): Record<string, unknown> {
+  if (!valor || typeof valor !== "object" || profundidad > 3) return salida;
+  for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
+    const clave = prefijo ? `${prefijo}.${k}` : k;
+    if (v && typeof v === "object" && !Array.isArray(v)) aplanar(v, clave, salida, profundidad + 1);
+    else salida[clave] = Array.isArray(v) ? v[0] : v;
+  }
+  return salida;
+}
+
+export function extraerPerfil(cuerpo: unknown): PerfilDirectorio {
+  const plano = aplanar(cuerpo);
+  const perfil: PerfilDirectorio = {};
+  for (const [campo, candidatos] of Object.entries(CLAVES_PERFIL) as [keyof PerfilDirectorio, string[]][]) {
+    for (const [clave, v] of Object.entries(plano)) {
+      const hoja = clave.split(".").pop()!.toLowerCase();
+      if (clave === "message" || clave === "token") continue;
+      if (candidatos.includes(hoja) && typeof v === "string" && v.trim()) {
+        perfil[campo] ??= v.trim();
+      }
+    }
+  }
+  if (perfil.email && !perfil.email.includes("@")) delete perfil.email;
+  return perfil;
+}
 
 export async function autenticarDirectorioActivo(
   usuario: string,
@@ -56,7 +102,8 @@ export async function autenticarDirectorioActivo(
   if (respuesta.ok) {
     const token = (cuerpo as { token?: unknown })?.token;
     if (typeof token === "string" && token.length > 0) {
-      return { ok: true, token };
+      console.info("[directorio-activo] campos de la respuesta del login:", Object.keys(aplanar(cuerpo)).join(", "));
+      return { ok: true, token, perfil: extraerPerfil(cuerpo) };
     }
     console.error("[directorio-activo] respuesta 2xx sin token:", cuerpo);
     return { ok: false, mensaje: "El directorio activo respondió de forma inesperada. Reporte el caso al área de sistemas." };

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { createSessionCookie } from "@/lib/auth";
 import { verifyPassword } from "@/lib/password";
@@ -8,8 +9,30 @@ import {
   autenticarDirectorioActivo,
   directorioActivoConfigurado,
   guardarTokenDirectorioActivo,
+  type PerfilDirectorio,
 } from "@/lib/directorio-activo";
+import { sincronizarContratistaDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
+
+type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargos: true } }>;
+
+async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: PerfilDirectorio): Promise<UsuarioConCargos> {
+  const datos: Record<string, string> = {};
+  const sinNombre = !usuario.nombres?.trim() && !usuario.apellidos?.trim() && !usuario.razonSocial?.trim();
+  if (sinNombre && perfil.nombres && perfil.apellidos) {
+    datos.nombres = perfil.nombres;
+    datos.apellidos = perfil.apellidos;
+    datos.nombre = `${perfil.nombres} ${perfil.apellidos}`;
+  }
+  if (!usuario.correoNotificacion && perfil.email) datos.correoNotificacion = perfil.email.toLowerCase();
+  if (!usuario.celular && perfil.celular) datos.celular = perfil.celular;
+  if (!usuario.telefono && perfil.telefono) datos.telefono = perfil.telefono;
+  if (!usuario.cedulaONit && perfil.documento) datos.cedulaONit = perfil.documento;
+  if (Object.keys(datos).length === 0) return usuario;
+  const actualizado = await db.usuario.update({ where: { id: usuario.id }, data: datos, include: { cargos: true } });
+  await sincronizarContratistaDeUsuario(usuario.id).catch(() => {});
+  return actualizado;
+}
 
 export async function POST(req: NextRequest) {
   const form = await req.formData();
@@ -156,9 +179,11 @@ async function ingresarPorDirectorioActivo(
     return fail("Su cuenta está inactiva en la aplicación. Comuníquese con un administrador.");
   }
 
+  const perfil = resultado.perfil;
   let usuario = existente;
   if (!usuario) {
-    const nombreInicial = nombreInicialDesdeUsuarioRed(usuarioRed);
+    const nombreInicial =
+      [perfil.nombres, perfil.apellidos].filter(Boolean).join(" ") || perfil.nombreCompleto || nombreInicialDesdeUsuarioRed(usuarioRed);
 
     usuario = await db.usuario.create({
       data: {
@@ -178,6 +203,8 @@ async function ingresarPorDirectorioActivo(
       emailIntento: usuarioRed,
     });
   }
+
+  usuario = await completarDesdeDirectorio(usuario, perfil);
 
   await createSessionCookie({
     userId: usuario.id,
