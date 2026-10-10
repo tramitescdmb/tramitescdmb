@@ -17,16 +17,7 @@ import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
-
-function saludo(hora: number) {
-  if (hora < 12) return "Buenos días";
-  if (hora < 19) return "Buenas tardes";
-  return "Buenas noches";
-}
-
-function horaBogota(): number {
-  return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
-}
+import { saludo, horaBogota } from "@/lib/saludo";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;

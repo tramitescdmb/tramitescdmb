@@ -16,6 +16,31 @@ import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 
 type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargos: true } }>;
 
+/**
+ * Busca, entre las dependencias activas, una cuyo nombre coincida (sin mayúsculas/tildes ni
+ * espacios de más) con lo que entregó el directorio activo. Solo se usa para RELLENAR un campo
+ * vacío — nunca crea una dependencia nueva ni reemplaza la que ya tenga asignada el usuario, para
+ * no inventar registros a partir de un nombre mal escrito o abreviado distinto en el directorio.
+ */
+async function resolverDependenciaIdPorNombre(nombre: string): Promise<string | null> {
+  const normalizado = nombre
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+  if (!normalizado) return null;
+  const candidatas = await db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true } });
+  const coincidencias = candidatas.filter(
+    (d) =>
+      d.nombre
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .trim()
+        .toLowerCase() === normalizado
+  );
+  return coincidencias.length === 1 ? coincidencias[0]!.id : null;
+}
+
 async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: PerfilDirectorio): Promise<UsuarioConCargos> {
   const datos: Record<string, string> = {};
   const sinNombre = !usuario.nombres?.trim() && !usuario.apellidos?.trim() && !usuario.razonSocial?.trim();
@@ -28,8 +53,17 @@ async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: Perfi
   if (!usuario.celular && perfil.celular) datos.celular = perfil.celular;
   if (!usuario.telefono && perfil.telefono) datos.telefono = perfil.telefono;
   if (!usuario.cedulaONit && perfil.documento) datos.cedulaONit = perfil.documento;
-  if (Object.keys(datos).length === 0) return usuario;
-  const actualizado = await db.usuario.update({ where: { id: usuario.id }, data: datos, include: { cargos: true } });
+  if (!usuario.direccion && perfil.direccion) datos.direccion = perfil.direccion;
+  let dependenciaId: string | undefined;
+  if (!usuario.dependenciaId && perfil.dependencia) {
+    dependenciaId = (await resolverDependenciaIdPorNombre(perfil.dependencia)) ?? undefined;
+  }
+  if (Object.keys(datos).length === 0 && !dependenciaId) return usuario;
+  const actualizado = await db.usuario.update({
+    where: { id: usuario.id },
+    data: { ...datos, ...(dependenciaId ? { dependenciaId } : {}) },
+    include: { cargos: true },
+  });
   await sincronizarContratistaDeUsuario(usuario.id).catch(() => {});
   return actualizado;
 }
