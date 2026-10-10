@@ -201,7 +201,7 @@ export default async function UsuariosPage({
                     )}
                   </p>
                   <p className="truncate text-xs text-stone-400">
-                    {u.email}
+                    {u.directorioActivo ? `Usuario de red: ${u.email}` : u.email}
                     {u.cedulaONit ? ` · ${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : ""}
                     {u.tipoPersona === "JURIDICA" ? " · Persona jurídica" : ""}
                   </p>
