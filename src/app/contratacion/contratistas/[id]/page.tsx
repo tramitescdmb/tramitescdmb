@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas, tieneRolContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
 import { ETIQUETA_ETAPA, faltantesContratista, SELECT_USUARIO_CONTRATISTA, vigenciaDeExpediente } from "@/lib/contratacion";
 import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedienteAContratistaForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
@@ -50,10 +50,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
 
   const usuario = contratista.usuario;
   const faltan = usuario ? faltantesContratista(usuario) : [];
-  const puedeEditarMinimo =
-    !usuario &&
-    (puedeGestionar ||
-      (tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") && contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id))));
+  const puedeEditarMinimo = !usuario && puedeRegistrarContratistaMinimo(permisos);
   const personaParaEditar = personaVacia({
     tipoPersona: contratista.tipoPersona,
     tipoIdentificacion: contratista.tipoPersona === "JURIDICA" ? "NIT" : "CC",
