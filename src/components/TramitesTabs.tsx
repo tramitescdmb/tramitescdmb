@@ -23,7 +23,7 @@ export function TramitesTabs({
     titulo: textoPendientesFirma(pendientesFirma),
   };
   const grupos: GrupoMenu[] = [
-    { label: "Panel", icon: LayoutDashboard, href: "/" },
+    { label: "Panel", icon: LayoutDashboard, href: "/tramites-ambientales" },
     { label: "Catálogo de trámites", icon: LibraryBig, href: "/tramites" },
     {
       label: "Expedientes",

@@ -3,7 +3,7 @@
 import { MigaModulo, type RutaMiga } from "@/components/MigaModulo";
 
 const INICIO_GRUPO: Record<string, string> = {
-  Panel: "/",
+  Panel: "/tramites-ambientales",
   "Catálogo de trámites": "/tramites",
   Expedientes: "/expedientes",
   "Visor de trámites": "/visor-tramites",
@@ -13,7 +13,7 @@ const INICIO_GRUPO: Record<string, string> = {
 };
 
 const RUTAS: RutaMiga[] = [
-  { re: /^\/$/, trail: ["Panel"] },
+  { re: /^\/tramites-ambientales$/, trail: ["Panel"] },
   { re: /^\/tramites\/[^/]+\/nuevo/, trail: ["Catálogo de trámites", "Trámite", "Radicar solicitud"] },
   { re: /^\/tramites\/[^/]+/, trail: ["Catálogo de trámites", "Trámite"] },
   { re: /^\/tramites$/, trail: ["Catálogo de trámites"] },
@@ -35,5 +35,5 @@ const RUTAS: RutaMiga[] = [
 ];
 
 export function MigaTramites() {
-  return <MigaModulo inicio={{ label: "Trámites 2.0", href: "/" }} inicioGrupo={INICIO_GRUPO} rutas={RUTAS} />;
+  return <MigaModulo inicio={{ label: "Trámites 2.0", href: "/tramites-ambientales" }} inicioGrupo={INICIO_GRUPO} rutas={RUTAS} />;
 }
