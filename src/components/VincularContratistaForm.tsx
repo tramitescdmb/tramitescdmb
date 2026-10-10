@@ -25,7 +25,7 @@ export function VincularContratistaForm({
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contratistaUsuarioId: c.usuarioId }),
+        body: JSON.stringify(c.tipo === "usuario" ? { contratistaUsuarioId: c.usuarioId } : { contratistaId: c.contratistaId }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo vincular el contratista.");
@@ -47,7 +47,7 @@ export function VincularContratistaForm({
       {guardando ? (
         <p className="text-xs text-stone-500">Vinculando…</p>
       ) : (
-        <BuscadorContratistaUsuario onElegir={vincular} />
+        <BuscadorContratistaUsuario onElegir={vincular} expedienteId={expedienteId} />
       )}
       {error && <p className="text-xs text-red-700">{error}</p>}
     </div>

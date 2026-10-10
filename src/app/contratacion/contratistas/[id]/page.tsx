@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas, tieneRolContratacion } from "@/lib/permisos";
 import { ETIQUETA_ETAPA, faltantesContratista, SELECT_USUARIO_CONTRATISTA, vigenciaDeExpediente } from "@/lib/contratacion";
 import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedienteAContratistaForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { EliminarContratistaBoton } from "@/components/EliminarContratistaBoton";
+import { EditarContratistaMinimoBoton } from "@/components/EditarContratistaMinimoBoton";
 import { formatearPesosCO } from "@/lib/moneda";
+import { personaVacia } from "@/lib/datos-persona";
 
 function fechaCorta(d: Date): string {
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -27,6 +29,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
       where: { id },
       include: {
         usuario: { select: SELECT_USUARIO_CONTRATISTA },
+        representanteLegal: true,
         expedientes: {
           where: { eliminado: false },
           orderBy: [{ fechaInicio: "desc" }, { createdAt: "desc" }],
@@ -47,6 +50,24 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
 
   const usuario = contratista.usuario;
   const faltan = usuario ? faltantesContratista(usuario) : [];
+  const puedeEditarMinimo =
+    !usuario &&
+    (puedeGestionar ||
+      (tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") && contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id))));
+  const personaParaEditar = personaVacia({
+    tipoPersona: contratista.tipoPersona,
+    tipoIdentificacion: contratista.tipoPersona === "JURIDICA" ? "NIT" : "CC",
+    identificacion: contratista.identificacion,
+    nombres: contratista.nombres ?? "",
+    apellidos: contratista.apellidos ?? "",
+    razonSocial: contratista.tipoPersona === "JURIDICA" ? contratista.nombreORazonSocial : "",
+    email: contratista.contactoEmail ?? "",
+    celular: contratista.contactoCelular ?? "",
+    telefono: contratista.contactoTelefono ?? "",
+    direccion: contratista.direccion ?? "",
+    departamento: contratista.departamento ?? "",
+    ciudad: contratista.ciudad ?? "",
+  });
   const porVigencia = new Map<number, typeof contratista.expedientes>();
   for (const e of contratista.expedientes) {
     const v = vigenciaDeExpediente(e.fechaInicio, e.createdAt);
@@ -65,6 +86,14 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         <h1 className="mt-1 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
           {contratista.nombreORazonSocial}
           {activos.length > 0 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Contrato activo</span>}
+          {!usuario && (
+            <span
+              className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+              title="Todavía no corresponde a un usuario del sistema. Se intenta vincular automáticamente, por documento, al pasar a la etapa Contractual."
+            >
+              Perfil mínimo · sin vincular
+            </span>
+          )}
         </h1>
         <p className="text-sm text-stone-500">
           {contratista.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {contratista.identificacion} ·{" "}
@@ -82,7 +111,27 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
       </div>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
-        <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos personales</h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-stone-900">Datos personales</h2>
+          {puedeEditarMinimo && (
+            <EditarContratistaMinimoBoton
+              contratistaId={contratista.id}
+              persona={personaParaEditar}
+              representanteLegal={
+                contratista.representanteLegal
+                  ? {
+                      nombres: contratista.representanteLegal.nombres,
+                      apellidos: contratista.representanteLegal.apellidos,
+                      identificacion: contratista.representanteLegal.identificacion,
+                      direccion: contratista.representanteLegal.direccion ?? "",
+                      telefono: contratista.representanteLegal.telefono ?? "",
+                      celular: contratista.representanteLegal.celular ?? "",
+                    }
+                  : undefined
+              }
+            />
+          )}
+        </div>
         {faltan.length > 0 && (
           <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">Para iniciar un contrato faltan: {faltan.join(", ")}. Los completa el administrador del sistema en Usuarios.</p>
         )}
@@ -111,6 +160,34 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </dd>
           </div>
         </dl>
+
+        {contratista.representanteLegal && (
+          <div className="mt-4 border-t border-stone-100 pt-3">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Representante legal</h3>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Nombre</dt>
+                <dd className="break-words text-stone-800">
+                  {contratista.representanteLegal.nombres} {contratista.representanteLegal.apellidos}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Cédula</dt>
+                <dd className="break-words text-stone-800">{contratista.representanteLegal.identificacion}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Celular / teléfono</dt>
+                <dd className="break-words text-stone-800">
+                  {[contratista.representanteLegal.celular, contratista.representanteLegal.telefono].filter(Boolean).join(" · ") || "—"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Dirección</dt>
+                <dd className="break-words text-stone-800">{contratista.representanteLegal.direccion ?? "—"}</dd>
+              </div>
+            </dl>
+          </div>
+        )}
 
         {puedeGestionar && contratista.expedientes.length === 0 && (
           <div className="mt-4 border-t border-stone-100 pt-3">

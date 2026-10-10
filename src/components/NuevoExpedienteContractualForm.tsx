@@ -153,7 +153,7 @@ export function NuevoExpedienteContractualForm({
     setSubserieTrdId(b.subserieTrdId);
     setSupervisorUsuarioIds(new Set(b.supervisorUsuarioIds));
     setPersonalIds(new Set(b.personalIds));
-    if (b.contratista?.usuarioId) setContratista(b.contratista);
+    if (b.contratista && "tipo" in b.contratista) setContratista(b.contratista);
     setBorradorRecuperado(true);
   }, [modalidades]);
 
@@ -235,7 +235,8 @@ export function NuevoExpedienteContractualForm({
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
           dependenciaSolicitanteId,
-          contratistaUsuarioId: contratista?.usuarioId ?? null,
+          contratistaUsuarioId: contratista?.tipo === "usuario" ? contratista.usuarioId : null,
+          contratistaId: contratista?.tipo === "contratista" ? contratista.contratistaId : null,
           supervisorUsuarioIds: Array.from(supervisorUsuarioIds),
           personalAsignadoIds: Array.from(personalIds),
           subserieId: subserieTrdId || null,

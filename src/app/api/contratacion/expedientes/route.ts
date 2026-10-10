@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const contratistaUsuarioId = typeof body.contratistaUsuarioId === "string" ? body.contratistaUsuarioId.trim() : "";
-    const contratistaId = contratistaUsuarioId ? (await asegurarContratistaDeUsuario(contratistaUsuarioId)).id : null;
+    let contratistaId = typeof body.contratistaId === "string" ? body.contratistaId.trim() || null : null;
+    if (contratistaUsuarioId) {
+      contratistaId = (await asegurarContratistaDeUsuario(contratistaUsuarioId)).id;
+    }
     const expediente = await crearExpedienteContractual({
       objeto,
       modalidadSeleccion,

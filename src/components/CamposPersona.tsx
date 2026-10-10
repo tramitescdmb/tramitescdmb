@@ -40,7 +40,7 @@ export function CamposPersona({
   tributaria?: boolean;
   identificacionBloqueada?: boolean;
   sinIdentificacion?: boolean;
-  requeridos?: Partial<Record<"identificacion" | "nombre" | "email" | "direccion" | "ubicacion" | "regimenTributario", boolean>>;
+  requeridos?: Partial<Record<"identificacion" | "nombre" | "email" | "direccion" | "ubicacion" | "regimenTributario" | "telefono" | "celular", boolean>>;
   etiquetaCorreo?: string;
   onIdentificacionLista?: (identificacion: string) => void;
   claseCampo?: string;
@@ -124,10 +124,10 @@ export function CamposPersona({
         <Campo icono={Mail} etiqueta={etiquetaCorreo} requerido={requeridos.email} id={`${id}-correo`}>
           <input id={`${id}-correo`} type="email" value={valor.email} onChange={(e) => cambiar("email", e.target.value)} className={claseCampo} />
         </Campo>
-        <Campo icono={Smartphone} etiqueta="Celular" id={`${id}-celular`}>
+        <Campo icono={Smartphone} etiqueta="Celular" requerido={requeridos.celular} id={`${id}-celular`}>
           <input id={`${id}-celular`} type="tel" value={valor.celular} onChange={(e) => cambiar("celular", e.target.value)} placeholder="Ej. 3001234567" className={claseCampo} />
         </Campo>
-        <Campo icono={Phone} etiqueta="Teléfono" id={`${id}-telefono`}>
+        <Campo icono={Phone} etiqueta="Teléfono" requerido={requeridos.telefono} id={`${id}-telefono`}>
           <input id={`${id}-telefono`} type="tel" value={valor.telefono} onChange={(e) => cambiar("telefono", e.target.value)} placeholder="Ej. 6076970000" className={claseCampo} />
         </Campo>
       </div>
