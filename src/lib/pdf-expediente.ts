@@ -24,6 +24,7 @@ export type PiezaExpediente = {
     dependencia: string | null;
     fechaHora: string;
     hash: string;
+    cargoAlFirmar?: string | null;
   }[];
   adjuntos: { nombre: string; mimeType: string; bytes: Buffer | Uint8Array | null }[];
 };
@@ -177,7 +178,7 @@ export async function generarExpedientePdf(datosOriginales: DatosExpedientePdf, 
       sep.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: MARGEN, y: sy, size: 7, font: fontBold, color: VERDE });
       sy -= 12;
       for (const f of pieza.firmas) {
-        const cargo = denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
+        const cargo = f.cargoAlFirmar ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
         sep.drawText(f.nombre.slice(0, 90), { x: MARGEN, y: sy, size: 8, font: fontBold, color: GRIS }); sy -= 10;
         if (cargo) { sep.drawText(cargo.slice(0, 100), { x: MARGEN, y: sy, size: 7.5, font, color: GRIS }); sy -= 10; }
         if (f.dependencia) { sep.drawText(f.dependencia.slice(0, 100), { x: MARGEN, y: sy, size: 7.5, font, color: GRIS }); sy -= 10; }

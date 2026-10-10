@@ -31,6 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           fechaHora: true,
           hashContenido: true,
           calidad: true,
+          cargoAlFirmar: true,
           usuario: {
             select: {
               nombre: true,
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         orderBy: { completadoEn: "asc" },
         select: {
           completadoEn: true,
+          cargoAlFirmar: true,
           usuarioAsignado: {
             select: {
               nombre: true,
@@ -107,7 +109,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: formatearFechaHoraLarga(f.fechaHora),
       hash: f.hashContenido,
       calidad: f.calidad,
-      cargo: cargoDelFirmante(f.usuario, "TRAMITES"),
+      cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "TRAMITES"),
       nivel: nivelFirma(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
@@ -121,7 +123,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",
-      cargo: cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
+      cargo: s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
       nivel: nivelFirma(s.usuarioAsignado),
     })),
   ];

@@ -23,7 +23,7 @@ export function AprobarEtapaContratoBoton({ expedienteId, etiquetaSiguiente }: {
       if (res.status === 409 && Array.isArray(body.faltantes)) {
         const lista = body.faltantes.map((f: string) => `• ${f}`).join("\n");
         window.alert(
-          `No se puede aprobar: faltan estos documentos obligatorios del catálogo en esta etapa:\n\n${lista}\n\nSúbalos antes de continuar.`
+          `No se puede aprobar: estos documentos obligatorios del catálogo de esta etapa no están subidos y validados:\n\n${lista}\n\nSúbalos y valídelos antes de continuar.`
         );
         return;
       }

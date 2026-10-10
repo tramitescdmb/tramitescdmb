@@ -204,7 +204,12 @@ export function cruzarChecklist(
 }
 
 export function requisitosObligatoriosFaltantes(checklist: ItemChecklist[]): string[] {
-  return checklist.filter((c) => c.obligatorio && !c.documento).map((c) => c.nombre);
+  // No basta con que exista un documento para el requisito: si el último que se subió está
+  // pendiente o fue rechazado (p. ej. se eliminó uno ya aprobado y se volvió a subir sin
+  // validar), el requisito sigue sin cumplirse.
+  return checklist
+    .filter((c) => c.obligatorio && (!c.documento || c.documento.estadoValidacion !== "APROBADO"))
+    .map((c) => c.nombre);
 }
 
 export async function listarCatalogoRequisitos() {
@@ -685,6 +690,11 @@ export async function validarDocumentoContrato(
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+  if (doc.estadoValidacion === "RECHAZADO") {
+    throw new Error(
+      "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."
+    );
+  }
 
   await db.documentoContrato.update({
     where: { id: documentoId },
@@ -707,7 +717,7 @@ export async function validarDocumentoContrato(
 
 export class FaltanRequisitosError extends Error {
   constructor(public readonly faltantes: string[]) {
-    super(`Faltan ${faltantes.length} documento(s) obligatorio(s) de esta etapa: ${faltantes.join("; ")}`);
+    super(`Faltan ${faltantes.length} documento(s) obligatorio(s) por subir y validar en esta etapa: ${faltantes.join("; ")}`);
     this.name = "FaltanRequisitosError";
   }
 }

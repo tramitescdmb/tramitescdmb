@@ -4,9 +4,29 @@ import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/cl
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
-import { nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
+import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
+
+const SELECT_FIRMANTE_CARGO = {
+  denominacionEmpleo: true,
+  denominacionComplemento: true,
+  denominacionEncargo: true,
+  sexo: true,
+  rolesContratacion: true,
+} as const;
+
+/** Cargo del usuario en este instante, ya formateado — se congela en la firma/solicitud al crearla. */
+async function cargoActualDelFirmante(
+  usuarioId: string,
+  modulo: ModuloFirma,
+  supervisaElExpediente = false,
+): Promise<string> {
+  const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_FIRMANTE_CARGO });
+  if (!u) return "Funcionario";
+  return cargoDelFirmante({ ...u, supervisaElExpediente }, modulo);
+}
 
 export type ObjetivoSolicitud =
   | { tipo: "comunicacion"; id: string }
@@ -292,7 +312,11 @@ export async function completarSolicitudFirma(
   }
 
   if (solicitud.rol === "VISTO_BUENO") {
-    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), ip, userAgent } });
+    const supervisaVistoBueno = solicitud.documentoContrato
+      ? (await supervisoresDelExpediente(solicitud.documentoContrato.expedienteId)).has(usuarioId)
+      : false;
+    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, moduloDeObjetivo(objetivoDeSolicitud(solicitud).tipo), supervisaVistoBueno);
+    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), cargoAlFirmar, ip, userAgent } });
     const sgdea = solicitud.comunicacion
       ? { entidad: "Comunicacion" as const, entidadId: solicitud.comunicacion.id, ref: solicitud.comunicacion.radicado }
       : solicitud.documentoArchivo
@@ -334,12 +358,15 @@ export async function completarSolicitudFirma(
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
+    const supervisaDocContrato = (await supervisoresDelExpediente(doc.expedienteId)).has(usuarioId);
+    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
     const firma = await db.firmaDocumentoContrato.create({
       data: {
         documentoId: doc.id,
         usuarioId,
         hashContenido,
         calidad: solicitud.calidad,
+        cargoAlFirmar,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,
@@ -369,12 +396,14 @@ export async function completarSolicitudFirma(
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
+    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "TRAMITES");
     const firma = await db.firmaExpedienteDocumento.create({
       data: {
         documentoId: doc.id,
         usuarioId,
         hashContenido,
         calidad: solicitud.calidad,
+        cargoAlFirmar,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,
@@ -409,6 +438,7 @@ export async function completarSolicitudFirma(
       const fechaHora = new Date();
       const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
+      const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "SGDEA");
       const firma = await db.firma.create({
         data: {
           calidad: solicitud.calidad,
@@ -417,6 +447,7 @@ export async function completarSolicitudFirma(
           fechaHora,
           hashContenido,
           tipo: "ELECTRONICA_HASH",
+          cargoAlFirmar,
           ip,
           userAgent,
           proveedor: resuelto.proveedor,
@@ -449,7 +480,8 @@ export async function completarSolicitudFirma(
     if (previa) {
       firmaId = previa.id;
     } else {
-      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, ip, userAgent);
+      const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "SGDEA");
+      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, cargoAlFirmar, ip, userAgent);
       firmaId = firma.id;
     }
     await db.solicitudFirma.update({
@@ -472,6 +504,7 @@ async function crearFirmaDocumentoArchivo(
   doc: { id: string; nombre: string; hashSha256: string | null },
   usuarioId: string,
   calidad: CalidadFirma | null,
+  cargoAlFirmar: string,
   ip: string | null,
   userAgent: string | null,
 ) {
@@ -483,6 +516,7 @@ async function crearFirmaDocumentoArchivo(
       usuarioId,
       documentoArchivoId: doc.id,
       calidad,
+      cargoAlFirmar,
       fechaHora,
       hashContenido,
       tipo: "ELECTRONICA_HASH",
@@ -513,12 +547,19 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
     await completarSolicitudFirma(propia.id, usuarioId, ip, userAgent);
     return;
   }
-  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_FIRMANTE_CARGO });
   if (!usuario) throw new Error("El usuario no existe.");
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
-  await crearFirmaDocumentoArchivo(doc, usuarioId, puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO", ip, userAgent);
+  await crearFirmaDocumentoArchivo(
+    doc,
+    usuarioId,
+    puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
+    cargoDelFirmante(usuario, "SGDEA"),
+    ip,
+    userAgent,
+  );
 }
 
 export async function rechazarSolicitudFirma(

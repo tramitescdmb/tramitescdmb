@@ -56,6 +56,11 @@ export async function validarDocumentoTramite(
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está aprobado.");
+  if (doc.estadoValidacion === "RECHAZADO") {
+    throw new Error(
+      "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."
+    );
+  }
 
   await db.expedienteDocumento.update({
     where: { id: documentoId },

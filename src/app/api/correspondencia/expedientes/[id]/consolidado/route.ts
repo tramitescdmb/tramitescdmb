@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           firmas: {
             orderBy: { fechaHora: "asc" },
             select: {
-              fechaHora: true, hashContenido: true,
+              fechaHora: true, hashContenido: true, cargoAlFirmar: true,
               usuario: { select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, sexo: true, dependencia: { select: { nombre: true } } } },
             },
           },
@@ -102,6 +102,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         dependencia: f.usuario.dependencia?.nombre ?? null,
         fechaHora: formatearFechaHoraLarga(f.fechaHora),
         hash: f.hashContenido,
+        cargoAlFirmar: f.cargoAlFirmar,
       })),
       adjuntos,
     });

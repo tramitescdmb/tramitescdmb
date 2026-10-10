@@ -5,6 +5,7 @@ export type ModuloFirma = "SGDEA" | "TRAMITES" | "GECON";
 export type PersonaFirmante = {
   denominacionEmpleo: string | null;
   denominacionComplemento?: string | null;
+  denominacionEncargo?: boolean | null;
   sexo?: string | null;
   rolesContratacion?: readonly string[] | null;
   supervisaElExpediente?: boolean;
@@ -62,7 +63,7 @@ export function puedeSolicitarFirmas(p: PersonaFirmante): boolean {
 }
 
 export function cargoDelFirmante(p: PersonaFirmante, modulo?: ModuloFirma): string {
-  const denominacion = denominacionParaFirma(p.denominacionEmpleo, p.sexo, p.denominacionComplemento);
+  const denominacion = denominacionParaFirma(p.denominacionEmpleo, p.sexo, p.denominacionComplemento, p.denominacionEncargo);
   if (modulo === "GECON" && (p.supervisaElExpediente ?? tieneRol(p, "SUPERVISOR_INTERVENTOR"))) {
     return denominacion ? `${denominacion} · Supervisor` : "Supervisor";
   }

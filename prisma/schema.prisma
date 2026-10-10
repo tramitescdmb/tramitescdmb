@@ -96,6 +96,8 @@ model Usuario {
   rol                     RolUsuario               @default(FUNCIONARIO)
   denominacionEmpleo      String?
   denominacionComplemento String?
+  // Marca que la denominacionEmpleo actual es un encargo (interino), no un nombramiento definitivo — se muestra como "(E)".
+  denominacionEncargo     Boolean                  @default(false)
   sexo                    String?
   accesoFirma             Boolean                  @default(true)
   cedulaONit              String?
@@ -137,6 +139,8 @@ model Usuario {
   temasVisitaCreados    TemaVisita[]               @relation("TemaVisitaCreadoPor")
   notificaciones        Notificacion[]             @relation("NotificacionUsuario")
   historialPasswords    HistorialPassword[]
+  historialCargos       HistorialCargo[] @relation("HistorialCargoUsuario")
+  historialCargosHechos HistorialCargo[] @relation("HistorialCargoCambiadoPor")
 
   dependenciaId                  String?
   rolCorrespondencia             RolCorrespondencia?
@@ -200,6 +204,29 @@ model HistorialPassword {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, createdAt])
+}
+
+/**
+ * Registro automático (no editable desde la interfaz, al menos por ahora) de cada cambio de
+ * denominación de empleo de un funcionario — promociones, encargos, reversiones. Guarda el
+ * valor ANTERIOR al cambio (igual que HistorialPassword), con la fecha en la que dejó de regir.
+ * Las firmas ya hechas no se tocan ni se recalculan a partir de esto: cada firma congela su
+ * propio cargoAlFirmar en el momento de firmar (ver Firma/FirmaDocumentoContrato/
+ * FirmaExpedienteDocumento/SolicitudFirma). Esta tabla es para consulta/auditoría futura.
+ */
+model HistorialCargo {
+  id                      String   @id @default(cuid())
+  usuarioId               String
+  denominacionEmpleo      String?
+  denominacionComplemento String?
+  denominacionEncargo     Boolean  @default(false)
+  vigenteHasta            DateTime @default(now())
+  cambiadoPorId           String?
+
+  usuario     Usuario  @relation("HistorialCargoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  cambiadoPor Usuario? @relation("HistorialCargoCambiadoPor", fields: [cambiadoPorId], references: [id])
+
+  @@index([usuarioId, vigenteHasta])
 }
 
 enum NivelAccesoTramite {
@@ -736,6 +763,10 @@ model FirmaExpedienteDocumento {
   selloTiempoEn     DateTime?
   selloTiempoFuente String?
   selloTiempoToken  String?
+  // Cargo exacto del firmante en el momento de firmar (ya formateado para mostrar). Se congela
+  // aquí para que un cambio posterior de cargo del usuario no altere firmas ya hechas. Null en
+  // filas anteriores a este campo: el renderizado cae de vuelta al cargo actual del usuario.
+  cargoAlFirmar     String?
 
   documento        ExpedienteDocumento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
   usuario          Usuario             @relation("FirmaExpedienteDocumentoUsuario", fields: [usuarioId], references: [id])
@@ -1460,6 +1491,8 @@ model Firma {
 
   calidad            CalidadFirma?
   documentoArchivoId String?
+  // Ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
+  cargoAlFirmar      String?
 
   usuario          Usuario           @relation("FirmaUsuario", fields: [usuarioId], references: [id])
   comunicacion     Comunicacion?     @relation(fields: [comunicacionId], references: [id])
@@ -1511,6 +1544,9 @@ model SolicitudFirma {
   asignadoPorId String
   asignadoEn    DateTime  @default(now())
   completadoEn  DateTime?
+  // Solo se usa para VISTO_BUENO (no genera fila en Firma/FirmaDocumentoContrato/
+  // FirmaExpedienteDocumento): ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
+  cargoAlFirmar String?
   ip            String?
   userAgent     String?
 
@@ -2167,6 +2203,8 @@ model FirmaDocumentoContrato {
   selloTiempoEn     DateTime?
   selloTiempoFuente String?
   selloTiempoToken  String?
+  // Ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
+  cargoAlFirmar     String?
 
   documento        DocumentoContrato @relation(fields: [documentoId], references: [id], onDelete: Cascade)
   usuario          Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])

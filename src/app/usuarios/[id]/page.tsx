@@ -73,7 +73,9 @@ export default async function EditarUsuarioPage({
                 </span>
               )}
             </h1>
-            <p className="text-sm text-stone-500">{usuario.email}</p>
+            <p className="text-sm text-stone-500">
+              {usuario.directorioActivo ? <>Usuario de red: {usuario.email}</> : usuario.email}
+            </p>
           </div>
         </div>
       </div>
@@ -98,6 +100,7 @@ export default async function EditarUsuarioPage({
         sexoActual={usuario.sexo}
         denominacionEmpleoActual={usuario.denominacionEmpleo}
         denominacionComplementoActual={usuario.denominacionComplemento}
+        denominacionEncargoActual={usuario.denominacionEncargo}
         accesoFirmaActual={usuario.accesoFirma}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={

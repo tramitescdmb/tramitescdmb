@@ -20,21 +20,47 @@ export type PerfilDirectorio = {
   celular?: string;
   telefono?: string;
   documento?: string;
+  direccion?: string;
+  dependencia?: string;
 };
 
 export type ResultadoAutenticacion =
   | { ok: true; token: string; perfil: PerfilDirectorio }
   | { ok: false; mensaje: string };
 
+// Nombres de campo "candidatos" por los que preguntamos, combinando el estándar LDAP/Active
+// Directory (givenName, sn, streetAddress, physicalDeliveryOfficeName...) con variantes en
+// español que distintos backends suelen usar. Nunca vimos una respuesta real de este API en
+// este repo (ver el log "[directorio-activo] campos de la respuesta del login" más abajo, que
+// existe justo para confirmarlo) — esto es mejor esfuerzo hasta tener una muestra real.
 const CLAVES_PERFIL: Record<keyof PerfilDirectorio, string[]> = {
-  nombres: ["givenname", "nombres", "nombre", "first_name", "firstname"],
-  apellidos: ["sn", "surname", "apellidos", "apellido", "last_name", "lastname"],
+  nombres: ["givenname", "nombres", "nombre", "nombre1", "first_name", "firstname"],
+  apellidos: ["sn", "surname", "apellidos", "apellido", "apellido1", "last_name", "lastname"],
   nombreCompleto: ["displayname", "cn", "name", "nombre_completo", "fullname"],
   email: ["mail", "email", "correo", "userprincipalname"],
   celular: ["mobile", "celular", "movil", "telefono_movil"],
   telefono: ["telephonenumber", "telefono", "phone"],
   documento: ["employeeid", "employeenumber", "cedula", "documento", "identificacion"],
+  // "departamento" se deja fuera a propósito: en esta app ya significa la división
+  // geográfica (Santander, etc.), no la dependencia/oficina del funcionario.
+  direccion: ["streetaddress", "direccion", "address", "postaladdress"],
+  dependencia: ["physicaldeliveryofficename", "department", "dependencia", "office", "oficina", "ou"],
 };
+
+/**
+ * Si el API solo entrega un nombre completo (sin nombres/apellidos por separado), lo partimos
+ * como mejor esfuerzo siguiendo el patrón más común en Colombia: 4 palabras → 2+2, 3 palabras →
+ * 1+2, 2 palabras → 1+1. Es una heurística, no siempre va a acertar (hay nombres compuestos que
+ * no siguen este patrón) — mejor esto que dejar nombres/apellidos vacíos y mostrar el usuario de
+ * red como si fuera el nombre.
+ */
+function partirNombreCompleto(nombreCompleto: string): { nombres: string; apellidos: string } | null {
+  const palabras = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+  if (palabras.length < 2) return null;
+  if (palabras.length >= 4) return { nombres: palabras.slice(0, 2).join(" "), apellidos: palabras.slice(2).join(" ") };
+  if (palabras.length === 3) return { nombres: palabras[0]!, apellidos: palabras.slice(1).join(" ") };
+  return { nombres: palabras[0]!, apellidos: palabras[1]! };
+}
 
 function aplanar(valor: unknown, prefijo = "", salida: Record<string, unknown> = {}, profundidad = 0): Record<string, unknown> {
   if (!valor || typeof valor !== "object" || profundidad > 3) return salida;
@@ -59,6 +85,13 @@ export function extraerPerfil(cuerpo: unknown): PerfilDirectorio {
     }
   }
   if (perfil.email && !perfil.email.includes("@")) delete perfil.email;
+  if ((!perfil.nombres || !perfil.apellidos) && perfil.nombreCompleto) {
+    const partido = partirNombreCompleto(perfil.nombreCompleto);
+    if (partido) {
+      perfil.nombres ??= partido.nombres;
+      perfil.apellidos ??= partido.apellidos;
+    }
+  }
   return perfil;
 }
 
