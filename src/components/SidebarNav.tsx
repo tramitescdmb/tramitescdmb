@@ -20,10 +20,10 @@ import {
 type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string | string[] };
 
 const ITEM_TRAMITES: Item = {
-  href: "/",
+  href: "/tramites-ambientales",
   label: "Trámites ambientales 2.0",
   icon: Leaf,
-  prefijo: ["/", "/tramites", "/expedientes", "/solicitantes", "/visor-tramites", "/planeador", "/firmas"],
+  prefijo: ["/tramites-ambientales", "/tramites", "/expedientes", "/solicitantes", "/visor-tramites", "/planeador", "/firmas"],
 };
 const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
 const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
