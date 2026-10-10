@@ -23,6 +23,14 @@ export type DenominacionEmpleoClave = keyof typeof DENOMINACIONES_EMPLEO;
 
 export const CLAVES_DENOMINACION_EMPLEO = Object.keys(DENOMINACIONES_EMPLEO) as DenominacionEmpleoClave[];
 
+// Estas denominaciones no son nombramientos de carrera con los que se pueda estar "encargado":
+// no ofrecemos la opción (E) para ellas.
+export const DENOMINACIONES_SIN_ENCARGO: ReadonlySet<DenominacionEmpleoClave> = new Set(["CONTRATISTA", "JUDICANTE", "PRACTICANTE"]);
+
+export function admiteEncargo(clave: string | null | undefined): boolean {
+  return esClaveDenominacion(clave) && !DENOMINACIONES_SIN_ENCARGO.has(clave);
+}
+
 export const SEXOS = [
   { valor: "F", etiqueta: "Femenino" },
   { valor: "M", etiqueta: "Masculino" },
@@ -40,12 +48,14 @@ export function denominacionParaFirma(
   clave: string | null | undefined,
   sexo: string | null | undefined,
   complemento?: string | null,
+  encargo?: boolean | null,
 ): string | null {
   if (!esClaveDenominacion(clave)) return null;
   const par = DENOMINACIONES_EMPLEO[clave];
   const base = sexo === "F" ? par.f : par.m;
   const extra = complemento?.trim();
-  return extra ? `${base} ${extra}` : base;
+  const texto = extra ? `${base} ${extra}` : base;
+  return encargo ? `${texto} (E)` : texto;
 }
 
 export function etiquetaDenominacion(clave: DenominacionEmpleoClave): string {

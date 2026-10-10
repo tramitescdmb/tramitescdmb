@@ -32,8 +32,8 @@ const SELECT_PERSONA = {
 
 type Persona = { nombre: string; denominacionEmpleo: string | null; denominacionComplemento: string | null; sexo: string | null; rolesContratacion: string[] };
 
-type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; usuario: Persona };
-type VistoFila = { id: string; completadoEn: Date | null; usuarioAsignado: Persona };
+type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; cargoAlFirmar: string | null; usuario: Persona };
+type VistoFila = { id: string; completadoEn: Date | null; cargoAlFirmar: string | null; usuarioAsignado: Persona };
 
 const ENTIDAD = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
 
@@ -41,35 +41,41 @@ const entidadDe = (cargo: string) => (/contratista/i.test(cargo) ? `Contratista 
 
 function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma): FirmaPublica[] {
   return [
-    ...firmas.map((f) => ({
-      id: f.id,
-      nombre: f.usuario.nombre,
-      cargo: cargoDelFirmante(f.usuario, modulo),
-      calidad: etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }),
-      fechaHora: f.fechaHora,
-      selloTiempoEn: f.selloTiempoEn,
-      hashFirma: f.hashContenido,
-      entidad: entidadDe(cargoDelFirmante(f.usuario, modulo)),
-    })),
+    ...firmas.map((f) => {
+      const cargo = f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, modulo);
+      return {
+        id: f.id,
+        nombre: f.usuario.nombre,
+        cargo,
+        calidad: etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }),
+        fechaHora: f.fechaHora,
+        selloTiempoEn: f.selloTiempoEn,
+        hashFirma: f.hashContenido,
+        entidad: entidadDe(cargo),
+      };
+    }),
     ...vistos
       .filter((v) => v.completadoEn)
-      .map((v) => ({
-        id: v.id,
-        nombre: v.usuarioAsignado.nombre,
-        cargo: cargoDelFirmante(v.usuarioAsignado, modulo),
-        calidad: "Visto bueno",
-        fechaHora: v.completadoEn!,
-        selloTiempoEn: null,
-        hashFirma: null,
-        entidad: entidadDe(cargoDelFirmante(v.usuarioAsignado, modulo)),
-      })),
+      .map((v) => {
+        const cargo = v.cargoAlFirmar ?? cargoDelFirmante(v.usuarioAsignado, modulo);
+        return {
+          id: v.id,
+          nombre: v.usuarioAsignado.nombre,
+          cargo,
+          calidad: "Visto bueno",
+          fechaHora: v.completadoEn!,
+          selloTiempoEn: null,
+          hashFirma: null,
+          entidad: entidadDe(cargo),
+        };
+      }),
   ].sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime());
 }
 
-const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, hashContenido: true, usuario: { select: SELECT_PERSONA } } as const;
+const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, hashContenido: true, cargoAlFirmar: true, usuario: { select: SELECT_PERSONA } } as const;
 const SELECT_VISTOS = {
   where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
-  select: { id: true, completadoEn: true, usuarioAsignado: { select: SELECT_PERSONA } },
+  select: { id: true, completadoEn: true, cargoAlFirmar: true, usuarioAsignado: { select: SELECT_PERSONA } },
 } as const;
 
 export const PLATAFORMA_FIRMA = {

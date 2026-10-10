@@ -39,12 +39,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     db.firma.findMany({
       where: { documentoArchivoId: id },
       orderBy: { fechaHora: "asc" },
-      select: { fechaHora: true, hashContenido: true, calidad: true, usuario: { select: USUARIO_SELLO } },
+      select: { fechaHora: true, hashContenido: true, calidad: true, cargoAlFirmar: true, usuario: { select: USUARIO_SELLO } },
     }),
     db.solicitudFirma.findMany({
       where: { documentoArchivoId: id, rol: "VISTO_BUENO", estado: "COMPLETADA" },
       orderBy: { completadoEn: "asc" },
-      select: { completadoEn: true, usuarioAsignado: { select: USUARIO_SELLO } },
+      select: { completadoEn: true, cargoAlFirmar: true, usuarioAsignado: { select: USUARIO_SELLO } },
     }),
   ]);
 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     baseUrl: base,
     metadatos: metadatosPdf({ tipo: "A", id, baseUrl: base, documento: doc.nombre, referencia: doc.expediente.numero, hashArchivo: doc.hashSha256 }),
   };
-  const aSello = (u: (typeof firmas)[number]["usuario"]) => ({
+  const aSello = (u: (typeof firmas)[number]["usuario"], cargoAlFirmar?: string | null) => ({
     nombre: u.nombre,
     cedulaONit: u.cedulaONit,
     tipoIdentificacion: u.tipoIdentificacionFirma,
@@ -63,13 +63,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     denominacionComplemento: u.denominacionComplemento,
     sexo: u.sexo,
     dependencia: u.dependencia?.nombre ?? null,
-    cargo: cargoDelFirmante(u, "SGDEA"),
+    cargo: cargoAlFirmar ?? cargoDelFirmante(u, "SGDEA"),
     nivel: nivelFirma(u),
   });
   const firmantes = [
-    ...firmas.map((f) => ({ ...aSello(f.usuario), fechaHora: formatearFechaHoraLarga(f.fechaHora), hash: f.hashContenido, calidad: f.calidad })),
+    ...firmas.map((f) => ({ ...aSello(f.usuario, f.cargoAlFirmar), fechaHora: formatearFechaHoraLarga(f.fechaHora), hash: f.hashContenido, calidad: f.calidad })),
     ...vistos.map((v) => ({
-      ...aSello(v.usuarioAsignado),
+      ...aSello(v.usuarioAsignado, v.cargoAlFirmar),
       fechaHora: v.completadoEn ? formatearFechaHoraLarga(v.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",

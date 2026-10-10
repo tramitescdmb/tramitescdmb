@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
-import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
 
 type Opcion = { id: string; nombre: string };
@@ -147,6 +147,7 @@ export function EditarUsuarioAccesoForm({
   sexoActual,
   denominacionEmpleoActual,
   denominacionComplementoActual,
+  denominacionEncargoActual,
   accesoFirmaActual,
   rolesContratacionActuales = [],
   rolContratacionVigenteHastaActual,
@@ -158,6 +159,7 @@ export function EditarUsuarioAccesoForm({
   sexoActual: string | null;
   denominacionEmpleoActual: string | null;
   denominacionComplementoActual: string | null;
+  denominacionEncargoActual?: boolean;
   accesoFirmaActual: boolean;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
@@ -180,6 +182,7 @@ export function EditarUsuarioAccesoForm({
   const [sexo, setSexo] = useState(sexoActual ?? "");
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
+  const [denominacionEncargo, setDenominacionEncargo] = useState(denominacionEncargoActual ?? false);
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
@@ -298,6 +301,7 @@ export function EditarUsuarioAccesoForm({
           sexo: sexo || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
+          denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
           accesoFirma,
           rol,
           estadoCuenta,
@@ -384,7 +388,10 @@ export function EditarUsuarioAccesoForm({
             Denominación del empleo
             <select
               value={denominacionEmpleo}
-              onChange={(e) => setDenominacionEmpleo(e.target.value)}
+              onChange={(e) => {
+                setDenominacionEmpleo(e.target.value);
+                if (!admiteEncargo(e.target.value)) setDenominacionEncargo(false);
+              }}
               className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             >
               <option value="">— Sin denominación —</option>
@@ -406,6 +413,23 @@ export function EditarUsuarioAccesoForm({
             />
           </label>
         </div>
+        {admiteEncargo(denominacionEmpleo) && (
+          <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              checked={denominacionEncargo}
+              onChange={(e) => setDenominacionEncargo(e.target.checked)}
+              className="mt-0.5 rounded border-stone-200"
+            />
+            <span>
+              Es un encargo (E), no un nombramiento definitivo
+              <span className="mt-0.5 block text-xs text-stone-400">
+                Se muestra como «(E)» junto a la denominación. Si más adelante vuelve a su cargo anterior, cambie la
+                denominación de nuevo: los documentos ya firmados con este cargo no se alteran.
+              </span>
+            </span>
+          </label>
+        )}
         <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
           <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-200" />
           <span>
@@ -420,8 +444,8 @@ export function EditarUsuarioAccesoForm({
           En la firma aparecerá:{" "}
           <span className="font-medium text-stone-800">
             {nombreCompletoPersona(persona) || "Nombre del funcionario"}
-            {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento) ? (
-              <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento)}</>
+            {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ? (
+              <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo)}</>
             ) : null}
             {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
               ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
