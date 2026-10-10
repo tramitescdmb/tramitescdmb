@@ -3,7 +3,7 @@
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, Building2, UserCog, PenLine } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
@@ -64,7 +64,6 @@ const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
   { id: "seccion-firma", etiqueta: "Datos para la firma" },
   { id: "seccion-contrasena", etiqueta: "Contraseña" },
   { id: "seccion-rol", etiqueta: "Rol" },
-  { id: "seccion-dependencia", etiqueta: "Dependencia" },
   { id: "seccion-estado", etiqueta: "Estado de la cuenta" },
   { id: "seccion-cargos", etiqueta: "Cargos" },
   { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
@@ -368,7 +367,7 @@ export function EditarUsuarioAccesoForm({
         <EncabezadoSeccion
           icono={PenLine}
           titulo="Datos para la firma electrónica"
-          ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado."
+          ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado — incluye su dependencia."
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-stone-600">
@@ -411,6 +410,20 @@ export function EditarUsuarioAccesoForm({
               placeholder="en Tecnologías de Información"
               className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
+          </label>
+          <label className="text-xs font-medium text-stone-600">
+            Dependencia
+            <select
+              value={dependenciaId}
+              onChange={(e) => setDependenciaId(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+            >
+              <option value="">— Sin dependencia —</option>
+              {(dependencias ?? []).map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+            <span className="mt-0.5 block text-[11px] font-normal text-stone-400">También la usan SGDEA y Contratación (GECON).</span>
           </label>
         </div>
         {admiteEncargo(denominacionEmpleo) && (
@@ -540,24 +553,6 @@ export function EditarUsuarioAccesoForm({
             Acceso total automático — los cargos, trámites y secciones de abajo quedan sin efecto.
           </p>
         )}
-      </section>
-
-      <section id="seccion-dependencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion
-          icono={Building2}
-          titulo="Dependencia"
-          ayuda="A qué oficina pertenece — la usan SGDEA y Contratación (GECON) por igual, no es exclusiva de un módulo."
-        />
-        <select
-          value={dependenciaId}
-          onChange={(e) => setDependenciaId(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-        >
-          <option value="">— Sin dependencia —</option>
-          {(dependencias ?? []).map((d) => (
-            <option key={d.id} value={d.id}>{d.nombre}</option>
-          ))}
-        </select>
       </section>
 
       <section id="seccion-estado" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
