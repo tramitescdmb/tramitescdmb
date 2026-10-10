@@ -6,7 +6,7 @@ import { AtSign, BadgeCheck, Briefcase, KeyRound, Lock, Network, PenLine, Shield
 import { CamposPersona, CLASE_CAMPO_PERSONA } from "@/components/CamposPersona";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { personaVacia, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
-import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS } from "@/lib/denominacion-empleo";
+import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo } from "@/lib/denominacion-empleo";
 
 type Acceso = "DIRECTORIO_ACTIVO" | "LOCAL";
 
@@ -28,6 +28,7 @@ export function NuevoUsuarioForm({
   const [sexo, setSexo] = useState("");
   const [denominacionEmpleo, setDenominacionEmpleo] = useState("");
   const [denominacionComplemento, setDenominacionComplemento] = useState("");
+  const [denominacionEncargo, setDenominacionEncargo] = useState(false);
   const [accesoFirma, setAccesoFirma] = useState(true);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set());
   const [guardando, setGuardando] = useState(false);
@@ -65,6 +66,7 @@ export function NuevoUsuarioForm({
           sexo: sexo || null,
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
+          denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
           accesoFirma,
           cargoIds: Array.from(cargoIds),
         }),
@@ -179,7 +181,14 @@ export function NuevoUsuarioForm({
           <label className="block">
             <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
               <BadgeCheck className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Denominación del empleo</span>
-            <select value={denominacionEmpleo} onChange={(e) => setDenominacionEmpleo(e.target.value)} className={CLASE_CAMPO_PERSONA}>
+            <select
+              value={denominacionEmpleo}
+              onChange={(e) => {
+                setDenominacionEmpleo(e.target.value);
+                if (!admiteEncargo(e.target.value)) setDenominacionEncargo(false);
+              }}
+              className={CLASE_CAMPO_PERSONA}
+            >
               <option value="">Sin denominación</option>
               {CLAVES_DENOMINACION_EMPLEO.map((c) => (
                 <option key={c} value={c}>
@@ -200,6 +209,17 @@ export function NuevoUsuarioForm({
             />
           </label>
         </div>
+        {admiteEncargo(denominacionEmpleo) && (
+          <label className="flex items-center gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              checked={denominacionEncargo}
+              onChange={(e) => setDenominacionEncargo(e.target.checked)}
+              className="rounded border-stone-200"
+            />
+            Es un encargo (E), no un nombramiento definitivo
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm text-stone-700">
           <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="rounded border-stone-200" />
           Puede firmar electrónicamente oficios y memorandos

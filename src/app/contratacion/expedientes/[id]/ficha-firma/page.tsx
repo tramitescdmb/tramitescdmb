@@ -155,7 +155,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       <p className="flex items-center gap-1.5 font-medium text-stone-900">
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
                         {f.usuario.nombre}
-                        <span className="font-normal text-stone-500"> — {cargoDelFirmante(f.usuario, "GECON")}</span>
+                        <span className="font-normal text-stone-500"> — {f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "GECON")}</span>
                         {rotuloCalidadFirma(f.calidad) && (
                           <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
                         )}
@@ -184,7 +184,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       <p className="flex items-center gap-1.5 font-medium text-stone-900">
                         <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
                         {s.usuarioAsignado.nombre}
-                        <span className="font-normal text-stone-500"> — {cargoDelFirmante(s.usuarioAsignado, "GECON")}</span>
+                        <span className="font-normal text-stone-500"> — {s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "GECON")}</span>
                         <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">

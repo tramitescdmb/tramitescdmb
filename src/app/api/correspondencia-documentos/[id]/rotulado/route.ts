@@ -9,6 +9,7 @@ import { metadatosPdf } from "@/lib/metadatos-pdf";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
+import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             select: {
               fechaHora: true,
               hashContenido: true,
+              cargoAlFirmar: true,
               usuario: {
                 select: {
                   nombre: true,
@@ -90,6 +92,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     dependencia: f.usuario.dependencia?.nombre ?? null,
     fechaHora: formatearFechaHoraLarga(f.fechaHora),
     hash: f.hashContenido,
+    cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "SGDEA"),
   }));
 
   const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");

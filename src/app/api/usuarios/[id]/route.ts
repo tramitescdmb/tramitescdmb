@@ -6,7 +6,7 @@ import { hashPassword } from "@/lib/password";
 import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPassword } from "@/lib/password-policy";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
+import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
 import { sincronizarContratistaDeUsuario } from "@/lib/contratacion";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
@@ -56,6 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ? body.denominacionComplemento.trim().slice(0, 120)
         : null)
     : undefined;
+  const denominacionEncargo: boolean | undefined = "denominacionEncargo" in body ? Boolean(body.denominacionEncargo) : undefined;
   const sexo: string | null | undefined = "sexo" in body
     ? (esSexo(body.sexo) ? body.sexo : null)
     : undefined;
@@ -137,6 +138,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await registrarHistorialPassword(usuario.id, usuario.passwordHash, config.passwordHistorialCantidad);
   }
 
+  // La denominación efectiva tras este PATCH (puede venir solo una de las dos partes) decide si
+  // el encargo (E) sigue teniendo sentido — nunca lo dejamos en true para una denominación que no
+  // lo admite (p. ej. si el cliente cambia a CONTRATISTA sin tocar denominacionEncargo).
+  const denominacionEmpleoEfectiva = denominacionEmpleo !== undefined ? denominacionEmpleo : usuario.denominacionEmpleo;
+  const denominacionEncargoFinal: boolean | undefined =
+    denominacionEmpleo !== undefined || denominacionEncargo !== undefined
+      ? admiteEncargo(denominacionEmpleoEfectiva) && (denominacionEncargo ?? usuario.denominacionEncargo)
+      : undefined;
+
+  const huboCambioDeCargo =
+    (denominacionEmpleo !== undefined && denominacionEmpleo !== usuario.denominacionEmpleo) ||
+    (denominacionComplemento !== undefined && denominacionComplemento !== usuario.denominacionComplemento) ||
+    (denominacionEncargoFinal !== undefined && denominacionEncargoFinal !== usuario.denominacionEncargo);
+  if (huboCambioDeCargo) {
+    // Guarda el cargo que regía HASTA este momento (igual que registrarHistorialPassword con la
+    // contraseña anterior) — las firmas ya hechas no dependen de esto, cada una congeló su propio
+    // cargoAlFirmar; esta tabla es solo para consulta/auditoría del historial laboral.
+    await db.historialCargo.create({
+      data: {
+        usuarioId: usuario.id,
+        denominacionEmpleo: usuario.denominacionEmpleo,
+        denominacionComplemento: usuario.denominacionComplemento,
+        denominacionEncargo: usuario.denominacionEncargo,
+        cambiadoPorId: session.userId,
+      },
+    });
+  }
+
   await db.$transaction([
     db.usuario.update({
       where: { id },
@@ -145,6 +174,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(persona ? dataUsuarioDesdePersona(persona) : {}),
         ...(denominacionEmpleo !== undefined ? { denominacionEmpleo } : {}),
         ...(denominacionComplemento !== undefined ? { denominacionComplemento } : {}),
+        ...(denominacionEncargoFinal !== undefined ? { denominacionEncargo: denominacionEncargoFinal } : {}),
         ...(sexo !== undefined ? { sexo } : {}),
         ...(accesoFirma !== undefined ? { accesoFirma } : {}),
         ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),

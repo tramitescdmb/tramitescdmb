@@ -5,7 +5,7 @@ import { hashPassword } from "@/lib/password";
 import { validarPoliticaPassword } from "@/lib/password-policy";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { esClaveDenominacion, esSexo } from "@/lib/denominacion-empleo";
+import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
 
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
   const sexo = esSexo(body.sexo) ? body.sexo : null;
   const denominacionEmpleo = esClaveDenominacion(body.denominacionEmpleo) ? body.denominacionEmpleo : null;
   const denominacionComplemento = typeof body.denominacionComplemento === "string" ? body.denominacionComplemento.trim().slice(0, 120) || null : null;
+  const denominacionEncargo = admiteEncargo(denominacionEmpleo) && Boolean(body.denominacionEncargo);
   const accesoFirma = body.accesoFirma !== false;
   const persona = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       sexo,
       denominacionEmpleo,
       denominacionComplemento,
+      denominacionEncargo,
       accesoFirma,
       ...dataUsuarioDesdePersona(persona),
       cargos: { connect: cargoIds.map((id: string) => ({ id })) },
