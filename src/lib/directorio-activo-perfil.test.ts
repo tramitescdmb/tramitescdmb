@@ -22,4 +22,34 @@ describe("perfil del directorio activo", () => {
   it("descarta un correo que no lo es", () => {
     expect(extraerPerfil({ usuario: { email: "luiloz01" } })).toEqual({});
   });
+
+  it("toma dirección y dependencia con nombres típicos de AD", () => {
+    expect(
+      extraerPerfil({
+        user: { streetAddress: "Calle 36 # 10-30", physicalDeliveryOfficeName: "Subdirección Ambiental" },
+      })
+    ).toEqual({ direccion: "Calle 36 # 10-30", dependencia: "Subdirección Ambiental" });
+  });
+
+  it("si solo viene el nombre completo, lo parte en nombres/apellidos (4 palabras: 2+2)", () => {
+    expect(extraerPerfil({ user: { displayName: "Luis Alfonso Lozano Camacho" } })).toEqual({
+      nombreCompleto: "Luis Alfonso Lozano Camacho",
+      nombres: "Luis Alfonso",
+      apellidos: "Lozano Camacho",
+    });
+  });
+
+  it("nombre completo de 2 palabras se parte 1+1", () => {
+    expect(extraerPerfil({ user: { displayName: "Ana Ruiz" } })).toEqual({
+      nombreCompleto: "Ana Ruiz",
+      nombres: "Ana",
+      apellidos: "Ruiz",
+    });
+  });
+
+  it("no parte el nombre completo si nombres/apellidos ya vinieron por separado", () => {
+    expect(
+      extraerPerfil({ user: { givenName: "Luis", sn: "Lozano", displayName: "Luis Alfonso Lozano Camacho" } })
+    ).toEqual({ nombres: "Luis", apellidos: "Lozano", nombreCompleto: "Luis Alfonso Lozano Camacho" });
+  });
 });
