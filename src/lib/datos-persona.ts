@@ -75,7 +75,7 @@ export function separarNombreCompleto(nombre: string): { nombres: string; apelli
   return { nombres: partes.slice(0, partes.length - 2).join(" "), apellidos: partes.slice(-2).join(" ") };
 }
 
-export type CampoPersona = "identificacion" | "nombre" | "email" | "direccion" | "ubicacion" | "regimenTributario";
+export type CampoPersona = "identificacion" | "nombre" | "email" | "direccion" | "ubicacion" | "regimenTributario" | "telefono" | "celular";
 
 const ETIQUETA_CAMPO: Record<CampoPersona, (tipo: string) => string> = {
   identificacion: (tipo) => (tipo === "JURIDICA" ? "NIT" : "documento de identificación"),
@@ -84,6 +84,8 @@ const ETIQUETA_CAMPO: Record<CampoPersona, (tipo: string) => string> = {
   direccion: () => "dirección",
   ubicacion: () => "departamento y ciudad",
   regimenTributario: () => "régimen tributario",
+  telefono: () => "teléfono",
+  celular: () => "celular",
 };
 
 export function camposFaltantes(p: Partial<DatosPersona>, requeridos: readonly CampoPersona[]): string[] {
@@ -96,11 +98,20 @@ export function camposFaltantes(p: Partial<DatosPersona>, requeridos: readonly C
     direccion: vacio(p.direccion),
     ubicacion: vacio(p.departamento) || vacio(p.ciudad),
     regimenTributario: vacio(p.regimenTributario),
+    telefono: vacio(p.telefono),
+    celular: vacio(p.celular),
   };
   return requeridos.filter((c) => falta[c]).map((c) => ETIQUETA_CAMPO[c](tipo));
 }
 
 export const REQUERIDOS_CONTRATISTA: readonly CampoPersona[] = ["identificacion", "nombre", "email", "direccion", "ubicacion", "regimenTributario"];
+
+// Perfil mínimo para registrar un contratista desde GECON en la etapa precontractual, cuando la
+// persona todavía no existe como Usuario del sistema (ver crearContratistaMinimo en contratacion.ts).
+// Persona jurídica no exige télefono/celular propios aquí porque esos datos de contacto los trae
+// el representante legal (ver faltantesRepresentanteLegal).
+export const REQUERIDOS_CONTRATISTA_MINIMO_NATURAL: readonly CampoPersona[] = ["identificacion", "nombre", "telefono", "celular"];
+export const REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA: readonly CampoPersona[] = ["identificacion", "nombre"];
 
 function texto(v: unknown, max = 200): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";

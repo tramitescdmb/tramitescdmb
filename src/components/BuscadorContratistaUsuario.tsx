@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, Search } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Search, UserPlus } from "lucide-react";
+import { RegistrarContratistaForm } from "@/components/RegistrarContratistaForm";
 
-export type ContratistaElegido = { usuarioId: string; nombre: string; identificacion: string };
+export type ContratistaElegido =
+  | { tipo: "usuario"; usuarioId: string; nombre: string; identificacion: string }
+  | { tipo: "contratista"; contratistaId: string; nombre: string; identificacion: string };
 
 type Resultado = {
   usuarioId: string;
@@ -18,19 +21,25 @@ type Resultado = {
 export function BuscadorContratistaUsuario({
   onElegir,
   claseCampo,
+  expedienteId,
+  permiteRegistrarNuevo = true,
 }: {
   onElegir: (c: ContratistaElegido) => void;
   claseCampo?: string;
+  expedienteId?: string;
+  permiteRegistrarNuevo?: boolean;
 }) {
   const [consulta, setConsulta] = useState("");
   const [resultados, setResultados] = useState<Resultado[] | null>(null);
   const [buscando, setBuscando] = useState(false);
   const [incompleto, setIncompleto] = useState<Resultado | null>(null);
+  const [registrando, setRegistrando] = useState(false);
   const turno = useRef(0);
 
   useEffect(() => {
     const q = consulta.trim();
     setIncompleto(null);
+    setRegistrando(false);
     if (q.length < 2) {
       setResultados(null);
       return;
@@ -54,7 +63,7 @@ export function BuscadorContratistaUsuario({
       setIncompleto(r);
       return;
     }
-    onElegir({ usuarioId: r.usuarioId, nombre: r.nombre, identificacion: r.identificacion });
+    onElegir({ tipo: "usuario", usuarioId: r.usuarioId, nombre: r.nombre, identificacion: r.identificacion });
   }
 
   return (
@@ -108,10 +117,32 @@ export function BuscadorContratistaUsuario({
         </p>
       )}
 
-      {resultados && resultados.length === 0 && !buscando && (
-        <p className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600">
-          Ningún usuario coincide con «{consulta.trim()}». Los contratistas los registra el administrador del sistema en Usuarios.
-        </p>
+      {resultados && resultados.length === 0 && !buscando && !registrando && (
+        <div className="space-y-2 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600">
+          <p>Ningún usuario del sistema coincide con «{consulta.trim()}».</p>
+          {permiteRegistrarNuevo && (
+            <button
+              type="button"
+              onClick={() => setRegistrando(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-cdmb-200 bg-white px-2.5 py-1.5 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+            >
+              <UserPlus className="h-3.5 w-3.5" aria-hidden />
+              Registrar como contratista nuevo
+            </button>
+          )}
+        </div>
+      )}
+
+      {registrando && (
+        <RegistrarContratistaForm
+          expedienteId={expedienteId}
+          consultaInicial={consulta.trim()}
+          onRegistrado={(c) => {
+            setRegistrando(false);
+            onElegir({ tipo: "contratista", contratistaId: c.contratistaId, nombre: c.nombre, identificacion: c.identificacion });
+          }}
+          onCancelar={() => setRegistrando(false)}
+        />
       )}
     </div>
   );

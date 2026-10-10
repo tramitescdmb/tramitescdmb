@@ -531,7 +531,7 @@ export default async function DetalleExpedienteContractualPage({
               )}
             </dd>
           </div>
-          <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? `${expediente.contratista.nombreORazonSocial} (${expediente.contratista.identificacion})` : "Por definir"}</dd></div>
+          <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? <Link href={`/contratacion/contratistas/${expediente.contratista.id}`} className="text-cdmb-700 hover:underline">{expediente.contratista.nombreORazonSocial} ({expediente.contratista.identificacion})</Link> : "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
             <UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Supervisor(es):</dt>

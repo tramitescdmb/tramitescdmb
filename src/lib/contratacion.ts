@@ -3,7 +3,18 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
-import { camposFaltantes, nombreCompletoPersona, nulo, regimenONulo, REQUERIDOS_CONTRATISTA } from "@/lib/datos-persona";
+import {
+  camposFaltantes,
+  leerDatosPersona,
+  nombreCompletoPersona,
+  nulo,
+  regimenONulo,
+  REQUERIDOS_CONTRATISTA,
+  REQUERIDOS_CONTRATISTA_MINIMO_NATURAL,
+  REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA,
+  TIPOS_IDENTIFICACION_USUARIO,
+  type DatosPersona,
+} from "@/lib/datos-persona";
 import { personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
@@ -719,10 +730,17 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
 
-  if (expediente.etapaActual === "PRECONTRACTUAL" && !expediente.contratistaId) {
-    throw new Error(
-      "No se puede pasar a la etapa Contractual sin conocer al contratista (persona natural o jurídica). Vincúlelo primero desde el expediente."
-    );
+  if (expediente.etapaActual === "PRECONTRACTUAL") {
+    if (!expediente.contratistaId) {
+      throw new Error(
+        "No se puede pasar a la etapa Contractual sin conocer al contratista (persona natural o jurídica). Vincúlelo primero desde el expediente."
+      );
+    }
+    if (!(await intentarVincularContratistaConUsuario(expediente.contratistaId))) {
+      throw new Error(
+        "El contratista todavía no corresponde a un usuario completo del sistema (debe crearlo o completar sus datos en Usuarios, con el mismo número de documento). Inténtelo de nuevo una vez exista — no hace falta repetir ningún otro paso."
+      );
+    }
   }
   if (ETAPAS_ORDEN.indexOf(expediente.etapaActual) === ETAPAS_ORDEN.length - 1) {
     if (!expediente.subserieId) throw new Error("Asigne la clasificación TRD (pestaña Administración) antes de cerrar el expediente.");
@@ -992,6 +1010,212 @@ export async function buscarUsuariosParaContrato(consulta: string, limite = 10) 
 }
 
 export type UsuarioParaContrato = Awaited<ReturnType<typeof buscarUsuariosParaContrato>>[number];
+
+// --- Contratista "perfil mínimo" en la etapa precontractual --------------------------------
+//
+// Antes de que exista un Usuario real para el futuro contratista (lo normal en precontractual:
+// la persona natural o jurídica con la que se va a contratar puede no tener ninguna cuenta en el
+// sistema todavía), se permite registrar un Contratista con solo los datos mínimos, sin crear un
+// Usuario. Más adelante, al pasar a la etapa Contractual, se intenta enlazar ese Contratista con
+// un Usuario real por documento/NIT (ver intentarVincularContratistaConUsuario) — si no se logra,
+// el paso de etapa queda bloqueado pero es reintentable sin perder nada de lo ya diligenciado.
+
+function textoRepresentante(v: unknown, max = 200): string {
+  return typeof v === "string" ? v.trim().slice(0, max) : "";
+}
+
+export type RepresentanteLegalDatos = {
+  nombres: string;
+  apellidos: string;
+  identificacion: string;
+  direccion: string;
+  telefono: string;
+  celular: string;
+};
+
+export function leerRepresentanteLegal(body: unknown): RepresentanteLegalDatos {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  return {
+    nombres: textoRepresentante(b.nombres, 120),
+    apellidos: textoRepresentante(b.apellidos, 120),
+    identificacion: textoRepresentante(b.identificacion, 30),
+    direccion: textoRepresentante(b.direccion, 200),
+    telefono: textoRepresentante(b.telefono, 30),
+    celular: textoRepresentante(b.celular, 30),
+  };
+}
+
+export function faltantesRepresentanteLegal(r: RepresentanteLegalDatos): string[] {
+  const falta: string[] = [];
+  if (!r.identificacion) falta.push("cédula del representante legal");
+  if (!r.nombres || !r.apellidos) falta.push("nombres y apellidos del representante legal");
+  if (!r.direccion) falta.push("dirección del representante legal");
+  if (!r.telefono && !r.celular) falta.push("teléfono o celular del representante legal");
+  return falta;
+}
+
+export function faltantesContratistaMinimo(p: Partial<DatosPersona>): string[] {
+  const requeridos = p.tipoPersona === "JURIDICA" ? REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA : REQUERIDOS_CONTRATISTA_MINIMO_NATURAL;
+  return camposFaltantes(p, requeridos);
+}
+
+export class ContratistaDuplicadoError extends Error {
+  constructor(
+    public readonly identificacion: string,
+    public readonly contratistaId: string,
+    nombre: string
+  ) {
+    super(`Ya existe un contratista registrado con el documento ${identificacion} (${nombre}).`);
+    this.name = "ContratistaDuplicadoError";
+  }
+}
+
+function datosContratistaDesdePersonaMinima(persona: DatosPersona) {
+  return {
+    identificacion: persona.identificacion.trim(),
+    tipoPersona: persona.tipoPersona,
+    nombres: persona.tipoPersona === "JURIDICA" ? null : nulo(persona.nombres),
+    apellidos: persona.tipoPersona === "JURIDICA" ? null : nulo(persona.apellidos),
+    nombreORazonSocial: nombreCompletoPersona(persona),
+    contactoEmail: nulo(persona.email),
+    contactoCelular: nulo(persona.celular),
+    contactoTelefono: nulo(persona.telefono),
+    direccion: nulo(persona.direccion),
+    departamento: nulo(persona.departamento),
+    ciudad: nulo(persona.ciudad),
+  };
+}
+
+export async function crearContratistaMinimo(personaBody: unknown, representanteBody: unknown): Promise<{ id: string; nombre: string }> {
+  const persona = leerDatosPersona(personaBody, TIPOS_IDENTIFICACION_USUARIO);
+  const faltan = faltantesContratistaMinimo(persona);
+  if (faltan.length > 0) throw new Error(`Faltan datos del contratista: ${faltan.join(", ")}.`);
+
+  const representante = persona.tipoPersona === "JURIDICA" ? leerRepresentanteLegal(representanteBody) : null;
+  if (representante) {
+    const faltanRep = faltantesRepresentanteLegal(representante);
+    if (faltanRep.length > 0) throw new Error(`Faltan datos del representante legal: ${faltanRep.join(", ")}.`);
+  }
+
+  const datos = datosContratistaDesdePersonaMinima(persona);
+  const existente = await db.contratista.findUnique({ where: { identificacion: datos.identificacion }, select: { id: true, nombreORazonSocial: true } });
+  if (existente) throw new ContratistaDuplicadoError(datos.identificacion, existente.id, existente.nombreORazonSocial);
+
+  const creado = await db.contratista.create({
+    data: {
+      ...datos,
+      ...(representante
+        ? {
+            representanteLegal: {
+              create: {
+                nombres: representante.nombres,
+                apellidos: representante.apellidos,
+                identificacion: representante.identificacion,
+                direccion: nulo(representante.direccion),
+                telefono: nulo(representante.telefono),
+                celular: nulo(representante.celular),
+              },
+            },
+          }
+        : {}),
+    },
+    select: { id: true, nombreORazonSocial: true },
+  });
+  return { id: creado.id, nombre: creado.nombreORazonSocial };
+}
+
+export async function editarContratistaMinimo(contratistaId: string, personaBody: unknown, representanteBody: unknown): Promise<void> {
+  const actual = await db.contratista.findUnique({
+    where: { id: contratistaId },
+    select: { usuarioId: true, representanteLegal: { select: { id: true } } },
+  });
+  if (!actual) throw new Error("El contratista no existe.");
+  if (actual.usuarioId) {
+    throw new Error("Este contratista ya está vinculado a un usuario del sistema: sus datos se editan desde Usuarios.");
+  }
+
+  const persona = leerDatosPersona(personaBody, TIPOS_IDENTIFICACION_USUARIO);
+  const faltan = faltantesContratistaMinimo(persona);
+  if (faltan.length > 0) throw new Error(`Faltan datos del contratista: ${faltan.join(", ")}.`);
+  const datos = datosContratistaDesdePersonaMinima(persona);
+
+  const ocupada = await db.contratista.findFirst({ where: { identificacion: datos.identificacion, id: { not: contratistaId } }, select: { id: true } });
+  if (ocupada) throw new Error(`El documento ${datos.identificacion} ya corresponde a otro contratista registrado.`);
+
+  let representante: RepresentanteLegalDatos | null = null;
+  if (persona.tipoPersona === "JURIDICA") {
+    representante = leerRepresentanteLegal(representanteBody);
+    const faltanRep = faltantesRepresentanteLegal(representante);
+    if (faltanRep.length > 0) throw new Error(`Faltan datos del representante legal: ${faltanRep.join(", ")}.`);
+  }
+
+  await db.contratista.update({
+    where: { id: contratistaId },
+    data: {
+      ...datos,
+      ...(representante
+        ? {
+            representanteLegal: {
+              upsert: {
+                create: {
+                  nombres: representante.nombres,
+                  apellidos: representante.apellidos,
+                  identificacion: representante.identificacion,
+                  direccion: nulo(representante.direccion),
+                  telefono: nulo(representante.telefono),
+                  celular: nulo(representante.celular),
+                },
+                update: {
+                  nombres: representante.nombres,
+                  apellidos: representante.apellidos,
+                  identificacion: representante.identificacion,
+                  direccion: nulo(representante.direccion),
+                  telefono: nulo(representante.telefono),
+                  celular: nulo(representante.celular),
+                },
+              },
+            },
+          }
+        : actual.representanteLegal
+          ? { representanteLegal: { delete: true } }
+          : {}),
+    },
+  });
+}
+
+/**
+ * Al pasar de etapa PRECONTRACTUAL a CONTRACTUAL, un Contratista "perfil mínimo" (sin Usuario
+ * todavía) debe quedar vinculado a un Usuario real del sistema: solo así puede firmar documentos
+ * del contrato y recibir el rol CONTRATISTA. Busca por documento/NIT; si ya está vinculado, solo
+ * refresca sus datos desde el Usuario (por si cambiaron). Devuelve false — sin lanzar error, para
+ * que el llamador decida el mensaje — cuando todavía no hay forma de vincularlo: el paso de etapa
+ * queda bloqueado pero se puede reintentar sin perder nada ya diligenciado.
+ */
+export async function intentarVincularContratistaConUsuario(contratistaId: string): Promise<boolean> {
+  const contratista = await db.contratista.findUnique({
+    where: { id: contratistaId },
+    select: { usuarioId: true, identificacion: true },
+  });
+  if (!contratista) return false;
+  if (contratista.usuarioId) {
+    await sincronizarContratistaDeUsuario(contratista.usuarioId);
+    return true;
+  }
+  if (!contratista.identificacion.trim()) return false;
+
+  const usuario = await db.usuario.findFirst({ where: { cedulaONit: contratista.identificacion }, select: SELECT_USUARIO_CONTRATISTA });
+  if (!usuario || motivoNoPuedeSerContratista(usuario) || faltantesContratista(usuario).length > 0) return false;
+
+  try {
+    await db.contratista.update({ where: { id: contratistaId }, data: { ...datosContratistaDesdeUsuario(usuario), usuarioId: usuario.id } });
+  } catch {
+    return false;
+  }
+  if (!usuario.rolesContratacion.includes("CONTRATISTA")) {
+    await db.usuario.update({ where: { id: usuario.id }, data: { rolesContratacion: ["CONTRATISTA"] } });
+  }
+  return true;
+}
 
 export type FiltrosContratacion = {
   q?: string;

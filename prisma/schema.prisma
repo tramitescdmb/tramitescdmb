@@ -1942,8 +1942,30 @@ model Contratista {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
-  usuario     Usuario?                @relation("ContratistaUsuario", fields: [usuarioId], references: [id])
-  expedientes ExpedienteContractual[]
+  usuario             Usuario?                @relation("ContratistaUsuario", fields: [usuarioId], references: [id])
+  expedientes         ExpedienteContractual[]
+  representanteLegal  RepresentanteLegal?
+}
+
+/**
+ * Representante legal de un Contratista persona jurídica. Solo tiene sentido mientras el
+ * Contratista es un perfil mínimo de la etapa precontractual (Contratista.usuarioId null) — una
+ * vez se vincula a un Usuario real, los datos de quien firma a nombre de la entidad se manejan
+ * igual que para cualquier otro firmante del sistema.
+ */
+model RepresentanteLegal {
+  id             String   @id @default(cuid())
+  contratistaId  String   @unique
+  nombres        String
+  apellidos      String
+  identificacion String
+  direccion      String?
+  telefono       String?
+  celular        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contratista Contratista @relation(fields: [contratistaId], references: [id], onDelete: Cascade)
 }
 
 model ExpedienteContractual {
