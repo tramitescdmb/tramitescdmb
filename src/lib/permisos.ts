@@ -343,6 +343,13 @@ export function puedeGestionarContratistas(permisos: PermisosUsuario): boolean {
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
+/** Registrar/editar el perfil mínimo (sin Usuario) de un contratista: también el Personal de
+ * Contratación en general, no solo cuando está asignado a un expediente puntual — a diferencia de
+ * vincular un expediente ya existente a un contratista, que sigue siendo cosa de quien gestiona. */
+export function puedeRegistrarContratistaMinimo(permisos: PermisosUsuario): boolean {
+  return puedeGestionarContratistas(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
+}
+
 export function puedeAsignarPersonalContrato(permisos: PermisosUsuario): boolean {
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }

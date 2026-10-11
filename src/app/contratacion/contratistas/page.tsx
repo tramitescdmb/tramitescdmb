@@ -5,14 +5,20 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Users, Download } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { Paginador } from "@/components/Paginador";
+import { NuevoContratistaSeccion } from "@/components/NuevoContratistaSeccion";
 import { vigenciaDeExpediente } from "@/lib/contratacion";
 import { CONTRATO_ACTIVO, filtroContratistas, vigenciasDisponibles } from "@/lib/contratistas-registro";
 
 const POR_PAGINA = 30;
+
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
 
 export default async function ContratistasPage({
   searchParams,
@@ -144,70 +150,65 @@ export default async function ContratistasPage({
       <ResumenResultados total={total} detalle={busqueda ? `que coinciden con "${busqueda}"` : undefined} />
 
       {contratistas.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-stone-100 text-left text-[11px] font-medium uppercase tracking-wide text-stone-400">
-                <th className="px-3 py-2">Documento</th>
-                <th className="px-3 py-2">Nombre / razón social</th>
-                <th className="px-3 py-2">Tipo</th>
-                <th className="px-3 py-2">Contacto</th>
-                <th className="px-3 py-2">Ciudad</th>
-                <th className="px-3 py-2">Contratos por vigencia</th>
-                <th className="px-3 py-2">Contrato activo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contratistas.map((c) => {
-                const porVigencia = new Map<number, number>();
-                for (const e of c.expedientes) {
-                  const v = vigenciaDeExpediente(e.fechaInicio, e.createdAt);
-                  porVigencia.set(v, (porVigencia.get(v) ?? 0) + 1);
-                }
-                const activos = c.expedientes.filter((e) => !e.cerrado && e.etapaActual === "CONTRACTUAL");
-                return (
-                  <tr key={c.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
-                    <td className="px-3 py-2 font-mono">
-                      <Link prefetch={false} href={`/contratacion/contratistas/${c.id}`} className="text-cdmb-700 hover:underline">
-                        {c.identificacion}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2 text-sm text-stone-800">{c.nombreORazonSocial}</td>
-                    <td className="px-3 py-2 text-stone-500">{c.tipoPersona === "JURIDICA" ? "Jurídica" : "Natural"}</td>
-                    <td className="px-3 py-2 text-stone-500">{[c.contactoEmail, c.contactoCelular ?? c.contactoTelefono].filter(Boolean).join(" · ") || "—"}</td>
-                    <td className="px-3 py-2 text-stone-500">{c.ciudad ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {Array.from(porVigencia.entries())
-                          .sort((a, b) => b[0] - a[0])
-                          .map(([v, n]) => (
-                            <span key={v} className={`rounded-full px-2 py-0.5 font-medium ${v === vigencia ? "bg-cdmb-100 text-cdmb-800" : "bg-stone-100 text-stone-600"}`}>
-                              {v}: {n}
-                            </span>
-                          ))}
-                        {porVigencia.size === 0 && <span className="text-stone-400">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      {activos.length > 0 ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700" title={activos.map((e) => e.numero).join(", ")}>
-                          Sí{activos.length > 1 ? ` (${activos.length})` : ""}
-                        </span>
-                      ) : (
-                        <span className="text-stone-400">No</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {contratistas.map((c) => {
+            const porVigencia = new Map<number, number>();
+            for (const e of c.expedientes) {
+              const v = vigenciaDeExpediente(e.fechaInicio, e.createdAt);
+              porVigencia.set(v, (porVigencia.get(v) ?? 0) + 1);
+            }
+            const activos = c.expedientes.filter((e) => !e.cerrado && e.etapaActual === "CONTRACTUAL");
+            const contacto = [c.contactoEmail, c.contactoCelular ?? c.contactoTelefono].filter(Boolean).join(" · ");
+            return (
+              <Link
+                key={c.id}
+                prefetch={false}
+                href={`/contratacion/contratistas/${c.id}`}
+                className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-cdmb-300 hover:shadow-md"
+              >
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
+                  {iniciales(c.nombreORazonSocial)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-1.5 font-medium text-stone-800">
+                    {c.nombreORazonSocial}
+                    {c.tipoPersona === "JURIDICA" && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">Jurídica</span>}
+                  </p>
+                  <p className="truncate text-xs text-stone-400">
+                    {c.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {c.identificacion}
+                    {c.ciudad ? ` · ${c.ciudad}` : ""}
+                    {contacto ? ` · ${contacto}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-none flex-wrap items-center justify-end gap-1">
+                  {Array.from(porVigencia.entries())
+                    .sort((a, b) => b[0] - a[0])
+                    .map(([v, n]) => (
+                      <span key={v} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${v === vigencia ? "bg-cdmb-100 text-cdmb-800" : "bg-stone-100 text-stone-600"}`}>
+                        {v}: {n}
+                      </span>
+                    ))}
+                  {activos.length > 0 ? (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700" title={activos.map((e) => e.numero).join(", ")}>
+                      Contrato activo{activos.length > 1 ? ` (${activos.length})` : ""}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-400">Sin contrato activo</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <EstadoVacio icon={Users}>{qsFiltros ? "Ningún contratista coincide con ese filtro." : "Todavía no hay contratistas con expediente."}</EstadoVacio>
       )}
 
-      <Paginador paginaActual={pagina} totalPaginas={totalPaginas} total={total} porPagina={POR_PAGINA} hrefPagina={hrefPagina} />
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
+        <Paginador paginaActual={pagina} totalPaginas={totalPaginas} total={total} porPagina={POR_PAGINA} hrefPagina={hrefPagina} />
+      </div>
+
+      {puedeRegistrarContratistaMinimo(permisos) && <NuevoContratistaSeccion />}
     </section>
   );
 }

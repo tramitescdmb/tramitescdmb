@@ -1,26 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas, tieneRolContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { editarContratistaMinimo } from "@/lib/contratacion";
-
-async function puedeEditarEsteContratista(permisos: Awaited<ReturnType<typeof obtenerPermisosUsuario>>, contratistaId: string): Promise<boolean> {
-  if (puedeGestionarContratistas(permisos)) return true;
-  if (!tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") || permisos.asignadoExpedientes.size === 0) return false;
-  const vinculado = await db.contratista.findFirst({
-    where: { id: contratistaId, expedientes: { some: { id: { in: [...permisos.asignadoExpedientes] } } } },
-    select: { id: true },
-  });
-  return Boolean(vinculado);
-}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!(await puedeEditarEsteContratista(permisos, id))) {
+  if (!puedeRegistrarContratistaMinimo(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para editar este contratista." }, { status: 403 });
   }
 
