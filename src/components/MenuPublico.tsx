@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus2, Search, ShieldCheck } from "lucide-react";
+import { LayoutGrid, FilePlus2, Search, ShieldCheck } from "lucide-react";
 
 const OPCIONES = [
+  { href: "/", label: "Aplicativos CDMB", icono: LayoutGrid, activo: (p: string) => p === "/" },
   { href: "/pqrsd", label: "Radicar PQRSD", icono: FilePlus2, activo: (p: string) => p === "/pqrsd" },
   { href: "/pqrsd/consultar", label: "Consultar estado", icono: Search, activo: (p: string) => p.startsWith("/pqrsd/consultar") },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck, activo: (p: string) => p.startsWith("/validar-firma") || p.startsWith("/verificar") },

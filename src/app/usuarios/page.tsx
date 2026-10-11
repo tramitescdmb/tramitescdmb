@@ -321,51 +321,57 @@ export default async function UsuariosPage({
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 border-t border-stone-100 pt-3 sm:grid-cols-3 sm:gap-3">
-              <div className="min-w-0">
-                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
-                {(() => {
-                  const texto = resumenCargosTexto(u.cargoAsignaciones, u.sexo);
-                  return (
-                    <p className={`truncate text-xs ${u.cargoAsignaciones.length === 0 ? "text-stone-400" : "text-stone-600"}`} title={texto}>
-                      {texto}
-                    </p>
-                  );
-                })()}
-              </div>
-
-              <div className="min-w-0">
-                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
-                {u.rol === "ADMIN" ? (
-                  <p className="text-xs text-stone-400">Acceso total</p>
-                ) : (
-                  (() => {
-                    const texto = resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
+            <details className="group mt-3 border-t border-stone-100 pt-2">
+              <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700 [&::-webkit-details-marker]:hidden">
+                <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                Cargo, trámites y accesos
+              </summary>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
+                  {(() => {
+                    const texto = resumenCargosTexto(u.cargoAsignaciones, u.sexo);
                     return (
-                      <p className={`truncate text-xs ${u.tramitesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
+                      <p className={`truncate text-xs ${u.cargoAsignaciones.length === 0 ? "text-stone-400" : "text-stone-600"}`} title={texto}>
                         {texto}
                       </p>
                     );
-                  })()
-                )}
-              </div>
+                  })()}
+                </div>
 
-              <div className="min-w-0">
-                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
-                {u.rol === "ADMIN" ? (
-                  <p className="text-xs text-stone-400">Acceso total</p>
-                ) : (
-                  (() => {
-                    const texto = resumenSeccionesTexto(u.seccionesAcceso);
-                    return (
-                      <p className={`truncate text-xs ${u.seccionesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
-                        {texto}
-                      </p>
-                    );
-                  })()
-                )}
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
+                  {u.rol === "ADMIN" ? (
+                    <p className="text-xs text-stone-400">Acceso total</p>
+                  ) : (
+                    (() => {
+                      const texto = resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
+                      return (
+                        <p className={`truncate text-xs ${u.tramitesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
+                          {texto}
+                        </p>
+                      );
+                    })()
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
+                  {u.rol === "ADMIN" ? (
+                    <p className="text-xs text-stone-400">Acceso total</p>
+                  ) : (
+                    (() => {
+                      const texto = resumenSeccionesTexto(u.seccionesAcceso);
+                      return (
+                        <p className={`truncate text-xs ${u.seccionesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
+                          {texto}
+                        </p>
+                      );
+                    })()
+                  )}
+                </div>
               </div>
-            </div>
+            </details>
           </div>
           );
         })}
