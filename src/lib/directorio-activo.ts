@@ -72,16 +72,23 @@ function aplanar(valor: unknown, prefijo = "", salida: Record<string, unknown> =
   return salida;
 }
 
-export function extraerPerfil(cuerpo: unknown): PerfilDirectorio {
+export function extraerPerfil(cuerpo: unknown, usuarioRed?: string): PerfilDirectorio {
   const plano = aplanar(cuerpo);
   const perfil: PerfilDirectorio = {};
+  const usuarioNormalizado = usuarioRed?.trim().toLowerCase() || null;
   for (const [campo, candidatos] of Object.entries(CLAVES_PERFIL) as [keyof PerfilDirectorio, string[]][]) {
     for (const [clave, v] of Object.entries(plano)) {
       const hoja = clave.split(".").pop()!.toLowerCase();
       if (clave === "message" || clave === "token") continue;
-      if (candidatos.includes(hoja) && typeof v === "string" && v.trim()) {
-        perfil[campo] ??= v.trim();
-      }
+      if (!candidatos.includes(hoja) || typeof v !== "string" || !v.trim()) continue;
+      const valor = v.trim();
+      // Algunos directorios mal configurados repiten el usuario de red en el campo de nombre
+      // (displayName/cn = sAMAccountName) — eso no es un nombre real: mejor dejar el campo vacío
+      // (y que quede el nombre provisional a partir del usuario, o que un administrador lo escriba
+      // a mano una vez) que mostrar el usuario de red como si fuera el nombre de la persona.
+      if (usuarioNormalizado && valor.toLowerCase() === usuarioNormalizado) continue;
+      if (campo === "nombreCompleto" && !/\s/.test(valor)) continue;
+      perfil[campo] ??= valor;
     }
   }
   if (perfil.email && !perfil.email.includes("@")) delete perfil.email;
@@ -136,7 +143,7 @@ export async function autenticarDirectorioActivo(
     const token = (cuerpo as { token?: unknown })?.token;
     if (typeof token === "string" && token.length > 0) {
       console.info("[directorio-activo] campos de la respuesta del login:", Object.keys(aplanar(cuerpo)).join(", "));
-      return { ok: true, token, perfil: extraerPerfil(cuerpo) };
+      return { ok: true, token, perfil: extraerPerfil(cuerpo, usuario) };
     }
     console.error("[directorio-activo] respuesta 2xx sin token:", cuerpo);
     return { ok: false, mensaje: "El directorio activo respondió de forma inesperada. Reporte el caso al área de sistemas." };
