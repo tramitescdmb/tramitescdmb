@@ -197,18 +197,19 @@ export default async function UsuariosPage({
         <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
           Usuarios registrados ({total})
         </p>
-        {usuarios.length === 0 && (
+        {usuarios.length === 0 ? (
           <p className="rounded-2xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400">
             No hay usuarios con este filtro.
           </p>
-        )}
-        {usuarios.map((u) => {
-          const vigencia = !u.directorioActivo ? estadoVigenciaPassword(u.passwordCambiadaEn, config.passwordVigenciaDias) : null;
-          return (
-          <div key={u.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+        ) : (
+          <div className="divide-y divide-stone-200 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            {usuarios.map((u) => {
+              const vigencia = !u.directorioActivo ? estadoVigenciaPassword(u.passwordCambiadaEn, config.passwordVigenciaDias) : null;
+              return (
+          <div key={u.id} className="p-3 hover:bg-stone-50/60">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
                   {iniciales(u.nombre)}
                 </span>
                 <div className="min-w-0">
@@ -373,8 +374,10 @@ export default async function UsuariosPage({
               </div>
             </details>
           </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
 
         <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
           <Paginador
