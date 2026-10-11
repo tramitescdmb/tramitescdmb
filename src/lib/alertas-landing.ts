@@ -16,7 +16,9 @@ import { obtenerTrabajoPendienteContratacion } from "@/lib/contratacion-panel";
 import { obtenerPanelMiTrabajo } from "@/lib/correspondencia-panel";
 import type { SessionPayload } from "@/lib/auth";
 
-export type ItemAlerta = { titulo: string; detalle?: string; link: string };
+export type TipoAlerta = "informacion" | "decision" | "visita" | "documento" | "paso" | "firma" | "informe" | "contratista" | "correspondencia" | "flujo";
+
+export type ItemAlerta = { titulo: string; detalle?: string; link: string; tipo: TipoAlerta };
 
 export type SeccionAlertasModulo = {
   modulo: "TRAMITES" | "GECON" | "SGDEA";
@@ -71,27 +73,32 @@ async function seccionTramites(session: SessionPayload, permisos: PermisosUsuari
 
   for (const d of pendientes?.informacionAdicional ?? []) {
     total++;
-    items.push({ titulo: `Información adicional: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}` });
+    items.push({ titulo: `Información adicional: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}`, tipo: "informacion" });
   }
   for (const d of pendientes?.decisiones ?? []) {
     total++;
-    items.push({ titulo: `Decisión pendiente: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}` });
+    items.push({ titulo: `Decisión pendiente: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}`, tipo: "decision" });
   }
   for (const v of [...(visitas?.equipoVencidas ?? []), ...(visitas?.porRegistrar ?? []), ...(visitas?.proximas ?? [])]) {
     total++;
-    items.push({ titulo: v.texto, detalle: `${v.tramite} · ${v.numero}`, link: v.visitaId ? `/expedientes/${v.expedienteId}/visitas/${v.visitaId}` : `/expedientes/${v.expedienteId}` });
+    items.push({
+      titulo: v.texto,
+      detalle: `${v.tramite} · ${v.numero}`,
+      link: v.visitaId ? `/expedientes/${v.expedienteId}/visitas/${v.visitaId}` : `/expedientes/${v.expedienteId}`,
+      tipo: "visita",
+    });
   }
   for (const d of pendientes?.documentos ?? []) {
     total++;
-    items.push({ titulo: `Falta documento: ${d.detalle ?? "ver expediente"}`, detalle: `${d.tramiteNombre} · ${d.numero}`, link: `/expedientes/${d.expedienteId}` });
+    items.push({ titulo: `Falta documento: ${d.detalle ?? "ver expediente"}`, detalle: `${d.tramiteNombre} · ${d.numero}`, link: `/expedientes/${d.expedienteId}`, tipo: "documento" });
   }
   for (const d of pendientes?.gestionPaso ?? []) {
     total++;
-    items.push({ titulo: `Gestionar paso: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}` });
+    items.push({ titulo: `Gestionar paso: ${d.numero}`, detalle: `${d.tramiteNombre} · ${d.pasoTitulo}`, link: `/expedientes/${d.expedienteId}`, tipo: "paso" });
   }
   if (buzon && buzon.listos > 0) {
     total += buzon.listos;
-    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/firmas/buzon" });
+    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/firmas/buzon", tipo: "firma" });
   }
 
   return {
@@ -116,15 +123,16 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
       titulo: `Informe N.° ${i.numeroInforme} por radicar`,
       detalle: `${i.objeto.slice(0, 70)} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
       link: `/contratacion/expedientes/${i.expedienteId}`,
+      tipo: "informe",
     });
   }
   if (trabajo.firmas.listos > 0) {
     total += trabajo.firmas.listos;
-    items.push({ titulo: `${trabajo.firmas.listos} firma(s) lista(s) para firmar`, link: "/contratacion/buzon" });
+    items.push({ titulo: `${trabajo.firmas.listos} firma(s) lista(s) para firmar`, link: "/contratacion/buzon", tipo: "firma" });
   }
   if (trabajo.sinContratista > 0) {
     total += trabajo.sinContratista;
-    items.push({ titulo: `${trabajo.sinContratista} expediente(s) sin contratista asignado`, link: "/contratacion/expedientes" });
+    items.push({ titulo: `${trabajo.sinContratista} expediente(s) sin contratista asignado`, link: "/contratacion/expedientes", tipo: "contratista" });
   }
 
   return {
@@ -154,16 +162,17 @@ async function seccionCorrespondencia(session: SessionPayload, permisos: Permiso
       titulo: `${c.radicado} ${vencida ? "— vencida" : "— por responder"}`,
       detalle: c.asunto.slice(0, 80),
       link: `/correspondencia/${c.id}`,
+      tipo: "correspondencia",
     });
   }
   if (buzon.listos > 0) {
     total += buzon.listos;
-    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/correspondencia/buzon" });
+    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/correspondencia/buzon", tipo: "firma" });
   }
   const otros = panel.pendientesProceso + panel.devueltasEsperandoReparto + panel.oficiosSinDespachar + panel.flujosPasoVencido;
   if (otros > 0 && (panel.puedeDistribuir || panel.puedeDespachar)) {
     total += otros;
-    items.push({ titulo: `${otros} pendiente(s) de reparto, despacho o flujo`, link: "/correspondencia/panel" });
+    items.push({ titulo: `${otros} pendiente(s) de reparto, despacho o flujo`, link: "/correspondencia/panel", tipo: "flujo" });
   }
 
   return {
