@@ -16,12 +16,15 @@ export type PermisosUsuario = {
   supervisaExpedientes: Set<string>;
   asignadoExpedientes: Set<string>;
   cargos: Set<string>;
+  /** Nombres de los cargos (de entre `cargos`) que este usuario ejerce en encargo — se muestran con "(E)". */
+  cargosEncargo: Set<string>;
 };
 
 type UsuarioFresco = {
   activo: boolean;
   rol: "ADMIN" | "FUNCIONARIO";
   cargos: string[];
+  cargosEncargo: string[];
   tramitesAcceso: { tramiteTipoId: string; nivel: NivelAccesoTramite }[];
   seccionesAcceso: { seccion: SeccionSoloLectura }[];
   rolCorrespondencia: RolCorrespondencia | null;
@@ -42,7 +45,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     select: {
       activo: true,
       rol: true,
-      cargos: { select: { nombre: true } },
+      cargoAsignaciones: { select: { encargo: true, cargo: { select: { nombre: true } } } },
       tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
       seccionesAcceso: { select: { seccion: true } },
       rolCorrespondencia: true,
@@ -61,7 +64,8 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
   return {
     activo: usuario.activo,
     rol: usuario.rol,
-    cargos: usuario.cargos.map((c) => c.nombre),
+    cargos: usuario.cargoAsignaciones.map((uc) => uc.cargo.nombre),
+    cargosEncargo: usuario.cargoAsignaciones.filter((uc) => uc.encargo).map((uc) => uc.cargo.nombre),
     tramitesAcceso: usuario.tramitesAcceso,
     seccionesAcceso: usuario.seccionesAcceso,
     rolCorrespondencia: usuario.rolCorrespondencia,
@@ -113,6 +117,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     supervisaExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.supervisaExpedientes : []),
     asignadoExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.asignadoExpedientes : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
+    cargosEncargo: new Set(usuario?.activo ? usuario.cargosEncargo : []),
   };
 });
 
@@ -121,7 +126,14 @@ export const verificarSesion = cache(async (): Promise<SessionPayload | null> =>
   if (!session) return null;
   const usuario = await obtenerUsuarioFresco(session.userId);
   if (!usuario || !usuario.activo) return null;
-  return { userId: session.userId, email: session.email, nombre: session.nombre, rol: usuario.rol, cargos: usuario.cargos };
+  return {
+    userId: session.userId,
+    email: session.email,
+    nombre: session.nombre,
+    rol: usuario.rol,
+    cargos: usuario.cargos,
+    cargosEncargo: usuario.cargosEncargo,
+  };
 });
 
 export function puedeAccederTramite(permisos: PermisosUsuario, tramiteTipoId: string): boolean {

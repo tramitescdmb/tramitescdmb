@@ -153,7 +153,12 @@ export default async function ExpedienteDetallePage({
     db.usuario.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true, cargos: { select: { nombre: true } }, dependencia: { select: { nombre: true } } },
+      select: {
+        id: true,
+        nombre: true,
+        cargoAsignaciones: { select: { encargo: true, cargo: { select: { nombre: true } } } },
+        dependencia: { select: { nombre: true } },
+      },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
   ]);
@@ -209,6 +214,7 @@ export default async function ExpedienteDetallePage({
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargos, pasoActual.responsables) : false;
   const puedeAvanzar = puedeEditar && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
+  const misCargosConEncargo = (session?.cargos ?? []).map((c) => (session?.cargosEncargo.includes(c) ? `${c} (E)` : c));
   const visitasDelPasoActual = pasoActual
     ? expediente.visitasTecnicas.filter((v) => v.pasoNumero === pasoActual.numero)
     : [];
@@ -492,7 +498,7 @@ export default async function ExpedienteDetallePage({
                     {esMiPaso && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                         <Hand className="h-3 w-3" aria-hidden />
-                        Corresponde a su cargo ({session?.cargos.join(", ")})
+                        Corresponde a su cargo ({misCargosConEncargo.join(", ")})
                       </span>
                     )}
                   </div>
@@ -660,7 +666,7 @@ export default async function ExpedienteDetallePage({
                         Este paso solo puede avanzarlo{" "}
                         <strong className="text-stone-700">{cargosDelPasoActual.join(", ")}</strong>
                         {session && session.cargos.length > 0 ? (
-                          <> — su(s) cargo(s) actual(es): &quot;{session.cargos.join(", ")}&quot;.</>
+                          <> — su(s) cargo(s) actual(es): &quot;{misCargosConEncargo.join(", ")}&quot;.</>
                         ) : (
                           " — no tiene un cargo asignado."
                         )}{" "}
@@ -746,7 +752,7 @@ export default async function ExpedienteDetallePage({
                         usuarios={usuariosActivos.map((u) => ({
                           id: u.id,
                           nombre: u.nombre,
-                          cargos: u.cargos.map((c) => c.nombre),
+                          cargos: u.cargoAsignaciones.map((uc) => ({ nombre: uc.cargo.nombre, encargo: uc.encargo })),
                           dependenciaNombre: u.dependencia?.nombre ?? null,
                         }))}
                         cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}

@@ -80,11 +80,29 @@ enum RolUsuario {
  * src/lib/cargos.ts para las palabras clave de coincidencia con cada paso.
  */
 model Cargo {
-  id                    String       @id @default(cuid())
-  nombre                String       @unique
-  orden                 Int          @default(0)
-  usuarios              Usuario[]
-  expedientesAsignacion Expediente[] @relation("ExpedienteCargosAsignados")
+  id                    String         @id @default(cuid())
+  nombre                String         @unique
+  orden                 Int            @default(0)
+  usuarios              UsuarioCargo[]
+  expedientesAsignacion Expediente[]   @relation("ExpedienteCargosAsignados")
+}
+
+/**
+ * Tabla intermedia explícita entre Usuario y Cargo — reemplaza lo que antes era una relación
+ * muchos-a-muchos implícita, para poder marcar cada asignación como encargo (interino) o no.
+ * Igual que Usuario.denominacionEncargo, pero por cargo: una persona puede tener varios cargos
+ * de Trámites ambientales 2.0 y solo alguno de ellos ser un encargo — se muestra como "(E)".
+ */
+model UsuarioCargo {
+  id        String  @id @default(cuid())
+  usuarioId String
+  cargoId   String
+  encargo   Boolean @default(false)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cargo   Cargo   @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, cargoId])
 }
 
 model Usuario {
@@ -122,7 +140,7 @@ model Usuario {
   regimenTributario RegimenTributario?
   granContribuyente Boolean            @default(false)
 
-  cargos                Cargo[]
+  cargoAsignaciones     UsuarioCargo[]
   tramitesAcceso        UsuarioTramiteAcceso[]
   seccionesAcceso       UsuarioSeccionAcceso[]
   expedientesCreados    Expediente[]               @relation("CreadoPor")

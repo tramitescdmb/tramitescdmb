@@ -64,6 +64,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const cargoIds: string[] | undefined = Array.isArray(body.cargoIds)
     ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string")
     : undefined;
+  const cargoEncargoIds = new Set<string>(
+    Array.isArray(body.cargoEncargoIds) ? body.cargoEncargoIds.filter((v: unknown): v is string => typeof v === "string") : []
+  );
   const accesoTramites: { tramiteTipoId: string; nivel: NivelAccesoTramite }[] | undefined = Array.isArray(body.accesoTramites)
     ? body.accesoTramites.filter(
         (a: unknown): a is { tramiteTipoId: string; nivel: NivelAccesoTramite } =>
@@ -177,7 +180,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(denominacionEncargoFinal !== undefined ? { denominacionEncargo: denominacionEncargoFinal } : {}),
         ...(sexo !== undefined ? { sexo } : {}),
         ...(accesoFirma !== undefined ? { accesoFirma } : {}),
-        ...(cargoIds ? { cargos: { set: cargoIds.map((cargoId) => ({ id: cargoId })) } } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
         ...(dependenciaId !== undefined ? { dependenciaId } : {}),
         ...(rolCorrespondencia !== undefined ? { rolCorrespondencia } : {}),
@@ -199,6 +201,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ? [
           db.usuarioSeccionAcceso.deleteMany({ where: { usuarioId: id } }),
           db.usuarioSeccionAcceso.createMany({ data: secciones.map((seccion) => ({ usuarioId: id, seccion })) }),
+        ]
+      : []),
+    ...(cargoIds
+      ? [
+          db.usuarioCargo.deleteMany({ where: { usuarioId: id } }),
+          db.usuarioCargo.createMany({
+            data: cargoIds.map((cargoId) => ({ usuarioId: id, cargoId, encargo: cargoEncargoIds.has(cargoId) })),
+          }),
         ]
       : []),
   ]);

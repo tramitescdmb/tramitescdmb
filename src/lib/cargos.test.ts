@@ -26,6 +26,12 @@ describe("cargoParaSexo", () => {
     expect(cargoParaSexo("Profesional o Técnico de Evaluación", "F")).toBe("Profesional o Técnico de Evaluación");
     expect(cargoParaSexo("Contratista de apoyo técnico o jurídico", "M")).toBe("Contratista de apoyo técnico o jurídico");
   });
+
+  it('agrega "(E)" cuando el cargo se ejerce en encargo', () => {
+    expect(cargoParaSexo("Director(a) General", "F", true)).toBe("Directora General (E)");
+    expect(cargoParaSexo("Director(a) General", "F", false)).toBe("Directora General");
+    expect(cargoParaSexo("Director(a) General", "F")).toBe("Directora General");
+  });
 });
 
 const RESPONSABLES_RECONOCIDOS = ["Coordinador de Evaluación para la Sostenibilidad", "Subdirector SEYCA"];

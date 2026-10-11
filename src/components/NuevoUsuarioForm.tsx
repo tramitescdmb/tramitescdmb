@@ -7,6 +7,7 @@ import { CamposPersona, CLASE_CAMPO_PERSONA } from "@/components/CamposPersona";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { personaVacia, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo } from "@/lib/denominacion-empleo";
+import { cargoParaSexo } from "@/lib/cargos";
 
 type Acceso = "DIRECTORIO_ACTIVO" | "LOCAL";
 
@@ -31,13 +32,32 @@ export function NuevoUsuarioForm({
   const [denominacionEncargo, setDenominacionEncargo] = useState(false);
   const [accesoFirma, setAccesoFirma] = useState(true);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set());
+  const [cargoEncargoIds, setCargoEncargoIds] = useState<Set<string>>(new Set());
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const esRed = acceso === "DIRECTORIO_ACTIVO";
 
   function alternarCargo(id: string) {
+    const estabaActivo = cargoIds.has(id);
     setCargoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (estabaActivo) {
+      setCargoEncargoIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  function alternarCargoEncargo(id: string) {
+    setCargoEncargoIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -69,6 +89,7 @@ export function NuevoUsuarioForm({
           denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
           accesoFirma,
           cargoIds: Array.from(cargoIds),
+          cargoEncargoIds: Array.from(cargoEncargoIds),
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -232,18 +253,36 @@ export function NuevoUsuarioForm({
           <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
             {cargos.map((c) => {
               const activo = cargoIds.has(c.id);
+              const esEncargo = cargoEncargoIds.has(c.id);
+              const etiqueta = cargoParaSexo(c.nombre, sexo || null, activo && esEncargo);
               return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => alternarCargo(c.id)}
-                  aria-pressed={activo}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                    activo ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                  }`}
-                >
-                  {c.nombre}
-                </button>
+                <span key={c.id} className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => alternarCargo(c.id)}
+                    aria-pressed={activo}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      activo ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                    }`}
+                  >
+                    {etiqueta}
+                  </button>
+                  {activo && (
+                    <button
+                      type="button"
+                      onClick={() => alternarCargoEncargo(c.id)}
+                      aria-pressed={esEncargo}
+                      title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
+                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                        esEncargo
+                          ? "border-amber-400 bg-amber-100 text-amber-800"
+                          : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"
+                      }`}
+                    >
+                      E
+                    </button>
+                  )}
+                </span>
               );
             })}
           </div>

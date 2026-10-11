@@ -25,6 +25,9 @@ export async function POST(req: NextRequest) {
   const password = String(body.password || "");
   const rol = body.rol === "ADMIN" ? "ADMIN" : "FUNCIONARIO";
   const cargoIds = Array.isArray(body.cargoIds) ? body.cargoIds.filter((v: unknown): v is string => typeof v === "string") : [];
+  const cargoEncargoIds = new Set<string>(
+    Array.isArray(body.cargoEncargoIds) ? body.cargoEncargoIds.filter((v: unknown): v is string => typeof v === "string") : []
+  );
   const sexo = esSexo(body.sexo) ? body.sexo : null;
   const denominacionEmpleo = esClaveDenominacion(body.denominacionEmpleo) ? body.denominacionEmpleo : null;
   const denominacionComplemento = typeof body.denominacionComplemento === "string" ? body.denominacionComplemento.trim().slice(0, 120) || null : null;
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
       denominacionEncargo,
       accesoFirma,
       ...dataUsuarioDesdePersona(persona),
-      cargos: { connect: cargoIds.map((id: string) => ({ id })) },
+      cargoAsignaciones: { create: cargoIds.map((id: string) => ({ cargoId: id, encargo: cargoEncargoIds.has(id) })) },
     },
     select: { id: true, nombre: true, email: true },
   });

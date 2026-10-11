@@ -32,7 +32,7 @@ export default async function EditarUsuarioPage({
     db.usuario.findUnique({
       where: { id },
       include: {
-        cargos: true,
+        cargoAsignaciones: { include: { cargo: true } },
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
       },
@@ -88,7 +88,8 @@ export default async function EditarUsuarioPage({
         personaActual={personaDesdeUsuario(usuario)}
         directorioActivo={usuario.directorioActivo}
         rolActual={usuario.rol}
-        cargoActualIds={usuario.cargos.map((c) => c.id)}
+        cargoActualIds={usuario.cargoAsignaciones.map((uc) => uc.cargo.id)}
+        cargoEncargoIdsActuales={usuario.cargoAsignaciones.filter((uc) => uc.encargo).map((uc) => uc.cargo.id)}
         accesoActual={usuario.tramitesAcceso.map((a) => ({ tramiteTipoId: a.tramiteTipoId, nivel: a.nivel }))}
         seccionesActuales={usuario.seccionesAcceso.map((s) => s.seccion)}
         cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}

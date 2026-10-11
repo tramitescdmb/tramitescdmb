@@ -60,14 +60,15 @@ export const CARGOS_CDMB: { nombre: string; palabrasClave: string[] }[] = [
   { nombre: "Otro / sin cargo específico", palabrasClave: [] },
 ];
 
-export function cargoParaSexo(nombre: string, sexo: string | null | undefined): string {
+export function cargoParaSexo(nombre: string, sexo: string | null | undefined, encargo?: boolean): string {
   const f = sexo === "F";
-  return nombre
+  const resuelto = nombre
     .replace(/a\(o\)/g, f ? "a" : "o")
     .replace(/\(a\)/g, f ? "a" : "")
     .replace(/\(o\)/g, f ? "" : "o")
     .replace(/\s{2,}/g, " ")
     .trim();
+  return encargo ? `${resuelto} (E)` : resuelto;
 }
 
 export function normalizar(texto: string) {
