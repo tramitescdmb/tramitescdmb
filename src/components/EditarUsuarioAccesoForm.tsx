@@ -132,6 +132,7 @@ export function EditarUsuarioAccesoForm({
   directorioActivo,
   rolActual,
   cargoActualIds,
+  cargoEncargoIdsActuales = [],
   accesoActual,
   seccionesActuales,
   cargos,
@@ -162,6 +163,7 @@ export function EditarUsuarioAccesoForm({
   accesoFirmaActual: boolean;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
+  cargoEncargoIdsActuales?: string[];
   accesoActual: { tramiteTipoId: string; nivel: Nivel }[];
   seccionesActuales: Seccion[];
   cargos: Opcion[];
@@ -186,6 +188,7 @@ export function EditarUsuarioAccesoForm({
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
+  const [cargoEncargoIds, setCargoEncargoIds] = useState<Set<string>>(new Set(cargoEncargoIdsActuales));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
   const [secciones, setSecciones] = useState<Set<Seccion>>(new Set(seccionesActuales));
   const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
@@ -217,7 +220,26 @@ export function EditarUsuarioAccesoForm({
   const [ok, setOk] = useState(false);
 
   function alternarCargo(id: string) {
+    const estabaActivo = cargoIds.has(id);
     setCargoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (estabaActivo) {
+      // Se está quitando el cargo: ya no puede seguir marcado como encargo.
+      setCargoEncargoIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  function alternarCargoEncargo(id: string) {
+    setCargoEncargoIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -305,6 +327,7 @@ export function EditarUsuarioAccesoForm({
           rol,
           estadoCuenta,
           cargoIds: Array.from(cargoIds),
+          cargoEncargoIds: Array.from(cargoEncargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
           secciones: Array.from(secciones),
           dependenciaId: dependenciaId || null,
@@ -582,26 +605,46 @@ export function EditarUsuarioAccesoForm({
 
       <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
-        <p className="mb-2.5 text-xs text-stone-400">Marque uno, varios, o todos los que correspondan.</p>
+        <p className="mb-2.5 text-xs text-stone-400">
+          Marque uno, varios, o todos los que correspondan. Con un cargo activo, use el botón «E» para marcarlo como encargo (interino) —
+          se muestra como «(E)» donde aparezca ese cargo en un trámite.
+        </p>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
           {cargos.map((c) => {
             const activo = cargoIds.has(c.id);
-            const etiqueta = cargoParaSexo(c.nombre, sexo || null);
+            const esEncargo = cargoEncargoIds.has(c.id);
+            const etiqueta = cargoParaSexo(c.nombre, sexo || null, activo && esEncargo);
             return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => alternarCargo(c.id)}
-                aria-pressed={activo}
-                title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  activo
-                    ? "border-menu-500 bg-menu-500 text-stone-900"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                }`}
-              >
-                {etiqueta}
-              </button>
+              <span key={c.id} className="inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => alternarCargo(c.id)}
+                  aria-pressed={activo}
+                  title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    activo
+                      ? "border-menu-500 bg-menu-500 text-stone-900"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                  }`}
+                >
+                  {etiqueta}
+                </button>
+                {activo && (
+                  <button
+                    type="button"
+                    onClick={() => alternarCargoEncargo(c.id)}
+                    aria-pressed={esEncargo}
+                    title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
+                    className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                      esEncargo
+                        ? "border-amber-400 bg-amber-100 text-amber-800"
+                        : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"
+                    }`}
+                  >
+                    E
+                  </button>
+                )}
+              </span>
             );
           })}
         </div>

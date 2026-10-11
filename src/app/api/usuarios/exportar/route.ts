@@ -39,7 +39,7 @@ export async function GET() {
   const usuarios = await db.usuario.findMany({
     orderBy: { createdAt: "asc" },
     include: {
-      cargos: { select: { nombre: true } },
+      cargoAsignaciones: { select: { encargo: true, cargo: { select: { nombre: true } } } },
       tramitesAcceso: { select: { nivel: true, tramiteTipo: { select: { codigo: true } } } },
       seccionesAcceso: { select: { seccion: true } },
     },
@@ -85,7 +85,7 @@ export async function GET() {
       u.ciudad,
       u.directorioActivo ? "Sí" : "No",
       esAdmin ? "Administrador" : "Funcionario",
-      u.cargos.map((c) => c.nombre).join("; "),
+      u.cargoAsignaciones.map((uc) => (uc.encargo ? `${uc.cargo.nombre} (E)` : uc.cargo.nombre)).join("; "),
       ETIQUETAS_ESTADO_CUENTA[u.estadoCuenta] ?? u.estadoCuenta,
       esAdmin ? "Acceso total" : u.rolCorrespondencia ? (ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia) : "Sin acceso",
       esAdmin ? "Todos" : editar.join("; "),

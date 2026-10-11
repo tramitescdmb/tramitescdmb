@@ -31,7 +31,12 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
-  const subtitulo = session.cargos.length > 0 ? session.cargos.join(" · ") : session.rol === "ADMIN" ? "Administrador" : "Funcionario";
+  const subtitulo =
+    session.cargos.length > 0
+      ? session.cargos.map((c) => (session.cargosEncargo.includes(c) ? `${c} (E)` : c)).join(" · ")
+      : session.rol === "ADMIN"
+        ? "Administrador"
+        : "Funcionario";
 
   const marca = (
     <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-white">

@@ -6,7 +6,7 @@ import { UserCheck, X } from "lucide-react";
 
 export const CARGO_PROFESIONAL_EVALUACION = "Profesional o Técnico de Evaluación";
 
-type UsuarioOpcion = { id: string; nombre: string; cargos: string[]; dependenciaNombre: string | null };
+type UsuarioOpcion = { id: string; nombre: string; cargos: { nombre: string; encargo: boolean }[]; dependenciaNombre: string | null };
 
 function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -29,7 +29,7 @@ export function PersonalAsignadoTramiteForm({
   const [abierto, setAbierto] = useState(false);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuariosIniciales));
   const [cargosSel, setCargosSel] = useState<Set<string>>(new Set(cargosIniciales));
-  const hayProfesionales = usuarios.some((u) => u.cargos.includes(CARGO_PROFESIONAL_EVALUACION));
+  const hayProfesionales = usuarios.some((u) => u.cargos.some((c) => c.nombre === CARGO_PROFESIONAL_EVALUACION));
   const [cargoFiltro, setCargoFiltro] = useState(hayProfesionales ? CARGO_PROFESIONAL_EVALUACION : "");
   const [filtro, setFiltro] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -39,9 +39,9 @@ export function PersonalAsignadoTramiteForm({
   const filtrados = usuarios.filter(
     (u) =>
       seleccion.has(u.id) ||
-      ((!cargoFiltro || u.cargos.includes(cargoFiltro)) && (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""}`).includes(q)))
+      ((!cargoFiltro || u.cargos.some((c) => c.nombre === cargoFiltro)) && (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""}`).includes(q)))
   );
-  const cargosConUsuarios = cargos.filter((c) => usuarios.some((u) => u.cargos.includes(c.nombre)));
+  const cargosConUsuarios = cargos.filter((c) => usuarios.some((u) => u.cargos.some((uc) => uc.nombre === c.nombre)));
 
   function alternar(conjunto: Set<string>, fijar: (s: Set<string>) => void, id: string) {
     const next = new Set(conjunto);
@@ -136,7 +136,8 @@ export function PersonalAsignadoTramiteForm({
                     <span className="min-w-0">
                       {u.nombre}
                       <span className="block truncate text-[11px] text-stone-400">
-                        {[u.cargos.join(", "), u.dependenciaNombre].filter(Boolean).join(" · ") || "Sin cargo"}
+                        {[u.cargos.map((c) => (c.encargo ? `${c.nombre} (E)` : c.nombre)).join(", "), u.dependenciaNombre].filter(Boolean).join(" · ") ||
+                          "Sin cargo"}
                       </span>
                     </span>
                   </label>

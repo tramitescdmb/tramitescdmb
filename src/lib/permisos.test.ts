@@ -28,6 +28,7 @@ const BASE_CONTRATACION = {
   supervisaExpedientes: new Set<string>(),
   asignadoExpedientes: new Set<string>(),
   cargos: new Set<string>(),
+  cargosEncargo: new Set<string>(),
 };
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
@@ -206,6 +207,7 @@ const permContrat = (roles: RolContratacion | RolContratacion[] | null, extra: P
   supervisaExpedientes: new Set<string>(),
   asignadoExpedientes: new Set<string>(),
   cargos: new Set<string>(),
+  cargosEncargo: new Set<string>(),
   ...extra,
 });
 

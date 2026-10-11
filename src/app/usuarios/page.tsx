@@ -101,7 +101,7 @@ export default async function UsuariosPage({
       where,
       orderBy: { createdAt: "asc" },
       include: {
-        cargos: true,
+        cargoAsignaciones: { include: { cargo: true } },
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
       },
@@ -304,13 +304,13 @@ export default async function UsuariosPage({
             <div className="mt-3 grid grid-cols-1 gap-3 border-t border-stone-100 pt-3 sm:grid-cols-3">
               <div>
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
-                {u.cargos.length === 0 ? (
+                {u.cargoAsignaciones.length === 0 ? (
                   <span className="text-xs text-stone-400">—</span>
                 ) : (
                   <div className="flex flex-wrap gap-1">
-                    {u.cargos.map((c) => (
-                      <span key={c.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
-                        {cargoParaSexo(c.nombre, u.sexo)}
+                    {u.cargoAsignaciones.map((uc) => (
+                      <span key={uc.cargo.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+                        {cargoParaSexo(uc.cargo.nombre, u.sexo, uc.encargo)}
                       </span>
                     ))}
                   </div>

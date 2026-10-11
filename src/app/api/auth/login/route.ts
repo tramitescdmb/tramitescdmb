@@ -14,7 +14,15 @@ import {
 import { sincronizarContratistaDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 
-type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargos: true } }>;
+type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargoAsignaciones: { include: { cargo: true } } } }>;
+
+function nombresCargos(usuario: UsuarioConCargos): string[] {
+  return usuario.cargoAsignaciones.map((uc) => uc.cargo.nombre);
+}
+
+function nombresCargosEncargo(usuario: UsuarioConCargos): string[] {
+  return usuario.cargoAsignaciones.filter((uc) => uc.encargo).map((uc) => uc.cargo.nombre);
+}
 
 /**
  * Busca, entre las dependencias activas, una cuyo nombre coincida (sin mayúsculas/tildes ni
@@ -62,7 +70,7 @@ async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: Perfi
   const actualizado = await db.usuario.update({
     where: { id: usuario.id },
     data: { ...datos, ...(dependenciaId ? { dependenciaId } : {}) },
-    include: { cargos: true },
+    include: { cargoAsignaciones: { include: { cargo: true } } },
   });
   await sincronizarContratistaDeUsuario(usuario.id).catch(() => {});
   return actualizado;
@@ -113,7 +121,7 @@ export async function POST(req: NextRequest) {
     return ingresarPorDirectorioActivo(req, identidad, password, redirectTo, fail);
   }
 
-  const usuario = await db.usuario.findUnique({ where: { email: identidad }, include: { cargos: true } });
+  const usuario = await db.usuario.findUnique({ where: { email: identidad }, include: { cargoAsignaciones: { include: { cargo: true } } } });
 
   if (usuario && usuario.directorioActivo) {
     await registrarAuditoria({
@@ -167,7 +175,8 @@ export async function POST(req: NextRequest) {
     email: usuario.email,
     nombre: usuario.nombre,
     rol: usuario.rol,
-    cargos: usuario.cargos.map((c) => c.nombre),
+    cargos: nombresCargos(usuario),
+    cargosEncargo: nombresCargosEncargo(usuario),
   });
 
   await registrarAuditoria({
@@ -201,7 +210,7 @@ async function ingresarPorDirectorioActivo(
     return fail(resultado.mensaje);
   }
 
-  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, include: { cargos: true } });
+  const existente = await db.usuario.findUnique({ where: { email: usuarioRed }, include: { cargoAsignaciones: { include: { cargo: true } } } });
 
   if (existente && !existente.activo) {
     await registrarAuditoria({
@@ -227,7 +236,7 @@ async function ingresarPorDirectorioActivo(
         rol: "FUNCIONARIO",
         directorioActivo: true,
       },
-      include: { cargos: true },
+      include: { cargoAsignaciones: { include: { cargo: true } } },
     });
 
     await registrarAuditoria({
@@ -245,7 +254,8 @@ async function ingresarPorDirectorioActivo(
     email: usuario.email,
     nombre: usuario.nombre,
     rol: usuario.rol,
-    cargos: usuario.cargos.map((c) => c.nombre),
+    cargos: nombresCargos(usuario),
+    cargosEncargo: nombresCargosEncargo(usuario),
   });
   await guardarTokenDirectorioActivo(resultado.token);
 

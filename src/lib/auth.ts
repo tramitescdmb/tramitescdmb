@@ -17,6 +17,8 @@ export type SessionPayload = {
   nombre: string;
   rol: "ADMIN" | "FUNCIONARIO";
   cargos: string[];
+  /** Nombres de los cargos (de entre `cargos`) que este usuario ejerce en encargo — se muestran con "(E)". */
+  cargosEncargo: string[];
 };
 
 async function firmarToken(payload: SessionPayload, loginAt: number, expiraEnSegundos: number) {
@@ -64,6 +66,7 @@ function leerPayload(payload: JWTPayload): SessionPayload {
     nombre: payload.nombre as string,
     rol: payload.rol as "ADMIN" | "FUNCIONARIO",
     cargos: Array.isArray(payload.cargos) ? (payload.cargos as string[]) : [],
+    cargosEncargo: Array.isArray(payload.cargosEncargo) ? (payload.cargosEncargo as string[]) : [],
   };
 }
 

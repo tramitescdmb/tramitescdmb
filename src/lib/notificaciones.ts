@@ -39,7 +39,7 @@ export async function planificadoresConAcceso(tramiteTipoId: string): Promise<st
   const usuarios = await db.usuario.findMany({
     where: {
       activo: true,
-      cargos: { some: { nombre: { in: CARGOS_PLANEADOR } } },
+      cargoAsignaciones: { some: { cargo: { nombre: { in: CARGOS_PLANEADOR } } } },
       OR: [{ rol: "ADMIN" }, { tramitesAcceso: { some: { tramiteTipoId } } }],
     },
     select: { id: true },
