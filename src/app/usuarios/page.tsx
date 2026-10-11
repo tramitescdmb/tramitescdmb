@@ -64,6 +64,26 @@ function resumenAcceso(
   };
 }
 
+/** Resume en una sola línea de texto (no una pared de chips) — pensado para que la tarjeta no
+ * crezca sin control cuando el registro llegue a cientos o miles de usuarios. El detalle completo
+ * sigue disponible en el `title` (al pasar el mouse) y en la ficha de edición de cada usuario. */
+function resumenTramitesTexto(accesos: AccesoTramite[], categoriaDeId: Map<string, string>, totalPorCategoria: Map<string, number>): string {
+  if (accesos.length === 0) return "Sin trámites asignados";
+  const resumen = resumenAcceso(accesos, categoriaDeId, totalPorCategoria);
+  if (resumen.tipo === "categorias") return resumen.categorias.join(", ");
+  return `${accesos.length} trámite(s) — ${resumen.editar} editar · ${resumen.ver} ver`;
+}
+
+function resumenSeccionesTexto(secciones: { seccion: string }[]): string {
+  if (secciones.length === 0) return "Sin acceso";
+  return secciones.map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ");
+}
+
+function resumenCargosTexto(cargoAsignaciones: { encargo: boolean; cargo: { nombre: string } }[], sexo: string | null | undefined): string {
+  if (cargoAsignaciones.length === 0) return "Sin cargo asignado";
+  return cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, sexo, uc.encargo)).join(", ");
+}
+
 export default async function UsuariosPage({
   searchParams,
 }: {
@@ -301,70 +321,48 @@ export default async function UsuariosPage({
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 border-t border-stone-100 pt-3 sm:grid-cols-3">
-              <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
-                {u.cargoAsignaciones.length === 0 ? (
-                  <span className="text-xs text-stone-400">—</span>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {u.cargoAsignaciones.map((uc) => (
-                      <span key={uc.cargo.id} className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
-                        {cargoParaSexo(uc.cargo.nombre, u.sexo, uc.encargo)}
-                      </span>
-                    ))}
-                  </div>
-                )}
+            <div className="mt-3 grid grid-cols-1 gap-2 border-t border-stone-100 pt-3 sm:grid-cols-3 sm:gap-3">
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
+                {(() => {
+                  const texto = resumenCargosTexto(u.cargoAsignaciones, u.sexo);
+                  return (
+                    <p className={`truncate text-xs ${u.cargoAsignaciones.length === 0 ? "text-stone-400" : "text-stone-600"}`} title={texto}>
+                      {texto}
+                    </p>
+                  );
+                })()}
               </div>
 
-              <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
                 {u.rol === "ADMIN" ? (
-                  <span className="text-xs text-stone-400">Acceso total</span>
-                ) : u.tramitesAcceso.length === 0 ? (
-                  <span className="text-xs text-amber-700">Sin trámites asignados</span>
+                  <p className="text-xs text-stone-400">Acceso total</p>
                 ) : (
                   (() => {
-                    const resumen = resumenAcceso(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
-                    if (resumen.tipo === "categorias") {
-                      return (
-                        <div className="flex flex-wrap gap-1">
-                          {resumen.categorias.map((cat) => (
-                            <span key={cat} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                      );
-                    }
+                    const texto = resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
                     return (
-                      <span className="text-xs">
-                        {resumen.editar} editar · {resumen.ver} ver
-                      </span>
+                      <p className={`truncate text-xs ${u.tramitesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
+                        {texto}
+                      </p>
                     );
                   })()
                 )}
               </div>
 
-              <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
                 {u.rol === "ADMIN" ? (
-                  <span className="text-xs text-stone-400">Acceso total</span>
-                ) : u.seccionesAcceso.length === 0 ? (
-                  <span className="text-xs text-amber-700">Sin acceso</span>
+                  <p className="text-xs text-stone-400">Acceso total</p>
                 ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {u.seccionesAcceso.map((s) => (
-                      <span
-                        key={s.seccion}
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          s.seccion === "SINCA_MINERIA" ? "bg-amber-50 text-amber-800" : "bg-sky-50 text-sky-700"
-                        }`}
-                      >
-                        {ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion}
-                      </span>
-                    ))}
-                  </div>
+                  (() => {
+                    const texto = resumenSeccionesTexto(u.seccionesAcceso);
+                    return (
+                      <p className={`truncate text-xs ${u.seccionesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
+                        {texto}
+                      </p>
+                    );
+                  })()
                 )}
               </div>
             </div>
