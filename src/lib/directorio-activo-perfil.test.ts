@@ -52,4 +52,31 @@ describe("perfil del directorio activo", () => {
       extraerPerfil({ user: { givenName: "Luis", sn: "Lozano", displayName: "Luis Alfonso Lozano Camacho" } })
     ).toEqual({ nombres: "Luis", apellidos: "Lozano", nombreCompleto: "Luis Alfonso Lozano Camacho" });
   });
+
+  it("descarta el nombre completo si el directorio solo repite el usuario de red (una sola palabra)", () => {
+    expect(extraerPerfil({ user: { displayName: "luiloz01" } }, "luiloz01")).toEqual({});
+  });
+
+  it("descarta cualquier campo que repita exactamente el usuario de red, sin importar mayúsculas", () => {
+    expect(extraerPerfil({ user: { cn: "LUILOZ01" } }, "luiloz01")).toEqual({});
+  });
+
+  it("no descarta un nombre completo real solo porque el usuario de red aparece en otro campo", () => {
+    expect(
+      extraerPerfil({ user: { displayName: "Luis Alfonso Lozano Camacho", mail: "luiloz01@cdmb.gov.co" } }, "luiloz01")
+    ).toEqual({
+      nombreCompleto: "Luis Alfonso Lozano Camacho",
+      nombres: "Luis Alfonso",
+      apellidos: "Lozano Camacho",
+      email: "luiloz01@cdmb.gov.co",
+    });
+  });
+
+  it("sin usuario de red para comparar, no descarta nada por ese motivo", () => {
+    expect(extraerPerfil({ user: { displayName: "Ana Ruiz" } })).toEqual({
+      nombreCompleto: "Ana Ruiz",
+      nombres: "Ana",
+      apellidos: "Ruiz",
+    });
+  });
 });
