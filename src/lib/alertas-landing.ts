@@ -51,7 +51,7 @@ export async function obtenerSeccionesAlertas(session: SessionPayload): Promise<
     mostrarCorrespondencia ? seccionCorrespondencia(session, permisos) : Promise.resolve(null),
   ]);
 
-  return [tramites, contratacion, correspondencia].filter((s): s is SeccionAlertasModulo => s !== null);
+  return [contratacion, tramites, correspondencia].filter((s): s is SeccionAlertasModulo => s !== null);
 }
 
 async function seccionTramites(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {
