@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import Link from "next/link";
+import type { EstadoCuenta, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";
-import { UserPlus, Pencil, ChevronDown } from "lucide-react";
+import { UserPlus, Pencil, ChevronDown, Search, Leaf, Mail, Briefcase, Database, AlertTriangle, Power, X, type LucideIcon } from "lucide-react";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -15,7 +16,7 @@ import { formatearFecha } from "@/lib/fecha";
 import { cargoParaSexo } from "@/lib/cargos";
 import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
 
-const POR_PAGINA = 15;
+const POR_PAGINA = 20;
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -25,10 +26,10 @@ function iniciales(nombre: string) {
 type AccesoTramite = { tramiteTipoId: string; nivel: "VER" | "EDITAR" };
 
 const ETIQUETAS_ROL_CORRESPONDENCIA: Record<string, string> = {
-  OPERADOR_VENTANILLA: "SGDEA: Ventanilla",
-  FUNCIONARIO_DEPENDENCIA: "SGDEA: Funcionario",
-  JEFE_DEPENDENCIA: "SGDEA: Jefe de dependencia",
-  ADMIN_ARCHIVO: "SGDEA: Admin. de archivo",
+  OPERADOR_VENTANILLA: "Ventanilla",
+  FUNCIONARIO_DEPENDENCIA: "Funcionario",
+  JEFE_DEPENDENCIA: "Jefe de dependencia",
+  ADMIN_ARCHIVO: "Administrador de archivo",
 };
 
 const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
@@ -39,64 +40,61 @@ const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
   SINCA_MINERIA: "SINCA: Minería",
 };
 
-function resumenAcceso(
-  accesos: AccesoTramite[],
-  categoriaDeId: Map<string, string>,
-  totalPorCategoria: Map<string, number>
-): { tipo: "categorias"; categorias: string[] } | { tipo: "conteo"; editar: number; ver: number } {
+const ESTADOS: Record<EstadoCuenta, { etiqueta: string; punto: string; texto: string }> = {
+  HABILITADA: { etiqueta: "Habilitada", punto: "bg-emerald-500", texto: "text-stone-700" },
+  DESHABILITADA: { etiqueta: "Deshabilitada", punto: "bg-stone-300", texto: "text-stone-400" },
+  BLOQUEADA: { etiqueta: "Bloqueada", punto: "bg-red-500", texto: "text-red-700" },
+  SUSPENDIDA: { etiqueta: "Suspendida", punto: "bg-amber-500", texto: "text-amber-700" },
+};
+
+const FILTROS: { id: string; etiqueta: string; where: Prisma.UsuarioWhereInput }[] = [
+  { id: "todos", etiqueta: "Todos", where: {} },
+  { id: "habilitados", etiqueta: "Habilitados", where: { estadoCuenta: "HABILITADA" } },
+  { id: "inactivos", etiqueta: "Deshabilitados", where: { estadoCuenta: { in: ["DESHABILITADA", "SUSPENDIDA"] } } },
+  { id: "bloqueados", etiqueta: "Bloqueados", where: { estadoCuenta: "BLOQUEADA" } },
+  { id: "admin", etiqueta: "Administradores", where: { rol: "ADMIN" } },
+];
+
+function resumenTramitesTexto(accesos: AccesoTramite[], categoriaDeId: Map<string, string>, totalPorCategoria: Map<string, number>): string {
+  if (accesos.length === 0) return "Sin trámites asignados";
   const porCategoria = new Map<string, number>();
   for (const a of accesos) {
     const cat = categoriaDeId.get(a.tramiteTipoId);
-    if (!cat) continue;
-    porCategoria.set(cat, (porCategoria.get(cat) ?? 0) + 1);
+    if (cat) porCategoria.set(cat, (porCategoria.get(cat) ?? 0) + 1);
   }
-  const categoriasCompletas = Array.from(porCategoria.entries())
-    .filter(([cat, count]) => count === totalPorCategoria.get(cat))
-    .map(([cat]) => cat);
-
-  if (categoriasCompletas.length > 0 && categoriasCompletas.length === porCategoria.size) {
-    return { tipo: "categorias", categorias: categoriasCompletas };
-  }
-  return {
-    tipo: "conteo",
-    editar: accesos.filter((a) => a.nivel === "EDITAR").length,
-    ver: accesos.filter((a) => a.nivel === "VER").length,
-  };
+  const completas = [...porCategoria].filter(([cat, n]) => n === totalPorCategoria.get(cat)).map(([cat]) => cat);
+  if (completas.length > 0 && completas.length === porCategoria.size) return completas.join(", ");
+  const editar = accesos.filter((a) => a.nivel === "EDITAR").length;
+  return `${accesos.length} trámite(s): ${editar} editar · ${accesos.length - editar} ver`;
 }
 
-/** Resume en una sola línea de texto (no una pared de chips) — pensado para que la tarjeta no
- * crezca sin control cuando el registro llegue a cientos o miles de usuarios. El detalle completo
- * sigue disponible en el `title` (al pasar el mouse) y en la ficha de edición de cada usuario. */
-function resumenTramitesTexto(accesos: AccesoTramite[], categoriaDeId: Map<string, string>, totalPorCategoria: Map<string, number>): string {
-  if (accesos.length === 0) return "Sin trámites asignados";
-  const resumen = resumenAcceso(accesos, categoriaDeId, totalPorCategoria);
-  if (resumen.tipo === "categorias") return resumen.categorias.join(", ");
-  return `${accesos.length} trámite(s) — ${resumen.editar} editar · ${resumen.ver} ver`;
-}
-
-function resumenSeccionesTexto(secciones: { seccion: string }[]): string {
-  if (secciones.length === 0) return "Sin acceso";
-  return secciones.map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ");
-}
-
-function resumenCargosTexto(cargoAsignaciones: { encargo: boolean; cargo: { nombre: string } }[], sexo: string | null | undefined): string {
-  if (cargoAsignaciones.length === 0) return "Sin cargo asignado";
-  return cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, sexo, uc.encargo)).join(", ");
+function ModuloIcono({ icon: Icon, activo, alerta, titulo }: { icon: LucideIcon; activo: boolean; alerta?: boolean; titulo: string }) {
+  return (
+    <span
+      title={titulo}
+      className={`relative flex h-7 w-7 items-center justify-center rounded-full ${activo ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-50 text-stone-300"}`}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      {alerta && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white" aria-hidden />}
+      <span className="sr-only">{titulo}</span>
+    </span>
+  );
 }
 
 export default async function UsuariosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ok?: string; page?: string; q?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string; page?: string; q?: string; estado?: string; nuevo?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Usuarios y roles" volverHref="/" volverLabel="Ir al inicio" />;
 
-  const { error, ok, page: pageParam, q } = await searchParams;
+  const { error, ok, page: pageParam, q, estado, nuevo } = await searchParams;
   const pagina = Math.max(1, Number(pageParam) || 1);
   const busqueda = q?.trim();
-  const where = busqueda
+  const filtro = FILTROS.find((f) => f.id === estado) ?? FILTROS[0]!;
+  const whereBusqueda: Prisma.UsuarioWhereInput = busqueda
     ? {
         AND: busqueda
           .split(/\s+/)
@@ -114,12 +112,13 @@ export default async function UsuariosPage({
           })),
       }
     : {};
+  const where: Prisma.UsuarioWhereInput = { AND: [whereBusqueda, filtro.where] };
 
-  const [total, usuarios, cargos, catalogo, config, bloqueadas] = await Promise.all([
-    db.usuario.count({ where }),
+  const [conteos, usuarios, cargos, catalogo, config] = await Promise.all([
+    Promise.all(FILTROS.map((f) => db.usuario.count({ where: { AND: [whereBusqueda, f.where] } }))),
     db.usuario.findMany({
       where,
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ activo: "desc" }, { nombre: "asc" }],
       include: {
         cargoAsignaciones: { include: { cargo: true } },
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
@@ -131,9 +130,10 @@ export default async function UsuariosPage({
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
     getCatalogoTramites(),
     getConfiguracionSitio(),
-    db.usuario.findMany({ where: { estadoCuenta: "BLOQUEADA" }, select: { id: true, nombre: true, email: true }, orderBy: { nombre: "asc" } }),
   ]);
+  const total = conteos[FILTROS.indexOf(filtro)] ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const ahora = new Date();
 
   const categoriaDeId = new Map<string, string>();
   const totalPorCategoria = new Map<string, number>();
@@ -142,267 +142,209 @@ export default async function UsuariosPage({
     for (const t of grupo.items) categoriaDeId.set(t.id, grupo.etiqueta);
   }
 
+  const href = (cambios: Record<string, string | undefined>) => {
+    const params = new URLSearchParams();
+    const base = { q: busqueda, estado: filtro.id === "todos" ? undefined : filtro.id, ...cambios };
+    for (const [k, v] of Object.entries(base)) if (v) params.set(k, v);
+    const qs = params.toString();
+    return qs ? `/usuarios?${qs}` : "/usuarios";
+  };
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Usuarios</h1>
-          <p className="text-sm text-stone-500">
-            Funcionarios de la CDMB que pueden ingresar a esta aplicación para gestionar trámites.
-          </p>
+          <p className="text-sm text-stone-500">Cuentas con acceso a los aplicativos de la CDMB.</p>
         </div>
-        <DescargarCsvBoton href="/api/usuarios/exportar" />
+        <div className="flex items-center gap-2">
+          <DescargarCsvBoton href="/api/usuarios/exportar" />
+          <Link
+            href={`${href({ nuevo: "1" })}#nuevo-usuario`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-acento-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-acento-600"
+          >
+            <UserPlus className="h-4 w-4" aria-hidden />
+            Nuevo usuario
+          </Link>
+        </div>
       </div>
 
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
+      {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {ok && <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
-      {bloqueadas.length > 0 && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          <p className="font-medium">
-            {bloqueadas.length === 1 ? "1 cuenta bloqueada" : `${bloqueadas.length} cuentas bloqueadas`} por exceder los intentos fallidos de inicio de sesión:
-          </p>
-          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-            {bloqueadas.map((u) => (
-              <li key={u.id}>
-                <Link href={`/usuarios/${u.id}`} className="underline hover:no-underline">{u.nombre}</Link>
-                <span className="text-red-600"> ({u.email})</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {(conteos[3] ?? 0) > 0 && filtro.id !== "bloqueados" && (
+        <Link
+          href={href({ estado: "bloqueados", page: undefined })}
+          className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 hover:bg-red-100"
+        >
+          <AlertTriangle className="h-4 w-4 flex-none" aria-hidden />
+          {conteos[3] === 1 ? "1 cuenta bloqueada" : `${conteos[3]} cuentas bloqueadas`} por intentos fallidos de inicio de sesión. Ver cuentas
+        </Link>
       )}
 
-      <form action="/usuarios" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <div className="min-w-[220px] flex-1">
-          <label className="mb-1 block text-xs font-medium text-stone-600">Buscar</label>
-          <input
-            name="q"
-            defaultValue={busqueda ?? ""}
-            placeholder="Nombre, apellidos, documento o usuario…"
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-          />
-        </div>
-        <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
-          Buscar
-        </button>
-        {busqueda && (
-          <Link href="/usuarios" className="text-sm text-stone-500 hover:text-stone-700">
-            Quitar búsqueda
-          </Link>
-        )}
-      </form>
-
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-          Usuarios registrados ({total})
-        </p>
-        {usuarios.length === 0 ? (
-          <p className="rounded-2xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400">
-            No hay usuarios con este filtro.
-          </p>
-        ) : (
-          <div className="divide-y divide-stone-200 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-            {usuarios.map((u) => {
-              const vigencia = !u.directorioActivo ? estadoVigenciaPassword(u.passwordCambiadaEn, config.passwordVigenciaDias) : null;
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 px-4 py-3">
+          <nav className="flex flex-wrap gap-1" aria-label="Filtrar por estado">
+            {FILTROS.map((f, i) => {
+              const activo = f.id === filtro.id;
               return (
-          <div key={u.id} className="p-3 hover:bg-stone-50/60">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
-                  {iniciales(u.nombre)}
-                </span>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-1.5 font-medium text-stone-800">
-                    {u.nombre}
-                    {u.directorioActivo && (
-                      <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
-                        Directorio activo
-                      </span>
-                    )}
-                  </p>
-                  <p className="truncate text-xs text-stone-400">
-                    {u.directorioActivo ? `Usuario de red: ${u.email}` : u.email}
-                    {u.cedulaONit ? ` · ${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : ""}
-                    {u.tipoPersona === "JURIDICA" ? " · Persona jurídica" : ""}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    u.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"
-                  }`}
-                >
-                  {u.rol === "ADMIN" ? "Administrador" : "Funcionario"}
-                </span>
-                {u.rol !== "ADMIN" && (
-                  <>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        u.rolCorrespondencia ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"
-                      }`}
-                      title="Rol dentro del módulo de correspondencia (SGDEA) — sin este rol no puede entrar al módulo ni recibir un reparto"
-                    >
-                      {u.rolCorrespondencia ? ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia : "Sin acceso SGDEA"}
-                    </span>
-                    {u.rolCorrespondencia && u.rolCorrespondenciaVigenteHasta && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          u.rolCorrespondenciaVigenteHasta < new Date() ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
-                        }`}
-                        title="Pasada esta fecha, pierde el rol de correspondencia automáticamente"
-                      >
-                        {u.rolCorrespondenciaVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta)}`}
-                      </span>
-                    )}
-                    {u.rolesContratacion.map((r) => (
-                      <span
-                        key={r}
-                        className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
-                        title="Rol dentro del módulo de Contratación (GECON)"
-                      >
-                        {ETIQUETA_ROL_CONTRATACION[r] ?? r}
-                      </span>
-                    ))}
-                    {u.rolesContratacion.length > 0 && u.rolContratacionVigenteHasta && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          u.rolContratacionVigenteHasta < new Date() ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
-                        }`}
-                        title="Pasada esta fecha, pierde el rol de contratación automáticamente"
-                      >
-                        {u.rolContratacionVigenteHasta < new Date() ? "Rol vencido" : `Vence ${formatearFecha(u.rolContratacionVigenteHasta)}`}
-                      </span>
-                    )}
-                  </>
-                )}
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    {
-                      HABILITADA: "bg-green-50 text-green-700",
-                      DESHABILITADA: "bg-stone-100 text-stone-500",
-                      BLOQUEADA: "bg-red-50 text-red-700",
-                      SUSPENDIDA: "bg-amber-50 text-amber-700",
-                    }[u.estadoCuenta]
-                  }`}
-                  title={u.estadoCuenta === "BLOQUEADA" ? "Bloqueada por el sistema tras intentos fallidos" : undefined}
-                >
-                  {{ HABILITADA: "Habilitada", DESHABILITADA: "Deshabilitada", BLOQUEADA: "Bloqueada", SUSPENDIDA: "Suspendida" }[u.estadoCuenta]}
-                </span>
-                {vigencia && vigencia.diasRestantes !== null && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      vigencia.vencida
-                        ? "bg-red-50 text-red-700"
-                        : vigencia.diasRestantes <= 7
-                          ? "bg-amber-50 text-amber-700"
-                          : "bg-stone-100 text-stone-500"
-                    }`}
-                    title="Vigencia de la contraseña — configurable en Administración → Seguridad"
-                  >
-                    {vigencia.vencida ? "Contraseña vencida" : `Contraseña vence en ${vigencia.diasRestantes} d.`}
-                  </span>
-                )}
                 <Link
-                  href={`/usuarios/${u.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700"
+                  key={f.id}
+                  href={href({ estado: f.id === "todos" ? undefined : f.id, page: undefined })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                    activo ? "bg-cdmb-600 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                  }`}
                 >
-                  <Pencil className="h-3 w-3" aria-hidden />
-                  Editar
+                  {f.etiqueta}
+                  <span className={`rounded-full px-1.5 text-[10px] ${activo ? "bg-white/20" : "bg-stone-100 text-stone-500"}`}>{conteos[i]}</span>
                 </Link>
-                {u.id !== session.userId && (
-                  <form action={`/api/usuarios/${u.id}/toggle`} method="post">
-                    <button className="text-xs text-stone-500 hover:text-cdmb-700 hover:underline">
-                      {u.activo ? "Desactivar" : "Activar"}
-                    </button>
-                  </form>
-                )}
-              </div>
-            </div>
-
-            <details className="group mt-3 border-t border-stone-100 pt-2">
-              <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-stone-500 hover:text-cdmb-700 [&::-webkit-details-marker]:hidden">
-                <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
-                Cargo, trámites y accesos
-              </summary>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                <div className="min-w-0">
-                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Cargo(s)</p>
-                  {(() => {
-                    const texto = resumenCargosTexto(u.cargoAsignaciones, u.sexo);
-                    return (
-                      <p className={`truncate text-xs ${u.cargoAsignaciones.length === 0 ? "text-stone-400" : "text-stone-600"}`} title={texto}>
-                        {texto}
-                      </p>
-                    );
-                  })()}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Trámites</p>
-                  {u.rol === "ADMIN" ? (
-                    <p className="text-xs text-stone-400">Acceso total</p>
-                  ) : (
-                    (() => {
-                      const texto = resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
-                      return (
-                        <p className={`truncate text-xs ${u.tramitesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
-                          {texto}
-                        </p>
-                      );
-                    })()
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">VITAL / SINCA 1.0</p>
-                  {u.rol === "ADMIN" ? (
-                    <p className="text-xs text-stone-400">Acceso total</p>
-                  ) : (
-                    (() => {
-                      const texto = resumenSeccionesTexto(u.seccionesAcceso);
-                      return (
-                        <p className={`truncate text-xs ${u.seccionesAcceso.length === 0 ? "text-amber-700" : "text-stone-600"}`} title={texto}>
-                          {texto}
-                        </p>
-                      );
-                    })()
-                  )}
-                </div>
-              </div>
-            </details>
-          </div>
               );
             })}
-          </div>
+          </nav>
+          <form action="/usuarios" method="get" className="relative w-full sm:w-72">
+            {filtro.id !== "todos" && <input type="hidden" name="estado" value={filtro.id} />}
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+            <input
+              name="q"
+              defaultValue={busqueda ?? ""}
+              placeholder="Buscar por nombre, documento o usuario"
+              className="w-full rounded-full border border-stone-200 bg-stone-50 py-1.5 pl-8 pr-8 text-sm focus:border-cdmb-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cdmb-500"
+            />
+            {busqueda && (
+              <Link href={href({ q: undefined, page: undefined })} title="Quitar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700">
+                <X className="h-4 w-4" aria-hidden />
+              </Link>
+            )}
+          </form>
+        </div>
+
+        {usuarios.length === 0 ? (
+          <p className="px-5 py-12 text-center text-sm text-stone-400">No hay usuarios con este filtro.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="hidden bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400 md:table-header-group">
+              <tr>
+                <th className="px-4 py-2 font-semibold">Usuario</th>
+                <th className="px-3 py-2 font-semibold">Cargo</th>
+                <th className="px-3 py-2 font-semibold">Accesos</th>
+                <th className="px-3 py-2 font-semibold">Estado</th>
+                <th className="px-4 py-2" aria-label="Acciones" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {usuarios.map((u) => {
+                const esAdmin = u.rol === "ADMIN";
+                const vigencia = !u.directorioActivo ? estadoVigenciaPassword(u.passwordCambiadaEn, config.passwordVigenciaDias) : null;
+                const cargo = u.cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, u.sexo, uc.encargo)).join(", ");
+                const tramites = esAdmin ? "Acceso total" : resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
+                const sgdeaVence = u.rolCorrespondencia && u.rolCorrespondenciaVigenteHasta;
+                const geconVence = u.rolesContratacion.length > 0 && u.rolContratacionVigenteHasta;
+                const sgdea = esAdmin
+                  ? "SGDEA: acceso total"
+                  : u.rolCorrespondencia
+                    ? `SGDEA: ${ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia}${sgdeaVence ? ` (vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta!)})` : ""}`
+                    : "SGDEA: sin acceso";
+                const gecon = esAdmin
+                  ? "GECON: acceso total"
+                  : u.rolesContratacion.length > 0
+                    ? `GECON: ${u.rolesContratacion.map((r) => ETIQUETA_ROL_CONTRATACION[r] ?? r).join(", ")}${geconVence ? ` (vence ${formatearFecha(u.rolContratacionVigenteHasta!)})` : ""}`
+                    : "GECON: sin acceso";
+                const historico = esAdmin
+                  ? "VITAL / SINCA 1.0: acceso total"
+                  : `VITAL / SINCA 1.0: ${u.seccionesAcceso.length ? u.seccionesAcceso.map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ") : "sin acceso"}`;
+                const avisos = [
+                  vigencia?.vencida ? "Contraseña vencida" : vigencia && vigencia.diasRestantes !== null && vigencia.diasRestantes <= 7 ? `Contraseña vence en ${vigencia.diasRestantes} d.` : null,
+                  sgdeaVence && u.rolCorrespondenciaVigenteHasta! < ahora ? "Rol SGDEA vencido" : null,
+                  geconVence && u.rolContratacionVigenteHasta! < ahora ? "Rol GECON vencido" : null,
+                ].filter((a): a is string => Boolean(a));
+                const est = ESTADOS[u.estadoCuenta];
+                return (
+                  <tr key={u.id} className={`group flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 hover:bg-stone-50/70 md:table-row md:p-0 ${u.activo ? "" : "opacity-70"}`}>
+                    <td className="min-w-0 basis-full md:px-4 md:py-2.5">
+                      <Link href={`/usuarios/${u.id}`} className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-xs font-semibold ${
+                            esAdmin ? "bg-violet-100 text-violet-700" : "bg-cdmb-100 text-cdmb-800"
+                          }`}
+                          title={esAdmin ? "Administrador" : "Funcionario"}
+                        >
+                          {iniciales(u.nombre)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-stone-800 group-hover:text-cdmb-700">{u.nombre}</span>
+                          <span className="block truncate text-xs text-stone-400">
+                            {u.email}
+                            {u.cedulaONit ? ` · ${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : ""}
+                            {u.directorioActivo ? " · Directorio activo" : ""}
+                          </span>
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="hidden max-w-[220px] px-3 py-2.5 md:table-cell">
+                      <span className={`block truncate text-xs ${cargo ? "text-stone-600" : "text-stone-300"}`} title={cargo || undefined}>
+                        {esAdmin && !cargo ? "Administrador" : cargo || "Sin cargo"}
+                      </span>
+                    </td>
+                    <td className="md:px-3 md:py-2.5">
+                      <span className="flex items-center gap-1">
+                        <ModuloIcono icon={Leaf} activo={esAdmin || u.tramitesAcceso.length > 0} titulo={`Trámites 2.0: ${tramites}`} />
+                        <ModuloIcono icon={Mail} activo={esAdmin || Boolean(u.rolCorrespondencia)} alerta={Boolean(sgdeaVence)} titulo={sgdea} />
+                        <ModuloIcono icon={Briefcase} activo={esAdmin || u.rolesContratacion.length > 0} alerta={Boolean(geconVence)} titulo={gecon} />
+                        <ModuloIcono icon={Database} activo={esAdmin || u.seccionesAcceso.length > 0} titulo={historico} />
+                      </span>
+                    </td>
+                    <td className="md:px-3 md:py-2.5">
+                      <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${est.texto}`}>
+                        <span className={`h-2 w-2 rounded-full ${est.punto}`} aria-hidden />
+                        {est.etiqueta}
+                        {avisos.length > 0 && (
+                          <span title={avisos.join(" · ")} className="text-amber-600">
+                            <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+                            <span className="sr-only">{avisos.join(" · ")}</span>
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="ml-auto md:ml-0 md:px-4 md:py-2.5">
+                      <span className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/usuarios/${u.id}`}
+                          title="Editar"
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-stone-400 hover:bg-cdmb-50 hover:text-cdmb-700"
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          <span className="sr-only">Editar</span>
+                        </Link>
+                        {u.id !== session.userId && (
+                          <form action={`/api/usuarios/${u.id}/toggle`} method="post">
+                            <button
+                              title={u.activo ? "Desactivar" : "Activar"}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full hover:bg-stone-100 ${u.activo ? "text-stone-400 hover:text-red-600" : "text-emerald-600"}`}
+                            >
+                              <Power className="h-3.5 w-3.5" aria-hidden />
+                              <span className="sr-only">{u.activo ? "Desactivar" : "Activar"}</span>
+                            </button>
+                          </form>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
 
-        <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
-          <Paginador
-            paginaActual={pagina}
-            totalPaginas={totalPaginas}
-            total={total}
-            porPagina={POR_PAGINA}
-            hrefPagina={(p) => {
-              const params = new URLSearchParams();
-              if (busqueda) params.set("q", busqueda);
-              if (p > 1) params.set("page", String(p));
-              const qs = params.toString();
-              return qs ? `/usuarios?${qs}` : "/usuarios";
-            }}
-          />
-        </div>
+        <Paginador paginaActual={pagina} totalPaginas={totalPaginas} total={total} porPagina={POR_PAGINA} hrefPagina={(p) => href({ page: p > 1 ? String(p) : undefined })} />
       </div>
 
-      <details className="group rounded-2xl border border-dashed border-cdmb-300 bg-cdmb-50/40 p-5">
+      <details id="nuevo-usuario" open={nuevo === "1"} className="group scroll-mt-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
         <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
+          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-acento-50 text-acento-600">
             <UserPlus className="h-4 w-4" aria-hidden />
           </span>
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-stone-900">+ Crear usuario nuevo</h2>
+            <h2 className="text-sm font-semibold text-stone-900">Crear usuario</h2>
             <p className="text-xs text-stone-400">Funcionarios, contratistas y empresas. Al guardar se abre su ficha para asignar accesos.</p>
           </div>
           <ChevronDown className="h-4 w-4 flex-none text-stone-400 transition-transform group-open:rotate-180" aria-hidden />

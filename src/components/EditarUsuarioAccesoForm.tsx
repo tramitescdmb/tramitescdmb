@@ -3,7 +3,7 @@
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, Leaf, ChevronDown, type LucideIcon } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
@@ -47,7 +47,7 @@ const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: str
   { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes y firma solo en Contractual/Postcontractual de su propio expediente. Nunca puede asignar firmantes." },
 ];
 
-const BOTON_BASE = "flex-1 rounded-md border px-2 py-1 text-[11px] font-medium transition";
+const SEGMENTO = "px-2.5 py-1 text-[11px] font-medium transition";
 
 const SECCIONES_VITAL: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
   { valor: "VITAL_BASE", etiqueta: "Solicitudes y Recientes", ayuda: "Ver las solicitudes de VITAL y las últimas radicadas." },
@@ -59,18 +59,18 @@ const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
   { valor: "SINCA_MINERIA", etiqueta: "Minería de datos", ayuda: "Sección sensible: reservada para directivos, no para cualquier funcionario." },
 ];
 
-const NAV_SECCIONES: { id: string; etiqueta: string }[] = [
-  { id: "seccion-nombre", etiqueta: "Datos personales" },
-  { id: "seccion-firma", etiqueta: "Datos para la firma" },
-  { id: "seccion-contrasena", etiqueta: "Contraseña" },
-  { id: "seccion-rol", etiqueta: "Rol" },
-  { id: "seccion-estado", etiqueta: "Estado de la cuenta" },
-  { id: "seccion-cargos", etiqueta: "Cargos" },
-  { id: "seccion-lectura", etiqueta: "VITAL y SINCA 1.0" },
-  { id: "seccion-correspondencia", etiqueta: "Correspondencia" },
-  { id: "seccion-contratacion", etiqueta: "Contratación" },
-  { id: "seccion-tramites", etiqueta: "Trámites" },
+type Pestana = "datos" | "firma" | "cuenta" | "tramites" | "modulos" | "consulta";
+
+const PESTANAS: { id: Pestana; etiqueta: string; icono: LucideIcon }[] = [
+  { id: "datos", etiqueta: "Datos personales", icono: UserRound },
+  { id: "firma", etiqueta: "Firma", icono: PenLine },
+  { id: "cuenta", etiqueta: "Cuenta", icono: UserCog },
+  { id: "tramites", etiqueta: "Trámites 2.0", icono: Leaf },
+  { id: "modulos", etiqueta: "SGDEA y GECON", icono: Mail },
+  { id: "consulta", etiqueta: "VITAL y SINCA 1.0", icono: Eye },
 ];
+
+const PESTANAS_DE_ACCESO: Pestana[] = ["tramites", "modulos", "consulta"];
 
 function generarContrasena(): string {
   const mayus = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -218,6 +218,17 @@ export function EditarUsuarioAccesoForm({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [pestana, setPestana] = useState<Pestana>("datos");
+  const [categoriasAbiertas, setCategoriasAbiertas] = useState<Set<string>>(new Set());
+
+  function alternarCategoria(etiqueta: string) {
+    setCategoriasAbiertas((prev) => {
+      const next = new Set(prev);
+      if (next.has(etiqueta)) next.delete(etiqueta);
+      else next.add(etiqueta);
+      return next;
+    });
+  }
 
   function alternarCargo(id: string) {
     const estabaActivo = cargoIds.has(id);
@@ -304,10 +315,12 @@ export function EditarUsuarioAccesoForm({
   async function guardar() {
     if (persona.tipoPersona === "JURIDICA" ? !persona.razonSocial.trim() : !persona.nombres.trim() || !persona.apellidos.trim()) {
       setError(persona.tipoPersona === "JURIDICA" ? "Indique la razón social." : "Indique los nombres y los apellidos.");
+      setPestana("datos");
       return;
     }
     if (nuevaContrasena && nuevaContrasena.length < politicaPassword.longitudMinima) {
       setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
+      setPestana("cuenta");
       return;
     }
     setGuardando(true);
@@ -354,599 +367,651 @@ export function EditarUsuarioAccesoForm({
   }
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       <nav
-        className="sticky top-0 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft/90 px-3 py-2 backdrop-blur"
-        aria-label="Ir a una sección de esta página"
+        className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-stone-200 bg-stone-50/95 p-1 shadow-soft backdrop-blur"
+        role="tablist"
+        aria-label="Secciones de la ficha del usuario"
       >
-        {NAV_SECCIONES.filter((s) => s.id !== "seccion-contrasena" || !directorioActivo).map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className="flex-none whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium text-stone-600 transition hover:bg-cdmb-50 hover:text-cdmb-700"
-          >
-            {s.etiqueta}
-          </a>
-        ))}
+        {PESTANAS.map((p) => {
+          const Icono = p.icono;
+          const activa = pestana === p.id;
+          const conteo =
+            p.id === "tramites" ? totalConAcceso : p.id === "modulos" ? (rolCorrespondencia ? 1 : 0) + rolesContratacion.size : p.id === "consulta" ? secciones.size : null;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="tab"
+              aria-selected={activa}
+              onClick={() => setPestana(p.id)}
+              className={`inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                activa ? "bg-white text-stone-900 shadow-sm ring-1 ring-stone-200" : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
+              }`}
+            >
+              <Icono className={`h-3.5 w-3.5 ${activa ? "text-cdmb-600" : ""}`} aria-hidden />
+              {p.etiqueta}
+              {conteo !== null && rol !== "ADMIN" && (
+                <span className={`rounded-full px-1.5 text-[10px] ${conteo > 0 ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"}`}>{conteo}</span>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      <section id="seccion-nombre" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={UserRound} titulo="Datos personales" ayuda="Identificación, nombre, contacto, ubicación e información tributaria. GECON los usa cuando la persona es contratista." />
-        <CamposPersona
-          valor={persona}
-          onChange={setPersona}
-          tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
-          tributaria
-          requeridos={{ nombre: true }}
-          etiquetaCorreo="Correo de notificación"
-        />
-        {directorioActivo && (
-          <p className="mt-2 text-xs text-stone-400">
-            Cuenta de directorio activo ({usuarioRed}): el nombre se asignó de forma provisional al crearse. Verifíquelo o corríjalo.
-          </p>
-        )}
-      </section>
-      <section id="seccion-firma" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion
-          icono={PenLine}
-          titulo="Datos para la firma electrónica"
-          ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado — incluye su dependencia."
-        />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-medium text-stone-600">
-            Sexo
-            <select
-              value={sexo}
-              onChange={(e) => setSexo(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-            >
-              <option value="">— Sin especificar —</option>
-              {SEXOS.map((s) => (
-                <option key={s.valor} value={s.valor}>{s.etiqueta}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs font-medium text-stone-600">
-            Denominación del empleo
-            <select
-              value={denominacionEmpleo}
-              onChange={(e) => {
-                setDenominacionEmpleo(e.target.value);
-                if (!admiteEncargo(e.target.value)) setDenominacionEncargo(false);
-              }}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-            >
-              <option value="">— Sin denominación —</option>
-              {CLAVES_DENOMINACION_EMPLEO.map((clave) => (
-                <option key={clave} value={clave}>
-                  {sexo === "F" ? DENOMINACIONES_EMPLEO[clave].f : DENOMINACIONES_EMPLEO[clave].m}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs font-medium text-stone-600 sm:col-span-2">
-            Complemento <span className="font-normal text-stone-400">(opcional)</span>
-            <input
-              value={denominacionComplemento}
-              onChange={(e) => setDenominacionComplemento(e.target.value)}
-              maxLength={120}
-              placeholder="en Tecnologías de Información"
-              className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-            />
-          </label>
-          <label className="text-xs font-medium text-stone-600">
-            Dependencia
-            <select
-              value={dependenciaId}
-              onChange={(e) => setDependenciaId(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-            >
-              <option value="">— Sin dependencia —</option>
-              {(dependencias ?? []).map((d) => (
-                <option key={d.id} value={d.id}>{d.nombre}</option>
-              ))}
-            </select>
-            <span className="mt-0.5 block text-[11px] font-normal text-stone-400">También la usan SGDEA y Contratación (GECON).</span>
-          </label>
-        </div>
-        {admiteEncargo(denominacionEmpleo) && (
-          <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
-            <input
-              type="checkbox"
-              checked={denominacionEncargo}
-              onChange={(e) => setDenominacionEncargo(e.target.checked)}
-              className="mt-0.5 rounded border-stone-200"
-            />
-            <span>
-              Es un encargo (E), no un nombramiento definitivo
-              <span className="mt-0.5 block text-xs text-stone-400">
-                Se muestra como «(E)» junto a la denominación. Si más adelante vuelve a su cargo anterior, cambie la
-                denominación de nuevo: los documentos ya firmados con este cargo no se alteran.
-              </span>
-            </span>
-          </label>
-        )}
-        <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
-          <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-200" />
-          <span>
-            Puede firmar electrónicamente oficios y memorandos
-            <span className="mt-0.5 block text-xs text-stone-400">
-              Desmarcado: no le aparece el botón de firmar ni entra en la firma en lote. No afecta las firmas ya registradas.
-            </span>
-          </span>
-        </label>
-
-        <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
-          En la firma aparecerá:{" "}
-          <span className="font-medium text-stone-800">
-            {nombreCompletoPersona(persona) || "Nombre del funcionario"}
-            {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ? (
-              <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo)}</>
-            ) : null}
-            {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
-              ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
-              : null}
-            {textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)
-              ? `, ${textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}`
-              : null}
-          </span>
+      {rol === "ADMIN" && PESTANAS_DE_ACCESO.includes(pestana) && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Rol Administrador: acceso total automático. Lo que se marque en esta pestaña no tiene efecto mientras conserve ese rol.
         </p>
-      </section>
-
-      {!directorioActivo && (
-        <section id="seccion-contrasena" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <EncabezadoSeccion icono={KeyRound} titulo="Contraseña" ayuda="Defina una nueva contraseña para entregársela al usuario." />
-          <p className="mb-3 text-xs text-stone-400">
-            Se aplica al hacer clic en «Guardar cambios», al final de la página. Déjela vacía si no quiere cambiarla.
-            Debe tener entre {politicaPassword.longitudMinima} y {politicaPassword.longitudMaxima} caracteres; la
-            política completa (mayúsculas, números, histórico) se define en Administración → Seguridad.
-          </p>
-          {vigenciaPassword?.diasRestantes != null && (
-            <p className={`mb-3 text-xs font-medium ${vigenciaPassword.vencida ? "text-red-700" : "text-amber-700"}`}>
-              {vigenciaPassword.vencida
-                ? "La contraseña actual ya venció — se recomienda restablecerla."
-                : `La contraseña actual vence en ${vigenciaPassword.diasRestantes} día(s).`}
-            </p>
-          )}
-          <div className="flex max-w-md flex-wrap items-center gap-2">
-            <div className="relative min-w-[200px] flex-1">
-              <input
-                type={mostrarContrasena ? "text" : "password"}
-                value={nuevaContrasena}
-                onChange={(e) => setNuevaContrasena(e.target.value)}
-                placeholder={`Nueva contraseña (mín. ${politicaPassword.longitudMinima} caracteres)`}
-                autoComplete="new-password"
-                maxLength={politicaPassword.longitudMaxima}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 pr-9 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-              />
-              <button
-                type="button"
-                onClick={() => setMostrarContrasena((v) => !v)}
-                title={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
-                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-stone-400 hover:text-stone-600"
-              >
-                {mostrarContrasena ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setNuevaContrasena(generarContrasena());
-                setMostrarContrasena(true);
-              }}
-              title="Generar una contraseña segura al azar"
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50"
-            >
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-              Generar
-            </button>
-            <button
-              type="button"
-              onClick={copiarContrasena}
-              disabled={!nuevaContrasena}
-              title="Copiar la contraseña para enviarla al usuario"
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {copiado ? <Check className="h-3.5 w-3.5 text-cdmb-600" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
-              {copiado ? "Copiada" : "Copiar"}
-            </button>
-          </div>
-        </section>
       )}
 
-      <section id="seccion-rol" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" ayuda="Administrador: acceso total. Funcionario: solo lo asignado abajo." />
-        <div className="grid max-w-sm grid-cols-2 gap-2">
-          {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
-            <button
-              key={valor}
-              type="button"
-              onClick={() => setRol(valor)}
-              title={valor === "ADMIN" ? "Acceso total, sin restricciones" : "Solo ve y gestiona lo que se le asigne abajo"}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                rol === valor ? "border-cdmb-600 bg-cdmb-50 text-cdmb-800" : "border-stone-200 text-stone-600 hover:bg-stone-50"
-              }`}
-            >
-              {valor === "ADMIN" ? "Administrador" : "Funcionario"}
-            </button>
-          ))}
-        </div>
-        {rol === "ADMIN" && (
-          <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Acceso total automático — los cargos, trámites y secciones de abajo quedan sin efecto.
-          </p>
-        )}
-      </section>
+      <div hidden={pestana !== "datos"}>
+        <section id="seccion-nombre" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={UserRound} titulo="Datos personales" ayuda="Identificación, nombre, contacto, ubicación e información tributaria. GECON los usa cuando la persona es contratista." />
+          <CamposPersona
+            valor={persona}
+            onChange={setPersona}
+            tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
+            tributaria
+            requeridos={{ nombre: true }}
+            etiquetaCorreo="Correo de notificación"
+          />
+          {directorioActivo && (
+            <p className="mt-2 text-xs text-stone-400">
+              Cuenta de directorio activo ({usuarioRed}): el nombre se asignó de forma provisional al crearse. Verifíquelo o corríjalo.
+            </p>
+          )}
+        </section>
+      </div>
 
-      <section id="seccion-estado" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={UserCog} titulo="Estado de la cuenta" ayuda="Con cualquier estado que no sea Habilitada, no puede iniciar sesión." />
-        <div className="grid max-w-lg grid-cols-2 gap-2 sm:grid-cols-4">
-          {ESTADOS_CUENTA.map((e) => (
-            <button
-              key={e.valor}
-              type="button"
-              onClick={() => setEstadoCuenta(e.valor)}
-              title={e.ayuda}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                estadoCuenta === e.valor ? e.clase : "border-stone-200 text-stone-600 hover:bg-stone-50"
-              }`}
-            >
-              {e.etiqueta}
-            </button>
-          ))}
-        </div>
-        {estadoCuentaActual === "BLOQUEADA" && estadoCuenta === "BLOQUEADA" && (
-          <p className="mt-2.5 rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
-            El sistema la bloqueó automáticamente por exceso de intentos fallidos. Elija «Habilitada» para permitirle
-            volver a iniciar sesión.
-          </p>
-        )}
-      </section>
+      <div hidden={pestana !== "firma"}>
+        <section id="seccion-firma" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion
+            icono={PenLine}
+            titulo="Datos para la firma electrónica"
+            ayuda="Cómo aparece esta persona al pie de un oficio, memorando o documento de contratación firmado — incluye su dependencia."
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-medium text-stone-600">
+              Sexo
+              <select
+                value={sexo}
+                onChange={(e) => setSexo(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              >
+                <option value="">— Sin especificar —</option>
+                {SEXOS.map((s) => (
+                  <option key={s.valor} value={s.valor}>{s.etiqueta}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-stone-600">
+              Denominación del empleo
+              <select
+                value={denominacionEmpleo}
+                onChange={(e) => {
+                  setDenominacionEmpleo(e.target.value);
+                  if (!admiteEncargo(e.target.value)) setDenominacionEncargo(false);
+                }}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              >
+                <option value="">— Sin denominación —</option>
+                {CLAVES_DENOMINACION_EMPLEO.map((clave) => (
+                  <option key={clave} value={clave}>
+                    {sexo === "F" ? DENOMINACIONES_EMPLEO[clave].f : DENOMINACIONES_EMPLEO[clave].m}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-stone-600 sm:col-span-2">
+              Complemento <span className="font-normal text-stone-400">(opcional)</span>
+              <input
+                value={denominacionComplemento}
+                onChange={(e) => setDenominacionComplemento(e.target.value)}
+                maxLength={120}
+                placeholder="en Tecnologías de Información"
+                className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              />
+            </label>
+            <label className="text-xs font-medium text-stone-600">
+              Dependencia
+              <select
+                value={dependenciaId}
+                onChange={(e) => setDependenciaId(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              >
+                <option value="">— Sin dependencia —</option>
+                {(dependencias ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.nombre}</option>
+                ))}
+              </select>
+              <span className="mt-0.5 block text-[11px] font-normal text-stone-400">También la usan SGDEA y Contratación (GECON).</span>
+            </label>
+          </div>
+          {admiteEncargo(denominacionEmpleo) && (
+            <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={denominacionEncargo}
+                onChange={(e) => setDenominacionEncargo(e.target.checked)}
+                className="mt-0.5 rounded border-stone-200"
+              />
+              <span>
+                Es un encargo (E), no un nombramiento definitivo
+                <span className="mt-0.5 block text-xs text-stone-400">
+                  Se muestra como «(E)» junto a la denominación. Si más adelante vuelve a su cargo anterior, cambie la
+                  denominación de nuevo: los documentos ya firmados con este cargo no se alteran.
+                </span>
+              </span>
+            </label>
+          )}
+          <label className="mt-3 flex items-start gap-2 text-sm text-stone-700">
+            <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="mt-0.5 rounded border-stone-200" />
+            <span>
+              Puede firmar electrónicamente oficios y memorandos
+              <span className="mt-0.5 block text-xs text-stone-400">
+                Desmarcado: no le aparece el botón de firmar ni entra en la firma en lote. No afecta las firmas ya registradas.
+              </span>
+            </span>
+          </label>
 
-      <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
-        <p className="mb-2.5 text-xs text-stone-400">
-          Marque uno, varios, o todos los que correspondan. Con un cargo activo, use el botón «E» para marcarlo como encargo (interino) —
-          se muestra como «(E)» donde aparezca ese cargo en un trámite.
-        </p>
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
-          {cargos.map((c) => {
-            const activo = cargoIds.has(c.id);
-            const esEncargo = cargoEncargoIds.has(c.id);
-            const etiqueta = cargoParaSexo(c.nombre, sexo || null, activo && esEncargo);
-            return (
-              <span key={c.id} className="inline-flex items-center gap-1">
+          <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
+            En la firma aparecerá:{" "}
+            <span className="font-medium text-stone-800">
+              {nombreCompletoPersona(persona) || "Nombre del funcionario"}
+              {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ? (
+                <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo)}</>
+              ) : null}
+              {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
+                ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
+                : null}
+              {textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)
+                ? `, ${textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}`
+                : null}
+            </span>
+          </p>
+        </section>
+      </div>
+
+      <div hidden={pestana !== "cuenta"} className="space-y-5">
+        <section id="seccion-estado" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={UserCog} titulo="Estado de la cuenta" ayuda="Con cualquier estado que no sea Habilitada, no puede iniciar sesión." />
+          <div className="grid max-w-lg grid-cols-2 gap-2 sm:grid-cols-4">
+            {ESTADOS_CUENTA.map((e) => (
+              <button
+                key={e.valor}
+                type="button"
+                onClick={() => setEstadoCuenta(e.valor)}
+                title={e.ayuda}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  estadoCuenta === e.valor ? e.clase : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                {e.etiqueta}
+              </button>
+            ))}
+          </div>
+          {estadoCuentaActual === "BLOQUEADA" && estadoCuenta === "BLOQUEADA" && (
+            <p className="mt-2.5 rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
+              El sistema la bloqueó automáticamente por exceso de intentos fallidos. Elija «Habilitada» para permitirle
+              volver a iniciar sesión.
+            </p>
+          )}
+        </section>
+        <section id="seccion-rol" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={ShieldCheck} titulo="Rol" ayuda="Administrador: acceso total. Funcionario: solo lo asignado en las pestañas de acceso." />
+          <div className="grid max-w-sm grid-cols-2 gap-2">
+            {(["FUNCIONARIO", "ADMIN"] as const).map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => setRol(valor)}
+                title={valor === "ADMIN" ? "Acceso total, sin restricciones" : "Solo ve y gestiona lo que se le asigne"}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  rol === valor ? "border-cdmb-600 bg-cdmb-50 text-cdmb-800" : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                {valor === "ADMIN" ? "Administrador" : "Funcionario"}
+              </button>
+            ))}
+          </div>
+          {rol === "ADMIN" && (
+            <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Acceso total automático: los cargos y los accesos por módulo quedan sin efecto.
+            </p>
+          )}
+        </section>
+        {!directorioActivo && (
+          <section id="seccion-contrasena" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <EncabezadoSeccion icono={KeyRound} titulo="Contraseña" ayuda="Defina una nueva contraseña para entregársela al usuario." />
+            <p className="mb-3 text-xs text-stone-400">
+              Se aplica al hacer clic en «Guardar cambios». Déjela vacía si no quiere cambiarla.
+              Debe tener entre {politicaPassword.longitudMinima} y {politicaPassword.longitudMaxima} caracteres; la
+              política completa (mayúsculas, números, histórico) se define en Administración → Seguridad.
+            </p>
+            {vigenciaPassword?.diasRestantes != null && (
+              <p className={`mb-3 text-xs font-medium ${vigenciaPassword.vencida ? "text-red-700" : "text-amber-700"}`}>
+                {vigenciaPassword.vencida
+                  ? "La contraseña actual ya venció — se recomienda restablecerla."
+                  : `La contraseña actual vence en ${vigenciaPassword.diasRestantes} día(s).`}
+              </p>
+            )}
+            <div className="flex max-w-md flex-wrap items-center gap-2">
+              <div className="relative min-w-[200px] flex-1">
+                <input
+                  type={mostrarContrasena ? "text" : "password"}
+                  value={nuevaContrasena}
+                  onChange={(e) => setNuevaContrasena(e.target.value)}
+                  placeholder={`Nueva contraseña (mín. ${politicaPassword.longitudMinima} caracteres)`}
+                  autoComplete="new-password"
+                  maxLength={politicaPassword.longitudMaxima}
+                  className="w-full rounded-lg border border-stone-200 px-3 py-2 pr-9 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+                />
                 <button
                   type="button"
-                  onClick={() => alternarCargo(c.id)}
-                  aria-pressed={activo}
-                  title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                    activo
-                      ? "border-menu-500 bg-menu-500 text-stone-900"
-                      : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                  }`}
+                  onClick={() => setMostrarContrasena((v) => !v)}
+                  title={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-stone-400 hover:text-stone-600"
                 >
-                  {etiqueta}
+                  {mostrarContrasena ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
                 </button>
-                {activo && (
-                  <button
-                    type="button"
-                    onClick={() => alternarCargoEncargo(c.id)}
-                    aria-pressed={esEncargo}
-                    title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
-                    className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
-                      esEncargo
-                        ? "border-amber-400 bg-amber-100 text-amber-800"
-                        : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"
-                    }`}
-                  >
-                    E
-                  </button>
-                )}
-              </span>
-            );
-          })}
-        </div>
-      </section>
-
-      <section id="seccion-lectura" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" ayuda="Solo consulta: define a qué pestañas puede entrar." />
-        <p className="mb-3 text-xs text-stone-400">
-          Solo consulta, no hay edición. <strong>Minería de datos</strong> es la sección más sensible — resérvela para directivos.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
-              <BotonAtajo
-                tono="activar"
-                title="Dar acceso a todas las pestañas de VITAL"
-                onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNuevaContrasena(generarContrasena());
+                  setMostrarContrasena(true);
+                }}
+                title="Generar una contraseña segura al azar"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50"
               >
-                Todos
-              </BotonAtajo>
-              <BotonAtajo
-                tono="desactivar"
-                title="Quitar el acceso a todas las pestañas de VITAL"
-                onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                Generar
+              </button>
+              <button
+                type="button"
+                onClick={copiarContrasena}
+                disabled={!nuevaContrasena}
+                title="Copiar la contraseña para enviarla al usuario"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Ninguno
-              </BotonAtajo>
+                {copiado ? <Check className="h-3.5 w-3.5 text-cdmb-600" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
+                {copiado ? "Copiada" : "Copiar"}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {SECCIONES_VITAL.map((s) => {
-                const activo = secciones.has(s.valor);
-                return (
+          </section>
+        )}
+      </div>
+
+      <div hidden={pestana !== "tramites"} className="space-y-5">
+        <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
+          <p className="mb-2.5 text-xs text-stone-400">
+            Marque uno, varios, o todos los que correspondan. Con un cargo activo, use el botón «E» para marcarlo como encargo (interino) —
+            se muestra como «(E)» donde aparezca ese cargo en un trámite.
+          </p>
+          <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
+            {cargos.map((c) => {
+              const activo = cargoIds.has(c.id);
+              const esEncargo = cargoEncargoIds.has(c.id);
+              const etiqueta = cargoParaSexo(c.nombre, sexo || null, activo && esEncargo);
+              return (
+                <span key={c.id} className="inline-flex items-center gap-1">
                   <button
-                    key={s.valor}
                     type="button"
-                    onClick={() => alternarSeccion(s.valor)}
+                    onClick={() => alternarCargo(c.id)}
                     aria-pressed={activo}
-                    title={s.ayuda}
+                    title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       activo
                         ? "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                     }`}
                   >
-                    {s.etiqueta}
+                    {etiqueta}
                   </button>
-                );
-              })}
-            </div>
+                  {activo && (
+                    <button
+                      type="button"
+                      onClick={() => alternarCargoEncargo(c.id)}
+                      aria-pressed={esEncargo}
+                      title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
+                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                        esEncargo
+                          ? "border-amber-400 bg-amber-100 text-amber-800"
+                          : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"
+                      }`}
+                    >
+                      E
+                    </button>
+                  )}
+                </span>
+              );
+            })}
           </div>
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
-              <BotonAtajo
-                tono="activar"
-                title="Dar acceso a todas las pestañas de SINCA 1.0"
-                onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}
-              >
-                Todos
-              </BotonAtajo>
-              <BotonAtajo
-                tono="desactivar"
-                title="Quitar el acceso a todas las pestañas de SINCA 1.0"
-                onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}
-              >
-                Ninguno
-              </BotonAtajo>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {SECCIONES_SINCA.map((s) => {
-                const activo = secciones.has(s.valor);
-                return (
+        </section>
+        <section id="seccion-tramites" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <EncabezadoSeccion
+              icono={Layers}
+              titulo='Trámites de "Trámites ambientales 2.0"'
+              ayuda="Ver: solo consulta. Editar: además puede actuar sobre el trámite."
+            />
+            <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+              {totalConAcceso} con acceso
+            </span>
+          </div>
+          <p className="-mt-1.5 mb-2 text-xs text-stone-400">
+            Sin marcar, no ve el trámite. <strong>Ver</strong>: solo consulta. <strong>Editar</strong>: además puede radicar,
+            avanzar pasos y subir documentos.
+          </p>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-stone-400">Todos los trámites:</span>
+            <BotonAtajo tono="activar" title="Dar nivel Editar a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, "EDITAR")}>
+              Editar todos
+            </BotonAtajo>
+            <BotonAtajo tono="ver" title="Dar nivel Ver a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, "VER")}>
+              Ver todos
+            </BotonAtajo>
+            <BotonAtajo tono="desactivar" title="Quitar el acceso a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, null)}>
+              Quitar todos
+            </BotonAtajo>
+          </div>
+
+          <div className="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200">
+            {tramitesPorCategoria.map((grupo) => {
+              const abierta = categoriasAbiertas.has(grupo.etiqueta);
+              const editar = grupo.items.filter((t) => acceso.get(t.id) === "EDITAR").length;
+              const ver = grupo.items.filter((t) => acceso.get(t.id) === "VER").length;
+              const resumen =
+                editar + ver === 0
+                  ? "Sin acceso"
+                  : [editar ? `${editar} editar` : null, ver ? `${ver} ver` : null].filter(Boolean).join(" · ");
+              return (
+                <div key={grupo.etiqueta} className="relative">
+                  <span className={`absolute inset-y-0 left-0 w-1 ${grupo.claseBarra}`} aria-hidden />
+                  <div className="flex flex-wrap items-center gap-2 py-2 pl-3 pr-3">
+                    <button
+                      type="button"
+                      onClick={() => alternarCategoria(grupo.etiqueta)}
+                      aria-expanded={abierta}
+                      title={abierta ? "Ocultar los trámites de esta categoría" : "Ajustar trámite por trámite"}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    >
+                      <ChevronDown className={`h-4 w-4 flex-none text-stone-400 transition-transform ${abierta ? "rotate-180" : ""}`} aria-hidden />
+                      <span className={`inline-flex flex-none items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
+                        {grupo.etiqueta}
+                      </span>
+                      <span className={`truncate text-xs ${editar + ver === 0 ? "text-stone-400" : "text-stone-600"}`}>
+                        {resumen} <span className="text-stone-400">de {grupo.items.length}</span>
+                      </span>
+                    </button>
+                    <div className="flex flex-wrap gap-1">
+                      <BotonAtajo tono="activar" title={`Editar todos los trámites de ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, "EDITAR")}>
+                        Editar todos
+                      </BotonAtajo>
+                      <BotonAtajo tono="ver" title={`Ver todos los trámites de ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, "VER")}>
+                        Ver todos
+                      </BotonAtajo>
+                      <BotonAtajo tono="desactivar" title={`Quitar el acceso a ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, null)}>
+                        Quitar
+                      </BotonAtajo>
+                    </div>
+                  </div>
+                  {abierta && (
+                    <ul className="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/60 pl-9">
+                      {grupo.items.map((t) => {
+                        const nivel = acceso.get(t.id) ?? null;
+                        return (
+                          <li key={t.id} className="flex flex-wrap items-center gap-2 py-1.5 pr-3 sm:flex-nowrap">
+                            <p className="min-w-0 flex-1 truncate text-xs text-stone-700" title={`${t.codigo} ${t.nombre}`}>
+                              <span className="mr-1 text-stone-400">{t.codigo}</span>
+                              {t.nombre}
+                            </p>
+                            <div className="flex flex-none divide-x divide-stone-200 overflow-hidden rounded-md border border-stone-200 bg-white">
+                              <button
+                                type="button"
+                                onClick={() => ponerNivel(t.id, null)}
+                                title="Sin acceso: no ve este trámite"
+                                className={`${SEGMENTO} ${nivel === null ? "bg-stone-100 text-stone-700" : "text-stone-400 hover:bg-stone-50"}`}
+                              >
+                                Sin acceso
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => ponerNivel(t.id, "VER")}
+                                title="Ver: consulta el catálogo y los expedientes, sin poder actuar"
+                                className={`${SEGMENTO} ${nivel === "VER" ? "bg-sky-600 text-white" : "text-stone-500 hover:bg-sky-50"}`}
+                              >
+                                Ver
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => ponerNivel(t.id, "EDITAR")}
+                                title="Editar: además puede radicar, avanzar pasos, subir documentos y comentar"
+                                className={`${SEGMENTO} ${nivel === "EDITAR" ? "bg-menu-500 text-stone-900" : "text-stone-500 hover:bg-cdmb-50"}`}
+                              >
+                                Editar
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      <div hidden={pestana !== "modulos"} className="space-y-5">
+        <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
+          <p className="mb-3 text-xs text-stone-400">
+            Sin rol asignado, no ve el módulo. Es independiente del cargo de Trámites 2.0. La dependencia se asigna en la
+            pestaña Firma.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:max-w-md">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Rol dentro del módulo</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setRolCorrespondencia("")}
+                  aria-pressed={rolCorrespondencia === ""}
+                  title="Sin acceso al módulo de correspondencia"
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    rolCorrespondencia === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
+                  }`}
+                >
+                  Sin acceso
+                </button>
+                {ROLES_CORRESPONDENCIA.map((r) => (
                   <button
-                    key={s.valor}
+                    key={r.valor}
                     type="button"
-                    onClick={() => alternarSeccion(s.valor)}
-                    aria-pressed={activo}
-                    title={s.ayuda}
+                    onClick={() => setRolCorrespondencia(r.valor)}
+                    aria-pressed={rolCorrespondencia === r.valor}
+                    title={r.ayuda}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                      activo
-                        ? s.valor === "SINCA_MINERIA"
-                          ? "border-amber-600 bg-amber-600 text-white"
-                          : "border-menu-500 bg-menu-500 text-stone-900"
+                      rolCorrespondencia === r.valor
+                        ? "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                     }`}
                   >
-                    {s.etiqueta}
+                    {r.etiqueta}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+              {rolCorrespondencia !== "" && (
+                <label className="mt-3 flex items-center gap-2 text-xs text-stone-600">
+                  Vigente hasta
+                  <input
+                    type="date"
+                    value={rolCorrespondenciaVigenteHasta}
+                    onChange={(e) => setRolCorrespondenciaVigenteHasta(e.target.value)}
+                    className="rounded-md border border-stone-200 px-2 py-1 text-sm"
+                  />
+                  <span className="text-stone-400">Opcional — pasada esa fecha pierde el rol automáticamente, sin que un ADMIN tenga que quitárselo.</span>
+                </label>
+              )}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
-        <p className="mb-3 text-xs text-stone-400">
-          Sin rol asignado, no ve el módulo. Independiente del cargo y del rol de arriba. La dependencia se asigna en su
-          propia sección, arriba.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:max-w-md">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Rol dentro del módulo</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setRolCorrespondencia("")}
-                aria-pressed={rolCorrespondencia === ""}
-                title="Sin acceso al módulo de correspondencia"
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  rolCorrespondencia === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
-                }`}
-              >
-                Sin acceso
-              </button>
-              {ROLES_CORRESPONDENCIA.map((r) => (
-                <button
-                  key={r.valor}
-                  type="button"
-                  onClick={() => setRolCorrespondencia(r.valor)}
-                  aria-pressed={rolCorrespondencia === r.valor}
-                  title={r.ayuda}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                    rolCorrespondencia === r.valor
-                      ? "border-menu-500 bg-menu-500 text-stone-900"
-                      : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                  }`}
-                >
-                  {r.etiqueta}
-                </button>
-              ))}
-            </div>
-            {rolCorrespondencia !== "" && (
-              <label className="mt-3 flex items-center gap-2 text-xs text-stone-600">
-                Vigente hasta
-                <input
-                  type="date"
-                  value={rolCorrespondenciaVigenteHasta}
-                  onChange={(e) => setRolCorrespondenciaVigenteHasta(e.target.value)}
-                  className="rounded-md border border-stone-200 px-2 py-1 text-sm"
-                />
-                <span className="text-stone-400">Opcional — pasada esa fecha pierde el rol automáticamente, sin que un ADMIN tenga que quitárselo.</span>
-              </label>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section id="seccion-contratacion" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <EncabezadoSeccion icono={Briefcase} titulo="Contratación" ayuda="Acceso al manejador de expedientes digitales de contratación." />
-        <p className="mb-3 text-xs text-stone-400">
-          Puede tener varios roles a la vez (por ejemplo, Supervisor y Personal de Contratación). Contratista no se combina con otros.
-        </p>
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setRolesContratacion(new Set())}
-            aria-pressed={rolesContratacion.size === 0}
-            title="Sin acceso al módulo de Contratación"
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-              rolesContratacion.size === 0 ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
-            }`}
-          >
-            Sin acceso
-          </button>
-          {ROLES_CONTRATACION.map((r) => (
+        </section>
+        <section id="seccion-contratacion" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={Briefcase} titulo="Contratación" ayuda="Acceso al manejador de expedientes digitales de contratación." />
+          <p className="mb-3 text-xs text-stone-400">
+            Puede tener varios roles a la vez (por ejemplo, Supervisor y Personal de Contratación). Contratista no se combina con otros.
+          </p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
             <button
-              key={r.valor}
               type="button"
-              onClick={() => alternarRolContratacion(r.valor)}
-              aria-pressed={rolesContratacion.has(r.valor)}
-              title={r.ayuda}
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
-                rolesContratacion.has(r.valor)
-                  ? "border-menu-500 bg-menu-500 text-stone-900"
-                  : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+              onClick={() => setRolesContratacion(new Set())}
+              aria-pressed={rolesContratacion.size === 0}
+              title="Sin acceso al módulo de Contratación"
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                rolesContratacion.size === 0 ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
               }`}
             >
-              {rolesContratacion.has(r.valor) && <Check className="h-3 w-3" aria-hidden />}
-              {r.etiqueta}
+              Sin acceso
             </button>
-          ))}
-        </div>
+            {ROLES_CONTRATACION.map((r) => (
+              <button
+                key={r.valor}
+                type="button"
+                onClick={() => alternarRolContratacion(r.valor)}
+                aria-pressed={rolesContratacion.has(r.valor)}
+                title={r.ayuda}
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  rolesContratacion.has(r.valor)
+                    ? "border-menu-500 bg-menu-500 text-stone-900"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                }`}
+              >
+                {rolesContratacion.has(r.valor) && <Check className="h-3 w-3" aria-hidden />}
+                {r.etiqueta}
+              </button>
+            ))}
+          </div>
 
-        {rolesContratacion.size > 0 && (
-          <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone-600">
-            Vigente hasta
-            <input
-              type="date"
-              value={rolContratacionVigenteHasta}
-              onChange={(e) => setRolContratacionVigenteHasta(e.target.value)}
-              className="rounded-md border border-stone-200 px-2 py-1 text-sm"
-            />
-            <span className="text-stone-400">
-              Opcional — pensado para que venza solo al terminar el contrato, sin quitárselo a mano.
-            </span>
-          </label>
-        )}
+          {rolesContratacion.size > 0 && (
+            <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone-600">
+              Vigente hasta
+              <input
+                type="date"
+                value={rolContratacionVigenteHasta}
+                onChange={(e) => setRolContratacionVigenteHasta(e.target.value)}
+                className="rounded-md border border-stone-200 px-2 py-1 text-sm"
+              />
+              <span className="text-stone-400">
+                Opcional — pensado para que venza solo al terminar el contrato, sin quitárselo a mano.
+              </span>
+            </label>
+          )}
 
-        {esContratista && (
-          <p className="rounded-lg border border-stone-100 bg-stone-50/60 px-3 py-2 text-xs text-stone-500">
-            Como contratista, GECON toma sus datos personales de esta página. Para iniciar un contrato debe tener completos
-            el documento, el nombre, el correo, la dirección, el departamento y la ciudad, y el régimen tributario.
+          {esContratista && (
+            <p className="rounded-lg border border-stone-100 bg-stone-50/60 px-3 py-2 text-xs text-stone-500">
+              Como contratista, GECON toma sus datos personales de esta página. Para iniciar un contrato debe tener completos
+              el documento, el nombre, el correo, la dirección, el departamento y la ciudad, y el régimen tributario.
+            </p>
+          )}
+        </section>
+      </div>
+
+      <div hidden={pestana !== "consulta"}>
+        <section id="seccion-lectura" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" ayuda="Solo consulta: define a qué pestañas puede entrar." />
+          <p className="mb-3 text-xs text-stone-400">
+            Solo consulta, no hay edición. <strong>Minería de datos</strong> es la sección más sensible — resérvela para directivos.
           </p>
-        )}
-      </section>
-
-      <section id="seccion-tramites" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <EncabezadoSeccion
-            icono={Layers}
-            titulo='Trámites de "Trámites ambientales 2.0"'
-            ayuda="Ver: solo consulta. Editar: además puede actuar sobre el trámite."
-          />
-          <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
-            {totalConAcceso} con acceso
-          </span>
-        </div>
-        <p className="-mt-1.5 mb-2 text-xs text-stone-400">
-          Sin marcar, no ve el trámite. <strong>Ver</strong>: solo consulta. <strong>Editar</strong>: además puede radicar,
-          avanzar pasos y subir documentos.
-        </p>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-stone-400">Todos los trámites:</span>
-          <BotonAtajo tono="activar" title="Dar nivel Editar a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, "EDITAR")}>
-            Editar todos
-          </BotonAtajo>
-          <BotonAtajo tono="ver" title="Dar nivel Ver a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, "VER")}>
-            Ver todos
-          </BotonAtajo>
-          <BotonAtajo tono="desactivar" title="Quitar el acceso a todos los trámites del catálogo" onClick={() => aplicarACategoria(todosLosTramites, null)}>
-            Quitar todos
-          </BotonAtajo>
-        </div>
-
-        <div className="space-y-3 rounded-lg border border-stone-100 p-3">
-          {tramitesPorCategoria.map((grupo) => (
-            <div key={grupo.etiqueta} className="relative overflow-hidden rounded-lg bg-stone-50/60 pl-3">
-              <span className={`absolute inset-y-0 left-0 w-1 ${grupo.claseBarra}`} aria-hidden />
-              <div className="p-2">
-                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
-                    {grupo.etiqueta} ({grupo.items.length})
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    <BotonAtajo tono="activar" title={`Editar todos los trámites de ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, "EDITAR")}>
-                      Editar todos
-                    </BotonAtajo>
-                    <BotonAtajo tono="ver" title={`Ver todos los trámites de ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, "VER")}>
-                      Ver todos
-                    </BotonAtajo>
-                    <BotonAtajo tono="desactivar" title={`Quitar el acceso a ${grupo.etiqueta}`} onClick={() => aplicarACategoria(grupo.items, null)}>
-                      Quitar
-                    </BotonAtajo>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {grupo.items.map((t) => {
-                    const nivel = acceso.get(t.id) ?? null;
-                    return (
-                      <div key={t.id} className="rounded-md border border-stone-200 bg-white p-2">
-                        <p className="mb-1.5 line-clamp-2 text-xs text-stone-700" title={t.nombre}>
-                          <span className="mr-1 text-stone-400">{t.codigo}</span>
-                          {t.nombre}
-                        </p>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => ponerNivel(t.id, null)}
-                            title="Sin acceso: no ve este trámite"
-                            className={`${BOTON_BASE} ${nivel === null ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 text-stone-400 hover:bg-stone-50"}`}
-                          >
-                            Sin acceso
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => ponerNivel(t.id, "VER")}
-                            title="Ver: consulta el catálogo y los expedientes, sin poder actuar"
-                            className={`${BOTON_BASE} ${nivel === "VER" ? "border-sky-600 bg-sky-600 text-white" : "border-stone-200 text-stone-500 hover:bg-sky-50"}`}
-                          >
-                            Ver
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => ponerNivel(t.id, "EDITAR")}
-                            title="Editar: además puede radicar, avanzar pasos, subir documentos y comentar"
-                            className={`${BOTON_BASE} ${nivel === "EDITAR" ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 text-stone-500 hover:bg-cdmb-50"}`}
-                          >
-                            Editar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
+                <BotonAtajo
+                  tono="activar"
+                  title="Dar acceso a todas las pestañas de VITAL"
+                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}
+                >
+                  Todos
+                </BotonAtajo>
+                <BotonAtajo
+                  tono="desactivar"
+                  title="Quitar el acceso a todas las pestañas de VITAL"
+                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}
+                >
+                  Ninguno
+                </BotonAtajo>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {SECCIONES_VITAL.map((s) => {
+                  const activo = secciones.has(s.valor);
+                  return (
+                    <button
+                      key={s.valor}
+                      type="button"
+                      onClick={() => alternarSeccion(s.valor)}
+                      aria-pressed={activo}
+                      title={s.ayuda}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        activo
+                          ? "border-menu-500 bg-menu-500 text-stone-900"
+                          : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                      }`}
+                    >
+                      {s.etiqueta}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
+                <BotonAtajo
+                  tono="activar"
+                  title="Dar acceso a todas las pestañas de SINCA 1.0"
+                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}
+                >
+                  Todos
+                </BotonAtajo>
+                <BotonAtajo
+                  tono="desactivar"
+                  title="Quitar el acceso a todas las pestañas de SINCA 1.0"
+                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}
+                >
+                  Ninguno
+                </BotonAtajo>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {SECCIONES_SINCA.map((s) => {
+                  const activo = secciones.has(s.valor);
+                  return (
+                    <button
+                      key={s.valor}
+                      type="button"
+                      onClick={() => alternarSeccion(s.valor)}
+                      aria-pressed={activo}
+                      title={s.ayuda}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        activo
+                          ? s.valor === "SINCA_MINERIA"
+                            ? "border-amber-600 bg-amber-600 text-white"
+                            : "border-menu-500 bg-menu-500 text-stone-900"
+                          : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
+                      }`}
+                    >
+                      {s.etiqueta}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="min-w-0 flex-1 text-sm">

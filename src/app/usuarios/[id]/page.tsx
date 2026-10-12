@@ -9,6 +9,16 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 import { personaDesdeUsuario } from "@/lib/usuarios-persona";
+import { cargoParaSexo } from "@/lib/cargos";
+import { ArrowLeft } from "lucide-react";
+import type { EstadoCuenta } from "@prisma/client";
+
+const ESTADOS: Record<EstadoCuenta, { etiqueta: string; punto: string; clase: string }> = {
+  HABILITADA: { etiqueta: "Habilitada", punto: "bg-emerald-500", clase: "bg-emerald-50 text-emerald-700" },
+  DESHABILITADA: { etiqueta: "Deshabilitada", punto: "bg-stone-400", clase: "bg-stone-100 text-stone-500" },
+  BLOQUEADA: { etiqueta: "Bloqueada", punto: "bg-red-500", clase: "bg-red-50 text-red-700" },
+  SUSPENDIDA: { etiqueta: "Suspendida", punto: "bg-amber-500", clase: "bg-amber-50 text-amber-700" },
+};
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
@@ -51,36 +61,48 @@ export default async function EditarUsuarioPage({
     items: g.items.map((t) => ({ id: t.id, codigo: t.codigo, nombre: t.nombre })),
   }));
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <Link href="/usuarios" className="text-sm text-cdmb-700 hover:underline">
-          ← Usuarios
-        </Link>
-        <div className="mt-2 flex items-center gap-3">
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-cdmb-100 text-sm font-semibold text-cdmb-800">
-            {iniciales(usuario.nombre)}
-          </span>
-          <div>
-            <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
-              {usuario.nombre}
-              {usuario.directorioActivo && (
-                <span
-                  className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700"
-                  title="Ingresa con las credenciales de la red CDMB, no con una contraseña local"
-                >
-                  Directorio activo
-                </span>
-              )}
-            </h1>
-            <p className="text-sm text-stone-500">
-              {usuario.directorioActivo ? <>Usuario de red: {usuario.email}</> : usuario.email}
-            </p>
-          </div>
-        </div>
-      </div>
+  const estado = ESTADOS[usuario.estadoCuenta];
+  const cargo = usuario.cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, usuario.sexo, uc.encargo)).join(", ");
 
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
+  return (
+    <div className="mx-auto max-w-4xl space-y-5">
+      <Link href="/usuarios" className="inline-flex items-center gap-1 text-sm text-cdmb-700 hover:underline">
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+        Usuarios
+      </Link>
+
+      <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-white px-5 py-4 shadow-soft">
+        <span
+          className={`flex h-12 w-12 flex-none items-center justify-center rounded-full text-base font-semibold ${
+            usuario.rol === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-cdmb-100 text-cdmb-800"
+          }`}
+        >
+          {iniciales(usuario.nombre)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold text-stone-900">{usuario.nombre}</h1>
+          <p className="truncate text-sm text-stone-500">
+            {usuario.directorioActivo ? `Usuario de red: ${usuario.email}` : usuario.email}
+            {cargo ? ` · ${cargo}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${estado.clase}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${estado.punto}`} aria-hidden />
+            {estado.etiqueta}
+          </span>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${usuario.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"}`}>
+            {usuario.rol === "ADMIN" ? "Administrador" : "Funcionario"}
+          </span>
+          {usuario.directorioActivo && (
+            <span className="rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700" title="Ingresa con las credenciales de la red CDMB, no con una contraseña local">
+              Directorio activo
+            </span>
+          )}
+        </div>
+      </header>
+
+      {ok && <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
       <EditarUsuarioAccesoForm
         usuarioId={usuario.id}
