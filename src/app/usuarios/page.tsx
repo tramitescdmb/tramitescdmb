@@ -16,6 +16,7 @@ import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { formatearFecha } from "@/lib/fecha";
 import { cargoParaSexo } from "@/lib/cargos";
+import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
 
 const POR_PAGINA = 20;
@@ -232,7 +233,7 @@ export default async function UsuariosPage({
             <thead className="hidden bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400 md:table-header-group">
               <tr>
                 <th className="px-4 py-2 font-semibold">Usuario</th>
-                <th className="px-3 py-2 font-semibold">Cargo</th>
+                <th className="px-3 py-2 font-semibold">Denominación del empleo</th>
                 <th className="px-3 py-2 font-semibold">Accesos</th>
                 <th className="px-3 py-2 font-semibold">Estado</th>
                 <th className="px-4 py-2" aria-label="Acciones" />
@@ -242,6 +243,7 @@ export default async function UsuariosPage({
               {usuarios.map((u) => {
                 const esAdmin = u.rol === "ADMIN";
                 const vigencia = !u.directorioActivo ? estadoVigenciaPassword(u.passwordCambiadaEn, config.passwordVigenciaDias) : null;
+                const denominacion = denominacionParaFirma(u.denominacionEmpleo, u.sexo, u.denominacionComplemento, u.denominacionEncargo) ?? "";
                 const cargo = u.cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, u.sexo, uc.encargo)).join(", ");
                 const tramites = esAdmin ? "Acceso total" : resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
                 const sgdeaVence = u.rolCorrespondencia && u.rolCorrespondenciaVigenteHasta;
@@ -309,8 +311,12 @@ export default async function UsuariosPage({
                       </Link>
                     </td>
                     <td className="hidden max-w-[220px] px-3 py-2.5 md:table-cell">
-                      <span className={`block truncate text-xs ${cargo ? "text-stone-600" : "text-stone-300"}`} title={cargo || undefined}>
-                        {esAdmin && !cargo ? "Administrador" : cargo || "Sin cargo"}
+                      <span
+                        className={`block truncate text-xs ${denominacion || esAdmin ? "text-stone-600" : "text-stone-300"}`}
+                        title={[denominacion, cargo ? `Cargo en Trámites 2.0: ${cargo}` : ""].filter(Boolean).join(" · ") || undefined}
+                      >
+                        {esAdmin && <span className="mr-1 rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">Administrador</span>}
+                        {denominacion || (esAdmin ? "" : "Sin denominación")}
                       </span>
                     </td>
                     <td className="md:px-3 md:py-2.5">

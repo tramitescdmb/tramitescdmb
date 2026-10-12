@@ -2,7 +2,7 @@ import type { CampoVisibilidadModulo } from "@/lib/modulos-visibles";
 
 export type ModuloUsuario = "TRAMITES" | "SGDEA" | "GECON" | "VITAL" | "SINCA";
 
-export type PestanaFichaUsuario = "datos" | "firma" | "cuenta" | "tramites" | "modulos" | "consulta";
+export type PestanaFichaUsuario = "datos" | "firma" | "cuenta" | "tramites" | "modulos" | "consulta" | "visitas";
 
 export const MODULOS_USUARIO: { id: ModuloUsuario; nombre: string; corto: string; pestana: PestanaFichaUsuario; campoGlobal: CampoVisibilidadModulo }[] = [
   { id: "TRAMITES", nombre: "Trámites ambientales 2.0", corto: "Trámites 2.0", pestana: "tramites", campoGlobal: "tramitesVisibleFuncionarios" },

@@ -28,7 +28,7 @@ function formato(dia: string, opciones: Intl.DateTimeFormatOptions) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-export function MiniPlaneador({ agenda, planificador }: { agenda: AgendaLanding; planificador: boolean }) {
+export function MiniPlaneador({ agenda, planificador, titulo = "Mis visitas" }: { agenda: AgendaLanding; planificador: boolean; titulo?: string }) {
   const { hoy, desde, hasta, visitas } = agenda;
   const [lunes, setLunes] = useState(lunesDe(hoy));
   const [dia, setDia] = useState(hoy);
@@ -64,7 +64,7 @@ export function MiniPlaneador({ agenda, planificador }: { agenda: AgendaLanding;
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
             <CalendarDays className="h-4 w-4" aria-hidden />
           </span>
-          Mis visitas
+          {titulo}
         </h2>
         <div className="flex items-center gap-1">
           <button

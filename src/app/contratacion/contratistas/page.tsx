@@ -5,11 +5,12 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Users, Download } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeRegistrarContratistaMinimo, filtroContratistasVisibles } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeRegistrarContratistaMinimo, puedeGestionarContratistas, filtroContratistasVisibles } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { Paginador } from "@/components/Paginador";
 import { NuevoContratistaSeccion } from "@/components/NuevoContratistaSeccion";
+import { ImportarContratistasSeccion } from "@/components/ImportarContratistasSeccion";
 import { vigenciaDeExpediente } from "@/lib/contratacion";
 import { CONTRATO_ACTIVO, filtroContratistas, vigenciasDisponibles } from "@/lib/contratistas-registro";
 
@@ -210,6 +211,7 @@ export default async function ContratistasPage({
       </div>
 
       {puedeRegistrarContratistaMinimo(permisos) && <NuevoContratistaSeccion />}
+      {puedeGestionarContratistas(permisos) && <ImportarContratistasSeccion />}
     </section>
   );
 }

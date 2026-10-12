@@ -10,6 +10,9 @@ import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 import { personaDesdeUsuario } from "@/lib/usuarios-persona";
 import { cargoParaSexo } from "@/lib/cargos";
+import { denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
+import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { MODULOS_USUARIO, type ModuloUsuario } from "@/lib/modulos-usuario";
 import { ArrowLeft } from "lucide-react";
 import type { EstadoCuenta } from "@prisma/client";
@@ -54,6 +57,7 @@ export default async function EditarUsuarioPage({
     getConfiguracionSitio(),
   ]);
   if (!usuario) notFound();
+  const agenda = await obtenerAgendaUsuario(usuario.id, false);
 
   const tramitesPorCategoria = agruparTramitesPorCategoria(tramites).map((g) => ({
     etiqueta: g.etiqueta,
@@ -63,7 +67,9 @@ export default async function EditarUsuarioPage({
   }));
 
   const estado = ESTADOS[usuario.estadoCuenta];
-  const cargo = usuario.cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, usuario.sexo, uc.encargo)).join(", ");
+  const cargo =
+    denominacionParaFirma(usuario.denominacionEmpleo, usuario.sexo, usuario.denominacionComplemento, usuario.denominacionEncargo) ??
+    usuario.cargoAsignaciones.map((uc) => cargoParaSexo(uc.cargo.nombre, usuario.sexo, uc.encargo)).join(", ");
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -134,6 +140,7 @@ export default async function EditarUsuarioPage({
         rolesContratacionActuales={usuario.rolesContratacion}
         rolContratacionVigenteHastaActual={usuario.rolContratacionVigenteHasta ? usuario.rolContratacionVigenteHasta.toISOString().slice(0, 10) : null}
         modulosActuales={usuario.modulosAcceso}
+        agendaVisitas={agenda ? <MiniPlaneador agenda={agenda} planificador={false} titulo="Visitas del funcionario" /> : undefined}
         visiblesGlobal={Object.fromEntries(MODULOS_USUARIO.map((m) => [m.id, config[m.campoGlobal]])) as Record<ModuloUsuario, boolean>}
       />
     </div>

@@ -132,16 +132,17 @@ export function CamposPersona({
         </Campo>
       </div>
 
-      <SelectorDepartamentoCiudad
-        valor={{ departamento: valor.departamento, ciudad: valor.ciudad }}
-        onChange={(u) => onChange({ ...valor, departamento: u.departamento, ciudad: u.ciudad })}
-        claseCampo={claseCampo}
-        requerido={requeridos.ubicacion}
-      />
-
-      <Campo icono={MapPin} etiqueta="Dirección" requerido={requeridos.direccion} id={`${id}-direccion`}>
-        <input id={`${id}-direccion`} value={valor.direccion} onChange={(e) => cambiar("direccion", e.target.value)} className={claseCampo} />
-      </Campo>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SelectorDepartamentoCiudad
+          valor={{ departamento: valor.departamento, ciudad: valor.ciudad }}
+          onChange={(u) => onChange({ ...valor, departamento: u.departamento, ciudad: u.ciudad })}
+          claseCampo={claseCampo}
+          requerido={requeridos.ubicacion}
+        />
+        <Campo icono={MapPin} etiqueta="Dirección" requerido={requeridos.direccion} id={`${id}-direccion`}>
+          <input id={`${id}-direccion`} value={valor.direccion} onChange={(e) => cambiar("direccion", e.target.value)} className={claseCampo} />
+        </Campo>
+      </div>
 
       {tributaria && (
         <div className="grid gap-3 sm:grid-cols-2">

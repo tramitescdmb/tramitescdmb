@@ -3,7 +3,7 @@
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, Leaf, ChevronDown, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, Leaf, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
@@ -70,6 +70,7 @@ const PESTANAS: { id: Pestana; etiqueta: string; icono: LucideIcon }[] = [
   { id: "tramites", etiqueta: "Trámites 2.0", icono: Leaf },
   { id: "modulos", etiqueta: "SGDEA y GECON", icono: Mail },
   { id: "consulta", etiqueta: "VITAL y SINCA 1.0", icono: Eye },
+  { id: "visitas", etiqueta: "Visitas", icono: CalendarDays },
 ];
 
 const PESTANAS_DE_ACCESO: Pestana[] = ["tramites", "modulos", "consulta"];
@@ -155,6 +156,7 @@ export function EditarUsuarioAccesoForm({
   rolContratacionVigenteHastaActual,
   modulosActuales,
   visiblesGlobal,
+  agendaVisitas,
 }: {
   usuarioId: string;
   usuarioRed: string;
@@ -183,6 +185,7 @@ export function EditarUsuarioAccesoForm({
   rolContratacionVigenteHastaActual?: string | null;
   modulosActuales: ModuloUsuario[];
   visiblesGlobal: Record<ModuloUsuario, boolean>;
+  agendaVisitas?: React.ReactNode;
 }) {
   const router = useRouter();
   const [persona, setPersona] = useState<DatosPersona>(personaActual);
@@ -429,7 +432,7 @@ export function EditarUsuarioAccesoForm({
         role="tablist"
         aria-label="Secciones de la ficha del usuario"
       >
-        {PESTANAS.map((p) => {
+        {PESTANAS.filter((p) => p.id !== "visitas" || agendaVisitas).map((p) => {
           const Icono = p.icono;
           const activa = pestana === p.id;
           const conteo =
@@ -1071,6 +1074,8 @@ export function EditarUsuarioAccesoForm({
           </div>
         </section>
       </div>
+
+      {agendaVisitas && <div hidden={pestana !== "visitas"}>{agendaVisitas}</div>}
 
       <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="min-w-0 flex-1 text-sm">
