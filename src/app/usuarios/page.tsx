@@ -5,7 +5,9 @@ import type { EstadoCuenta, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";
-import { UserPlus, Pencil, ChevronDown, Search, Leaf, Mail, Briefcase, Database, AlertTriangle, Power, X, type LucideIcon } from "lucide-react";
+import { UserPlus, Pencil, ChevronDown, Search, AlertTriangle, Power, X, type LucideIcon } from "lucide-react";
+import { MODULOS_USUARIO, faltanteModulo, type ModuloUsuario } from "@/lib/modulos-usuario";
+import { ICONOS_MODULO } from "@/lib/modulos-usuario-iconos";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -68,12 +70,17 @@ function resumenTramitesTexto(accesos: AccesoTramite[], categoriaDeId: Map<strin
   return `${accesos.length} trámite(s): ${editar} editar · ${accesos.length - editar} ver`;
 }
 
-function ModuloIcono({ icon: Icon, activo, alerta, titulo }: { icon: LucideIcon; activo: boolean; alerta?: boolean; titulo: string }) {
+type TonoModulo = "ok" | "pendiente" | "no";
+
+const CLASE_TONO: Record<TonoModulo, string> = {
+  ok: "bg-cdmb-50 text-cdmb-700",
+  pendiente: "bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200",
+  no: "bg-stone-50 text-stone-300",
+};
+
+function ModuloIcono({ icon: Icon, tono, alerta, titulo }: { icon: LucideIcon; tono: TonoModulo; alerta?: boolean; titulo: string }) {
   return (
-    <span
-      title={titulo}
-      className={`relative flex h-7 w-7 items-center justify-center rounded-full ${activo ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-50 text-stone-300"}`}
-    >
+    <span title={titulo} className={`relative flex h-7 w-7 items-center justify-center rounded-full ${CLASE_TONO[tono]}`}>
       <Icon className="h-3.5 w-3.5" aria-hidden />
       {alerta && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white" aria-hidden />}
       <span className="sr-only">{titulo}</span>
@@ -249,9 +256,30 @@ export default async function UsuariosPage({
                   : u.rolesContratacion.length > 0
                     ? `GECON: ${u.rolesContratacion.map((r) => ETIQUETA_ROL_CONTRATACION[r] ?? r).join(", ")}${geconVence ? ` (vence ${formatearFecha(u.rolContratacionVigenteHasta!)})` : ""}`
                     : "GECON: sin acceso";
-                const historico = esAdmin
-                  ? "VITAL / SINCA 1.0: acceso total"
-                  : `VITAL / SINCA 1.0: ${u.seccionesAcceso.length ? u.seccionesAcceso.map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ") : "sin acceso"}`;
+                const seccionesDe = (prefijo: string) =>
+                  u.seccionesAcceso.filter((s) => s.seccion.startsWith(prefijo)).map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ");
+                const detalle: Record<ModuloUsuario, string> = {
+                  TRAMITES: `Trámites 2.0: ${tramites}`,
+                  SGDEA: sgdea,
+                  GECON: gecon,
+                  VITAL: `VITAL: ${seccionesDe("VITAL_")}`,
+                  SINCA: `SINCA 1.0: ${seccionesDe("SINCA_")}`,
+                };
+                const habilitados = new Set(u.modulosAcceso);
+                const configuracion = {
+                  tramites: u.tramitesAcceso.length,
+                  rolCorrespondencia: u.rolCorrespondencia,
+                  rolesContratacion: u.rolesContratacion,
+                  secciones: u.seccionesAcceso.map((s) => s.seccion),
+                };
+                const modulos = MODULOS_USUARIO.map((m) => {
+                  if (esAdmin) return { m, tono: "ok" as TonoModulo, titulo: `${m.corto}: acceso total` };
+                  if (!habilitados.has(m.id)) return { m, tono: "no" as TonoModulo, titulo: `${m.corto}: sin acceso` };
+                  if (!config[m.campoGlobal]) return { m, tono: "pendiente" as TonoModulo, titulo: `${m.corto}: oculto para todos en Administración → Módulos` };
+                  const falta = faltanteModulo(m.id, configuracion);
+                  if (falta) return { m, tono: "pendiente" as TonoModulo, titulo: `${m.corto}: activado, falta configurar (${falta.toLowerCase()})` };
+                  return { m, tono: "ok" as TonoModulo, titulo: detalle[m.id] };
+                });
                 const avisos = [
                   vigencia?.vencida ? "Contraseña vencida" : vigencia && vigencia.diasRestantes !== null && vigencia.diasRestantes <= 7 ? `Contraseña vence en ${vigencia.diasRestantes} d.` : null,
                   sgdeaVence && u.rolCorrespondenciaVigenteHasta! < ahora ? "Rol SGDEA vencido" : null,
@@ -287,10 +315,15 @@ export default async function UsuariosPage({
                     </td>
                     <td className="md:px-3 md:py-2.5">
                       <span className="flex items-center gap-1">
-                        <ModuloIcono icon={Leaf} activo={esAdmin || u.tramitesAcceso.length > 0} titulo={`Trámites 2.0: ${tramites}`} />
-                        <ModuloIcono icon={Mail} activo={esAdmin || Boolean(u.rolCorrespondencia)} alerta={Boolean(sgdeaVence)} titulo={sgdea} />
-                        <ModuloIcono icon={Briefcase} activo={esAdmin || u.rolesContratacion.length > 0} alerta={Boolean(geconVence)} titulo={gecon} />
-                        <ModuloIcono icon={Database} activo={esAdmin || u.seccionesAcceso.length > 0} titulo={historico} />
+                        {modulos.map(({ m, tono, titulo }) => (
+                          <ModuloIcono
+                            key={m.id}
+                            icon={ICONOS_MODULO[m.id]}
+                            tono={tono}
+                            titulo={titulo}
+                            alerta={tono === "ok" && !esAdmin && ((m.id === "SGDEA" && Boolean(sgdeaVence)) || (m.id === "GECON" && Boolean(geconVence)))}
+                          />
+                        ))}
                       </span>
                     </td>
                     <td className="md:px-3 md:py-2.5">

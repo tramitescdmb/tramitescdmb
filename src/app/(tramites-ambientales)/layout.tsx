@@ -15,13 +15,15 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   const session = await getSession();
   if (!session) redirect("/login");
   const [permisos, config] = await Promise.all([obtenerPermisosUsuario(session.userId), getConfiguracionSitio()]);
-  if (!permisos.esAdmin && !config.tramitesVisibleFuncionarios) {
+  if (!permisos.modulos.has("TRAMITES")) {
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-soft">
         <Leaf className="mx-auto h-6 w-6 text-stone-300" aria-hidden />
         <h1 className="mt-2 text-base font-semibold text-stone-900">Trámites ambientales 2.0 no está disponible</h1>
         <p className="mt-1 text-sm text-stone-500">
-          El administrador del sistema deshabilitó temporalmente este módulo. Seleccione otro módulo en el menú lateral.
+          {config.tramitesVisibleFuncionarios
+            ? "Su usuario no tiene acceso a este módulo. Si lo necesita, solicítelo a un administrador."
+            : "El administrador del sistema deshabilitó temporalmente este módulo. Seleccione otro módulo en el menú lateral."}
         </p>
       </div>
     );

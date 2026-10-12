@@ -10,6 +10,7 @@ import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { EditarUsuarioAccesoForm } from "@/components/EditarUsuarioAccesoForm";
 import { personaDesdeUsuario } from "@/lib/usuarios-persona";
 import { cargoParaSexo } from "@/lib/cargos";
+import { MODULOS_USUARIO, type ModuloUsuario } from "@/lib/modulos-usuario";
 import { ArrowLeft } from "lucide-react";
 import type { EstadoCuenta } from "@prisma/client";
 
@@ -132,6 +133,8 @@ export default async function EditarUsuarioPage({
         estadoCuentaActual={usuario.estadoCuenta}
         rolesContratacionActuales={usuario.rolesContratacion}
         rolContratacionVigenteHastaActual={usuario.rolContratacionVigenteHasta ? usuario.rolContratacionVigenteHasta.toISOString().slice(0, 10) : null}
+        modulosActuales={usuario.modulosAcceso}
+        visiblesGlobal={Object.fromEntries(MODULOS_USUARIO.map((m) => [m.id, config[m.campoGlobal]])) as Record<ModuloUsuario, boolean>}
       />
     </div>
   );

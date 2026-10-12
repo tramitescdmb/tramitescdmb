@@ -8,6 +8,8 @@ import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
+import { MODULOS_USUARIO, faltanteModulo, type ModuloUsuario, type PestanaFichaUsuario } from "@/lib/modulos-usuario";
+import { AccesoModulosPanel } from "@/components/usuarios/AccesoModulosPanel";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -59,7 +61,7 @@ const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
   { valor: "SINCA_MINERIA", etiqueta: "Minería de datos", ayuda: "Sección sensible: reservada para directivos, no para cualquier funcionario." },
 ];
 
-type Pestana = "datos" | "firma" | "cuenta" | "tramites" | "modulos" | "consulta";
+type Pestana = PestanaFichaUsuario;
 
 const PESTANAS: { id: Pestana; etiqueta: string; icono: LucideIcon }[] = [
   { id: "datos", etiqueta: "Datos personales", icono: UserRound },
@@ -151,6 +153,8 @@ export function EditarUsuarioAccesoForm({
   accesoFirmaActual,
   rolesContratacionActuales = [],
   rolContratacionVigenteHastaActual,
+  modulosActuales,
+  visiblesGlobal,
 }: {
   usuarioId: string;
   usuarioRed: string;
@@ -177,6 +181,8 @@ export function EditarUsuarioAccesoForm({
   estadoCuentaActual: EstadoCuenta;
   rolesContratacionActuales?: RolContratacion[];
   rolContratacionVigenteHastaActual?: string | null;
+  modulosActuales: ModuloUsuario[];
+  visiblesGlobal: Record<ModuloUsuario, boolean>;
 }) {
   const router = useRouter();
   const [persona, setPersona] = useState<DatosPersona>(personaActual);
@@ -219,6 +225,7 @@ export function EditarUsuarioAccesoForm({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [pestana, setPestana] = useState<Pestana>("datos");
+  const [modulos, setModulos] = useState<Set<ModuloUsuario>>(new Set(modulosActuales));
   const [categoriasAbiertas, setCategoriasAbiertas] = useState<Set<string>>(new Set());
 
   function alternarCategoria(etiqueta: string) {
@@ -347,6 +354,7 @@ export function EditarUsuarioAccesoForm({
           rolCorrespondencia: rolCorrespondencia || null,
           rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
           rolesContratacion: Array.from(rolesContratacion),
+          modulosAcceso: Array.from(modulos),
           rolContratacionVigenteHasta: rolesContratacion.size > 0 ? (rolContratacionVigenteHasta || null) : null,
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
@@ -366,8 +374,56 @@ export function EditarUsuarioAccesoForm({
     }
   }
 
+  const configuracionAcceso = {
+    tramites: totalConAcceso,
+    rolCorrespondencia: rolCorrespondencia || null,
+    rolesContratacion: Array.from(rolesContratacion),
+    secciones: Array.from(secciones),
+  };
+  const seccionesDe = (prefijo: string) => Array.from(secciones).filter((s) => s.startsWith(prefijo)).length;
+  const resumenModulos: Record<ModuloUsuario, string> = {
+    TRAMITES: `${totalConAcceso} trámite(s)${cargoIds.size ? ` · ${cargoIds.size} cargo(s)` : ""}`,
+    SGDEA: ROLES_CORRESPONDENCIA.find((r) => r.valor === rolCorrespondencia)?.etiqueta ?? "",
+    GECON: ROLES_CONTRATACION.filter((r) => rolesContratacion.has(r.valor)).map((r) => r.etiqueta).join(", "),
+    VITAL: `${seccionesDe("VITAL_")} sección(es)`,
+    SINCA: `${seccionesDe("SINCA_")} sección(es)`,
+  };
+
+  function cambiarModulo(id: ModuloUsuario, activo: boolean) {
+    setModulos((prev) => {
+      const next = new Set(prev);
+      if (activo) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    const modulo = MODULOS_USUARIO.find((m) => m.id === id)!;
+    if (activo && faltanteModulo(id, configuracionAcceso)) setPestana(modulo.pestana);
+  }
+
+  function avisoModulosInactivos(p: Pestana) {
+    if (rol === "ADMIN") return null;
+    const inactivos = MODULOS_USUARIO.filter((m) => m.pestana === p && !modulos.has(m.id));
+    if (inactivos.length === 0) return null;
+    return (
+      <p className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-500">
+        {inactivos.length === 1 ? "Módulo sin acceso" : "Módulos sin acceso"}: <strong>{inactivos.map((m) => m.corto).join(" y ")}</strong>. Lo que se
+        configure aquí se conserva, pero no tiene efecto hasta activar el módulo en «Acceso a módulos».
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-5 pb-4">
+      <AccesoModulosPanel
+        modulos={modulos}
+        onCambiar={cambiarModulo}
+        esAdmin={rol === "ADMIN"}
+        visiblesGlobal={visiblesGlobal}
+        configuracion={configuracionAcceso}
+        resumen={resumenModulos}
+        onConfigurar={setPestana}
+      />
+
       <nav
         className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-stone-200 bg-stone-50/95 p-1 shadow-soft backdrop-blur"
         role="tablist"
@@ -644,6 +700,7 @@ export function EditarUsuarioAccesoForm({
       </div>
 
       <div hidden={pestana !== "tramites"} className="space-y-5">
+        {avisoModulosInactivos("tramites")}
         <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
           <p className="mb-2.5 text-xs text-stone-400">
@@ -807,6 +864,7 @@ export function EditarUsuarioAccesoForm({
       </div>
 
       <div hidden={pestana !== "modulos"} className="space-y-5">
+        {avisoModulosInactivos("modulos")}
         <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
           <p className="mb-3 text-xs text-stone-400">
@@ -920,7 +978,8 @@ export function EditarUsuarioAccesoForm({
         </section>
       </div>
 
-      <div hidden={pestana !== "consulta"}>
+      <div hidden={pestana !== "consulta"} className="space-y-5">
+        {avisoModulosInactivos("consulta")}
         <section id="seccion-lectura" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" ayuda="Solo consulta: define a qué pestañas puede entrar." />
           <p className="mb-3 text-xs text-stone-400">

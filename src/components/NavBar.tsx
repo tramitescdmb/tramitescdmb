@@ -22,7 +22,7 @@ export async function NavBar() {
     terminosAceptados(session.userId),
   ]);
   const esAdmin = session.rol === "ADMIN";
-  const mostrarTramites = esAdmin || config.tramitesVisibleFuncionarios;
+  const mostrarTramites = permisos.modulos.has("TRAMITES");
   const mostrarVital = puedeAccederSeccion(permisos, "VITAL_BASE") || puedeAccederSeccion(permisos, "VITAL_DASHBOARD");
   const mostrarSinca =
     sincaConfigurado() &&

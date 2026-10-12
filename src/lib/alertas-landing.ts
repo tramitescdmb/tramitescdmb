@@ -1,4 +1,3 @@
-import { getConfiguracionSitio } from "@/lib/config-sitio";
 import {
   obtenerPermisosUsuario,
   puedeAccederCorrespondencia,
@@ -40,11 +39,9 @@ const MAX_ITEMS_POR_SECCION = 6;
  * solo la junta para la landing. Un usuario sin acceso a un módulo simplemente no genera su sección.
  */
 export async function obtenerSeccionesAlertas(session: SessionPayload): Promise<SeccionAlertasModulo[]> {
-  const [permisos, config] = await Promise.all([obtenerPermisosUsuario(session.userId), getConfiguracionSitio()]);
+  const permisos = await obtenerPermisosUsuario(session.userId);
 
-  // Mismo criterio que NavBar/SidebarNav usan para decidir si el módulo aparece en el menú lateral
-  // — si ese criterio cambia allá, debe cambiar aquí también para que la landing y el menú coincidan.
-  const mostrarTramites = permisos.esAdmin || config.tramitesVisibleFuncionarios;
+  const mostrarTramites = permisos.modulos.has("TRAMITES");
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
 

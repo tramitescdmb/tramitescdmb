@@ -952,7 +952,7 @@ export async function asegurarContratistaDeUsuario(usuarioId: string): Promise<{
     id = (await db.contratista.create({ data: { ...datos, usuarioId }, select: { id: true } })).id;
   }
   if (!u.rolesContratacion.includes("CONTRATISTA")) {
-    await db.usuario.update({ where: { id: usuarioId }, data: { rolesContratacion: ["CONTRATISTA"] } });
+    await db.usuario.update({ where: { id: usuarioId }, data: { rolesContratacion: ["CONTRATISTA"], modulosAcceso: { push: "GECON" } } });
   }
   return { id, nombre: datos.nombreORazonSocial };
 }
@@ -1212,7 +1212,7 @@ export async function intentarVincularContratistaConUsuario(contratistaId: strin
     return false;
   }
   if (!usuario.rolesContratacion.includes("CONTRATISTA")) {
-    await db.usuario.update({ where: { id: usuario.id }, data: { rolesContratacion: ["CONTRATISTA"] } });
+    await db.usuario.update({ where: { id: usuario.id }, data: { rolesContratacion: ["CONTRATISTA"], modulosAcceso: { push: "GECON" } } });
   }
   return true;
 }

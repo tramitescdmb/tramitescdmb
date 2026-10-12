@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion, ModuloAplicativo } from "@prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
@@ -18,6 +18,7 @@ export type PermisosUsuario = {
   cargos: Set<string>;
   /** Nombres de los cargos (de entre `cargos`) que este usuario ejerce en encargo — se muestran con "(E)". */
   cargosEncargo: Set<string>;
+  modulos: Set<ModuloAplicativo>;
 };
 
 type UsuarioFresco = {
@@ -33,6 +34,7 @@ type UsuarioFresco = {
   accesoFirma: boolean;
   rolesContratacion: RolContratacion[];
   rolContratacionVigenteHasta: Date | null;
+  modulosAcceso: ModuloAplicativo[];
   contratistaId: string | null;
   supervisaExpedientes: string[];
   asignadoExpedientes: string[];
@@ -54,6 +56,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       accesoFirma: true,
       rolesContratacion: true,
       rolContratacionVigenteHasta: true,
+      modulosAcceso: true,
       contratista: { select: { id: true } },
       supervisionesContrato: { select: { expedienteId: true } },
       asignacionesContrato: { select: { expedienteId: true } },
@@ -74,6 +77,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     accesoFirma: usuario.accesoFirma,
     rolesContratacion: usuario.rolesContratacion,
     rolContratacionVigenteHasta: usuario.rolContratacionVigenteHasta,
+    modulosAcceso: usuario.modulosAcceso,
     contratistaId: usuario.contratista?.id ?? null,
     supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
     asignadoExpedientes: usuario.asignacionesContrato.map((a) => a.expedienteId),
@@ -90,18 +94,28 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   const esAdmin = Boolean(usuario?.activo) && usuario?.rol === "ADMIN";
   const tramites = new Map<string, NivelAccesoTramite>();
   const secciones = new Set<SeccionSoloLectura>();
+  const habilitados = new Set(usuario?.modulosAcceso ?? []);
+  const visiblesGlobal: Record<ModuloAplicativo, boolean> = {
+    TRAMITES: config.tramitesVisibleFuncionarios,
+    SGDEA: config.sgdeaVisibleFuncionarios,
+    GECON: config.geconVisibleFuncionarios,
+    VITAL: config.vitalVisibleFuncionarios,
+    SINCA: config.sincaVisibleFuncionarios,
+  };
+  const modulos = new Set<ModuloAplicativo>(
+    (Object.keys(visiblesGlobal) as ModuloAplicativo[]).filter((m) => esAdmin || (Boolean(usuario?.activo) && habilitados.has(m) && visiblesGlobal[m]))
+  );
   if (usuario?.activo && !esAdmin) {
-    if (config.tramitesVisibleFuncionarios) {
+    if (modulos.has("TRAMITES")) {
       for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
     }
     for (const s of usuario.seccionesAcceso) {
-      const esVital = s.seccion.startsWith("VITAL_");
-      if (esVital ? config.vitalVisibleFuncionarios : config.sincaVisibleFuncionarios) secciones.add(s.seccion);
+      if (modulos.has(s.seccion.startsWith("VITAL_") ? "VITAL" : "SINCA")) secciones.add(s.seccion);
     }
   }
   const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
-  const sgdeaOculto = !config.sgdeaVisibleFuncionarios && !esAdmin;
-  const geconOculto = !config.geconVisibleFuncionarios && !esAdmin;
+  const sgdeaOculto = !modulos.has("SGDEA");
+  const geconOculto = !modulos.has("GECON");
   const rolContratacionVencido = Boolean(
     usuario?.rolContratacionVigenteHasta && usuario.rolContratacionVigenteHasta < new Date()
   );
@@ -118,6 +132,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     asignadoExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.asignadoExpedientes : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
     cargosEncargo: new Set(usuario?.activo ? usuario.cargosEncargo : []),
+    modulos,
   };
 });
 

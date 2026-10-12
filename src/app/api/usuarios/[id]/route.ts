@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta, ModuloAplicativo } from "@prisma/client";
+import { IDS_MODULOS_USUARIO } from "@/lib/modulos-usuario";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
@@ -98,6 +99,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ? [...new Set<RolContratacion>(body.rolesContratacion.filter((r: unknown): r is RolContratacion => ROLES_CONTRATACION_VALIDOS.includes(r as RolContratacion)))]
     : undefined;
   const esContratista = rolesContratacion?.includes("CONTRATISTA") ?? false;
+  const modulosAcceso: ModuloAplicativo[] | undefined = Array.isArray(body.modulosAcceso)
+    ? IDS_MODULOS_USUARIO.filter((m) => body.modulosAcceso.includes(m))
+    : undefined;
   const rolContratacionVigenteHasta: Date | null | undefined = "rolContratacionVigenteHasta" in body
     ? (typeof body.rolContratacionVigenteHasta === "string" && body.rolContratacionVigenteHasta ? new Date(body.rolContratacionVigenteHasta) : null)
     : undefined;
@@ -186,6 +190,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(rolCorrespondenciaVigenteHasta !== undefined ? { rolCorrespondenciaVigenteHasta } : {}),
         ...(rolesContratacion !== undefined ? { rolesContratacion } : {}),
         ...(rolContratacionVigenteHasta !== undefined ? { rolContratacionVigenteHasta } : {}),
+        ...(modulosAcceso !== undefined ? { modulosAcceso } : {}),
         ...(estadoCuenta ? { estadoCuenta, activo: estadoCuenta === "HABILITADA" } : {}),
       },
     }),
@@ -221,7 +226,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       estadoCuenta ? `, estado ${estadoCuenta}` : ""
     }${accesoTramites ? `, ${accesoTramites.length} trámite(s) con acceso` : ""}${
       secciones ? `, ${secciones.length} sección(es) de VITAL/SINCA` : ""
-    }${passwordHash ? ", contraseña restablecida" : ""}.`,
+    }${modulosAcceso ? `, módulos: ${modulosAcceso.join(", ") || "ninguno"}` : ""}${passwordHash ? ", contraseña restablecida" : ""}.`,
     usuarioId: session.userId,
   });
 

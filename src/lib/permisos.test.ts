@@ -20,7 +20,7 @@ import {
   puedeAsignarFirmantesDocumentoContrato,
   type PermisosUsuario,
 } from "./permisos";
-import type { RolContratacion } from "@prisma/client";
+import type { ModuloAplicativo, RolContratacion } from "@prisma/client";
 
 const BASE_CONTRATACION = {
   rolesContratacion: new Set<RolContratacion>(),
@@ -29,6 +29,7 @@ const BASE_CONTRATACION = {
   asignadoExpedientes: new Set<string>(),
   cargos: new Set<string>(),
   cargosEncargo: new Set<string>(),
+  modulos: new Set<ModuloAplicativo>(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
 };
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
@@ -208,6 +209,7 @@ const permContrat = (roles: RolContratacion | RolContratacion[] | null, extra: P
   asignadoExpedientes: new Set<string>(),
   cargos: new Set<string>(),
   cargosEncargo: new Set<string>(),
+  modulos: new Set<ModuloAplicativo>(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
   ...extra,
 });
 
