@@ -37,3 +37,12 @@ describe("manual de demostración del SGDEA", () => {
     expect(datos.pasos).toEqual(["a", "b"]);
   });
 });
+
+describe("semilla del manual de GECON", () => {
+  it("trae apartados válidos y ordenados", () => {
+    const apartados = filasSemillaManual("GECON");
+    expect(apartados.length).toBeGreaterThan(5);
+    expect(apartados.map((a) => a.orden)).toEqual([...apartados.map((a) => a.orden)].sort((x, y) => x - y));
+    for (const a of apartados) expect(a.pasos.length).toBeGreaterThan(0);
+  });
+});

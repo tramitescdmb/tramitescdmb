@@ -120,8 +120,8 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Ve y edita TODA la contratación, en cualquier etapa (incluso una que el expediente aún no alcanza, o ya cerrada — no solo la etapa actual); sube documentos (queda registrado); edita los datos generales del expediente (modalidad, valor, dependencia, número de contrato, contratista); asigna quién debe firmar cada documento en cualquier expediente.</td>
-            <td className="px-2.5 py-1.5">Aprobar/retroceder etapas, editar o eliminar documentos sin registro en la bitácora, eliminar un expediente, gestionar el registro de Contratistas o los supervisores.</td>
+            <td className="px-2.5 py-1.5">Ve y gestiona <strong>solo los expedientes que le asignan</strong> (sección «Gestión del expediente»), en cualquier etapa; sube documentos (queda registrado); edita sus datos generales; asigna quién debe firmar. En Contratistas ve los de sus expedientes y los recién registrados sin expediente, y puede registrar uno nuevo.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes no asignados, aprobar/retroceder etapas, editar o eliminar documentos sin registro en la bitácora, eliminar un expediente, importar contratistas o gestionar los supervisores.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
@@ -140,8 +140,9 @@ export default async function ContratacionAyudaPage() {
           </tr>
         </Tabla>
         <p className="text-xs text-stone-400">
-          El acceso de Contratista/Supervisor se da por Directorio Activo de la CDMB (misma cuenta de dominio) —
-          se asigna desde la ficha del usuario en <em>Usuarios y roles</em>, no aquí.
+          Para entrar a GECON la persona necesita dos cosas en su ficha de <em>Usuarios</em>: el módulo GECON activado en
+          «Acceso a módulos» y al menos un rol de contratación. Quien queda registrado como contratista recibe ambos de forma
+          automática. Funcionarios y supervisores ingresan con su cuenta del directorio activo de la CDMB.
         </p>
       </Seccion>
     </>
@@ -333,8 +334,19 @@ export default async function ContratacionAyudaPage() {
           acceso consulta su expediente —incluidas las etapas Contractual y Postcontractual— y carga en él sus documentos.
           La norma general es <strong>un contratista por expediente</strong>: el vínculo se hace una sola vez y puede
           hacerse <strong>en cualquier etapa</strong>, desde el detalle del expediente («Vincular un contratista») o desde la
-          ficha del contratista («Vincular un expediente», que solo ofrece expedientes sin contratista); queda en la
+          ficha del contratista («Vincular otro expediente», al final, que solo aparece cuando hay expedientes sin contratista); queda en la
           bitácora. Al vincularlo, su cuenta recibe el rol Contratista si no tenía otro rol en GECON.
+        </p>
+        <p>
+          <strong>Perfil mínimo y vinculación automática.</strong> Si la persona aún no tiene usuario, se registra con un perfil
+          mínimo (documento, nombre y contacto). En cuanto exista un usuario con el mismo número de documento y los datos completos,
+          el perfil se vincula solo: al guardarlo el administrador en Usuarios, al ingresar la persona por directorio activo o, a
+          más tardar, al pasar el contrato a Contractual (que no avanza sin ese vínculo). No hay que repetir nada.
+        </p>
+        <p>
+          <strong>Carga masiva.</strong> Administrador y Jefe de Contratación pueden importar perfiles mínimos desde un archivo CSV
+          («Importar contratistas desde CSV» en Contratistas). La pantalla ofrece la plantilla, describe cada columna, revisa el
+          archivo fila por fila antes de guardar y omite los documentos ya registrados.
         </p>
         <p>
           Un contratista <strong>que no pertenece a ningún expediente</strong> puede eliminarse desde su ficha
@@ -410,7 +422,12 @@ export default async function ContratacionAyudaPage() {
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Volver al panel
         </Link>
-        <BotonImprimir variante="secundario">Imprimir</BotonImprimir>
+        <div className="flex items-center gap-2">
+          <Link href="/contratacion/manual-demostracion" className="rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-cdmb-300 hover:text-cdmb-700">
+            Manual de demostración
+          </Link>
+          <BotonImprimir variante="secundario">Imprimir</BotonImprimir>
+        </div>
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-6 print:border-0 print:p-0">

@@ -498,3 +498,7 @@ export function puedeEditarContratistaMinimo(permisos: PermisosUsuario, contrati
   if (!tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")) return false;
   return contratista.expedientes.length === 0 || contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id));
 }
+
+export function puedeEditarManualDemostracion(permisos: PermisosUsuario, modulo: "SGDEA" | "GECON"): boolean {
+  return modulo === "GECON" ? puedeGestionarContratistas(permisos) : puedeAdministrarArchivo(permisos);
+}

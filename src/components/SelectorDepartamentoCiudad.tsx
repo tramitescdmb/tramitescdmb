@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Building, type LucideIcon } from "lucide-react";
-import { buscarMunicipios, type DatosDivipola, type OpcionMunicipio } from "@/lib/divipola";
+import { Building, Map, type LucideIcon } from "lucide-react";
+import { buscarDepartamentos, buscarMunicipios, type DatosDivipola, type OpcionMunicipio } from "@/lib/divipola";
 
 let cargaDatos: Promise<DatosDivipola> | null = null;
 
@@ -125,71 +125,57 @@ function Autocompletar<T>({
   );
 }
 
-function normalizar(t: string) {
-  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-}
-
-function textoUbicacion(v: Valor) {
-  return [v.ciudad, v.departamento].filter((t) => t.trim()).join(", ");
-}
-
 export function SelectorDepartamentoCiudad({
   valor,
   onChange,
   claseCampo,
   requerido = false,
+  claseContenedor = "grid gap-3 sm:grid-cols-2",
 }: {
+  claseContenedor?: string;
   valor: Valor;
   onChange: (v: Valor) => void;
   claseCampo: string;
   requerido?: boolean;
 }) {
   const [datos, setDatos] = useState<DatosDivipola | null>(null);
-  const [texto, setTexto] = useState<string | null>(null);
   const cargar = () => {
     if (!datos) cargarDivipola().then(setDatos).catch(() => {});
   };
 
-  const consulta = texto ?? "";
-  const [parteCiudad = "", parteDepto = ""] = consulta.split(",");
-  const sugerencias: OpcionMunicipio[] =
-    datos && parteCiudad.trim()
-      ? buscarMunicipios(datos, parteCiudad, "", 60)
-          .filter((m) => !parteDepto.trim() || normalizar(m.departamento).includes(normalizar(parteDepto)))
-          .slice(0, 8)
-      : [];
-
-  const confirmarTextoLibre = () => {
-    if (texto === null) return;
-    if (normalizar(texto) !== normalizar(textoUbicacion(valor))) {
-      const [ciudad = "", departamento = ""] = texto.split(",").map((t) => t.trim());
-      onChange({ ciudad, departamento: departamento || (ciudad ? valor.departamento : "") });
-    }
-    setTexto(null);
-  };
+  const departamentos = datos ? buscarDepartamentos(datos, valor.departamento) : [];
+  const enDepartamento: OpcionMunicipio[] = datos ? buscarMunicipios(datos, valor.ciudad, valor.departamento) : [];
+  const municipios = datos && valor.ciudad.trim() && enDepartamento.length === 0 ? buscarMunicipios(datos, valor.ciudad, "") : enDepartamento;
 
   return (
-    <div onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && confirmarTextoLibre()}>
-      <Autocompletar
-        etiqueta="Ciudad o municipio"
-        icono={Building}
-        requerido={requerido}
-        valor={texto ?? textoUbicacion(valor)}
-        placeholder="Escriba el municipio, p. ej. Floridablanca"
-        sugerencias={sugerencias}
-        textoOpcion={(m) => m.nombre}
-        detalleOpcion={(m) => m.departamento}
-        onAbrir={() => {
-          cargar();
-          setTexto(texto ?? textoUbicacion(valor));
-        }}
-        onEscribir={setTexto}
-        onElegir={(m) => {
-          onChange({ departamento: m.departamento, ciudad: m.nombre });
-          setTexto(null);
-        }}
-        claseCampo={claseCampo}
-      />
+    <div className={claseContenedor}>
+        <Autocompletar
+          etiqueta="Departamento"
+          icono={Map}
+          requerido={requerido}
+          valor={valor.departamento}
+          placeholder="Escriba para buscar…"
+          sugerencias={departamentos}
+          textoOpcion={(d) => d}
+          onAbrir={cargar}
+          onEscribir={(departamento) => onChange({ ...valor, departamento })}
+          onElegir={(departamento) => onChange({ departamento, ciudad: departamento === valor.departamento ? valor.ciudad : "" })}
+          claseCampo={claseCampo}
+        />
+        <Autocompletar
+          etiqueta="Ciudad o municipio"
+          icono={Building}
+          requerido={requerido}
+          valor={valor.ciudad}
+          placeholder="Escriba para buscar…"
+          sugerencias={municipios}
+          textoOpcion={(m) => m.nombre}
+          detalleOpcion={(m) => (m.departamento === valor.departamento ? null : m.departamento)}
+          onAbrir={cargar}
+          onEscribir={(ciudad) => onChange({ ...valor, ciudad })}
+          onElegir={(m) => onChange({ departamento: m.departamento, ciudad: m.nombre })}
+          claseCampo={claseCampo}
+        />
     </div>
   );
 }

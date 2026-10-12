@@ -1,5 +1,13 @@
 import { db } from "@/lib/db";
-import semilla from "../../data/sgdea/manual-demostracion.json";
+import type { ModuloManual } from "@prisma/client";
+import semillaSgdea from "../../data/sgdea/manual-demostracion.json";
+import semillaGecon from "../../data/gecon/manual-demostracion.json";
+
+const SEMILLAS: Record<ModuloManual, DatosApartado[]> = { SGDEA: semillaSgdea as DatosApartado[], GECON: semillaGecon as DatosApartado[] };
+
+export function moduloManualValido(v: unknown): ModuloManual {
+  return v === "GECON" ? "GECON" : "SGDEA";
+}
 
 export type DatosApartado = {
   orden: number;
@@ -84,13 +92,13 @@ export function validarDatosApartado(entrada: Record<string, unknown>, ordenPorD
   };
 }
 
-export function filasSemillaManual(): DatosApartado[] {
-  return (semilla as DatosApartado[]).map((a) => validarDatosApartado(a, a.orden));
+export function filasSemillaManual(modulo: ModuloManual = "SGDEA"): DatosApartado[] {
+  return SEMILLAS[modulo].map((a) => validarDatosApartado(a, a.orden));
 }
 
-export async function asegurarManualDemostracion(): Promise<void> {
-  if ((await db.apartadoManualDemostracion.count()) > 0) return;
-  await db.apartadoManualDemostracion.createMany({ data: filasSemillaManual() });
+export async function asegurarManualDemostracion(modulo: ModuloManual = "SGDEA"): Promise<void> {
+  if ((await db.apartadoManualDemostracion.count({ where: { modulo } })) > 0) return;
+  await db.apartadoManualDemostracion.createMany({ data: filasSemillaManual(modulo).map((a) => ({ ...a, modulo })) });
 }
 
 const ETIQUETA_CAMPO: Record<keyof DatosApartado, string> = {
@@ -107,10 +115,11 @@ const ETIQUETA_CAMPO: Record<keyof DatosApartado, string> = {
 };
 
 export async function crearApartadoManual(entrada: Record<string, unknown>, usuarioId: string) {
-  const ultimo = await db.apartadoManualDemostracion.aggregate({ _max: { orden: true } });
+  const modulo = moduloManualValido(entrada.modulo);
+  const ultimo = await db.apartadoManualDemostracion.aggregate({ where: { modulo }, _max: { orden: true } });
   const datos = validarDatosApartado(entrada, (ultimo._max.orden ?? 0) + 1);
   return db.apartadoManualDemostracion.create({
-    data: { ...datos, actualizadoEn: new Date(), actualizadoPorId: usuarioId },
+    data: { ...datos, modulo, actualizadoEn: new Date(), actualizadoPorId: usuarioId },
     select: { id: true, orden: true, titulo: true },
   });
 }

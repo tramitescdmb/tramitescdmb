@@ -1634,24 +1634,30 @@ model RequisitoMoreq {
 }
 
 model ApartadoManualDemostracion {
-  id               String    @id @default(cuid())
+  id               String       @id @default(cuid())
+  modulo           ModuloManual @default(SGDEA)
   orden            Int
   etiqueta         String
   titulo           String
   tituloIndice     String
-  ubicacion        String    @db.Text
-  resumen          String    @db.Text
+  ubicacion        String       @db.Text
+  resumen          String       @db.Text
   pasos            String[]
-  ejemplo          String    @db.Text
-  detalle          String    @db.Text
-  fundamento       String    @db.Text
+  ejemplo          String       @db.Text
+  detalle          String       @db.Text
+  fundamento       String       @db.Text
   actualizadoEn    DateTime?
   actualizadoPorId String?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime     @default(now())
 
   actualizadoPor Usuario? @relation("ApartadoManualActualizadoPor", fields: [actualizadoPorId], references: [id])
 
-  @@index([orden])
+  @@index([modulo, orden])
+}
+
+enum ModuloManual {
+  SGDEA
+  GECON
 }
 
 model ExpedienteDocumental {

@@ -26,7 +26,7 @@ function camposDe(a: ApartadoEditable): Campos {
   return { ...a, orden: String(a.orden), pasos: a.pasos.join("\n") };
 }
 
-export function EditarApartadoManual({ apartado }: { apartado: ApartadoEditable }) {
+export function EditarApartadoManual({ apartado, modulo = "SGDEA" }: { apartado: ApartadoEditable; modulo?: "SGDEA" | "GECON" }) {
   const router = useRouter();
   const nuevo = !apartado.id;
   const [abierto, setAbierto] = useState(false);
@@ -52,7 +52,7 @@ export function EditarApartadoManual({ apartado }: { apartado: ApartadoEditable 
       const res = await fetch(url, {
         method: metodo,
         headers: { "Content-Type": "application/json" },
-        body: metodo === "DELETE" ? undefined : JSON.stringify(campos),
+        body: metodo === "DELETE" ? undefined : JSON.stringify({ ...campos, modulo }),
       });
       const cuerpo = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(cuerpo.error || "No se pudo guardar.");

@@ -20,8 +20,9 @@ export default async function ManualDemostracionPage() {
   const permisos = await obtenerPermisosUsuario(session.userId);
   const puedeEditar = puedeAdministrarArchivo(permisos);
 
-  await asegurarManualDemostracion();
+  await asegurarManualDemostracion("SGDEA");
   const apartados = await db.apartadoManualDemostracion.findMany({
+    where: { modulo: "SGDEA" },
     orderBy: [{ orden: "asc" }, { createdAt: "asc" }],
     include: { actualizadoPor: { select: { nombre: true } } },
   });

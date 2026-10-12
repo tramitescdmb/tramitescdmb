@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
+import { db } from "@/lib/db";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeEditarManualDemostracion } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { actualizarApartadoManual, eliminarApartadoManual } from "@/lib/manual-demostracion";
 
 async function autorizar(req: NextRequest, id: string, operacion: string) {
   const session = await getSession();
   if (!session) return { error: NextResponse.json({ error: "No autenticado." }, { status: 401 }) };
-  const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) {
+  const [permisos, apartado] = await Promise.all([
+    obtenerPermisosUsuario(session.userId),
+    db.apartadoManualDemostracion.findUnique({ where: { id }, select: { modulo: true } }),
+  ]);
+  if (!apartado) return { error: NextResponse.json({ error: "El apartado no existe." }, { status: 404 }) };
+  if (!puedeEditarManualDemostracion(permisos, apartado.modulo)) {
     await registrarAccesoDenegadoAccion(operacion, id, session, req.headers);
-    return { error: NextResponse.json({ error: "Solo el administrador de archivo puede editar el manual." }, { status: 403 }) };
+    return { error: NextResponse.json({ error: "No tiene permiso para editar este manual." }, { status: 403 }) };
   }
   return { session };
 }

@@ -132,8 +132,9 @@ export function CamposPersona({
         </Campo>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <SelectorDepartamentoCiudad
+          claseContenedor="contents"
           valor={{ departamento: valor.departamento, ciudad: valor.ciudad }}
           onChange={(u) => onChange({ ...valor, departamento: u.departamento, ciudad: u.ciudad })}
           claseCampo={claseCampo}
