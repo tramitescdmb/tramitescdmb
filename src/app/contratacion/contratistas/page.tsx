@@ -5,7 +5,7 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Users, Download } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeRegistrarContratistaMinimo, filtroContratistasVisibles } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { Paginador } from "@/components/Paginador";
@@ -39,7 +39,8 @@ export default async function ContratistasPage({
   const vigencia = Number(vigenciaParam) || null;
   const estado = estadoParam === "activo" || estadoParam === "inactivo" ? estadoParam : "";
 
-  const where: Prisma.ContratistaWhereInput = filtroContratistas({ busqueda, vigencia, estado });
+  const visibles = filtroContratistasVisibles(permisos);
+  const where: Prisma.ContratistaWhereInput = { AND: [filtroContratistas({ busqueda, vigencia, estado }), visibles] };
 
   const [total, contratistas, conActivo, vigencias] = await Promise.all([
     db.contratista.count({ where }),
@@ -63,7 +64,7 @@ export default async function ContratistasPage({
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
     }),
-    db.contratista.count({ where: { expedientes: { some: CONTRATO_ACTIVO } } }),
+    db.contratista.count({ where: { AND: [{ expedientes: { some: CONTRATO_ACTIVO } }, visibles] } }),
     vigenciasDisponibles(),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));

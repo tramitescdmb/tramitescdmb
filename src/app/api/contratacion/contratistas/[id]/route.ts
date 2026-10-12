@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeEditarContratistaMinimo } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { editarContratistaMinimo } from "@/lib/contratacion";
 
@@ -10,7 +10,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeRegistrarContratistaMinimo(permisos)) {
+  const objetivo = await db.contratista.findUnique({ where: { id }, select: { expedientes: { where: { eliminado: false }, select: { id: true } } } });
+  if (!objetivo) return NextResponse.json({ error: "El contratista no existe." }, { status: 404 });
+  if (!puedeEditarContratistaMinimo(permisos, objetivo)) {
     return NextResponse.json({ error: "No tiene permiso para editar este contratista." }, { status: 403 });
   }
 

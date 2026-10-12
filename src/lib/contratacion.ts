@@ -962,7 +962,13 @@ export async function sincronizarContratistaDeUsuario(usuarioId: string): Promis
     db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
     db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_USUARIO_CONTRATISTA }),
   ]);
-  if (!contratista || !u) return;
+  if (!u) return;
+  if (!contratista) {
+    if (!u.cedulaONit) return;
+    const pendiente = await db.contratista.findFirst({ where: { usuarioId: null, identificacion: u.cedulaONit.trim() }, select: { id: true } });
+    if (pendiente) await intentarVincularContratistaConUsuario(pendiente.id);
+    return;
+  }
   const { identificacion, ...resto } = datosContratistaDesdeUsuario(u);
   const ocupada = identificacion
     ? await db.contratista.findFirst({ where: { identificacion, id: { not: contratista.id } }, select: { id: true } })

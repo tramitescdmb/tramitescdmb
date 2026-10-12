@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeVerRegistroContratistas, puedeGestionarContratistas, puedeVerContratista, puedeEditarContratistaMinimo } from "@/lib/permisos";
 import { ETIQUETA_ETAPA, faltantesContratista, SELECT_USUARIO_CONTRATISTA, vigenciaDeExpediente } from "@/lib/contratacion";
 import { VincularExpedienteAContratistaForm } from "@/components/VincularExpedienteAContratistaForm";
 import { regimenTributarioLabel } from "@/lib/regimen-tributario";
@@ -46,11 +46,11 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         })
       : Promise.resolve([]),
   ]);
-  if (!contratista) notFound();
+  if (!contratista || !puedeVerContratista(permisos, contratista)) notFound();
 
   const usuario = contratista.usuario;
   const faltan = usuario ? faltantesContratista(usuario) : [];
-  const puedeEditarMinimo = !usuario && puedeRegistrarContratistaMinimo(permisos);
+  const puedeEditarMinimo = !usuario && puedeEditarContratistaMinimo(permisos, contratista);
   const personaParaEditar = personaVacia({
     tipoPersona: contratista.tipoPersona,
     tipoIdentificacion: contratista.tipoPersona === "JURIDICA" ? "NIT" : "CC",
@@ -86,7 +86,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
           {!usuario && (
             <span
               className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
-              title="Todavía no corresponde a un usuario del sistema. Se intenta vincular automáticamente, por documento, al pasar a la etapa Contractual."
+              title="Todavía no corresponde a un usuario del sistema. Se vincula solo, por número de documento, cuando exista un usuario con ese documento y datos completos: al guardarlo en Usuarios, al ingresar por directorio activo o al pasar el contrato a Contractual."
             >
               Perfil mínimo · sin vincular
             </span>
@@ -193,22 +193,6 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         )}
       </section>
 
-      {puedeGestionar && (
-        <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
-          <h2 className="mb-2 text-sm font-semibold text-stone-900">Vincular un expediente</h2>
-          <VincularExpedienteAContratistaForm
-            contratistaId={contratista.id}
-            usuarioId={usuario?.id ?? null}
-            opciones={vinculables.map((e) => ({
-              id: e.id,
-              numero: e.numero,
-              objeto: e.objeto,
-              etapa: e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
-            }))}
-          />
-        </section>
-      )}
-
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Contratos por vigencia ({contratista.expedientes.length})</h2>
         {contratista.expedientes.length === 0 ? (
@@ -264,6 +248,21 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             ))
         )}
       </section>
+      {puedeGestionar && vinculables.length > 0 && (
+        <section className="rounded-xl border border-dashed border-stone-300 bg-white/60 p-4">
+          <h2 className="mb-2 text-sm font-semibold text-stone-900">Vincular otro expediente</h2>
+          <VincularExpedienteAContratistaForm
+            contratistaId={contratista.id}
+            usuarioId={usuario?.id ?? null}
+            opciones={vinculables.map((e) => ({
+              id: e.id,
+              numero: e.numero,
+              objeto: e.objeto,
+              etapa: e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
+            }))}
+          />
+        </section>
+      )}
     </div>
   );
 }

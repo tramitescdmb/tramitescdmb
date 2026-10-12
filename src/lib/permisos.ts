@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion, ModuloAplicativo } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion, ModuloAplicativo, Prisma } from "@prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
@@ -474,4 +474,27 @@ export const CARGOS_PLANEADOR = [
 
 export function puedePlanearVisitas(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || CARGOS_PLANEADOR.some((c) => permisos.cargos.has(c));
+}
+
+export function filtroContratistasVisibles(permisos: PermisosUsuario): Prisma.ContratistaWhereInput {
+  if (puedeGestionarContratistas(permisos)) return {};
+  const propios = [...permisos.asignadoExpedientes, ...permisos.supervisaExpedientes];
+  return {
+    OR: [
+      { expedientes: { some: { id: { in: propios }, eliminado: false } } },
+      ...(tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") ? [{ expedientes: { none: { eliminado: false } } }] : []),
+    ],
+  };
+}
+
+export function puedeVerContratista(permisos: PermisosUsuario, contratista: { expedientes: { id: string }[] }): boolean {
+  if (puedeGestionarContratistas(permisos)) return true;
+  if (contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id) || permisos.supervisaExpedientes.has(e.id))) return true;
+  return tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") && contratista.expedientes.length === 0;
+}
+
+export function puedeEditarContratistaMinimo(permisos: PermisosUsuario, contratista: { expedientes: { id: string }[] }): boolean {
+  if (puedeGestionarContratistas(permisos)) return true;
+  if (!tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")) return false;
+  return contratista.expedientes.length === 0 || contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id));
 }
