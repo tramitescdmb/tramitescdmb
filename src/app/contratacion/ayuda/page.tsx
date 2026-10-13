@@ -188,8 +188,11 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
-          (prórroga, adición en valor, ambas, suspensión, vigencias futuras o aclaración), se diligencian sus datos y se carga una sola
-          acta. Las adiciones no superan el 50 % del valor inicial. Una terminación que pasa a la vigencia siguiente exige la autorización
+          (prórroga, adición en valor, ambas, suspensión, vigencias futuras o aclaración), se indica su fecha de suscripción, se
+          diligencian sus datos y se carga una sola acta. Solo proceden durante la ejecución: entre el inicio y la terminación vigente
+          (Manual, num. 7.5). Las adiciones no superan el 50 % del valor inicial expresado en SMMLV: el valor inicial se convierte con el
+          salario mínimo del año de suscripción y cada adición con el de su año (Ley 80, art. 40; Manual, num. 7.5.3); los contratos de
+          interventoría están exentos (Ley 1474, art. 85). Una terminación que pasa a la vigencia siguiente exige la autorización
           de vigencias futuras con el periodo cubierto en esa vigencia (meses y días, desde el 1 de enero) y su valor. Cada adición en valor
           exige su CDP y su RP; una prórroga o vigencia futura sin recursos nuevos solo exige el RP, porque la vigencia siguiente se
           respalda con el acto de autorización y no con CDP. La fecha de terminación, el valor y los informes mensuales se

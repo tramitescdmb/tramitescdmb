@@ -93,9 +93,12 @@ export function identidadFirmante(u: {
   };
 }
 
+const CODIGO_ACTA_LIQUIDACION = "A-BS-FO135";
+const TIPOS_SIN_LIQUIDACION_OBLIGATORIA: TipoContratoEstatal[] = ["PRESTACION_SERVICIOS", "COMPRAVENTA"];
+
 export const obtenerRequisitosDeEtapa = unstable_cache(
   async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion, tipoContrato: TipoContratoEstatal = "PRESTACION_SERVICIOS") => {
-    return db.requisitoDocumentoContratacion.findMany({
+    const requisitos = await db.requisitoDocumentoContratacion.findMany({
       where: {
         etapa,
         activo: true,
@@ -104,8 +107,12 @@ export const obtenerRequisitosDeEtapa = unstable_cache(
       },
       orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
+    if (!TIPOS_SIN_LIQUIDACION_OBLIGATORIA.includes(tipoContrato)) return requisitos;
+    return requisitos
+      .map((r) => (r.codigoFormato?.includes(CODIGO_ACTA_LIQUIDACION) ? { ...r, obligatorio: false } : r))
+      .sort((a, b) => Number(b.obligatorio) - Number(a.obligatorio) || a.orden - b.orden);
   },
-  ["requisitos-de-etapa-v3"],
+  ["requisitos-de-etapa-v4"],
   { tags: [TAG_CATALOGO_REQUISITOS] }
 );
 
@@ -1487,13 +1494,26 @@ export async function registrarModificacionContrato(datos: {
 }) {
   const expediente = await db.expedienteContractual.findUniqueOrThrow({
     where: { id: datos.expedienteId },
-    select: { fechaFinEstimada: true, valor: true, modalidadSeleccion: true, modificaciones: { select: { valorAdicionado: true } } },
+    select: {
+      fechaFinEstimada: true,
+      fechaInicio: true,
+      fechaSuscripcion: true,
+      tipoContrato: true,
+      valor: true,
+      modalidadSeleccion: true,
+      modificaciones: { select: { valorAdicionado: true, fechaSuscripcion: true, createdAt: true } },
+    },
   });
   const m = datos.modificacion;
   const problema = errorModificacion(m, {
     terminacion: expediente.fechaFinEstimada,
+    inicio: expediente.fechaInicio,
+    suscripcion: expediente.fechaSuscripcion,
     valorInicial: expediente.valor !== null ? Number(expediente.valor) : null,
-    adicionadoPrevio: expediente.modificaciones.reduce((a, x) => a + (x.valorAdicionado ? Number(x.valorAdicionado) : 0), 0),
+    tipoContrato: expediente.tipoContrato,
+    adiciones: expediente.modificaciones
+      .filter((x) => x.valorAdicionado)
+      .map((x) => ({ valor: Number(x.valorAdicionado), fecha: x.fechaSuscripcion ?? x.createdAt })),
   });
   if (problema) throw new Error(problema);
 
@@ -1533,6 +1553,7 @@ export async function registrarModificacionContrato(datos: {
         numero,
         documentoId: documento.id,
         tipo: m.tipo,
+        fechaSuscripcion: m.fecha ? new Date(`${m.fecha}T00:00:00Z`) : null,
         fechaTerminacionAnterior: expediente.fechaFinEstimada,
         fechaTerminacionNueva: nuevaFecha,
         valorAdicionado: m.valorAdicionado,

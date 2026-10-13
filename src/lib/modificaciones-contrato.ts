@@ -1,3 +1,5 @@
+import { enSmmlv, formatearSmmlv, smmlvDe } from "@/lib/smmlv";
+
 export type TipoModificacion = "PRORROGA" | "ADICION_VALOR" | "PRORROGA_Y_ADICION" | "SUSPENSION" | "VIGENCIAS_FUTURAS" | "OTRA";
 
 export type ClaseVigenciasFuturas = "ORDINARIA" | "EXCEPCIONAL";
@@ -63,6 +65,7 @@ export function cambiaValor(tipo: TipoModificacion): boolean {
 
 export type DatosModificacion = {
   tipo: TipoModificacion;
+  fecha: string | null;
   fechaTerminacion: string | null;
   valorAdicionado: number | null;
   fechaSuspension: string | null;
@@ -83,6 +86,7 @@ export function leerModificacion(v: unknown): DatosModificacion | null {
   const observacion = typeof b.observacion === "string" ? b.observacion.trim().slice(0, 1000) : "";
   return {
     tipo,
+    fecha: fechaIso(b.fecha),
     fechaTerminacion: cambiaPlazo(tipo) ? fechaIso(b.fechaTerminacion) : null,
     valorAdicionado: cambiaValor(tipo) && Number.isFinite(valor) && valor > 0 ? Math.round(valor) : null,
     fechaSuspension: tipo === "SUSPENSION" ? fechaIso(b.fechaSuspension) : null,
@@ -185,23 +189,59 @@ export function textoAnios(anios: number[]): string {
   return anios.length <= 1 ? String(anios[0] ?? "") : `${anios.slice(0, -1).join(", ")} y ${anios.at(-1)}`;
 }
 
-export function errorModificacion(
-  m: DatosModificacion,
-  contrato: { terminacion: Date | null; valorInicial: number | null; adicionadoPrevio: number; hoy?: Date }
-): string | null {
+export type ContratoParaModificar = {
+  terminacion: Date | null;
+  inicio: Date | null;
+  suscripcion: Date | null;
+  valorInicial: number | null;
+  tipoContrato: string;
+  adiciones: { valor: number; fecha: Date }[];
+  hoy?: Date;
+};
+
+export type LimiteAdicion = { inicialSm: number; adicionadoSm: number; disponibleSm: number; disponiblePesos: number; anioAdicion: number };
+
+export function exentoLimiteAdicion(tipoContrato: string): boolean {
+  return tipoContrato === "INTERVENTORIA";
+}
+
+export function limiteAdicion(contrato: ContratoParaModificar, fechaAdicion: Date): LimiteAdicion | null {
+  if (exentoLimiteAdicion(contrato.tipoContrato) || !contrato.valorInicial) return null;
+  const base = contrato.suscripcion ?? contrato.inicio ?? fechaAdicion;
+  const inicialSm = enSmmlv(contrato.valorInicial, base);
+  const adicionadoSm = contrato.adiciones.reduce((a, x) => a + enSmmlv(x.valor, x.fecha), 0);
+  const disponibleSm = Math.max(0, inicialSm * LIMITE_ADICION - adicionadoSm);
+  const anioAdicion = fechaAdicion.getUTCFullYear();
+  return { inicialSm, adicionadoSm, disponibleSm, disponiblePesos: Math.floor(disponibleSm * smmlvDe(anioAdicion)), anioAdicion };
+}
+
+export function errorModificacion(m: DatosModificacion, contrato: ContratoParaModificar): string | null {
+  const hoy = contrato.hoy ?? new Date();
+  if (!m.fecha) return "Indique la fecha de suscripción de la modificación.";
+  const fecha = utc(m.fecha);
+  if (fecha.getTime() > hoy.getTime()) return "La fecha de suscripción no puede ser posterior a hoy.";
+  if (!contrato.inicio) return "El contrato no tiene fecha de inicio: las modificaciones proceden una vez iniciada la ejecución.";
+  if (fecha < contrato.inicio) return "La fecha de suscripción es anterior al inicio de la ejecución del contrato.";
+  if (contrato.terminacion && fecha > contrato.terminacion) {
+    return "El plazo del contrato ya había vencido en esa fecha: un contrato terminado no admite modificaciones.";
+  }
   if (cambiaPlazo(m.tipo)) {
     if (!m.fechaTerminacion) return "Indique la nueva fecha de terminación.";
     if (contrato.terminacion && utc(m.fechaTerminacion) <= contrato.terminacion) return "La nueva fecha de terminación debe ser posterior a la actual.";
   }
   if (cambiaValor(m.tipo)) {
     if (!m.valorAdicionado) return "Indique el valor adicionado.";
-    if (contrato.valorInicial && contrato.adicionadoPrevio + m.valorAdicionado > contrato.valorInicial * LIMITE_ADICION) {
-      return "Las adiciones no pueden superar el 50 % del valor inicial del contrato.";
+    const limite = limiteAdicion(contrato, fecha);
+    if (limite && enSmmlv(m.valorAdicionado, fecha) > limite.disponibleSm + 1e-9) {
+      return `Las adiciones no pueden superar el 50 % del valor inicial expresado en SMMLV (${formatearSmmlv(limite.inicialSm * LIMITE_ADICION)}). Disponible: ${formatearSmmlv(limite.disponibleSm)}.`;
     }
   }
   if (m.tipo === "SUSPENSION") {
     if (!m.fechaSuspension || !m.fechaReinicio) return "Indique la fecha de suspensión y la de reinicio.";
     if (diasSuspendidos(m) <= 0) return "La fecha de reinicio debe ser posterior a la de suspensión.";
+    if (utc(m.fechaSuspension) < contrato.inicio || (contrato.terminacion && utc(m.fechaSuspension) > contrato.terminacion)) {
+      return "La suspensión debe empezar dentro del plazo de ejecución del contrato.";
+    }
   }
   if (m.tipo === "OTRA" && !m.observacion) return "Describa brevemente la aclaración o modificación.";
   if (m.tipo === "VIGENCIAS_FUTURAS" && !m.vigenciasFuturas.hasta) return "Indique la fecha hasta la que se comprometen recursos de la vigencia siguiente.";

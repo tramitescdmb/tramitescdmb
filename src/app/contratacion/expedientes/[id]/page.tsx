@@ -690,11 +690,15 @@ export default async function DetalleExpedienteContractualPage({
           expedienteId={id}
           puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
           terminacion={fechaTerminacionIso}
+          inicio={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
+          suscripcion={expediente.fechaSuscripcion ? expediente.fechaSuscripcion.toISOString().slice(0, 10) : null}
+          tipoContrato={expediente.tipoContrato}
           valorInicial={expediente.valor !== null ? Number(expediente.valor) : null}
           modificaciones={expediente.modificaciones.map((m) => ({
             id: m.id,
             numero: m.numero,
             tipo: m.tipo,
+            fecha: (m.fechaSuscripcion ?? m.createdAt).toISOString(),
             terminacionAnterior: m.fechaTerminacionAnterior?.toISOString() ?? null,
             terminacionNueva: m.fechaTerminacionNueva?.toISOString() ?? null,
             valorAdicionado: m.valorAdicionado !== null ? Number(m.valorAdicionado) : null,

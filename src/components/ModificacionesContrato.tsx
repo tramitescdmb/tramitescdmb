@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatearSmmlv } from "@/lib/smmlv";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarClock, Check, FilePlus2, UploadCloud, X } from "lucide-react";
 import { comprimirParaContratacion } from "@/lib/compresion-cliente";
@@ -8,11 +9,12 @@ import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import {
   ETIQUETA_TIPO_MODIFICACION,
-  LIMITE_ADICION,
   TIPOS_MODIFICACION,
   cambiaPlazo,
   cambiaValor,
   diasSuspendidos,
+  exentoLimiteAdicion,
+  limiteAdicion,
   duracionPeriodo,
   errorModificacion,
   leerModificacion,
@@ -31,6 +33,7 @@ export type ModificacionRegistrada = {
   id: string;
   numero: number;
   tipo: TipoModificacion;
+  fecha: string;
   terminacionAnterior: string | null;
   terminacionNueva: string | null;
   valorAdicionado: number | null;
@@ -138,18 +141,25 @@ export function ModificacionesContrato({
   expedienteId,
   puedeRegistrar,
   terminacion,
+  inicio,
+  suscripcion,
+  tipoContrato,
   valorInicial,
   modificaciones,
 }: {
   expedienteId: string;
   puedeRegistrar: boolean;
   terminacion: string | null;
+  inicio: string | null;
+  suscripcion: string | null;
+  tipoContrato: string;
   valorInicial: number | null;
   modificaciones: ModificacionRegistrada[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [tipo, setTipo] = useState<TipoModificacion | "">("");
+  const [fecha, setFecha] = useState(() => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10));
   const [fechaTerminacion, setFechaTerminacion] = useState("");
   const [valorAdicionado, setValorAdicionado] = useState("");
   const [fechaSuspension, setFechaSuspension] = useState("");
@@ -171,6 +181,7 @@ export function ModificacionesContrato({
       tipo
         ? leerModificacion({
             tipo,
+            fecha,
             fechaTerminacion,
             valorAdicionado: Number(valorAdicionado),
             fechaSuspension,
@@ -179,7 +190,7 @@ export function ModificacionesContrato({
             observacion,
           })
         : null,
-    [tipo, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion]
+    [tipo, fecha, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion]
   );
   const nueva = datos ? nuevaFechaTerminacion(datos, actual) : null;
   const periodos = datos ? periodosRequeridos(datos, actual) : [];
@@ -192,7 +203,15 @@ export function ModificacionesContrato({
   const conSoportes = modificaciones.some((m) => soportesRequeridos(m).length > 0);
   const soportesNueva = datos ? soportesRequeridos({ tipo: datos.tipo, vigenciasFuturas: pideVigencias }) : [];
   const tipoElegido = TIPOS_MODIFICACION.find((t) => t.valor === tipo);
-  const disponibleAdicion = valorInicial !== null ? valorInicial * LIMITE_ADICION - adicionadoPrevio : null;
+  const contrato = {
+    terminacion: actual,
+    inicio: inicio ? new Date(`${inicio}T00:00:00Z`) : null,
+    suscripcion: suscripcion ? new Date(`${suscripcion}T00:00:00Z`) : null,
+    valorInicial,
+    tipoContrato,
+    adiciones: modificaciones.filter((m) => m.valorAdicionado).map((m) => ({ valor: m.valorAdicionado!, fecha: new Date(m.fecha) })),
+  };
+  const limite = fecha ? limiteAdicion(contrato, new Date(`${fecha}T00:00:00Z`)) : null;
 
   function cerrar() {
     setAbierto(false);
@@ -217,7 +236,7 @@ export function ModificacionesContrato({
 
   async function registrar() {
     if (!datos) return setError("Seleccione el tipo de modificación.");
-    const problema = errorModificacion(datos, { terminacion: actual, valorInicial, adicionadoPrevio });
+    const problema = errorModificacion(datos, contrato);
     if (problema) return setError(problema);
     if (!archivo) return setError("Cargue el acta de la modificación.");
     setGuardando(true);
@@ -303,6 +322,10 @@ export function ModificacionesContrato({
             <fieldset className="space-y-2">
               <legend className="mb-1.5 text-xs font-medium text-stone-700">2. Datos</legend>
               <div className="flex flex-wrap gap-3">
+                <label className="flex flex-col gap-1 text-xs text-stone-600">
+                  Fecha de suscripción
+                  <input type="date" value={fecha} min={inicio ?? undefined} max={terminacion ?? undefined} onChange={(e) => setFecha(e.target.value)} className={campo} />
+                </label>
                 {cambiaPlazo(tipo) && (
                   <label className="flex flex-col gap-1 text-xs text-stone-600">
                     Nueva fecha de terminación
@@ -313,7 +336,13 @@ export function ModificacionesContrato({
                   <label className="flex flex-col gap-1 text-xs text-stone-600">
                     Valor adicionado ($)
                     <input type="number" min={1} step={1} value={valorAdicionado} onChange={(e) => setValorAdicionado(e.target.value)} className={`${campo} w-48`} />
-                    {disponibleAdicion !== null && <span className="text-[11px] text-stone-400">Disponible hasta el 50 %: {pesos(Math.max(0, disponibleAdicion))}</span>}
+                    {limite ? (
+                      <span className="text-[11px] text-stone-400" title={`50 % del valor inicial: ${formatearSmmlv(limite.inicialSm / 2)}; adicionado: ${formatearSmmlv(limite.adicionadoSm)}`}>
+                        Disponible hasta el 50 %: {formatearSmmlv(limite.disponibleSm)} ≈ {pesos(limite.disponiblePesos)} (SMMLV {limite.anioAdicion})
+                      </span>
+                    ) : (
+                      exentoLimiteAdicion(tipoContrato) && <span className="text-[11px] text-stone-400">Interventoría: sin el límite del 50 % (Ley 1474 de 2011, art. 85)</span>
+                    )}
                   </label>
                 )}
                 {tipo === "SUSPENSION" && (
@@ -460,6 +489,7 @@ export function ModificacionesContrato({
                 <th className="px-3 py-1.5 font-medium">Terminación</th>
                 <th className="px-3 py-1.5 font-medium">Valor adicionado</th>
                 {conSoportes && <th className="px-3 py-1.5 font-medium">CDP / RP</th>}
+                <th className="px-3 py-1.5 font-medium">Suscripción</th>
                 <th className="px-3 py-1.5 font-medium">Registro</th>
               </tr>
             </thead>
@@ -510,6 +540,7 @@ export function ModificacionesContrato({
                       )}
                     </td>
                   )}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-stone-600">{fechaLarga(m.fecha)}</td>
                   <td className="px-3 py-1.5 text-stone-400">
                     {fechaLarga(m.registradoEn)} · {m.registradoPor}
                     {m.documentoId && (

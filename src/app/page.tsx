@@ -80,18 +80,9 @@ export default async function LandingPage() {
 
       {contratos.length > 0 && <MisContratos contratos={contratos} />}
 
-      {secciones.length > 0 && (
-        <div className={`grid grid-cols-1 gap-5 ${agenda ? "lg:grid-cols-5" : ""}`}>
-          {agenda && (
-            <div className="lg:col-span-2">
-              <MiniPlaneador agenda={agenda} planificador={planificador} />
-            </div>
-          )}
-          <div className={agenda ? "lg:col-span-3" : ""}>
-            <BandejaPendientes secciones={secciones} />
-          </div>
-        </div>
-      )}
+      {secciones.length > 0 && <BandejaPendientes secciones={secciones} />}
+
+      {agenda && <MiniPlaneador agenda={agenda} planificador={planificador} />}
     </div>
   );
 }

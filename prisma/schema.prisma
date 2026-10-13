@@ -2289,6 +2289,7 @@ model ModificacionContrato {
   cdpDocumentoId           String?                  @unique
   rpDocumentoId            String?                  @unique
   tipo                     TipoModificacionContrato
+  fechaSuscripcion         DateTime?
   fechaTerminacionAnterior DateTime?
   fechaTerminacionNueva    DateTime?
   valorAdicionado          Decimal?                 @db.Decimal(18, 2)

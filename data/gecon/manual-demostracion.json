@@ -208,12 +208,12 @@
     "resumen": "Las modificaciones se registran en un solo lugar: se elige el tipo, se diligencian solo sus datos y se carga una acta, que el sistema ubica en el requisito correspondiente.",
     "pasos": [
       "Se pulsa «Registrar modificación» y se elige un tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras, o aclaración.",
-      "Prórroga: nueva fecha de terminación. Adición: valor adicionado, hasta el 50 % del valor inicial. Suspensión: fechas de suspensión y reinicio; la terminación se corre los días suspendidos.",
+      "Fecha de suscripción de la modificación, entre el inicio y la terminación vigente. Prórroga: nueva fecha de terminación. Adición: valor adicionado, hasta el 50 % del valor inicial en SMMLV (la interventoría está exenta). Suspensión: fechas de suspensión y reinicio; la terminación se corre los días suspendidos.",
       "Si la nueva terminación pasa a otro año, o se elige «Vigencias futuras», se registra la clase (ordinaria o excepcional), el acto de autorización y, por cada vigencia siguiente, el periodo cubierto (meses y días desde el 1 de enero hasta la terminación) y el valor comprometido. Registrada la modificación, la tabla habilita la carga del CDP y del RP de cada adición en valor, y solo del RP cuando se trata de vigencias futuras sin recursos nuevos.",
       "Se carga el acta y se registra. La fecha de terminación, el valor y los informes mensuales se actualizan."
     ],
     "ejemplo": "Prorrogar el contrato `050-2026` del 21 de diciembre de 2026 al 31 de enero de 2027 exige confirmar vigencias futuras 2027 y agrega el informe de enero.",
     "detalle": "Cada modificación queda numerada, con la terminación anterior y la nueva, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
-    "fundamento": "Ley 80 de 1993, art. 40 (adiciones hasta el 50 %) · Decreto 111 de 1996 y Ley 819 de 2003 (vigencias futuras) · Manual A-BS-MA01."
+    "fundamento": "Ley 80 de 1993, art. 40 (adiciones hasta el 50 % en SMMLV) · Ley 1474 de 2011, art. 85 (interventoría) · Decreto 111 de 1996 y Ley 819 de 2003 (vigencias futuras) · Manual A-BS-MA01."
   }
 ]
