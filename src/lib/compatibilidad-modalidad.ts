@@ -68,7 +68,7 @@ const REGLAS_MODALIDAD: Record<string, { tipos: TipoContrato[]; motivo: string }
     motivo: "La consultoría y la interventoría se seleccionan por concurso de méritos (Ley 1150 de 2007, art. 2, num. 3).",
   },
   SELECCION_ABREVIADA_SUBASTA_INVERSA: {
-    tipos: ["SUMINISTRO", "COMPRAVENTA", "PRESTACION_SERVICIOS", "OTRO"],
+    tipos: ["SUMINISTRO", "COMPRAVENTA", "PRESTACION_SERVICIOS", "ARRENDAMIENTO", "OTRO"],
     motivo: "La subasta inversa es solo para bienes y servicios de características técnicas uniformes y de común utilización (Decreto 1082 de 2015, art. 2.2.1.2.1.2.2).",
   },
   SELECCION_ABREVIADA_LICITACION_DESIERTA: {

@@ -3,6 +3,7 @@
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
 import { prefijoProceso } from "@/lib/codigo-proceso";
+import { TraerDeSecop, type ContratoSecopRespuesta } from "@/components/TraerDeSecop";
 import { errorCuantia, minimaCuantia, topeDeAnio, type TopeCuantia } from "@/lib/cuantias";
 import { formatearPesosCO } from "@/lib/moneda";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -141,6 +142,20 @@ export function NuevoExpedienteContractualForm({
     setModalidadSeleccion(valor);
     setCausal("");
     ajustarTipo(tiposPermitidos(valor, null));
+  }
+
+  function aplicarSecop(c: ContratoSecopRespuesta) {
+    if (c.objeto) setObjeto(c.objeto);
+    if (modalidades.some((m) => m.valor === c.modalidad)) setModalidadSeleccion(c.modalidad);
+    setCausal(c.causal ?? "");
+    setTipoContrato(c.tipoContrato);
+    if (c.valor !== null) setValor(String(c.valor));
+    if (c.numeroContrato) setNumeroContrato(c.numeroContrato);
+    if (c.numeroProcesoSecop) setNumeroProcesoSecop(c.numeroProcesoSecop);
+    if (c.fechaSuscripcion) setFechaSuscripcion(c.fechaSuscripcion);
+    if (c.fechaInicio) setFechaInicio(c.fechaInicio);
+    if (c.fechaFin) setFechaFinEstimada(c.fechaFin);
+    if (c.usuario) setContratista({ tipo: "usuario", usuarioId: c.usuario.id, nombre: c.usuario.nombre, identificacion: c.usuario.cedulaONit ?? "" });
   }
 
   function elegirCausal(valor: string) {
@@ -317,6 +332,7 @@ export function NuevoExpedienteContractualForm({
             </button>
           </div>
         )}
+        <TraerDeSecop onAplicar={aplicarSecop} />
         <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
             <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
               <textarea
