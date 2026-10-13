@@ -61,13 +61,13 @@ export default async function ManualDemostracionGeconPage() {
         <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs sm:grid-cols-[auto_1fr]">
           <dt className="text-stone-500">Expediente</dt>
           <dd className="text-stone-800">
-            <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">CDMB-CTO-2026-000006</code> — contrato <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">050-2026</code>, contratación directa
+            <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">CDMB-CTO-2026-000006</code> · código <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">CD-CPS-0001-2026</code> — contrato <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">210-17017-8</code> en SECOP II, contratación directa
           </dd>
           <dt className="text-stone-500">Objeto</dt>
-          <dd className="text-stone-800">Prestación de Servicio como Ingeniero de Sistemas para ADEI — $20.000.000, del 22 de septiembre al 21 de diciembre de 2026</dd>
+          <dd className="text-stone-800">Servicios profesionales como ingeniero de sistemas al proceso de Tecnologías de la Información — $19.800.000, del 28 de julio al 12 de diciembre de 2026</dd>
           <dt className="text-stone-500">Contratista</dt>
           <dd className="text-stone-800">
-            Walid Chakib Halaby Shalaby — usuario de red <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">walhal01</code>
+            Walid Chakib Halaby Shalaby (C.C. 91509227) — usuario de red <code className="rounded bg-stone-100 px-1 py-0.5 font-mono">walhal01</code>
           </dd>
         </dl>
         <div className="mt-3 flex flex-wrap gap-2 print:hidden">

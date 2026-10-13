@@ -18,6 +18,13 @@ describe("plazos de liquidación", () => {
     expect(p.residual.toISOString().slice(0, 10)).toBe("2028-11-15");
   });
 
+  it("ajusta al último día del mes", () => {
+    const p = plazosLiquidacion(new Date("2026-01-31T00:00:00Z"));
+    expect(p.mutuoAcuerdo.toISOString().slice(0, 10)).toBe("2026-07-31");
+    expect(p.unilateral.toISOString().slice(0, 10)).toBe("2026-09-30");
+    expect(p.residual.toISOString().slice(0, 10)).toBe("2028-09-30");
+  });
+
   it("indica la fase según la fecha", () => {
     const base = { terminacion, tipoContrato: "OBRA", terminadoAnticipadamente: false, liquidado: false };
     expect(estadoLiquidacion({ ...base, hoy: new Date("2026-01-10T00:00:00Z") }).fase).toBe("en-ejecucion");

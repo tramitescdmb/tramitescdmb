@@ -6,7 +6,8 @@ export type FaseLiquidacion = "en-ejecucion" | "mutuo-acuerdo" | "unilateral" | 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 function sumarMeses(fecha: Date, meses: number): Date {
-  return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth() + meses, fecha.getUTCDate()));
+  const ultimoDia = new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth() + meses + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth() + meses, Math.min(fecha.getUTCDate(), ultimoDia)));
 }
 
 export function requiereLiquidacion(tipoContrato: string, terminadoAnticipadamente: boolean): boolean {

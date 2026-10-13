@@ -267,11 +267,14 @@ export default async function ContratacionAyudaPage() {
           una licitación por debajo de la menor cuantía corresponde a selección abreviada. Sin tope registrado para el año, no se valida.
         </p>
         <p>
-          <strong>Traer datos de SECOP II.</strong> Al crear un expediente se escribe el número del contrato (por ejemplo, 210-17017-8)
-          o el ID del proceso y se pulsa «Consultar»: GECON lee los datos abiertos de SECOP II en datos.gov.co, filtrados por el NIT de
-          la CDMB, y llena objeto, modalidad, causal, tipo, valor, números y fechas. El contratista se vincula solo si existe un usuario
-          con el mismo documento; si no, lo crea el administrador del sistema. GECON no reemplaza a SECOP II: toma sus datos para
-          resguardar el expediente electrónico y gestionar la firma.
+          <strong>SECOP II.</strong> El expediente se crea en GECON desde la etapa precontractual. Cada día GECON revisa los datos
+          abiertos de SECOP II (datos.gov.co, NIT de la CDMB) y enlaza cada expediente con su contrato: por el número de contrato o de
+          proceso o, si no los tiene, por el documento del contratista entre los contratos firmados desde la creación del expediente. Si
+          encuentra varios, no los adivina: pide escribir el número de contrato. Una vez enlazado, el panel «SECOP II» del expediente
+          muestra en solo lectura lo que publica la API (estado, valores facturado y pagado, fuentes de recursos, supervisor, facturas,
+          modificaciones, adiciones, suspensiones y garantías), señala las diferencias con los datos de GECON y completa los campos que
+          estén vacíos. Los documentos se consultan en SECOP II con el enlace del panel: GECON no los copia. Al crear un expediente
+          también se puede escribir el número del contrato y pulsar «Consultar» para llenar el formulario de una vez.
         </p>
         <p>
           <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la
