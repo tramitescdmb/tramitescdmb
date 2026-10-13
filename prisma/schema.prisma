@@ -2016,6 +2016,7 @@ model ExpedienteContractual {
   tipoContrato              TipoContratoEstatal        @default(PRESTACION_SERVICIOS)
   causalContratacionDirecta CausalContratacionDirecta?
   codigoProceso             String?                    @unique
+  idContratoSecop           String?
   valor                     Decimal?                   @db.Decimal(18, 2)
   numeroContrato            String?
   numeroProcesoSecop        String?
@@ -2054,6 +2055,7 @@ model ExpedienteContractual {
   modificaciones              ModificacionContrato[]
   garantias                   GarantiaContrato[]
   pagos                       PagoContrato[]
+  secop                       SecopContratoEspejo?
   asignados                   ExpedienteContractualAsignado[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
@@ -2308,6 +2310,20 @@ model GarantiaContrato {
   expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
 
   @@index([expedienteId])
+}
+
+model SecopContratoEspejo {
+  expedienteId   String   @id
+  idContrato     String
+  datos          Json
+  facturas       Json
+  garantias      Json
+  modificaciones Json
+  adiciones      Json
+  suspensiones   Json
+  sincronizadoEn DateTime
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
 }
 
 model PagoContrato {

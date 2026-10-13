@@ -131,6 +131,7 @@ export function NuevoExpedienteContractualForm({
   const [tipoContrato, setTipoContrato] = useState("");
   const [causal, setCausal] = useState("");
   const [codigoProceso, setCodigoProceso] = useState("");
+  const [idContratoSecop, setIdContratoSecop] = useState<string | null>(null);
   const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
 
   function ajustarTipo(lista: string[]) {
@@ -145,6 +146,7 @@ export function NuevoExpedienteContractualForm({
   }
 
   function aplicarSecop(c: ContratoSecopRespuesta) {
+    setIdContratoSecop(c.idContrato);
     if (c.objeto) setObjeto(c.objeto);
     if (modalidades.some((m) => m.valor === c.modalidad)) setModalidadSeleccion(c.modalidad);
     setCausal(c.causal ?? "");
@@ -286,6 +288,7 @@ export function NuevoExpedienteContractualForm({
           tipoContrato,
           causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
           codigoProceso: codigoProceso.trim() || null,
+          idContratoSecop,
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,

@@ -25,6 +25,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   GARANTIA_ELIMINADA: { icono: ShieldCheck, etiqueta: "Garantía eliminada", clase: "bg-red-100 text-red-700" },
   PAGO_REGISTRADO: { icono: Wallet, etiqueta: "Pago registrado", clase: "bg-emerald-100 text-emerald-700" },
   PAGO_ELIMINADO: { icono: Wallet, etiqueta: "Pago eliminado", clase: "bg-red-100 text-red-700" },
+  SECOP_SINCRONIZADO: { icono: RefreshCw, etiqueta: "Sincronizado con SECOP II", clase: "bg-cdmb-100 text-cdmb-700" },
   VISITA_PROGRAMADA: { icono: CalendarClock, etiqueta: "Visita técnica programada", clase: "bg-sky-100 text-sky-700" },
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };

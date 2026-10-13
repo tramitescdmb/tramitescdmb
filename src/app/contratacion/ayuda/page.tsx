@@ -174,7 +174,9 @@ export default async function ContratacionAyudaPage() {
           <strong>Liquidación.</strong> El acta de liquidación es obligatoria salvo en prestación de servicios profesionales y de
           apoyo a la gestión y en compraventa, donde queda como opcional; si esos contratos terminan anticipadamente, se liquidan. Plazos
           del Manual (cap. 10): mutuo acuerdo dentro de los 6 meses siguientes a la terminación, unilateral dentro de los 2 meses
-          siguientes y, vencidos ambos, hasta 2 años más.
+          siguientes y, vencidos ambos, hasta 2 años más. Terminado el plazo, el expediente muestra la fase vigente con su fecha límite y
+          los días que faltan, y el inicio la lista en los pendientes hasta que se cargue el acta (A-BS-FO135). El acta de recibo
+          definitivo y pago final es la A-BS-FO126, salvo en obra, que usa la A-BS-FO129.
         </p>
       </Seccion>
 
@@ -197,8 +199,10 @@ export default async function ContratacionAyudaPage() {
         <p>
           <strong>Requisitos por periodo.</strong> El informe de supervisión (A-BS-FO116), el informe de cumplimiento (A-BS-FO132),
           el acta de recibo de pago parcial (A-BS-FO127) y, en obra, el informe de supervisión para obra pública (A-BS-FO117) se cargan por cada mes del
-          contrato, según sus fechas de inicio y fin. Cada periodo se radica desde el día siguiente a su cierre. Ejemplo: un contrato
-          del 25 de septiembre al 24 de diciembre tiene cuatro periodos (25–30 sep, octubre, noviembre y 1–24 dic). Si cambian las
+          contrato, según sus fechas de inicio y fin, junto con el soporte de pago de aportes al Sistema de Seguridad Social Integral
+          (planilla PILA, Ley 789 de 2002, art. 50; Ley 1150 de 2007, art. 23). Cada periodo se radica desde el día siguiente a su
+          cierre. Ejemplo: el contrato 210-17017-8, del 28 de julio al 12 de diciembre de 2026, tiene seis periodos (28–31 jul, agosto,
+          septiembre, octubre, noviembre y 1–12 dic). Si cambian las
           fechas, los periodos se recalculan y los informes de meses que desaparecen se conservan aparte.
         </p>
         <p>
@@ -207,7 +211,8 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
-          (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras o aclaración), se indica la fecha de suscripción,
+          (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración), se
+          indica la fecha de suscripción,
           se diligencian sus datos y se carga una sola acta. La fecha de terminación, el valor y los informes mensuales se actualizan.
         </p>
         <ul className="list-disc space-y-1 pl-5">
@@ -226,7 +231,25 @@ export default async function ContratacionAyudaPage() {
             Cada adición en valor exige su CDP y su RP. Una prórroga o vigencia futura sin recursos nuevos solo exige el RP: la vigencia
             siguiente se respalda con el acto de autorización y no con CDP. Ambos se cargan desde la tabla de modificaciones.
           </li>
+          <li>
+            La cesión (A-BS-FO114) pide el usuario de red del cesionario, que debe existir en la plataforma: el expediente pasa a él y el
+            cedente deja de verlo (Ley 80, art. 41; Manual, num. 7.6).
+          </li>
+          <li>
+            La terminación anticipada es de mutuo acuerdo (acta A-BS-FO131) o unilateral (acto administrativo, Ley 80, art. 17); fija la
+            nueva terminación y vuelve obligatoria la liquidación (Manual, num. 7.12 y 7.13).
+          </li>
         </ul>
+        <p>
+          <strong>Garantías.</strong> En el bloque «Garantías» se registra cada póliza (aseguradora, número, amparos, valor y vigencia);
+          la aprueban Administrador o Jefe de Contratación, como requisito de ejecución (Ley 80, art. 41). El bloque avisa si hay
+          garantías sin aprobar, si la vigencia termina antes que el contrato o si después de la última garantía hubo una prórroga,
+          adición, suspensión o cesión que obliga a ampliarla (Decreto 1082, art. 2.2.1.2.3.1.18).
+        </p>
+        <p>
+          <strong>Pagos.</strong> En el bloque «Pagos» se registra cada pago con su fecha, valor y periodo. Muestra lo pagado, el saldo y
+          la ejecución financiera frente al avance del plazo, y no admite pagos que superen el valor del contrato con sus adiciones.
+        </p>
         <p>
           <strong>Modalidad y tipo de contrato.</strong> El tipo de contrato se elige entre los que admite la modalidad: el concurso de
           méritos es solo para consultoría e interventoría, que no se seleccionan por licitación ni por selección abreviada (Ley 1150,
@@ -234,11 +257,25 @@ export default async function ContratacionAyudaPage() {
           la venta de bienes de la Corporación; la mínima cuantía admite cualquier objeto. En contratación directa se indica la causal
           (Decreto 1082, art. 2.2.1.2.1.4.1), que define los tipos admitidos: servicios profesionales y de apoyo a la gestión (CD-CPS)
           solo prestación de servicios; arrendamiento de inmuebles (CD-A) solo arrendamiento; adquisición de inmuebles (CD-AI) solo
-          compraventa; interadministrativo y urgencia manifiesta, cualquiera.
+          compraventa; interadministrativo y urgencia manifiesta, cualquiera. También están las causales de selección abreviada por
+          licitación declarada desierta (SA-LPD), acuerdo marco de precios (SA-AMP) y bolsa de productos (SA-BP).
+        </p>
+        <p>
+          <strong>Topes de cuantía.</strong> En «Administración → Topes de cuantía por vigencia» se registra cada año la menor cuantía
+          de la circular de enero; la mínima cuantía es el 10 %. Con esos topes se valida el valor según el año de suscripción: la mínima
+          cuantía y la menor cuantía no superan su tope; por debajo de la mínima prevalece la mínima cuantía (Ley 2069 de 2020, art. 30);
+          una licitación por debajo de la menor cuantía corresponde a selección abreviada. Sin tope registrado para el año, no se valida.
+        </p>
+        <p>
+          <strong>Traer datos de SECOP II.</strong> Al crear un expediente se escribe el número del contrato (por ejemplo, 210-17017-8)
+          o el ID del proceso y se pulsa «Consultar»: GECON lee los datos abiertos de SECOP II en datos.gov.co, filtrados por el NIT de
+          la CDMB, y llena objeto, modalidad, causal, tipo, valor, números y fechas. El contratista se vincula solo si existe un usuario
+          con el mismo documento; si no, lo crea el administrador del sistema. GECON no reemplaza a SECOP II: toma sus datos para
+          resguardar el expediente electrónico y gestionar la firma.
         </p>
         <p>
           <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la
-          modalidad o de la causal, consecutivo de cuatro dígitos por vigencia y año (LP, SA-MC, SA-SI, SA-EBE, CM, MC, CD-CPS, CD-CI,
+          modalidad o de la causal, consecutivo de cuatro dígitos por vigencia y año (LP, SA-MC, SA-SI, SA-EBE, SA-LPD, SA-AMP, SA-BP, CM, MC, CD-CPS, CD-CI,
           CD-UM, CD-UO, CD-ACT, CD-A, CD-AI, CD-C, CD-E). Ejemplo: <code>CD-CPS-0012-2026</code>. Se asigna al crear el expediente; si el
           proceso ya tenía código, se escribe. Aparece en el encabezado, los listados, el inicio, los pendientes y el ZIP, y sirve para
           buscar. Si cambian la modalidad o la causal, se asigna uno nuevo y queda en la bitácora.
@@ -372,6 +409,7 @@ export default async function ContratacionAyudaPage() {
         </p>
         <Tabla encabezados={["Opción", "Quién la usa", "Para qué"]}>
           <tr><td className="px-2.5 py-1.5"><strong>Expedientes → Nuevo expediente</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Abrir un expediente contractual.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Topes de cuantía por vigencia</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Menor y mínima cuantía de cada año, con su soporte.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Catálogo de requisitos</strong></td><td className="px-2.5 py-1.5">Administrador de Contratación</td><td className="px-2.5 py-1.5">Documentos exigidos por etapa y modalidad.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del GECON</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de los expedientes.</td></tr>
           <tr><td className="px-2.5 py-1.5"><strong>Administración → Usuarios y roles</strong></td><td className="px-2.5 py-1.5">Administrador del sistema</td><td className="px-2.5 py-1.5">Acceso a módulos, roles de contratación y datos personales.</td></tr>

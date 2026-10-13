@@ -22,6 +22,7 @@ import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 import { errorCuantia, type TopeCuantia } from "@/lib/cuantias";
+import { buscarContratosSecop, buscarContratosSecopPorContratista, consultarExpedienteSecop, contratoDesdeFila } from "@/lib/secop-datos";
 import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion";
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -375,6 +376,7 @@ export async function crearExpedienteContractual(datos: {
   tipoContrato: TipoContratoEstatal;
   causalContratacionDirecta?: CausalContratacionDirecta | null;
   codigoProceso?: string | null;
+  idContratoSecop?: string | null;
   valor?: number | null;
   numeroContrato?: string | null;
   numeroProcesoSecop?: string | null;
@@ -420,6 +422,7 @@ export async function crearExpedienteContractual(datos: {
       tipoContrato: datos.tipoContrato,
       causalContratacionDirecta: causal,
       codigoProceso,
+      idContratoSecop: datos.idContratoSecop ?? null,
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
       numeroProcesoSecop,
@@ -1796,4 +1799,120 @@ export async function eliminarPago(expedienteId: string, pagoId: string, usuario
   if (!p) throw new Error("El pago no existe.");
   await db.pagoContrato.delete({ where: { id: pagoId } });
   await registrarEventoContratacion(expedienteId, "PAGO_ELIMINADO", `Pago N.° ${p.numero} por $${Number(p.valor).toLocaleString("es-CO")} eliminado`, usuarioId);
+}
+
+function jsonEstable(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(jsonEstable).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v as Record<string, unknown>)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${jsonEstable((v as Record<string, unknown>)[k])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(v ?? null);
+}
+
+export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId: string | null) {
+  const expediente = await db.expedienteContractual.findUniqueOrThrow({
+    where: { id: expedienteId },
+    select: {
+      idContratoSecop: true,
+      numeroContrato: true,
+      numeroProcesoSecop: true,
+      valor: true,
+      fechaSuscripcion: true,
+      fechaInicio: true,
+      fechaFinEstimada: true,
+      createdAt: true,
+      contratista: { select: { identificacion: true } },
+      secop: { select: { datos: true, facturas: true, garantias: true, modificaciones: true, adiciones: true, suspensiones: true } },
+    },
+  });
+  let idContrato = expediente.idContratoSecop;
+  if (!idContrato) {
+    const ref = expediente.numeroContrato ?? expediente.numeroProcesoSecop;
+    let candidatos = ref ? await buscarContratosSecop(ref) : [];
+    let criterio = ref ? `la referencia ${ref}` : "";
+    if (candidatos.length === 0 && expediente.contratista?.identificacion) {
+      const desde = new Date(expediente.createdAt.getTime() - 60 * 24 * 60 * 60 * 1000);
+      const enlazados = new Set(
+        (await db.expedienteContractual.findMany({ where: { idContratoSecop: { not: null }, id: { not: expedienteId } }, select: { idContratoSecop: true } })).map(
+          (e) => e.idContratoSecop
+        )
+      );
+      candidatos = (await buscarContratosSecopPorContratista(expediente.contratista.identificacion, desde)).filter((c) => !enlazados.has(c.idContrato));
+      criterio = `el documento del contratista ${expediente.contratista.identificacion}`;
+    }
+    if (!criterio) throw new Error("Aún no hay con qué buscarlo en SECOP II: vincule el contratista o escriba el número de contrato o de proceso.");
+    if (candidatos.length === 0) throw new Error(`Aún no aparece en SECOP II un contrato de la CDMB con ${criterio}.`);
+    if (candidatos.length > 1) {
+      throw new Error(
+        `Hay ${candidatos.length} contratos en SECOP II con ${criterio} (${candidatos.map((c) => c.numeroContrato).join(", ")}): escriba el número de contrato en los datos generales.`
+      );
+    }
+    idContrato = candidatos[0]!.idContrato;
+  }
+  if (!idContrato) throw new Error("SECOP II no devolvió el identificador del contrato.");
+  const secop = await consultarExpedienteSecop(idContrato);
+  if (!secop) throw new Error(`El contrato ${idContrato} no aparece en SECOP II para la CDMB.`);
+  const c = contratoDesdeFila(secop.datos);
+  const fechaDb = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00Z`) : null);
+
+
+  const completar = {
+    ...(!expediente.numeroContrato && c.numeroContrato ? { numeroContrato: c.numeroContrato } : {}),
+    ...(!expediente.numeroProcesoSecop && c.numeroProcesoSecop ? { numeroProcesoSecop: c.numeroProcesoSecop } : {}),
+    ...(expediente.valor === null && c.valor !== null ? { valor: c.valor } : {}),
+    ...(!expediente.fechaSuscripcion && c.fechaSuscripcion ? { fechaSuscripcion: fechaDb(c.fechaSuscripcion) } : {}),
+    ...(!expediente.fechaInicio && c.fechaInicio ? { fechaInicio: fechaDb(c.fechaInicio) } : {}),
+    ...(!expediente.fechaFinEstimada && c.fechaFin ? { fechaFinEstimada: fechaDb(c.fechaFin) } : {}),
+  };
+
+  const espejo = {
+    idContrato,
+    datos: secop.datos as Prisma.InputJsonValue,
+    facturas: secop.facturas as Prisma.InputJsonValue,
+    garantias: secop.garantias as Prisma.InputJsonValue,
+    modificaciones: secop.modificaciones as Prisma.InputJsonValue,
+    adiciones: secop.adiciones as Prisma.InputJsonValue,
+    suspensiones: secop.suspensiones as Prisma.InputJsonValue,
+    sincronizadoEn: new Date(),
+  };
+  await db.$transaction([
+    db.secopContratoEspejo.upsert({ where: { expedienteId }, create: { expedienteId, ...espejo }, update: espejo }),
+    db.expedienteContractual.update({ where: { id: expedienteId }, data: { idContratoSecop: idContrato, ...completar } }),
+  ]);
+  const resumen = [
+    `Sincronizado con SECOP II (${idContrato})`,
+    Object.keys(completar).length ? `datos completados: ${Object.keys(completar).length}` : null,
+  ].filter(Boolean);
+  const anterior = expediente.secop ? jsonEstable(expediente.secop) : null;
+  const cambio = anterior !== jsonEstable(secop);
+  if (cambio || Object.keys(completar).length > 0 || usuarioId) {
+    await registrarEventoContratacion(expedienteId, "SECOP_SINCRONIZADO", `${resumen.join(" · ")}${cambio ? "" : " · sin cambios"}`, usuarioId);
+  }
+  return { idContrato, completados: Object.keys(completar).length, cambio };
+}
+
+export async function sincronizarSecopTodos(): Promise<{ total: number; ok: number; cambios: number; errores: string[] }> {
+  const expedientes = await db.expedienteContractual.findMany({
+    where: {
+      eliminado: false,
+      OR: [{ idContratoSecop: { not: null } }, { numeroContrato: { not: null } }, { numeroProcesoSecop: { not: null } }, { contratistaId: { not: null } }],
+    },
+    select: { id: true, numero: true },
+  });
+  let ok = 0;
+  let cambios = 0;
+  const errores: string[] = [];
+  for (const e of expedientes) {
+    try {
+      const r = await sincronizarExpedienteSecop(e.id, null);
+      ok++;
+      if (r.cambio) cambios++;
+    } catch (err) {
+      errores.push(`${e.numero}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return { total: expedientes.length, ok, cambios, errores };
 }

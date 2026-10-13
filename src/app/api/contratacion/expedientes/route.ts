@@ -5,7 +5,7 @@ import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
-import { asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
+import { sincronizarExpedienteSecop, asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
 
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       tipoContrato: body.tipoContrato,
       causalContratacionDirecta: esCausalContratacionDirecta(body.causalContratacionDirecta) ? body.causalContratacionDirecta : null,
       codigoProceso: typeof body.codigoProceso === "string" ? body.codigoProceso : null,
+      idContratoSecop: typeof body.idContratoSecop === "string" && body.idContratoSecop.trim() ? body.idContratoSecop.trim() : null,
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
       numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       numeroProcesoSecop: typeof body.numeroProcesoSecop === "string" ? body.numeroProcesoSecop : null,
@@ -80,6 +81,9 @@ export async function POST(req: NextRequest) {
       subserieId: body.subserieId ? String(body.subserieId) : null,
       creadoPorId: session.userId,
     });
+    if (expediente.idContratoSecop) {
+      await sincronizarExpedienteSecop(expediente.id, session.userId).catch(() => null);
+    }
     return NextResponse.json({ id: expediente.id, numero: expediente.numero }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo crear el expediente." }, { status: 400 });

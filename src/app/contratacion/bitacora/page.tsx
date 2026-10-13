@@ -32,6 +32,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   GARANTIA_ELIMINADA: { icono: ShieldCheck, clase: "text-red-600", texto: "Garantía eliminada" },
   PAGO_REGISTRADO: { icono: Wallet, clase: "text-emerald-600", texto: "Pago registrado" },
   PAGO_ELIMINADO: { icono: Wallet, clase: "text-red-600", texto: "Pago eliminado" },
+  SECOP_SINCRONIZADO: { icono: UploadCloud, clase: "text-cdmb-700", texto: "Sincronizado con SECOP II" },
   RECLASIFICACION_TRD: { icono: FolderTree, clase: "text-cdmb-600", texto: "Clasificación TRD" },
   NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, clase: "text-amber-600", texto: "Nivel de acceso" },
   EXPEDIENTE_ELIMINADO: { icono: Trash2, clase: "text-red-600", texto: "Expediente eliminado" },

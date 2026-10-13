@@ -11,6 +11,7 @@ import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
 import { avisosGarantia, porcentajePlazo, resumenPagos } from "@/lib/garantias-pagos";
 import { GarantiasContrato, PagosContrato } from "@/components/GarantiasPagosContrato";
+import { SecopPanel } from "@/components/SecopPanel";
 import { CODIGO_ACTA_LIQUIDACION, ETIQUETA_FASE_LIQUIDACION, estadoLiquidacion, plazosLiquidacion } from "@/lib/liquidacion";
 import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
@@ -166,6 +167,7 @@ export default async function DetalleExpedienteContractualPage({
       periodosEventuales: { orderBy: { createdAt: "asc" } },
       modificaciones: { orderBy: { numero: "asc" }, include: { registradoPor: { select: { nombre: true } } } },
       garantias: { orderBy: { createdAt: "asc" } },
+      secop: true,
       pagos: { orderBy: { numero: "asc" } },
       documentos: {
         orderBy: { createdAt: "asc" },
@@ -254,6 +256,25 @@ export default async function DetalleExpedienteContractualPage({
   const valorTotalContrato =
     expediente.valor !== null ? Number(expediente.valor) + expediente.modificaciones.reduce((a, m) => a + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0) : null;
   const pagosResumen = resumenPagos(valorTotalContrato, expediente.pagos.map((p) => ({ valor: Number(p.valor) })));
+  const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
+  const diferenciasSecop: string[] = [];
+  if (datosSecop) {
+    const fechaS = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : null);
+    const fechaG = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+    const comparar = (etiqueta: string, gecon: string | null, secop: string | null) => {
+      if (secop && gecon !== secop) diferenciasSecop.push(`${etiqueta}: en GECON «${gecon ?? "vacío"}», en SECOP II «${secop}».`);
+    };
+    comparar("Número de contrato", expediente.numeroContrato, typeof datosSecop.referencia_del_contrato === "string" ? datosSecop.referencia_del_contrato : null);
+    comparar("Fecha de inicio", fechaG(expediente.fechaInicio), fechaS(datosSecop.fecha_de_inicio_del_contrato));
+    comparar("Fecha de terminación", fechaG(expediente.fechaFinEstimada), fechaS(datosSecop.fecha_de_fin_del_contrato));
+    comparar("Documento del contratista", expediente.contratista?.identificacion ?? null, typeof datosSecop.documento_proveedor === "string" ? datosSecop.documento_proveedor : null);
+    const valorSecop = Number(datosSecop.valor_del_contrato);
+    if (valorTotalContrato !== null && Number.isFinite(valorSecop) && valorSecop > 0 && Math.round(valorSecop) !== Math.round(valorTotalContrato)) {
+      diferenciasSecop.push(
+        `Valor del contrato: en GECON «$ ${Math.round(valorTotalContrato).toLocaleString("es-CO")}» (con adiciones), en SECOP II «$ ${Math.round(valorSecop).toLocaleString("es-CO")}».`
+      );
+    }
+  }
   const avisosGarantias = avisosGarantia(expediente.garantias, expediente.fechaFinEstimada, expediente.modificaciones);
   const hoy = new Date();
 
@@ -800,6 +821,26 @@ export default async function DetalleExpedienteContractualPage({
           />
         </>
       )}
+
+      <SecopPanel
+        expedienteId={id}
+        espejo={
+          expediente.secop
+            ? {
+                idContrato: expediente.secop.idContrato,
+                datos: datosSecop ?? {},
+                facturas: expediente.secop.facturas as Record<string, unknown>[],
+                garantias: expediente.secop.garantias as Record<string, unknown>[],
+                modificaciones: expediente.secop.modificaciones as Record<string, unknown>[],
+                adiciones: expediente.secop.adiciones as Record<string, unknown>[],
+                suspensiones: expediente.secop.suspensiones as Record<string, unknown>[],
+                sincronizadoEn: expediente.secop.sincronizadoEn,
+              }
+            : null
+        }
+        diferencias={diferenciasSecop}
+        puedeSincronizar={puedeRegistrarModificacionContrato(permisos, expediente)}
+      />
 
       <PestanasDetalle
         inicial={expediente.cerrado ? "POSTCONTRACTUAL" : expediente.etapaActual}

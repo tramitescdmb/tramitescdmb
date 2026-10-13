@@ -120,3 +120,54 @@ export async function buscarContratosSecop(referencia: string): Promise<Contrato
   const filas = (await res.json()) as FilaSecop[];
   return filas.map(contratoDesdeFila);
 }
+
+const CONJUNTOS_RELACIONADOS = {
+  facturas: { id: "ibyt-yi2f", columna: "id_contrato" },
+  garantias: { id: "gjp9-cutm", columna: "id_contrato" },
+  modificaciones: { id: "u8cx-r425", columna: "id_contrato" },
+  adiciones: { id: "cb9c-h8sn", columna: "id_contrato" },
+  suspensiones: { id: "u99c-7mfm", columna: "id_contrato" },
+} as const;
+
+export type ExpedienteSecop = {
+  datos: Record<string, unknown>;
+  facturas: Record<string, unknown>[];
+  garantias: Record<string, unknown>[];
+  modificaciones: Record<string, unknown>[];
+  adiciones: Record<string, unknown>[];
+  suspensiones: Record<string, unknown>[];
+};
+
+async function consultarSocrata(conjunto: string, where: string, limite = 200): Promise<Record<string, unknown>[]> {
+  const url = `https://www.datos.gov.co/resource/${conjunto}.json?$where=${encodeURIComponent(where)}&$limit=${limite}`;
+  const token = process.env.SOCRATA_APP_TOKEN?.trim();
+  const res = await fetch(url, { headers: token ? { "X-App-Token": token } : {}, cache: "no-store", signal: AbortSignal.timeout(25000) });
+  if (!res.ok) throw new Error("SECOP II (datos.gov.co) no respondió. Intente de nuevo en unos minutos.");
+  return (await res.json()) as Record<string, unknown>[];
+}
+
+export async function consultarExpedienteSecop(idContrato: string): Promise<ExpedienteSecop | null> {
+  const id = idContrato.trim().replace(/'/g, "");
+  const [principal, ...relacionados] = await Promise.all([
+    consultarSocrata("jbjy-vk9h", `nit_entidad='${NIT_CDMB}' AND id_contrato='${id}'`, 1),
+    ...Object.values(CONJUNTOS_RELACIONADOS).map((c) => consultarSocrata(c.id, `${c.columna}='${id}'`)),
+  ]);
+  if (!principal[0]) return null;
+  const [facturas, garantias, modificaciones, adiciones, suspensiones] = relacionados;
+  const { n_mero_de_cuenta: _cuenta, ...datos } = principal[0];
+  void _cuenta;
+  return { datos, facturas: facturas!, garantias: garantias!, modificaciones: modificaciones!, adiciones: adiciones!, suspensiones: suspensiones! };
+}
+
+export const fechaSecop = fecha;
+
+export async function buscarContratosSecopPorContratista(documento: string, desde: Date): Promise<ContratoSecop[]> {
+  const doc = documento.replace(/\D/g, "");
+  if (doc.length < 5) return [];
+  const where = `nit_entidad='${NIT_CDMB}' AND documento_proveedor='${doc}' AND fecha_de_firma >= '${desde.toISOString().slice(0, 10)}T00:00:00'`;
+  const url = `${URL_CONTRATOS_SECOP}?$where=${encodeURIComponent(where)}&$order=fecha_de_firma DESC&$limit=10`;
+  const token = process.env.SOCRATA_APP_TOKEN?.trim();
+  const res = await fetch(url, { headers: token ? { "X-App-Token": token } : {}, cache: "no-store", signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error("SECOP II (datos.gov.co) no respondió. Intente de nuevo en unos minutos.");
+  return ((await res.json()) as FilaSecop[]).map(contratoDesdeFila);
+}
