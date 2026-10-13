@@ -3,6 +3,8 @@
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
 import { prefijoProceso } from "@/lib/codigo-proceso";
+import { errorCuantia, minimaCuantia, topeDeAnio, type TopeCuantia } from "@/lib/cuantias";
+import { formatearPesosCO } from "@/lib/moneda";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -111,6 +113,7 @@ export function NuevoExpedienteContractualForm({
   modalidades,
   series,
   subseriePorModalidad,
+  topes,
 }: {
   personal: PersonaRol[];
   puedeAsignarPersonal: boolean;
@@ -119,6 +122,7 @@ export function NuevoExpedienteContractualForm({
   dependencias: Opcion[];
   supervisores: PersonaRol[];
   modalidades: ModalidadOpcion[];
+  topes: TopeCuantia[];
 }) {
   const router = useRouter();
   const [objeto, setObjeto] = useState("");
@@ -392,6 +396,16 @@ export function NuevoExpedienteContractualForm({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Valor del contrato" icon={<CircleDollarSign className="h-4 w-4" />} help="En pesos colombianos.">
                 <CampoMoneda value={valor} onChange={setValor} className="rounded-xl" />
+                {(() => {
+                  const tope = topeDeAnio(topes, Number((fechaSuscripcion || String(new Date().getFullYear())).slice(0, 4)));
+                  if (!tope) return null;
+                  const error = errorCuantia(modalidadSeleccion, valor ? Number(valor) : null, tope);
+                  return (
+                    <span className={`mt-1 block text-[11px] font-normal ${error ? "text-amber-700" : "text-stone-400"}`}>
+                      {error ?? `Topes ${tope.anio}: menor cuantía ${formatearPesosCO(tope.menorCuantia)} · mínima ${formatearPesosCO(minimaCuantia(tope))}`}
+                    </span>
+                  );
+                })()}
               </Field>
               <Field label="N.º de proceso SECOP" icon={<Hash className="h-4 w-4" />} help="El de la etapa precontractual, antes de que exista contrato.">
                 <input

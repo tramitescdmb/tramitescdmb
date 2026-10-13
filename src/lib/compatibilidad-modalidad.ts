@@ -71,6 +71,18 @@ const REGLAS_MODALIDAD: Record<string, { tipos: TipoContrato[]; motivo: string }
     tipos: ["SUMINISTRO", "COMPRAVENTA", "PRESTACION_SERVICIOS", "OTRO"],
     motivo: "La subasta inversa es solo para bienes y servicios de características técnicas uniformes y de común utilización (Decreto 1082 de 2015, art. 2.2.1.2.1.2.2).",
   },
+  SELECCION_ABREVIADA_LICITACION_DESIERTA: {
+    tipos: BIENES_Y_SERVICIOS,
+    motivo: "Procede tras una licitación declarada desierta, con su mismo objeto; la consultoría y la interventoría van por concurso de méritos (Ley 1150 de 2007, art. 2, num. 2, lit. d).",
+  },
+  SELECCION_ABREVIADA_ACUERDO_MARCO: {
+    tipos: ["SUMINISTRO", "COMPRAVENTA", "PRESTACION_SERVICIOS", "ARRENDAMIENTO", "OTRO"],
+    motivo: "La compra por catálogo de acuerdos marco de precios es para bienes y servicios de común utilización (Decreto 1082 de 2015, art. 2.2.1.2.1.2.7).",
+  },
+  SELECCION_ABREVIADA_BOLSA_PRODUCTOS: {
+    tipos: ["SUMINISTRO", "COMPRAVENTA", "OTRO"],
+    motivo: "La bolsa de productos es para bienes de características técnicas uniformes y productos de origen agropecuario (Ley 1150 de 2007, art. 2, num. 2, lits. a y f).",
+  },
   SELECCION_ABREVIADA_ENAJENACION_BIENES: {
     tipos: ["COMPRAVENTA", "OTRO"],
     motivo: "La enajenación de bienes del Estado corresponde a la venta de bienes de la Corporación (Ley 1150 de 2007, art. 2, num. 2, lit. e).",

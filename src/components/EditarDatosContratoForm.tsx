@@ -3,6 +3,8 @@
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
 import { prefijoProceso } from "@/lib/codigo-proceso";
+import { errorCuantia, minimaCuantia, topeDeAnio, type TopeCuantia } from "@/lib/cuantias";
+import { formatearPesosCO } from "@/lib/moneda";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
@@ -18,6 +20,7 @@ export function EditarDatosContratoForm({
   tipoContratoActual,
   causalActual,
   codigoProcesoActual,
+  topes,
   modalidades,
   valorActual,
   dependenciaActualId,
@@ -33,6 +36,7 @@ export function EditarDatosContratoForm({
   tipoContratoActual: string;
   causalActual: string | null;
   codigoProcesoActual: string | null;
+  topes: TopeCuantia[];
   modalidades: ModalidadOpcion[];
   valorActual: string | null;
   dependenciaActualId: string;
@@ -184,6 +188,16 @@ export function EditarDatosContratoForm({
               <label className="block text-xs font-medium text-stone-600">
                 Valor del contrato
                 <CampoMoneda value={valor} onChange={setValor} className="mt-1" />
+                {(() => {
+                  const tope = topeDeAnio(topes, Number((fechaSuscripcion || String(new Date().getFullYear())).slice(0, 4)));
+                  if (!tope) return null;
+                  const error = errorCuantia(modalidadSeleccion, valor ? Number(valor) : null, tope);
+                  return (
+                    <span className={`mt-1 block text-[11px] font-normal ${error ? "text-amber-700" : "text-stone-400"}`}>
+                      {error ?? `Topes ${tope.anio}: menor cuantía ${formatearPesosCO(tope.menorCuantia)} · mínima ${formatearPesosCO(minimaCuantia(tope))}`}
+                    </span>
+                  );
+                })()}
               </label>
 
               <label className="block text-xs font-medium text-stone-600">

@@ -16,6 +16,7 @@ import {
   eliminarExpedienteContractualCompleto,
   registrarEventoContratacion,
   resolverCodigoProceso,
+  validarCuantiaContrato,
   ETIQUETA_MODALIDAD,
   validarFormatoSecop,
   verificarUnicidadSecopPorVigencia,
@@ -147,6 +148,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         });
       } catch (err) {
         return NextResponse.json({ error: err instanceof Error ? err.message : "Código de proceso no válido." }, { status: 400 });
+      }
+    }
+    if ("valor" in body || "modalidadSeleccion" in body || "fechaSuscripcion" in body) {
+      const base = await db.expedienteContractual.findUnique({ where: { id }, select: { valor: true, modalidadSeleccion: true, fechaSuscripcion: true } });
+      if (!base) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+      const valor = "valor" in body ? (body.valor === null || body.valor === "" ? null : Number(body.valor)) : base.valor !== null ? Number(base.valor) : null;
+      const modalidad = "modalidadSeleccion" in body ? String(body.modalidadSeleccion) : base.modalidadSeleccion;
+      const suscripcion = "fechaSuscripcion" in body ? (body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null) : base.fechaSuscripcion;
+      try {
+        await validarCuantiaContrato(modalidad, valor, suscripcion);
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "El valor no corresponde a la modalidad." }, { status: 400 });
       }
     }
     if ("dependenciaSolicitanteId" in body) {

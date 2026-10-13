@@ -1930,6 +1930,9 @@ enum ModalidadSeleccion {
   SELECCION_ABREVIADA_MENOR_CUANTIA
   SELECCION_ABREVIADA_SUBASTA_INVERSA
   SELECCION_ABREVIADA_ENAJENACION_BIENES
+  SELECCION_ABREVIADA_LICITACION_DESIERTA
+  SELECCION_ABREVIADA_ACUERDO_MARCO
+  SELECCION_ABREVIADA_BOLSA_PRODUCTOS
   CONCURSO_MERITOS
   CONTRATACION_DIRECTA
   MINIMA_CUANTIA
@@ -2313,6 +2316,14 @@ model ModificacionContrato {
   registradoPor Usuario               @relation("ModificacionContratoRegistradaPor", fields: [registradoPorId], references: [id])
 
   @@index([expedienteId])
+}
+
+model TopeCuantiaContratacion {
+  anio             Int      @id
+  menorCuantia     Decimal  @db.Decimal(18, 2)
+  soporte          String?
+  actualizadoEn    DateTime @updatedAt
+  actualizadoPorId String?
 }
 
 enum CausalContratacionDirecta {

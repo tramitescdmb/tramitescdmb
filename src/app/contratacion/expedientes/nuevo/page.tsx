@@ -8,6 +8,7 @@ import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
 import { NuevoExpedienteContractualForm } from "@/components/NuevoExpedienteContractualForm";
+import { listarTopesCuantia } from "@/lib/contratacion";
 import type { RolContratacion } from "@prisma/client";
 
 function personasConRol(rol: RolContratacion) {
@@ -27,12 +28,13 @@ export default async function NuevoExpedienteContractualPage() {
   }
 
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
-  const [series, subseriePorModalidad, dependencias, supervisores, personal] = await Promise.all([
+  const [series, subseriePorModalidad, dependencias, supervisores, personal, topes] = await Promise.all([
     catalogoSeriesBuscablesCacheado(),
     subseriesPorModalidad(),
     db.dependencia.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
     personasConRol("SUPERVISOR_INTERVENTOR"),
     puedeAsignarPersonal ? personasConRol("FUNCIONARIO_CONTRATACION") : [],
+    listarTopesCuantia(),
   ]);
   const aOpcion = (s: Awaited<ReturnType<typeof personasConRol>>[number]) => ({
     id: s.id,
@@ -45,6 +47,7 @@ export default async function NuevoExpedienteContractualPage() {
     <section className="mx-auto max-w-3xl space-y-4">
       <TituloSeccion icon={FilePlus2}>Nuevo expediente contractual</TituloSeccion>
       <NuevoExpedienteContractualForm
+        topes={topes}
         series={series}
         subseriePorModalidad={subseriePorModalidad}
         dependencias={dependencias}

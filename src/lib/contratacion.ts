@@ -21,6 +21,7 @@ import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
+import { errorCuantia, type TopeCuantia } from "@/lib/cuantias";
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
@@ -317,6 +318,29 @@ export async function registrarEventoContratacion(
   await db.eventoContratacion.create({ data: { expedienteId, tipo, detalle, usuarioId } });
 }
 
+export async function listarTopesCuantia(): Promise<TopeCuantia[]> {
+  const filas = await db.topeCuantiaContratacion.findMany({ orderBy: { anio: "desc" } });
+  return filas.map((f) => ({ anio: f.anio, menorCuantia: Number(f.menorCuantia), soporte: f.soporte }));
+}
+
+export async function topeCuantiaDe(anio: number): Promise<TopeCuantia | null> {
+  const f = await db.topeCuantiaContratacion.findUnique({ where: { anio } });
+  return f ? { anio: f.anio, menorCuantia: Number(f.menorCuantia), soporte: f.soporte } : null;
+}
+
+export async function guardarTopeCuantia(datos: { anio: number; menorCuantia: number; soporte: string | null }, usuarioId: string) {
+  if (!Number.isInteger(datos.anio) || datos.anio < 2000 || datos.anio > 2100) throw new Error("Indique un año válido.");
+  if (!Number.isFinite(datos.menorCuantia) || datos.menorCuantia <= 0) throw new Error("Indique el valor de la menor cuantía.");
+  const data = { menorCuantia: Math.round(datos.menorCuantia), soporte: datos.soporte?.trim().slice(0, 300) || null, actualizadoPorId: usuarioId };
+  await db.topeCuantiaContratacion.upsert({ where: { anio: datos.anio }, create: { anio: datos.anio, ...data }, update: data });
+}
+
+export async function validarCuantiaContrato(modalidad: string, valor: number | null, fechaSuscripcion: Date | null): Promise<void> {
+  if (valor === null) return;
+  const error = errorCuantia(modalidad, valor, await topeCuantiaDe((fechaSuscripcion ?? new Date()).getUTCFullYear()));
+  if (error) throw new Error(error);
+}
+
 export async function resolverCodigoProceso(datos: {
   solicitado?: unknown;
   modalidad: string;
@@ -370,6 +394,7 @@ export async function crearExpedienteContractual(datos: {
   const causal = datos.modalidadSeleccion === "CONTRATACION_DIRECTA" ? datos.causalContratacionDirecta ?? null : null;
   const combinacion = errorCombinacionContrato(datos.modalidadSeleccion, datos.tipoContrato, causal);
   if (combinacion) throw new Error(combinacion);
+  await validarCuantiaContrato(datos.modalidadSeleccion, datos.valor ?? null, datos.fechaSuscripcion ?? null);
   const automatica = datos.subserieId ? null : await subserieDeModalidad(datos.modalidadSeleccion);
   const subserieElegida = datos.subserieId ?? automatica?.subserieId ?? null;
   const subserie = subserieElegida ? await validarSubserieContrato(subserieElegida) : null;

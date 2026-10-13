@@ -38,6 +38,7 @@ import {
 } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import {
+  listarTopesCuantia,
   ETAPAS_ORDEN,
   ETIQUETA_ETAPA,
   ETIQUETA_MODALIDAD,
@@ -189,7 +190,8 @@ export default async function DetalleExpedienteContractualPage({
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const idsDocumentos = expediente.documentos.map((d) => d.id);
-  const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
+  const [topesCuantia, subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
+    puedeEditarDatosGenerales ? listarTopesCuantia() : Promise.resolve([]),
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeGestionar
       ? db.usuario.findMany({
@@ -508,6 +510,7 @@ export default async function DetalleExpedienteContractualPage({
                 tipoContratoActual={expediente.tipoContrato}
                 causalActual={expediente.causalContratacionDirecta}
                 codigoProcesoActual={expediente.codigoProceso}
+                topes={topesCuantia}
                 modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
                 valorActual={expediente.valor?.toString() ?? null}
                 dependenciaActualId={expediente.dependenciaSolicitanteId}
