@@ -76,7 +76,7 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      {seguimiento && <SeguimientoContratos filas={seguimiento.filas} enEjecucion={seguimiento.enEjecucion} />}
+      {seguimiento && <SeguimientoContratos datos={seguimiento} />}
 
       {contratos.length > 0 && <MisContratos contratos={contratos} />}
 

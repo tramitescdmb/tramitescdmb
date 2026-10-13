@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarClock, FilePlus2, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, FilePlus2, UploadCloud, X } from "lucide-react";
 import { comprimirParaContratacion } from "@/lib/compresion-cliente";
 import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
@@ -20,6 +20,9 @@ import {
   periodosRequeridos,
   textoAnios,
   CLASES_VIGENCIAS_FUTURAS,
+  SOPORTES_PRESUPUESTALES,
+  requiereSoportePresupuestal,
+  type SoportePresupuestal,
   type TipoModificacion,
 } from "@/lib/modificaciones-contrato";
 
@@ -36,6 +39,8 @@ export type ModificacionRegistrada = {
   valoresVigenciasFuturas: { anio: number; valor: number; desde?: string; hasta?: string }[];
   observacion: string | null;
   documentoId: string | null;
+  cdpDocumentoId: string | null;
+  rpDocumentoId: string | null;
   registradoEn: string;
   registradoPor: string;
 };
@@ -43,7 +48,90 @@ export type ModificacionRegistrada = {
 const pesos = (v: number) => `$ ${Math.round(v).toLocaleString("es-CO")}`;
 const fechaLarga = (iso: string | null) =>
   iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
-const campo = "rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
+const campo = "rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-xs focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
+
+async function subirAlExpediente(expedienteId: string, archivo: File) {
+  const comprimido = await comprimirParaContratacion(archivo);
+  if (comprimido.size > TAMANO_MAXIMO_CONTRATACION_BYTES) throw new Error(mensajeArchivoDemasiadoGrandeContratacion(archivo.name));
+  const subido = await subirArchivoContrato(expedienteId, comprimido);
+  return { storagePath: subido.path, mimeType: subido.mimeType, tamanoBytes: subido.tamanoBytes, hashSha256: await sha256Hex(comprimido) };
+}
+
+function SoporteCelda({
+  expedienteId,
+  modificacionId,
+  soporte,
+  documentoId,
+  puedeCargar,
+}: {
+  expedienteId: string;
+  modificacionId: string;
+  soporte: SoportePresupuestal;
+  documentoId: string | null;
+  puedeCargar: boolean;
+}) {
+  const router = useRouter();
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const nombre = SOPORTES_PRESUPUESTALES.find((x) => x.valor === soporte)!.nombre;
+
+  if (documentoId) {
+    return (
+      <a href={`#documento-${documentoId}`} title={`${nombre}: ver documento`} className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-px font-medium text-emerald-700 hover:bg-emerald-100">
+        <Check className="h-3 w-3" aria-hidden />
+        {soporte}
+      </a>
+    );
+  }
+  if (!puedeCargar) {
+    return (
+      <span title={`${nombre} pendiente`} className="rounded bg-amber-50 px-1.5 py-px font-medium text-amber-700">
+        {soporte} pendiente
+      </span>
+    );
+  }
+
+  async function cargar(archivo: File) {
+    setCargando(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/contratacion/expedientes/${expedienteId}/modificaciones/${modificacionId}/presupuesto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ soporte, archivo: await subirAlExpediente(expedienteId, archivo) }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo cargar el soporte.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <label
+      title={error ?? `Cargar ${nombre}`}
+      className={`inline-flex cursor-pointer items-center gap-0.5 rounded border px-1.5 py-px font-medium ${
+        error ? "border-red-300 bg-red-50 text-red-700" : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+      }`}
+    >
+      <UploadCloud className="h-3 w-3" aria-hidden />
+      {cargando ? "Cargando…" : soporte}
+      <input
+        type="file"
+        className="hidden"
+        disabled={cargando}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void cargar(f);
+        }}
+      />
+    </label>
+  );
+}
 
 export function ModificacionesContrato({
   expedienteId,
@@ -96,6 +184,12 @@ export function ModificacionesContrato({
   const periodos = datos ? periodosRequeridos(datos, actual) : [];
   const anios = periodos.map((p) => p.anio);
   const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || periodos.length > 0;
+  const soportesPendientes = modificaciones.reduce(
+    (a, m) => a + (requiereSoportePresupuestal(m) ? Number(!m.cdpDocumentoId) + Number(!m.rpDocumentoId) : 0),
+    0
+  );
+  const conSoportes = modificaciones.some(requiereSoportePresupuestal);
+  const tipoElegido = TIPOS_MODIFICACION.find((t) => t.valor === tipo);
   const disponibleAdicion = valorInicial !== null ? valorInicial * LIMITE_ADICION - adicionadoPrevio : null;
 
   function cerrar() {
@@ -127,17 +221,10 @@ export function ModificacionesContrato({
     setGuardando(true);
     setError(null);
     try {
-      const comprimido = await comprimirParaContratacion(archivo);
-      if (comprimido.size > TAMANO_MAXIMO_CONTRATACION_BYTES) throw new Error(mensajeArchivoDemasiadoGrandeContratacion(archivo.name));
-      const subido = await subirArchivoContrato(expedienteId, comprimido);
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}/modificaciones`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          modificacion: datos,
-          requiereFirma,
-          archivo: { storagePath: subido.path, mimeType: subido.mimeType, tamanoBytes: subido.tamanoBytes, hashSha256: await sha256Hex(comprimido) },
-        }),
+        body: JSON.stringify({ modificacion: datos, requiereFirma, archivo: await subirAlExpediente(expedienteId, archivo) }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo registrar la modificación.");
@@ -151,7 +238,7 @@ export function ModificacionesContrato({
   }
 
   return (
-    <section id="modificaciones" className="scroll-mt-28 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <section id="modificaciones" className="scroll-mt-28 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
@@ -167,13 +254,14 @@ export function ModificacionesContrato({
                 {adicionadoPrevio > 0 && <span className="text-stone-400"> (inicial {pesos(valorInicial)})</span>}
               </>
             )}
+            {soportesPendientes > 0 && <span className="font-medium text-amber-700"> · {soportesPendientes} soporte(s) presupuestal(es) por cargar</span>}
           </p>
         </div>
         {puedeRegistrar && !abierto && (
           <button
             type="button"
             onClick={() => setAbierto(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-acento-500 px-3.5 py-2 text-sm font-medium text-white hover:bg-acento-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-acento-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-acento-600"
           >
             <FilePlus2 className="h-4 w-4" aria-hidden />
             Registrar modificación
@@ -182,7 +270,7 @@ export function ModificacionesContrato({
       </div>
 
       {abierto && (
-        <div className="mt-4 space-y-4 rounded-xl border border-acento-200 bg-acento-50/40 p-4">
+        <div className="mt-3 space-y-3 rounded-lg border border-acento-200 bg-acento-50/40 p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold text-stone-900">Nueva modificación (N.° {modificaciones.length + 1})</p>
             <button type="button" onClick={cerrar} className="text-stone-400 hover:text-stone-700" title="Cancelar">
@@ -191,29 +279,28 @@ export function ModificacionesContrato({
           </div>
 
           <fieldset>
-            <legend className="mb-2 text-xs font-medium text-stone-700">1. Tipo de modificación</legend>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <legend className="mb-1.5 text-xs font-medium text-stone-700">1. Tipo de modificación</legend>
+            <div className="flex flex-wrap gap-1.5">
               {TIPOS_MODIFICACION.map((t) => (
                 <label
                   key={t.valor}
-                  className={`flex cursor-pointer flex-col gap-0.5 rounded-lg border p-3 text-xs transition ${
-                    tipo === t.valor ? "border-acento-500 bg-white ring-1 ring-acento-500" : "border-stone-200 bg-white hover:border-acento-300"
+                  title={t.descripcion}
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    tipo === t.valor ? "border-acento-500 bg-acento-500 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-acento-300"
                   }`}
                 >
-                  <span className="flex items-center gap-2 font-semibold text-stone-900">
-                    <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => elegirTipo(t.valor)} className="accent-acento-500" />
-                    {t.etiqueta}
-                  </span>
-                  <span className="text-stone-500">{t.descripcion}</span>
+                  <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => elegirTipo(t.valor)} className="sr-only" />
+                  {t.etiqueta}
                 </label>
               ))}
             </div>
+            {tipoElegido && <p className="mt-1 text-[11px] text-stone-500">{tipoElegido.descripcion}</p>}
           </fieldset>
 
           {tipo && (
-            <fieldset className="space-y-3">
-              <legend className="mb-2 text-xs font-medium text-stone-700">2. Datos</legend>
-              <div className="flex flex-wrap gap-4">
+            <fieldset className="space-y-2">
+              <legend className="mb-1.5 text-xs font-medium text-stone-700">2. Datos</legend>
+              <div className="flex flex-wrap gap-3">
                 {cambiaPlazo(tipo) && (
                   <label className="flex flex-col gap-1 text-xs text-stone-600">
                     Nueva fecha de terminación
@@ -246,7 +333,7 @@ export function ModificacionesContrato({
               </div>
 
               {(nueva || (datos?.valorAdicionado && valorInicial !== null)) && (
-                <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-white px-3 py-2 text-xs text-stone-600">
+                <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-md bg-white px-2.5 py-1.5 text-xs text-stone-600">
                   {nueva && (
                     <span>
                       Terminación: {fechaLarga(terminacion)} → <strong className="text-stone-900">{fechaLarga(nueva.toISOString())}</strong>
@@ -262,26 +349,28 @@ export function ModificacionesContrato({
               )}
 
               {pideVigencias && (
-                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-950">
-                  <p className="flex items-start gap-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-600" aria-hidden />
+                <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                  <p className="flex items-start gap-1.5">
+                    <AlertTriangle className="mt-px h-3.5 w-3.5 flex-none text-amber-600" aria-hidden />
                     {tipo === "VIGENCIAS_FUTURAS"
                       ? "Registre la autorización para comprometer recursos de la vigencia siguiente, por el periodo que el contrato se ejecuta en ella."
                       : `La nueva terminación compromete la vigencia ${textoAnios(anios)}. No se registra sin la autorización de vigencias futuras.`}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span>Clase:</span>
                     {CLASES_VIGENCIAS_FUTURAS.map((c) => (
                       <label
                         key={c.valor}
-                        className={`flex cursor-pointer flex-col rounded-lg border bg-white px-3 py-2 ${vfClase === c.valor ? "border-amber-500 ring-1 ring-amber-500" : "border-amber-200"}`}
+                        title={c.descripcion}
+                        className={`flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-0.5 font-medium ${
+                          vfClase === c.valor ? "border-amber-500 bg-amber-500 text-white" : "border-amber-300 bg-white text-amber-900"
+                        }`}
                       >
-                        <span className="flex items-center gap-2 font-semibold">
-                          <input type="radio" name="clase-vf" checked={vfClase === c.valor} onChange={() => setVfClase(c.valor)} className="accent-amber-600" />
-                          {c.etiqueta}
-                        </span>
-                        <span className="text-amber-800/80">{c.descripcion}</span>
+                        <input type="radio" name="clase-vf" checked={vfClase === c.valor} onChange={() => setVfClase(c.valor)} className="sr-only" />
+                        {c.etiqueta}
                       </label>
                     ))}
+                    {vfClase && <span className="text-amber-800/80">{CLASES_VIGENCIAS_FUTURAS.find((c) => c.valor === vfClase)?.descripcion}</span>}
                   </div>
                   <label className="flex flex-col gap-1">
                     Acto de autorización (número y fecha)
@@ -324,9 +413,9 @@ export function ModificacionesContrato({
 
           {tipo && (
             <fieldset>
-              <legend className="mb-2 text-xs font-medium text-stone-700">3. Acta de la modificación</legend>
+              <legend className="mb-1.5 text-xs font-medium text-stone-700">3. Acta de la modificación</legend>
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
                   <UploadCloud className="h-4 w-4" aria-hidden />
                   {archivo ? archivo.name : "Elegir archivo"}
                   <input type="file" className="hidden" onChange={(e) => setArchivo(e.target.files?.[0] ?? null)} />
@@ -336,6 +425,9 @@ export function ModificacionesContrato({
                   Requiere firma
                 </label>
               </div>
+              {datos && requiereSoportePresupuestal({ tipo: datos.tipo, vigenciasFuturas: pideVigencias }) && (
+                <p className="mt-1.5 text-[11px] text-stone-500">Una vez registrada, cargue en la tabla el CDP y el RP de esta modificación.</p>
+              )}
             </fieldset>
           )}
 
@@ -345,7 +437,7 @@ export function ModificacionesContrato({
               type="button"
               onClick={registrar}
               disabled={guardando}
-              className="rounded-lg bg-cdmb-600 px-4 py-2 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+              className="rounded-lg bg-cdmb-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
             >
               {guardando ? "Registrando…" : "Registrar modificación"}
             </button>
@@ -354,22 +446,23 @@ export function ModificacionesContrato({
       )}
 
       {modificaciones.length > 0 && (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-stone-100">
+        <div className="mt-3 overflow-x-auto rounded-lg border border-stone-100">
           <table className="w-full text-xs">
             <thead className="bg-stone-50 text-left text-[11px] uppercase tracking-wide text-stone-400">
               <tr>
-                <th className="px-3 py-2 font-medium">N.°</th>
-                <th className="px-3 py-2 font-medium">Tipo</th>
-                <th className="px-3 py-2 font-medium">Terminación</th>
-                <th className="px-3 py-2 font-medium">Valor adicionado</th>
-                <th className="px-3 py-2 font-medium">Registro</th>
+                <th className="px-3 py-1.5 font-medium">N.°</th>
+                <th className="px-3 py-1.5 font-medium">Tipo</th>
+                <th className="px-3 py-1.5 font-medium">Terminación</th>
+                <th className="px-3 py-1.5 font-medium">Valor adicionado</th>
+                {conSoportes && <th className="px-3 py-1.5 font-medium">CDP / RP</th>}
+                <th className="px-3 py-1.5 font-medium">Registro</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {modificaciones.map((m) => (
                 <tr key={m.id}>
-                  <td className="px-3 py-2 font-medium text-stone-800">{m.numero}</td>
-                  <td className="px-3 py-2 text-stone-700">
+                  <td className="px-3 py-1.5 font-medium text-stone-800">{m.numero}</td>
+                  <td className="px-3 py-1.5 text-stone-700">
                     {ETIQUETA_TIPO_MODIFICACION[m.tipo]}
                     {m.vigenciasFuturas && (
                       <span className="ml-1 rounded bg-amber-50 px-1 text-[10px] text-amber-700">vigencias futuras {textoAnios(m.aniosVigenciasFuturas)}</span>
@@ -382,11 +475,31 @@ export function ModificacionesContrato({
                     )}
                     {m.observacion && <span className="block text-stone-400">{m.observacion}</span>}
                   </td>
-                  <td className="px-3 py-2 text-stone-600">
+                  <td className="px-3 py-1.5 text-stone-600">
                     {m.terminacionNueva ? `${fechaLarga(m.terminacionAnterior)} → ${fechaLarga(m.terminacionNueva)}` : "Sin cambio"}
                   </td>
-                  <td className="px-3 py-2 text-stone-600">{m.valorAdicionado ? pesos(m.valorAdicionado) : "—"}</td>
-                  <td className="px-3 py-2 text-stone-400">
+                  <td className="px-3 py-1.5 text-stone-600">{m.valorAdicionado ? pesos(m.valorAdicionado) : "—"}</td>
+                  {conSoportes && (
+                    <td className="whitespace-nowrap px-3 py-1.5 text-[11px]">
+                      {requiereSoportePresupuestal(m) ? (
+                        <span className="flex gap-1">
+                          {SOPORTES_PRESUPUESTALES.map((x) => (
+                            <SoporteCelda
+                              key={x.valor}
+                              expedienteId={expedienteId}
+                              modificacionId={m.id}
+                              soporte={x.valor}
+                              documentoId={x.valor === "CDP" ? m.cdpDocumentoId : m.rpDocumentoId}
+                              puedeCargar={puedeRegistrar}
+                            />
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="text-stone-300">No aplica</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="px-3 py-1.5 text-stone-400">
                     {fechaLarga(m.registradoEn)} · {m.registradoPor}
                     {m.documentoId && (
                       <a href={`#documento-${m.documentoId}`} className="ml-1 text-cdmb-700 hover:underline">

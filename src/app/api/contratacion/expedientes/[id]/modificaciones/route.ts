@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualquierEtapaContrato, tieneRolContratacion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeRegistrarModificacionContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
 import { registrarModificacionContrato } from "@/lib/contratacion";
 import { leerModificacion } from "@/lib/modificaciones-contrato";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES } from "@/lib/uploads-config";
@@ -10,11 +10,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  const permisos = await obtenerPermisosUsuario(session.userId);
-  const expediente = await db.expedienteContractual.findUnique({ where: { id }, select: { id: true, contratistaId: true, cerrado: true } });
+  const [permisos, expediente] = await Promise.all([
+    obtenerPermisosUsuario(session.userId),
+    db.expedienteContractual.findFirst({ where: { id, eliminado: false }, select: { id: true, contratistaId: true, cerrado: true } }),
+  ]);
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
-  const soloContratista = tieneRolContratacion(permisos, "CONTRATISTA") && permisos.rolesContratacion.size === 1 && !permisos.esAdmin;
-  if (soloContratista || !puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL")) {
+  if (!puedeRegistrarModificacionContrato(permisos, expediente)) {
     return NextResponse.json({ error: "No tiene permiso para registrar modificaciones en este contrato." }, { status: 403 });
   }
 

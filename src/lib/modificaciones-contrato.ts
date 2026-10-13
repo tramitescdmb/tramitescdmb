@@ -31,6 +31,17 @@ export const ETIQUETA_TIPO_MODIFICACION: Record<TipoModificacion, string> = {
 
 export const LIMITE_ADICION = 0.5;
 
+export type SoportePresupuestal = "CDP" | "RP";
+
+export const SOPORTES_PRESUPUESTALES: { valor: SoportePresupuestal; sigla: string; nombre: string }[] = [
+  { valor: "CDP", sigla: "CDP", nombre: "Certificado de disponibilidad presupuestal" },
+  { valor: "RP", sigla: "RP", nombre: "Registro presupuestal" },
+];
+
+export function requiereSoportePresupuestal(m: { tipo: TipoModificacion; vigenciasFuturas: boolean }): boolean {
+  return cambiaValor(m.tipo) || m.tipo === "VIGENCIAS_FUTURAS" || m.vigenciasFuturas;
+}
+
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 export function esDocumentoModificacion(nombre: string | null | undefined): boolean {

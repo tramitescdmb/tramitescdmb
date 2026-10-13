@@ -209,7 +209,7 @@
     "pasos": [
       "Se pulsa «Registrar modificación» y se elige un tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras, o aclaración.",
       "Prórroga: nueva fecha de terminación. Adición: valor adicionado, hasta el 50 % del valor inicial. Suspensión: fechas de suspensión y reinicio; la terminación se corre los días suspendidos.",
-      "Si la nueva terminación pasa a otro año, o se elige «Vigencias futuras», se registra la clase (ordinaria o excepcional), el acto de autorización y, por cada vigencia siguiente, el periodo cubierto (meses y días desde el 1 de enero hasta la terminación) y el valor comprometido.",
+      "Si la nueva terminación pasa a otro año, o se elige «Vigencias futuras», se registra la clase (ordinaria o excepcional), el acto de autorización y, por cada vigencia siguiente, el periodo cubierto (meses y días desde el 1 de enero hasta la terminación) y el valor comprometido. Registrada la modificación, la tabla habilita la carga del CDP y del RP de cada adición o vigencia futura.",
       "Se carga el acta y se registra. La fecha de terminación, el valor y los informes mensuales se actualizan."
     ],
     "ejemplo": "Prorrogar el contrato `050-2026` del 21 de diciembre de 2026 al 31 de enero de 2027 exige confirmar vigencias futuras 2027 y agrega el informe de enero.",

@@ -319,6 +319,13 @@ export function puedeGestionarPeriodosInforme(permisos: PermisosUsuario, expedie
   return !esContratistaGecon(permisos) && puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL");
 }
 
+export function puedeRegistrarModificacionContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; contratistaId: string | null; cerrado: boolean }
+): boolean {
+  return !expediente.cerrado && puedeGestionarPeriodosInforme(permisos, expediente);
+}
+
 export function puedeAsignarFirmantesDocumentoContrato(
   permisos: PermisosUsuario,
   expediente: { id: string; dependenciaSolicitanteId: string }

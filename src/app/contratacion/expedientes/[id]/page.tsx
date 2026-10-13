@@ -18,6 +18,7 @@ import {
   obtenerPermisosUsuario,
   puedeVerExpedienteContractual,
   tieneSolicitudFirmaEnExpedienteContractual,
+  puedeRegistrarModificacionContrato,
   puedeSubirDocumentoContrato,
   puedeAsignarFirmantesDocumentoContrato,
   puedeEditarSinTrazaDocumentoContrato,
@@ -383,7 +384,6 @@ export default async function DetalleExpedienteContractualPage({
           controlesDocumento(doc, etapa, puedeGestionarEtapaCerrada)
         ) : puedeSubirEtapa ? (
           <SubirDocumentoRequisitoForm
-
             expedienteId={id}
             etapa={etapa}
             requisitoId={item.id}
@@ -688,11 +688,7 @@ export default async function DetalleExpedienteContractualPage({
       {(expediente.etapaActual !== "PRECONTRACTUAL" || expediente.modificaciones.length > 0) && (
         <ModificacionesContrato
           expedienteId={id}
-          puedeRegistrar={
-            !expediente.cerrado &&
-            !(tieneRolContratacion(permisos, "CONTRATISTA") && permisos.rolesContratacion.size === 1 && !permisos.esAdmin) &&
-            puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL")
-          }
+          puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
           terminacion={fechaTerminacionIso}
           valorInicial={expediente.valor !== null ? Number(expediente.valor) : null}
           modificaciones={expediente.modificaciones.map((m) => ({
@@ -708,6 +704,8 @@ export default async function DetalleExpedienteContractualPage({
             valoresVigenciasFuturas: Array.isArray(m.valoresVigenciasFuturas) ? (m.valoresVigenciasFuturas as { anio: number; valor: number; desde?: string; hasta?: string }[]) : [],
             observacion: m.observacion,
             documentoId: m.documentoId,
+            cdpDocumentoId: m.cdpDocumentoId,
+            rpDocumentoId: m.rpDocumentoId,
             registradoEn: m.createdAt.toISOString(),
             registradoPor: m.registradoPor.nombre,
           }))}
@@ -943,7 +941,6 @@ export default async function DetalleExpedienteContractualPage({
                             </div>
                           ) : puedeSubir ? (
                             <SubirDocumentoRequisitoForm
-
                               expedienteId={id}
                               etapa={etapa}
                               requisitoId={item.id}
@@ -1070,7 +1067,7 @@ export default async function DetalleExpedienteContractualPage({
                           + Subir otro documento no listado en el catálogo
                         </summary>
                         <div className="mt-2">
-                          <SubirDocumentosContratoForm  expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
+                          <SubirDocumentosContratoForm expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
                         </div>
                       </details>
                     )}

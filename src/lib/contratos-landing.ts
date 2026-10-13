@@ -79,7 +79,7 @@ const SELECT_CONTRATO = {
 
 type ExpedienteLanding = Prisma.ExpedienteContractualGetPayload<{ select: typeof SELECT_CONTRATO }>;
 
-function periodosDe(e: ExpedienteLanding, hoy: Date): PeriodoLanding[] {
+function periodosDe(e: Pick<ExpedienteLanding, "id" | "documentos" | "fechaInicio" | "fechaFinEstimada">, hoy: Date): PeriodoLanding[] {
   const base = `/contratacion/expedientes/${e.id}`;
   const docPorMes = new Map(e.documentos.map((d) => [d.periodoMes!, d.id]));
   return calcularPeriodosInforme(e.fechaInicio, e.fechaFinEstimada).map((p, i) => {
@@ -178,27 +178,41 @@ export function veSeguimientoContratos(permisos: PermisosUsuario): boolean {
   return puedeGestionarContratistas(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
 }
 
-export async function obtenerSeguimientoContratos(permisos: PermisosUsuario): Promise<{ filas: FilaSeguimiento[]; enEjecucion: number }> {
+const SELECT_SEGUIMIENTO = {
+  id: true,
+  numero: true,
+  numeroContrato: true,
+  fechaInicio: true,
+  fechaFinEstimada: true,
+  contratista: { select: { nombreORazonSocial: true } },
+  documentos: SELECT_CONTRATO.documentos,
+} satisfies Prisma.ExpedienteContractualSelect;
+
+export type SeguimientoContratos = {
+  filas: FilaSeguimiento[];
+  total: number;
+  enEjecucion: number;
+  informes: number;
+  firmas: number;
+  porTerminar: number;
+};
+
+export async function obtenerSeguimientoContratos(permisos: PermisosUsuario, limite = 8): Promise<SeguimientoContratos> {
   const hoy = hoyColombia();
   const where: Prisma.ExpedienteContractualWhereInput = {
     AND: [construirWhereExpedienteContractual({}, permisos), { etapaActual: "CONTRACTUAL", cerrado: false }],
   };
-  const expedientes = await db.expedienteContractual.findMany({ where, take: 500, select: SELECT_CONTRATO });
-  const firmas = await db.solicitudFirma.groupBy({
-    by: ["documentoContratoId"],
-    where: { estado: "PENDIENTE", documentoContrato: { expedienteId: { in: expedientes.map((e) => e.id) } } },
-    _count: true,
-  });
-  const docs = expedientes.length
-    ? await db.documentoContrato.findMany({
-        where: { id: { in: firmas.map((f) => f.documentoContratoId!).filter(Boolean) } },
-        select: { id: true, expedienteId: true },
-      })
-    : [];
+  const [expedientes, firmas] = await Promise.all([
+    db.expedienteContractual.findMany({ where, take: 500, select: SELECT_SEGUIMIENTO }),
+    db.solicitudFirma.findMany({
+      where: { estado: "PENDIENTE", documentoContrato: { expediente: where } },
+      select: { documentoContrato: { select: { expedienteId: true } } },
+    }),
+  ]);
   const firmasPorExpediente = new Map<string, number>();
   for (const f of firmas) {
-    const exp = docs.find((d) => d.id === f.documentoContratoId)?.expedienteId;
-    if (exp) firmasPorExpediente.set(exp, (firmasPorExpediente.get(exp) ?? 0) + f._count);
+    const exp = f.documentoContrato?.expedienteId;
+    if (exp) firmasPorExpediente.set(exp, (firmasPorExpediente.get(exp) ?? 0) + 1);
   }
 
   const filas = expedientes
@@ -223,5 +237,12 @@ export async function obtenerSeguimientoContratos(permisos: PermisosUsuario): Pr
     .filter((f) => f.informesPorRadicar > 0 || f.firmasPendientes > 0 || (f.diasParaTerminar !== null && f.diasParaTerminar <= 15))
     .sort((a, b) => b.maxRetraso - a.maxRetraso || (a.diasParaTerminar ?? 9999) - (b.diasParaTerminar ?? 9999));
 
-  return { filas, enEjecucion: expedientes.length };
+  return {
+    filas: filas.slice(0, limite),
+    total: filas.length,
+    enEjecucion: expedientes.length,
+    informes: filas.reduce((a, f) => a + f.informesPorRadicar, 0),
+    firmas: filas.reduce((a, f) => a + f.firmasPendientes, 0),
+    porTerminar: filas.filter((f) => f.diasParaTerminar !== null && f.diasParaTerminar >= 0 && f.diasParaTerminar <= 15).length,
+  };
 }

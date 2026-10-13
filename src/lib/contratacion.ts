@@ -17,7 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, TIPOS_MODIFICACION, duracionPeriodo, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
+import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, duracionPeriodo, requiereSoportePresupuestal, type SoportePresupuestal, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -1559,4 +1559,38 @@ export async function registrarModificacionContrato(datos: {
   ].filter(Boolean);
   await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
   return { numero };
+}
+
+export async function adjuntarSoportePresupuestalModificacion(datos: {
+  expedienteId: string;
+  modificacionId: string;
+  soporte: SoportePresupuestal;
+  archivo: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
+  usuarioId: string;
+  ip?: string | null;
+  userAgent?: string | null;
+}) {
+  const modificacion = await db.modificacionContrato.findFirst({
+    where: { id: datos.modificacionId, expedienteId: datos.expedienteId },
+    select: { numero: true, tipo: true, vigenciasFuturas: true, cdpDocumentoId: true, rpDocumentoId: true },
+  });
+  if (!modificacion) throw new Error("La modificación no existe.");
+  if (!requiereSoportePresupuestal(modificacion)) throw new Error("Esta modificación no compromete recursos: no requiere CDP ni RP.");
+  const campo = datos.soporte === "CDP" ? "cdpDocumentoId" : "rpDocumentoId";
+  if (modificacion[campo]) throw new Error(`El ${datos.soporte} de esta modificación ya está cargado.`);
+  const soporte = SOPORTES_PRESUPUESTALES.find((x) => x.valor === datos.soporte)!;
+
+  const documento = await agregarDocumentoContrato({
+    expedienteId: datos.expedienteId,
+    etapa: "CONTRACTUAL",
+    categoria: soporte.nombre,
+    nombre: `${soporte.nombre} (${soporte.sigla}) — modificación N.° ${modificacion.numero}`,
+    ...datos.archivo,
+    subidoPorId: datos.usuarioId,
+    requiereFirma: false,
+    ip: datos.ip,
+    userAgent: datos.userAgent,
+    cualquierEtapa: true,
+  });
+  await db.modificacionContrato.update({ where: { id: datos.modificacionId }, data: { [campo]: documento.id } });
 }
