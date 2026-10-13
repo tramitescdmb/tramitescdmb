@@ -105,7 +105,7 @@ export const obtenerRequisitosDeEtapa = unstable_cache(
       orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
   },
-  ["requisitos-de-etapa"],
+  ["requisitos-de-etapa-v2"],
   { tags: [TAG_CATALOGO_REQUISITOS] }
 );
 
