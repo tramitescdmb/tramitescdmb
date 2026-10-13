@@ -43,12 +43,12 @@
     "resumen": "Cada contrato tiene un único expediente, que se abre en la etapa Precontractual.",
     "pasos": [
       "Administrador o Jefe de Contratación abre «Nuevo expediente».",
-      "Diligencia objeto, modalidad, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
+      "Diligencia objeto, modalidad, tipo de contrato, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
       "Vincula el contratista y designa supervisores y Personal de Contratación.",
       "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN`."
     ],
     "ejemplo": "`CDMB-CTO-2026-000006`, contrato `050-2026`: prestación de servicio como ingeniero de sistemas para ADEI, contratación directa, $20.000.000, del 22 de septiembre al 21 de diciembre de 2026.",
-    "detalle": "Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.",
+    "detalle": "El tipo de contrato define parte del catálogo: obra pide el informe de supervisión para obra pública y el acta de mayores y menores cantidades; interventoría queda exenta del límite de adiciones; prestación de servicios y compraventa no exigen acta de liquidación.\n\nLa fecha de suscripción no puede ser posterior a la de inicio. Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.",
     "fundamento": "Ley 80 de 1993 · Ley 1150 de 2007 · Manual A-BS-MA01."
   },
   {
@@ -57,16 +57,16 @@
     "titulo": "Documentos por etapa",
     "tituloIndice": "Documentos por etapa",
     "ubicacion": "Detalle del expediente → etapa Precontractual, Contractual o Postcontractual.",
-    "resumen": "Cada etapa lista los documentos del Manual A-BS-MA01: primero los obligatorios, luego los opcionales.",
+    "resumen": "Cada etapa lista los documentos del Manual A-BS-MA01 según la modalidad y el tipo de contrato: primero los obligatorios, luego los opcionales.",
     "pasos": [
       "Se abre la etapa actual.",
       "Se carga el archivo de cada requisito.",
       "Quien revisa lo marca como validado.",
       "Se pueden cargar documentos fuera del catálogo."
     ],
-    "ejemplo": "En `CDMB-CTO-2026-000006` la etapa Precontractual exige la Hoja de vida SIGEP.",
+    "ejemplo": "En `CDMB-CTO-2026-000006` la etapa Precontractual exige la Hoja de vida SIGEP y el Certificado de Disponibilidad Presupuestal (CDP); la Contractual exige el Registro Presupuestal (RP) como requisito de ejecución.",
     "detalle": "Cada carga, edición, eliminación o validación queda en la cadena de hash del expediente. Las acciones de Administrador y Jefe de Contratación no se registran en ella.",
-    "fundamento": "Manual A-BS-MA01 · Ley 594 de 2000."
+    "fundamento": "Manual A-BS-MA01 · Ley 80 de 1993, arts. 25 y 41 · Ley 594 de 2000."
   },
   {
     "orden": 5,
@@ -90,7 +90,7 @@
     "titulo": "Informes y actas por periodo",
     "tituloIndice": "Informes por periodo",
     "ubicacion": "Detalle del expediente → etapa Contractual → requisitos por periodo.",
-    "resumen": "Los informes de supervisión y de cumplimiento y las actas de pago parcial se cargan por cada mes del contrato.",
+    "resumen": "El informe de supervisión, el informe de cumplimiento y el acta de pago parcial se cargan por cada mes del contrato; en obra, el informe de supervisión para obra pública.",
     "pasos": [
       "El sistema calcula los periodos con las fechas de inicio y fin.",
       "Cada periodo se radica desde el día siguiente a su cierre.",
@@ -143,10 +143,10 @@
     "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado.",
     "pasos": [
       "Ingresa con su usuario de red.",
-      "Consulta sus pendientes en el inicio.",
+      "En el inicio ve cada contrato con su avance del plazo, los informes por mes y el siguiente paso.",
       "Carga el soporte del periodo y firma desde el buzón."
     ],
-    "ejemplo": "`walhal01` ve «Informe N.° 1 por radicar» del contrato `050-2026`.",
+    "ejemplo": "`walhal01` ve en el inicio «Contrato N.° 050-2026 · informe de septiembre por radicar», con los días de retraso.",
     "detalle": "En Precontractual solo carga personal de la CDMB.",
     "fundamento": "Manual A-BS-MA01."
   },
@@ -164,7 +164,7 @@
       "«Sistema»: volumen y actividad (Administrador o Jefe de Contratación)."
     ],
     "ejemplo": "Con los datos de prueba hay dos contratos en ejecución (`050-2026` y `22136326`) y uno en Precontractual.",
-    "detalle": "Los pendientes de GECON también aparecen en el inicio del aplicativo.",
+    "detalle": "En el inicio del aplicativo, Administrador, Jefe y Personal de Contratación ven el seguimiento de los contratos en ejecución con informes por radicar, firmas pendientes o terminación en los próximos 15 días, los más atrasados primero.",
     "fundamento": "Decreto 1499 de 2017 (MIPG)."
   },
   {
@@ -175,13 +175,14 @@
     "ubicacion": "Detalle del expediente → aprobación de Postcontractual. Administración → Disposición final (TRD).",
     "resumen": "El expediente cerrado queda en solo lectura y pasa al archivo central del SGDEA con su clasificación TRD.",
     "pasos": [
-      "Se aprueba la etapa Postcontractual con el acta de liquidación cargada.",
+      "Se carga el acta de liquidación cuando aplica: es opcional en prestación de servicios y compraventa, salvo terminación anticipada.",
+      "Se aprueba la etapa Postcontractual.",
       "El expediente queda disponible en el SGDEA como ficha de solo lectura.",
       "Cumplido el tiempo de retención, se aplica la disposición final."
     ],
     "ejemplo": "`CDMB-CTO-2026-000034` está en Postcontractual.",
-    "detalle": "Un expediente cerrado se reabre con motivo; queda en su bitácora.",
-    "fundamento": "Ley 594 de 2000 · Acuerdo 004 de 2019 AGN."
+    "detalle": "Plazos de liquidación del Manual: mutuo acuerdo dentro de los 6 meses siguientes a la terminación, unilateral dentro de los 2 meses siguientes y, vencidos ambos, hasta 2 años más.\n\nUn expediente cerrado se reabre con motivo; queda en su bitácora.",
+    "fundamento": "Ley 1150 de 2007, art. 11 · Decreto 019 de 2012, art. 217 · Manual A-BS-MA01, cap. 10 · Ley 594 de 2000 · Acuerdo 004 de 2019 AGN."
   },
   {
     "orden": 12,
@@ -207,13 +208,15 @@
     "ubicacion": "Detalle del expediente → «Modificaciones del contrato» → «Registrar modificación».",
     "resumen": "Las modificaciones se registran en un solo lugar: se elige el tipo, se diligencian solo sus datos y se carga una acta, que el sistema ubica en el requisito correspondiente.",
     "pasos": [
-      "Se pulsa «Registrar modificación» y se elige un tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras, o aclaración.",
-      "Fecha de suscripción de la modificación, entre el inicio y la terminación vigente. Prórroga: nueva fecha de terminación. Adición: valor adicionado, hasta el 50 % del valor inicial en SMMLV (la interventoría está exenta). Suspensión: fechas de suspensión y reinicio; la terminación se corre los días suspendidos.",
-      "Si la nueva terminación pasa a otro año, o se elige «Vigencias futuras», se registra la clase (ordinaria o excepcional), el acto de autorización y, por cada vigencia siguiente, el periodo cubierto (meses y días desde el 1 de enero hasta la terminación) y el valor comprometido. Registrada la modificación, la tabla habilita la carga del CDP y del RP de cada adición en valor, y solo del RP cuando se trata de vigencias futuras sin recursos nuevos.",
-      "Se carga el acta y se registra. La fecha de terminación, el valor y los informes mensuales se actualizan."
+      "Se pulsa «Registrar modificación» y se elige el tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras o aclaración.",
+      "Se indica la fecha de suscripción, que debe estar entre el inicio y la terminación vigente: un contrato vencido no admite modificaciones.",
+      "Prórroga: nueva fecha de terminación. Adición: valor adicionado; el sistema muestra el saldo disponible hasta el 50 % del valor inicial en SMMLV. Suspensión: fechas de suspensión y reinicio.",
+      "Si la nueva terminación pasa a la vigencia siguiente se registran la clase de vigencias futuras, el acto de autorización y, por cada vigencia, el periodo cubierto en meses y días y el valor.",
+      "Se carga el acta y se registra. La terminación, el valor y los informes mensuales se actualizan.",
+      "En la tabla de modificaciones se cargan el CDP y el RP de cada adición, o solo el RP cuando la modificación no trae recursos nuevos."
     ],
-    "ejemplo": "Prorrogar el contrato `050-2026` del 21 de diciembre de 2026 al 31 de enero de 2027 exige confirmar vigencias futuras 2027 y agrega el informe de enero.",
-    "detalle": "Cada modificación queda numerada, con la terminación anterior y la nueva, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
-    "fundamento": "Ley 80 de 1993, art. 40 (adiciones hasta el 50 % en SMMLV) · Ley 1474 de 2011, art. 85 (interventoría) · Decreto 111 de 1996 y Ley 819 de 2003 (vigencias futuras) · Manual A-BS-MA01."
+    "ejemplo": "Contrato `050-2026` ($20.000.000, suscrito en 2026): una adición de $10.000.000 alcanza el límite de 5,71 SMMLV. Prorrogarlo del 21 de diciembre de 2026 al 15 de febrero de 2027 exige vigencias futuras 2027 por 1 mes y 15 días y agrega los informes de enero y febrero.",
+    "detalle": "La interventoría está exenta del límite del 50 %. La suspensión no puede ser indefinida.\n\nCada modificación queda numerada, con su fecha de suscripción y la terminación anterior y la nueva, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
+    "fundamento": "Ley 80 de 1993, art. 40 · Ley 1474 de 2011, art. 85 · Decreto 111 de 1996, arts. 14 y 71 · Ley 819 de 2003 · Manual A-BS-MA01, num. 7.4 y 7.5."
   }
 ]

@@ -159,12 +159,25 @@ export default async function ContratacionAyudaPage() {
           <li>Si faltan documentos obligatorios, el sistema los lista y permite continuar.</li>
           <li>Retroceder una etapa reabre la anterior y, si el expediente estaba cerrado, lo reabre.</li>
         </ul>
+        <p>
+          <strong>Soportes presupuestales.</strong> El CDP se exige en Precontractual, antes de comprometer recursos (Ley 80, art. 25,
+          num. 6). El RP se exige en Contractual como requisito de ejecución, junto con la aprobación de garantías y la designación de
+          supervisor (Ley 80, art. 41; Manual, pág. 104). Aplican a todas las modalidades.
+        </p>
+        <p>
+          <strong>Liquidación.</strong> El acta de liquidación es obligatoria salvo en prestación de servicios profesionales y de
+          apoyo a la gestión y en compraventa, donde queda como opcional; si esos contratos terminan anticipadamente, se liquidan. Plazos
+          del Manual (cap. 10): mutuo acuerdo dentro de los 6 meses siguientes a la terminación, unilateral dentro de los 2 meses
+          siguientes y, vencidos ambos, hasta 2 años más.
+        </p>
       </Seccion>
 
       <Seccion n={4} id="checklist" icono={FileCheck2} titulo="Checklist de documentos">
         <p>
           Cada etapa muestra el catálogo de documentos del Manual A-BS-MA01 cruzado con lo cargado: primero los obligatorios, luego
-          los opcionales. Los marcados <Chip tono="cdmb">Se gestiona en SECOP II</Chip> admiten cargar el soporte. También se
+          los opcionales. El catálogo depende de la modalidad y del <strong>tipo de contrato</strong>: los de obra piden el informe de
+          supervisión para obra pública (A-BS-FO117) y el acta de mayores y menores cantidades; los demás, el informe de supervisión
+          (A-BS-FO116). Los marcados <Chip tono="cdmb">Se gestiona en SECOP II</Chip> admiten cargar el soporte. También se
           pueden cargar documentos fuera del catálogo.
         </p>
         <p>
@@ -177,7 +190,7 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Requisitos por periodo.</strong> El informe de supervisión (A-BS-FO116), el informe de cumplimiento (A-BS-FO132),
-          el acta de recibo de pago parcial (A-BS-FO127) y el informe de supervisión de obra (A-BS-FO117) se cargan por cada mes del
+          el acta de recibo de pago parcial (A-BS-FO127) y, en obra, el informe de supervisión para obra pública (A-BS-FO117) se cargan por cada mes del
           contrato, según sus fechas de inicio y fin. Cada periodo se radica desde el día siguiente a su cierre. Ejemplo: un contrato
           del 25 de septiembre al 24 de diciembre tiene cuatro periodos (25–30 sep, octubre, noviembre y 1–24 dic). Si cambian las
           fechas, los periodos se recalculan y los informes de meses que desaparecen se conservan aparte.
@@ -188,18 +201,28 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
-          (prórroga, adición en valor, ambas, suspensión, vigencias futuras o aclaración), se indica su fecha de suscripción, se
-          diligencian sus datos y se carga una sola acta. Solo proceden durante la ejecución: entre el inicio y la terminación vigente
-          (Manual, num. 7.5). Las adiciones no superan el 50 % del valor inicial expresado en SMMLV: el valor inicial se convierte con el
-          salario mínimo del año de suscripción y cada adición con el de su año (Ley 80, art. 40; Manual, num. 7.5.3); los contratos de
-          interventoría están exentos (Ley 1474, art. 85). Una terminación que pasa a la vigencia siguiente exige la autorización
-          de vigencias futuras con el periodo cubierto en esa vigencia (meses y días, desde el 1 de enero) y su valor. Cada adición en valor
-          exige su CDP y su RP; una prórroga o vigencia futura sin recursos nuevos solo exige el RP, porque la vigencia siguiente se
-          respalda con el acto de autorización y no con CDP. La fecha de terminación, el valor y los informes mensuales se
-          actualizan.
+          (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras o aclaración), se indica la fecha de suscripción,
+          se diligencian sus datos y se carga una sola acta. La fecha de terminación, el valor y los informes mensuales se actualizan.
         </p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Solo proceden durante la ejecución: entre el inicio y la terminación vigente (Manual, num. 7.5).</li>
+          <li>
+            Las adiciones no superan el 50 % del valor inicial expresado en SMMLV: el valor inicial se convierte con el salario mínimo
+            del año de suscripción y cada adición con el de su año (Ley 80, art. 40; Manual, num. 7.5.3). La interventoría está exenta
+            (Ley 1474, art. 85).
+          </li>
+          <li>La suspensión indica fecha de reinicio; no se admiten suspensiones indefinidas y la terminación se corre los días suspendidos (Manual, num. 7.4).</li>
+          <li>
+            Una terminación que pasa a la vigencia siguiente exige la autorización de vigencias futuras: clase, acto de autorización y,
+            por cada vigencia, el periodo cubierto (meses y días desde el 1 de enero) y su valor.
+          </li>
+          <li>
+            Cada adición en valor exige su CDP y su RP. Una prórroga o vigencia futura sin recursos nuevos solo exige el RP: la vigencia
+            siguiente se respalda con el acto de autorización y no con CDP. Ambos se cargan desde la tabla de modificaciones.
+          </li>
+        </ul>
         <p>
-          <strong>Datos generales</strong> (modalidad, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
+          <strong>Datos generales</strong> (modalidad, tipo de contrato, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
           «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>
       </Seccion>
@@ -312,6 +335,11 @@ export default async function ContratacionAyudaPage() {
           vistas: <strong>Mi trabajo pendiente</strong> (firmas, revisiones e informes de periodos cerrados sin cargar),{" "}
           <strong>Expedientes</strong> (cantidad por etapa y recientes), <strong>Indicadores</strong> (tiempos por etapa, firmas,
           dependencias y modalidades) y <strong>Sistema</strong> (volumen y actividad; Administrador o Jefe de Contratación).
+        </p>
+        <p>
+          En el <strong>inicio</strong> del aplicativo, Administrador, Jefe y Personal de Contratación ven el seguimiento de los
+          contratos en ejecución con informes por radicar, firmas pendientes o terminación en los próximos 15 días, los más atrasados
+          primero. Contratista y Supervisor ven sus contratos con el avance del plazo, los informes por mes y el siguiente paso.
         </p>
       </Seccion>
 

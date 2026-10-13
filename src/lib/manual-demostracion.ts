@@ -96,9 +96,28 @@ export function filasSemillaManual(modulo: ModuloManual = "SGDEA"): DatosApartad
   return SEMILLAS[modulo].map((a) => validarDatosApartado(a, a.orden));
 }
 
+const CAMPOS_APARTADO = ["etiqueta", "titulo", "tituloIndice", "ubicacion", "resumen", "pasos", "ejemplo", "detalle", "fundamento"] as const;
+
 export async function asegurarManualDemostracion(modulo: ModuloManual = "SGDEA"): Promise<void> {
-  if ((await db.apartadoManualDemostracion.count({ where: { modulo } })) > 0) return;
-  await db.apartadoManualDemostracion.createMany({ data: filasSemillaManual(modulo).map((a) => ({ ...a, modulo })) });
+  const semilla = filasSemillaManual(modulo);
+  const actuales = await db.apartadoManualDemostracion.findMany({ where: { modulo } });
+  if (actuales.length === 0) {
+    await db.apartadoManualDemostracion.createMany({ data: semilla.map((a) => ({ ...a, modulo })) });
+    return;
+  }
+  const maxOrden = Math.max(...actuales.map((a) => a.orden));
+  const nuevos = semilla.filter((a) => a.orden > maxOrden && !actuales.some((x) => x.titulo === a.titulo));
+  const desactualizados = actuales.flatMap((fila) => {
+    if (fila.actualizadoPorId) return [];
+    const base = semilla.find((a) => a.orden === fila.orden);
+    if (!base || CAMPOS_APARTADO.every((k) => JSON.stringify(base[k]) === JSON.stringify(fila[k]))) return [];
+    return [{ id: fila.id, base }];
+  });
+  if (nuevos.length === 0 && desactualizados.length === 0) return;
+  await db.$transaction([
+    ...desactualizados.map(({ id, base }) => db.apartadoManualDemostracion.update({ where: { id }, data: base })),
+    ...(nuevos.length ? [db.apartadoManualDemostracion.createMany({ data: nuevos.map((a) => ({ ...a, modulo })) })] : []),
+  ]);
 }
 
 const ETIQUETA_CAMPO: Record<keyof DatosApartado, string> = {
