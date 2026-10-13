@@ -80,3 +80,15 @@ describe("periodo en la vigencia siguiente", () => {
     expect(valoresConPeriodo(m, contrato.terminacion)).toEqual([{ anio: 2027, valor: 5, desde: "2027-01-01", hasta: "2027-02-15" }]);
   });
 });
+
+describe("soportes presupuestales", () => {
+  it("pide CDP solo con recursos nuevos y RP con adición o vigencias futuras", async () => {
+    const { soportesRequeridos } = await import("@/lib/modificaciones-contrato");
+    expect(soportesRequeridos({ tipo: "ADICION_VALOR", vigenciasFuturas: false })).toEqual(["CDP", "RP"]);
+    expect(soportesRequeridos({ tipo: "PRORROGA_Y_ADICION", vigenciasFuturas: true })).toEqual(["CDP", "RP"]);
+    expect(soportesRequeridos({ tipo: "PRORROGA", vigenciasFuturas: true })).toEqual(["RP"]);
+    expect(soportesRequeridos({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: true })).toEqual(["RP"]);
+    expect(soportesRequeridos({ tipo: "PRORROGA", vigenciasFuturas: false })).toEqual([]);
+    expect(soportesRequeridos({ tipo: "SUSPENSION", vigenciasFuturas: false })).toEqual([]);
+  });
+});

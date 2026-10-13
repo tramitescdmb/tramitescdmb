@@ -21,7 +21,8 @@ import {
   textoAnios,
   CLASES_VIGENCIAS_FUTURAS,
   SOPORTES_PRESUPUESTALES,
-  requiereSoportePresupuestal,
+  MOTIVO_SIN_CDP,
+  soportesRequeridos,
   type SoportePresupuestal,
   type TipoModificacion,
 } from "@/lib/modificaciones-contrato";
@@ -185,10 +186,11 @@ export function ModificacionesContrato({
   const anios = periodos.map((p) => p.anio);
   const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || periodos.length > 0;
   const soportesPendientes = modificaciones.reduce(
-    (a, m) => a + (requiereSoportePresupuestal(m) ? Number(!m.cdpDocumentoId) + Number(!m.rpDocumentoId) : 0),
+    (a, m) => a + soportesRequeridos(m).filter((x) => !(x === "CDP" ? m.cdpDocumentoId : m.rpDocumentoId)).length,
     0
   );
-  const conSoportes = modificaciones.some(requiereSoportePresupuestal);
+  const conSoportes = modificaciones.some((m) => soportesRequeridos(m).length > 0);
+  const soportesNueva = datos ? soportesRequeridos({ tipo: datos.tipo, vigenciasFuturas: pideVigencias }) : [];
   const tipoElegido = TIPOS_MODIFICACION.find((t) => t.valor === tipo);
   const disponibleAdicion = valorInicial !== null ? valorInicial * LIMITE_ADICION - adicionadoPrevio : null;
 
@@ -425,8 +427,11 @@ export function ModificacionesContrato({
                   Requiere firma
                 </label>
               </div>
-              {datos && requiereSoportePresupuestal({ tipo: datos.tipo, vigenciasFuturas: pideVigencias }) && (
-                <p className="mt-1.5 text-[11px] text-stone-500">Una vez registrada, cargue en la tabla el CDP y el RP de esta modificación.</p>
+              {soportesNueva.length > 0 && (
+                <p className="mt-1.5 text-[11px] text-stone-500">
+                  Una vez registrada, cargue en la tabla {soportesNueva.length === 2 ? "el CDP y el RP" : "el RP"} de esta modificación.
+                  {soportesNueva.length === 1 && " No requiere CDP: los recursos de la vigencia siguiente se respaldan con el acto de autorización."}
+                </p>
               )}
             </fieldset>
           )}
@@ -481,18 +486,24 @@ export function ModificacionesContrato({
                   <td className="px-3 py-1.5 text-stone-600">{m.valorAdicionado ? pesos(m.valorAdicionado) : "—"}</td>
                   {conSoportes && (
                     <td className="whitespace-nowrap px-3 py-1.5 text-[11px]">
-                      {requiereSoportePresupuestal(m) ? (
+                      {soportesRequeridos(m).length > 0 ? (
                         <span className="flex gap-1">
-                          {SOPORTES_PRESUPUESTALES.map((x) => (
-                            <SoporteCelda
-                              key={x.valor}
-                              expedienteId={expedienteId}
-                              modificacionId={m.id}
-                              soporte={x.valor}
-                              documentoId={x.valor === "CDP" ? m.cdpDocumentoId : m.rpDocumentoId}
-                              puedeCargar={puedeRegistrar}
-                            />
-                          ))}
+                          {SOPORTES_PRESUPUESTALES.map((x) =>
+                            !soportesRequeridos(m).includes(x.valor) ? (
+                              <span key={x.valor} title={MOTIVO_SIN_CDP} className="rounded px-1.5 py-px text-stone-300">
+                                Sin {x.valor}
+                              </span>
+                            ) : (
+                              <SoporteCelda
+                                key={x.valor}
+                                expedienteId={expedienteId}
+                                modificacionId={m.id}
+                                soporte={x.valor}
+                                documentoId={x.valor === "CDP" ? m.cdpDocumentoId : m.rpDocumentoId}
+                                puedeCargar={puedeRegistrar}
+                              />
+                            )
+                          )}
                         </span>
                       ) : (
                         <span className="text-stone-300">No aplica</span>

@@ -17,7 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, duracionPeriodo, requiereSoportePresupuestal, type SoportePresupuestal, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
+import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, duracionPeriodo, soportesRequeridos, type SoportePresupuestal, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -105,7 +105,7 @@ export const obtenerRequisitosDeEtapa = unstable_cache(
       orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
   },
-  ["requisitos-de-etapa-v2"],
+  ["requisitos-de-etapa-v3"],
   { tags: [TAG_CATALOGO_REQUISITOS] }
 );
 
@@ -1575,7 +1575,7 @@ export async function adjuntarSoportePresupuestalModificacion(datos: {
     select: { numero: true, tipo: true, vigenciasFuturas: true, cdpDocumentoId: true, rpDocumentoId: true },
   });
   if (!modificacion) throw new Error("La modificación no existe.");
-  if (!requiereSoportePresupuestal(modificacion)) throw new Error("Esta modificación no compromete recursos: no requiere CDP ni RP.");
+  if (!soportesRequeridos(modificacion).includes(datos.soporte)) throw new Error(`Esta modificación no requiere ${datos.soporte}.`);
   const campo = datos.soporte === "CDP" ? "cdpDocumentoId" : "rpDocumentoId";
   if (modificacion[campo]) throw new Error(`El ${datos.soporte} de esta modificación ya está cargado.`);
   const soporte = SOPORTES_PRESUPUESTALES.find((x) => x.valor === datos.soporte)!;

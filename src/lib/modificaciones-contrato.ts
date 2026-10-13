@@ -38,9 +38,13 @@ export const SOPORTES_PRESUPUESTALES: { valor: SoportePresupuestal; sigla: strin
   { valor: "RP", sigla: "RP", nombre: "Registro presupuestal" },
 ];
 
-export function requiereSoportePresupuestal(m: { tipo: TipoModificacion; vigenciasFuturas: boolean }): boolean {
-  return cambiaValor(m.tipo) || m.tipo === "VIGENCIAS_FUTURAS" || m.vigenciasFuturas;
+export function soportesRequeridos(m: { tipo: TipoModificacion; vigenciasFuturas: boolean }): SoportePresupuestal[] {
+  const valor = cambiaValor(m.tipo);
+  const futuras = m.tipo === "VIGENCIAS_FUTURAS" || m.vigenciasFuturas;
+  return [...(valor ? (["CDP"] as const) : []), ...(valor || futuras ? (["RP"] as const) : [])];
 }
+
+export const MOTIVO_SIN_CDP = "Sin recursos nuevos de la vigencia en curso: el respaldo es el acto de autorización de vigencias futuras.";
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
