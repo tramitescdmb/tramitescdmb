@@ -8,6 +8,8 @@ const GRUPOS: { titulo: string; campos: [string, string, Formato?][] }[] = [
   {
     titulo: "Contrato",
     campos: [
+      ["objeto_del_contrato", "Objeto"],
+      ["descripcion_del_proceso", "Descripción del proceso"],
       ["id_contrato", "ID del contrato"],
       ["referencia_del_contrato", "N.° de contrato"],
       ["proceso_de_compra", "Proceso"],
@@ -26,6 +28,11 @@ const GRUPOS: { titulo: string; campos: [string, string, Formato?][] }[] = [
       ["fecha_inicio_liquidacion", "Inicio de liquidación", "fecha"],
       ["fecha_fin_liquidacion", "Fin de liquidación", "fecha"],
       ["ultima_actualizacion", "Última actualización en SECOP", "fecha"],
+      ["condiciones_de_entrega", "Condiciones de entrega"],
+      ["habilita_pago_adelantado", "Habilita pago adelantado"],
+      ["puntos_del_acuerdo", "Puntos del Acuerdo de Paz"],
+      ["pilares_del_acuerdo", "Pilares del Acuerdo de Paz"],
+      ["documentos_tipo", "Documentos tipo"],
     ],
   },
   {
@@ -61,14 +68,40 @@ const GRUPOS: { titulo: string; campos: [string, string, Formato?][] }[] = [
     titulo: "Personas",
     campos: [
       ["proveedor_adjudicado", "Contratista"],
+      ["tipodocproveedor", "Tipo de documento"],
       ["documento_proveedor", "Documento del contratista"],
+      ["codigo_proveedor", "Código del proveedor en SECOP"],
       ["es_pyme", "Es mipyme"],
       ["es_grupo", "Es consorcio o unión temporal"],
       ["nombre_representante_legal", "Representante legal"],
+      ["tipo_de_identificaci_n_representante_legal", "Tipo de documento del representante"],
+      ["identificaci_n_representante_legal", "Documento del representante"],
+      ["nacionalidad_representante_legal", "Nacionalidad del representante"],
+      ["domicilio_representante_legal", "Domicilio del representante"],
+      ["g_nero_representante_legal", "Género del representante"],
       ["nombre_supervisor", "Supervisor"],
+      ["tipo_de_documento_supervisor", "Tipo de documento del supervisor"],
       ["n_mero_de_documento_supervisor", "Documento del supervisor"],
       ["nombre_ordenador_del_gasto", "Ordenador del gasto"],
+      ["tipo_de_documento_ordenador_del_gasto", "Tipo de documento del ordenador"],
       ["n_mero_de_documento_ordenador_del_gasto", "Documento del ordenador"],
+      ["nombre_ordenador_de_pago", "Ordenador del pago"],
+      ["tipo_de_documento_ordenador_de_pago", "Tipo de documento del ordenador del pago"],
+      ["n_mero_de_documento_ordenador_de_pago", "Documento del ordenador del pago"],
+    ],
+  },
+  {
+    titulo: "Entidad",
+    campos: [
+      ["nombre_entidad", "Entidad"],
+      ["nit_entidad", "NIT"],
+      ["codigo_entidad", "Código en SECOP"],
+      ["orden", "Orden"],
+      ["rama", "Rama"],
+      ["entidad_centralizada", "Centralizada"],
+      ["departamento", "Departamento"],
+      ["ciudad", "Ciudad"],
+      ["localizaci_n", "Localización"],
     ],
   },
   {
@@ -84,6 +117,14 @@ const GRUPOS: { titulo: string; campos: [string, string, Formato?][] }[] = [
     ],
   },
 ];
+
+const OCULTOS = new Set(["n_mero_de_cuenta", "urlproceso"]);
+const CONOCIDOS = new Set(GRUPOS.flatMap((g) => g.campos.map(([c]) => c)));
+
+function etiquetaDe(clave: string): string {
+  const t = clave.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 const vacio = (v: unknown) => v === null || v === undefined || v === "" || /^(no definido|sin descripcion)$/i.test(String(v));
 
@@ -203,7 +244,15 @@ export function SecopPanel({
           </p>
         ))}
         {espejo &&
-          GRUPOS.map((g) => {
+          [
+            ...GRUPOS,
+            {
+              titulo: "Otros campos publicados",
+              campos: Object.keys(d)
+                .filter((k) => !CONOCIDOS.has(k) && !OCULTOS.has(k) && typeof d[k] !== "object")
+                .map((k): [string, string, Formato?] => [k, etiquetaDe(k)]),
+            },
+          ].map((g) => {
             const campos = g.campos.filter(([clave]) => !vacio(d[clave]));
             if (campos.length === 0) return null;
             return (
@@ -211,7 +260,7 @@ export function SecopPanel({
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">{g.titulo}</p>
                 <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs sm:grid-cols-2 lg:grid-cols-3">
                   {campos.map(([clave, etiqueta, formato]) => (
-                    <div key={clave} className="flex gap-1.5">
+                    <div key={clave} className={`flex gap-1.5 ${String(d[clave]).length > 70 ? "sm:col-span-2 lg:col-span-3" : ""}`}>
                       <dt className="flex-none text-stone-500">{etiqueta}:</dt>
                       <dd className="min-w-0 break-words font-medium text-stone-800">{valor(d[clave], formato)}</dd>
                     </div>

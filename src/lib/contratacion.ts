@@ -1840,7 +1840,7 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
           (e) => e.idContratoSecop
         )
       );
-      candidatos = (await buscarContratosSecopPorContratista(expediente.contratista.identificacion, desde)).filter((c) => !enlazados.has(c.idContrato));
+      candidatos = (await buscarContratosSecopPorContratista(expediente.contratista.identificacion, desde, expediente.createdAt)).filter((c) => !enlazados.has(c.idContrato));
       criterio = `el documento del contratista ${expediente.contratista.identificacion}`;
     }
     if (!criterio) throw new Error("Aún no hay con qué buscarlo en SECOP II: vincule el contratista o escriba el número de contrato o de proceso.");

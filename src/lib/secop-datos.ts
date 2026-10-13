@@ -161,10 +161,11 @@ export async function consultarExpedienteSecop(idContrato: string): Promise<Expe
 
 export const fechaSecop = fecha;
 
-export async function buscarContratosSecopPorContratista(documento: string, desde: Date): Promise<ContratoSecop[]> {
+export async function buscarContratosSecopPorContratista(documento: string, desde: Date, vigenteEn: Date): Promise<ContratoSecop[]> {
   const doc = documento.replace(/\D/g, "");
   if (doc.length < 5) return [];
-  const where = `nit_entidad='${NIT_CDMB}' AND documento_proveedor='${doc}' AND fecha_de_firma >= '${desde.toISOString().slice(0, 10)}T00:00:00'`;
+  const dia = (d: Date) => `'${d.toISOString().slice(0, 10)}T00:00:00'`;
+  const where = `nit_entidad='${NIT_CDMB}' AND documento_proveedor='${doc}' AND (fecha_de_firma >= ${dia(desde)} OR fecha_de_fin_del_contrato >= ${dia(vigenteEn)})`;
   const url = `${URL_CONTRATOS_SECOP}?$where=${encodeURIComponent(where)}&$order=fecha_de_firma DESC&$limit=10`;
   const token = process.env.SOCRATA_APP_TOKEN?.trim();
   const res = await fetch(url, { headers: token ? { "X-App-Token": token } : {}, cache: "no-store", signal: AbortSignal.timeout(20000) });
