@@ -76,6 +76,13 @@ async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: Perfi
   return actualizado;
 }
 
+export function GET(req: NextRequest) {
+  const url = new URL("/login", req.url);
+  const next = req.nextUrl.searchParams.get("next");
+  if (next && next.startsWith("/")) url.searchParams.set("next", next);
+  return NextResponse.redirect(url, { status: 303 });
+}
+
 export async function POST(req: NextRequest) {
   const form = await req.formData();
   const identidad = String(form.get("email") || "").trim().toLowerCase();
