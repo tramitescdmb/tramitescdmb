@@ -334,6 +334,7 @@ export default async function DetalleExpedienteContractualPage({
     );
   };
 
+  const fechaTerminacionIso = expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null;
   const anclaUsada = new Set<string>();
   const anclaPeriodo = (clave: string) => {
     if (anclaUsada.has(clave)) return undefined;
@@ -379,6 +380,7 @@ export default async function DetalleExpedienteContractualPage({
           controlesDocumento(doc, etapa, puedeGestionarEtapaCerrada)
         ) : puedeSubirEtapa ? (
           <SubirDocumentoRequisitoForm
+fechaTerminacionActual={fechaTerminacionIso}
             expedienteId={id}
             etapa={etapa}
             requisitoId={item.id}
@@ -907,6 +909,7 @@ export default async function DetalleExpedienteContractualPage({
                             </div>
                           ) : puedeSubir ? (
                             <SubirDocumentoRequisitoForm
+fechaTerminacionActual={fechaTerminacionIso}
                               expedienteId={id}
                               etapa={etapa}
                               requisitoId={item.id}
@@ -1033,7 +1036,7 @@ export default async function DetalleExpedienteContractualPage({
                           + Subir otro documento no listado en el catálogo
                         </summary>
                         <div className="mt-2">
-                          <SubirDocumentosContratoForm expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
+                          <SubirDocumentosContratoForm fechaTerminacionActual={fechaTerminacionIso} expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
                         </div>
                       </details>
                     )}

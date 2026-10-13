@@ -17,6 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { ETIQUETA_TIPO_MODIFICACION, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -1465,3 +1466,37 @@ export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor:
   ]);
 }
 
+
+export async function registrarModificacionContrato(datos: {
+  expedienteId: string;
+  documentoId: string;
+  modificacion: DatosModificacion;
+  usuarioId: string;
+}) {
+  const expediente = await db.expedienteContractual.findUniqueOrThrow({
+    where: { id: datos.expedienteId },
+    select: { fechaFinEstimada: true },
+  });
+  const { tipo, fechaTerminacion, valorAdicionado } = datos.modificacion;
+  const nuevaFecha = fechaTerminacion ? new Date(`${fechaTerminacion}T00:00:00Z`) : null;
+  await db.$transaction([
+    db.modificacionContrato.create({
+      data: {
+        expedienteId: datos.expedienteId,
+        documentoId: datos.documentoId,
+        tipo,
+        fechaTerminacionAnterior: expediente.fechaFinEstimada,
+        fechaTerminacionNueva: nuevaFecha,
+        valorAdicionado,
+        registradoPorId: datos.usuarioId,
+      },
+    }),
+    ...(nuevaFecha ? [db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { fechaFinEstimada: nuevaFecha } })] : []),
+  ]);
+  const partes = [
+    ETIQUETA_TIPO_MODIFICACION[tipo],
+    nuevaFecha ? `nueva fecha de terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
+    valorAdicionado ? `valor adicionado $${valorAdicionado.toLocaleString("es-CO")}` : null,
+  ].filter(Boolean);
+  await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
+}

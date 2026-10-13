@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { CalendarCheck, CalendarDays, Inbox, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarCheck, CalendarDays, Inbox, type LucideIcon } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { obtenerSeccionesAlertas } from "@/lib/alertas-landing";
 import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
@@ -7,8 +7,8 @@ import { saludo, horaBogota } from "@/lib/saludo";
 import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { BandejaPendientes } from "@/components/inicio/BandejaPendientes";
-import { MisContratos } from "@/components/inicio/MisContratos";
-import { obtenerContratosLanding } from "@/lib/contratos-landing";
+import { MisContratos, SeguimientoContratos } from "@/components/inicio/MisContratos";
+import { obtenerContratosLanding, obtenerSeguimientoContratos, veSeguimientoContratos } from "@/lib/contratos-landing";
 
 function Indicador({ icon: Icon, valor, etiqueta, tono }: { icon: LucideIcon; valor: number; etiqueta: string; tono: string }) {
   return (
@@ -31,10 +31,13 @@ export default async function LandingPage() {
   const [secciones, permisos] = await Promise.all([obtenerSeccionesAlertas(session), obtenerPermisosUsuario(session.userId)]);
   const conTramites = secciones.some((s) => s.modulo === "TRAMITES");
   const planificador = puedePlanearVisitas(permisos);
-  const [agenda, contratos] = await Promise.all([
+  const conGecon = permisos.modulos.has("GECON");
+  const [agenda, contratos, seguimiento] = await Promise.all([
     conTramites ? obtenerAgendaUsuario(session.userId, planificador) : Promise.resolve(null),
-    permisos.modulos.has("GECON") ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve([]),
+    conGecon ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve([]),
+    conGecon && veSeguimientoContratos(permisos) ? obtenerSeguimientoContratos(permisos) : Promise.resolve(null),
   ]);
+  const contratosPropios = contratos.filter((c) => c.relacion === "CONTRATISTA").length;
 
   const primerNombre = session.nombre.trim().split(/\s+/)[0];
   const totalGeneral = secciones.reduce((acc, s) => acc + s.total, 0);
@@ -63,6 +66,8 @@ export default async function LandingPage() {
           </div>
           {secciones.length > 0 && (
             <div className="flex flex-wrap gap-2">
+              {contratosPropios > 0 && <Indicador icon={Briefcase} valor={contratosPropios} etiqueta={contratosPropios === 1 ? "Contrato vigente" : "Contratos vigentes"} tono="bg-amber-100 text-amber-700" />}
+              {seguimiento && <Indicador icon={Briefcase} valor={seguimiento.enEjecucion} etiqueta="Contratos en ejecución" tono="bg-amber-100 text-amber-700" />}
               <Indicador icon={Inbox} valor={totalGeneral} etiqueta="Pendientes" tono="bg-acento-100 text-acento-700" />
               {agenda && <Indicador icon={CalendarCheck} valor={visitasHoy} etiqueta="Visitas hoy" tono="bg-cdmb-100 text-cdmb-700" />}
               {agenda && <Indicador icon={CalendarDays} valor={visitasSemana} etiqueta="Próximos 7 días" tono="bg-sky-100 text-sky-700" />}
@@ -70,6 +75,8 @@ export default async function LandingPage() {
           )}
         </div>
       </header>
+
+      {seguimiento && <SeguimientoContratos filas={seguimiento.filas} enEjecucion={seguimiento.enEjecucion} />}
 
       {contratos.length > 0 && <MisContratos contratos={contratos} />}
 

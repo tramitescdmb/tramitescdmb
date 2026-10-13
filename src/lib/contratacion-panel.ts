@@ -15,6 +15,9 @@ export type InformePorRadicar = {
   numero: string;
   objeto: string;
   numeroInforme: number;
+  numeroContrato: string | null;
+  contratista: string | null;
+  mes: string;
   periodoClave: string;
   rango: string;
   radicaDesde: Date;
@@ -33,6 +36,8 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
       select: {
         id: true,
         numero: true,
+        numeroContrato: true,
+        contratista: { select: { nombreORazonSocial: true } },
         objeto: true,
         fechaInicio: true,
         fechaFinEstimada: true,
@@ -58,6 +63,9 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
         numero: e.numero,
         objeto: e.objeto,
         numeroInforme: p.numero,
+        numeroContrato: e.numeroContrato,
+        contratista: e.contratista?.nombreORazonSocial ?? null,
+        mes: p.periodo.desde.toLocaleDateString("es-CO", { month: "long", timeZone: "UTC" }),
         periodoClave: p.periodo.clave,
         rango: etiquetaRangoPeriodo(p.periodo),
         radicaDesde: p.periodo.radicaDesde,

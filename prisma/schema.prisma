@@ -211,6 +211,8 @@ model Usuario {
   solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
   solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
 
+  modificacionesContrato ModificacionContrato[] @relation("ModificacionContratoRegistradaPor")
+
   @@index([dependenciaId])
 }
 
@@ -2042,6 +2044,7 @@ model ExpedienteContractual {
   eliminadoPor           Usuario?               @relation("ExpContractualEliminadoPor", fields: [eliminadoPorId], references: [id])
 
   supervisores                ExpedienteContractualSupervisor[]
+  modificaciones              ModificacionContrato[]
   asignados                   ExpedienteContractualAsignado[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
@@ -2170,6 +2173,8 @@ model DocumentoContrato {
   solicitudesFirma         SolicitudFirma[]
   avisosRechazo            AvisoRechazoDocumento[]
 
+  modificacion ModificacionContrato?
+
   @@index([expedienteId])
   @@index([etapa])
   @@index([requisitoId])
@@ -2259,6 +2264,31 @@ model EventoContratacion {
 
   expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
   usuario    Usuario?              @relation("EventoContratacionUsuario", fields: [usuarioId], references: [id])
+
+  @@index([expedienteId])
+}
+
+enum TipoModificacionContrato {
+  PRORROGA
+  ADICION_VALOR
+  PRORROGA_Y_ADICION
+  OTRA
+}
+
+model ModificacionContrato {
+  id                       String                   @id @default(cuid())
+  expedienteId             String
+  documentoId              String?                  @unique
+  tipo                     TipoModificacionContrato
+  fechaTerminacionAnterior DateTime?
+  fechaTerminacionNueva    DateTime?
+  valorAdicionado          Decimal?                 @db.Decimal(18, 2)
+  registradoPorId          String
+  createdAt                DateTime                 @default(now())
+
+  expediente    ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  documento     DocumentoContrato?    @relation(fields: [documentoId], references: [id], onDelete: SetNull)
+  registradoPor Usuario               @relation("ModificacionContratoRegistradaPor", fields: [registradoPorId], references: [id])
 
   @@index([expedienteId])
 }

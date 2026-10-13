@@ -26,6 +26,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   ETAPA_RETROCEDIDA: { icono: Undo2, clase: "text-amber-600", texto: "Etapa retrocedida" },
   EXPEDIENTE_CERRADO: { icono: Lock, clase: "text-stone-700", texto: "Expediente cerrado" },
   EXPEDIENTE_REABIERTO: { icono: LockOpen, clase: "text-amber-600", texto: "Expediente reabierto" },
+  MODIFICACION_CONTRATO: { icono: CalendarClock, clase: "text-acento-600", texto: "Modificación del contrato" },
   RECLASIFICACION_TRD: { icono: FolderTree, clase: "text-cdmb-600", texto: "Clasificación TRD" },
   NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, clase: "text-amber-600", texto: "Nivel de acceso" },
   EXPEDIENTE_ELIMINADO: { icono: Trash2, clase: "text-red-600", texto: "Expediente eliminado" },

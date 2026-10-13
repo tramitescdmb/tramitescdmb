@@ -19,6 +19,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, etiqueta: "Nivel de acceso", clase: "bg-amber-100 text-amber-700" },
   EXPEDIENTE_ARCHIVADO: { icono: Archive, etiqueta: "Expediente cerrado y archivado", clase: "bg-stone-200 text-stone-700" },
   EXPEDIENTE_REABIERTO: { icono: LockOpen, etiqueta: "Expediente reabierto", clase: "bg-amber-100 text-amber-700" },
+  MODIFICACION_CONTRATO: { icono: CalendarClock, etiqueta: "Modificación del contrato", clase: "bg-orange-100 text-orange-700" },
   VISITA_PROGRAMADA: { icono: CalendarClock, etiqueta: "Visita técnica programada", clase: "bg-sky-100 text-sky-700" },
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };

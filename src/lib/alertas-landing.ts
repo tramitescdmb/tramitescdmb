@@ -117,8 +117,8 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   for (const i of trabajo.informes.lista) {
     total++;
     items.push({
-      titulo: `Informe N.° ${i.numeroInforme} por radicar`,
-      detalle: `${i.objeto.slice(0, 70)} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
+      titulo: `Contrato N.° ${i.numeroContrato ?? i.numero} · informe de ${i.mes} por radicar`,
+      detalle: `${i.contratista ?? "Sin contratista"} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
       link: `/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`,
       tipo: "informe",
     });
@@ -126,8 +126,8 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   for (const f of trabajo.firmas.lista.filter((x) => x.puedeActuar)) {
     total++;
     items.unshift({
-      titulo: `${f.rol === "VISTO_BUENO" ? "Dar visto bueno" : "Firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
-      detalle: `${f.documentoContrato?.expediente.numero ?? ""} · asignado por ${f.asignadoPor.nombre}`,
+      titulo: `Contrato N.° ${f.documentoContrato?.expediente.numeroContrato ?? f.documentoContrato?.expediente.numero ?? ""} · ${f.rol === "VISTO_BUENO" ? "visto bueno" : "firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
+      detalle: `${f.documentoContrato?.expediente.contratista?.nombreORazonSocial ?? "Sin contratista"} · asignado por ${f.asignadoPor.nombre}`,
       link: `/contratacion/firmar/${f.id}`,
       tipo: "firma",
     });
