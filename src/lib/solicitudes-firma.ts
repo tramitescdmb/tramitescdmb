@@ -789,7 +789,7 @@ export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
           nombre: true,
           mimeType: true,
           expedienteId: true,
-          expediente: { select: { numero: true, numeroContrato: true, contratista: { select: { nombreORazonSocial: true } } } },
+          expediente: { select: { numero: true, numeroContrato: true, codigoProceso: true, contratista: { select: { nombreORazonSocial: true } } } },
           firmas: { select: { id: true } },
           solicitudesFirma: { where: { rol: "VISTO_BUENO", estado: "COMPLETADA" }, select: { id: true } },
         },

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const expedientes = await db.expedienteContractual.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    select: { id: true, numero: true, numeroContrato: true },
+    select: { id: true, numero: true, numeroContrato: true, codigoProceso: true },
   });
 
   try {

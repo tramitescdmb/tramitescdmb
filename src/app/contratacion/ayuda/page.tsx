@@ -237,6 +237,13 @@ export default async function ContratacionAyudaPage() {
           compraventa; interadministrativo y urgencia manifiesta, cualquiera.
         </p>
         <p>
+          <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la
+          modalidad o de la causal, consecutivo de cuatro dígitos por vigencia y año (LP, SA-MC, SA-SI, SA-EBE, CM, MC, CD-CPS, CD-CI,
+          CD-UM, CD-UO, CD-ACT, CD-A, CD-AI, CD-C, CD-E). Ejemplo: <code>CD-CPS-0012-2026</code>. Se asigna al crear el expediente; si el
+          proceso ya tenía código, se escribe. Aparece en el encabezado, los listados, el inicio, los pendientes y el ZIP, y sirve para
+          buscar. Si cambian la modalidad o la causal, se asigna uno nuevo y queda en la bitácora.
+        </p>
+        <p>
           <strong>Datos generales</strong> (modalidad, tipo de contrato, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
           «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>

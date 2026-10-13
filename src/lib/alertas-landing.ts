@@ -1,3 +1,4 @@
+import { identificacionContrato } from "@/lib/codigo-proceso";
 import {
   obtenerPermisosUsuario,
   puedeAccederCorrespondencia,
@@ -117,7 +118,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   for (const i of trabajo.informes.lista) {
     total++;
     items.push({
-      titulo: `Contrato N.° ${i.numeroContrato ?? i.numero} · informe de ${i.mes} por radicar`,
+      titulo: `${identificacionContrato(i)} · informe de ${i.mes} por radicar`,
       detalle: `${i.contratista ?? "Sin contratista"} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
       link: `/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`,
       tipo: "informe",
@@ -126,7 +127,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   for (const f of trabajo.firmas.lista.filter((x) => x.puedeActuar)) {
     total++;
     items.unshift({
-      titulo: `Contrato N.° ${f.documentoContrato?.expediente.numeroContrato ?? f.documentoContrato?.expediente.numero ?? ""} · ${f.rol === "VISTO_BUENO" ? "visto bueno" : "firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
+      titulo: `${f.documentoContrato ? identificacionContrato(f.documentoContrato.expediente) : "Contrato"} · ${f.rol === "VISTO_BUENO" ? "visto bueno" : "firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
       detalle: `${f.documentoContrato?.expediente.contratista?.nombreORazonSocial ?? "Sin contratista"} · asignado por ${f.asignadoPor.nombre}`,
       link: `/contratacion/firmar/${f.id}`,
       tipo: "firma",

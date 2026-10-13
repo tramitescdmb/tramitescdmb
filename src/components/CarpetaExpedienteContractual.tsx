@@ -7,6 +7,7 @@ export type CarpetaContractualData = {
   id: string;
   numero: string;
   numeroContrato: string | null;
+  codigoProceso: string | null;
   numeroProcesoSecop: string | null;
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
@@ -39,7 +40,10 @@ export function CarpetaExpedienteContractual({ c }: { c: CarpetaContractualData 
       </span>
 
       <div className="flex items-start justify-between gap-2">
-        <span className={`font-mono text-sm font-semibold ${c.cerrado ? "text-stone-600" : "text-cdmb-800"}`}>{c.numero}</span>
+        <span className={`font-mono text-sm font-semibold ${c.cerrado ? "text-stone-600" : "text-cdmb-800"}`}>
+          {c.codigoProceso ?? c.numero}
+          {c.codigoProceso && <span className="block text-[10px] font-normal text-stone-400">{c.numero}</span>}
+        </span>
         <span
           className={`inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
             c.cerrado ? "bg-stone-200/70 text-stone-600" : pendienteDeInicio ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"

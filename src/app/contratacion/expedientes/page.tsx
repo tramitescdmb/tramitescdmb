@@ -55,7 +55,7 @@ export default async function ExpedientesContratacionPage({
         <input
           name="q"
           defaultValue={sp.q ?? ""}
-          placeholder="Buscar por número, N.º de proceso SECOP, N.º de contrato, objeto o contratista…"
+          placeholder="Buscar por código de proceso, número, N.º de proceso SECOP, N.º de contrato, objeto o contratista…"
           className="min-w-[220px] flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         />
         <select
@@ -125,6 +125,7 @@ export default async function ExpedientesContratacionPage({
                 id: e.id,
                 numero: e.numero,
                 numeroContrato: e.numeroContrato,
+                codigoProceso: e.codigoProceso,
                 numeroProcesoSecop: e.numeroProcesoSecop,
                 objeto: e.objeto,
                 modalidadSeleccion: e.modalidadSeleccion,
@@ -146,6 +147,7 @@ export default async function ExpedientesContratacionPage({
               return {
                 id: e.id,
                 numero: e.numero,
+                codigoProceso: e.codigoProceso,
                 numeroProcesoSecop: e.numeroProcesoSecop,
                 numeroContrato: e.numeroContrato,
                 objeto: e.objeto,

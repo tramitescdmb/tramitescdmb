@@ -7,7 +7,7 @@ import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
 const COLUMNAS: { titulo: string; icono: ReactNode; ancho: number }[] = [
-  { titulo: "Número", icono: <Hash className="h-3.5 w-3.5" aria-hidden />, ancho: 150 },
+  { titulo: "Código de proceso", icono: <Hash className="h-3.5 w-3.5" aria-hidden />, ancho: 150 },
   { titulo: "N.º proceso SECOP", icono: <Landmark className="h-3.5 w-3.5" aria-hidden />, ancho: 130 },
   { titulo: "N.º contrato", icono: <FileSignature className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
   { titulo: "Objeto", icono: <FileText className="h-3.5 w-3.5" aria-hidden />, ancho: 360 },
@@ -23,6 +23,7 @@ const ANCHOS_DEFECTO = COLUMNAS.map((c) => c.ancho);
 export type FilaExpedienteContractual = {
   id: string;
   numero: string;
+  codigoProceso: string | null;
   numeroProcesoSecop: string | null;
   numeroContrato: string | null;
   objeto: string;
@@ -65,8 +66,9 @@ export function TablaExpedientesContractuales({ filas }: { filas: FilaExpediente
           <tr key={e.id} className="align-top hover:bg-stone-50/60">
             <td className="break-all px-3 py-2 font-mono text-xs">
               <Link href={`/contratacion/expedientes/${e.id}`} className="text-cdmb-700 hover:underline">
-                {e.numero}
+                {e.codigoProceso ?? e.numero}
               </Link>
+              {e.codigoProceso && <span className="block text-[10px] text-stone-400">{e.numero}</span>}
             </td>
             <td className="break-all px-3 py-2 font-mono text-xs text-stone-500">{e.numeroProcesoSecop ?? "—"}</td>
             <td className="break-all px-3 py-2 font-mono text-xs text-stone-500">{e.numeroContrato ?? "—"}</td>

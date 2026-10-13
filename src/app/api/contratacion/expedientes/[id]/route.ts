@@ -15,6 +15,7 @@ import {
   asegurarContratistaDeUsuario,
   eliminarExpedienteContractualCompleto,
   registrarEventoContratacion,
+  resolverCodigoProceso,
   ETIQUETA_MODALIDAD,
   validarFormatoSecop,
   verificarUnicidadSecopPorVigencia,
@@ -104,6 +105,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "modalidadSeleccion" in body ||
     "tipoContrato" in body ||
     "causalContratacionDirecta" in body ||
+    "codigoProceso" in body ||
     "valor" in body ||
     "dependenciaSolicitanteId" in body
   ) {
@@ -118,10 +120,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "La modalidad de selección indicada no es válida." }, { status: 400 });
     }
     let causalNueva: CausalContratacionDirecta | null | undefined;
-    if ("modalidadSeleccion" in body || "tipoContrato" in body || "causalContratacionDirecta" in body) {
+    let codigoNuevo: string | undefined;
+    let codigoAnterior: string | null = null;
+    if ("modalidadSeleccion" in body || "tipoContrato" in body || "causalContratacionDirecta" in body || "codigoProceso" in body) {
       const vigente = await db.expedienteContractual.findUnique({
         where: { id },
-        select: { modalidadSeleccion: true, tipoContrato: true, causalContratacionDirecta: true },
+        select: { modalidadSeleccion: true, tipoContrato: true, causalContratacionDirecta: true, codigoProceso: true, fechaSuscripcion: true, createdAt: true },
       });
       if (!vigente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
       const modalidad = "modalidadSeleccion" in body ? String(body.modalidadSeleccion) : vigente.modalidadSeleccion;
@@ -130,6 +134,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const combinacion = errorCombinacionContrato(modalidad, tipo, causal);
       if (combinacion) return NextResponse.json({ error: combinacion }, { status: 400 });
       causalNueva = modalidad === "CONTRATACION_DIRECTA" && esCausalContratacionDirecta(causal) ? causal : null;
+      codigoAnterior = vigente.codigoProceso;
+      const suscripcion = "fechaSuscripcion" in body && body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : vigente.fechaSuscripcion;
+      try {
+        codigoNuevo = await resolverCodigoProceso({
+          solicitado: "codigoProceso" in body ? body.codigoProceso : null,
+          modalidad,
+          causal: causalNueva,
+          anio: (suscripcion ?? vigente.createdAt).getUTCFullYear(),
+          actual: vigente.codigoProceso,
+          excluirId: id,
+        });
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Código de proceso no válido." }, { status: 400 });
+      }
     }
     if ("dependenciaSolicitanteId" in body) {
       const dependenciaId = String(body.dependenciaSolicitanteId || "").trim();
@@ -187,12 +205,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...("modalidadSeleccion" in body ? { modalidadSeleccion: body.modalidadSeleccion as ModalidadSeleccion } : {}),
         ...("tipoContrato" in body && esTipoContrato(body.tipoContrato) ? { tipoContrato: body.tipoContrato } : {}),
         ...(causalNueva !== undefined ? { causalContratacionDirecta: causalNueva } : {}),
+        ...(codigoNuevo !== undefined ? { codigoProceso: codigoNuevo } : {}),
         ...("valor" in body ? { valor: body.valor === null || body.valor === "" ? null : Number(body.valor) } : {}),
         ...("dependenciaSolicitanteId" in body ? { dependenciaSolicitanteId: String(body.dependenciaSolicitanteId).trim() } : {}),
       },
     });
     await registrarEventoContratacion(id, "DATOS_CONTRATO_ACTUALIZADOS", "Se actualizaron los datos generales del expediente.", session.userId);
     if (reclasificacion) await registrarEventoContratacion(id, "RECLASIFICACION_TRD", reclasificacion.detalle, session.userId);
+    if (codigoNuevo && codigoNuevo !== codigoAnterior) {
+      await registrarEventoContratacion(id, "DATOS_CONTRATO_ACTUALIZADOS", `Código de proceso: ${codigoAnterior ?? "sin código"} → ${codigoNuevo}.`, session.userId);
+    }
     await sincronizarArchivoContrato(id);
     return NextResponse.json({ ok: true });
   }

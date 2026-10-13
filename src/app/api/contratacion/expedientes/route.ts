@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       modalidadSeleccion,
       tipoContrato: body.tipoContrato,
       causalContratacionDirecta: esCausalContratacionDirecta(body.causalContratacionDirecta) ? body.causalContratacionDirecta : null,
+      codigoProceso: typeof body.codigoProceso === "string" ? body.codigoProceso : null,
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
       numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       numeroProcesoSecop: typeof body.numeroProcesoSecop === "string" ? body.numeroProcesoSecop : null,

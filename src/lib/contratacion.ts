@@ -21,6 +21,7 @@ import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
+import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
@@ -316,11 +317,42 @@ export async function registrarEventoContratacion(
   await db.eventoContratacion.create({ data: { expedienteId, tipo, detalle, usuarioId } });
 }
 
+export async function resolverCodigoProceso(datos: {
+  solicitado?: unknown;
+  modalidad: string;
+  causal: string | null;
+  anio: number;
+  actual?: string | null;
+  excluirId?: string;
+}): Promise<string> {
+  const prefijo = prefijoProceso(datos.modalidad, datos.causal);
+  if (!prefijo) throw new Error("Indique la causal de contratación directa para asignar el código de proceso.");
+  const solicitado = normalizarCodigoProceso(datos.solicitado);
+  if (solicitado) {
+    const error = errorCodigoProceso(solicitado, datos.modalidad, datos.causal);
+    if (error) throw new Error(error);
+    const repetido = await db.expedienteContractual.findFirst({
+      where: { codigoProceso: solicitado, ...(datos.excluirId ? { id: { not: datos.excluirId } } : {}) },
+      select: { numero: true },
+    });
+    if (repetido) throw new Error(`El código de proceso ${solicitado} ya está asignado al expediente ${repetido.numero}.`);
+    return solicitado;
+  }
+  if (datos.actual && datos.actual.startsWith(`${prefijo}-`)) return datos.actual;
+  for (let intento = 0; intento < 50; intento++) {
+    const { numero } = await generarConsecutivo(`PROC-${prefijo}`, datos.anio);
+    const codigo = formatearCodigoProceso(prefijo, numero, datos.anio);
+    if (!(await db.expedienteContractual.findUnique({ where: { codigoProceso: codigo }, select: { id: true } }))) return codigo;
+  }
+  throw new Error("No se pudo asignar el código de proceso.");
+}
+
 export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
   tipoContrato: TipoContratoEstatal;
   causalContratacionDirecta?: CausalContratacionDirecta | null;
+  codigoProceso?: string | null;
   valor?: number | null;
   numeroContrato?: string | null;
   numeroProcesoSecop?: string | null;
@@ -350,6 +382,12 @@ export async function crearExpedienteContractual(datos: {
     await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(datos.fechaInicio ?? null, new Date()));
   }
 
+  const codigoProceso = await resolverCodigoProceso({
+    solicitado: datos.codigoProceso,
+    modalidad: datos.modalidadSeleccion,
+    causal,
+    anio: (datos.fechaSuscripcion ?? new Date()).getUTCFullYear(),
+  });
   const numero = await generarNumeroExpedienteContractual();
   const expediente = await db.expedienteContractual.create({
     data: {
@@ -358,6 +396,7 @@ export async function crearExpedienteContractual(datos: {
       modalidadSeleccion: datos.modalidadSeleccion,
       tipoContrato: datos.tipoContrato,
       causalContratacionDirecta: causal,
+      codigoProceso,
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
       numeroProcesoSecop,
@@ -1293,6 +1332,7 @@ export function construirWhereExpedienteContractual(
     and.push({
       OR: [
         { numero: { contains: q, mode: "insensitive" } },
+        { codigoProceso: { contains: q, mode: "insensitive" } },
         { numeroContrato: { contains: q, mode: "insensitive" } },
         { numeroProcesoSecop: { contains: q, mode: "insensitive" } },
         { objeto: { contains: q, mode: "insensitive" } },
@@ -1413,43 +1453,6 @@ export function normalizarUsuarioRed(valor: unknown): string {
   return typeof valor === "string" ? valor.trim().toLowerCase().replace(/^.*\\/, "").replace(/@.*$/, "").slice(0, 60) : "";
 }
 
-function distanciaEdicion(a: string, b: string): number {
-  const fila = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    let previo = fila[0]!;
-    fila[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const actual = fila[j]!;
-      fila[j] = Math.min(fila[j]! + 1, fila[j - 1]! + 1, previo + (a[i - 1] === b[j - 1] ? 0 : 1));
-      previo = actual;
-    }
-  }
-  return fila[b.length]!;
-}
-
-async function usuariosParecidos(original: string, usuarioRed: string): Promise<{ usuarioRed: string; nombre: string }[]> {
-  const texto = original.trim();
-  const documento = texto.replace(/\D/g, "");
-  const candidatos = await db.usuario.findMany({
-    where: {
-      activo: true,
-      OR: [
-        { email: { startsWith: usuarioRed.slice(0, 3), mode: "insensitive" } },
-        ...(documento.length >= 5 ? [{ cedulaONit: { contains: documento } }] : []),
-        ...(/[a-záéíóúñ]{4,}/i.test(texto) && !/\d/.test(texto) ? [{ nombre: { contains: texto, mode: "insensitive" as const } }] : []),
-      ],
-    },
-    select: { email: true, nombre: true, cedulaONit: true },
-    take: 40,
-  });
-  return candidatos
-    .map((u) => ({ u, d: distanciaEdicion(u.email.toLowerCase().replace(/@.*$/, ""), usuarioRed) }))
-    .filter(({ u, d }) => d <= 2 || (documento.length >= 5 && u.cedulaONit?.includes(documento)) || u.nombre.toLowerCase().includes(texto.toLowerCase()))
-    .sort((a, b) => a.d - b.d)
-    .slice(0, 5)
-    .map(({ u }) => ({ usuarioRed: u.email, nombre: u.nombre }));
-}
-
 export async function consultarUsuarioRedContratista(valor: string) {
   const usuarioRed = normalizarUsuarioRed(valor);
   if (!usuarioRed) return null;
@@ -1460,7 +1463,7 @@ export async function consultarUsuarioRedContratista(valor: string) {
     }),
     db.contratista.findFirst({ where: { usuarioRed, usuarioId: null }, select: { id: true, nombreORazonSocial: true } }),
   ]);
-  if (!usuario) return { usuarioRed, existe: false as const, pendiente, sugerencias: await usuariosParecidos(valor, usuarioRed) };
+  if (!usuario) return { usuarioRed, existe: false as const, pendiente };
   return {
     usuarioRed,
     existe: true as const,

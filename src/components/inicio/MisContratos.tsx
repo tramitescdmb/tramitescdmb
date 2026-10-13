@@ -87,7 +87,10 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
               {c.relacion === "SUPERVISOR" && <span className="rounded-full bg-sky-50 px-2 py-px font-semibold text-sky-700">Supervisión</span>}
               Expediente {c.numero}
             </p>
-            <h3 className="mt-0.5 text-sm font-semibold text-stone-900">Contrato N.° {c.numeroContrato ?? "sin número"}</h3>
+            <h3 className="mt-0.5 text-sm font-semibold text-stone-900">
+              {c.codigoProceso && <span className="mr-1.5 font-mono">{c.codigoProceso}</span>}
+              Contrato N.° {c.numeroContrato ?? "sin número"}
+            </h3>
             <p className="line-clamp-2 text-xs text-stone-500" title={c.objeto}>
               {c.objeto}
             </p>
@@ -239,6 +242,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
                   <Link href={`/contratacion/expedientes/${f.id}`} className="font-medium text-stone-800 hover:text-cdmb-700">
                     N.° {f.numeroContrato ?? "sin número"}
                   </Link>
+                  {f.codigoProceso && <span className="block font-mono text-[10px] text-stone-500">{f.codigoProceso}</span>}
                   <span className="block text-[10px] text-stone-400">{f.numero}</span>
                 </td>
                 <td className="max-w-[220px] truncate text-stone-600 md:px-3 md:py-1.5">{f.contratista ?? "Sin contratista"}</td>

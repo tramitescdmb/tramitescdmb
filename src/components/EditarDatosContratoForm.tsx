@@ -2,6 +2,7 @@
 
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
+import { prefijoProceso } from "@/lib/codigo-proceso";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
@@ -16,6 +17,7 @@ export function EditarDatosContratoForm({
   modalidadActual,
   tipoContratoActual,
   causalActual,
+  codigoProcesoActual,
   modalidades,
   valorActual,
   dependenciaActualId,
@@ -30,6 +32,7 @@ export function EditarDatosContratoForm({
   modalidadActual: string;
   tipoContratoActual: string;
   causalActual: string | null;
+  codigoProcesoActual: string | null;
   modalidades: ModalidadOpcion[];
   valorActual: string | null;
   dependenciaActualId: string;
@@ -45,6 +48,9 @@ export function EditarDatosContratoForm({
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidadActual);
   const [tipoContrato, setTipoContrato] = useState(tipoContratoActual);
   const [causal, setCausal] = useState(causalActual ?? "");
+  const [codigoProceso, setCodigoProceso] = useState(codigoProcesoActual ?? "");
+  const prefijo = prefijoProceso(modalidadSeleccion, causal || null);
+  const codigoEnviado = prefijo && codigoProceso.startsWith(`${prefijo}-`) ? codigoProceso.trim() : null;
   const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
   const combinacion = tipoContrato ? errorCombinacionContrato(modalidadSeleccion, tipoContrato, causal || null) : "Seleccione el tipo de contrato.";
 
@@ -75,6 +81,7 @@ export function EditarDatosContratoForm({
           modalidadSeleccion,
           tipoContrato,
           causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
+          codigoProceso: codigoEnviado,
           valor: valor.trim() || null,
           dependenciaSolicitanteId,
           numeroContrato: numeroContrato.trim() || null,
@@ -179,6 +186,20 @@ export function EditarDatosContratoForm({
                 <CampoMoneda value={valor} onChange={setValor} className="mt-1" />
               </label>
 
+              <label className="block text-xs font-medium text-stone-600">
+                Código de proceso
+                <input
+                  value={codigoProceso}
+                  onChange={(e) => setCodigoProceso(e.target.value.toUpperCase())}
+                  placeholder={`${prefijo ?? "Elija la causal"}-0000-AAAA`}
+                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                />
+                {prefijo && codigoProceso && !codigoProceso.startsWith(`${prefijo}-`) && (
+                  <span className="mt-1 block text-[11px] font-normal text-amber-700">
+                    No corresponde a la modalidad elegida: al guardar se asigna un código {prefijo}- nuevo.
+                  </span>
+                )}
+              </label>
               <label className="block text-xs font-medium text-stone-600">
                 Número de proceso SECOP
                 <input

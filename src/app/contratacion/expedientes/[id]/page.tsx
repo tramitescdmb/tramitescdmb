@@ -467,7 +467,9 @@ export default async function DetalleExpedienteContractualPage({
     <ProveedorUsuariosFirma usuarios={usuariosOpciones}>
     <section className="space-y-5">
       <TituloSeccion icon={Briefcase}>
-        <span className="font-mono text-base">{expediente.numero}</span>
+        <span className="font-mono text-base">{expediente.codigoProceso ?? expediente.numero}</span>
+        {expediente.numeroContrato && <span className="ml-2 text-base font-normal text-stone-500">Contrato N.° {expediente.numeroContrato}</span>}
+        {expediente.codigoProceso && <span className="ml-2 font-mono text-xs font-normal text-stone-400">{expediente.numero}</span>}
       </TituloSeccion>
 
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
@@ -505,6 +507,7 @@ export default async function DetalleExpedienteContractualPage({
                 modalidadActual={expediente.modalidadSeleccion}
                 tipoContratoActual={expediente.tipoContrato}
                 causalActual={expediente.causalContratacionDirecta}
+                codigoProcesoActual={expediente.codigoProceso}
                 modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
                 valorActual={expediente.valor?.toString() ?? null}
                 dependenciaActualId={expediente.dependenciaSolicitanteId}

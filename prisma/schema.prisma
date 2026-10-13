@@ -2012,6 +2012,7 @@ model ExpedienteContractual {
   modalidadSeleccion        ModalidadSeleccion
   tipoContrato              TipoContratoEstatal        @default(PRESTACION_SERVICIOS)
   causalContratacionDirecta CausalContratacionDirecta?
+  codigoProceso             String?                    @unique
   valor                     Decimal?                   @db.Decimal(18, 2)
   numeroContrato            String?
   numeroProcesoSecop        String?

@@ -101,13 +101,13 @@ export async function construirZipExpediente(
 }
 
 export async function construirZipMasivo(
-  expedientes: { id: string; numero: string; numeroContrato: string | null }[],
+  expedientes: { id: string; numero: string; numeroContrato: string | null; codigoProceso: string | null }[],
   baseUrl: string
 ): Promise<Buffer> {
   const zip = new JSZip();
   const usados = new Set<string>();
   for (const e of expedientes) {
-    const nombreCarpeta = nombreUnico(usados, sanearNombreZip((e.numeroContrato ?? e.numero)));
+    const nombreCarpeta = nombreUnico(usados, sanearNombreZip(e.codigoProceso ?? e.numeroContrato ?? e.numero));
     const carpeta = zip.folder(nombreCarpeta)!;
     await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl);
   }

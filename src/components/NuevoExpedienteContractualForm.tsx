@@ -2,6 +2,7 @@
 
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
+import { prefijoProceso } from "@/lib/codigo-proceso";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -124,6 +125,7 @@ export function NuevoExpedienteContractualForm({
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidades[0]?.valor ?? "");
   const [tipoContrato, setTipoContrato] = useState("");
   const [causal, setCausal] = useState("");
+  const [codigoProceso, setCodigoProceso] = useState("");
   const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
 
   function ajustarTipo(lista: string[]) {
@@ -264,6 +266,7 @@ export function NuevoExpedienteContractualForm({
           modalidadSeleccion,
           tipoContrato,
           causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
+          codigoProceso: codigoProceso.trim() || null,
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,
@@ -346,6 +349,14 @@ export function NuevoExpedienteContractualForm({
                     <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
                   ))}
                 </select>
+              </Field>
+              <Field label="Código de proceso" icon={<Hash className="h-4 w-4" />} help="Se asigna con el consecutivo de la modalidad. Escríbalo solo si el proceso ya tiene código.">
+                <input
+                  value={codigoProceso}
+                  onChange={(e) => setCodigoProceso(e.target.value.toUpperCase())}
+                  placeholder={`${prefijoProceso(modalidadSeleccion, causal || null) ?? "Elija la causal"}-0000-${new Date().getFullYear()} (automático)`}
+                  className={campoCls}
+                />
               </Field>
               <Field label="Dependencia solicitante" required icon={<Building2 className="h-4 w-4" />}>
                 <BuscadorDependencia dependencias={dependencias} value={dependenciaSolicitanteId} onChange={setDependenciaSolicitanteId} />

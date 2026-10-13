@@ -16,6 +16,7 @@ export type InformePorRadicar = {
   objeto: string;
   numeroInforme: number;
   numeroContrato: string | null;
+  codigoProceso: string | null;
   contratista: string | null;
   mes: string;
   periodoClave: string;
@@ -37,6 +38,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
         id: true,
         numero: true,
         numeroContrato: true,
+        codigoProceso: true,
         contratista: { select: { nombreORazonSocial: true } },
         objeto: true,
         fechaInicio: true,
@@ -64,6 +66,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
         objeto: e.objeto,
         numeroInforme: p.numero,
         numeroContrato: e.numeroContrato,
+        codigoProceso: e.codigoProceso,
         contratista: e.contratista?.nombreORazonSocial ?? null,
         mes: p.periodo.desde.toLocaleDateString("es-CO", { month: "long", timeZone: "UTC" }),
         periodoClave: p.periodo.clave,

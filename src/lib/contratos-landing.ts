@@ -27,6 +27,7 @@ export type ContratoLanding = {
   id: string;
   numero: string;
   numeroContrato: string | null;
+  codigoProceso: string | null;
   objeto: string;
   estado: EstadoContrato;
   relacion: "CONTRATISTA" | "SUPERVISOR";
@@ -48,6 +49,7 @@ export type FilaSeguimiento = {
   id: string;
   numero: string;
   numeroContrato: string | null;
+  codigoProceso: string | null;
   contratista: string | null;
   terminacion: Date | null;
   diasParaTerminar: number | null;
@@ -62,6 +64,7 @@ const SELECT_CONTRATO = {
   id: true,
   numero: true,
   numeroContrato: true,
+  codigoProceso: true,
   objeto: true,
   etapaActual: true,
   contratistaId: true,
@@ -147,6 +150,7 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
       id: e.id,
       numero: e.numero,
       numeroContrato: e.numeroContrato,
+      codigoProceso: e.codigoProceso,
       objeto: e.objeto,
       estado: estadoDe(e, hoy),
       relacion: permisos.contratistaId && e.contratistaId === permisos.contratistaId ? "CONTRATISTA" : "SUPERVISOR",
@@ -182,6 +186,7 @@ const SELECT_SEGUIMIENTO = {
   id: true,
   numero: true,
   numeroContrato: true,
+  codigoProceso: true,
   fechaInicio: true,
   fechaFinEstimada: true,
   contratista: { select: { nombreORazonSocial: true } },
@@ -224,6 +229,7 @@ export async function obtenerSeguimientoContratos(permisos: PermisosUsuario, lim
         id: e.id,
         numero: e.numero,
         numeroContrato: e.numeroContrato,
+        codigoProceso: e.codigoProceso,
         contratista: e.contratista?.nombreORazonSocial ?? null,
         terminacion: e.fechaFinEstimada,
         diasParaTerminar: e.fechaFinEstimada ? Math.ceil((e.fechaFinEstimada.getTime() - hoy.getTime()) / MS_DIA) : null,
