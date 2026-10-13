@@ -17,8 +17,11 @@ describe("modificaciones del contrato", () => {
     expect(errorModificacion(leerModificacion({ tipo: "PRORROGA" })!, contrato)).toMatch(/nueva fecha/);
     expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2026-12-01" })!, contrato)).toMatch(/posterior/);
     expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2026-12-30" })!, contrato)).toBeNull();
-    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-01-31" })!, contrato)).toMatch(/vigencias futuras/);
-    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-01-31", vigenciasFuturas: true })!, contrato)).toBeNull();
+    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-01-31" })!, contrato)).toMatch(/2027/);
+    const vf = { clase: "ORDINARIA", acto: "Acuerdo 012 de 2026", valores: [{ anio: 2027, valor: 3_000_000 }] };
+    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-01-31", vigenciasFuturas: { ...vf, acto: "" } })!, contrato)).toMatch(/acto/);
+    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-01-31", vigenciasFuturas: vf })!, contrato)).toBeNull();
+    expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2028-01-31", vigenciasFuturas: vf })!, contrato)).toMatch(/2028/);
   });
 
   it("limita las adiciones al 50 % del valor inicial", () => {
@@ -46,5 +49,14 @@ describe("vigencias futuras por año", () => {
     expect(anios).toEqual([2027, 2028]);
     expect(textoAnios(anios)).toBe("2027 y 2028");
     expect(errorModificacion(leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2028-03-31" })!, contrato)).toMatch(/2027 y 2028/);
+  });
+});
+
+describe("tipo vigencias futuras", () => {
+  it("exige clase, acto y valores por año", () => {
+    expect(errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS" })!, contrato)).toMatch(/ordinarias o excepcionales/);
+    expect(
+      errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: { clase: "EXCEPCIONAL", acto: "Acuerdo 3", valores: [{ anio: 2027, valor: 1 }] } })!, contrato)
+    ).toBeNull();
   });
 });

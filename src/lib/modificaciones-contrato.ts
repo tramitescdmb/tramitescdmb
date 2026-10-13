@@ -1,10 +1,20 @@
-export type TipoModificacion = "PRORROGA" | "ADICION_VALOR" | "PRORROGA_Y_ADICION" | "SUSPENSION" | "OTRA";
+export type TipoModificacion = "PRORROGA" | "ADICION_VALOR" | "PRORROGA_Y_ADICION" | "SUSPENSION" | "VIGENCIAS_FUTURAS" | "OTRA";
+
+export type ClaseVigenciasFuturas = "ORDINARIA" | "EXCEPCIONAL";
+
+export const CLASES_VIGENCIAS_FUTURAS: { valor: ClaseVigenciasFuturas; etiqueta: string; descripcion: string }[] = [
+  { valor: "ORDINARIA", etiqueta: "Ordinaria", descripcion: "Con apropiación en la vigencia en curso de al menos el 15 % del valor." },
+  { valor: "EXCEPCIONAL", etiqueta: "Excepcional", descripcion: "Sin apropiación en la vigencia en curso." },
+];
+
+export type VigenciaFutura = { anio: number; valor: number };
 
 export const TIPOS_MODIFICACION: { valor: TipoModificacion; etiqueta: string; descripcion: string; codigoFormato: string }[] = [
   { valor: "PRORROGA", etiqueta: "Prórroga del plazo", descripcion: "Amplía la fecha de terminación.", codigoFormato: "A-BS-FO123" },
   { valor: "ADICION_VALOR", etiqueta: "Adición en valor", descripcion: "Aumenta el valor del contrato.", codigoFormato: "A-BS-FO120" },
   { valor: "PRORROGA_Y_ADICION", etiqueta: "Prórroga y adición", descripcion: "Amplía el plazo y aumenta el valor.", codigoFormato: "A-BS-FO120" },
   { valor: "SUSPENSION", etiqueta: "Suspensión y reinicio", descripcion: "Detiene la ejecución; la terminación se corre los días suspendidos.", codigoFormato: "A-BS-FO130" },
+  { valor: "VIGENCIAS_FUTURAS", etiqueta: "Vigencias futuras", descripcion: "Registra la autorización para comprometer recursos de años siguientes.", codigoFormato: "" },
   { valor: "OTRA", etiqueta: "Aclaración o modificación", descripcion: "Cambia otras condiciones, sin plazo ni valor.", codigoFormato: "A-BS-FO122" },
 ];
 
@@ -13,6 +23,7 @@ export const ETIQUETA_TIPO_MODIFICACION: Record<TipoModificacion, string> = {
   ADICION_VALOR: "Adición en valor",
   PRORROGA_Y_ADICION: "Prórroga y adición",
   SUSPENSION: "Suspensión",
+  VIGENCIAS_FUTURAS: "Vigencias futuras",
   OTRA: "Aclaración o modificación",
 };
 
@@ -39,7 +50,7 @@ export type DatosModificacion = {
   valorAdicionado: number | null;
   fechaSuspension: string | null;
   fechaReinicio: string | null;
-  vigenciasFuturas: boolean;
+  vigenciasFuturas: { clase: ClaseVigenciasFuturas | null; acto: string | null; valores: VigenciaFutura[] };
   observacion: string | null;
 };
 
@@ -59,9 +70,29 @@ export function leerModificacion(v: unknown): DatosModificacion | null {
     valorAdicionado: cambiaValor(tipo) && Number.isFinite(valor) && valor > 0 ? Math.round(valor) : null,
     fechaSuspension: tipo === "SUSPENSION" ? fechaIso(b.fechaSuspension) : null,
     fechaReinicio: tipo === "SUSPENSION" ? fechaIso(b.fechaReinicio) : null,
-    vigenciasFuturas: b.vigenciasFuturas === true,
+    vigenciasFuturas: leerVigenciasFuturas(b.vigenciasFuturas),
     observacion: observacion || null,
   };
+}
+
+function leerVigenciasFuturas(v: unknown): DatosModificacion["vigenciasFuturas"] {
+  const b = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const clase = CLASES_VIGENCIAS_FUTURAS.find((c) => c.valor === b.clase)?.valor ?? null;
+  const acto = typeof b.acto === "string" && b.acto.trim() ? b.acto.trim().slice(0, 300) : null;
+  const valores = Array.isArray(b.valores)
+    ? b.valores
+        .map((x) => ({ anio: Number((x as VigenciaFutura)?.anio), valor: Math.round(Number((x as VigenciaFutura)?.valor)) }))
+        .filter((x) => Number.isInteger(x.anio) && x.anio > 2000 && Number.isFinite(x.valor) && x.valor > 0)
+    : [];
+  return { clase, acto, valores };
+}
+
+export function aniosConValor(m: DatosModificacion): number[] {
+  return m.vigenciasFuturas.valores.map((v) => v.anio).sort((a, b) => a - b);
+}
+
+export function tieneVigenciasFuturas(m: DatosModificacion): boolean {
+  return Boolean(m.vigenciasFuturas.clase && m.vigenciasFuturas.acto && m.vigenciasFuturas.valores.length > 0);
 }
 
 export function diasSuspendidos(m: Pick<DatosModificacion, "fechaSuspension" | "fechaReinicio">): number {
@@ -112,9 +143,14 @@ export function errorModificacion(
     if (diasSuspendidos(m) <= 0) return "La fecha de reinicio debe ser posterior a la de suspensión.";
   }
   if (m.tipo === "OTRA" && !m.observacion) return "Describa brevemente la aclaración o modificación.";
-  if (pasaDeVigencia(contrato.terminacion, nuevaFechaTerminacion(m, contrato.terminacion)) && !m.vigenciasFuturas) {
-    const anios = vigenciasComprometidas(contrato.terminacion, nuevaFechaTerminacion(m, contrato.terminacion));
-    return `La nueva terminación compromete la vigencia ${textoAnios(anios)}: confirme la autorización de vigencias futuras para ${anios.length > 1 ? "cada año" : "ese año"}.`;
+  const requeridos = m.tipo === "VIGENCIAS_FUTURAS" ? [] : vigenciasComprometidas(contrato.terminacion, nuevaFechaTerminacion(m, contrato.terminacion));
+  if (m.tipo === "VIGENCIAS_FUTURAS" || requeridos.length > 0) {
+    const prefijo = requeridos.length > 0 ? `La nueva terminación compromete la vigencia ${textoAnios(requeridos)}: ` : "";
+    if (!m.vigenciasFuturas.clase) return `${prefijo}indique si las vigencias futuras son ordinarias o excepcionales.`;
+    if (!m.vigenciasFuturas.acto) return `${prefijo}indique el acto de autorización de vigencias futuras (número y fecha).`;
+    if (m.vigenciasFuturas.valores.length === 0) return `${prefijo}indique el valor comprometido en cada año.`;
+    const faltan = requeridos.filter((a) => !m.vigenciasFuturas.valores.some((v) => v.anio === a));
+    if (faltan.length > 0) return `Indique el valor comprometido para ${textoAnios(faltan)}.`;
   }
   return null;
 }

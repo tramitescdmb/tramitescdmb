@@ -2275,6 +2275,7 @@ enum TipoModificacionContrato {
   ADICION_VALOR
   PRORROGA_Y_ADICION
   SUSPENSION
+  VIGENCIAS_FUTURAS
   OTRA
 }
 
@@ -2291,6 +2292,9 @@ model ModificacionContrato {
   fechaReinicio            DateTime?
   vigenciasFuturas         Boolean                  @default(false)
   aniosVigenciasFuturas    Int[]                    @default([])
+  claseVigenciasFuturas    String?
+  actoVigenciasFuturas     String?
+  valoresVigenciasFuturas  Json?
   observacion              String?                  @db.Text
   registradoPorId          String
   createdAt                DateTime                 @default(now())

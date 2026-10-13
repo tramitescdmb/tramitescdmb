@@ -18,6 +18,7 @@ import {
   nuevaFechaTerminacion,
   pasaDeVigencia,
   textoAnios,
+  CLASES_VIGENCIAS_FUTURAS,
   vigenciasComprometidas,
   type TipoModificacion,
 } from "@/lib/modificaciones-contrato";
@@ -31,6 +32,8 @@ export type ModificacionRegistrada = {
   valorAdicionado: number | null;
   vigenciasFuturas: boolean;
   aniosVigenciasFuturas: number[];
+  actoVigenciasFuturas: string | null;
+  valoresVigenciasFuturas: { anio: number; valor: number }[];
   observacion: string | null;
   documentoId: string | null;
   registradoEn: string;
@@ -62,7 +65,10 @@ export function ModificacionesContrato({
   const [valorAdicionado, setValorAdicionado] = useState("");
   const [fechaSuspension, setFechaSuspension] = useState("");
   const [fechaReinicio, setFechaReinicio] = useState("");
-  const [vigenciasFuturas, setVigenciasFuturas] = useState(false);
+  const [vfClase, setVfClase] = useState("");
+  const [vfActo, setVfActo] = useState("");
+  const [vfValores, setVfValores] = useState<Record<number, string>>({});
+  const [vfAniosExtra, setVfAniosExtra] = useState<number[]>([]);
   const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [requiereFirma, setRequiereFirma] = useState(true);
@@ -74,13 +80,26 @@ export function ModificacionesContrato({
   const datos = useMemo(
     () =>
       tipo
-        ? leerModificacion({ tipo, fechaTerminacion, valorAdicionado: Number(valorAdicionado), fechaSuspension, fechaReinicio, vigenciasFuturas, observacion })
+        ? leerModificacion({
+            tipo,
+            fechaTerminacion,
+            valorAdicionado: Number(valorAdicionado),
+            fechaSuspension,
+            fechaReinicio,
+            vigenciasFuturas: { clase: vfClase, acto: vfActo, valores: Object.entries(vfValores).map(([anio, valor]) => ({ anio: Number(anio), valor: Number(valor) })) },
+            observacion,
+          })
         : null,
-    [tipo, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vigenciasFuturas, observacion]
+    [tipo, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfValores, observacion]
   );
   const nueva = datos ? nuevaFechaTerminacion(datos, actual) : null;
   const cruzaVigencia = pasaDeVigencia(actual, nueva);
-  const anios = vigenciasComprometidas(actual, nueva);
+  const anioSiguiente = (actual?.getUTCFullYear() ?? new Date().getUTCFullYear()) + 1;
+  const anios =
+    tipo === "VIGENCIAS_FUTURAS"
+      ? [...new Set([anioSiguiente, ...vfAniosExtra])].sort((a, b) => a - b)
+      : vigenciasComprometidas(actual, nueva);
+  const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || cruzaVigencia;
   const disponibleAdicion = valorInicial !== null ? valorInicial * LIMITE_ADICION - adicionadoPrevio : null;
 
   function cerrar() {
@@ -90,7 +109,10 @@ export function ModificacionesContrato({
     setValorAdicionado("");
     setFechaSuspension("");
     setFechaReinicio("");
-    setVigenciasFuturas(false);
+    setVfClase("");
+    setVfActo("");
+    setVfValores({});
+    setVfAniosExtra([]);
     setObservacion("");
     setArchivo(null);
     setError(null);
@@ -169,7 +191,7 @@ export function ModificacionesContrato({
 
           <fieldset>
             <legend className="mb-2 text-xs font-medium text-stone-700">1. Tipo de modificación</legend>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {TIPOS_MODIFICACION.map((t) => (
                 <label
                   key={t.valor}
@@ -238,17 +260,60 @@ export function ModificacionesContrato({
                 </div>
               )}
 
-              {cruzaVigencia && (
-                <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-                  <span className="flex-1">
-                    La nueva terminación compromete la vigencia {textoAnios(anios)}. No se puede registrar sin autorización de vigencias futuras{anios.length > 1 ? " para cada año" : ""}.
-                    <span className="mt-1 flex items-center gap-2 font-medium">
-                      <input type="checkbox" checked={vigenciasFuturas} onChange={(e) => setVigenciasFuturas(e.target.checked)} />
-                      Cuenta con la autorización de vigencias futuras para {textoAnios(anios)}
-                    </span>
-                  </span>
-                </label>
+              {pideVigencias && (
+                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-950">
+                  <p className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-600" aria-hidden />
+                    {tipo === "VIGENCIAS_FUTURAS"
+                      ? "Registre la autorización para comprometer recursos de los años siguientes."
+                      : `La nueva terminación compromete la vigencia ${textoAnios(anios)}. No se registra sin la autorización de vigencias futuras${anios.length > 1 ? " de cada año" : ""}.`}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {CLASES_VIGENCIAS_FUTURAS.map((c) => (
+                      <label
+                        key={c.valor}
+                        className={`flex cursor-pointer flex-col rounded-lg border bg-white px-3 py-2 ${vfClase === c.valor ? "border-amber-500 ring-1 ring-amber-500" : "border-amber-200"}`}
+                      >
+                        <span className="flex items-center gap-2 font-semibold">
+                          <input type="radio" name="clase-vf" checked={vfClase === c.valor} onChange={() => setVfClase(c.valor)} className="accent-amber-600" />
+                          {c.etiqueta}
+                        </span>
+                        <span className="text-amber-800/80">{c.descripcion}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="flex flex-col gap-1">
+                    Acto de autorización (número y fecha)
+                    <input value={vfActo} onChange={(e) => setVfActo(e.target.value)} placeholder="Ej. Acuerdo del Consejo Directivo N.° 012 del 20 de noviembre de 2026" className={campo} />
+                  </label>
+                  <div>
+                    <p className="mb-1">Valor comprometido por año</p>
+                    <div className="flex flex-wrap items-end gap-2">
+                      {anios.map((a) => (
+                        <label key={a} className="flex flex-col gap-1">
+                          <span className="font-semibold">{a}</span>
+                          <input
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={vfValores[a] ?? ""}
+                            onChange={(e) => setVfValores((v) => ({ ...v, [a]: e.target.value }))}
+                            className={`${campo} w-40`}
+                          />
+                        </label>
+                      ))}
+                      {tipo === "VIGENCIAS_FUTURAS" && (
+                        <button
+                          type="button"
+                          onClick={() => setVfAniosExtra((x) => [...x, (anios.at(-1) ?? anioSiguiente) + 1])}
+                          className="rounded-lg border border-amber-300 bg-white px-3 py-2 font-medium text-amber-800 hover:bg-amber-100"
+                        >
+                          + Agregar año
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </fieldset>
           )}
@@ -304,6 +369,10 @@ export function ModificacionesContrato({
                     {ETIQUETA_TIPO_MODIFICACION[m.tipo]}
                     {m.vigenciasFuturas && (
                       <span className="ml-1 rounded bg-amber-50 px-1 text-[10px] text-amber-700">vigencias futuras {textoAnios(m.aniosVigenciasFuturas)}</span>
+                    )}
+                    {m.actoVigenciasFuturas && <span className="block text-stone-400">{m.actoVigenciasFuturas}</span>}
+                    {m.valoresVigenciasFuturas.length > 0 && (
+                      <span className="block text-stone-400">{m.valoresVigenciasFuturas.map((v) => `${v.anio}: ${pesos(v.valor)}`).join(" · ")}</span>
                     )}
                     {m.observacion && <span className="block text-stone-400">{m.observacion}</span>}
                   </td>

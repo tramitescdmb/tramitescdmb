@@ -704,6 +704,8 @@ export default async function DetalleExpedienteContractualPage({
             valorAdicionado: m.valorAdicionado !== null ? Number(m.valorAdicionado) : null,
             vigenciasFuturas: m.vigenciasFuturas,
             aniosVigenciasFuturas: m.aniosVigenciasFuturas,
+            actoVigenciasFuturas: m.actoVigenciasFuturas,
+            valoresVigenciasFuturas: Array.isArray(m.valoresVigenciasFuturas) ? (m.valoresVigenciasFuturas as { anio: number; valor: number }[]) : [],
             observacion: m.observacion,
             documentoId: m.documentoId,
             registradoEn: m.createdAt.toISOString(),
