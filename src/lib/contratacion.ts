@@ -22,6 +22,7 @@ import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 import { errorCuantia, type TopeCuantia } from "@/lib/cuantias";
+import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion";
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
@@ -96,11 +97,8 @@ export function identidadFirmante(u: {
   };
 }
 
-const CODIGO_ACTA_LIQUIDACION = "A-BS-FO135";
-const TIPOS_SIN_LIQUIDACION_OBLIGATORIA: TipoContratoEstatal[] = ["PRESTACION_SERVICIOS", "COMPRAVENTA"];
-
 export const obtenerRequisitosDeEtapa = unstable_cache(
-  async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion, tipoContrato: TipoContratoEstatal = "PRESTACION_SERVICIOS") => {
+  async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion, tipoContrato: TipoContratoEstatal = "PRESTACION_SERVICIOS", terminadoAnticipadamente = false) => {
     const requisitos = await db.requisitoDocumentoContratacion.findMany({
       where: {
         etapa,
@@ -110,12 +108,12 @@ export const obtenerRequisitosDeEtapa = unstable_cache(
       },
       orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
-    if (!TIPOS_SIN_LIQUIDACION_OBLIGATORIA.includes(tipoContrato)) return requisitos;
+    if (requiereLiquidacion(tipoContrato, terminadoAnticipadamente)) return requisitos;
     return requisitos
       .map((r) => (r.codigoFormato?.includes(CODIGO_ACTA_LIQUIDACION) ? { ...r, obligatorio: false } : r))
       .sort((a, b) => Number(b.obligatorio) - Number(a.obligatorio) || a.orden - b.orden);
   },
-  ["requisitos-de-etapa-v4"],
+  ["requisitos-de-etapa-v5"],
   { tags: [TAG_CATALOGO_REQUISITOS] }
 );
 
@@ -811,7 +809,7 @@ export class FaltanRequisitosError extends Error {
 export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, contratistaId: true, subserieId: true },
+    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
@@ -857,7 +855,7 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     },
   });
   {
-    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual, expediente.tipoContrato);
+    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual, expediente.tipoContrato, expediente.terminadoAnticipadamente);
     const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentosEtapa));
     if (faltantes.length > 0) throw new FaltanRequisitosError(faltantes);
   }
@@ -1567,6 +1565,7 @@ export async function registrarModificacionContrato(datos: {
     where: { id: datos.expedienteId },
     select: {
       fechaFinEstimada: true,
+      contratistaId: true,
       fechaInicio: true,
       fechaSuscripcion: true,
       tipoContrato: true,
@@ -1587,6 +1586,21 @@ export async function registrarModificacionContrato(datos: {
       .map((x) => ({ valor: Number(x.valorAdicionado), fecha: x.fechaSuscripcion ?? x.createdAt })),
   });
   if (problema) throw new Error(problema);
+
+  let cesion: { cedente: string | null; cesionario: string; nombre: string } | null = null;
+  if (m.tipo === "CESION") {
+    const consulta = await consultarUsuarioRedContratista(m.cesionarioUsuarioRed ?? "");
+    if (!consulta?.existe) throw new Error(`El usuario de red ${m.cesionarioUsuarioRed} no existe en la plataforma: el administrador del sistema debe crearlo en Usuarios.`);
+    if (consulta.motivo) throw new Error(consulta.motivo);
+    if (consulta.faltan.length > 0) throw new Error(`Faltan datos del cesionario en su usuario: ${consulta.faltan.join(", ")}.`);
+    const cesionario = await asegurarContratistaDeUsuario(consulta.usuarioId);
+    if (cesionario.id === expediente.contratistaId) throw new Error("El cesionario es el contratista actual del expediente.");
+    const cedente = expediente.contratistaId
+      ? await db.contratista.findUnique({ where: { id: expediente.contratistaId }, select: { nombreORazonSocial: true } })
+      : null;
+    cesion = { cedente: expediente.contratistaId, cesionario: cesionario.id, nombre: consulta.nombre };
+    m.observacion = [`Cedente: ${cedente?.nombreORazonSocial ?? "sin contratista"} → cesionario: ${consulta.nombre}`, m.observacion].filter(Boolean).join(" · ");
+  }
 
   const codigo = TIPOS_MODIFICACION.find((t) => t.valor === m.tipo)!.codigoFormato;
   const requisito = !codigo
@@ -1635,16 +1649,32 @@ export async function registrarModificacionContrato(datos: {
         claseVigenciasFuturas: m.vigenciasFuturas.clase,
         actoVigenciasFuturas: m.vigenciasFuturas.acto,
         valoresVigenciasFuturas: tieneVigenciasFuturas(m) ? valoresVf : undefined,
+        cedenteContratistaId: cesion?.cedente ?? null,
+        cesionarioContratistaId: cesion?.cesionario ?? null,
+        claseTerminacion: m.claseTerminacion,
         observacion: m.observacion,
         registradoPorId: datos.usuarioId,
       },
     }),
-    ...(nuevaFecha ? [db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { fechaFinEstimada: nuevaFecha } })] : []),
+    ...(nuevaFecha || cesion
+      ? [
+          db.expedienteContractual.update({
+            where: { id: datos.expedienteId },
+            data: {
+              ...(nuevaFecha ? { fechaFinEstimada: nuevaFecha } : {}),
+              ...(m.tipo === "TERMINACION_ANTICIPADA" ? { terminadoAnticipadamente: true } : {}),
+              ...(cesion ? { contratistaId: cesion.cesionario } : {}),
+            },
+          }),
+        ]
+      : []),
   ]);
   const partes = [
     `Modificación N.° ${numero}: ${ETIQUETA_TIPO_MODIFICACION[m.tipo]}`,
     nuevaFecha ? `terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
     m.valorAdicionado ? `valor adicionado $${m.valorAdicionado.toLocaleString("es-CO")}` : null,
+    cesion ? `cesionario ${cesion.nombre}` : null,
+    m.claseTerminacion ? (m.claseTerminacion === "UNILATERAL" ? "unilateral" : "de mutuo acuerdo") : null,
     tieneVigenciasFuturas(m)
       ? `vigencias futuras ${valoresVf.map((v) => `${v.anio} (${duracionPeriodo(v.desde, v.hasta)})`).join(", ")} (${m.vigenciasFuturas.acto})`
       : null,
@@ -1685,4 +1715,85 @@ export async function adjuntarSoportePresupuestalModificacion(datos: {
     cualquierEtapa: true,
   });
   await db.modificacionContrato.update({ where: { id: datos.modificacionId }, data: { [campo]: documento.id } });
+}
+
+
+export async function registrarGarantia(
+  expedienteId: string,
+  datos: { aseguradora: string; numeroPoliza: string; amparos: string[]; valorAsegurado: number | null; vigenciaDesde: Date | null; vigenciaHasta: Date },
+  usuarioId: string
+) {
+  if (!datos.aseguradora.trim()) throw new Error("Indique la aseguradora o entidad que expide la garantía.");
+  if (!datos.numeroPoliza.trim()) throw new Error("Indique el número de la póliza o garantía.");
+  if (datos.amparos.length === 0) throw new Error("Seleccione al menos un amparo.");
+  if (Number.isNaN(datos.vigenciaHasta.getTime())) throw new Error("Indique hasta cuándo está vigente la garantía.");
+  if (datos.vigenciaDesde && datos.vigenciaDesde > datos.vigenciaHasta) throw new Error("La vigencia inicial no puede ser posterior a la final.");
+  await db.garantiaContrato.create({
+    data: {
+      expedienteId,
+      aseguradora: datos.aseguradora.trim().slice(0, 200),
+      numeroPoliza: datos.numeroPoliza.trim().slice(0, 80),
+      amparos: datos.amparos,
+      valorAsegurado: datos.valorAsegurado,
+      vigenciaDesde: datos.vigenciaDesde,
+      vigenciaHasta: datos.vigenciaHasta,
+      registradaPorId: usuarioId,
+    },
+  });
+  await registrarEventoContratacion(expedienteId, "GARANTIA_REGISTRADA", `Garantía ${datos.numeroPoliza.trim()} de ${datos.aseguradora.trim()}, vigente hasta ${datos.vigenciaHasta.toISOString().slice(0, 10)}`, usuarioId);
+}
+
+export async function aprobarGarantia(expedienteId: string, garantiaId: string, usuarioId: string) {
+  const g = await db.garantiaContrato.findFirst({ where: { id: garantiaId, expedienteId }, select: { numeroPoliza: true, aprobadaEn: true } });
+  if (!g) throw new Error("La garantía no existe.");
+  if (g.aprobadaEn) return;
+  await db.garantiaContrato.update({ where: { id: garantiaId }, data: { aprobadaEn: new Date(), aprobadaPorId: usuarioId } });
+  await registrarEventoContratacion(expedienteId, "GARANTIA_APROBADA", `Garantía ${g.numeroPoliza} aprobada`, usuarioId);
+}
+
+export async function eliminarGarantia(expedienteId: string, garantiaId: string, usuarioId: string) {
+  const g = await db.garantiaContrato.findFirst({ where: { id: garantiaId, expedienteId }, select: { numeroPoliza: true } });
+  if (!g) throw new Error("La garantía no existe.");
+  await db.garantiaContrato.delete({ where: { id: garantiaId } });
+  await registrarEventoContratacion(expedienteId, "GARANTIA_ELIMINADA", `Garantía ${g.numeroPoliza} eliminada`, usuarioId);
+}
+
+export async function registrarPago(
+  expedienteId: string,
+  datos: { fecha: Date; valor: number; periodoMes: string | null; observacion: string | null },
+  usuarioId: string
+) {
+  if (Number.isNaN(datos.fecha.getTime())) throw new Error("Indique la fecha del pago.");
+  if (datos.fecha.getTime() > Date.now()) throw new Error("La fecha del pago no puede ser posterior a hoy.");
+  if (!Number.isFinite(datos.valor) || datos.valor <= 0) throw new Error("Indique el valor pagado.");
+  const expediente = await db.expedienteContractual.findUniqueOrThrow({
+    where: { id: expedienteId },
+    select: { valor: true, fechaInicio: true, modificaciones: { select: { valorAdicionado: true } }, pagos: { select: { valor: true, numero: true } } },
+  });
+  if (expediente.fechaInicio && datos.fecha < expediente.fechaInicio) throw new Error("El pago no puede ser anterior al inicio del contrato.");
+  if (expediente.valor !== null) {
+    const total = Number(expediente.valor) + expediente.modificaciones.reduce((a, m) => a + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0);
+    const pagado = expediente.pagos.reduce((a, p) => a + Number(p.valor), 0);
+    if (pagado + datos.valor > total) throw new Error(`Los pagos superarían el valor del contrato. Saldo disponible: $${Math.max(0, total - pagado).toLocaleString("es-CO")}.`);
+  }
+  const numero = Math.max(0, ...expediente.pagos.map((p) => p.numero)) + 1;
+  await db.pagoContrato.create({
+    data: {
+      expedienteId,
+      numero,
+      fecha: datos.fecha,
+      valor: Math.round(datos.valor),
+      periodoMes: datos.periodoMes && /^\d{4}-\d{2}$/.test(datos.periodoMes) ? datos.periodoMes : null,
+      observacion: datos.observacion?.trim().slice(0, 500) || null,
+      registradoPorId: usuarioId,
+    },
+  });
+  await registrarEventoContratacion(expedienteId, "PAGO_REGISTRADO", `Pago N.° ${numero} por $${Math.round(datos.valor).toLocaleString("es-CO")} del ${datos.fecha.toISOString().slice(0, 10)}`, usuarioId);
+}
+
+export async function eliminarPago(expedienteId: string, pagoId: string, usuarioId: string) {
+  const p = await db.pagoContrato.findFirst({ where: { id: pagoId, expedienteId }, select: { numero: true, valor: true } });
+  if (!p) throw new Error("El pago no existe.");
+  await db.pagoContrato.delete({ where: { id: pagoId } });
+  await registrarEventoContratacion(expedienteId, "PAGO_ELIMINADO", `Pago N.° ${p.numero} por $${Number(p.valor).toLocaleString("es-CO")} eliminado`, usuarioId);
 }

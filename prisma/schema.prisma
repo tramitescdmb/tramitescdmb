@@ -2026,6 +2026,7 @@ model ExpedienteContractual {
   subserieId                String?
   etapaActual               EtapaContratacion          @default(PRECONTRACTUAL)
   cerrado                   Boolean                    @default(false)
+  terminadoAnticipadamente  Boolean                    @default(false)
   fechaCierre               DateTime?
   contratistaId             String?
   creadoPorId               String
@@ -2051,6 +2052,8 @@ model ExpedienteContractual {
 
   supervisores                ExpedienteContractualSupervisor[]
   modificaciones              ModificacionContrato[]
+  garantias                   GarantiaContrato[]
+  pagos                       PagoContrato[]
   asignados                   ExpedienteContractualAsignado[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
@@ -2283,7 +2286,44 @@ enum TipoModificacionContrato {
   PRORROGA_Y_ADICION
   SUSPENSION
   VIGENCIAS_FUTURAS
+  CESION
+  TERMINACION_ANTICIPADA
   OTRA
+}
+
+model GarantiaContrato {
+  id              String    @id @default(cuid())
+  expedienteId    String
+  aseguradora     String
+  numeroPoliza    String
+  amparos         String[]
+  valorAsegurado  Decimal?  @db.Decimal(18, 2)
+  vigenciaDesde   DateTime?
+  vigenciaHasta   DateTime
+  aprobadaEn      DateTime?
+  aprobadaPorId   String?
+  registradaPorId String
+  createdAt       DateTime  @default(now())
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+
+  @@index([expedienteId])
+}
+
+model PagoContrato {
+  id              String   @id @default(cuid())
+  expedienteId    String
+  numero          Int
+  fecha           DateTime
+  valor           Decimal  @db.Decimal(18, 2)
+  periodoMes      String?
+  observacion     String?
+  registradoPorId String
+  createdAt       DateTime @default(now())
+
+  expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+
+  @@index([expedienteId])
 }
 
 model ModificacionContrato {
@@ -2292,6 +2332,9 @@ model ModificacionContrato {
   expedienteId             String
   documentoId              String?                  @unique
   cdpDocumentoId           String?                  @unique
+  cedenteContratistaId     String?
+  cesionarioContratistaId  String?
+  claseTerminacion         String?
   rpDocumentoId            String?                  @unique
   tipo                     TipoModificacionContrato
   fechaSuscripcion         DateTime?

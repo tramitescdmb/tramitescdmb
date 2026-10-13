@@ -9,6 +9,9 @@ import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { ModificacionesContrato } from "@/components/ModificacionesContrato";
 import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
+import { avisosGarantia, porcentajePlazo, resumenPagos } from "@/lib/garantias-pagos";
+import { GarantiasContrato, PagosContrato } from "@/components/GarantiasPagosContrato";
+import { CODIGO_ACTA_LIQUIDACION, ETIQUETA_FASE_LIQUIDACION, estadoLiquidacion, plazosLiquidacion } from "@/lib/liquidacion";
 import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
@@ -162,6 +165,8 @@ export default async function DetalleExpedienteContractualPage({
       asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
       modificaciones: { orderBy: { numero: "asc" }, include: { registradoPor: { select: { nombre: true } } } },
+      garantias: { orderBy: { createdAt: "asc" } },
+      pagos: { orderBy: { numero: "asc" } },
       documentos: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -246,6 +251,10 @@ export default async function DetalleExpedienteContractualPage({
   const personalOpciones = personalDisponible.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
+  const valorTotalContrato =
+    expediente.valor !== null ? Number(expediente.valor) + expediente.modificaciones.reduce((a, m) => a + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0) : null;
+  const pagosResumen = resumenPagos(valorTotalContrato, expediente.pagos.map((p) => ({ valor: Number(p.valor) })));
+  const avisosGarantias = avisosGarantia(expediente.garantias, expediente.fechaFinEstimada, expediente.modificaciones);
   const hoy = new Date();
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -265,7 +274,15 @@ export default async function DetalleExpedienteContractualPage({
         ? null
         : null;
 
-  const requisitosPorEtapa = await Promise.all(ETAPAS_ORDEN.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa, expediente.tipoContrato)));
+  const requisitosPorEtapa = await Promise.all(ETAPAS_ORDEN.map((etapa) => obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, etapa, expediente.tipoContrato, expediente.terminadoAnticipadamente)));
+  const idsActaLiquidacion = new Set(requisitosPorEtapa.flat().filter((r) => r.codigoFormato?.includes(CODIGO_ACTA_LIQUIDACION)).map((r) => r.id));
+  const liquidacion = estadoLiquidacion({
+    terminacion: expediente.fechaFinEstimada,
+    tipoContrato: expediente.tipoContrato,
+    terminadoAnticipadamente: expediente.terminadoAnticipadamente,
+    liquidado: expediente.cerrado || expediente.documentos.some((d) => d.requisitoId && idsActaLiquidacion.has(d.requisitoId)),
+  });
+  const plazosLiq = expediente.fechaFinEstimada ? plazosLiquidacion(expediente.fechaFinEstimada) : null;
   const checklistsPorEtapa = new Map<string, ItemChecklist[]>();
   ETAPAS_ORDEN.forEach((etapa, i) => {
     const docs = expediente.documentos.filter((d) => d.etapa === etapa);
@@ -694,6 +711,25 @@ export default async function DetalleExpedienteContractualPage({
         </div>
       </div>
 
+      {plazosLiq && ["mutuo-acuerdo", "unilateral", "residual", "sin-competencia"].includes(liquidacion.fase) && (
+        <section className={`rounded-xl border p-4 shadow-sm ${liquidacion.fase === "sin-competencia" || liquidacion.dias <= 30 ? "border-red-200 bg-red-50/40" : "border-amber-200 bg-amber-50/40"}`}>
+          <h2 className="text-sm font-semibold text-stone-900">
+            {ETIQUETA_FASE_LIQUIDACION[liquidacion.fase]}
+            {liquidacion.fase !== "sin-competencia" && liquidacion.limite && (
+              <span className="ml-2 text-xs font-normal text-stone-600">
+                hasta el {formatearFecha(liquidacion.limite)} · {liquidacion.dias} día(s)
+              </span>
+            )}
+          </h2>
+          <p className="mt-1 text-xs text-stone-600">
+            Mutuo acuerdo hasta {formatearFecha(plazosLiq.mutuoAcuerdo)} · unilateral hasta {formatearFecha(plazosLiq.unilateral)} · término residual hasta{" "}
+            {formatearFecha(plazosLiq.residual)}. Se cumple al cargar el acta de liquidación (A-BS-FO135) en Postcontractual (Ley 1150 de 2007, art. 11;
+            Manual A-BS-MA01, cap. 10).
+            {expediente.terminadoAnticipadamente && " El contrato terminó anticipadamente: debe liquidarse aunque sea de prestación de servicios o compraventa."}
+          </p>
+        </section>
+      )}
+
       {(expediente.etapaActual !== "PRECONTRACTUAL" || expediente.modificaciones.length > 0) && (
         <ModificacionesContrato
           expedienteId={id}
@@ -723,6 +759,46 @@ export default async function DetalleExpedienteContractualPage({
             registradoPor: m.registradoPor.nombre,
           }))}
         />
+      )}
+
+      {expediente.etapaActual !== "PRECONTRACTUAL" && (
+        <>
+          <GarantiasContrato
+            expedienteId={id}
+            garantias={expediente.garantias.map((g) => ({
+              id: g.id,
+              aseguradora: g.aseguradora,
+              numeroPoliza: g.numeroPoliza,
+              amparos: g.amparos,
+              valorAsegurado: g.valorAsegurado !== null ? Number(g.valorAsegurado) : null,
+              vigenciaDesde: g.vigenciaDesde?.toISOString() ?? null,
+              vigenciaHasta: g.vigenciaHasta.toISOString(),
+              aprobadaEn: g.aprobadaEn?.toISOString() ?? null,
+            }))}
+            avisos={avisosGarantias}
+            puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
+            puedeAprobar={!expediente.cerrado && puedeGestionarContratistas(permisos)}
+          />
+          <PagosContrato
+            expedienteId={id}
+            pagos={expediente.pagos.map((p) => ({
+              id: p.id,
+              numero: p.numero,
+              fecha: p.fecha.toISOString(),
+              valor: Number(p.valor),
+              periodoMes: p.periodoMes,
+              observacion: p.observacion,
+            }))}
+            valorTotal={valorTotalContrato}
+            pagado={pagosResumen.pagado}
+            saldo={pagosResumen.saldo}
+            porcentajePagado={pagosResumen.porcentaje}
+            porcentajePlazo={porcentajePlazo(expediente.fechaInicio, expediente.fechaFinEstimada)}
+            periodos={periodosMensuales.map((p) => ({ clave: p.clave, etiqueta: etiquetaRangoPeriodo(p) }))}
+            puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
+            puedeEliminar={!expediente.cerrado && puedeGestionarContratistas(permisos)}
+          />
+        </>
       )}
 
       <PestanasDetalle

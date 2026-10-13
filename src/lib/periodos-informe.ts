@@ -48,7 +48,7 @@ export function nombreDocumentoPeriodo(nombreRequisito: string, periodo: Pick<Pe
   return `${nombreRequisito} ${numero} (${etiquetaRangoPeriodo(periodo)})`;
 }
 
-export const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116", "A-BS-FO132", "A-BS-FO127", "A-BS-FO117"];
+export const CODIGOS_FORMATO_POR_PERIODOS = ["A-BS-FO116", "A-BS-FO132", "A-BS-FO127", "A-BS-FO117", "PILA"];
 
 export function esRequisitoPorPeriodos(requisito: { codigoFormato: string | null }): boolean {
   return requisito.codigoFormato !== null && CODIGOS_FORMATO_POR_PERIODOS.includes(requisito.codigoFormato);

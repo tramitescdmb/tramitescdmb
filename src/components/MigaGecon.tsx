@@ -28,6 +28,7 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/contratacion\/contratistas\/[^/]+/, trail: ["Contratistas", "Contratista"] },
   { re: /^\/contratacion\/contratistas$/, trail: ["Contratistas"] },
   { re: /^\/contratacion\/catalogo/, trail: ["Configuración", "Catálogo de requisitos"] },
+  { re: /^\/contratacion\/cuantias/, trail: ["Administración", "Topes de cuantía por vigencia"] },
   { re: /^\/contratacion\/bitacora/, trail: ["Administración", "Bitácora del GECON"] },
   { re: /^\/contratacion\/auditoria/, trail: ["Administración", "Auditoría de cuentas"] },
   { re: /^\/contratacion\/seguridad/, trail: ["Administración", "Seguridad"] },

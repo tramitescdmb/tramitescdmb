@@ -22,6 +22,7 @@ import {
   periodosRequeridos,
   textoAnios,
   CLASES_VIGENCIAS_FUTURAS,
+  CLASES_TERMINACION,
   SOPORTES_PRESUPUESTALES,
   MOTIVO_SIN_CDP,
   soportesRequeridos,
@@ -169,6 +170,8 @@ export function ModificacionesContrato({
   const [vfHasta, setVfHasta] = useState("");
   const [vfValores, setVfValores] = useState<Record<number, string>>({});
   const [observacion, setObservacion] = useState("");
+  const [cesionario, setCesionario] = useState("");
+  const [claseTerminacion, setClaseTerminacion] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [requiereFirma, setRequiereFirma] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -188,9 +191,11 @@ export function ModificacionesContrato({
             fechaReinicio,
             vigenciasFuturas: { clase: vfClase, acto: vfActo, hasta: vfHasta, valores: Object.entries(vfValores).map(([anio, valor]) => ({ anio: Number(anio), valor: Number(valor) })) },
             observacion,
+            cesionarioUsuarioRed: cesionario,
+            claseTerminacion,
           })
         : null,
-    [tipo, fecha, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion]
+    [tipo, fecha, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion, cesionario, claseTerminacion]
   );
   const nueva = datos ? nuevaFechaTerminacion(datos, actual) : null;
   const periodos = datos ? periodosRequeridos(datos, actual) : [];
@@ -225,6 +230,8 @@ export function ModificacionesContrato({
     setVfHasta("");
     setVfValores({});
     setObservacion("");
+    setCesionario("");
+    setClaseTerminacion("");
     setArchivo(null);
     setError(null);
   }
@@ -326,6 +333,38 @@ export function ModificacionesContrato({
                   Fecha de suscripción
                   <input type="date" value={fecha} min={inicio ?? undefined} max={terminacion ?? undefined} onChange={(e) => setFecha(e.target.value)} className={campo} />
                 </label>
+                {tipo === "TERMINACION_ANTICIPADA" && (
+                  <>
+                    <div className="flex flex-col gap-1 text-xs text-stone-600">
+                      Clase de terminación
+                      <div className="flex gap-1.5">
+                        {CLASES_TERMINACION.map((c) => (
+                          <label
+                            key={c.valor}
+                            title={c.descripcion}
+                            className={`cursor-pointer rounded-full border px-2.5 py-1 font-medium ${
+                              claseTerminacion === c.valor ? "border-acento-500 bg-acento-500 text-white" : "border-stone-200 bg-white text-stone-700"
+                            }`}
+                          >
+                            <input type="radio" name="clase-terminacion" checked={claseTerminacion === c.valor} onChange={() => setClaseTerminacion(c.valor)} className="sr-only" />
+                            {c.etiqueta}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <label className="flex flex-col gap-1 text-xs text-stone-600">
+                      Fecha de terminación anticipada
+                      <input type="date" value={fechaTerminacion} max={terminacion ?? undefined} onChange={(e) => setFechaTerminacion(e.target.value)} className={campo} />
+                    </label>
+                  </>
+                )}
+                {tipo === "CESION" && (
+                  <label className="flex flex-col gap-1 text-xs text-stone-600">
+                    Usuario de red del cesionario
+                    <input value={cesionario} onChange={(e) => setCesionario(e.target.value.trim())} placeholder="Ej. cardel02" className={`${campo} w-48`} />
+                    <span className="text-[11px] text-stone-400">Debe existir en la plataforma. El cedente deja de ver el expediente.</span>
+                  </label>
+                )}
                 {cambiaPlazo(tipo) && (
                   <label className="flex flex-col gap-1 text-xs text-stone-600">
                     Nueva fecha de terminación

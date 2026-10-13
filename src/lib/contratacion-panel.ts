@@ -1,3 +1,4 @@
+import { CODIGO_ACTA_LIQUIDACION, estadoLiquidacion } from "@/lib/liquidacion";
 import { resumirPendientesFirma } from "@/lib/calidad-firma";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
@@ -29,7 +30,8 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
   const where = construirWhereExpedienteContractual({}, permisos);
   const hoy = hoyColombia();
 
-  const [buzon, enEjecucion, sinContratista] = await Promise.all([
+  const gestiona = permisos.esAdmin || !permisos.rolesContratacion.has("CONTRATISTA");
+  const [buzon, enEjecucion, sinContratista, terminados] = await Promise.all([
     listarBuzon(userId, "documentoContrato"),
     db.expedienteContractual.findMany({
       where: { AND: [where, { etapaActual: "CONTRACTUAL", cerrado: false, fechaInicio: { not: null }, fechaFinEstimada: { not: null } }] },
@@ -52,7 +54,37 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
     verSinContratista
       ? db.expedienteContractual.count({ where: { AND: [where, { contratistaId: null, cerrado: false }] } })
       : Promise.resolve(0),
+    gestiona
+      ? db.expedienteContractual.findMany({
+          where: { AND: [where, { cerrado: false, fechaFinEstimada: { lt: hoy } }] },
+          take: 300,
+          select: {
+            id: true,
+            numero: true,
+            numeroContrato: true,
+            codigoProceso: true,
+            tipoContrato: true,
+            terminadoAnticipadamente: true,
+            fechaFinEstimada: true,
+            documentos: { where: { requisito: { codigoFormato: { contains: CODIGO_ACTA_LIQUIDACION } } }, select: { id: true }, take: 1 },
+          },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const liquidaciones = terminados
+    .map((e) => ({
+      expediente: e,
+      estado: estadoLiquidacion({
+        terminacion: e.fechaFinEstimada,
+        tipoContrato: e.tipoContrato,
+        terminadoAnticipadamente: e.terminadoAnticipadamente,
+        liquidado: e.documentos.length > 0,
+        hoy,
+      }),
+    }))
+    .filter((l) => ["mutuo-acuerdo", "unilateral", "residual", "sin-competencia"].includes(l.estado.fase))
+    .sort((a, b) => a.estado.dias - b.estado.dias);
 
   const firmas = buzon.filter((s) => s.rol === "FIRMA" || s.rol === "VISTO_BUENO");
 
@@ -86,6 +118,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
       lista: firmas.slice(0, 8),
     },
     informes: { total: informes.length, lista: informes.slice(0, 10) },
+    liquidaciones,
     sinContratista,
   };
 }

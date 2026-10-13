@@ -1,3 +1,4 @@
+import { ETIQUETA_FASE_LIQUIDACION } from "@/lib/liquidacion";
 import { identificacionContrato } from "@/lib/codigo-proceso";
 import {
   obtenerPermisosUsuario,
@@ -136,6 +137,18 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   const enEspera = trabajo.firmas.total - trabajo.firmas.listos;
   if (enEspera > 0) {
     items.push({ titulo: `${enEspera} firma(s) en espera de turno`, detalle: "Se habilitan cuando firmen los anteriores", link: "/contratacion/buzon", tipo: "firma" });
+  }
+  for (const l of trabajo.liquidaciones) {
+    total++;
+    items.push({
+      titulo: `${identificacionContrato(l.expediente)} · ${ETIQUETA_FASE_LIQUIDACION[l.estado.fase].toLowerCase()}`,
+      detalle:
+        l.estado.fase === "sin-competencia"
+          ? "Venció el término para liquidar"
+          : `Hasta el ${l.estado.limite!.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })} · ${l.estado.dias} día(s)`,
+      link: `/contratacion/expedientes/${l.expediente.id}`,
+      tipo: "documento",
+    });
   }
   if (trabajo.sinContratista > 0) {
     total += trabajo.sinContratista;

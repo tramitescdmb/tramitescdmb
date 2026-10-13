@@ -1,6 +1,21 @@
 import { enSmmlv, formatearSmmlv, smmlvDe } from "@/lib/smmlv";
 
-export type TipoModificacion = "PRORROGA" | "ADICION_VALOR" | "PRORROGA_Y_ADICION" | "SUSPENSION" | "VIGENCIAS_FUTURAS" | "OTRA";
+export type TipoModificacion =
+  | "PRORROGA"
+  | "ADICION_VALOR"
+  | "PRORROGA_Y_ADICION"
+  | "SUSPENSION"
+  | "VIGENCIAS_FUTURAS"
+  | "CESION"
+  | "TERMINACION_ANTICIPADA"
+  | "OTRA";
+
+export type ClaseTerminacion = "MUTUO_ACUERDO" | "UNILATERAL";
+
+export const CLASES_TERMINACION: { valor: ClaseTerminacion; etiqueta: string; descripcion: string }[] = [
+  { valor: "MUTUO_ACUERDO", etiqueta: "De mutuo acuerdo", descripcion: "Acta de terminación por mutuo acuerdo (A-BS-FO131, procedimiento A-BS-PR48)." },
+  { valor: "UNILATERAL", etiqueta: "Unilateral", descripcion: "Acto administrativo motivado, con recurso de reposición (Ley 80 de 1993, art. 17; procedimiento A-BS-PR49)." },
+];
 
 export type ClaseVigenciasFuturas = "ORDINARIA" | "EXCEPCIONAL";
 
@@ -19,6 +34,8 @@ export const TIPOS_MODIFICACION: { valor: TipoModificacion; etiqueta: string; de
   { valor: "PRORROGA_Y_ADICION", etiqueta: "Prórroga y adición", descripcion: "Amplía el plazo y aumenta el valor.", codigoFormato: "A-BS-FO120" },
   { valor: "SUSPENSION", etiqueta: "Suspensión y reinicio", descripcion: "Detiene la ejecución; la terminación se corre los días suspendidos.", codigoFormato: "A-BS-FO130" },
   { valor: "VIGENCIAS_FUTURAS", etiqueta: "Vigencias futuras", descripcion: "Registra la autorización para comprometer recursos de la vigencia siguiente.", codigoFormato: "" },
+  { valor: "CESION", etiqueta: "Cesión del contrato", descripcion: "Sustituye al contratista por un cesionario autorizado por la CDMB.", codigoFormato: "A-BS-FO114" },
+  { valor: "TERMINACION_ANTICIPADA", etiqueta: "Terminación anticipada", descripcion: "Termina el contrato antes de su plazo; obliga a liquidarlo.", codigoFormato: "A-BS-FO131" },
   { valor: "OTRA", etiqueta: "Aclaración o modificación", descripcion: "Cambia otras condiciones, sin plazo ni valor.", codigoFormato: "A-BS-FO122" },
 ];
 
@@ -28,6 +45,8 @@ export const ETIQUETA_TIPO_MODIFICACION: Record<TipoModificacion, string> = {
   PRORROGA_Y_ADICION: "Prórroga y adición",
   SUSPENSION: "Suspensión",
   VIGENCIAS_FUTURAS: "Vigencias futuras",
+  CESION: "Cesión",
+  TERMINACION_ANTICIPADA: "Terminación anticipada",
   OTRA: "Aclaración o modificación",
 };
 
@@ -52,7 +71,7 @@ const MS_DIA = 24 * 60 * 60 * 1000;
 
 export function esDocumentoModificacion(nombre: string | null | undefined): boolean {
   if (/certificado|disponibilidad presupuestal|registro presupuestal|garant[ií]a|p[oó]liza/i.test(nombre ?? "")) return false;
-  return /pr[oó]rroga|adici[oó]n(?![a-záéíóúñ])|modificatori|otro\s*s[ií](?![a-záéíóúñ])|modificaci[oó]n(?![a-záéíóúñ])|suspensi[oó]n/i.test(nombre ?? "");
+  return /pr[oó]rroga|adici[oó]n(?![a-záéíóúñ])|modificatori|otro\s*s[ií](?![a-záéíóúñ])|modificaci[oó]n(?![a-záéíóúñ])|suspensi[oó]n|cesi[oó]n|terminaci[oó]n anticipada/i.test(nombre ?? "");
 }
 
 export function cambiaPlazo(tipo: TipoModificacion): boolean {
@@ -71,6 +90,8 @@ export type DatosModificacion = {
   fechaSuspension: string | null;
   fechaReinicio: string | null;
   vigenciasFuturas: { clase: ClaseVigenciasFuturas | null; acto: string | null; hasta: string | null; valores: VigenciaFutura[] };
+  cesionarioUsuarioRed: string | null;
+  claseTerminacion: ClaseTerminacion | null;
   observacion: string | null;
 };
 
@@ -87,11 +108,13 @@ export function leerModificacion(v: unknown): DatosModificacion | null {
   return {
     tipo,
     fecha: fechaIso(b.fecha),
-    fechaTerminacion: cambiaPlazo(tipo) ? fechaIso(b.fechaTerminacion) : null,
+    fechaTerminacion: cambiaPlazo(tipo) || tipo === "TERMINACION_ANTICIPADA" ? fechaIso(b.fechaTerminacion) : null,
     valorAdicionado: cambiaValor(tipo) && Number.isFinite(valor) && valor > 0 ? Math.round(valor) : null,
     fechaSuspension: tipo === "SUSPENSION" ? fechaIso(b.fechaSuspension) : null,
     fechaReinicio: tipo === "SUSPENSION" ? fechaIso(b.fechaReinicio) : null,
     vigenciasFuturas: leerVigenciasFuturas(b.vigenciasFuturas),
+    cesionarioUsuarioRed: tipo === "CESION" && typeof b.cesionarioUsuarioRed === "string" && b.cesionarioUsuarioRed.trim() ? b.cesionarioUsuarioRed.trim().slice(0, 60) : null,
+    claseTerminacion: tipo === "TERMINACION_ANTICIPADA" ? CLASES_TERMINACION.find((c) => c.valor === b.claseTerminacion)?.valor ?? null : null,
     observacion: observacion || null,
   };
 }
@@ -131,7 +154,7 @@ export function diasSuspendidos(m: Pick<DatosModificacion, "fechaSuspension" | "
 }
 
 export function nuevaFechaTerminacion(m: DatosModificacion, actual: Date | null): Date | null {
-  if (cambiaPlazo(m.tipo) && m.fechaTerminacion) return utc(m.fechaTerminacion);
+  if ((cambiaPlazo(m.tipo) || m.tipo === "TERMINACION_ANTICIPADA") && m.fechaTerminacion) return utc(m.fechaTerminacion);
   if (m.tipo === "SUSPENSION" && actual) {
     const dias = diasSuspendidos(m);
     return dias > 0 ? new Date(actual.getTime() + dias * MS_DIA) : null;
@@ -244,6 +267,13 @@ export function errorModificacion(m: DatosModificacion, contrato: ContratoParaMo
     }
   }
   if (m.tipo === "OTRA" && !m.observacion) return "Describa brevemente la aclaración o modificación.";
+  if (m.tipo === "CESION" && !m.cesionarioUsuarioRed) return "Indique el usuario de red del cesionario.";
+  if (m.tipo === "TERMINACION_ANTICIPADA") {
+    if (!m.claseTerminacion) return "Indique si la terminación es de mutuo acuerdo o unilateral.";
+    if (!m.fechaTerminacion) return "Indique la fecha de terminación anticipada.";
+    if (utc(m.fechaTerminacion) < fecha) return "La fecha de terminación anticipada no puede ser anterior a la suscripción del acta.";
+    if (contrato.terminacion && utc(m.fechaTerminacion) >= contrato.terminacion) return "La terminación anticipada debe ser anterior a la terminación vigente.";
+  }
   if (m.tipo === "VIGENCIAS_FUTURAS" && !m.vigenciasFuturas.hasta) return "Indique la fecha hasta la que se comprometen recursos de la vigencia siguiente.";
   const requeridos = periodosRequeridos(m, contrato.terminacion, contrato.hoy).map((p) => p.anio);
   if (m.tipo === "VIGENCIAS_FUTURAS" && requeridos.length === 0) return "La fecha debe pertenecer a una vigencia posterior a la actual.";
@@ -256,3 +286,4 @@ export function errorModificacion(m: DatosModificacion, contrato: ContratoParaMo
   }
   return null;
 }
+
