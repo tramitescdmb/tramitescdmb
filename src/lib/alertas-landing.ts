@@ -119,13 +119,22 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
     items.push({
       titulo: `Informe N.° ${i.numeroInforme} por radicar`,
       detalle: `${i.objeto.slice(0, 70)} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
-      link: `/contratacion/expedientes/${i.expedienteId}`,
+      link: `/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`,
       tipo: "informe",
     });
   }
-  if (trabajo.firmas.listos > 0) {
-    total += trabajo.firmas.listos;
-    items.push({ titulo: `${trabajo.firmas.listos} firma(s) lista(s) para firmar`, link: "/contratacion/buzon", tipo: "firma" });
+  for (const f of trabajo.firmas.lista.filter((x) => x.puedeActuar)) {
+    total++;
+    items.unshift({
+      titulo: `${f.rol === "VISTO_BUENO" ? "Dar visto bueno" : "Firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
+      detalle: `${f.documentoContrato?.expediente.numero ?? ""} · asignado por ${f.asignadoPor.nombre}`,
+      link: `/contratacion/firmar/${f.id}`,
+      tipo: "firma",
+    });
+  }
+  const enEspera = trabajo.firmas.total - trabajo.firmas.listos;
+  if (enEspera > 0) {
+    items.push({ titulo: `${enEspera} firma(s) en espera de turno`, detalle: "Se habilitan cuando firmen los anteriores", link: "/contratacion/buzon", tipo: "firma" });
   }
   if (trabajo.sinContratista > 0) {
     total += trabajo.sinContratista;

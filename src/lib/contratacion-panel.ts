@@ -15,6 +15,7 @@ export type InformePorRadicar = {
   numero: string;
   objeto: string;
   numeroInforme: number;
+  periodoClave: string;
   rango: string;
   radicaDesde: Date;
   diasDeRetraso: number;
@@ -57,6 +58,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
         numero: e.numero,
         objeto: e.objeto,
         numeroInforme: p.numero,
+        periodoClave: p.periodo.clave,
         rango: etiquetaRangoPeriodo(p.periodo),
         radicaDesde: p.periodo.radicaDesde,
         diasDeRetraso: p.diasDeRetraso,

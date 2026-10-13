@@ -7,6 +7,8 @@ import { saludo, horaBogota } from "@/lib/saludo";
 import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { BandejaPendientes } from "@/components/inicio/BandejaPendientes";
+import { MisContratos } from "@/components/inicio/MisContratos";
+import { obtenerContratosLanding } from "@/lib/contratos-landing";
 
 function Indicador({ icon: Icon, valor, etiqueta, tono }: { icon: LucideIcon; valor: number; etiqueta: string; tono: string }) {
   return (
@@ -29,7 +31,10 @@ export default async function LandingPage() {
   const [secciones, permisos] = await Promise.all([obtenerSeccionesAlertas(session), obtenerPermisosUsuario(session.userId)]);
   const conTramites = secciones.some((s) => s.modulo === "TRAMITES");
   const planificador = puedePlanearVisitas(permisos);
-  const agenda = conTramites ? await obtenerAgendaUsuario(session.userId, planificador) : null;
+  const [agenda, contratos] = await Promise.all([
+    conTramites ? obtenerAgendaUsuario(session.userId, planificador) : Promise.resolve(null),
+    permisos.modulos.has("GECON") ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve([]),
+  ]);
 
   const primerNombre = session.nombre.trim().split(/\s+/)[0];
   const totalGeneral = secciones.reduce((acc, s) => acc + s.total, 0);
@@ -65,6 +70,8 @@ export default async function LandingPage() {
           )}
         </div>
       </header>
+
+      {contratos.length > 0 && <MisContratos contratos={contratos} />}
 
       {secciones.length > 0 && (
         <div className={`grid grid-cols-1 gap-5 ${agenda ? "lg:grid-cols-5" : ""}`}>

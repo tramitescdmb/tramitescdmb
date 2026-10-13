@@ -127,7 +127,7 @@ export default async function DetalleExpedienteContractualPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; periodo?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -334,6 +334,12 @@ export default async function DetalleExpedienteContractualPage({
     );
   };
 
+  const anclaUsada = new Set<string>();
+  const anclaPeriodo = (clave: string) => {
+    if (anclaUsada.has(clave)) return undefined;
+    anclaUsada.add(clave);
+    return `periodo-${clave}`;
+  };
   const panelPorPeriodos = (item: ItemChecklist, etapa: EtapaContratacion, puedeSubirEtapa: boolean, puedeGestionarEtapaCerrada: boolean) => {
     const docs = expediente.documentos.filter((d) => d.requisitoId === item.id);
     const claves = new Set(periodosMensuales.map((p) => p.clave));
@@ -349,12 +355,13 @@ export default async function DetalleExpedienteContractualPage({
       doc: DocumentoExpediente | undefined,
       subida: { periodoMes?: string; periodoEventualId?: string },
       pendiente: boolean,
-      extra?: React.ReactNode
+      extra?: React.ReactNode,
+      ancla?: string
     ) => (
       <li
         key={key}
-        id={doc ? `documento-${doc.id}` : undefined}
-        className="flex flex-wrap items-center gap-2 rounded-md p-2 scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
+        id={doc ? `documento-${doc.id}` : ancla}
+        className="flex flex-wrap items-center gap-2 rounded-md p-2 scroll-mt-28 target:bg-amber-50 target:ring-1 target:ring-amber-300"
       >
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-stone-800">
@@ -393,7 +400,7 @@ export default async function DetalleExpedienteContractualPage({
             (se ajustan en «Datos del contrato», más arriba). Mientras tanto puede usar espacios eventuales.
           </p>
         ) : (
-          <details className="group/periodos">
+          <details className="group/periodos" open={Boolean(sp.periodo && periodosMensuales.some((p) => p.clave === sp.periodo))}>
             <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] text-stone-500 [&::-webkit-details-marker]:hidden">
               <ChevronDown className="h-3 w-3 flex-none transition-transform group-open/periodos:rotate-180" aria-hidden />
               {docs.filter((d) => d.periodoMes && claves.has(d.periodoMes)).length} de {periodosMensuales.length} periodos mensuales con informe cargado — clic para ver cada uno
@@ -408,7 +415,9 @@ export default async function DetalleExpedienteContractualPage({
                   `Periodo ${etiquetaRangoPeriodo(p)} · se radica desde el ${formatearFechaSolo(p.radicaDesde)}`,
                   doc,
                   { periodoMes: p.clave },
-                  p.radicaDesde <= hoy
+                  p.radicaDesde <= hoy,
+                  undefined,
+                  doc ? undefined : anclaPeriodo(p.clave)
                 );
               })}
             </ul>
