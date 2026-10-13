@@ -19,7 +19,7 @@ import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } 
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { ETIQUETA_TIPO_MODIFICACION, TIPOS_MODIFICACION, errorModificacion, nuevaFechaTerminacion, textoAnios, vigenciasComprometidas, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
@@ -94,9 +94,14 @@ export function identidadFirmante(u: {
 }
 
 export const obtenerRequisitosDeEtapa = unstable_cache(
-  async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion) => {
+  async (modalidad: ModalidadSeleccion, etapa: EtapaContratacion, tipoContrato: TipoContratoEstatal = "PRESTACION_SERVICIOS") => {
     return db.requisitoDocumentoContratacion.findMany({
-      where: { etapa, activo: true, OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }] },
+      where: {
+        etapa,
+        activo: true,
+        OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: modalidad }],
+        aplicaTipoContrato: { in: tipoContrato === "OBRA" ? ["TODOS", "SOLO_OBRA"] : ["TODOS", "EXCEPTO_OBRA"] },
+      },
       orderBy: [{ obligatorio: "desc" }, { orden: "asc" }],
     });
   },
@@ -256,6 +261,7 @@ export async function actualizarRequisitoCatalogo(
     obligatorio: boolean;
     gestionadoEnSecop: boolean;
     activo: boolean;
+    aplicaTipoContrato: "TODOS" | "SOLO_OBRA" | "EXCEPTO_OBRA";
   }>
 ) {
   return db.requisitoDocumentoContratacion.update({
@@ -305,6 +311,7 @@ export async function registrarEventoContratacion(
 export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
+  tipoContrato: TipoContratoEstatal;
   valor?: number | null;
   numeroContrato?: string | null;
   numeroProcesoSecop?: string | null;
@@ -337,6 +344,7 @@ export async function crearExpedienteContractual(datos: {
       numero,
       objeto: datos.objeto.trim(),
       modalidadSeleccion: datos.modalidadSeleccion,
+      tipoContrato: datos.tipoContrato,
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
       numeroProcesoSecop,
@@ -726,7 +734,7 @@ export class FaltanRequisitosError extends Error {
 export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, contratistaId: true, subserieId: true },
+    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, contratistaId: true, subserieId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
@@ -772,7 +780,7 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
     },
   });
   {
-    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual);
+    const requisitos = await obtenerRequisitosDeEtapa(expediente.modalidadSeleccion, expediente.etapaActual, expediente.tipoContrato);
     const faltantes = requisitosObligatoriosFaltantes(cruzarChecklist(requisitos, documentosEtapa));
     if (faltantes.length > 0) throw new FaltanRequisitosError(faltantes);
   }

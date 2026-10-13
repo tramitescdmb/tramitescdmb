@@ -2006,11 +2006,12 @@ model RepresentanteLegal {
 }
 
 model ExpedienteContractual {
-  id                       String             @id @default(cuid())
-  numero                   String             @unique
-  objeto                   String             @db.Text
+  id                       String              @id @default(cuid())
+  numero                   String              @unique
+  objeto                   String              @db.Text
   modalidadSeleccion       ModalidadSeleccion
-  valor                    Decimal?           @db.Decimal(18, 2)
+  tipoContrato             TipoContratoEstatal @default(PRESTACION_SERVICIOS)
+  valor                    Decimal?            @db.Decimal(18, 2)
   numeroContrato           String?
   numeroProcesoSecop       String?
   fechaSuscripcion         DateTime?
@@ -2018,13 +2019,13 @@ model ExpedienteContractual {
   fechaFinEstimada         DateTime?
   dependenciaSolicitanteId String
   subserieId               String?
-  etapaActual              EtapaContratacion  @default(PRECONTRACTUAL)
-  cerrado                  Boolean            @default(false)
+  etapaActual              EtapaContratacion   @default(PRECONTRACTUAL)
+  cerrado                  Boolean             @default(false)
   fechaCierre              DateTime?
   contratistaId            String?
   creadoPorId              String
-  createdAt                DateTime           @default(now())
-  updatedAt                DateTime           @updatedAt
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
 
   expedienteRelacionadoId String?
 
@@ -2120,6 +2121,7 @@ model RequisitoDocumentoContratacion {
   notaOrigenExterno  String?             @db.Text
   fuente             String?
   activo             Boolean             @default(true)
+  aplicaTipoContrato AplicaTipoContrato  @default(TODOS)
   tipoDocumentalId   String?
 
   tipoDocumental     TipoDocumental?          @relation(fields: [tipoDocumentalId], references: [id])
@@ -2298,4 +2300,21 @@ model ModificacionContrato {
   registradoPor Usuario               @relation("ModificacionContratoRegistradaPor", fields: [registradoPorId], references: [id])
 
   @@index([expedienteId])
+}
+
+enum TipoContratoEstatal {
+  PRESTACION_SERVICIOS
+  OBRA
+  SUMINISTRO
+  COMPRAVENTA
+  CONSULTORIA
+  INTERVENTORIA
+  ARRENDAMIENTO
+  OTRO
+}
+
+enum AplicaTipoContrato {
+  TODOS
+  SOLO_OBRA
+  EXCEPTO_OBRA
 }

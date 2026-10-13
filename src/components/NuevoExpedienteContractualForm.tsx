@@ -1,5 +1,6 @@
 "use client";
 
+import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -118,6 +119,7 @@ export function NuevoExpedienteContractualForm({
   const router = useRouter();
   const [objeto, setObjeto] = useState("");
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidades[0]?.valor ?? "");
+  const [tipoContrato, setTipoContrato] = useState("");
   const [valor, setValor] = useState("");
   const [numeroContrato, setNumeroContrato] = useState("");
   const [numeroProcesoSecop, setNumeroProcesoSecop] = useState("");
@@ -218,6 +220,7 @@ export function NuevoExpedienteContractualForm({
 
   async function guardar() {
     if (!objeto.trim()) return setError("El objeto del contrato es obligatorio.");
+    if (!tipoContrato) return setError("Seleccione el tipo de contrato.");
     if (!dependenciaSolicitanteId) return setError("Debe elegir la dependencia solicitante.");
     setGuardando(true);
     setError(null);
@@ -228,6 +231,7 @@ export function NuevoExpedienteContractualForm({
         body: JSON.stringify({
           objeto: objeto.trim(),
           modalidadSeleccion,
+          tipoContrato,
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,
@@ -285,7 +289,15 @@ export function NuevoExpedienteContractualForm({
               />
             </Field>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Tipo de contrato" required>
+                <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className={campoCls}>
+                  <option value="">Seleccione…</option>
+                  {TIPOS_CONTRATO.map((t) => (
+                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Modalidad de selección" required>
                 <select value={modalidadSeleccion} onChange={(e) => setModalidadSeleccion(e.target.value)} className={campoCls}>
                   {modalidades.map((m) => (

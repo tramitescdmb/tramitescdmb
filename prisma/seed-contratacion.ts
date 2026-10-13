@@ -14,6 +14,7 @@ type RequisitoJson = {
   gestionadoEnSecop?: boolean;
   notaOrigenExterno?: string;
   fuente: string;
+  aplicaTipoContrato?: "TODOS" | "SOLO_OBRA" | "EXCEPTO_OBRA";
 };
 
 const requisitos = requisitosJson as RequisitoJson[];

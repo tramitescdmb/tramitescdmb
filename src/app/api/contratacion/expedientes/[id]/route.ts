@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -43,6 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "fechaInicio",
     "fechaFinEstimada",
     "modalidadSeleccion",
+    "tipoContrato",
     "valor",
     "dependenciaSolicitanteId",
     "expedienteRelacionadoId",
@@ -99,12 +101,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "fechaInicio" in body ||
     "fechaFinEstimada" in body ||
     "modalidadSeleccion" in body ||
+    "tipoContrato" in body ||
     "valor" in body ||
     "dependenciaSolicitanteId" in body
   ) {
     if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
       await registrarAccesoDenegadoAccion("editar los datos generales de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para editar los datos generales de este expediente." }, { status: 403 });
+    }
+    if ("tipoContrato" in body && !esTipoContrato(body.tipoContrato)) {
+      return NextResponse.json({ error: "El tipo de contrato indicado no es válido." }, { status: 400 });
     }
     if ("modalidadSeleccion" in body && !MODALIDADES_VALIDAS.has(String(body.modalidadSeleccion))) {
       return NextResponse.json({ error: "La modalidad de selección indicada no es válida." }, { status: 400 });
@@ -163,6 +169,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...("fechaInicio" in body ? { fechaInicio: body.fechaInicio ? new Date(body.fechaInicio) : null } : {}),
         ...("fechaFinEstimada" in body ? { fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null } : {}),
         ...("modalidadSeleccion" in body ? { modalidadSeleccion: body.modalidadSeleccion as ModalidadSeleccion } : {}),
+        ...("tipoContrato" in body && esTipoContrato(body.tipoContrato) ? { tipoContrato: body.tipoContrato } : {}),
         ...("valor" in body ? { valor: body.valor === null || body.valor === "" ? null : Number(body.valor) } : {}),
         ...("dependenciaSolicitanteId" in body ? { dependenciaSolicitanteId: String(body.dependenciaSolicitanteId).trim() } : {}),
       },

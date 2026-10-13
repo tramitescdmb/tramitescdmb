@@ -1,5 +1,6 @@
 "use client";
 
+import { ETIQUETA_APLICA_TIPO, type AplicaTipoContrato } from "@/lib/tipo-contrato";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowDown, Pencil, Trash2, Plus, X } from "lucide-react";
@@ -18,7 +19,10 @@ export type RequisitoCatalogo = {
   obligatorio: boolean;
   gestionadoEnSecop: boolean;
   activo: boolean;
+  aplicaTipoContrato: AplicaTipoContrato;
 };
+
+const SIGUIENTE_APLICA: Record<AplicaTipoContrato, AplicaTipoContrato> = { TODOS: "SOLO_OBRA", SOLO_OBRA: "EXCEPTO_OBRA", EXCEPTO_OBRA: "TODOS" };
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
@@ -120,6 +124,22 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
                               </p>
                             )}
                           </div>
+                          <button
+                            type="button"
+                            title="Tipo de contrato al que aplica; clic para cambiar"
+                            onClick={() =>
+                              accion(() =>
+                                fetch(`/api/contratacion/catalogo/${r.id}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ aplicaTipoContrato: SIGUIENTE_APLICA[r.aplicaTipoContrato] }),
+                                })
+                              )
+                            }
+                            className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${r.aplicaTipoContrato === "TODOS" ? "bg-stone-100 text-stone-500" : "bg-sky-100 text-sky-800"}`}
+                          >
+                            {ETIQUETA_APLICA_TIPO[r.aplicaTipoContrato]}
+                          </button>
                           <button
                             type="button"
                             onClick={() => alternar(r.id, "obligatorio", r.obligatorio)}

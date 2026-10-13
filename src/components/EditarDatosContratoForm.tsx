@@ -1,5 +1,6 @@
 "use client";
 
+import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
@@ -12,6 +13,7 @@ type Dependencia = { id: string; nombre: string };
 export function EditarDatosContratoForm({
   expedienteId,
   modalidadActual,
+  tipoContratoActual,
   modalidades,
   valorActual,
   dependenciaActualId,
@@ -24,6 +26,7 @@ export function EditarDatosContratoForm({
 }: {
   expedienteId: string;
   modalidadActual: string;
+  tipoContratoActual: string;
   modalidades: ModalidadOpcion[];
   valorActual: string | null;
   dependenciaActualId: string;
@@ -37,6 +40,7 @@ export function EditarDatosContratoForm({
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidadActual);
+  const [tipoContrato, setTipoContrato] = useState(tipoContratoActual);
   const [valor, setValor] = useState(valorActual ?? "");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState(dependenciaActualId);
   const [numeroContrato, setNumeroContrato] = useState(numeroContratoActual ?? "");
@@ -57,6 +61,7 @@ export function EditarDatosContratoForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           modalidadSeleccion,
+          tipoContrato,
           valor: valor.trim() || null,
           dependenciaSolicitanteId,
           numeroContrato: numeroContrato.trim() || null,
@@ -100,6 +105,19 @@ export function EditarDatosContratoForm({
             </div>
 
             <div className="space-y-3">
+              <label className="block text-xs font-medium text-stone-600">
+                Tipo de contrato
+                <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
+                  {TIPOS_CONTRATO.map((t) => (
+                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                  ))}
+                </select>
+                {(tipoContrato === "OBRA") !== (tipoContratoActual === "OBRA") && (
+                  <span className="mt-1 block text-[11px] font-normal text-amber-700">
+                    Cambia los informes exigidos: {tipoContrato === "OBRA" ? "informe de supervisión para obra pública" : "informe de supervisión"}.
+                  </span>
+                )}
+              </label>
               <label className="block text-xs font-medium text-stone-600">
                 Modalidad de selección
                 <select

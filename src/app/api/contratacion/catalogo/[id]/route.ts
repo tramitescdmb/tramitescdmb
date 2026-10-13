@@ -33,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.obligatorio === "boolean") datos.obligatorio = body.obligatorio;
     if (typeof body.gestionadoEnSecop === "boolean") datos.gestionadoEnSecop = body.gestionadoEnSecop;
     if (typeof body.activo === "boolean") datos.activo = body.activo;
+    if (["TODOS", "SOLO_OBRA", "EXCEPTO_OBRA"].includes(body.aplicaTipoContrato)) datos.aplicaTipoContrato = body.aplicaTipoContrato;
 
     await actualizarRequisitoCatalogo(id, datos);
     revalidateTag(TAG_CATALOGO_REQUISITOS);

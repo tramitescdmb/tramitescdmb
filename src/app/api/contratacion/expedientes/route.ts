@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -23,6 +24,9 @@ export async function POST(req: NextRequest) {
   const dependenciaSolicitanteId = String(body.dependenciaSolicitanteId || "").trim();
 
   if (!objeto) return NextResponse.json({ error: "El objeto del contrato es obligatorio." }, { status: 400 });
+  if (!esTipoContrato(body.tipoContrato)) {
+    return NextResponse.json({ error: "Seleccione el tipo de contrato." }, { status: 400 });
+  }
   if (!MODALIDADES_VALIDAS.includes(modalidadSeleccion)) {
     return NextResponse.json({ error: "Debe indicarse una modalidad de selección válida." }, { status: 400 });
   }
@@ -57,6 +61,7 @@ export async function POST(req: NextRequest) {
     const expediente = await crearExpedienteContractual({
       objeto,
       modalidadSeleccion,
+      tipoContrato: body.tipoContrato,
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
       numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       numeroProcesoSecop: typeof body.numeroProcesoSecop === "string" ? body.numeroProcesoSecop : null,
