@@ -95,7 +95,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         <p className="text-sm text-stone-500">
           {contratista.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {contratista.identificacion} ·{" "}
           {contratista.tipoPersona === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
-          {usuario ? ` · Usuario ${usuario.email}` : ""}
+          {usuario ? ` · Usuario ${usuario.email}` : contratista.usuarioRed ? ` · Usuario de red ${contratista.usuarioRed} (se vincula cuando ingrese)` : ""}
           {usuario && permisos.esAdmin && (
             <>
               {" · "}

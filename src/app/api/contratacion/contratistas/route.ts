@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
   try {
-    const creado = await crearContratistaMinimo(body.persona, body.representanteLegal);
+    const creado = await crearContratistaMinimo(body.persona, body.representanteLegal, body.usuarioRed);
     return NextResponse.json({ id: creado.id, nombre: creado.nombre }, { status: 201 });
   } catch (err) {
     if (err instanceof ContratistaDuplicadoError) {

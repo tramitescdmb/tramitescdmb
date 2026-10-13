@@ -15,7 +15,7 @@ import {
   TIPOS_IDENTIFICACION_USUARIO,
   type DatosPersona,
 } from "@/lib/datos-persona";
-import { personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
+import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
@@ -1092,7 +1092,16 @@ function datosContratistaDesdePersonaMinima(persona: DatosPersona) {
   };
 }
 
-export async function crearContratistaMinimo(personaBody: unknown, representanteBody: unknown): Promise<{ id: string; nombre: string }> {
+export async function crearContratistaMinimo(personaBody: unknown, representanteBody: unknown, usuarioRedBody?: unknown): Promise<{ id: string; nombre: string }> {
+  const usuarioRed = normalizarUsuarioRed(usuarioRedBody);
+  if (usuarioRed) {
+    if (await db.usuario.findFirst({ where: { email: { equals: usuarioRed, mode: "insensitive" } }, select: { id: true } })) {
+      throw new Error(`El usuario de red ${usuarioRed} ya existe en la plataforma: vincúlelo en lugar de registrarlo.`);
+    }
+    if (await db.contratista.findFirst({ where: { usuarioRed }, select: { id: true } })) {
+      throw new Error(`El usuario de red ${usuarioRed} ya está asignado a otro contratista.`);
+    }
+  }
   const persona = leerDatosPersona(personaBody, TIPOS_IDENTIFICACION_USUARIO);
   const faltan = faltantesContratistaMinimo(persona);
   if (faltan.length > 0) throw new Error(`Faltan datos del contratista: ${faltan.join(", ")}.`);
@@ -1110,6 +1119,7 @@ export async function crearContratistaMinimo(personaBody: unknown, representante
   const creado = await db.contratista.create({
     data: {
       ...datos,
+      usuarioRed: usuarioRed || null,
       ...(representante
         ? {
             representanteLegal: {
@@ -1376,3 +1386,82 @@ export async function listarAvisosRechazoParaUsuario(usuarioId: string, veTodos:
   });
   return avisos as (typeof avisos[number] & { documentoContrato: NonNullable<(typeof avisos)[number]["documentoContrato"]> })[];
 }
+
+export function normalizarUsuarioRed(valor: unknown): string {
+  return typeof valor === "string" ? valor.trim().toLowerCase().replace(/^.*\\/, "").replace(/@.*$/, "").slice(0, 60) : "";
+}
+
+export async function consultarUsuarioRedContratista(valor: string) {
+  const usuarioRed = normalizarUsuarioRed(valor);
+  if (!usuarioRed) return null;
+  const [usuario, pendiente] = await Promise.all([
+    db.usuario.findFirst({
+      where: { email: { equals: usuarioRed, mode: "insensitive" } },
+      select: { ...SELECT_USUARIO_CONTRATISTA, directorioActivo: true, contratista: { select: { id: true } } },
+    }),
+    db.contratista.findFirst({ where: { usuarioRed, usuarioId: null }, select: { id: true, nombreORazonSocial: true } }),
+  ]);
+  if (!usuario) return { usuarioRed, existe: false as const, pendiente };
+  return {
+    usuarioRed,
+    existe: true as const,
+    usuarioId: usuario.id,
+    nombre: usuario.nombre,
+    documento: usuario.cedulaONit,
+    directorioActivo: usuario.directorioActivo,
+    contratistaId: usuario.contratista?.id ?? null,
+    motivo: motivoNoPuedeSerContratista(usuario),
+    faltan: faltantesContratista(usuario),
+  };
+}
+
+export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor: string): Promise<void> {
+  const usuarioRed = normalizarUsuarioRed(valor);
+  if (!usuarioRed) return;
+  const pendiente = await db.contratista.findFirst({ where: { usuarioRed, usuarioId: null } });
+  if (!pendiente) return;
+  const [usuario, yaVinculado] = await Promise.all([
+    db.usuario.findUnique({ where: { id: usuarioId }, select: { ...SELECT_USUARIO_CONTRATISTA, modulosAcceso: true } }),
+    db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
+  ]);
+  if (!usuario || yaVinculado || motivoNoPuedeSerContratista(usuario)) return;
+  const actual = personaDesdeUsuario(usuario, false);
+  if (actual.identificacion.trim() && actual.identificacion.trim() !== pendiente.identificacion) return;
+
+  const deContratista: Partial<DatosPersona> = {
+    tipoPersona: pendiente.tipoPersona,
+    tipoIdentificacion: pendiente.tipoPersona === "JURIDICA" ? "NIT" : "CC",
+    identificacion: pendiente.identificacion,
+    nombres: pendiente.nombres ?? "",
+    apellidos: pendiente.apellidos ?? "",
+    razonSocial: pendiente.tipoPersona === "JURIDICA" ? pendiente.nombreORazonSocial : "",
+    email: pendiente.contactoEmail ?? "",
+    celular: pendiente.contactoCelular ?? "",
+    telefono: pendiente.contactoTelefono ?? "",
+    direccion: pendiente.direccion ?? "",
+    departamento: pendiente.departamento ?? "",
+    ciudad: pendiente.ciudad ?? "",
+  };
+  const combinada = { ...actual };
+  for (const [k, v] of Object.entries(deContratista) as [keyof DatosPersona, string][]) {
+    if (typeof combinada[k] === "string" && !(combinada[k] as string).trim() && v) (combinada as Record<string, unknown>)[k] = v;
+  }
+  if (!actual.identificacion.trim()) {
+    combinada.tipoPersona = pendiente.tipoPersona;
+    combinada.tipoIdentificacion = deContratista.tipoIdentificacion!;
+  }
+
+  const modulos = [...new Set([...usuario.modulosAcceso, "GECON" as const])];
+  await db.$transaction([
+    db.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        ...dataUsuarioDesdePersona(combinada),
+        rolesContratacion: ["CONTRATISTA"],
+        modulosAcceso: modulos,
+      },
+    }),
+    db.contratista.update({ where: { id: pendiente.id }, data: { usuarioId } }),
+  ]);
+}
+

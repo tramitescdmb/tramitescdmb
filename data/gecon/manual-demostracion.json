@@ -2,19 +2,19 @@
   {
     "orden": 1,
     "etiqueta": "Acceso",
-    "titulo": "Acceso al módulo y roles de contratación",
+    "titulo": "Acceso al módulo y roles",
     "tituloIndice": "Acceso y roles",
     "ubicacion": "[Usuarios](/usuarios) → ficha de la persona → «Acceso a módulos» y pestaña «SGDEA y GECON».",
-    "resumen": "GECON solo se muestra a quien tiene el módulo activado en su ficha y al menos un rol de contratación. Cada rol define qué expedientes ve y qué puede hacer en ellos.",
+    "resumen": "GECON se muestra a quien tiene el módulo activo en su ficha y al menos un rol de contratación.",
     "pasos": [
-      "El administrador del sistema abre la ficha de la persona en Usuarios y activa el interruptor **GECON** en «Acceso a módulos».",
-      "En la pestaña «SGDEA y GECON» asigna uno o varios roles: Administrador, Jefe o Personal de Contratación, Jefe de dependencia o Supervisor / Interventor. El rol Contratista no se combina con otros.",
-      "Si el rol es temporal, se diligencia «Vigente hasta»: al pasar esa fecha la persona pierde el rol sin intervención manual.",
-      "Se guardan los cambios. La tarjeta de GECON queda en verde con el resumen de roles; en ámbar si el módulo está activo pero falta el rol."
+      "El administrador del sistema abre la ficha de la persona y activa **GECON** en «Acceso a módulos».",
+      "En la pestaña «SGDEA y GECON» asigna el rol: Administrador, Jefe o Personal de Contratación, Jefe de dependencia, Supervisor / Interventor o Contratista.",
+      "Si el rol es temporal, diligencia «Vigente hasta».",
+      "Guarda los cambios."
     ],
-    "ejemplo": "Al funcionario `walhal01` se le activó GECON y quedó con el rol **Contratista**, que el sistema asignó de forma automática al vincularlo al contrato `050-2026`.",
-    "detalle": "El acceso es denegado por defecto: un usuario nuevo, incluso uno creado por el directorio activo, no ve GECON hasta que se active.\n\nEl Personal de Contratación ve solo los expedientes que le asignan en «Gestión del expediente»; el Supervisor, solo los que supervisa; el Contratista, solo los suyos.",
-    "fundamento": "Manual de Contratación y de Supervisión o Interventoría A-BS-MA01 · Ley 1581 de 2012 (acceso restringido a datos personales)."
+    "ejemplo": "`walhal01` tiene GECON activo y el rol Contratista, asignado al vincularlo al contrato `050-2026`.",
+    "detalle": "Un usuario nuevo no tiene acceso a ningún módulo hasta que se active.\n\nPersonal de Contratación ve los expedientes que le asignan; Supervisor, los que supervisa; Contratista, los propios.",
+    "fundamento": "Manual A-BS-MA01 · Ley 1581 de 2012."
   },
   {
     "orden": 2,
@@ -22,133 +22,133 @@
     "titulo": "Registro del contratista",
     "tituloIndice": "Registro del contratista",
     "ubicacion": "[Contratistas](/contratacion/contratistas) → «Registrar contratista nuevo» o «Importar contratistas desde CSV».",
-    "resumen": "Todo contrato tiene un contratista. Si la persona aún no es usuaria de la plataforma, se registra con un perfil mínimo que luego se vincula sola con su usuario.",
+    "resumen": "El contratista se identifica por su usuario de red. Si ya existe en la plataforma se vincula directamente; si no, se registra un perfil mínimo que se vincula cuando la persona ingresa.",
     "pasos": [
-      "Se busca a la persona por documento, nombres o razón social. Si ya existe como usuario, se elige y sus datos se toman de Usuarios.",
-      "Si no existe, se abre «Registrar contratista nuevo» y se diligencia el perfil mínimo: tipo de persona, documento, nombre y contacto. Para persona jurídica, además los datos del representante legal.",
-      "Para varios contratistas a la vez, se descarga la plantilla en «Importar contratistas desde CSV», se diligencia una fila por persona y se carga el archivo. El sistema revisa cada fila (lista, ya existe o con errores) y solo guarda al confirmar.",
-      "El perfil mínimo se vincula con el usuario en cuanto exista uno con el mismo documento y datos completos: al guardarlo en Usuarios, al ingresar por directorio activo o al pasar el contrato a Contractual."
+      "Se escribe el usuario de red y se pulsa «Consultar».",
+      "Si el usuario existe, se muestra la persona: «Vincular como contratista» o, si ya lo es, «Usar este contratista».",
+      "Si no existe, se diligencia el perfil mínimo: tipo de persona, documento, nombre y contacto; para persona jurídica, también el representante legal.",
+      "Cuando la persona ingresa por primera vez con ese usuario de red, el perfil se vincula y sus datos pasan a su usuario.",
+      "Para registrar varios contratistas se usa la importación por CSV, con plantilla y revisión fila por fila antes de guardar."
     ],
-    "ejemplo": "Al cargar un CSV con tres filas, el sistema mostró: `1098000111` listo para importar; `900999888` con errores (faltan los datos del representante legal); `91509227` ya existe como Walid Chakib Halaby Shalaby.",
-    "detalle": "La ficha del contratista agrupa sus contratos por vigencia. «Vincular otro expediente» aparece al final solo cuando hay expedientes sin contratista.\n\nUn contratista sin expedientes puede eliminarse; queda constancia en la auditoría.",
-    "fundamento": "Decreto 1082 de 2015 (registro de proponentes y contratistas) · Ley 1581 de 2012 (tratamiento de datos personales)."
+    "ejemplo": "Al consultar `walhal01` el sistema muestra a Walid Chakib Halaby Shalaby, ya registrado como contratista.",
+    "detalle": "Sin usuario de red, el perfil se vincula por número de documento cuando exista un usuario con ese documento y datos completos.\n\nUn contratista sin expedientes puede eliminarse desde su ficha.",
+    "fundamento": "Decreto 1082 de 2015 · Ley 1581 de 2012."
   },
   {
     "orden": 3,
     "etiqueta": "Expediente",
-    "titulo": "Creación del expediente contractual",
+    "titulo": "Creación del expediente",
     "tituloIndice": "Nuevo expediente",
-    "ubicacion": "Menú Expedientes → [Nuevo expediente](/contratacion/expedientes/nuevo).",
-    "resumen": "Un contrato es un solo expediente de principio a fin. Se crea en la etapa Precontractual con sus datos generales, su contratista y el personal que lo gestiona.",
+    "ubicacion": "Expedientes → [Nuevo expediente](/contratacion/expedientes/nuevo).",
+    "resumen": "Cada contrato tiene un único expediente, que se abre en la etapa Precontractual.",
     "pasos": [
       "Administrador o Jefe de Contratación abre «Nuevo expediente».",
-      "Diligencia objeto, modalidad de selección, valor, dependencia solicitante, fechas de inicio y fin estimadas y número de proceso en SECOP II.",
-      "Vincula el contratista (buscándolo o registrándolo desde el mismo formulario) y designa supervisores y Personal de Contratación.",
-      "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN` y abre el expediente en Precontractual."
+      "Diligencia objeto, modalidad, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
+      "Vincula el contratista y designa supervisores y Personal de Contratación.",
+      "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN`."
     ],
-    "ejemplo": "El expediente `CDMB-CTO-2026-000006` (contrato `050-2026`): «Prestación de Servicio como Ingeniero de Sistemas para ADEI», contratación directa, $20.000.000, del 22 de septiembre al 21 de diciembre de 2026.",
-    "detalle": "Los datos generales se pueden corregir después con «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación, porque el anterior pierde el acceso.",
-    "fundamento": "Ley 80 de 1993 y Ley 1150 de 2007 · Manual A-BS-MA01 de la CDMB."
+    "ejemplo": "`CDMB-CTO-2026-000006`, contrato `050-2026`: prestación de servicio como ingeniero de sistemas para ADEI, contratación directa, $20.000.000, del 22 de septiembre al 21 de diciembre de 2026.",
+    "detalle": "Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.",
+    "fundamento": "Ley 80 de 1993 · Ley 1150 de 2007 · Manual A-BS-MA01."
   },
   {
     "orden": 4,
     "etiqueta": "Checklist",
-    "titulo": "Checklist de documentos por etapa",
-    "tituloIndice": "Checklist de documentos",
-    "ubicacion": "Detalle del expediente → pestaña de la etapa (Precontractual, Contractual, Postcontractual).",
-    "resumen": "Cada etapa muestra el catálogo de documentos exigidos por el Manual A-BS-MA01, cruzado con lo ya cargado: obligatorios primero, luego opcionales.",
+    "titulo": "Documentos por etapa",
+    "tituloIndice": "Documentos por etapa",
+    "ubicacion": "Detalle del expediente → etapa Precontractual, Contractual o Postcontractual.",
+    "resumen": "Cada etapa lista los documentos del Manual A-BS-MA01: primero los obligatorios, luego los opcionales.",
     "pasos": [
-      "Se abre la etapa actual del expediente.",
-      "En cada requisito se carga el archivo (PDF u otro formato permitido). Los marcados «Se gestiona en SECOP II» admiten la evidencia aunque el trámite ocurra allá.",
-      "Quien revisa puede marcar el documento como **validado**.",
-      "Se pueden cargar documentos libres, fuera del catálogo, cuando el caso lo requiera."
+      "Se abre la etapa actual.",
+      "Se carga el archivo de cada requisito.",
+      "Quien revisa lo marca como validado.",
+      "Se pueden cargar documentos fuera del catálogo."
     ],
-    "ejemplo": "En `CDMB-CTO-2026-000006`, la Precontractual exige la Hoja de vida SIGEP, resaltada con una flecha para que no se omita.",
-    "detalle": "Cada carga, edición, eliminación o validación deja un eslabón en una cadena de hash inalterable, visible al final del expediente en «Trazabilidad de los documentos».\n\nAdministrador y Jefe de Contratación pueden corregir o eliminar sin registro en la bitácora, por la rotación de contratistas y los errores de captura frecuentes.",
-    "fundamento": "Manual A-BS-MA01 · Ley 594 de 2000 (integridad del expediente)."
+    "ejemplo": "En `CDMB-CTO-2026-000006` la etapa Precontractual exige la Hoja de vida SIGEP.",
+    "detalle": "Cada carga, edición, eliminación o validación queda en la cadena de hash del expediente. Las acciones de Administrador y Jefe de Contratación no se registran en ella.",
+    "fundamento": "Manual A-BS-MA01 · Ley 594 de 2000."
   },
   {
     "orden": 5,
     "etiqueta": "Etapas",
     "titulo": "Paso entre etapas",
     "tituloIndice": "Paso entre etapas",
-    "ubicacion": "Detalle del expediente → «Aprobar etapa» / «Retroceder etapa».",
-    "resumen": "Las etapas son secuenciales. Aprobar la actual habilita la siguiente; retroceder corrige un avance por error.",
+    "ubicacion": "Detalle del expediente → «Aprobar etapa» o «Retroceder etapa».",
+    "resumen": "Las etapas son secuenciales. Al aprobar Postcontractual el expediente se cierra.",
     "pasos": [
-      "Administrador o Jefe de Contratación revisa el checklist de la etapa.",
-      "Pulsa «Aprobar etapa». Si faltan obligatorios, el sistema muestra la lista y permite continuar o volver.",
-      "Para pasar de Precontractual a Contractual el contratista debe estar vinculado a un usuario completo; si no lo está, el paso se bloquea con un aviso y se puede reintentar sin perder nada.",
-      "Al aprobar Postcontractual el expediente se cierra."
+      "Administrador o Jefe de Contratación revisa los documentos de la etapa.",
+      "Pulsa «Aprobar etapa». Si faltan obligatorios, el sistema los lista y permite continuar.",
+      "Para pasar a Contractual, el contratista debe estar vinculado a su usuario."
     ],
-    "ejemplo": "`CDMB-CTO-2026-000006` pasó a Contractual cuando el perfil de Walid Chakib Halaby Shalaby quedó vinculado a su usuario `walhal01`.",
-    "detalle": "Administrador, Jefe y Personal de Contratación pueden adelantar documentos en etapas aún no alcanzadas; aparecen marcadas «(aún no alcanzada)».",
-    "fundamento": "Manual A-BS-MA01, etapas precontractual, contractual y postcontractual."
+    "ejemplo": "`CDMB-CTO-2026-000006` pasó a Contractual con el contratista vinculado al usuario `walhal01`.",
+    "detalle": "Retroceder una etapa reabre la anterior.",
+    "fundamento": "Manual A-BS-MA01."
   },
   {
     "orden": 6,
     "etiqueta": "Periodos",
     "titulo": "Informes y actas por periodo",
     "tituloIndice": "Informes por periodo",
-    "ubicacion": "Detalle del expediente → etapa Contractual → requisitos por periodos.",
-    "resumen": "El informe de supervisión, el informe de cumplimiento y las actas de pago parcial se cargan por cada mes del contrato, al ritmo de la cuenta de cobro.",
+    "ubicacion": "Detalle del expediente → etapa Contractual → requisitos por periodo.",
+    "resumen": "Los informes de supervisión y de cumplimiento y las actas de pago parcial se cargan por cada mes del contrato.",
     "pasos": [
-      "El sistema calcula los periodos a partir de las fechas de inicio y fin del contrato.",
-      "Cada periodo se puede radicar desde el día siguiente a su cierre.",
-      "Para una eventualidad (por ejemplo, una suspensión) se crea un espacio eventual con nombre propio.",
-      "Los informes pendientes de periodos ya cerrados aparecen en «Mi trabajo pendiente» del Panel y en el inicio del aplicativo."
+      "El sistema calcula los periodos con las fechas de inicio y fin.",
+      "Cada periodo se radica desde el día siguiente a su cierre.",
+      "Para situaciones fuera del calendario mensual se crea un espacio eventual.",
+      "Los informes de periodos cerrados sin cargar aparecen en los pendientes."
     ],
-    "ejemplo": "Del 22 de septiembre al 21 de diciembre de 2026, `CDMB-CTO-2026-000006` tiene cuatro periodos: 22–30 sep, octubre, noviembre y 1–21 dic. El «Informe N.° 1» se radica desde el 1 de octubre.",
-    "detalle": "Si cambian las fechas del contrato los periodos se recalculan; los informes cargados en meses que dejan de existir se conservan en un listado aparte.",
-    "fundamento": "Manual A-BS-MA01 (formatos A-BS-FO116, A-BS-FO132, A-BS-FO127 y A-BS-FO117)."
+    "ejemplo": "`CDMB-CTO-2026-000006` tiene cuatro periodos: 22–30 sep, octubre, noviembre y 1–21 dic. El Informe N.° 1 se radica desde el 1 de octubre.",
+    "detalle": "Si cambian las fechas, los periodos se recalculan y los informes de meses que desaparecen se conservan aparte.",
+    "fundamento": "Formatos A-BS-FO116, A-BS-FO132, A-BS-FO127 y A-BS-FO117."
   },
   {
     "orden": 7,
     "etiqueta": "Firma",
     "titulo": "Firma electrónica asignada",
     "tituloIndice": "Firma asignada",
-    "ubicacion": "Detalle del expediente → «Asignar firmantes». Pendientes: Firmas → [Buzón de firmas](/contratacion/buzon).",
-    "resumen": "Quien gestiona el documento designa quién firma, quién da visto bueno y quién solo lee. Cada firmante actúa desde su buzón, en el orden definido.",
+    "ubicacion": "Detalle del expediente → «Asignar firmantes». Pendientes: [Buzón de firmas](/contratacion/buzon).",
+    "resumen": "Se designa quién firma, quién da visto bueno y quién consulta cada documento, con turno de firma.",
     "pasos": [
-      "En el documento se pulsa «Asignar firmantes» y se elige a cada persona con su calidad: debe firmar, visto bueno o solo lectura.",
-      "Se fija el turno: los del mismo número firman en cualquier orden; uno con número mayor espera a los anteriores.",
-      "Cada firmante abre su Buzón, revisa el documento y firma o rechaza con motivo.",
-      "Al completar las firmas, el PDF queda estampado con el sello, la identificación de cada firmante y un código QR."
+      "En el documento se pulsa «Asignar firmantes» y se elige la calidad de cada persona.",
+      "Se fija el turno; un número mayor espera a los anteriores.",
+      "Cada firmante revisa el documento en su buzón y firma o rechaza con motivo.",
+      "El PDF firmado queda con el sello de los firmantes y un código QR."
     ],
-    "ejemplo": "El informe del periodo de octubre de `050-2026` se asigna a firma del contratista (turno 1) y del supervisor (turno 2): el supervisor ve el documento en su buzón solo después de que firma el contratista.",
-    "detalle": "Un rechazo genera un aviso para quien cargó el archivo; se limpia al reemplazar el archivo por uno corregido. El historial queda en «Rechazos al firmar».\n\nCada firma congela el cargo del firmante en el momento de firmar.",
-    "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015 (firma electrónica)."
+    "ejemplo": "El informe de octubre del contrato `050-2026` lo firma primero el contratista (turno 1) y luego el supervisor (turno 2).",
+    "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo del firmante a la fecha de firma.",
+    "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015."
   },
   {
     "orden": 8,
     "etiqueta": "Verificación",
-    "titulo": "Ficha técnica y verificación por QR",
-    "tituloIndice": "Ficha técnica y QR",
-    "ubicacion": "Detalle del expediente → «Rótulo / QR» y «Ficha técnica de firmas». Página pública: [Validador de firmas](/validar-firma).",
-    "resumen": "El QR del documento firmado lleva a una verificación pública que confirma su validez sin exponer datos personales; los datos técnicos completos exigen iniciar sesión.",
+    "titulo": "Verificación por QR y ficha técnica",
+    "tituloIndice": "Verificación y ficha técnica",
+    "ubicacion": "PDF firmado → código QR. [Validador de firmas](/validar-firma).",
+    "resumen": "El QR confirma la validez del documento sin mostrar datos personales. La ficha técnica completa requiere sesión.",
     "pasos": [
-      "Se escanea el QR del PDF firmado o se abre el validador de firmas con el código del documento.",
-      "La página pública confirma el documento, la fecha y el estado de las firmas.",
-      "Quien tiene sesión abre la «Ficha técnica de firmas»: hash SHA-256, IP, agente de usuario y sello de tiempo de cada firma."
+      "Se escanea el QR o se ingresa el código en el validador de firmas.",
+      "La verificación muestra el documento, la fecha y el estado de las firmas.",
+      "Con sesión iniciada, la ficha técnica muestra hash, IP, agente de usuario y sello de tiempo."
     ],
-    "ejemplo": "El acta firmada del contrato `050-2026` muestra en su última página el sello con el nombre y la cédula de cada firmante y un QR que abre la verificación.",
-    "detalle": "El archivo estampado es también el que se descarga en el ZIP del expediente; el original sin firma no se entrega.",
-    "fundamento": "Ley 1712 de 2014 (transparencia) · Ley 1581 de 2012 (protección de datos personales)."
+    "ejemplo": "El acta firmada del contrato `050-2026` lleva en su última página el sello con nombre y documento de cada firmante y el QR.",
+    "detalle": "El ZIP del expediente incluye el archivo firmado.",
+    "fundamento": "Ley 1712 de 2014 · Ley 1581 de 2012."
   },
   {
     "orden": 9,
     "etiqueta": "Contratista",
-    "titulo": "Trabajo del contratista en su expediente",
+    "titulo": "Gestión del contratista en su expediente",
     "tituloIndice": "Vista del contratista",
-    "ubicacion": "Inicio del aplicativo y Panel de GECON (sesión del contratista).",
-    "resumen": "El contratista ve únicamente sus contratos, desde la etapa Contractual, carga sus soportes y firma lo que le asignan.",
+    "ubicacion": "Inicio y Panel de GECON, con sesión del contratista.",
+    "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado.",
     "pasos": [
-      "El contratista ingresa con su usuario de red.",
-      "En el inicio ve sus pendientes: informes por radicar y firmas listas.",
-      "Abre su expediente, carga el soporte del periodo y, si se le asignó, lo firma desde el buzón."
+      "Ingresa con su usuario de red.",
+      "Consulta sus pendientes en el inicio.",
+      "Carga el soporte del periodo y firma desde el buzón."
     ],
-    "ejemplo": "Al ingresar, `walhal01` encuentra «Informe N.° 1 por radicar» del contrato `050-2026` y el enlace directo al expediente.",
-    "detalle": "En Precontractual solo carga personal de la CDMB. El contratista nunca asigna firmantes ni ve contratos de otros.",
-    "fundamento": "Manual A-BS-MA01 · Ley 1581 de 2012."
+    "ejemplo": "`walhal01` ve «Informe N.° 1 por radicar» del contrato `050-2026`.",
+    "detalle": "En Precontractual solo carga personal de la CDMB.",
+    "fundamento": "Manual A-BS-MA01."
   },
   {
     "orden": 10,
@@ -156,32 +156,32 @@
     "titulo": "Panel e indicadores",
     "tituloIndice": "Panel e indicadores",
     "ubicacion": "[Panel de GECON](/contratacion/panel).",
-    "resumen": "El Panel reúne el trabajo pendiente de cada persona, el estado de los expedientes por etapa, los indicadores de tiempos y firmas, y la actividad del sistema.",
+    "resumen": "Trabajo pendiente, expedientes por etapa, indicadores y actividad del módulo.",
     "pasos": [
-      "«Mi trabajo pendiente» lista documentos por firmar o revisar e informes de periodos cerrados sin cargar.",
-      "«Expedientes» muestra cuántos hay en cada etapa y los más recientes.",
-      "«Indicadores» presenta tiempos por etapa, firmas y distribución por dependencia y modalidad.",
-      "«Sistema» (Administrador o Jefe) muestra el volumen del módulo y la actividad reciente."
+      "«Mi trabajo pendiente»: firmas, revisiones e informes por radicar.",
+      "«Expedientes»: cantidad por etapa y recientes.",
+      "«Indicadores»: tiempos por etapa, firmas, dependencias y modalidades.",
+      "«Sistema»: volumen y actividad (Administrador o Jefe de Contratación)."
     ],
-    "ejemplo": "Con los datos de prueba, el Panel muestra dos contratos en ejecución (`050-2026` y `22136326`) y uno en Precontractual.",
-    "detalle": "Los mismos pendientes se resumen en el inicio del aplicativo, junto con los de Trámites ambientales 2.0 y el SGDEA.",
-    "fundamento": "Decreto 1499 de 2017 (MIPG — seguimiento y control)."
+    "ejemplo": "Con los datos de prueba hay dos contratos en ejecución (`050-2026` y `22136326`) y uno en Precontractual.",
+    "detalle": "Los pendientes de GECON también aparecen en el inicio del aplicativo.",
+    "fundamento": "Decreto 1499 de 2017 (MIPG)."
   },
   {
     "orden": 11,
     "etiqueta": "Cierre",
-    "titulo": "Cierre, archivo y disposición final",
+    "titulo": "Cierre y archivo",
     "tituloIndice": "Cierre y archivo",
     "ubicacion": "Detalle del expediente → aprobación de Postcontractual. Administración → Disposición final (TRD).",
-    "resumen": "Al cerrar la etapa Postcontractual el expediente queda en solo lectura y pasa al archivo central del SGDEA con su clasificación TRD.",
+    "resumen": "El expediente cerrado queda en solo lectura y pasa al archivo central del SGDEA con su clasificación TRD.",
     "pasos": [
       "Se aprueba la etapa Postcontractual con el acta de liquidación cargada.",
-      "El expediente cerrado se incorpora al SGDEA como ficha de solo lectura con la etiqueta de origen GECON.",
-      "Al cumplir el tiempo de retención, el administrador aplica la disposición final según la TRD."
+      "El expediente queda disponible en el SGDEA como ficha de solo lectura.",
+      "Cumplido el tiempo de retención, se aplica la disposición final."
     ],
-    "ejemplo": "`CDMB-CTO-2026-000034` está en Postcontractual: al aprobarla, quedará disponible en el archivo central del SGDEA.",
-    "detalle": "Un expediente cerrado puede reabrirse con motivo; queda constancia en su bitácora.",
-    "fundamento": "Ley 594 de 2000 · Acuerdo 004 de 2019 AGN (TRD)."
+    "ejemplo": "`CDMB-CTO-2026-000034` está en Postcontractual.",
+    "detalle": "Un expediente cerrado se reabre con motivo; queda en su bitácora.",
+    "fundamento": "Ley 594 de 2000 · Acuerdo 004 de 2019 AGN."
   },
   {
     "orden": 12,
@@ -189,14 +189,14 @@
     "titulo": "Bitácora y auditoría",
     "tituloIndice": "Bitácora y auditoría",
     "ubicacion": "Administración → [Bitácora del GECON](/contratacion/bitacora) y Auditoría de cuentas.",
-    "resumen": "Toda la gestión de los expedientes queda en una bitácora cronológica con filtros; los accesos y cambios de cuentas, en la auditoría general.",
+    "resumen": "La gestión de los expedientes queda en la bitácora; accesos, usuarios e importaciones, en la auditoría de cuentas.",
     "pasos": [
-      "Administrador o Jefe de Contratación abre la Bitácora del GECON.",
-      "Filtra por expediente, tipo de evento, persona o fecha.",
-      "Para inicios de sesión, cambios de usuarios o importaciones de contratistas, consulta la Auditoría de cuentas."
+      "Se abre la Bitácora del GECON.",
+      "Se filtra por expediente, evento, persona o fecha.",
+      "Para inicios de sesión, usuarios e importaciones se consulta la Auditoría de cuentas."
     ],
-    "ejemplo": "La importación de contratistas por CSV deja el evento «Contratistas importados» con el número de registros creados y quién lo hizo.",
-    "detalle": "La excepción sin traza de Administrador y Jefe aplica solo a la edición y eliminación de documentos; eliminar un expediente completo siempre queda registrado.",
-    "fundamento": "Ley 594 de 2000 · Política de seguridad de la información de la CDMB."
+    "ejemplo": "La importación por CSV queda como «Contratistas importados», con el número de registros y el responsable.",
+    "detalle": "Eliminar un expediente completo siempre queda registrado.",
+    "fundamento": "Ley 594 de 2000."
   }
 ]

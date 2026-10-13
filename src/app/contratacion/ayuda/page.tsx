@@ -15,7 +15,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeEditarSinTrazaDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { ETIQUETA_ROL_CONTRATACION, ETIQUETA_ETAPA } from "@/lib/contratacion";
 import { BotonImprimir } from "@/components/BotonImprimir";
@@ -87,62 +87,56 @@ export default async function ContratacionAyudaPage() {
   if (!session) redirect("/login");
   const [permisos, config] = await Promise.all([obtenerPermisosUsuario(session.userId), getConfiguracionSitio()]);
   if (!puedeAccederContratacion(permisos)) redirect("/contratacion");
-  const esAdministrador = puedeEditarSinTrazaDocumentoContrato(permisos);
 
   const grupoGeneral = (
     <>
-      <Seccion n={1} id="alcance" icono={Briefcase} titulo="Qué es GECON y qué no es">
+      <Seccion n={1} id="alcance" icono={Briefcase} titulo="Alcance del módulo">
         <p>
-          GECON (Gestión de Expedientes de Contratación) es un <strong>manejador de
-          expedientes digitales</strong> para el ciclo de un contrato, conforme al Manual de Contratación y de
-          Supervisión o Interventoría A-BS-MA01 de la CDMB. Organiza documentos, etapas, firmas y contratistas
-          en un solo expediente por contrato.
+          GECON (Gestión de Expedientes de Contratación) administra el expediente digital de cada contrato: documentos, etapas,
+          firmas y contratista, conforme al Manual de Contratación y de Supervisión o Interventoría A-BS-MA01.
         </p>
         <p>
-          <strong>No reemplaza SECOP II</strong> (donde se publica y adjudica el proceso), <strong>no valida
-          cuantías</strong> ni reglas jurídicas de cada modalidad de selección, y no calcula ni genera CDP ni
-          modificaciones al PAA — esos documentos se suben aquí como evidencia, pero se producen en otras
-          plataformas.
+          El proceso se publica y adjudica en SECOP II. Los CDP, las modificaciones al PAA y la validación jurídica de cuantías y
+          modalidades se gestionan en sus plataformas; en GECON se cargan como soporte.
         </p>
       </Seccion>
 
-      <Seccion n={2} id="roles" icono={Users} titulo="Roles y qué puede hacer cada uno">
+      <Seccion n={2} id="roles" icono={Users} titulo="Roles">
         <Tabla encabezados={["Rol", "Puede", "No puede"]}>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.ADMINISTRADOR_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">El encargado de sistemas. Todo lo del módulo, sin excepción — permisos totales.</td>
-            <td className="px-2.5 py-1.5">—</td>
+            <td className="px-2.5 py-1.5">Todas las funciones del módulo.</td>
+            <td className="px-2.5 py-1.5" />
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Mismo nivel que el Administrador: crea expedientes, vincula/cambia contratista y supervisores, aprueba/retrocede etapas, edita o elimina documentos sin registro en la bitácora, elimina un expediente completo, gestiona el registro de Contratistas — de TODA la entidad.</td>
-            <td className="px-2.5 py-1.5">—</td>
+            <td className="px-2.5 py-1.5">Crear expedientes; vincular contratista y supervisores; aprobar y retroceder etapas; editar o eliminar documentos sin registro en la bitácora; eliminar expedientes; administrar contratistas e importarlos por CSV.</td>
+            <td className="px-2.5 py-1.5" />
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Ve y gestiona <strong>solo los expedientes que le asignan</strong> (sección «Gestión del expediente»), en cualquier etapa; sube documentos (queda registrado); edita sus datos generales; asigna quién debe firmar. En Contratistas ve los de sus expedientes y los recién registrados sin expediente, y puede registrar uno nuevo.</td>
-            <td className="px-2.5 py-1.5">Ver expedientes no asignados, aprobar/retroceder etapas, editar o eliminar documentos sin registro en la bitácora, eliminar un expediente, importar contratistas o gestionar los supervisores.</td>
+            <td className="px-2.5 py-1.5">Gestionar los expedientes que le asignan, en cualquier etapa: cargar documentos, editar datos generales y asignar firmantes. Registrar contratistas y consultar los de sus expedientes.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes no asignados, aprobar etapas, editar sin registro en la bitácora, eliminar expedientes o importar contratistas.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
-            <td className="px-2.5 py-1.5">Ve, asigna firmantes y puede firmar (si es asignado) solo en los expedientes de SU PROPIA dependencia solicitante.</td>
-            <td className="px-2.5 py-1.5">Ver expedientes de otras dependencias, subir documentos, gestionar etapas.</td>
+            <td className="px-2.5 py-1.5">Ver los expedientes de su dependencia, asignar firmantes y firmar lo que le asignen.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes de otras dependencias, cargar documentos o gestionar etapas.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">Ver TODAS las etapas y archivos de los expedientes donde está asignado (incluida una que aún no se alcanza); subir, asignar firmantes (incluido enviar un documento a firma del propio contratista), y editar o eliminar documentos en esos mismos expedientes (con registro en la bitácora).</td>
-            <td className="px-2.5 py-1.5">Ver expedientes ajenos, editar o eliminar sin registro en la bitácora, aprobar el paso de etapa, eliminar el expediente completo.</td>
+            <td className="px-2.5 py-1.5">En los expedientes que supervisa: ver todas las etapas, cargar, editar o eliminar documentos (con registro) y asignar firmantes.</td>
+            <td className="px-2.5 py-1.5">Ver otros expedientes, aprobar etapas o eliminar el expediente.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
-            <td className="px-2.5 py-1.5">Ver y subir documentos de su(s) propio(s) expediente(s), solo en etapa Contractual y Postcontractual; firmar lo que le asignen.</td>
-            <td className="px-2.5 py-1.5">Subir nada en Precontractual (ahí solo sube personal de la CDMB), ver expedientes de otros contratistas, asignar firmantes a nadie.</td>
+            <td className="px-2.5 py-1.5">Ver sus expedientes desde la etapa Contractual, cargar sus documentos y firmar lo asignado.</td>
+            <td className="px-2.5 py-1.5">Cargar en Precontractual, ver contratos de otros o asignar firmantes.</td>
           </tr>
         </Tabla>
         <p className="text-xs text-stone-400">
-          Para entrar a GECON la persona necesita dos cosas en su ficha de <em>Usuarios</em>: el módulo GECON activado en
-          «Acceso a módulos» y al menos un rol de contratación. Quien queda registrado como contratista recibe ambos de forma
-          automática. Funcionarios y supervisores ingresan con su cuenta del directorio activo de la CDMB.
+          Para ingresar a GECON la persona necesita el módulo activo en su ficha de <em>Usuarios</em> y un rol de contratación.
+          Quien queda registrado como contratista recibe ambos de forma automática.
         </p>
       </Seccion>
     </>
@@ -152,100 +146,61 @@ export default async function ContratacionAyudaPage() {
     <>
       <Seccion n={3} id="etapas" icono={FileCheck2} titulo="Etapas del expediente">
         <p>
-          Un contrato es <strong>un solo expediente</strong> de principio a fin — nunca se crea uno nuevo por
-          etapa. Las tres etapas ({ETIQUETA_ETAPA.PRECONTRACTUAL} → {ETIQUETA_ETAPA.CONTRACTUAL} →{" "}
-          {ETIQUETA_ETAPA.POSTCONTRACTUAL}) son secuenciales para el flujo normal: solo se puede subir documentos en
-          la etapa ACTUAL; las futuras se ven bloqueadas (candado, solo los nombres del catálogo) y las completadas
-          quedan en solo lectura.
+          Un contrato es un solo expediente en las tres etapas ({ETIQUETA_ETAPA.PRECONTRACTUAL} → {ETIQUETA_ETAPA.CONTRACTUAL} →{" "}
+          {ETIQUETA_ETAPA.POSTCONTRACTUAL}). Los documentos se cargan en la etapa actual; las siguientes se ven bloqueadas y las
+          completadas quedan en solo lectura.
         </p>
         <p>
-          Excepción: Administrador, Jefe y Personal de Contratación
-          ven y pueden adelantar documentos en <strong>cualquier</strong> etapa de <strong>cualquier</strong> expediente,
-          esté alcanzada o no, e incluso una ya completada — la etapa aparece marcada &quot;(aún no alcanzada)&quot;
-          para que quede claro que el expediente formalmente sigue en la etapa anterior. El supervisor/interventor
-          designado también ve (no necesariamente edita) todas las etapas de los expedientes que le fueron asignados,
-          aunque el expediente todavía no llegue ahí.
+          Administrador, Jefe y Personal de Contratación pueden adelantar documentos en cualquier etapa de los expedientes a su
+          cargo; la etapa aparece marcada «(aún no alcanzada)». El supervisor ve todas las etapas de los expedientes que supervisa.
         </p>
         <ul className="list-disc space-y-1 pl-5">
-          <li>No se puede pasar de Precontractual a Contractual sin un contratista vinculado (persona natural o jurídica) — bloqueo duro, sin excepción.</li>
-          <li>Si faltan documentos obligatorios del catálogo, aprobar la etapa avisa la lista y permite continuar de todas formas (el catálogo es una guía, no un motor de validación jurídica).</li>
-          <li>Retroceder una etapa corrige un avance por error — reabre la anterior y, si el expediente estaba cerrado, lo reabre.</li>
+          <li>Para pasar a Contractual el contratista debe estar vinculado a su usuario.</li>
+          <li>Si faltan documentos obligatorios, el sistema los lista y permite continuar.</li>
+          <li>Retroceder una etapa reabre la anterior y, si el expediente estaba cerrado, lo reabre.</li>
         </ul>
       </Seccion>
 
       <Seccion n={4} id="checklist" icono={FileCheck2} titulo="Checklist de documentos">
         <p>
-          Cada etapa muestra el catálogo de documentos exigidos por el Manual A-BS-MA01, cruzado con lo ya subido —
-          siempre con los <strong>obligatorios primero y los opcionales a continuación</strong>, sin importar el
-          orden interno del catálogo. Un documento marcado <Chip tono="cdmb">Se gestiona en SECOP II</Chip>{" "}
-          igual admite subir la evidencia aquí, aunque el trámite ocurra en otra plataforma. También se pueden
-          subir documentos libres, fuera del catálogo.
+          Cada etapa muestra el catálogo de documentos del Manual A-BS-MA01 cruzado con lo cargado: primero los obligatorios, luego
+          los opcionales. Los marcados <Chip tono="cdmb">Se gestiona en SECOP II</Chip> admiten cargar el soporte. También se
+          pueden cargar documentos fuera del catálogo.
         </p>
         <p>
-          Precontractual exige la <strong>Hoja de vida SIGEP</strong> (se certifica en el SIGEP II de Función
-          Pública, no en esta plataforma — aquí solo se sube la evidencia) — se resalta con una flecha en el
-          checklist para que no pase desapercibida. Cualquier documento del checklist puede además{" "}
-          <strong>validarse manualmente</strong> con el botón &quot;Validar&quot; — lo puede hacer
-          Administrador, Jefe o Personal de Contratación (no Supervisor ni Jefe de dependencia). Confirma que
-          alguien de Contratación ya lo revisó, aparte de la aprobación automática que ya ocurre al firmar un
-          documento o al cerrar la etapa. La validación de Administrador/Jefe no se registra en la bitácora; la de Funcionario
-          de Contratación sí.
+          La Hoja de vida SIGEP, exigida en Precontractual, aparece resaltada. Administrador, Jefe y Personal de Contratación
+          pueden marcar cualquier documento como <strong>validado</strong>.
         </p>
         <p>
-          Subir, editar, eliminar o validar un documento (salvo la excepción de Administrador/Jefe) deja un
-          eslabón en una <strong>cadena de hash inalterable</strong> — el mismo mecanismo que ya usa el SGDEA
-          (cada eslabón encadena su hash con el del anterior; alterar o borrar uno se puede detectar). Se ve al
-          final del detalle de cada expediente, en &quot;Trazabilidad de los documentos&quot;.
+          Cada carga, edición, eliminación o validación queda en una cadena de hash, visible al final del expediente en
+          «Trazabilidad de los documentos». Las acciones de Administrador y Jefe de Contratación no se registran en ella (sección 5).
         </p>
         <p>
-          Cuatro requisitos se entregan <strong>por periodos</strong>, no como un único archivo, porque van al ritmo de la
-          cuenta de cobro mensual del contratista: el <strong>Informe de supervisión</strong> (A-BS-FO116), el{" "}
-          <strong>Formato único de informe de cumplimiento</strong> (A-BS-FO132), el <strong>Acta de recibo — pago
-          parcial</strong> (A-BS-FO127) y el <strong>Informe de supervisión para obra pública</strong> (A-BS-FO117, solo
-          en contratos de obra). Cada uno genera su propio espacio de carga numerado (Informe de supervisión 1,
-          2, 3… — igual para los otros tres) por cada mes del contrato, a partir de sus fechas de inicio y de fin
-          (ajustables en «Editar datos generales», ver la sección de Datos del expediente más abajo). Por ejemplo, un
-          contrato del 25 de septiembre al 24 de diciembre tiene cuatro periodos: 25 sep – 30 sep, 01 oct – 31 oct,
-          01 nov – 30 nov y 01 dic – 24 dic. Cada periodo se radica desde el día siguiente a su cierre. Si cambian las
-          fechas del contrato, los periodos se recalculan y los informes ya cargados en meses que dejan de existir se
-          conservan en un listado aparte. La lista de periodos está colapsada por defecto (se ve el avance sin
-          abrirla) para no hacerse enorme cuando son muchos meses.
+          <strong>Requisitos por periodo.</strong> El informe de supervisión (A-BS-FO116), el informe de cumplimiento (A-BS-FO132),
+          el acta de recibo de pago parcial (A-BS-FO127) y el informe de supervisión de obra (A-BS-FO117) se cargan por cada mes del
+          contrato, según sus fechas de inicio y fin. Cada periodo se radica desde el día siguiente a su cierre. Ejemplo: un contrato
+          del 25 de septiembre al 24 de diciembre tiene cuatro periodos (25–30 sep, octubre, noviembre y 1–24 dic). Si cambian las
+          fechas, los periodos se recalculan y los informes de meses que desaparecen se conservan aparte.
         </p>
         <p>
-          Además de los periodos mensuales se pueden crear <strong>espacios eventuales</strong> con un nombre propio (por
-          ejemplo, «Informe extraordinario por suspensión») para una eventualidad que no corresponde a un mes — cada uno
-          de los cuatro requisitos por periodos tiene los suyos propios, no se comparten entre sí. Los crea
-          quien lleva el expediente (Administrador, Jefe, Personal de Contratación o el Supervisor asignado); el
-          contratista solo carga su documento en ellos. Un espacio con documento no se puede quitar hasta eliminar el
-          documento.
+          Para situaciones fuera del calendario mensual (por ejemplo, una suspensión) se crea un <strong>espacio eventual</strong>{" "}
+          con nombre propio. Lo crea quien gestiona el expediente; el contratista carga en él su documento.
         </p>
         <p>
-          <strong>Datos del expediente</strong> (modalidad, valor, dependencia solicitante, número de contrato,
-          fechas de inicio/fin, contratista): editables en cualquier momento por Administrador, Jefe o Funcionario
-          de Contratación con el botón &quot;Editar datos generales&quot; del detalle del expediente.
-          Cambiar el contratista de uno ya vinculado pide confirmación: el anterior deja de tener acceso al
-          expediente. Supervisor(es)/interventor(es) y el expediente relacionado siguen siendo exclusivos de
-          Administrador/Jefe.
+          <strong>Datos generales</strong> (modalidad, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
+          «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>
       </Seccion>
 
-      <Seccion n={5} id="editar-sin-traza" icono={Scale} titulo="Editar y eliminar documentos sin registro en la bitácora" admin>
+      <Seccion n={5} id="editar-sin-traza" icono={Scale} titulo="Edición sin registro en la bitácora" admin>
         <p>
-          Administrador y Jefe de Contratación pueden editar el nombre,
-          <strong> reemplazar el archivo real</strong> o eliminar un documento sin que quede ninguna fila en la
-          bitácora del expediente. Motivo: alta rotación de contratistas y errores de captura frecuentes;
-          exigir siempre trazabilidad sería inviable operativamente.
+          Administrador y Jefe de Contratación pueden editar el nombre, reemplazar el archivo o eliminar un documento sin registro en
+          la bitácora ni en la cadena de hash. Lo mismo aplica a la validación de documentos.
         </p>
         <p className="text-xs text-stone-400">
-          Reemplazar el archivo borra el anterior del almacenamiento e invalida cualquier firma o solicitud de
-          firma registrada sobre ese documento, porque corresponden al archivo anterior.
+          Reemplazar el archivo invalida las firmas y solicitudes de firma registradas sobre el anterior.
         </p>
-        <p>
-          La misma excepción aplica a <strong>validar</strong> un documento y a la <strong>cadena de hash</strong>{" "}
-          del expediente (ver la sección de Checklist): lo que hace Administrador o Jefe de Contratación no deja
-          fila en ninguna de las dos. Personal de Contratación y Supervisor/Interventor SÍ quedan registrados
-          en ambas.
-        </p>
+        <p>Personal de Contratación y Supervisor / Interventor sí quedan registrados.</p>
       </Seccion>
     </>
   );
@@ -254,60 +209,37 @@ export default async function ContratacionAyudaPage() {
     <>
       <Seccion n={6} id="firma" icono={PenLine} titulo="Firma electrónica asignada">
         <p>
-          Cuando un documento requiere firma, se debe <strong>designar</strong>{" "}
-          quién debe firmar, dar visto bueno, o tener solo acceso de lectura sobre cada documento, con el botón
-          <strong> Asignar firmantes</strong> del detalle del expediente.
+          En cada documento, <strong>Asignar firmantes</strong> define quién firma, quién da visto bueno y quién solo consulta.
         </p>
-        <Tabla encabezados={["Rol asignado", "Qué implica"]}>
-          <tr><td className="px-2.5 py-1.5"><strong>Debe firmar</strong></td><td className="px-2.5 py-1.5">Firma electrónica con hash SHA-256, IP, agente de usuario y sello de tiempo — puede haber varios firmantes en un mismo documento.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Debe dar visto bueno</strong></td><td className="px-2.5 py-1.5">Confirma que lo revisó, sin firmar legalmente.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Solo lectura</strong></td><td className="px-2.5 py-1.5">Puede ver el documento aunque no tenga rol normal sobre ese expediente — no hay ninguna acción pendiente.</td></tr>
+        <Tabla encabezados={["Calidad", "Efecto"]}>
+          <tr><td className="px-2.5 py-1.5"><strong>Debe firmar</strong></td><td className="px-2.5 py-1.5">Firma electrónica con hash SHA-256, IP, agente de usuario y sello de tiempo. Admite varios firmantes.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Visto bueno</strong></td><td className="px-2.5 py-1.5">Constancia de revisión, sin firma.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Solo lectura</strong></td><td className="px-2.5 py-1.5">Acceso al documento sin acción pendiente.</td></tr>
         </Tabla>
         <p>
-          Si hay varios firmantes con <strong>turnos</strong> (número de orden): los del mismo número actúan en
-          cualquier momento; uno con número mayor espera a que todos los de número menor ya hayan firmado.
+          El número de turno ordena las firmas: los del mismo número firman en cualquier orden; un número mayor espera a los
+          anteriores.
         </p>
         <p>
-          Lo pendiente de cada persona aparece en su{" "}
-          <Link href="/contratacion/buzon" className="font-medium text-cdmb-700 hover:underline">Buzón de firmas</Link>
-          , con la vista previa de un solo documento (no del expediente completo). Firmar o dar visto bueno siempre
-          muestra el documento real antes de confirmar.
+          Los pendientes llegan al <Link href="/contratacion/buzon" className="font-medium text-cdmb-700 hover:underline">Buzón de firmas</Link>,
+          con insignia en el menú y aviso en el Panel. El firmante revisa el documento y firma o rechaza con motivo. El rechazo genera
+          un aviso para quien cargó el archivo y se cierra al reemplazarlo; el historial está en «Rechazos al firmar».
         </p>
         <p>
-          Un firmante puede <strong>rechazar</strong> (con motivo) en vez de firmar. El rechazo genera un <strong>aviso</strong> para
-          quien subió el archivo y de Administrador/Jefe de Contratación, con el motivo — se puede descartar a mano,
-          o se limpia solo cuando se reemplaza el archivo rechazado por uno corregido. Los avisos activos y el
-          historial completo de rechazos (aunque el aviso ya se haya limpiado) se consultan en el menú Firmas, opción
-          «Rechazos al firmar». El historial incluye además los rechazos de los contratos donde la persona
-          figura como supervisor o interventor.
-        </p>
-        <p>
-          La cantidad de documentos pendientes se indica con una <strong>insignia en la pestaña «Buzón»</strong> y con un
-          aviso en el Panel (en rojo cuando ya puede firmar alguno; en gris si todos esperan el turno de otro firmante).
-          En{" "}
-          <Link href="/contratacion/mis-firmas" className="font-medium text-cdmb-700 hover:underline">Mis firmas</Link>{" "}
-          queda el historial de lo firmado: <strong>Ver documento</strong> abre siempre el archivo firmado (el PDF con su
-          sello y QR) y <strong>Ver ficha técnica</strong> muestra los datos de la firma de ese documento, sin necesidad de
-          tener acceso al resto del expediente. El sello impreso en el PDF lleva, debajo del nombre de cada firmante,
-          su cédula o NIT — el mismo archivo estampado (nunca el original sin firma) es el que se descarga también
-          dentro del ZIP del expediente.
+          <Link href="/contratacion/mis-firmas" className="font-medium text-cdmb-700 hover:underline">Mis firmas</Link> reúne lo
+          firmado, con el PDF estampado y su ficha técnica. El sello lleva el nombre y el documento de cada firmante; ese mismo
+          archivo es el que se descarga en el ZIP del expediente.
         </p>
       </Seccion>
 
       <Seccion n={7} id="ficha-tecnica" icono={ShieldCheck} titulo="Ficha técnica y verificación por QR">
         <p>
-          El rótulo/QR de cada expediente (<em>Rótulo / QR</em> en el detalle) enlaza a una página pública de
-          verificación que confirma que el expediente existe, sin exponer datos personales (Ley 1712/2014). Los
-          datos técnicos completos de cada firma — hash, IP, agente de usuario, identificador, sello de
-          tiempo — están en <em>Ficha técnica de firmas</em>, que exige haber iniciado sesión (protección de
-          datos personales, Ley 1581/2012).
+          El QR del rótulo y de los documentos firmados abre una verificación pública que confirma su existencia sin mostrar datos
+          personales (Ley 1712 de 2014). La ficha técnica de firmas (hash, IP, agente de usuario y sello de tiempo) exige iniciar
+          sesión (Ley 1581 de 2012).
         </p>
         <p className="text-xs text-stone-400">
-          La cédula/NIT y el correo de notificación de la ficha se toman de la cuenta del firmante
-          (<em>Usuarios y roles</em>) y, si están vacíos ahí, del Contratista vinculado a esa cuenta — así un
-          contratista que ya tiene su identificación en su propio registro no aparece como &quot;no registrada&quot;.
-          Un funcionario de la CDMB sin Contratista vinculado sí necesita que alguien le registre la cédula en su
-          cuenta para que deje de verse así.
+          El documento y el correo del firmante se toman de su usuario y, si faltan, del registro de contratista vinculado.
         </p>
       </Seccion>
     </>
@@ -315,59 +247,46 @@ export default async function ContratacionAyudaPage() {
 
   const grupoDatos = (
     <>
-      <Seccion n={8} id="contratistas" icono={UserSquare2} titulo="Registro de Contratistas">
+      <Seccion n={8} id="contratistas" icono={UserSquare2} titulo="Registro de contratistas">
         <p>
-          Todo contratista es un <strong>usuario de la plataforma</strong> (persona natural con su usuario de red, o persona
-          jurídica con cuenta local). Sus datos —documento, nombres y apellidos o razón social, correo, celular, teléfono,
-          dirección, departamento, ciudad e información tributaria— se registran una sola vez en Usuarios y GECON los toma
-          de ahí. Al crear un expediente se busca por documento, nombres o apellidos; para iniciar el contrato la persona debe
-          tener esos datos completos (celular y teléfono son opcionales). Los usuarios los crea y completa únicamente el
-          administrador del sistema; GECON solo los busca y los vincula, igual que a los supervisores.
+          El contratista es un usuario de la plataforma. Sus datos (documento, nombre o razón social, contacto, dirección,
+          departamento, ciudad e información tributaria) se registran en Usuarios y GECON los toma de allí. Para iniciar el contrato
+          deben estar completos; los completa el administrador del sistema.
         </p>
         <p>
-          En <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link>{" "}
-          se consulta quién tiene contrato activo (en etapa Contractual) y cuántos contratos tiene cada uno por vigencia; la
-          ficha agrupa los contratos por vigencia con su periodo.
-        </p>
-        <p>
-          Vincular un expediente a un contratista <strong>no es solo para firmas</strong>: el contratista con cuenta de
-          acceso consulta su expediente —incluidas las etapas Contractual y Postcontractual— y carga en él sus documentos.
-          La norma general es <strong>un contratista por expediente</strong>: el vínculo se hace una sola vez y puede
-          hacerse <strong>en cualquier etapa</strong>, desde el detalle del expediente («Vincular un contratista») o desde la
-          ficha del contratista («Vincular otro expediente», al final, que solo aparece cuando hay expedientes sin contratista); queda en la
-          bitácora. Al vincularlo, su cuenta recibe el rol Contratista si no tenía otro rol en GECON.
-        </p>
-        <p>
-          <strong>Perfil mínimo y vinculación automática.</strong> Si la persona aún no tiene usuario, se registra con un perfil
-          mínimo (documento, nombre y contacto). En cuanto exista un usuario con el mismo número de documento y los datos completos,
-          el perfil se vincula solo: al guardarlo el administrador en Usuarios, al ingresar la persona por directorio activo o, a
-          más tardar, al pasar el contrato a Contractual (que no avanza sin ese vínculo). No hay que repetir nada.
+          <strong>Registro.</strong> En «Registrar contratista» se indica primero el usuario de red. Si ya existe en la plataforma,
+          se muestra la persona y se vincula directamente. Si no existe, se registra un perfil mínimo (documento, nombre y contacto)
+          que queda asociado a ese usuario de red y se vincula cuando la persona ingresa por primera vez; en ese momento sus datos
+          se trasladan a su usuario. Sin usuario de red, la vinculación se hace por número de documento.
         </p>
         <p>
           <strong>Carga masiva.</strong> Administrador y Jefe de Contratación pueden importar perfiles mínimos desde un archivo CSV
-          («Importar contratistas desde CSV» en Contratistas). La pantalla ofrece la plantilla, describe cada columna, revisa el
-          archivo fila por fila antes de guardar y omite los documentos ya registrados.
+          en Contratistas. La pantalla ofrece la plantilla y la descripción de cada columna, revisa el archivo fila por fila y omite
+          los documentos ya registrados.
         </p>
         <p>
-          Un contratista <strong>que no pertenece a ningún expediente</strong> puede eliminarse desde su ficha
-          (Administrador o Jefe de Contratación); queda constancia en el registro de auditoría. Si tiene expedientes, primero
-          deben reasignarse a otro contratista o eliminarse.
+          En <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link> se
+          consulta quién tiene contrato activo y sus contratos por vigencia. Un contratista se vincula a un expediente una sola vez,
+          en cualquier etapa, desde el expediente o desde su ficha («Vincular otro expediente»). Al vincularlo recibe el rol
+          Contratista y el acceso a GECON.
+        </p>
+        <p>
+          Un contratista sin expedientes puede eliminarse desde su ficha (Administrador o Jefe de Contratación); queda registro en la
+          auditoría.
         </p>
       </Seccion>
 
       <Seccion n={9} id="relacionados" icono={Link2} titulo="Expedientes relacionados">
         <p>
-          Un mismo contratista puede tener varios contratos en distintos periodos del año — cada uno sigue
-          siendo su propio expediente, nunca se fusionan. Cuando uno es una prórroga o continuación de otro, se
-          puede marcar como <em>relacionado</em> desde el detalle del expediente (solo si ya tiene contratista
-          vinculado, para poder elegir entre sus otros contratos).
+          Cada contrato es un expediente independiente. Una prórroga o continuación se marca como <em>relacionada</em> desde el
+          detalle del expediente, entre los demás contratos del mismo contratista.
         </p>
       </Seccion>
 
       <Seccion n={10} id="filtros" icono={Search} titulo="Filtros y búsqueda">
         <p>
-          El listado de <Link href="/contratacion/expedientes" className="font-medium text-cdmb-700 hover:underline">Expedientes</Link>{" "}
-          filtra por texto (número, objeto o contratista), etapa y dependencia solicitante.
+          <Link href="/contratacion/expedientes" className="font-medium text-cdmb-700 hover:underline">Expedientes</Link> filtra
+          por número, objeto o contratista, etapa y dependencia solicitante.
         </p>
       </Seccion>
     </>
@@ -375,40 +294,36 @@ export default async function ContratacionAyudaPage() {
 
   const grupoAdministracion = (
     <>
-      <Seccion n={11} id="tablero" icono={LayoutDashboard} titulo="Tablero (Panel)">
+      <Seccion n={11} id="tablero" icono={LayoutDashboard} titulo="Panel">
         <p>
-          El <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">Panel</Link> reúne cuatro
-          vistas unidas por un ciclo de anillos. <strong>Mi trabajo pendiente</strong>: documentos por firmar o revisar e
-          informes de supervisión cuyo periodo ya cerró y siguen sin cargarse, de los expedientes que usted ve.{" "}
-          <strong>Expedientes</strong>: cuántos hay en cada etapa y los más recientes. <strong>Indicadores</strong>: tiempos
-          por etapa, firmas y distribución por dependencia y modalidad. <strong>Sistema</strong>: volumen del módulo y
-          actividad reciente (solo Administrador o Jefe de Contratación).
+          El <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">Panel</Link> tiene cuatro
+          vistas: <strong>Mi trabajo pendiente</strong> (firmas, revisiones e informes de periodos cerrados sin cargar),{" "}
+          <strong>Expedientes</strong> (cantidad por etapa y recientes), <strong>Indicadores</strong> (tiempos por etapa, firmas,
+          dependencias y modalidades) y <strong>Sistema</strong> (volumen y actividad; Administrador o Jefe de Contratación).
         </p>
       </Seccion>
 
-      <Seccion n={12} id="menu-administracion" icono={Settings2} titulo="Menú, configuración y administración" admin>
+      <Seccion n={12} id="menu-administracion" icono={Settings2} titulo="Menú y administración" admin>
         <p>
-          Todas las opciones del menú se muestran a todos los usuarios, para que el módulo se vea completo. Las que el usuario
-          no puede usar aparecen <strong>atenuadas, con un candado y la leyenda de quién sí puede</strong>; no abren nada. Esto
-          es solo la vitrina: el acceso real lo controla cada pantalla y cada operación del servidor.
+          El menú muestra todas las opciones. Las que el usuario no puede usar aparecen atenuadas, con candado y la indicación de
+          quién puede usarlas.
         </p>
         <Tabla encabezados={["Opción", "Quién la usa", "Para qué"]}>
           <tr><td className="px-2.5 py-1.5"><strong>Expedientes → Nuevo expediente</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Abrir un expediente contractual.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Configuración → Catálogo de requisitos</strong></td><td className="px-2.5 py-1.5">Administrador de Contratación</td><td className="px-2.5 py-1.5">Agregar, ordenar, activar o desactivar los documentos exigidos por etapa y modalidad.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del GECON</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de todos los expedientes, con filtros.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Administración → Usuarios y roles</strong></td><td className="px-2.5 py-1.5">Administrador del sistema</td><td className="px-2.5 py-1.5">Asignar el rol de contratación, cargos y accesos de cada persona.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Administración → Auditoría de cuentas</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Inicios de sesión, gestión de usuarios y cambios de configuración.</td></tr>
-          <tr><td className="px-2.5 py-1.5"><strong>Administración → Seguridad</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Intentos de acceso, política de contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Catálogo de requisitos</strong></td><td className="px-2.5 py-1.5">Administrador de Contratación</td><td className="px-2.5 py-1.5">Documentos exigidos por etapa y modalidad.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Bitácora del GECON</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Registro cronológico de la gestión de los expedientes.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Usuarios y roles</strong></td><td className="px-2.5 py-1.5">Administrador del sistema</td><td className="px-2.5 py-1.5">Acceso a módulos, roles de contratación y datos personales.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Auditoría de cuentas</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Inicios de sesión, gestión de usuarios, importaciones y configuración.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Seguridad</strong></td><td className="px-2.5 py-1.5">Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Política de contraseñas, formatos permitidos y sello de tiempo.</td></tr>
+          <tr><td className="px-2.5 py-1.5"><strong>Administración → Manual de demostración</strong></td><td className="px-2.5 py-1.5">Todos; edición: Administrador o Jefe de Contratación</td><td className="px-2.5 py-1.5">Recorrido del módulo con un contrato de ejemplo.</td></tr>
         </Tabla>
-        <p className="text-xs text-stone-400">
-          Seguridad y Auditoría de cuentas son las mismas de toda la aplicación: un cambio aquí rige para todos los usuarios.
-        </p>
+        <p className="text-xs text-stone-400">Seguridad y Auditoría de cuentas aplican a toda la aplicación.</p>
       </Seccion>
     </>
   );
 
   const grupos = [
-    { id: "general", label: "Qué es y roles", contenido: grupoGeneral },
+    { id: "general", label: "Alcance y roles", contenido: grupoGeneral },
     { id: "expediente", label: "Expediente y documentos", contenido: grupoExpediente },
     { id: "firma", label: "Firma y verificación", contenido: grupoFirma },
     { id: "datos", label: "Contratistas y filtros", contenido: grupoDatos },
@@ -440,26 +355,18 @@ export default async function ContratacionAyudaPage() {
           )}
           <div>
             <p className="text-sm font-semibold text-stone-900">Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga</p>
-            <p className="text-xs text-stone-500">GECON — Gestión de Expedientes de Contratación — Guía de referencia</p>
+            <p className="text-xs text-stone-500">GECON · Gestión de Expedientes de Contratación · Guía de referencia</p>
           </div>
         </div>
 
         <p className="mt-3 text-xs leading-relaxed text-stone-500">
-          Describe roles, el ciclo del expediente, el mecanismo de firma electrónica asignada y los datos
-          maestros del módulo. Base: Manual de Contratación y de Supervisión o Interventoría A-BS-MA01 de la
-          CDMB, Ley 527/1999 y Decreto 1074/2015. No sustituye ese marco, lo referencia. Se muestra por
-          pestañas; al imprimir se expande completo.
+          Roles, ciclo del expediente, firma electrónica asignada y registro de contratistas. Marco: Manual A-BS-MA01 de la CDMB,
+          Ley 527 de 1999 y Decreto 1074 de 2015.
         </p>
       </div>
 
       <AyudaTabs grupos={grupos} />
 
-      {esAdministrador && (
-        <p className="text-center text-xs text-stone-400 print:hidden">
-          Como Administrador/Jefe de Contratación, también puede consultar la excepción de auditoría en la
-          sección 5 de esta guía.
-        </p>
-      )}
     </div>
   );
 }
