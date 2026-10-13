@@ -2006,26 +2006,27 @@ model RepresentanteLegal {
 }
 
 model ExpedienteContractual {
-  id                       String              @id @default(cuid())
-  numero                   String              @unique
-  objeto                   String              @db.Text
-  modalidadSeleccion       ModalidadSeleccion
-  tipoContrato             TipoContratoEstatal @default(PRESTACION_SERVICIOS)
-  valor                    Decimal?            @db.Decimal(18, 2)
-  numeroContrato           String?
-  numeroProcesoSecop       String?
-  fechaSuscripcion         DateTime?
-  fechaInicio              DateTime?
-  fechaFinEstimada         DateTime?
-  dependenciaSolicitanteId String
-  subserieId               String?
-  etapaActual              EtapaContratacion   @default(PRECONTRACTUAL)
-  cerrado                  Boolean             @default(false)
-  fechaCierre              DateTime?
-  contratistaId            String?
-  creadoPorId              String
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
+  id                        String                     @id @default(cuid())
+  numero                    String                     @unique
+  objeto                    String                     @db.Text
+  modalidadSeleccion        ModalidadSeleccion
+  tipoContrato              TipoContratoEstatal        @default(PRESTACION_SERVICIOS)
+  causalContratacionDirecta CausalContratacionDirecta?
+  valor                     Decimal?                   @db.Decimal(18, 2)
+  numeroContrato            String?
+  numeroProcesoSecop        String?
+  fechaSuscripcion          DateTime?
+  fechaInicio               DateTime?
+  fechaFinEstimada          DateTime?
+  dependenciaSolicitanteId  String
+  subserieId                String?
+  etapaActual               EtapaContratacion          @default(PRECONTRACTUAL)
+  cerrado                   Boolean                    @default(false)
+  fechaCierre               DateTime?
+  contratistaId             String?
+  creadoPorId               String
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
 
   expedienteRelacionadoId String?
 
@@ -2311,6 +2312,19 @@ model ModificacionContrato {
   registradoPor Usuario               @relation("ModificacionContratoRegistradaPor", fields: [registradoPorId], references: [id])
 
   @@index([expedienteId])
+}
+
+enum CausalContratacionDirecta {
+  URGENCIA_MANIFIESTA
+  EMPRESTITOS
+  INTERADMINISTRATIVO
+  CIENCIA_TECNOLOGIA
+  NO_PLURALIDAD_OFERENTES
+  SERVICIOS_PROFESIONALES_APOYO
+  ARRENDAMIENTO_INMUEBLES
+  ADQUISICION_INMUEBLES
+  COMODATO
+  PERITOS
 }
 
 enum TipoContratoEstatal {

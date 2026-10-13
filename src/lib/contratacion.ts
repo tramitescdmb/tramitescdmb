@@ -19,7 +19,8 @@ import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } 
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, duracionPeriodo, soportesRequeridos, type SoportePresupuestal, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
+import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
@@ -319,6 +320,7 @@ export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
   tipoContrato: TipoContratoEstatal;
+  causalContratacionDirecta?: CausalContratacionDirecta | null;
   valor?: number | null;
   numeroContrato?: string | null;
   numeroProcesoSecop?: string | null;
@@ -333,6 +335,9 @@ export async function crearExpedienteContractual(datos: {
   creadoPorId: string;
 }) {
   if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
+  const causal = datos.modalidadSeleccion === "CONTRATACION_DIRECTA" ? datos.causalContratacionDirecta ?? null : null;
+  const combinacion = errorCombinacionContrato(datos.modalidadSeleccion, datos.tipoContrato, causal);
+  if (combinacion) throw new Error(combinacion);
   const automatica = datos.subserieId ? null : await subserieDeModalidad(datos.modalidadSeleccion);
   const subserieElegida = datos.subserieId ?? automatica?.subserieId ?? null;
   const subserie = subserieElegida ? await validarSubserieContrato(subserieElegida) : null;
@@ -352,6 +357,7 @@ export async function crearExpedienteContractual(datos: {
       objeto: datos.objeto.trim(),
       modalidadSeleccion: datos.modalidadSeleccion,
       tipoContrato: datos.tipoContrato,
+      causalContratacionDirecta: causal,
       valor: datos.valor ?? null,
       numeroContrato: datos.numeroContrato?.trim() || null,
       numeroProcesoSecop,
@@ -1407,6 +1413,43 @@ export function normalizarUsuarioRed(valor: unknown): string {
   return typeof valor === "string" ? valor.trim().toLowerCase().replace(/^.*\\/, "").replace(/@.*$/, "").slice(0, 60) : "";
 }
 
+function distanciaEdicion(a: string, b: string): number {
+  const fila = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let previo = fila[0]!;
+    fila[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const actual = fila[j]!;
+      fila[j] = Math.min(fila[j]! + 1, fila[j - 1]! + 1, previo + (a[i - 1] === b[j - 1] ? 0 : 1));
+      previo = actual;
+    }
+  }
+  return fila[b.length]!;
+}
+
+async function usuariosParecidos(original: string, usuarioRed: string): Promise<{ usuarioRed: string; nombre: string }[]> {
+  const texto = original.trim();
+  const documento = texto.replace(/\D/g, "");
+  const candidatos = await db.usuario.findMany({
+    where: {
+      activo: true,
+      OR: [
+        { email: { startsWith: usuarioRed.slice(0, 3), mode: "insensitive" } },
+        ...(documento.length >= 5 ? [{ cedulaONit: { contains: documento } }] : []),
+        ...(/[a-záéíóúñ]{4,}/i.test(texto) && !/\d/.test(texto) ? [{ nombre: { contains: texto, mode: "insensitive" as const } }] : []),
+      ],
+    },
+    select: { email: true, nombre: true, cedulaONit: true },
+    take: 40,
+  });
+  return candidatos
+    .map((u) => ({ u, d: distanciaEdicion(u.email.toLowerCase().replace(/@.*$/, ""), usuarioRed) }))
+    .filter(({ u, d }) => d <= 2 || (documento.length >= 5 && u.cedulaONit?.includes(documento)) || u.nombre.toLowerCase().includes(texto.toLowerCase()))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 5)
+    .map(({ u }) => ({ usuarioRed: u.email, nombre: u.nombre }));
+}
+
 export async function consultarUsuarioRedContratista(valor: string) {
   const usuarioRed = normalizarUsuarioRed(valor);
   if (!usuarioRed) return null;
@@ -1417,7 +1460,7 @@ export async function consultarUsuarioRedContratista(valor: string) {
     }),
     db.contratista.findFirst({ where: { usuarioRed, usuarioId: null }, select: { id: true, nombreORazonSocial: true } }),
   ]);
-  if (!usuario) return { usuarioRed, existe: false as const, pendiente };
+  if (!usuario) return { usuarioRed, existe: false as const, pendiente, sugerencias: await usuariosParecidos(valor, usuarioRed) };
   return {
     usuarioRed,
     existe: true as const,

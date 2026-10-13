@@ -1,6 +1,7 @@
 "use client";
 
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
+import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
@@ -14,6 +15,7 @@ export function EditarDatosContratoForm({
   expedienteId,
   modalidadActual,
   tipoContratoActual,
+  causalActual,
   modalidades,
   valorActual,
   dependenciaActualId,
@@ -27,6 +29,7 @@ export function EditarDatosContratoForm({
   expedienteId: string;
   modalidadActual: string;
   tipoContratoActual: string;
+  causalActual: string | null;
   modalidades: ModalidadOpcion[];
   valorActual: string | null;
   dependenciaActualId: string;
@@ -41,6 +44,14 @@ export function EditarDatosContratoForm({
   const [abierto, setAbierto] = useState(false);
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidadActual);
   const [tipoContrato, setTipoContrato] = useState(tipoContratoActual);
+  const [causal, setCausal] = useState(causalActual ?? "");
+  const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
+  const combinacion = tipoContrato ? errorCombinacionContrato(modalidadSeleccion, tipoContrato, causal || null) : "Seleccione el tipo de contrato.";
+
+  function ajustarTipo(lista: string[]) {
+    if (lista.length === 1) setTipoContrato(lista[0]!);
+    else if (!lista.includes(tipoContrato)) setTipoContrato("");
+  }
   const [valor, setValor] = useState(valorActual ?? "");
   const [dependenciaSolicitanteId, setDependenciaSolicitanteId] = useState(dependenciaActualId);
   const [numeroContrato, setNumeroContrato] = useState(numeroContratoActual ?? "");
@@ -52,6 +63,7 @@ export function EditarDatosContratoForm({
   const [error, setError] = useState<string | null>(null);
 
   async function guardar() {
+    if (combinacion) return setError(combinacion);
     if (!dependenciaSolicitanteId) return setError("Debe elegir la dependencia solicitante.");
     setGuardando(true);
     setError(null);
@@ -62,6 +74,7 @@ export function EditarDatosContratoForm({
         body: JSON.stringify({
           modalidadSeleccion,
           tipoContrato,
+          causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
           valor: valor.trim() || null,
           dependenciaSolicitanteId,
           numeroContrato: numeroContrato.trim() || null,
@@ -105,10 +118,46 @@ export function EditarDatosContratoForm({
             </div>
 
             <div className="space-y-3">
+                            <label className="block text-xs font-medium text-stone-600">
+                Modalidad de selección
+                <select
+                  value={modalidadSeleccion}
+                  onChange={(e) => {
+                    setModalidadSeleccion(e.target.value);
+                    setCausal("");
+                    ajustarTipo(tiposPermitidos(e.target.value, null));
+                  }}
+                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                >
+                  {modalidades.map((m) => (
+                    <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
+                  ))}
+                </select>
+              </label>
+              {modalidadSeleccion === "CONTRATACION_DIRECTA" && (
+                <label className="block text-xs font-medium text-stone-600">
+                  Causal de contratación directa
+                  <select
+                    value={causal}
+                    onChange={(e) => {
+                      setCausal(e.target.value);
+                      ajustarTipo(tiposPermitidos(modalidadSeleccion, e.target.value));
+                    }}
+                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Seleccione…</option>
+                    {CAUSALES_CONTRATACION_DIRECTA.map((c) => (
+                      <option key={c.valor} value={c.valor}>{c.codigo} · {c.etiqueta}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
               <label className="block text-xs font-medium text-stone-600">
                 Tipo de contrato
                 <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
-                  {TIPOS_CONTRATO.map((t) => (
+                  <option value="">Seleccione…</option>
+                  {TIPOS_CONTRATO.filter((t) => permitidos.includes(t.valor)).map((t) => (
                     <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
                   ))}
                 </select>
@@ -118,19 +167,6 @@ export function EditarDatosContratoForm({
                   </span>
                 )}
               </label>
-              <label className="block text-xs font-medium text-stone-600">
-                Modalidad de selección
-                <select
-                  value={modalidadSeleccion}
-                  onChange={(e) => setModalidadSeleccion(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
-                >
-                  {modalidades.map((m) => (
-                    <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
-                  ))}
-                </select>
-              </label>
-
               <label className="block text-xs font-medium text-stone-600">
                 Dependencia solicitante
                 <div className="mt-1">

@@ -222,6 +222,15 @@ export default async function ContratacionAyudaPage() {
           </li>
         </ul>
         <p>
+          <strong>Modalidad y tipo de contrato.</strong> El tipo de contrato se elige entre los que admite la modalidad: el concurso de
+          méritos es solo para consultoría e interventoría, que no se seleccionan por licitación ni por selección abreviada (Ley 1150,
+          art. 2, num. 3); la subasta inversa es solo para bienes y servicios de características técnicas uniformes; la enajenación, para
+          la venta de bienes de la Corporación; la mínima cuantía admite cualquier objeto. En contratación directa se indica la causal
+          (Decreto 1082, art. 2.2.1.2.1.4.1), que define los tipos admitidos: servicios profesionales y de apoyo a la gestión (CD-CPS)
+          solo prestación de servicios; arrendamiento de inmuebles (CD-A) solo arrendamiento; adquisición de inmuebles (CD-AI) solo
+          compraventa; interadministrativo y urgencia manifiesta, cualquiera.
+        </p>
+        <p>
           <strong>Datos generales</strong> (modalidad, tipo de contrato, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
           «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>

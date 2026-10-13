@@ -1,6 +1,7 @@
+import { errorCombinacionContrato, esCausalContratacionDirecta } from "@/lib/compatibilidad-modalidad";
 import { NextRequest, NextResponse } from "next/server";
 import { esTipoContrato } from "@/lib/tipo-contrato";
-import type { ModalidadSeleccion } from "@prisma/client";
+import type { CausalContratacionDirecta, ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import {
@@ -102,6 +103,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "fechaFinEstimada" in body ||
     "modalidadSeleccion" in body ||
     "tipoContrato" in body ||
+    "causalContratacionDirecta" in body ||
     "valor" in body ||
     "dependenciaSolicitanteId" in body
   ) {
@@ -114,6 +116,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if ("modalidadSeleccion" in body && !MODALIDADES_VALIDAS.has(String(body.modalidadSeleccion))) {
       return NextResponse.json({ error: "La modalidad de selección indicada no es válida." }, { status: 400 });
+    }
+    let causalNueva: CausalContratacionDirecta | null | undefined;
+    if ("modalidadSeleccion" in body || "tipoContrato" in body || "causalContratacionDirecta" in body) {
+      const vigente = await db.expedienteContractual.findUnique({
+        where: { id },
+        select: { modalidadSeleccion: true, tipoContrato: true, causalContratacionDirecta: true },
+      });
+      if (!vigente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+      const modalidad = "modalidadSeleccion" in body ? String(body.modalidadSeleccion) : vigente.modalidadSeleccion;
+      const tipo = "tipoContrato" in body ? String(body.tipoContrato) : vigente.tipoContrato;
+      const causal = "causalContratacionDirecta" in body ? body.causalContratacionDirecta : vigente.causalContratacionDirecta;
+      const combinacion = errorCombinacionContrato(modalidad, tipo, causal);
+      if (combinacion) return NextResponse.json({ error: combinacion }, { status: 400 });
+      causalNueva = modalidad === "CONTRATACION_DIRECTA" && esCausalContratacionDirecta(causal) ? causal : null;
     }
     if ("dependenciaSolicitanteId" in body) {
       const dependenciaId = String(body.dependenciaSolicitanteId || "").trim();
@@ -170,6 +186,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...("fechaFinEstimada" in body ? { fechaFinEstimada: body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null } : {}),
         ...("modalidadSeleccion" in body ? { modalidadSeleccion: body.modalidadSeleccion as ModalidadSeleccion } : {}),
         ...("tipoContrato" in body && esTipoContrato(body.tipoContrato) ? { tipoContrato: body.tipoContrato } : {}),
+        ...(causalNueva !== undefined ? { causalContratacionDirecta: causalNueva } : {}),
         ...("valor" in body ? { valor: body.valor === null || body.valor === "" ? null : Number(body.valor) } : {}),
         ...("dependenciaSolicitanteId" in body ? { dependenciaSolicitanteId: String(body.dependenciaSolicitanteId).trim() } : {}),
       },

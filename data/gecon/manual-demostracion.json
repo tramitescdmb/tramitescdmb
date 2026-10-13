@@ -43,13 +43,15 @@
     "resumen": "Cada contrato tiene un único expediente, que se abre en la etapa Precontractual.",
     "pasos": [
       "Administrador o Jefe de Contratación abre «Nuevo expediente».",
-      "Diligencia objeto, modalidad, tipo de contrato, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
+      "Elige la modalidad de selección; en contratación directa, también la causal.",
+      "Elige el tipo de contrato entre los que admite esa modalidad o causal.",
+      "Diligencia objeto, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
       "Vincula el contratista y designa supervisores y Personal de Contratación.",
       "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN`."
     ],
-    "ejemplo": "`CDMB-CTO-2026-000006`, contrato `050-2026`: prestación de servicio como ingeniero de sistemas para ADEI, contratación directa, $20.000.000, del 22 de septiembre al 21 de diciembre de 2026.",
-    "detalle": "El tipo de contrato define parte del catálogo: obra pide el informe de supervisión para obra pública y el acta de mayores y menores cantidades; interventoría queda exenta del límite de adiciones; prestación de servicios y compraventa no exigen acta de liquidación.\n\nLa fecha de suscripción no puede ser posterior a la de inicio. Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.",
-    "fundamento": "Ley 80 de 1993 · Ley 1150 de 2007 · Manual A-BS-MA01."
+    "ejemplo": "`CDMB-CTO-2026-000006`, contrato `050-2026`: prestación de servicio como ingeniero de sistemas para ADEI, contratación directa por la causal CD-CPS (servicios profesionales y de apoyo a la gestión), $20.000.000, del 22 de septiembre al 21 de diciembre de 2026.",
+    "detalle": "Concurso de méritos solo admite consultoría e interventoría, y estas no se seleccionan por licitación ni por selección abreviada. La subasta inversa no admite obra, consultoría ni interventoría. La mínima cuantía admite cualquier objeto.\n\nEl tipo de contrato define parte del catálogo: obra pide el informe de supervisión para obra pública y el acta de mayores y menores cantidades; interventoría queda exenta del límite de adiciones; prestación de servicios y compraventa no exigen acta de liquidación.\n\nLa fecha de suscripción no puede ser posterior a la de inicio. Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.",
+    "fundamento": "Ley 80 de 1993 · Ley 1150 de 2007, art. 2 · Decreto 1082 de 2015, arts. 2.2.1.2.1.2.2 y 2.2.1.2.1.4.1 y ss. · Manual A-BS-MA01, num. 6.2."
   },
   {
     "orden": 4,

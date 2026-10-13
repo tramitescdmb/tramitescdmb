@@ -16,7 +16,12 @@ export type RepresentanteLegalForm = {
 };
 
 type ConsultaUsuarioRed =
-  | { usuarioRed: string; existe: false; pendiente: { id: string; nombreORazonSocial: string } | null }
+  | {
+      usuarioRed: string;
+      existe: false;
+      pendiente: { id: string; nombreORazonSocial: string } | null;
+      sugerencias: { usuarioRed: string; nombre: string }[];
+    }
   | {
       usuarioRed: string;
       existe: true;
@@ -54,8 +59,9 @@ export function RegistrarContratistaForm({
   const [consulta, setConsulta] = useState<ConsultaUsuarioRed | null>(null);
   const [consultando, setConsultando] = useState(false);
 
-  async function consultar() {
-    const valor = usuarioRed.trim();
+  async function consultar(otro?: string) {
+    if (otro) setUsuarioRed(otro);
+    const valor = (otro ?? usuarioRed).trim();
     if (!valor || consulta?.usuarioRed === valor.toLowerCase()) return;
     setConsultando(true);
     setError(null);
@@ -135,7 +141,7 @@ export function RegistrarContratistaForm({
                   setUsuarioRed(e.target.value);
                   setConsulta(null);
                 }}
-                onBlur={consultar}
+                onBlur={() => consultar()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -147,7 +153,7 @@ export function RegistrarContratistaForm({
               />
               <button
                 type="button"
-                onClick={consultar}
+                onClick={() => consultar()}
                 disabled={!usuarioRed.trim() || consultando}
                 className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
               >
@@ -211,6 +217,21 @@ export function RegistrarContratistaForm({
                 <>
                   El usuario de red <strong>{consulta.usuarioRed}</strong> no existe en la plataforma. Se registra el perfil mínimo y se vincula
                   cuando la persona ingrese con ese usuario.
+                  {consulta.sugerencias.length > 0 && (
+                    <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      ¿Quiso decir?
+                      {consulta.sugerencias.map((s) => (
+                        <button
+                          key={s.usuarioRed}
+                          type="button"
+                          onClick={() => consultar(s.usuarioRed)}
+                          className="rounded-full border border-amber-300 bg-white px-2 py-0.5 font-medium text-amber-900 hover:bg-amber-100"
+                        >
+                          {s.usuarioRed} · {s.nombre}
+                        </button>
+                      ))}
+                    </span>
+                  )}
                 </>
               )}
             </p>

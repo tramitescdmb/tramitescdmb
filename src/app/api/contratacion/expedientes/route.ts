@@ -1,3 +1,4 @@
+import { errorCombinacionContrato, esCausalContratacionDirecta } from "@/lib/compatibilidad-modalidad";
 import { NextRequest, NextResponse } from "next/server";
 import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Debe indicarse una modalidad de selección válida." }, { status: 400 });
   }
   if (!dependenciaSolicitanteId) return NextResponse.json({ error: "Debe indicarse la dependencia solicitante." }, { status: 400 });
+  const combinacion = errorCombinacionContrato(modalidadSeleccion, body.tipoContrato, body.causalContratacionDirecta);
+  if (combinacion) return NextResponse.json({ error: combinacion }, { status: 400 });
 
   const dependencia = await db.dependencia.findUnique({ where: { id: dependenciaSolicitanteId }, select: { id: true } });
   if (!dependencia) return NextResponse.json({ error: "La dependencia seleccionada no existe." }, { status: 400 });
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
       objeto,
       modalidadSeleccion,
       tipoContrato: body.tipoContrato,
+      causalContratacionDirecta: esCausalContratacionDirecta(body.causalContratacionDirecta) ? body.causalContratacionDirecta : null,
       valor: body.valor != null && body.valor !== "" ? Number(body.valor) : null,
       numeroContrato: typeof body.numeroContrato === "string" ? body.numeroContrato : null,
       numeroProcesoSecop: typeof body.numeroProcesoSecop === "string" ? body.numeroProcesoSecop : null,

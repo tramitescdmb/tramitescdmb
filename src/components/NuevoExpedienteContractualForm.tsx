@@ -1,6 +1,7 @@
 "use client";
 
 import { TIPOS_CONTRATO } from "@/lib/tipo-contrato";
+import { CAUSALES_CONTRATACION_DIRECTA, errorCombinacionContrato, tiposPermitidos } from "@/lib/compatibilidad-modalidad";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -62,6 +63,8 @@ const CLAVE_BORRADOR = "borrador-expediente-gecon";
 type Borrador = {
   objeto: string;
   modalidadSeleccion: string;
+  causal?: string;
+  tipoContrato?: string;
   valor: string;
   numeroContrato: string;
   numeroProcesoSecop: string;
@@ -120,6 +123,24 @@ export function NuevoExpedienteContractualForm({
   const [objeto, setObjeto] = useState("");
   const [modalidadSeleccion, setModalidadSeleccion] = useState(modalidades[0]?.valor ?? "");
   const [tipoContrato, setTipoContrato] = useState("");
+  const [causal, setCausal] = useState("");
+  const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
+
+  function ajustarTipo(lista: string[]) {
+    if (lista.length === 1) setTipoContrato(lista[0]!);
+    else if (tipoContrato && !lista.includes(tipoContrato)) setTipoContrato("");
+  }
+
+  function elegirModalidad(valor: string) {
+    setModalidadSeleccion(valor);
+    setCausal("");
+    ajustarTipo(tiposPermitidos(valor, null));
+  }
+
+  function elegirCausal(valor: string) {
+    setCausal(valor);
+    ajustarTipo(tiposPermitidos(modalidadSeleccion, valor));
+  }
   const [valor, setValor] = useState("");
   const [numeroContrato, setNumeroContrato] = useState("");
   const [numeroProcesoSecop, setNumeroProcesoSecop] = useState("");
@@ -144,6 +165,8 @@ export function NuevoExpedienteContractualForm({
     if (!b) return;
     setObjeto(b.objeto);
     if (modalidades.some((m) => m.valor === b.modalidadSeleccion)) setModalidadSeleccion(b.modalidadSeleccion);
+    if (b.causal) setCausal(b.causal);
+    if (b.tipoContrato) setTipoContrato(b.tipoContrato);
     setValor(b.valor);
     setNumeroContrato(b.numeroContrato);
     setNumeroProcesoSecop(b.numeroProcesoSecop);
@@ -168,6 +191,8 @@ export function NuevoExpedienteContractualForm({
         : {
             objeto,
             modalidadSeleccion,
+            causal,
+            tipoContrato,
             valor,
             numeroContrato,
             numeroProcesoSecop,
@@ -185,6 +210,8 @@ export function NuevoExpedienteContractualForm({
   }, [
     objeto,
     modalidadSeleccion,
+    causal,
+    tipoContrato,
     valor,
     numeroContrato,
     numeroProcesoSecop,
@@ -202,6 +229,8 @@ export function NuevoExpedienteContractualForm({
   function descartarBorrador() {
     setObjeto("");
     setModalidadSeleccion(modalidades[0]?.valor ?? "");
+    setCausal("");
+    setTipoContrato("");
     setValor("");
     setNumeroContrato("");
     setNumeroProcesoSecop("");
@@ -221,6 +250,8 @@ export function NuevoExpedienteContractualForm({
   async function guardar() {
     if (!objeto.trim()) return setError("El objeto del contrato es obligatorio.");
     if (!tipoContrato) return setError("Seleccione el tipo de contrato.");
+    const combinacion = errorCombinacionContrato(modalidadSeleccion, tipoContrato, causal || null);
+    if (combinacion) return setError(combinacion);
     if (!dependenciaSolicitanteId) return setError("Debe elegir la dependencia solicitante.");
     setGuardando(true);
     setError(null);
@@ -232,6 +263,7 @@ export function NuevoExpedienteContractualForm({
           objeto: objeto.trim(),
           modalidadSeleccion,
           tipoContrato,
+          causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
           valor: valor ? Number(valor) : null,
           numeroContrato: numeroContrato.trim() || null,
           numeroProcesoSecop: numeroProcesoSecop.trim() || null,
@@ -289,19 +321,29 @@ export function NuevoExpedienteContractualForm({
               />
             </Field>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Tipo de contrato" required>
-                <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className={campoCls}>
-                  <option value="">Seleccione…</option>
-                  {TIPOS_CONTRATO.map((t) => (
-                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Modalidad de selección" required>
+                <select value={modalidadSeleccion} onChange={(e) => elegirModalidad(e.target.value)} className={campoCls}>
+                  {modalidades.map((m) => (
+                    <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="Modalidad de selección" required>
-                <select value={modalidadSeleccion} onChange={(e) => setModalidadSeleccion(e.target.value)} className={campoCls}>
-                  {modalidades.map((m) => (
-                    <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
+              {modalidadSeleccion === "CONTRATACION_DIRECTA" && (
+                <Field label="Causal de contratación directa" required>
+                  <select value={causal} onChange={(e) => elegirCausal(e.target.value)} className={campoCls}>
+                    <option value="">Seleccione…</option>
+                    {CAUSALES_CONTRATACION_DIRECTA.map((c) => (
+                      <option key={c.valor} value={c.valor}>{c.codigo} · {c.etiqueta}</option>
+                    ))}
+                  </select>
+                </Field>
+              )}
+              <Field label="Tipo de contrato" required>
+                <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className={campoCls}>
+                  <option value="">Seleccione…</option>
+                  {TIPOS_CONTRATO.filter((t) => permitidos.includes(t.valor)).map((t) => (
+                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
                   ))}
                 </select>
               </Field>
