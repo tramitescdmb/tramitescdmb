@@ -6,8 +6,6 @@ import { UploadCloud } from "lucide-react";
 import { comprimirParaContratacion } from "@/lib/compresion-cliente";
 import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
-import { esDocumentoModificacion } from "@/lib/modificaciones-contrato";
-import { CamposModificacionContrato, MODIFICACION_VACIA, cuerpoModificacion, faltaEnModificacion, type ValorModificacion } from "@/components/CamposModificacionContrato";
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
@@ -15,12 +13,10 @@ export function SubirDocumentosContratoForm({
   expedienteId,
   etapa,
   categoriasSugeridas,
-  fechaTerminacionActual = null,
 }: {
   expedienteId: string;
   etapa: EtapaContratacion;
   categoriasSugeridas: string[];
-  fechaTerminacionActual?: string | null;
 }) {
   const router = useRouter();
   const datalistId = useId();
@@ -29,22 +25,9 @@ export function SubirDocumentosContratoForm({
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const esModificacion = esDocumentoModificacion(categoria);
-  const [modificacion, setModificacion] = useState<ValorModificacion>(MODIFICACION_VACIA);
 
   async function subir(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (esModificacion) {
-      const falta = faltaEnModificacion(modificacion);
-      if (falta) {
-        setError(falta);
-        return;
-      }
-      if (files.length > 1) {
-        setError("Cargue un solo archivo por modificación.");
-        return;
-      }
-    }
     setSubiendo(true);
     setError(null);
     try {
@@ -71,7 +54,6 @@ export function SubirDocumentosContratoForm({
             tamanoBytes: subido.tamanoBytes,
             hashSha256,
             requiereFirma,
-            modificacion: esModificacion ? cuerpoModificacion(modificacion) : undefined,
           }),
         });
         if (!res.ok) {
@@ -80,7 +62,6 @@ export function SubirDocumentosContratoForm({
         }
       }
       setCategoria("");
-      setModificacion(MODIFICACION_VACIA);
       setRequiereFirma(false);
       router.refresh();
     } catch (err) {
@@ -107,11 +88,6 @@ export function SubirDocumentosContratoForm({
           ))}
         </datalist>
       </div>
-      {esModificacion && (
-        <div className="mb-2">
-          <CamposModificacionContrato valor={modificacion} onChange={setModificacion} fechaTerminacionActual={fechaTerminacionActual} />
-        </div>
-      )}
       <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-stone-600">
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} />

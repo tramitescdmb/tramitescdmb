@@ -3,8 +3,7 @@ import type { EtapaContratacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
-import { agregarDocumentoContrato, ETAPAS_ORDEN, registrarModificacionContrato } from "@/lib/contratacion";
-import { errorModificacion, esDocumentoModificacion, leerModificacion } from "@/lib/modificaciones-contrato";
+import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { datosPeticion } from "@/lib/auditoria-doc";
 
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
-    select: { id: true, contratistaId: true, cerrado: true, fechaFinEstimada: true },
+    select: { id: true, contratistaId: true, cerrado: true },
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
 
@@ -42,13 +41,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: mensajeArchivoDemasiadoGrandeContratacion(nombre) }, { status: 400 });
   }
 
-  const modificacion = leerModificacion(body.modificacion);
-  if (esDocumentoModificacion(body.categoria ? String(body.categoria) : nombre) || body.modificacion) {
-    if (!modificacion) return NextResponse.json({ error: "Indique el tipo de modificación del contrato." }, { status: 400 });
-    const problema = errorModificacion(modificacion, expediente.fechaFinEstimada);
-    if (problema) return NextResponse.json({ error: problema }, { status: 400 });
-  }
-
   const { ip, userAgent } = datosPeticion(req.headers);
 
   try {
@@ -70,9 +62,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       userAgent,
       cualquierEtapa: puedeSubirEnCualquierEtapaContrato(permisos),
     });
-    if (modificacion) {
-      await registrarModificacionContrato({ expedienteId: id, documentoId: documento.id, modificacion, usuarioId: session.userId });
-    }
     return NextResponse.json({ id: documento.id }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo registrar el documento." }, { status: 400 });

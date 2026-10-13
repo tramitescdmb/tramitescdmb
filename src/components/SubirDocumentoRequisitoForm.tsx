@@ -7,7 +7,6 @@ import { comprimirParaContratacion } from "@/lib/compresion-cliente";
 import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { esDocumentoModificacion } from "@/lib/modificaciones-contrato";
-import { CamposModificacionContrato, MODIFICACION_VACIA, cuerpoModificacion, faltaEnModificacion, type ValorModificacion } from "@/components/CamposModificacionContrato";
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
@@ -18,7 +17,6 @@ export function SubirDocumentoRequisitoForm({
   requisitoNombre,
   periodoMes,
   periodoEventualId,
-  fechaTerminacionActual = null,
 }: {
   expedienteId: string;
   etapa: EtapaContratacion;
@@ -26,25 +24,15 @@ export function SubirDocumentoRequisitoForm({
   requisitoNombre: string;
   periodoMes?: string;
   periodoEventualId?: string;
-  fechaTerminacionActual?: string | null;
 }) {
   const router = useRouter();
   const [requiereFirma, setRequiereFirma] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const esModificacion = esDocumentoModificacion(requisitoNombre);
-  const [modificacion, setModificacion] = useState<ValorModificacion>(MODIFICACION_VACIA);
 
   async function subir(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
-    if (esModificacion) {
-      const falta = faltaEnModificacion(modificacion);
-      if (falta) {
-        setError(falta);
-        return;
-      }
-    }
     setSubiendo(true);
     setError(null);
     try {
@@ -68,7 +56,6 @@ export function SubirDocumentoRequisitoForm({
           requiereFirma,
           periodoMes,
           periodoEventualId,
-          modificacion: esModificacion ? cuerpoModificacion(modificacion) : undefined,
         }),
       });
       if (!res.ok) {
@@ -83,9 +70,16 @@ export function SubirDocumentoRequisitoForm({
     }
   }
 
+  if (esDocumentoModificacion(requisitoNombre)) {
+    return (
+      <a href="#modificaciones" className="inline-flex items-center gap-1.5 rounded-md border border-acento-200 bg-acento-50 px-2.5 py-1 text-xs font-medium text-acento-700 hover:bg-acento-100">
+        Registrar en Modificaciones del contrato
+      </a>
+    );
+  }
+
   return (
     <div className="flex flex-col items-end gap-1">
-      {esModificacion && <CamposModificacionContrato valor={modificacion} onChange={setModificacion} fechaTerminacionActual={fechaTerminacionActual} />}
       <div className="flex items-center gap-2 text-[10px] text-stone-500">
         <label className="flex items-center gap-1" title="El Jefe de Contratación o el Supervisor asignado podrá revisarlo y estamparle la firma electrónica">
           <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} />

@@ -204,16 +204,16 @@
     "etiqueta": "Modificaciones",
     "titulo": "Modificaciones del contrato (otrosí)",
     "tituloIndice": "Modificaciones del contrato",
-    "ubicacion": "Detalle del expediente → etapa Contractual → «Acta de concertación de prórroga del plazo», «adición en valor y/o prórroga» o «Subir otro documento».",
-    "resumen": "Al cargar un otrosí se registra el tipo de modificación. Una prórroga cambia la fecha de terminación; una adición suma al valor del contrato.",
+    "ubicacion": "Detalle del expediente → «Modificaciones del contrato» → «Registrar modificación».",
+    "resumen": "Las modificaciones se registran en un solo lugar: se elige el tipo, se diligencian solo sus datos y se carga una acta, que el sistema ubica en el requisito correspondiente.",
     "pasos": [
-      "Se elige el requisito de la modificación o se escribe la categoría del documento.",
-      "Se selecciona el tipo: prórroga del plazo, adición en valor, prórroga y adición, u otra modificación.",
-      "Para prórroga se indica la nueva fecha de terminación; para adición, el valor adicionado.",
-      "Se carga el documento. La fecha de terminación y los informes mensuales se recalculan."
+      "Se pulsa «Registrar modificación» y se elige un tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, o aclaración.",
+      "Prórroga: nueva fecha de terminación. Adición: valor adicionado, hasta el 50 % del valor inicial. Suspensión: fechas de suspensión y reinicio; la terminación se corre los días suspendidos.",
+      "Si la nueva terminación pasa a otro año, se confirma la autorización de vigencias futuras para cada año comprometido; sin ella no se registra.",
+      "Se carga el acta y se registra. La fecha de terminación, el valor y los informes mensuales se actualizan."
     ],
-    "ejemplo": "Una prórroga del contrato `050-2026` hasta el 31 de enero de 2027 agrega el informe de enero y muestra la fecha de terminación como «prorrogado».",
-    "detalle": "La modificación queda en la bitácora del expediente con la fecha anterior y la nueva. El valor del contrato en el inicio incluye las adiciones.",
-    "fundamento": "Ley 80 de 1993, art. 40 · Manual A-BS-MA01, procedimientos de modificación."
+    "ejemplo": "Prorrogar el contrato `050-2026` del 21 de diciembre de 2026 al 31 de enero de 2027 exige confirmar vigencias futuras 2027 y agrega el informe de enero.",
+    "detalle": "Cada modificación queda numerada, con la terminación anterior y la nueva, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
+    "fundamento": "Ley 80 de 1993, art. 40 (adiciones hasta el 50 %) · Decreto 111 de 1996 y Ley 819 de 2003 (vigencias futuras) · Manual A-BS-MA01."
   }
 ]

@@ -17,7 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, type DatosModificacion } from "@/lib/modificaciones-contrato";
+import { ETIQUETA_TIPO_MODIFICACION, TIPOS_MODIFICACION, errorModificacion, nuevaFechaTerminacion, textoAnios, vigenciasComprometidas, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -1469,34 +1469,78 @@ export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor:
 
 export async function registrarModificacionContrato(datos: {
   expedienteId: string;
-  documentoId: string;
   modificacion: DatosModificacion;
+  archivo: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
+  requiereFirma: boolean;
   usuarioId: string;
+  ip?: string | null;
+  userAgent?: string | null;
+  cualquierEtapa: boolean;
 }) {
   const expediente = await db.expedienteContractual.findUniqueOrThrow({
     where: { id: datos.expedienteId },
-    select: { fechaFinEstimada: true },
+    select: { fechaFinEstimada: true, valor: true, modalidadSeleccion: true, modificaciones: { select: { valorAdicionado: true } } },
   });
-  const { tipo, fechaTerminacion, valorAdicionado } = datos.modificacion;
-  const nuevaFecha = fechaTerminacion ? new Date(`${fechaTerminacion}T00:00:00Z`) : null;
+  const m = datos.modificacion;
+  const problema = errorModificacion(m, {
+    terminacion: expediente.fechaFinEstimada,
+    valorInicial: expediente.valor !== null ? Number(expediente.valor) : null,
+    adicionadoPrevio: expediente.modificaciones.reduce((a, x) => a + (x.valorAdicionado ? Number(x.valorAdicionado) : 0), 0),
+  });
+  if (problema) throw new Error(problema);
+
+  const codigo = TIPOS_MODIFICACION.find((t) => t.valor === m.tipo)!.codigoFormato;
+  const requisito = await db.requisitoDocumentoContratacion.findFirst({
+    where: {
+      activo: true,
+      etapa: "CONTRACTUAL",
+      codigoFormato: { contains: codigo },
+      OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: expediente.modalidadSeleccion }],
+    },
+    select: { id: true, nombre: true },
+  });
+  const numero = expediente.modificaciones.length + 1;
+  const documento = await agregarDocumentoContrato({
+    expedienteId: datos.expedienteId,
+    etapa: "CONTRACTUAL",
+    requisitoId: requisito?.id ?? null,
+    categoria: requisito ? null : ETIQUETA_TIPO_MODIFICACION[m.tipo],
+    nombre: `${requisito?.nombre ?? ETIQUETA_TIPO_MODIFICACION[m.tipo]} N.° ${numero}`,
+    ...datos.archivo,
+    subidoPorId: datos.usuarioId,
+    requiereFirma: datos.requiereFirma,
+    ip: datos.ip,
+    userAgent: datos.userAgent,
+    cualquierEtapa: datos.cualquierEtapa,
+  });
+
+  const nuevaFecha = nuevaFechaTerminacion(m, expediente.fechaFinEstimada);
   await db.$transaction([
     db.modificacionContrato.create({
       data: {
         expedienteId: datos.expedienteId,
-        documentoId: datos.documentoId,
-        tipo,
+        numero,
+        documentoId: documento.id,
+        tipo: m.tipo,
         fechaTerminacionAnterior: expediente.fechaFinEstimada,
         fechaTerminacionNueva: nuevaFecha,
-        valorAdicionado,
+        valorAdicionado: m.valorAdicionado,
+        fechaSuspension: m.fechaSuspension ? new Date(`${m.fechaSuspension}T00:00:00Z`) : null,
+        fechaReinicio: m.fechaReinicio ? new Date(`${m.fechaReinicio}T00:00:00Z`) : null,
+        vigenciasFuturas: m.vigenciasFuturas,
+        aniosVigenciasFuturas: m.vigenciasFuturas ? vigenciasComprometidas(expediente.fechaFinEstimada, nuevaFecha) : [],
+        observacion: m.observacion,
         registradoPorId: datos.usuarioId,
       },
     }),
     ...(nuevaFecha ? [db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { fechaFinEstimada: nuevaFecha } })] : []),
   ]);
   const partes = [
-    ETIQUETA_TIPO_MODIFICACION[tipo],
-    nuevaFecha ? `nueva fecha de terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
-    valorAdicionado ? `valor adicionado $${valorAdicionado.toLocaleString("es-CO")}` : null,
+    `Modificación N.° ${numero}: ${ETIQUETA_TIPO_MODIFICACION[m.tipo]}`,
+    nuevaFecha ? `terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
+    m.valorAdicionado ? `valor adicionado $${m.valorAdicionado.toLocaleString("es-CO")}` : null,
+    m.vigenciasFuturas ? `vigencias futuras ${textoAnios(vigenciasComprometidas(expediente.fechaFinEstimada, nuevaFecha))}` : null,
   ].filter(Boolean);
   await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
+  return { numero };
 }

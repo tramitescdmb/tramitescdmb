@@ -6,6 +6,7 @@ import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck,
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
+import { ModificacionesContrato } from "@/components/ModificacionesContrato";
 import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
@@ -156,6 +157,7 @@ export default async function DetalleExpedienteContractualPage({
       supervisores: { include: { usuario: { select: { nombre: true } } } },
       asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
+      modificaciones: { orderBy: { numero: "asc" }, include: { registradoPor: { select: { nombre: true } } } },
       documentos: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -380,7 +382,7 @@ export default async function DetalleExpedienteContractualPage({
           controlesDocumento(doc, etapa, puedeGestionarEtapaCerrada)
         ) : puedeSubirEtapa ? (
           <SubirDocumentoRequisitoForm
-fechaTerminacionActual={fechaTerminacionIso}
+
             expedienteId={id}
             etapa={etapa}
             requisitoId={item.id}
@@ -680,6 +682,33 @@ fechaTerminacionActual={fechaTerminacionIso}
         </div>
       </div>
 
+      {(expediente.etapaActual !== "PRECONTRACTUAL" || expediente.modificaciones.length > 0) && (
+        <ModificacionesContrato
+          expedienteId={id}
+          puedeRegistrar={
+            !expediente.cerrado &&
+            !(tieneRolContratacion(permisos, "CONTRATISTA") && permisos.rolesContratacion.size === 1 && !permisos.esAdmin) &&
+            puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL")
+          }
+          terminacion={fechaTerminacionIso}
+          valorInicial={expediente.valor !== null ? Number(expediente.valor) : null}
+          modificaciones={expediente.modificaciones.map((m) => ({
+            id: m.id,
+            numero: m.numero,
+            tipo: m.tipo,
+            terminacionAnterior: m.fechaTerminacionAnterior?.toISOString() ?? null,
+            terminacionNueva: m.fechaTerminacionNueva?.toISOString() ?? null,
+            valorAdicionado: m.valorAdicionado !== null ? Number(m.valorAdicionado) : null,
+            vigenciasFuturas: m.vigenciasFuturas,
+            aniosVigenciasFuturas: m.aniosVigenciasFuturas,
+            observacion: m.observacion,
+            documentoId: m.documentoId,
+            registradoEn: m.createdAt.toISOString(),
+            registradoPor: m.registradoPor.nombre,
+          }))}
+        />
+      )}
+
       <PestanasDetalle
         inicial={expediente.cerrado ? "POSTCONTRACTUAL" : expediente.etapaActual}
         grupos={[
@@ -909,7 +938,7 @@ fechaTerminacionActual={fechaTerminacionIso}
                             </div>
                           ) : puedeSubir ? (
                             <SubirDocumentoRequisitoForm
-fechaTerminacionActual={fechaTerminacionIso}
+
                               expedienteId={id}
                               etapa={etapa}
                               requisitoId={item.id}
@@ -1036,7 +1065,7 @@ fechaTerminacionActual={fechaTerminacionIso}
                           + Subir otro documento no listado en el catálogo
                         </summary>
                         <div className="mt-2">
-                          <SubirDocumentosContratoForm fechaTerminacionActual={fechaTerminacionIso} expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
+                          <SubirDocumentosContratoForm  expedienteId={id} etapa={etapa} categoriasSugeridas={CATEGORIAS_SUGERIDAS[etapa]} />
                         </div>
                       </details>
                     )}

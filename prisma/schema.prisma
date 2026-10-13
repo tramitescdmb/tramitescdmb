@@ -2272,17 +2272,24 @@ enum TipoModificacionContrato {
   PRORROGA
   ADICION_VALOR
   PRORROGA_Y_ADICION
+  SUSPENSION
   OTRA
 }
 
 model ModificacionContrato {
   id                       String                   @id @default(cuid())
+  numero                   Int                      @default(1)
   expedienteId             String
   documentoId              String?                  @unique
   tipo                     TipoModificacionContrato
   fechaTerminacionAnterior DateTime?
   fechaTerminacionNueva    DateTime?
   valorAdicionado          Decimal?                 @db.Decimal(18, 2)
+  fechaSuspension          DateTime?
+  fechaReinicio            DateTime?
+  vigenciasFuturas         Boolean                  @default(false)
+  aniosVigenciasFuturas    Int[]                    @default([])
+  observacion              String?                  @db.Text
   registradoPorId          String
   createdAt                DateTime                 @default(now())
 

@@ -187,9 +187,10 @@ export default async function ContratacionAyudaPage() {
           con nombre propio. Lo crea quien gestiona el expediente; el contratista carga en él su documento.
         </p>
         <p>
-          <strong>Modificaciones.</strong> Al cargar un otrosí se indica el tipo: prórroga del plazo, adición en valor, ambas u otra
-          modificación. La prórroga pide la nueva fecha de terminación y recalcula los informes mensuales; la adición pide el valor
-          adicionado. Cada modificación queda en la bitácora del expediente.
+          <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
+          (prórroga, adición en valor, ambas, suspensión o aclaración), se diligencian sus datos y se carga una sola acta. Las adiciones
+          no superan el 50 % del valor inicial y una terminación que pasa a otro año exige la autorización de vigencias futuras de cada
+          año. La fecha de terminación, el valor y los informes mensuales se actualizan.
         </p>
         <p>
           <strong>Datos generales</strong> (modalidad, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
