@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
+import { esContratistaGecon, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { listarExpedientesContractuales, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -104,7 +104,7 @@ export default async function ExpedientesContratacionPage({
             Carpetas
           </Link>
         </div>
-        {total > 0 && (
+        {total > 0 && !esContratistaGecon(permisos) && (
           <BotonDescargarZip
             href={hrefZip}
             nombreArchivo="expedientes-gecon.zip"

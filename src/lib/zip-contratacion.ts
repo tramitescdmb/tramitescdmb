@@ -34,12 +34,11 @@ async function agregarDocumentosExpediente(
   carpetaBase: JSZip,
   expedienteId: string,
   numeroExpediente: string,
-  baseUrl: string,
-  ocultarPrecontractual: boolean
+  baseUrl: string
 ) {
   const [documentos, supervisores] = await Promise.all([
     db.documentoContrato.findMany({
-      where: { expedienteId, ...(ocultarPrecontractual ? { etapa: { not: "PRECONTRACTUAL" } } : {}) },
+      where: { expedienteId },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
@@ -94,25 +93,23 @@ async function agregarDocumentosExpediente(
 export async function construirZipExpediente(
   expedienteId: string,
   numeroExpediente: string,
-  baseUrl: string,
-  ocultarPrecontractual: boolean
+  baseUrl: string
 ): Promise<Buffer> {
   const zip = new JSZip();
-  await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl, ocultarPrecontractual);
+  await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl);
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }
 
 export async function construirZipMasivo(
   expedientes: { id: string; numero: string; numeroContrato: string | null }[],
-  baseUrl: string,
-  ocultarPrecontractual: boolean
+  baseUrl: string
 ): Promise<Buffer> {
   const zip = new JSZip();
   const usados = new Set<string>();
   for (const e of expedientes) {
     const nombreCarpeta = nombreUnico(usados, sanearNombreZip((e.numeroContrato ?? e.numero)));
     const carpeta = zip.folder(nombreCarpeta)!;
-    await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl, ocultarPrecontractual);
+    await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl);
   }
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

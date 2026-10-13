@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const doc = await db.documentoContrato.findUnique({
     where: { id },
-    select: { expedienteId: true, expediente: { select: { dependenciaSolicitanteId: true } } },
+    select: { expedienteId: true, etapa: true, expediente: { select: { dependenciaSolicitanteId: true } } },
   });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
   if (!puedeAsignarFirmantesDocumentoContrato(permisos, { id: doc.expedienteId, dependenciaSolicitanteId: doc.expediente.dependenciaSolicitanteId })) {
@@ -42,6 +42,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       orden: Number.isFinite(f?.orden) ? Number(f.orden) : 1,
       calidad: f.rol === "FIRMA" && esCalidadFirma(f.calidad) ? f.calidad : null,
     });
+  }
+
+  if (doc.etapa === "PRECONTRACTUAL") {
+    const contratistas = await db.usuario.count({
+      where: { id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) }, rolesContratacion: { has: "CONTRATISTA" } },
+    });
+    if (contratistas > 0) return NextResponse.json({ error: "El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos." }, { status: 400 });
   }
 
   try {

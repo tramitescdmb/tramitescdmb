@@ -142,14 +142,14 @@
     "titulo": "Gestión del contratista en su expediente",
     "tituloIndice": "Vista del contratista",
     "ubicacion": "Inicio y Panel de GECON, con sesión del contratista.",
-    "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado.",
+    "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado. Los documentos de Precontractual los consulta y descarga, sin modificarlos.",
     "pasos": [
       "Ingresa con su usuario de red.",
       "En el inicio ve cada contrato con su avance del plazo, los informes por mes y el siguiente paso.",
       "Carga el soporte del periodo y firma desde el buzón."
     ],
     "ejemplo": "`walhal01` ve en el inicio «Contrato N.° 050-2026 · informe de septiembre por radicar», con los días de retraso.",
-    "detalle": "En Precontractual solo carga personal de la CDMB.",
+    "detalle": "En Precontractual solo carga personal de la CDMB; el contratista consulta y descarga uno a uno esos documentos (hoja de vida, CDP y demás), pero no los edita, elimina ni firma. No descarga el expediente completo en ZIP.",
     "fundamento": "Manual A-BS-MA01."
   },
   {

@@ -130,8 +130,14 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
-            <td className="px-2.5 py-1.5">Ver sus expedientes desde la etapa Contractual, cargar sus documentos y firmar lo asignado.</td>
-            <td className="px-2.5 py-1.5">Cargar en Precontractual, ver contratos de otros o asignar firmantes.</td>
+            <td className="px-2.5 py-1.5">
+              Ver sus expedientes desde la etapa Contractual, cargar sus documentos y firmar lo asignado. Consultar y descargar uno a uno
+              los documentos de Precontractual (hoja de vida, CDP y demás).
+            </td>
+            <td className="px-2.5 py-1.5">
+              Cargar, editar, eliminar, firmar o dar visto bueno en Precontractual; descargar el expediente en ZIP; ver contratos de otros o
+              asignar firmantes.
+            </td>
           </tr>
         </Tabla>
         <p className="text-xs text-stone-400">

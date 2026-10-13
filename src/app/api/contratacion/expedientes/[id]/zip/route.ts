@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, esContratistaGecon } from "@/lib/permisos";
+import { esContratistaGecon, obtenerPermisosUsuario, puedeVerExpedienteContractual } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { construirZipExpediente } from "@/lib/zip-contratacion";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
@@ -12,6 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
+  if (esContratistaGecon(permisos)) return NextResponse.json({ error: "El contratista consulta y descarga los documentos uno por uno; la descarga del expediente completo no está disponible para su rol." }, { status: 403 });
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       contentType: "application/zip",
       descargar: true,
       comoJson: req.headers.get("accept")?.includes("application/json") ?? false,
-      generar: async () => new Uint8Array(await construirZipExpediente(id, expediente.numero, baseUrl, esContratistaGecon(permisos))),
+      generar: async () => new Uint8Array(await construirZipExpediente(id, expediente.numero, baseUrl)),
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo generar el ZIP." }, { status: 500 });

@@ -10,7 +10,6 @@ import {
   puedeResponderComoAsignado,
   puedeDevolverReparto,
   puedeVerExpedienteContractual,
-  puedeVerDocumentoContrato,
   puedeSubirDocumentoContrato,
   puedeGestionarExpedienteCompleto,
   puedeValidarDocumentoContrato,
@@ -233,12 +232,6 @@ describe("Acceso a expedientes contractuales (GECON) por etapa y asignación —
       const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
       expect(puedeSubirDocumentoContrato(contratista, expedienteContractual, "PRECONTRACTUAL")).toBe(false);
       expect(puedeSubirDocumentoContrato(contratista, expedienteContractual, "CONTRACTUAL")).toBe(true);
-    });
-
-    it("no puede ver/descargar un documento puntual de la etapa Precontractual, aunque el expediente ya esté en Contractual", () => {
-      const contratista = permContrat("CONTRATISTA", { contratistaId: "contXYZ" });
-      expect(puedeVerDocumentoContrato(contratista, expedienteContractual, "PRECONTRACTUAL")).toBe(false);
-      expect(puedeVerDocumentoContrato(contratista, expedienteContractual, "CONTRACTUAL")).toBe(true);
     });
 
     it("un contratista de OTRO contrato no ve el expediente en ninguna etapa", () => {

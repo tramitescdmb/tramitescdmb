@@ -188,8 +188,7 @@ export default async function DetalleExpedienteContractualPage({
   const puedeEditarDatosGenerales = puedeGestionDocumental && !cerrado;
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
-  const ocultaPrecontractualParaMi = esContratistaGecon(permisos);
-  const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
+  const idsDocumentos = expediente.documentos.map((d) => d.id);
   const [subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeGestionar
@@ -492,12 +491,14 @@ export default async function DetalleExpedienteContractualPage({
               <FileCheck2 className="h-3.5 w-3.5" aria-hidden />
               Ficha técnica de firmas
             </Link>
-            <BotonDescargarZip
-              href={`/api/contratacion/expedientes/${id}/zip`}
-              nombreArchivo={`${expediente.numero}.zip`}
-              etiqueta="Descargar todo (ZIP)"
-              titulo="Descarga en un ZIP todos los documentos del expediente, en carpetas por etapa"
-            />
+            {!esContratistaGecon(permisos) && (
+              <BotonDescargarZip
+                href={`/api/contratacion/expedientes/${id}/zip`}
+                nombreArchivo={`${expediente.numero}.zip`}
+                etiqueta="Descargar todo (ZIP)"
+                titulo="Descarga en un ZIP todos los documentos del expediente, en carpetas por etapa"
+              />
+            )}
             {puedeEditarDatosGenerales && (
               <EditarDatosContratoForm
                 expedienteId={id}
@@ -725,28 +726,16 @@ export default async function DetalleExpedienteContractualPage({
             id: etapa,
             label: ETIQUETA_ETAPA[etapa],
             icono: etapa === "PRECONTRACTUAL" ? <ClipboardList className="h-4 w-4" aria-hidden /> : etapa === "CONTRACTUAL" ? <FileSignature className="h-4 w-4" aria-hidden /> : <FolderCheck className="h-4 w-4" aria-hidden />,
-            contador: etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi ? undefined : expediente.documentos.filter((d) => d.etapa === etapa).length,
+            contador: expediente.documentos.filter((d) => d.etapa === etapa).length,
             contenido: (() => {
                 const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
                 const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos, expediente);
-                const ocultaPorRol = etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi;
                 const puedeVerEtapaCompleta =
-                  !ocultaPorRol &&
-                  (estado !== "bloqueada" ||
+                  estado !== "bloqueada" ||
                     puedeGestionarPrivilegiado ||
-                    (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
+                  (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id));
 
                 if (!puedeVerEtapaCompleta) {
-                  if (ocultaPorRol) {
-                    return (
-                      <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
-                        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-500">
-                          <Lock className="h-3.5 w-3.5" aria-hidden />
-                          {ETIQUETA_ETAPA[etapa]} — no disponible para el contratista
-                        </h3>
-                      </div>
-                    );
-                  }
                   const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
                   return (
                     <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
@@ -774,6 +763,7 @@ export default async function DetalleExpedienteContractualPage({
                   estado === "completada" ? "border-emerald-100 bg-emerald-50/20" : estado === "bloqueada" ? "border-dashed border-amber-200 bg-amber-50/10" : "border-stone-200 bg-white";
                 const puedeGestionarEtapaCerrada =
                   !cerrado &&
+                  !(etapa === "PRECONTRACTUAL" && esContratistaGecon(permisos)) &&
                   (estado === "actual" || puedeGestionarPrivilegiado || (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
 
                 return (
