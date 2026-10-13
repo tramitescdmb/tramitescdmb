@@ -198,5 +198,22 @@
     "ejemplo": "La importación por CSV queda como «Contratistas importados», con el número de registros y el responsable.",
     "detalle": "Eliminar un expediente completo siempre queda registrado.",
     "fundamento": "Ley 594 de 2000."
+  },
+  {
+    "orden": 13,
+    "etiqueta": "Modificaciones",
+    "titulo": "Modificaciones del contrato (otrosí)",
+    "tituloIndice": "Modificaciones del contrato",
+    "ubicacion": "Detalle del expediente → etapa Contractual → «Acta de concertación de prórroga del plazo», «adición en valor y/o prórroga» o «Subir otro documento».",
+    "resumen": "Al cargar un otrosí se registra el tipo de modificación. Una prórroga cambia la fecha de terminación; una adición suma al valor del contrato.",
+    "pasos": [
+      "Se elige el requisito de la modificación o se escribe la categoría del documento.",
+      "Se selecciona el tipo: prórroga del plazo, adición en valor, prórroga y adición, u otra modificación.",
+      "Para prórroga se indica la nueva fecha de terminación; para adición, el valor adicionado.",
+      "Se carga el documento. La fecha de terminación y los informes mensuales se recalculan."
+    ],
+    "ejemplo": "Una prórroga del contrato `050-2026` hasta el 31 de enero de 2027 agrega el informe de enero y muestra la fecha de terminación como «prorrogado».",
+    "detalle": "La modificación queda en la bitácora del expediente con la fecha anterior y la nueva. El valor del contrato en el inicio incluye las adiciones.",
+    "fundamento": "Ley 80 de 1993, art. 40 · Manual A-BS-MA01, procedimientos de modificación."
   }
 ]

@@ -187,6 +187,11 @@ export default async function ContratacionAyudaPage() {
           con nombre propio. Lo crea quien gestiona el expediente; el contratista carga en él su documento.
         </p>
         <p>
+          <strong>Modificaciones.</strong> Al cargar un otrosí se indica el tipo: prórroga del plazo, adición en valor, ambas u otra
+          modificación. La prórroga pide la nueva fecha de terminación y recalcula los informes mensuales; la adición pide el valor
+          adicionado. Cada modificación queda en la bitácora del expediente.
+        </p>
+        <p>
           <strong>Datos generales</strong> (modalidad, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
           «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>
