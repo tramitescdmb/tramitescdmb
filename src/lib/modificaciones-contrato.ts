@@ -7,14 +7,16 @@ export const CLASES_VIGENCIAS_FUTURAS: { valor: ClaseVigenciasFuturas; etiqueta:
   { valor: "EXCEPCIONAL", etiqueta: "Excepcional", descripcion: "Sin apropiación en la vigencia en curso." },
 ];
 
-export type VigenciaFutura = { anio: number; valor: number };
+export type VigenciaFutura = { anio: number; valor: number; desde: string; hasta: string };
+
+export type PeriodoVigencia = { anio: number; desde: string; hasta: string };
 
 export const TIPOS_MODIFICACION: { valor: TipoModificacion; etiqueta: string; descripcion: string; codigoFormato: string }[] = [
   { valor: "PRORROGA", etiqueta: "Prórroga del plazo", descripcion: "Amplía la fecha de terminación.", codigoFormato: "A-BS-FO123" },
   { valor: "ADICION_VALOR", etiqueta: "Adición en valor", descripcion: "Aumenta el valor del contrato.", codigoFormato: "A-BS-FO120" },
   { valor: "PRORROGA_Y_ADICION", etiqueta: "Prórroga y adición", descripcion: "Amplía el plazo y aumenta el valor.", codigoFormato: "A-BS-FO120" },
   { valor: "SUSPENSION", etiqueta: "Suspensión y reinicio", descripcion: "Detiene la ejecución; la terminación se corre los días suspendidos.", codigoFormato: "A-BS-FO130" },
-  { valor: "VIGENCIAS_FUTURAS", etiqueta: "Vigencias futuras", descripcion: "Registra la autorización para comprometer recursos de años siguientes.", codigoFormato: "" },
+  { valor: "VIGENCIAS_FUTURAS", etiqueta: "Vigencias futuras", descripcion: "Registra la autorización para comprometer recursos de la vigencia siguiente.", codigoFormato: "" },
   { valor: "OTRA", etiqueta: "Aclaración o modificación", descripcion: "Cambia otras condiciones, sin plazo ni valor.", codigoFormato: "A-BS-FO122" },
 ];
 
@@ -50,7 +52,7 @@ export type DatosModificacion = {
   valorAdicionado: number | null;
   fechaSuspension: string | null;
   fechaReinicio: string | null;
-  vigenciasFuturas: { clase: ClaseVigenciasFuturas | null; acto: string | null; valores: VigenciaFutura[] };
+  vigenciasFuturas: { clase: ClaseVigenciasFuturas | null; acto: string | null; hasta: string | null; valores: VigenciaFutura[] };
   observacion: string | null;
 };
 
@@ -81,14 +83,23 @@ function leerVigenciasFuturas(v: unknown): DatosModificacion["vigenciasFuturas"]
   const acto = typeof b.acto === "string" && b.acto.trim() ? b.acto.trim().slice(0, 300) : null;
   const valores = Array.isArray(b.valores)
     ? b.valores
-        .map((x) => ({ anio: Number((x as VigenciaFutura)?.anio), valor: Math.round(Number((x as VigenciaFutura)?.valor)) }))
-        .filter((x) => Number.isInteger(x.anio) && x.anio > 2000 && Number.isFinite(x.valor) && x.valor > 0)
+        .map((x) => {
+          const r = (x ?? {}) as Record<string, unknown>;
+          const anio = Number(r.anio);
+          const inicio = `${anio}-01-01`;
+          const fin = `${anio}-12-31`;
+          const desde = fechaIso(r.desde);
+          const hasta = fechaIso(r.hasta);
+          return {
+            anio,
+            valor: Math.round(Number(r.valor)),
+            desde: desde && desde >= inicio && desde <= fin ? desde : inicio,
+            hasta: hasta && hasta >= inicio && hasta <= fin ? hasta : fin,
+          };
+        })
+        .filter((x) => Number.isInteger(x.anio) && x.anio > 2000 && Number.isFinite(x.valor) && x.valor > 0 && x.desde <= x.hasta)
     : [];
-  return { clase, acto, valores };
-}
-
-export function aniosConValor(m: DatosModificacion): number[] {
-  return m.vigenciasFuturas.valores.map((v) => v.anio).sort((a, b) => a - b);
+  return { clase, acto, hasta: fechaIso(b.hasta), valores };
 }
 
 export function tieneVigenciasFuturas(m: DatosModificacion): boolean {
@@ -116,17 +127,52 @@ export function vigenciasComprometidas(actual: Date | null, nueva: Date | null):
   return anios;
 }
 
+export function periodosVigencias(anioBase: number, fin: Date | null): PeriodoVigencia[] {
+  if (!fin) return [];
+  const finIso = fin.toISOString().slice(0, 10);
+  const periodos: PeriodoVigencia[] = [];
+  for (let a = anioBase + 1; a <= fin.getUTCFullYear(); a++) {
+    periodos.push({ anio: a, desde: `${a}-01-01`, hasta: a === fin.getUTCFullYear() ? finIso : `${a}-12-31` });
+  }
+  return periodos;
+}
+
+export function duracionPeriodo(desde: string, hasta: string): string {
+  const inicio = utc(desde);
+  const limite = new Date(utc(hasta).getTime() + MS_DIA);
+  let meses = 0;
+  while (true) {
+    const siguiente = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + meses + 1, inicio.getUTCDate()));
+    if (siguiente > limite) break;
+    meses++;
+  }
+  const corte = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + meses, inicio.getUTCDate()));
+  const dias = Math.round((limite.getTime() - corte.getTime()) / MS_DIA);
+  const partes = [meses ? `${meses} ${meses === 1 ? "mes" : "meses"}` : "", dias ? `${dias} ${dias === 1 ? "día" : "días"}` : ""].filter(Boolean);
+  return partes.join(" y ") || "0 días";
+}
+
+export function periodosRequeridos(m: DatosModificacion, terminacion: Date | null, hoy: Date = new Date()): PeriodoVigencia[] {
+  if (m.tipo === "VIGENCIAS_FUTURAS") return periodosVigencias(hoy.getUTCFullYear(), m.vigenciasFuturas.hasta ? utc(m.vigenciasFuturas.hasta) : null);
+  if (!terminacion) return [];
+  return periodosVigencias(terminacion.getUTCFullYear(), nuevaFechaTerminacion(m, terminacion));
+}
+
+export function valoresConPeriodo(m: DatosModificacion, terminacion: Date | null, hoy: Date = new Date()): VigenciaFutura[] {
+  const periodos = periodosRequeridos(m, terminacion, hoy);
+  return m.vigenciasFuturas.valores.flatMap((v) => {
+    const p = periodos.find((x) => x.anio === v.anio);
+    return p ? [{ ...v, desde: p.desde, hasta: p.hasta }] : [];
+  });
+}
+
 export function textoAnios(anios: number[]): string {
   return anios.length <= 1 ? String(anios[0] ?? "") : `${anios.slice(0, -1).join(", ")} y ${anios.at(-1)}`;
 }
 
-export function pasaDeVigencia(actual: Date | null, nueva: Date | null): boolean {
-  return vigenciasComprometidas(actual, nueva).length > 0;
-}
-
 export function errorModificacion(
   m: DatosModificacion,
-  contrato: { terminacion: Date | null; valorInicial: number | null; adicionadoPrevio: number }
+  contrato: { terminacion: Date | null; valorInicial: number | null; adicionadoPrevio: number; hoy?: Date }
 ): string | null {
   if (cambiaPlazo(m.tipo)) {
     if (!m.fechaTerminacion) return "Indique la nueva fecha de terminación.";
@@ -143,12 +189,13 @@ export function errorModificacion(
     if (diasSuspendidos(m) <= 0) return "La fecha de reinicio debe ser posterior a la de suspensión.";
   }
   if (m.tipo === "OTRA" && !m.observacion) return "Describa brevemente la aclaración o modificación.";
-  const requeridos = m.tipo === "VIGENCIAS_FUTURAS" ? [] : vigenciasComprometidas(contrato.terminacion, nuevaFechaTerminacion(m, contrato.terminacion));
-  if (m.tipo === "VIGENCIAS_FUTURAS" || requeridos.length > 0) {
-    const prefijo = requeridos.length > 0 ? `La nueva terminación compromete la vigencia ${textoAnios(requeridos)}: ` : "";
+  if (m.tipo === "VIGENCIAS_FUTURAS" && !m.vigenciasFuturas.hasta) return "Indique la fecha hasta la que se comprometen recursos de la vigencia siguiente.";
+  const requeridos = periodosRequeridos(m, contrato.terminacion, contrato.hoy).map((p) => p.anio);
+  if (m.tipo === "VIGENCIAS_FUTURAS" && requeridos.length === 0) return "La fecha debe pertenecer a una vigencia posterior a la actual.";
+  if (requeridos.length > 0) {
+    const prefijo = m.tipo === "VIGENCIAS_FUTURAS" ? "" : `La nueva terminación compromete la vigencia ${textoAnios(requeridos)}: `;
     if (!m.vigenciasFuturas.clase) return `${prefijo}indique si las vigencias futuras son ordinarias o excepcionales.`;
     if (!m.vigenciasFuturas.acto) return `${prefijo}indique el acto de autorización de vigencias futuras (número y fecha).`;
-    if (m.vigenciasFuturas.valores.length === 0) return `${prefijo}indique el valor comprometido en cada año.`;
     const faltan = requeridos.filter((a) => !m.vigenciasFuturas.valores.some((v) => v.anio === a));
     if (faltan.length > 0) return `Indique el valor comprometido para ${textoAnios(faltan)}.`;
   }

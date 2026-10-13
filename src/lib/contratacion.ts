@@ -17,7 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, TIPOS_MODIFICACION, aniosConValor, errorModificacion, nuevaFechaTerminacion, textoAnios, tieneVigenciasFuturas, type DatosModificacion } from "@/lib/modificaciones-contrato";
+import { ETIQUETA_TIPO_MODIFICACION, TIPOS_MODIFICACION, duracionPeriodo, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal } from "@prisma/client";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -1525,6 +1525,7 @@ export async function registrarModificacionContrato(datos: {
   });
 
   const nuevaFecha = nuevaFechaTerminacion(m, expediente.fechaFinEstimada);
+  const valoresVf = valoresConPeriodo(m, expediente.fechaFinEstimada);
   await db.$transaction([
     db.modificacionContrato.create({
       data: {
@@ -1538,10 +1539,10 @@ export async function registrarModificacionContrato(datos: {
         fechaSuspension: m.fechaSuspension ? new Date(`${m.fechaSuspension}T00:00:00Z`) : null,
         fechaReinicio: m.fechaReinicio ? new Date(`${m.fechaReinicio}T00:00:00Z`) : null,
         vigenciasFuturas: tieneVigenciasFuturas(m),
-        aniosVigenciasFuturas: tieneVigenciasFuturas(m) ? aniosConValor(m) : [],
+        aniosVigenciasFuturas: tieneVigenciasFuturas(m) ? valoresVf.map((v) => v.anio) : [],
         claseVigenciasFuturas: m.vigenciasFuturas.clase,
         actoVigenciasFuturas: m.vigenciasFuturas.acto,
-        valoresVigenciasFuturas: tieneVigenciasFuturas(m) ? m.vigenciasFuturas.valores : undefined,
+        valoresVigenciasFuturas: tieneVigenciasFuturas(m) ? valoresVf : undefined,
         observacion: m.observacion,
         registradoPorId: datos.usuarioId,
       },
@@ -1552,7 +1553,9 @@ export async function registrarModificacionContrato(datos: {
     `Modificación N.° ${numero}: ${ETIQUETA_TIPO_MODIFICACION[m.tipo]}`,
     nuevaFecha ? `terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
     m.valorAdicionado ? `valor adicionado $${m.valorAdicionado.toLocaleString("es-CO")}` : null,
-    tieneVigenciasFuturas(m) ? `vigencias futuras ${textoAnios(aniosConValor(m))} (${m.vigenciasFuturas.acto})` : null,
+    tieneVigenciasFuturas(m)
+      ? `vigencias futuras ${valoresVf.map((v) => `${v.anio} (${duracionPeriodo(v.desde, v.hasta)})`).join(", ")} (${m.vigenciasFuturas.acto})`
+      : null,
   ].filter(Boolean);
   await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
   return { numero };

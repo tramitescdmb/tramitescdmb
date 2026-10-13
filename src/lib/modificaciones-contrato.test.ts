@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { errorModificacion, esDocumentoModificacion, leerModificacion, nuevaFechaTerminacion } from "@/lib/modificaciones-contrato";
 
-const contrato = { terminacion: new Date("2026-12-21T00:00:00Z"), valorInicial: 20_000_000, adicionadoPrevio: 0 };
+const contrato = { terminacion: new Date("2026-12-21T00:00:00Z"), valorInicial: 20_000_000, adicionadoPrevio: 0, hoy: new Date("2026-10-13T00:00:00Z") };
 
 describe("modificaciones del contrato", () => {
   it("reconoce las actas de modificación", () => {
@@ -53,10 +53,30 @@ describe("vigencias futuras por año", () => {
 });
 
 describe("tipo vigencias futuras", () => {
-  it("exige clase, acto y valores por año", () => {
-    expect(errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS" })!, contrato)).toMatch(/ordinarias o excepcionales/);
+  it("exige la fecha en la vigencia siguiente, clase, acto y valor", () => {
+    expect(errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS" })!, contrato)).toMatch(/fecha hasta/);
+    expect(errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: { hasta: "2026-12-30" } })!, contrato)).toMatch(/posterior/);
+    expect(errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: { hasta: "2027-02-15" } })!, contrato)).toMatch(/ordinarias o excepcionales/);
     expect(
-      errorModificacion(leerModificacion({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: { clase: "EXCEPCIONAL", acto: "Acuerdo 3", valores: [{ anio: 2027, valor: 1 }] } })!, contrato)
+      errorModificacion(
+        leerModificacion({ tipo: "VIGENCIAS_FUTURAS", vigenciasFuturas: { clase: "EXCEPCIONAL", acto: "Acuerdo 3", hasta: "2027-02-15", valores: [{ anio: 2027, valor: 1 }] } })!,
+        contrato
+      )
     ).toBeNull();
+  });
+});
+
+describe("periodo en la vigencia siguiente", () => {
+  it("expresa el periodo en meses y días", async () => {
+    const { duracionPeriodo, periodosVigencias, valoresConPeriodo } = await import("@/lib/modificaciones-contrato");
+    expect(duracionPeriodo("2027-01-01", "2027-02-15")).toBe("1 mes y 15 días");
+    expect(duracionPeriodo("2027-01-01", "2027-01-20")).toBe("20 días");
+    expect(duracionPeriodo("2027-01-01", "2027-12-31")).toBe("12 meses");
+    expect(periodosVigencias(2026, new Date("2028-03-10T00:00:00Z"))).toEqual([
+      { anio: 2027, desde: "2027-01-01", hasta: "2027-12-31" },
+      { anio: 2028, desde: "2028-01-01", hasta: "2028-03-10" },
+    ]);
+    const m = leerModificacion({ tipo: "PRORROGA", fechaTerminacion: "2027-02-15", vigenciasFuturas: { valores: [{ anio: 2027, valor: 5 }, { anio: 2030, valor: 9 }] } })!;
+    expect(valoresConPeriodo(m, contrato.terminacion)).toEqual([{ anio: 2027, valor: 5, desde: "2027-01-01", hasta: "2027-02-15" }]);
   });
 });

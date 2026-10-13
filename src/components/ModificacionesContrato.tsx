@@ -13,13 +13,13 @@ import {
   cambiaPlazo,
   cambiaValor,
   diasSuspendidos,
+  duracionPeriodo,
   errorModificacion,
   leerModificacion,
   nuevaFechaTerminacion,
-  pasaDeVigencia,
+  periodosRequeridos,
   textoAnios,
   CLASES_VIGENCIAS_FUTURAS,
-  vigenciasComprometidas,
   type TipoModificacion,
 } from "@/lib/modificaciones-contrato";
 
@@ -33,7 +33,7 @@ export type ModificacionRegistrada = {
   vigenciasFuturas: boolean;
   aniosVigenciasFuturas: number[];
   actoVigenciasFuturas: string | null;
-  valoresVigenciasFuturas: { anio: number; valor: number }[];
+  valoresVigenciasFuturas: { anio: number; valor: number; desde?: string; hasta?: string }[];
   observacion: string | null;
   documentoId: string | null;
   registradoEn: string;
@@ -67,8 +67,8 @@ export function ModificacionesContrato({
   const [fechaReinicio, setFechaReinicio] = useState("");
   const [vfClase, setVfClase] = useState("");
   const [vfActo, setVfActo] = useState("");
+  const [vfHasta, setVfHasta] = useState("");
   const [vfValores, setVfValores] = useState<Record<number, string>>({});
-  const [vfAniosExtra, setVfAniosExtra] = useState<number[]>([]);
   const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [requiereFirma, setRequiereFirma] = useState(true);
@@ -86,20 +86,16 @@ export function ModificacionesContrato({
             valorAdicionado: Number(valorAdicionado),
             fechaSuspension,
             fechaReinicio,
-            vigenciasFuturas: { clase: vfClase, acto: vfActo, valores: Object.entries(vfValores).map(([anio, valor]) => ({ anio: Number(anio), valor: Number(valor) })) },
+            vigenciasFuturas: { clase: vfClase, acto: vfActo, hasta: vfHasta, valores: Object.entries(vfValores).map(([anio, valor]) => ({ anio: Number(anio), valor: Number(valor) })) },
             observacion,
           })
         : null,
-    [tipo, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfValores, observacion]
+    [tipo, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion]
   );
   const nueva = datos ? nuevaFechaTerminacion(datos, actual) : null;
-  const cruzaVigencia = pasaDeVigencia(actual, nueva);
-  const anioSiguiente = (actual?.getUTCFullYear() ?? new Date().getUTCFullYear()) + 1;
-  const anios =
-    tipo === "VIGENCIAS_FUTURAS"
-      ? [...new Set([anioSiguiente, ...vfAniosExtra])].sort((a, b) => a - b)
-      : vigenciasComprometidas(actual, nueva);
-  const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || cruzaVigencia;
+  const periodos = datos ? periodosRequeridos(datos, actual) : [];
+  const anios = periodos.map((p) => p.anio);
+  const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || periodos.length > 0;
   const disponibleAdicion = valorInicial !== null ? valorInicial * LIMITE_ADICION - adicionadoPrevio : null;
 
   function cerrar() {
@@ -111,11 +107,16 @@ export function ModificacionesContrato({
     setFechaReinicio("");
     setVfClase("");
     setVfActo("");
+    setVfHasta("");
     setVfValores({});
-    setVfAniosExtra([]);
     setObservacion("");
     setArchivo(null);
     setError(null);
+  }
+
+  function elegirTipo(t: TipoModificacion) {
+    setTipo(t);
+    if (t === "VIGENCIAS_FUTURAS" && !vfHasta && terminacion && Number(terminacion.slice(0, 4)) > new Date().getFullYear()) setVfHasta(terminacion.slice(0, 10));
   }
 
   async function registrar() {
@@ -200,7 +201,7 @@ export function ModificacionesContrato({
                   }`}
                 >
                   <span className="flex items-center gap-2 font-semibold text-stone-900">
-                    <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => setTipo(t.valor)} className="accent-acento-500" />
+                    <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => elegirTipo(t.valor)} className="accent-acento-500" />
                     {t.etiqueta}
                   </span>
                   <span className="text-stone-500">{t.descripcion}</span>
@@ -265,8 +266,8 @@ export function ModificacionesContrato({
                   <p className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-600" aria-hidden />
                     {tipo === "VIGENCIAS_FUTURAS"
-                      ? "Registre la autorización para comprometer recursos de los años siguientes."
-                      : `La nueva terminación compromete la vigencia ${textoAnios(anios)}. No se registra sin la autorización de vigencias futuras${anios.length > 1 ? " de cada año" : ""}.`}
+                      ? "Registre la autorización para comprometer recursos de la vigencia siguiente, por el periodo que el contrato se ejecuta en ella."
+                      : `La nueva terminación compromete la vigencia ${textoAnios(anios)}. No se registra sin la autorización de vigencias futuras.`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {CLASES_VIGENCIAS_FUTURAS.map((c) => (
@@ -286,33 +287,36 @@ export function ModificacionesContrato({
                     Acto de autorización (número y fecha)
                     <input value={vfActo} onChange={(e) => setVfActo(e.target.value)} placeholder="Ej. Acuerdo del Consejo Directivo N.° 012 del 20 de noviembre de 2026" className={campo} />
                   </label>
-                  <div>
-                    <p className="mb-1">Valor comprometido por año</p>
-                    <div className="flex flex-wrap items-end gap-2">
-                      {anios.map((a) => (
-                        <label key={a} className="flex flex-col gap-1">
-                          <span className="font-semibold">{a}</span>
-                          <input
-                            type="number"
-                            min={1}
-                            step={1}
-                            value={vfValores[a] ?? ""}
-                            onChange={(e) => setVfValores((v) => ({ ...v, [a]: e.target.value }))}
-                            className={`${campo} w-40`}
-                          />
-                        </label>
-                      ))}
-                      {tipo === "VIGENCIAS_FUTURAS" && (
-                        <button
-                          type="button"
-                          onClick={() => setVfAniosExtra((x) => [...x, (anios.at(-1) ?? anioSiguiente) + 1])}
-                          className="rounded-lg border border-amber-300 bg-white px-3 py-2 font-medium text-amber-800 hover:bg-amber-100"
-                        >
-                          + Agregar año
-                        </button>
-                      )}
+                  {tipo === "VIGENCIAS_FUTURAS" && (
+                    <label className="flex flex-col gap-1">
+                      Ejecución en la vigencia siguiente hasta
+                      <input type="date" value={vfHasta} min={`${new Date().getFullYear() + 1}-01-01`} onChange={(e) => setVfHasta(e.target.value)} className={`${campo} w-48`} />
+                    </label>
+                  )}
+                  {periodos.length > 0 && (
+                    <div>
+                      <p className="mb-1">Periodo y valor comprometido en cada vigencia</p>
+                      <div className="flex flex-wrap items-end gap-3">
+                        {periodos.map((p) => (
+                          <label key={p.anio} className="flex flex-col gap-1">
+                            <span>
+                              <strong>{p.anio}</strong> · {fechaLarga(p.desde)} – {fechaLarga(p.hasta)}{" "}
+                              <span className="text-amber-800/80">({duracionPeriodo(p.desde, p.hasta)})</span>
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              step={1}
+                              placeholder="Valor ($)"
+                              value={vfValores[p.anio] ?? ""}
+                              onChange={(e) => setVfValores((v) => ({ ...v, [p.anio]: e.target.value }))}
+                              className={`${campo} w-48`}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </fieldset>
@@ -372,7 +376,9 @@ export function ModificacionesContrato({
                     )}
                     {m.actoVigenciasFuturas && <span className="block text-stone-400">{m.actoVigenciasFuturas}</span>}
                     {m.valoresVigenciasFuturas.length > 0 && (
-                      <span className="block text-stone-400">{m.valoresVigenciasFuturas.map((v) => `${v.anio}: ${pesos(v.valor)}`).join(" · ")}</span>
+                      <span className="block text-stone-400">{m.valoresVigenciasFuturas
+                          .map((v) => `${v.anio}${v.desde && v.hasta ? ` (${fechaLarga(v.desde)} – ${fechaLarga(v.hasta)}, ${duracionPeriodo(v.desde, v.hasta)})` : ""}: ${pesos(v.valor)}`)
+                          .join(" · ")}</span>
                     )}
                     {m.observacion && <span className="block text-stone-400">{m.observacion}</span>}
                   </td>

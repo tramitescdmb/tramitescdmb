@@ -188,9 +188,10 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
-          (prórroga, adición en valor, ambas, suspensión o aclaración), se diligencian sus datos y se carga una sola acta. Las adiciones
-          no superan el 50 % del valor inicial y una terminación que pasa a otro año exige la autorización de vigencias futuras de cada
-          año. La fecha de terminación, el valor y los informes mensuales se actualizan.
+          (prórroga, adición en valor, ambas, suspensión, vigencias futuras o aclaración), se diligencian sus datos y se carga una sola
+          acta. Las adiciones no superan el 50 % del valor inicial. Una terminación que pasa a la vigencia siguiente exige la autorización
+          de vigencias futuras con el periodo cubierto en esa vigencia (meses y días, desde el 1 de enero) y su valor. La fecha de
+          terminación, el valor y los informes mensuales se actualizan.
         </p>
         <p>
           <strong>Datos generales</strong> (modalidad, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
