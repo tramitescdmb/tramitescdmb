@@ -8,18 +8,25 @@ export type TipoContrato =
   | "ARRENDAMIENTO"
   | "OTRO";
 
-export const TIPOS_CONTRATO: { valor: TipoContrato; etiqueta: string }[] = [
-  { valor: "PRESTACION_SERVICIOS", etiqueta: "Prestación de servicios" },
-  { valor: "OBRA", etiqueta: "Obra" },
-  { valor: "SUMINISTRO", etiqueta: "Suministro" },
-  { valor: "COMPRAVENTA", etiqueta: "Compraventa" },
-  { valor: "CONSULTORIA", etiqueta: "Consultoría" },
-  { valor: "INTERVENTORIA", etiqueta: "Interventoría" },
-  { valor: "ARRENDAMIENTO", etiqueta: "Arrendamiento" },
-  { valor: "OTRO", etiqueta: "Otro" },
+export const TIPOS_CONTRATO: { valor: TipoContrato; codigo: string; etiqueta: string }[] = [
+  { valor: "PRESTACION_SERVICIOS", codigo: "PS", etiqueta: "Prestación de servicios" },
+  { valor: "OBRA", codigo: "OB", etiqueta: "Obra" },
+  { valor: "SUMINISTRO", codigo: "SU", etiqueta: "Suministro" },
+  { valor: "COMPRAVENTA", codigo: "CV", etiqueta: "Compraventa" },
+  { valor: "CONSULTORIA", codigo: "CO", etiqueta: "Consultoría" },
+  { valor: "INTERVENTORIA", codigo: "IN", etiqueta: "Interventoría" },
+  { valor: "ARRENDAMIENTO", codigo: "AR", etiqueta: "Arrendamiento" },
+  { valor: "OTRO", codigo: "OT", etiqueta: "Otro" },
 ];
 
 export const ETIQUETA_TIPO_CONTRATO = Object.fromEntries(TIPOS_CONTRATO.map((t) => [t.valor, t.etiqueta])) as Record<TipoContrato, string>;
+
+export const CODIGO_TIPO_CONTRATO = Object.fromEntries(TIPOS_CONTRATO.map((t) => [t.valor, t.codigo])) as Record<TipoContrato, string>;
+
+export function etiquetaTipoConCodigo(tipo: string): string {
+  const t = TIPOS_CONTRATO.find((x) => x.valor === tipo);
+  return t ? `${t.codigo} · ${t.etiqueta}` : tipo;
+}
 
 export type AplicaTipoContrato = "TODOS" | "SOLO_OBRA" | "EXCEPTO_OBRA";
 

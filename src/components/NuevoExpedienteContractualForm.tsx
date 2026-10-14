@@ -368,7 +368,7 @@ export function NuevoExpedienteContractualForm({
                 <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className={campoCls}>
                   <option value="">Seleccione…</option>
                   {TIPOS_CONTRATO.filter((t) => permitidos.includes(t.valor)).map((t) => (
-                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                    <option key={t.valor} value={t.valor}>{t.codigo} · {t.etiqueta}</option>
                   ))}
                 </select>
               </Field>

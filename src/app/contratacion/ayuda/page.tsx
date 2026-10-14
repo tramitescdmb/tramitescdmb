@@ -224,7 +224,7 @@ export default async function ContratacionAyudaPage() {
           (Decreto 1082, art. 2.2.1.2.1.4.1), que define los tipos admitidos: servicios profesionales y de apoyo a la gestión (CD-CPS)
           solo prestación de servicios; arrendamiento de inmuebles (CD-A) solo arrendamiento; adquisición de inmuebles (CD-AI) solo
           compraventa; interadministrativo y urgencia manifiesta, cualquiera. También están las causales de selección abreviada por
-          licitación declarada desierta (SA-LPD), acuerdo marco de precios (SA-AMP) y bolsa de productos (SA-BP).
+          licitación declarada desierta (SA-LPD), acuerdo marco de precios (SA-AMP) y bolsa de productos (SA-BP). Cada tipo de contrato lleva su código: PS prestación de servicios, OB obra, SU suministro, CV compraventa, CO consultoría, IN interventoría, AR arrendamiento y OT otro.
         </p>
         <p>
           <strong>Topes de cuantía.</strong> En «Administración → Topes de cuantía por vigencia» se registra cada año la menor cuantía

@@ -198,7 +198,7 @@ export function EditarDatosContratoForm({
                 <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)} className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
                   <option value="">Seleccione…</option>
                   {TIPOS_CONTRATO.filter((t) => permitidos.includes(t.valor)).map((t) => (
-                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                    <option key={t.valor} value={t.valor}>{t.codigo} · {t.etiqueta}</option>
                   ))}
                 </select>
                 {(tipoContrato === "OBRA") !== (tipoContratoActual === "OBRA") && (

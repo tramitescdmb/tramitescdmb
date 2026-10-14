@@ -7,7 +7,7 @@ import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck,
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
-import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
+import { etiquetaTipoConCodigo } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
 import { SecopPanel } from "@/components/SecopPanel";
 import { CODIGO_ACTA_LIQUIDACION, ETIQUETA_FASE_LIQUIDACION, estadoLiquidacion, plazosLiquidacion } from "@/lib/liquidacion";
@@ -541,8 +541,8 @@ export default async function DetalleExpedienteContractualPage({
 
         <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Dependencia:</dt><dd className="font-medium text-stone-800">{expediente.dependenciaSolicitante.nombre}</dd></div>
-          <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Tipo de contrato:</dt><dd className="font-medium text-stone-800">{ETIQUETA_TIPO_CONTRATO[expediente.tipoContrato]}</dd></div>
-          <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Modalidad:</dt><dd className="font-medium text-stone-800">{ETIQUETA_MODALIDAD[expediente.modalidadSeleccion]}{causalDe(expediente.causalContratacionDirecta) && <span className="font-normal text-stone-500"> · {causalDe(expediente.causalContratacionDirecta)!.codigo} {causalDe(expediente.causalContratacionDirecta)!.etiqueta}</span>}</dd></div>
+          <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Tipo de contrato:</dt><dd className="font-medium text-stone-800">{etiquetaTipoConCodigo(expediente.tipoContrato)}</dd></div>
+          <div className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Modalidad:</dt><dd className="font-medium text-stone-800">{etiquetaModalidadConCodigo(expediente.modalidadSeleccion, ETIQUETA_MODALIDAD[expediente.modalidadSeleccion])}{causalDe(expediente.causalContratacionDirecta) && <span className="font-normal text-stone-500"> · {causalDe(expediente.causalContratacionDirecta)!.codigo} {causalDe(expediente.causalContratacionDirecta)!.etiqueta}</span>}</dd></div>
           <div className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Valor:</dt><dd className="font-medium text-stone-800">{formatearPesosCO(expediente.valor?.toString())}</dd></div>
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º proceso SECOP:</dt><dd className="font-medium text-stone-800">{expediente.numeroProcesoSecop ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º contrato:</dt><dd className="font-medium text-stone-800">{expediente.numeroContrato ?? "Por definir"}</dd></div>
