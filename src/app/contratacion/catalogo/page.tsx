@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { ListChecks } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAdministrarCatalogoContratacion } from "@/lib/permisos";
 import { listarCatalogoRequisitos } from "@/lib/contratacion";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { SectionHelp } from "@/components/Field";
@@ -12,7 +12,7 @@ export default async function CatalogoRequisitosPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeAdministrarCatalogoContratacion(permisos)) {
     return <AccesoRestringido titulo="Catálogo de requisitos" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
 

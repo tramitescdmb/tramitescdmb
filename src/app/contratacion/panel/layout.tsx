@@ -1,6 +1,6 @@
 ﻿import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarGecon, puedeGestionarContratistas, tieneRolContratacion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarGecon, puedeVerTableroContratos } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
 import { PanelGeconNav } from "@/components/PanelGeconNav";
 
@@ -15,7 +15,7 @@ export default async function PanelGeconLayout({ children }: { children: ReactNo
     <div className="space-y-4">
       <PanelGeconNav
         gestion={puedeAdministrarGecon(permisos)}
-        contratos={puedeGestionarContratistas(permisos) || tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR")}
+        contratos={puedeVerTableroContratos(permisos)}
         pendientes={pendientes.listos}
       />
       {children}

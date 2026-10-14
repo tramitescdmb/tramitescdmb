@@ -110,23 +110,23 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Crear expedientes; vincular contratista y supervisores; aprobar y retroceder etapas; editar o eliminar documentos sin registro en la bitácora; eliminar expedientes; administrar contratistas e importarlos por CSV.</td>
+            <td className="px-2.5 py-1.5">Crear expedientes; vincular contratista y supervisores; aprobar y retroceder etapas; editar o eliminar documentos sin registro en la bitácora; eliminar expedientes; administrar contratistas e importarlos por CSV; administrar el catálogo de requisitos.</td>
             <td className="px-2.5 py-1.5" />
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.FUNCIONARIO_CONTRATACION}</strong></td>
-            <td className="px-2.5 py-1.5">Gestionar los expedientes que le asignan, en cualquier etapa: cargar documentos, editar datos generales y asignar firmantes. Registrar contratistas y consultar los de sus expedientes.</td>
-            <td className="px-2.5 py-1.5">Ver expedientes no asignados, aprobar etapas, editar sin registro en la bitácora, eliminar expedientes o importar contratistas.</td>
+            <td className="px-2.5 py-1.5">Crear expedientes (queda asignado a ellos). En los que le asignan, en cualquier etapa: cargar, editar o eliminar documentos (con registro en la bitácora), editar datos generales, vincular el contratista y asignar firmantes. Registrar contratistas y consultar los de sus expedientes. Ver el tablero de sus contratos.</td>
+            <td className="px-2.5 py-1.5">Ver expedientes no asignados, asignar supervisores o personal, aprobar etapas, editar sin registro en la bitácora, eliminar expedientes o importar contratistas.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.JEFE_DEPENDENCIA}</strong></td>
-            <td className="px-2.5 py-1.5">Ver los expedientes de su dependencia, asignar firmantes y firmar lo que le asignen.</td>
+            <td className="px-2.5 py-1.5">Ver los expedientes de su dependencia y su tablero de contratos y recursos, asignar firmantes y firmar lo que le asignen.</td>
             <td className="px-2.5 py-1.5">Ver expedientes de otras dependencias, cargar documentos o gestionar etapas.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">En los expedientes que supervisa: ver todas las etapas, cargar, editar o eliminar documentos (con registro) y asignar firmantes.</td>
-            <td className="px-2.5 py-1.5">Ver otros expedientes, aprobar etapas o eliminar el expediente.</td>
+            <td className="px-2.5 py-1.5">En los expedientes que supervisa: ver todas las etapas, cargar, editar o eliminar documentos (con registro, salvo en Precontractual) y asignar firmantes. Ver el tablero de sus contratos.</td>
+            <td className="px-2.5 py-1.5">Ver otros expedientes, editar los datos generales, cambiar el contratista, aprobar etapas o eliminar el expediente.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>

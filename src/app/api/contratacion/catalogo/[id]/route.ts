@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAdministrarCatalogoContratacion } from "@/lib/permisos";
 import { actualizarRequisitoCatalogo, moverRequisitoCatalogo, eliminarRequisitoCatalogo, TAG_CATALOGO_REQUISITOS } from "@/lib/contratacion";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeAdministrarCatalogoContratacion(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para modificar el catálogo de requisitos." }, { status: 403 });
   }
 
@@ -48,7 +48,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeAdministrarCatalogoContratacion(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para modificar el catálogo de requisitos." }, { status: 403 });
   }
 

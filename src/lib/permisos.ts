@@ -278,7 +278,23 @@ export function puedeAdministrarContratacion(permisos: PermisosUsuario): boolean
 }
 
 export function puedeAprobarEtapaContratacion(permisos: PermisosUsuario): boolean {
-  return permisos.esAdmin || tieneRolContratacion(permisos, "JEFE_CONTRATACION");
+  return permisos.esAdmin || tieneRolContratacion(permisos, "JEFE_CONTRATACION") || tieneRolContratacion(permisos, "ADMINISTRADOR_CONTRATACION");
+}
+
+export function puedeAdministrarCatalogoContratacion(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
+}
+
+export function puedeCrearExpedienteContractual(permisos: PermisosUsuario): boolean {
+  return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
+}
+
+export function puedeVerTableroContratos(permisos: PermisosUsuario): boolean {
+  return (
+    puedeAdministrarContratacion(permisos) ||
+    puedeAprobarEtapaContratacion(permisos) ||
+    (["FUNCIONARIO_CONTRATACION", "JEFE_DEPENDENCIA", "SUPERVISOR_INTERVENTOR"] as const).some((r) => tieneRolContratacion(permisos, r))
+  );
 }
 
 function gestionaComoPersonal(permisos: PermisosUsuario, expedienteId: string): boolean {
@@ -343,6 +359,7 @@ export function puedeEditarConTrazaDocumentoContrato(
   expediente: { id: string },
   documentoEtapa: EtapaContratacion
 ): boolean {
+  if (gestionaComoPersonal(permisos, expediente.id)) return true;
   if (documentoEtapa === "PRECONTRACTUAL") return false;
   return gestionaComoSupervisor(permisos, expediente.id);
 }
@@ -383,6 +400,11 @@ export function puedeSubirEnCualquierEtapaContrato(permisos: PermisosUsuario): b
 export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario, expediente: { id: string }): boolean {
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   return gestionaComoPersonal(permisos, expediente.id) || gestionaComoSupervisor(permisos, expediente.id);
+}
+
+export function puedeEditarDatosContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
+  return gestionaComoPersonal(permisos, expediente.id);
 }
 
 export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Landmark } from "lucide-react";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas, tieneRolContratacion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas, puedeVerTableroContratos, tieneRolContratacion } from "@/lib/permisos";
 import { obtenerTableroContratos, type FilaContrato } from "@/lib/contratacion-tablero";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
@@ -43,10 +43,14 @@ export default async function TableroContratosPage({ searchParams }: { searchPar
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   const global = puedeGestionarContratistas(permisos);
-  const supervisor = tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR");
-  if (!global && !supervisor) {
+  if (!puedeVerTableroContratos(permisos)) {
     return <AccesoRestringido titulo="Contratos y recursos" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
+  const titulo = tieneRolContratacion(permisos, "JEFE_DEPENDENCIA")
+    ? "Contratos de su dependencia"
+    : tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")
+      ? "Contratos a su cargo"
+      : "Mis contratos supervisados";
   const sp = await searchParams;
   const vigencia = sp.vigencia && /^\d{4}$/.test(sp.vigencia) ? Number(sp.vigencia) : null;
   const t = await obtenerTableroContratos(permisos, vigencia);
@@ -55,7 +59,7 @@ export default async function TableroContratosPage({ searchParams }: { searchPar
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <TituloSeccion icon={Landmark}>{global ? "Contratos y recursos" : "Mis contratos supervisados"}</TituloSeccion>
+        <TituloSeccion icon={Landmark}>{global ? "Contratos y recursos" : titulo}</TituloSeccion>
         <nav className="flex flex-wrap gap-1 text-xs" aria-label="Vigencia">
           {[null, ...t.vigencias].map((v) => (
             <Link

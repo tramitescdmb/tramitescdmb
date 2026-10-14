@@ -2,7 +2,7 @@ import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { catalogoSeriesBuscablesCacheado, subseriesPorModalidad } from "@/lib/trd-clasificacion";
 import { ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion";
@@ -24,8 +24,8 @@ export default async function NuevoExpedienteContractualPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeGestionarContratistas(permisos)) {
-    return <AccesoRestringido titulo="Nuevo expediente" quien="administrador o jefe de contratación" volverHref="/contratacion/expedientes" volverLabel="Ver expedientes" />;
+  if (!puedeCrearExpedienteContractual(permisos)) {
+    return <AccesoRestringido titulo="Nuevo expediente" quien="administrador, jefe o personal de contratación" volverHref="/contratacion/expedientes" volverLabel="Ver expedientes" />;
   }
 
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);

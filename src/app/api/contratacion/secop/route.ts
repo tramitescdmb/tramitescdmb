@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { buscarContratosSecop } from "@/lib/secop-datos";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  if (!puedeGestionarContratistas(await obtenerPermisosUsuario(session.userId))) {
+  if (!puedeCrearExpedienteContractual(await obtenerPermisosUsuario(session.userId))) {
     return NextResponse.json({ error: "No tiene permiso para consultar SECOP II desde GECON." }, { status: 403 });
   }
   const ref = req.nextUrl.searchParams.get("ref") ?? "";

@@ -6,6 +6,8 @@ import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraMo
 
 export type PermitidoContratacion = {
   administrar: boolean;
+  crearExpediente: boolean;
+  catalogo: boolean;
   verContratistas: boolean;
   soloAdministrador: boolean;
   gestion: boolean;
@@ -36,7 +38,7 @@ export function ContratacionTabs({
       icon: Briefcase,
       items: [
         { href: "/contratacion/expedientes", label: "Expedientes contractuales" },
-        entrada(permitido.administrar, ADMIN_O_JEFE, { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente" }),
+        entrada(permitido.crearExpediente, "Solo administrador, jefe o personal de contratación", { href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente" }),
       ],
     },
     permitido.verContratistas
@@ -57,7 +59,7 @@ export function ContratacionTabs({
       icon: ShieldCheck,
       lado: "derecha",
       items: [
-        entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true }),
+        entrada(permitido.catalogo, ADMIN_O_JEFE, { href: "/contratacion/catalogo", label: "Catálogo de requisitos", prefijo: true }),
         entrada(permitido.soloAdministrador, SOLO_ADMIN, { href: "/contratacion/disposicion", label: "Disposición final (TRD)", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/cuantias", label: "Topes de cuantía por vigencia", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/bitacora", label: "Bitácora del GECON", prefijo: true, separador: true }),

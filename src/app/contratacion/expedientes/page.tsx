@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { esContratistaGecon, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
+import { esContratistaGecon, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { listarExpedientesContractuales, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -38,7 +38,7 @@ export default async function ExpedientesContratacionPage({
         icon={Briefcase}
         contador={total}
         accion={
-          puedeGestionarContratistas(permisos) ? (
+          puedeCrearExpedienteContractual(permisos) ? (
             <Link
               href="/contratacion/expedientes/nuevo"
               className="flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600"

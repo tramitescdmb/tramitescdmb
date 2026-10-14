@@ -7,9 +7,9 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import {
   obtenerPermisosUsuario,
   puedeGestionarContratistas,
-  puedeGestionarExpedienteCompleto,
   puedeAsignarPersonalContrato,
   puedeEliminarExpedienteContractual,
+  puedeEditarDatosContrato,
 } from "@/lib/permisos";
 import {
   asegurarContratistaDeUsuario,
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   if ("contratistaId" in body || "contratistaUsuarioId" in body) {
-    if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
+    if (!puedeEditarDatosContrato(permisos, { id })) {
       await registrarAccesoDenegadoAccion("vincular el contratista de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para vincular el contratista de este expediente." }, { status: 403 });
     }
@@ -114,7 +114,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "valor" in body ||
     "dependenciaSolicitanteId" in body
   ) {
-    if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
+    if (!puedeEditarDatosContrato(permisos, { id })) {
       await registrarAccesoDenegadoAccion("editar los datos generales de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para editar los datos generales de este expediente." }, { status: 403 });
     }
@@ -333,7 +333,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeEliminarExpedienteContractual(permisos)) {
     await registrarAccesoDenegadoAccion("eliminar un expediente", id, session, req.headers);
-    return NextResponse.json({ error: "Solo el Jefe de Contratación puede eliminar un expediente." }, { status: 403 });
+    return NextResponse.json({ error: "Solo el administrador o el jefe de contratación pueden eliminar un expediente." }, { status: 403 });
   }
   const body = await req.json().catch(() => null);
   const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";

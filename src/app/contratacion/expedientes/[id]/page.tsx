@@ -31,6 +31,7 @@ import {
   puedeEliminarExpedienteContractual,
   puedeGestionarContratistas,
   puedeGestionarExpedienteCompleto,
+  puedeEditarDatosContrato,
   puedeSubirEnCualquierEtapaContrato,
   puedeAsignarPersonalContrato,
   puedeGestionarPeriodosInforme,
@@ -188,7 +189,7 @@ export default async function DetalleExpedienteContractualPage({
   const cerrado = expediente.cerrado;
   const puedeGestionar = puedeGestionarContratistas(permisos);
   const puedeGestionDocumental = puedeGestionarExpedienteCompleto(permisos, expediente);
-  const puedeEditarDatosGenerales = puedeGestionDocumental && !cerrado;
+  const puedeEditarDatosGenerales = puedeEditarDatosContrato(permisos, expediente) && !cerrado;
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
   const idsDocumentos = expediente.documentos.map((d) => d.id);
@@ -263,7 +264,7 @@ export default async function DetalleExpedienteContractualPage({
   const motivoEtapaOculta = expediente.cerrado
     ? null
     : !puedeAprobar
-      ? "Solo el Jefe de Contratación (o un Administrador del sistema) puede aprobar el paso de etapa."
+      ? "Solo el administrador o el jefe de contratación pueden aprobar el paso de etapa."
       : faltaContratista
         ? null
         : null;

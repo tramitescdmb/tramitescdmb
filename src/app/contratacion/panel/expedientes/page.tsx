@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, FileClock, FileCheck2, FileArchive, Lock, Plus } from "lucide-react";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 import { db } from "@/lib/db";
 import { TituloSeccion, TarjetaKpi, EstadoVacio } from "@/components/sgdea/ui";
@@ -32,7 +32,7 @@ export default async function PanelExpedientesGeconPage() {
       <TituloSeccion
         icon={Briefcase}
         accion={
-          puedeGestionarContratistas(permisos) ? (
+          puedeCrearExpedienteContractual(permisos) ? (
             <Link href="/contratacion/expedientes/nuevo" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600">
               <Plus className="h-3.5 w-3.5" aria-hidden />
               Nuevo expediente

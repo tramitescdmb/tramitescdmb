@@ -44,7 +44,7 @@
     "ubicacion": "Expedientes → [Nuevo expediente](/contratacion/expedientes/nuevo).",
     "resumen": "Cada contrato tiene un único expediente, que se abre en la etapa Precontractual.",
     "pasos": [
-      "Administrador o Jefe de Contratación abre «Nuevo expediente».",
+      "Administrador, Jefe o Personal de Contratación abre «Nuevo expediente» (si lo crea el Personal, queda asignado a él).",
       "Opcional: escribe el número del contrato en «Traer datos de SECOP II» y pulsa «Consultar» para llenar el formulario.",
       "Elige la modalidad de selección; en contratación directa, también la causal.",
       "Elige el tipo de contrato entre los que admite esa modalidad o causal.",

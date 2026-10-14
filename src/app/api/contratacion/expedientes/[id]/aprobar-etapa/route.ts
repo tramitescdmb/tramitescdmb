@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAprobarEtapaContratacion(permisos)) {
-    return NextResponse.json({ error: "Solo el Jefe de Contratación puede aprobar el paso de etapa." }, { status: 403 });
+    return NextResponse.json({ error: "Solo el administrador o el jefe de contratación pueden aprobar el paso de etapa." }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));

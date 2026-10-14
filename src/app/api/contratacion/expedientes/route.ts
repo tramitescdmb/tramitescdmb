@@ -4,7 +4,7 @@ import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeGestionarContratistas, puedeAsignarPersonalContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato, tieneRolContratacion } from "@/lib/permisos";
 import { sincronizarExpedienteSecop, asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeGestionarContratistas(permisos)) {
+  if (!puedeCrearExpedienteContractual(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para crear expedientes de contratación." }, { status: 403 });
   }
 
@@ -76,7 +76,10 @@ export async function POST(req: NextRequest) {
       dependenciaSolicitanteId,
       contratistaId,
       supervisorUsuarioIds,
-      personalAsignadoIds,
+      personalAsignadoIds:
+        !puedeAsignarPersonalContrato(permisos) && tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")
+          ? [...new Set([...personalAsignadoIds, session.userId])]
+          : personalAsignadoIds,
       subserieId: body.subserieId ? String(body.subserieId) : null,
       creadoPorId: session.userId,
     });

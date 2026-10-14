@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import type { EtapaContratacion, ModalidadSeleccion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAdministrarCatalogoContratacion } from "@/lib/permisos";
 import { listarCatalogoRequisitos, crearRequisitoCatalogo, ETAPAS_ORDEN, TAG_CATALOGO_REQUISITOS } from "@/lib/contratacion";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeAdministrarCatalogoContratacion(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para ver el catálogo de requisitos." }, { status: 403 });
   }
   const requisitos = await listarCatalogoRequisitos();
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarContratacion(permisos)) {
+  if (!puedeAdministrarCatalogoContratacion(permisos)) {
     return NextResponse.json({ error: "No tiene permiso para modificar el catálogo de requisitos." }, { status: 403 });
   }
 
