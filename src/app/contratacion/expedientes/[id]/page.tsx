@@ -56,7 +56,7 @@ import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, etiquetaRangoPeriodo } from "@/lib/periodos-informe";
 import { CATEGORIAS_SUGERIDAS } from "@/lib/contratacion-categorias";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
-import { formatearFecha, formatearFechaHora, formatearFechaSolo } from "@/lib/fecha";
+import { formatearFecha, formatearFechaCalendario, formatearFechaHora, formatearFechaSolo } from "@/lib/fecha";
 import { formatearPesosCO } from "@/lib/moneda";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -584,7 +584,7 @@ export default async function DetalleExpedienteContractualPage({
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Suscripción:</dt>
-            <dd className="font-medium text-stone-800">{formatearFecha(expediente.fechaSuscripcion)}</dd>
+            <dd className="font-medium text-stone-800">{formatearFechaCalendario(expediente.fechaSuscripcion)}</dd>
           </div>
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
@@ -598,7 +598,7 @@ export default async function DetalleExpedienteContractualPage({
                   Pendiente de inicio
                 </span>
               ) : (
-                <>{formatearFecha(expediente.fechaInicio)} – {formatearFecha(expediente.fechaFinEstimada)}</>
+                <>{formatearFechaCalendario(expediente.fechaInicio)} – {formatearFechaCalendario(expediente.fechaFinEstimada)}</>
               )}
             </dd>
           </div>
@@ -746,13 +746,13 @@ export default async function DetalleExpedienteContractualPage({
             {ETIQUETA_FASE_LIQUIDACION[liquidacion.fase]}
             {liquidacion.fase !== "sin-competencia" && liquidacion.limite && (
               <span className="ml-2 text-xs font-normal text-stone-600">
-                hasta el {formatearFecha(liquidacion.limite)} · {liquidacion.dias} día(s)
+                hasta el {formatearFechaCalendario(liquidacion.limite)} · {liquidacion.dias} día(s)
               </span>
             )}
           </h2>
           <p className="mt-1 text-xs text-stone-600">
-            Mutuo acuerdo hasta {formatearFecha(plazosLiq.mutuoAcuerdo)} · unilateral hasta {formatearFecha(plazosLiq.unilateral)} · término residual hasta{" "}
-            {formatearFecha(plazosLiq.residual)}. Se cumple al cargar el acta de liquidación (A-BS-FO135) en Postcontractual (Ley 1150 de 2007, art. 11;
+            Mutuo acuerdo hasta {formatearFechaCalendario(plazosLiq.mutuoAcuerdo)} · unilateral hasta {formatearFechaCalendario(plazosLiq.unilateral)} · término residual hasta{" "}
+            {formatearFechaCalendario(plazosLiq.residual)}. Se cumple al cargar el acta de liquidación (A-BS-FO135) en Postcontractual (Ley 1150 de 2007, art. 11;
             Manual A-BS-MA01, cap. 10).
             {expediente.terminadoAnticipadamente && " El contrato terminó anticipadamente: debe liquidarse aunque sea de prestación de servicios o compraventa."}
           </p>

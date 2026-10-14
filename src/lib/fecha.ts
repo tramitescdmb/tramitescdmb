@@ -5,6 +5,11 @@ export function formatearFecha(d: Date | string | null | undefined): string {
   return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: ZONA_HORARIA });
 }
 
+export function formatearFechaCalendario(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
 export function formatearFechaLarga(d: Date | string | null | undefined): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: ZONA_HORARIA });
