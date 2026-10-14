@@ -32,8 +32,8 @@ export function Field({
 
 export function SectionHelp({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-4 flex gap-2 border-l-2 border-cdmb-300 bg-stone-50/80 py-1.5 pl-3 pr-3 text-[13px] leading-snug text-stone-600">
-      <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-cdmb-500" aria-hidden />
+    <div className="mb-4 flex gap-2.5 rounded-xl bg-white/80 px-3.5 py-2 text-[13px] leading-snug text-stone-600 ring-1 ring-stone-200/70">
+      <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
       <p>{children}</p>
     </div>
   );

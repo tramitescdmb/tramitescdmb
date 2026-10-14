@@ -9,7 +9,7 @@ const ERRORES: Record<string, string> = {
 };
 
 const inputCls =
-  "w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
+  "w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 " +
   "transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15";
 
 export default async function LoginPage({

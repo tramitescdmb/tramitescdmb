@@ -31,7 +31,7 @@ export default async function HistoricoPanelPage({
 
   if (!sincaConfigurado()) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
         La conexión con SINCA 1.0 no está configurada en este servidor (variables <code>SINCA_API_URL</code>, <code>SINCA_API_USUARIO</code>, <code>SINCA_API_PASSWORD</code>).
       </div>
     );
@@ -62,13 +62,13 @@ export default async function HistoricoPanelPage({
 
   return (
     <div className="space-y-4">
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {selector}
 
       {sinDatos ? (
-        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center">
+        <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center">
           <p className="text-sm text-stone-600">
             {rango
               ? "No hay resoluciones en el período seleccionado."

@@ -21,7 +21,7 @@ function Campo({ k, v }: { k: string; v: string | null }) {
 
 function Tarjeta({ icon: Icon, titulo, children }: { icon: typeof MapPin; titulo: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+    <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
         <Icon className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
         {titulo}
@@ -58,7 +58,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         Volver al listado
       </Link>
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-start gap-2.5">
             <span className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
@@ -116,7 +116,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
                       {v.nroSolicitud && v.tieneDetalle ? (
                         <Link prefetch={false}
                           href={`/historico/solicitudes/${v.nroSolicitud}`}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
                           Ver solicitud {v.nroSolicitud}

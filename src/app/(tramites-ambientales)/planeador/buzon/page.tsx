@@ -72,7 +72,7 @@ export default async function BuzonVisitasPage() {
         )}
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         {pendientes.length === 0 ? (
           <p className="flex items-center gap-2 px-4 py-6 text-sm text-stone-500">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
@@ -84,7 +84,7 @@ export default async function BuzonVisitasPage() {
       </section>
 
       {atendidas.length > 0 && (
-        <details className="rounded-xl border border-stone-200 bg-white shadow-soft">
+        <details className="rounded-2xl border border-stone-200 bg-white shadow-soft">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-stone-600">Atendidas en los últimos 30 días ({atendidas.length})</summary>
           <ul className="divide-y divide-stone-100 border-t border-stone-100">{atendidas.map((n) => fila(n, true))}</ul>
         </details>

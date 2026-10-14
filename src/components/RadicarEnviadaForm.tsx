@@ -152,9 +152,9 @@ export function RadicarEnviadaForm({
 
   return (
     <div className="space-y-4">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={1} icono={<Reply className="h-4 w-4" aria-hidden />} titulo="¿Responde a una comunicación recibida?" />
         <p className="mb-3 text-xs text-stone-400">
           Busque por radicado, asunto o tercero. Al elegirla se cargan el destinatario, el asunto, la respuesta del
@@ -179,7 +179,7 @@ export function RadicarEnviadaForm({
         )}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <EncabezadoPaso numero={2} icono={<UserRound className="h-4 w-4" aria-hidden />} titulo="Destinatario" />
           {destinatarioBloqueado && (
@@ -201,7 +201,7 @@ export function RadicarEnviadaForm({
         <BloqueTercero valor={persona} onChange={setPersona} deshabilitado={destinatarioBloqueado} />
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={3}
           icono={<FileText className="h-4 w-4" aria-hidden />}
@@ -288,7 +288,7 @@ export function RadicarEnviadaForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={4}
           icono={<Paperclip className="h-4 w-4" aria-hidden />}

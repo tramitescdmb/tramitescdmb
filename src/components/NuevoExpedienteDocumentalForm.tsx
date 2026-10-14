@@ -89,8 +89,8 @@ export function NuevoExpedienteDocumentalForm({
 
   return (
     <form onSubmit={enviar} className="space-y-4">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
       <EncabezadoPaso
         numero={1}
         icono={<FolderOpen className="h-4 w-4" aria-hidden />}
@@ -115,7 +115,7 @@ export function NuevoExpedienteDocumentalForm({
       </Field>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
         <EncabezadoPaso
           numero={2}
           icono={<FolderTree className="h-4 w-4" aria-hidden />}
@@ -142,7 +142,7 @@ export function NuevoExpedienteDocumentalForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
         <EncabezadoPaso numero={3} icono={<Paperclip className="h-4 w-4" aria-hidden />} titulo="Archivos iniciales" />
         <SectionHelp>
           Opcional — adjunte aquí el o los primeros documentos del expediente. Puede agregar más después de abrirlo.

@@ -49,10 +49,10 @@ export function TablaExpedientesContractuales({ filas }: { filas: FilaExpediente
 
   return (
     <table className="table-fixed text-sm" style={{ width: anchoTotal, minWidth: "100%" }}>
-      <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+      <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
         <tr>
           {COLUMNAS.map((c, i) => (
-            <th key={c.titulo} className="relative px-3 py-2 font-medium" style={{ width: anchos[i] }}>
+            <th key={c.titulo} className="relative px-3 py-2" style={{ width: anchos[i] }}>
               <span className="flex items-center gap-1.5" title={c.titulo}>
                 <span className="flex-none text-cdmb-600">{c.icono}</span>
                 <span className="truncate">{c.titulo}</span>

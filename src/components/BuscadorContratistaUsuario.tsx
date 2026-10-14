@@ -87,7 +87,7 @@ export function BuscadorContratistaUsuario({
       </div>
 
       {resultados && resultados.length > 0 && (
-        <ul className="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <ul className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200 bg-white">
           {resultados.map((r) => (
             <li key={r.usuarioId}>
               <button type="button" onClick={() => elegir(r)} className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left hover:bg-cdmb-50/60">

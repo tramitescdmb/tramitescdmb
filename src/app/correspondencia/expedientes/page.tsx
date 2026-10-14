@@ -109,9 +109,9 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         <TarjetaKpi icon={Handshake} label="Préstamos activos" value={prestamosActivos} tono={prestamosActivos > 0 ? "ambar" : "neutro"} />
       </div>
 
-      {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.error && <div className="print:hidden rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white shadow-soft p-2.5">
+      <form method="get" className="print:hidden flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white shadow-soft p-2.5">
         <span className="flex min-w-[200px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
           <input
@@ -207,7 +207,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       )}
 
       <div
-        className={`overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none ${
+        className={`overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none ${
           modo === "carpetas" && expedientes.length > 0 ? "hidden print:block" : ""
         }`}
       >
@@ -218,15 +218,15 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Número</th>
-                  <th className="px-4 py-2 font-medium">Asunto</th>
-                  <th className="px-4 py-2 font-medium">Dependencia</th>
-                  <th className="px-4 py-2 font-medium">Clasificación</th>
-                  <th className="px-4 py-2 text-right font-medium">Documentos</th>
-                  <th className="px-4 py-2 font-medium">Estado</th>
-                  <th className="px-4 py-2 font-medium">Apertura</th>
+                  <th className="px-4 py-2">Número</th>
+                  <th className="px-4 py-2">Asunto</th>
+                  <th className="px-4 py-2">Dependencia</th>
+                  <th className="px-4 py-2">Clasificación</th>
+                  <th className="px-4 py-2 text-right">Documentos</th>
+                  <th className="px-4 py-2">Estado</th>
+                  <th className="px-4 py-2">Apertura</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -283,7 +283,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       </div>
 
       {expedientes.length > 0 && (
-        <div className="rounded-xl border border-stone-200 bg-white shadow-soft print:hidden">
+        <div className="rounded-2xl border border-stone-200 bg-white shadow-soft print:hidden">
           <SelectorVista vistaActual={vista} />
           <Paginador paginaActual={page} totalPaginas={totalPaginas} total={total} porPagina={porPagina} hrefPagina={hrefPagina} />
         </div>

@@ -391,9 +391,9 @@ export default async function ExpedienteDetallePage({
         </div>
       </div>
 
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
+      {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
       {error && !["sin-permiso-paso", "sin-permiso-estado"].includes(error) && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error === "cerrado" ? MENSAJE_EXPEDIENTE_CERRADO : error}</div>
+        <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error === "cerrado" ? MENSAJE_EXPEDIENTE_CERRADO : error}</div>
       )}
       {!puedeEditarPorRol && (
         <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
@@ -573,7 +573,7 @@ export default async function ExpedienteDetallePage({
                     </div>
                     {requiereVisita &&
                       (visitasVigentesLista.length === 0 ? (
-                        <p className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
                           Este paso requiere visita técnica y aún no está programada. La programan el Coordinador de Evaluación o el Subdirector SEYCA desde el Planeador.
                         </p>
@@ -743,7 +743,7 @@ export default async function ExpedienteDetallePage({
             contador: visitasVigentes,
             contenido: (
               <div id="planeador" className="space-y-4 scroll-mt-20">
-                <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-stone-900">Personal asignado</h2>
                     {planificador && !cerrado && (
@@ -781,7 +781,7 @@ export default async function ExpedienteDetallePage({
                   )}
                 </section>
 
-                <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-stone-900">Visitas técnicas programadas</h2>
                     {planificador && enEjecucion && pasoVisita.permite && profesionalesAsignados.length > 0 && (
@@ -802,13 +802,13 @@ export default async function ExpedienteDetallePage({
                     )}
                   </div>
                   {enEjecucion && !pasoVisita.permite && (
-                    <p className="mb-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <p className="mb-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
                       <span>No se pueden programar visitas en este momento. {pasoVisita.motivo}</span>
                     </p>
                   )}
                   {planificador && enEjecucion && pasoVisita.permite && profesionalesAsignados.length === 0 && (
-                    <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
                       Asigne personal al trámite para poder programar la visita.
                     </p>
                   )}
@@ -910,7 +910,7 @@ export default async function ExpedienteDetallePage({
             icono: <User className="h-4 w-4" aria-hidden />,
             contenido: (
               <>
-              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="mb-2 text-sm font-semibold text-stone-900">Solicitante</h2>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
                   <div className="min-w-0">
@@ -1005,7 +1005,7 @@ export default async function ExpedienteDetallePage({
             contador: expediente.documentos.length,
             contenido: (
               <>
-              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                   <div>
                     <h2 className="text-sm font-semibold text-stone-900">Documentos del expediente</h2>
@@ -1065,7 +1065,7 @@ export default async function ExpedienteDetallePage({
             icono: <ListOrdered className="h-4 w-4" aria-hidden />,
             contenido: (
               <>
-              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
                   Todos los pasos del flujo
                 </h2>
@@ -1129,7 +1129,7 @@ export default async function ExpedienteDetallePage({
             contador: expediente.eventos.length,
             contenido: (
               <>
-              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="text-sm font-semibold text-stone-900">Historia del expediente</h2>
                 <p className="mb-3 text-xs text-stone-500">
                   La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
@@ -1178,7 +1178,7 @@ export default async function ExpedienteDetallePage({
               </section>
 
               {expediente.comunicaciones.length > 0 && (
-                <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+                <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                   <h2 className="text-sm font-semibold text-stone-900">Correspondencia asociada ({expediente.comunicaciones.length})</h2>
                   <p className="mb-3 text-xs text-stone-500">Comunicaciones del módulo de Correspondencia archivadas en este expediente.</p>
                   <ul className="space-y-1.5">
@@ -1286,7 +1286,7 @@ export default async function ExpedienteDetallePage({
                 }}
               />
               {!cerrado && (
-              <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+              <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
                 <p className="mb-3 text-xs text-stone-500">
                   Para definir el estado cuando el flujo no tiene una decisión que corresponda (por ejemplo, un

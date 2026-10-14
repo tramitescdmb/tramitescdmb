@@ -41,7 +41,7 @@ export default async function BuzonContratacionPage() {
           No tiene documentos pendientes de firmar o revisar.
         </p>
       ) : (
-        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+        <ul className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white shadow-sm">
           {solicitudes.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">

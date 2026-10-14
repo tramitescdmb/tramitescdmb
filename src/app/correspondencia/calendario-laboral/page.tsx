@@ -41,10 +41,10 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         </SectionHelp>
       </div>
 
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarDays className="h-4 w-4 text-cdmb-600" aria-hidden /> Jornada laboral
         </h3>
@@ -89,7 +89,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         </form>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <CalendarOff className="h-4 w-4 text-cdmb-600" aria-hidden /> Días no laborados de la Corporación
         </h3>
@@ -116,8 +116,8 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         ) : (
           <div className="mt-3 overflow-hidden rounded-lg border border-stone-200">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-                <tr><th className="px-3 py-2 font-medium">Fecha</th><th className="px-3 py-2 font-medium">Motivo</th><th className="px-3 py-2 font-medium">Estado</th><th className="px-3 py-2"></th></tr>
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <tr><th className="px-3 py-2">Fecha</th><th className="px-3 py-2">Motivo</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2"></th></tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {dias.map((d) => (
@@ -150,7 +150,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
         )}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h3 className="text-sm font-semibold text-stone-900">Festivos de ley {anio} (referencia)</h3>
         <SectionHelp>Se calculan solos (Ley 51/1983 — Ley Emiliani) y no se editan aquí.</SectionHelp>
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">

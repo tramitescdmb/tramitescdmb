@@ -152,10 +152,10 @@ function Tabla({ titulo, filas, columnas }: { titulo: string; filas: Fila[]; col
       </p>
       <div className="overflow-x-auto rounded-lg border border-stone-100">
         <table className="w-full text-xs">
-          <thead className="bg-stone-50 text-left text-[11px] text-stone-400">
+          <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
             <tr>
               {columnas.map(([, etiqueta]) => (
-                <th key={etiqueta} className="px-3 py-1.5 font-medium">
+                <th key={etiqueta} className="px-3 py-1.5">
                   {etiqueta}
                 </th>
               ))}
@@ -195,7 +195,7 @@ export function SecopPanel({
   const url = d.urlproceso && typeof d.urlproceso === "object" ? String((d.urlproceso as { url?: unknown }).url ?? "") : "";
 
   return (
-    <details className="group rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+    <details className="group rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
         <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-stone-900">
           <Landmark className="h-4 w-4 text-cdmb-600" aria-hidden />

@@ -14,7 +14,7 @@ export function AyudaTabs({
       <div
         role="tablist"
         aria-label="Secciones del documento"
-        className="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-white shadow-soft p-1 print:hidden"
+        className="flex flex-wrap gap-1 rounded-2xl border border-stone-200 bg-white shadow-soft p-1 print:hidden"
       >
         {grupos.map((g) => {
           const sel = g.id === activo;
@@ -25,8 +25,8 @@ export function AyudaTabs({
               role="tab"
               aria-selected={sel}
               onClick={() => setActivo(g.id)}
-              className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                sel ? "bg-menu-500 text-stone-900" : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+              className={`flex-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                sel ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               }`}
             >
               {g.label}

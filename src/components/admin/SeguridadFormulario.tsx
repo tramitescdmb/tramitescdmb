@@ -23,15 +23,15 @@ export function SeguridadFormulario({
         <p className="text-sm text-stone-500">Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</p>
       </div>
 
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <SectionHelp>Bloqueo temporal tras exceder los intentos fallidos, en cuenta institucional y directorio activo.</SectionHelp>
 
       <form action="/api/configuracion-seguridad" method="post" className="space-y-6">
         <input type="hidden" name="volver" value={volver} />
 
-        <div className="grid grid-cols-1 gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-soft sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft sm:grid-cols-2">
           <Field label="Intentos fallidos permitidos" help="Entre 3 y 20.">
             <input type="number" name="loginMaxIntentos" min={3} max={20} defaultValue={config.loginMaxIntentos} required className={inputCls} />
           </Field>
@@ -40,7 +40,7 @@ export function SeguridadFormulario({
           </Field>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
           <h2 className="text-sm font-semibold text-stone-900">Política de contraseñas</h2>
           <SectionHelp>
             Aplica al crear o restablecer una contraseña — no revisa retroactivamente las existentes. Las obviamente débiles (ej.
@@ -82,7 +82,7 @@ export function SeguridadFormulario({
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
           <h2 className="text-sm font-semibold text-stone-900">Formatos de archivo permitidos</h2>
           <SectionHelp>
             Formatos aceptados al subir un documento, en toda la aplicación. Separados por coma o espacio, sin el punto (
@@ -102,7 +102,7 @@ export function SeguridadFormulario({
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
           <h2 className="text-sm font-semibold text-stone-900">Firma electrónica</h2>
           <div className="mt-3">
             <Field

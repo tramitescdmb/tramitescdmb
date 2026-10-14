@@ -29,8 +29,8 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
         <ArrowLeft className="h-4 w-4" aria-hidden /> Volver a Administración
       </Link>
 
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <section className="space-y-3">
         <h2 className="flex flex-wrap items-center justify-between gap-2 text-base font-semibold text-stone-900">
@@ -46,7 +46,7 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
           por palabra clave es consistente. La <strong>categoría</strong> es opcional, solo agrupa la lista.
         </SectionHelp>
 
-        <form action="/api/correspondencia/vocabulario" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
+        <form action="/api/correspondencia/vocabulario" method="post" className="grid grid-cols-1 gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
           <div className="sm:col-span-2">
             <Field label="Término" required>
               <input name="termino" className={inputCls} placeholder="Ej. Vertimientos" required />
@@ -63,15 +63,15 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
         </form>
 
         {terminos.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 text-sm text-stone-400">El vocabulario está vacío.</p>
+          <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4 text-sm text-stone-400">El vocabulario está vacío.</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+          <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Término</th>
-                  <th className="px-4 py-2 font-medium">Categoría</th>
-                  <th className="px-4 py-2 font-medium">Estado</th>
+                  <th className="px-4 py-2">Término</th>
+                  <th className="px-4 py-2">Categoría</th>
+                  <th className="px-4 py-2">Estado</th>
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>

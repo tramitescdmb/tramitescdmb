@@ -107,7 +107,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         </p>
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-stone-900">Datos personales</h2>
           {puedeEditarMinimo && (
@@ -130,7 +130,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
           )}
         </div>
         {faltan.length > 0 && (
-          <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">Para iniciar un contrato faltan: {faltan.join(", ")}. Los completa el administrador del sistema en Usuarios.</p>
+          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Para iniciar un contrato faltan: {faltan.join(", ")}. Los completa el administrador del sistema en Usuarios.</p>
         )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           <div className="min-w-0">
@@ -196,23 +196,23 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Contratos por vigencia ({contratista.expedientes.length})</h2>
         {contratista.expedientes.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400 shadow-soft">Todavía no tiene expedientes.</p>
+          <p className="rounded-2xl border border-stone-200 bg-white px-5 py-10 text-center text-sm text-stone-400 shadow-soft">Todavía no tiene expedientes.</p>
         ) : (
           Array.from(porVigencia.entries())
             .sort((a, b) => b[0] - a[0])
             .map(([vigencia, expedientes]) => (
-              <div key={vigencia} className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
+              <div key={vigencia} className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
                 <p className="border-b border-stone-100 bg-stone-50 px-4 py-2 text-xs font-semibold text-stone-700">
                   Vigencia {vigencia} · {expedientes.length} contrato{expedientes.length === 1 ? "" : "s"}
                 </p>
                 <table className="w-full text-xs">
-                  <thead className="border-b border-stone-100 text-left text-[11px] uppercase tracking-wide text-stone-400">
+                  <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                     <tr>
-                      <th className="px-4 py-2 font-medium">Número</th>
-                      <th className="px-4 py-2 font-medium">Objeto</th>
-                      <th className="px-4 py-2 font-medium">Periodo</th>
-                      <th className="px-4 py-2 font-medium">Valor</th>
-                      <th className="px-4 py-2 font-medium">Etapa</th>
+                      <th className="px-4 py-2">Número</th>
+                      <th className="px-4 py-2">Objeto</th>
+                      <th className="px-4 py-2">Periodo</th>
+                      <th className="px-4 py-2">Valor</th>
+                      <th className="px-4 py-2">Etapa</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">

@@ -25,8 +25,8 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-6">
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <div className="space-y-2">
         <TituloSeccion icon={Workflow}>Flujos de trabajo</TituloSeccion>
@@ -51,7 +51,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
         </span>
       </div>
 
-      <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <details className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <summary className="cursor-pointer text-sm font-semibold text-stone-900">Crear un flujo desde cero</summary>
         <form action="/api/correspondencia/flujos" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <input type="hidden" name="accion" value="crear" />
@@ -88,7 +88,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
             <Link
               key={f.id}
               href={`/correspondencia/admin/flujos/${f.id}`}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 hover:border-stone-200"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4 hover:border-stone-200"
             >
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-stone-800">

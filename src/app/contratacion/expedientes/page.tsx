@@ -154,7 +154,7 @@ export default async function ExpedientesContratacionPage({
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
           <TablaExpedientesContractuales
             filas={filas.map((e) => {
               const pendiente = !e.cerrado && e.etapaActual === "CONTRACTUAL" && !e.fechaInicio;

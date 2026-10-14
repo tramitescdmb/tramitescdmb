@@ -76,7 +76,7 @@ export default async function BitacoraPage({
       <SectionHelp>Cada fila va encadenada por hash SHA-256 — alterar o borrar una rompe la cadena.</SectionHelp>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4 print:border-0 print:p-0">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4 print:border-0 print:p-0">
         <form method="get" className="grid grid-cols-2 gap-3 print:hidden sm:grid-cols-5">
           <select name="accion" defaultValue={filtros.accion ?? ""} className={inputCls}>
             <option value="">Cualquier acción</option>
@@ -95,14 +95,14 @@ export default async function BitacoraPage({
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 text-left text-xs uppercase tracking-wide text-stone-500">
+            <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
-                <th className="py-2 pr-3 font-medium">Acción</th>
-                <th className="py-2 pr-3 font-medium">Registro</th>
-                <th className="py-2 pr-3 font-medium">Detalle</th>
-                <th className="py-2 pr-3 font-medium">Usuario</th>
-                <th className="py-2 pr-3 font-medium">Origen</th>
-                <th className="py-2 font-medium">Fecha</th>
+                <th className="py-2 pr-3">Acción</th>
+                <th className="py-2 pr-3">Registro</th>
+                <th className="py-2 pr-3">Detalle</th>
+                <th className="py-2 pr-3">Usuario</th>
+                <th className="py-2 pr-3">Origen</th>
+                <th className="py-2">Fecha</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">

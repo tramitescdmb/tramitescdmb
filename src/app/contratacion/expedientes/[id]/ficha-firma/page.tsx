@@ -109,7 +109,7 @@ export default async function FichaFirmaExpedienteContractualPage({
         <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <p className="font-mono text-sm text-stone-500">{expediente.numero}</p>
         <p className="mt-0.5 text-base font-medium text-stone-900">{expediente.objeto}</p>
         {documentoId && veExpediente && (

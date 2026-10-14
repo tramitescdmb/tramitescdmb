@@ -44,20 +44,20 @@ export default async function DisposicionExpedientesPage() {
         const lista = porFase.get(fase) ?? [];
         if (lista.length === 0) return null;
         return (
-          <section key={fase} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+          <section key={fase} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
             <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3">
               <Archive className="h-4 w-4 text-cdmb-600" aria-hidden />
               <h2 className="text-sm font-semibold text-stone-900">{ETIQUETA_FASE[fase]}</h2>
               <span className="text-xs text-stone-400">{lista.length}</span>
             </div>
             <table className="w-full text-sm">
-              <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Expediente</th>
-                  <th className="px-4 py-2 font-medium">Subserie</th>
-                  <th className="px-4 py-2 font-medium">Cierre</th>
-                  <th className="px-4 py-2 font-medium">Fin gestión</th>
-                  <th className="px-4 py-2 font-medium">Fin archivo central</th>
+                  <th className="px-4 py-2">Expediente</th>
+                  <th className="px-4 py-2">Subserie</th>
+                  <th className="px-4 py-2">Cierre</th>
+                  <th className="px-4 py-2">Fin gestión</th>
+                  <th className="px-4 py-2">Fin archivo central</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -81,7 +81,7 @@ export default async function DisposicionExpedientesPage() {
       })}
 
       {clasificados.length === 0 && (
-        <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-400">
+        <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-400">
           Sin expedientes clasificados con fecha de cierre todavía.
         </p>
       )}

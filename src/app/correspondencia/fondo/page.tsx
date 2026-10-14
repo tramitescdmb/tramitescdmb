@@ -27,7 +27,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
   if (!fondoHistoricoConfigurado()) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
         El Fondo Documental histórico no está configurado en este servidor.
       </div>
     );
@@ -133,7 +133,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         </p>
       )}
 
-      <form method="GET" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <form method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         {grupoActivo.miembros.length > 1 ? (
           <label className="text-sm">
             <span className="mb-1 block font-medium text-stone-600">Fuente</span>
@@ -216,10 +216,10 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
         )}
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[52rem] text-sm">
-            <thead className="border-b border-stone-200 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+            <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Documento</th>
                 {esPsdocuments && <th className="px-4 py-2.5 font-semibold">Serie</th>}
@@ -297,7 +297,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
 function Tarjeta({ etiqueta, valor, nota }: { etiqueta: string; valor: string; nota?: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
+    <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
       <div className="text-xs font-medium uppercase tracking-wide text-stone-400">{etiqueta}</div>
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className="text-xl font-semibold text-stone-900">{valor}</span>

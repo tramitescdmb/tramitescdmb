@@ -95,7 +95,7 @@ function EncabezadoSeccion({ icono: Icono, titulo, ayuda }: { icono: typeof Shie
   return (
     <div className="mb-3 flex items-center gap-2.5">
       <span
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700"
+        className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700"
         title={ayuda}
       >
         <Icono className="h-4 w-4" aria-hidden />
@@ -574,7 +574,7 @@ export function EditarUsuarioAccesoForm({
             </span>
           </label>
 
-          <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
             En la firma aparecerá:{" "}
             <span className="font-medium text-stone-800">
               {nombreCompletoPersona(persona) || "Nombre del funcionario"}
@@ -611,7 +611,7 @@ export function EditarUsuarioAccesoForm({
             ))}
           </div>
           {estadoCuentaActual === "BLOQUEADA" && estadoCuenta === "BLOQUEADA" && (
-            <p className="mt-2.5 rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
+            <p className="mt-2.5 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800">
               El sistema la bloqueó automáticamente por exceso de intentos fallidos. Elija «Habilitada» para permitirle
               volver a iniciar sesión.
             </p>
@@ -635,7 +635,7 @@ export function EditarUsuarioAccesoForm({
             ))}
           </div>
           {rol === "ADMIN" && (
-            <p className="mt-2.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="mt-2.5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
               Acceso total automático: los cargos y los accesos por módulo quedan sin efecto.
             </p>
           )}

@@ -133,9 +133,9 @@ export function PqrsdPublicoForm() {
 
   return (
     <div className="space-y-4">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <input
           type="checkbox"
           checked={anonima}
@@ -153,7 +153,7 @@ export function PqrsdPublicoForm() {
         </span>
       </label>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={1} icono={<ListChecks className="h-4 w-4" aria-hidden />} titulo="Tipo de solicitud" />
         <SectionHelp>
           Elija la que mejor describa lo que quiere: una petición pide algo, una queja se refiere a la conducta de un
@@ -167,7 +167,7 @@ export function PqrsdPublicoForm() {
         {ayudaTipo && <p className="mt-1.5 text-xs text-stone-500">{ayudaTipo}</p>}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={2} icono={<UserRound className="h-4 w-4" aria-hidden />} titulo="Sus datos" />
         {!anonima && (
           <SectionHelp>
@@ -195,7 +195,7 @@ export function PqrsdPublicoForm() {
         )}
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={3} icono={<MessageSquareText className="h-4 w-4" aria-hidden />} titulo="Su solicitud" />
         <div className="space-y-3">
           <Field label="Asunto" required help="Resumen de una línea de lo que necesita.">
@@ -207,7 +207,7 @@ export function PqrsdPublicoForm() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={4} icono={<Paperclip className="h-4 w-4" aria-hidden />} titulo="Documentos de soporte" descripcion="Opcional." />
         <p className="mb-2 text-xs text-stone-500">
           Si tiene fotos, oficios o cualquier evidencia relacionada, puede adjuntarla aquí. Hasta {MAX_ARCHIVOS_LOTE} archivos,

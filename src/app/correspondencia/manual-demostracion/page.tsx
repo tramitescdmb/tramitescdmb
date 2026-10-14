@@ -65,7 +65,7 @@ export default async function ManualDemostracionPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-soft">
+      <div className="rounded-2xl border border-stone-200 bg-white p-3.5 shadow-soft">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Datos de ejemplo usados en el manual</p>
         <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs sm:grid-cols-[auto_1fr]">
           <dt className="text-stone-500">Radicado de la PQRSD</dt>
@@ -117,7 +117,7 @@ export default async function ManualDemostracionPage() {
             const ejemplo = parrafos(a.ejemplo);
             const detalle = parrafos(a.detalle);
             return (
-              <section key={a.id} id={`apartado-${a.orden}`} className="scroll-mt-16 rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+              <section key={a.id} id={`apartado-${a.orden}`} className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-mono text-sm font-semibold text-cdmb-600">{numero(a.orden)}</span>
                   <span className="rounded border border-stone-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-stone-500">{a.etiqueta}</span>

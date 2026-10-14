@@ -35,10 +35,10 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
 
   return (
     <table className="w-full table-fixed text-sm">
-      <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+      <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
         <tr>
           {ENCABEZADOS.map((titulo, i) => (
-            <th key={titulo} className="relative px-2.5 py-2 font-medium" style={{ width: anchos[i] }}>
+            <th key={titulo} className="relative px-2.5 py-2" style={{ width: anchos[i] }}>
               <span className="block truncate" title={titulo}>{titulo}</span>
               <ManijaRedimension anchoActual={anchos[i]} onCambiar={(a) => cambiarAncho(i, a)} onRestablecer={() => restablecer(i)} />
             </th>

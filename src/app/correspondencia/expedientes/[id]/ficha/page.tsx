@@ -62,7 +62,7 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
         <BotonImprimir>Imprimir ficha</BotonImprimir>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-8 print:border-0 print:p-0">
+      <div className="rounded-2xl border border-stone-200 bg-white p-8 print:border-0 print:p-0">
         <div className="flex items-center gap-3 border-b border-stone-200 pb-4">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -110,10 +110,10 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-stone-200 text-left text-stone-500">
-                  <th className="py-1 pr-2 font-medium">No.</th>
-                  <th className="py-1 pr-2 font-medium">Nombre</th>
-                  <th className="py-1 pr-2 font-medium">Fecha</th>
-                  <th className="py-1 font-medium">SHA-256</th>
+                  <th className="py-1 pr-2">No.</th>
+                  <th className="py-1 pr-2">Nombre</th>
+                  <th className="py-1 pr-2">Fecha</th>
+                  <th className="py-1">SHA-256</th>
                 </tr>
               </thead>
               {gruposModulo.map((g) => (
@@ -141,10 +141,10 @@ export default async function FichaExpedientePage({ params }: { params: Promise<
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-stone-200 text-left text-stone-500">
-                  <th className="py-1 pr-2 font-medium">No.</th>
-                  <th className="py-1 pr-2 font-medium">Nombre</th>
-                  <th className="py-1 pr-2 text-right font-medium">Tamaño</th>
-                  <th className="py-1 font-medium">SHA-256</th>
+                  <th className="py-1 pr-2">No.</th>
+                  <th className="py-1 pr-2">Nombre</th>
+                  <th className="py-1 pr-2 text-right">Tamaño</th>
+                  <th className="py-1">SHA-256</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">

@@ -63,7 +63,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
   return (
     <div className="space-y-4">
       <div>
-        <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
           <Paso n={1} icono={<KeyRound className="h-4 w-4" aria-hidden />} titulo="Validar por código seguro de verificación (CSV)" />
           <p className="mt-2 text-xs text-stone-500">
             El código aparece en el margen de cada página del documento firmado y en su hoja de metadatos. También puede leer el código QR.
@@ -112,7 +112,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
           Validando…
         </p>
       )}
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {documentos && !validando && (
         <div ref={resultado} className="space-y-3">
@@ -132,7 +132,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
           </div>
 
           {documentos.map((d) => (
-            <article key={d.codigo} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+            <article key={d.codigo} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
               <div className="grid gap-x-6 gap-y-2 border-b border-stone-100 bg-stone-50/70 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <Dato icono={<FileText className="h-3.5 w-3.5" />} k="Documento" v={d.documento} />
                 <Dato icono={<Building2 className="h-3.5 w-3.5" />} k="Plataforma" v={d.plataforma} />

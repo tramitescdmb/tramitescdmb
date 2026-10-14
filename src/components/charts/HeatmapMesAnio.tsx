@@ -20,7 +20,7 @@ export function HeatmapMesAnio({ filas, emptyMessage }: { filas: Fila[]; emptyMe
               <tr>
                 <th />
                 {MESES.map((m, i) => (
-                  <th key={i} className="w-6 pb-0.5 text-center font-medium text-stone-400">
+                  <th key={i} className="w-6 pb-0.5 text-center text-stone-400">
                     {m}
                   </th>
                 ))}

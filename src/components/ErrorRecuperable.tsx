@@ -27,7 +27,7 @@ export function ErrorRecuperable({ error, reset }: { error: Error & { digest?: s
   }, [deVersion]);
 
   return (
-    <div className="mx-auto my-16 max-w-md rounded-xl border border-stone-200 bg-white p-6 text-center shadow-soft">
+    <div className="mx-auto my-16 max-w-md rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-soft">
       <TriangleAlert className="mx-auto h-8 w-8 text-amber-500" aria-hidden />
       <h1 className="mt-3 text-base font-semibold text-stone-900">
         {deVersion ? "La plataforma se actualizó" : "No se pudo mostrar esta página"}

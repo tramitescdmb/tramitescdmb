@@ -136,7 +136,7 @@ function Campo({ k, v }: { k: string; v: ReactNode }) {
 
 function Tarjeta({ titulo, children, extra, id, icono }: { titulo: string; children: ReactNode; extra?: ReactNode; id?: string; icono?: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+    <section id={id} className="scroll-mt-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
           {icono && <span className="text-cdmb-600">{icono}</span>}
@@ -303,8 +303,8 @@ export default async function CorrespondenciaDetallePage({
         Volver a la bandeja
       </Link>
 
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {c.estado === "ANULADA" && (
         <div className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-100 px-3 py-2 text-sm text-stone-700">
@@ -316,7 +316,7 @@ export default async function CorrespondenciaDetallePage({
         </div>
       )}
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>
@@ -592,7 +592,7 @@ export default async function CorrespondenciaDetallePage({
                 )}
                 {puedeRadicarUsuario && c.respuestaTexto && c.respuestas.length === 0 && (
                   bloqueoRespuesta ? (
-                    <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{bloqueoRespuesta}</p>
+                    <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">{bloqueoRespuesta}</p>
                   ) : (
                     <Link
                       href={`/correspondencia/nueva/enviada?respondeAId=${id}`}

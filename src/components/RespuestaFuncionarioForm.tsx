@@ -69,7 +69,7 @@ export function RespuestaFuncionarioForm({
 
   return (
     <div className="space-y-3">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       <div>
         <label className="mb-1 block text-sm font-medium text-stone-700">
           Escribir respuesta <span className="text-red-500">*</span>

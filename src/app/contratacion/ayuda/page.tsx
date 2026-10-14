@@ -53,7 +53,7 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5 print:break-inside-avoid print:border-stone-200">
+    <section id={id} className="scroll-mt-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5 print:break-inside-avoid print:border-stone-200">
       <div className="mb-3 flex flex-wrap items-center gap-2.5 border-b border-stone-100 pb-3">
         <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-cdmb-600 text-[11px] font-bold text-white">{n}</span>
         <Icono className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
@@ -72,7 +72,7 @@ function Tabla({ encabezados, children }: { encabezados: string[]; children: Rea
         <thead>
           <tr className="border-b border-stone-200 bg-stone-50 text-left text-stone-500">
             {encabezados.map((h) => (
-              <th key={h} className="py-1.5 px-2.5 font-medium">{h}</th>
+              <th key={h} className="py-1.5 px-2.5">{h}</th>
             ))}
           </tr>
         </thead>
@@ -434,7 +434,7 @@ export default async function ContratacionAyudaPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-6 print:border-0 print:p-0">
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 print:border-0 print:p-0">
         <div className="flex items-center gap-3 border-b border-stone-200 pb-4">
           {config.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

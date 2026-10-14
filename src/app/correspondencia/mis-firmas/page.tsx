@@ -28,7 +28,7 @@ export default async function MisFirmasCorrespondenciaPage() {
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ninguna comunicación ni documento en el SGDEA.</EstadoVacio>
       ) : (
-        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+        <ul className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white shadow-sm">
           {firmas.map((f) => {
             const pdfComunicacion = f.comunicacion?.documentos.find((d) => d.mimeType === "application/pdf") ?? null;
             return (

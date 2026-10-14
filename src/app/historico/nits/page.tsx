@@ -38,7 +38,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
   }
   const esAdmin = session?.rol === "ADMIN";
   if (!sincaConfigurado()) {
-    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
+    return <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
   const filtros = await searchParams;
@@ -95,10 +95,10 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
       </div>
 
-      {filtros.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
-      {filtros.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}
+      {filtros.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
+      {filtros.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}
 
-      <form method="get" className="space-y-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <form method="get" className="space-y-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="flex items-end gap-2">
           <label className="flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
@@ -196,7 +196,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
         <>
           <ResumenResultados total={totalFiltrado} detalle={detalleFiltro} />
 
-          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+          <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
             <div className="overflow-x-auto">
               <TablaNits filas={filas} sinResultadosTexto={hayFiltros ? "Ningún tercero coincide con esos filtros." : "No hay registros."} />
             </div>

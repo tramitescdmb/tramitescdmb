@@ -152,7 +152,7 @@ export default async function ExpedientesPage({
                 key={anio}
                 href={conFiltro({ desde: `${anio}-01-01`, hasta: `${anio}-12-31` })}
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  activa ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  activa ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
                 }`}
               >
                 {anio}
@@ -162,7 +162,7 @@ export default async function ExpedientesPage({
         </div>
       )}
 
-      <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
         {soloMios && <input type="hidden" name="asignados" value="mi" />}
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
@@ -226,7 +226,7 @@ export default async function ExpedientesPage({
         <Link
           href={conFiltro({ estado: undefined })}
           className={`rounded-full px-3 py-1 text-xs font-medium ${
-            !estado ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+            !estado ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
           }`}
         >
           Todos
@@ -236,7 +236,7 @@ export default async function ExpedientesPage({
             key={e}
             href={conFiltro({ estado: e })}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              estado === e ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              estado === e ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
             }`}
           >
             {e.replaceAll("_", " ")}
@@ -249,7 +249,7 @@ export default async function ExpedientesPage({
         {total > 0 && <BotonExportar hrefXlsx={hrefExportar("xlsx")} hrefCsv={hrefExportar("csv")} />}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         {expedientes.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay expedientes con este filtro.</p>
         ) : (

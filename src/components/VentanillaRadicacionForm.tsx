@@ -118,9 +118,9 @@ export function VentanillaRadicacionForm({
 
   return (
     <div className="space-y-4">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={1}
           icono={<UserRound className="h-4 w-4" aria-hidden />}
@@ -130,7 +130,7 @@ export function VentanillaRadicacionForm({
         <BloqueTercero valor={persona} onChange={setPersona} tiposIdentificacion={TIPOS_IDENTIFICACION_REMITENTE} />
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={2}
           icono={<Mail className="h-4 w-4" aria-hidden />}
@@ -180,7 +180,7 @@ export function VentanillaRadicacionForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div>
           <EncabezadoPaso
             numero={3}
@@ -216,7 +216,7 @@ export function VentanillaRadicacionForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={4}
           icono={<Paperclip className="h-4 w-4" aria-hidden />}

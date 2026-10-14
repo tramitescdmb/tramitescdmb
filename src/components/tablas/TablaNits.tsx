@@ -24,10 +24,10 @@ export function TablaNits({ filas, sinResultadosTexto }: { filas: FilaNit[]; sin
 
   return (
     <table className="w-full table-fixed text-sm">
-      <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+      <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
         <tr>
           {ENCABEZADOS.map((h, i) => (
-            <th key={h.texto} className="relative px-2.5 py-1.5 font-medium" style={{ width: anchos[i] }}>
+            <th key={h.texto} className="relative px-2.5 py-1.5" style={{ width: anchos[i] }}>
               <span className="block truncate" title={h.title ?? h.texto}>{h.texto}</span>
               <ManijaRedimension anchoActual={anchos[i]} onCambiar={(a) => cambiarAncho(i, a)} onRestablecer={() => restablecer(i)} />
             </th>

@@ -77,7 +77,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
         <p className="text-sm text-stone-500">{visita.expediente.tramiteTipo.nombre}</p>
       </div>
 
-      <section className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-soft sm:grid-cols-3">
+      <section className="grid grid-cols-1 gap-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft sm:grid-cols-3">
         <p className="flex gap-2">
           <CalendarClock className="mt-0.5 h-4 w-4 flex-none text-stone-400" aria-hidden />
           <span>
@@ -118,7 +118,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
 
       {vt && (
         <div className="space-y-3">
-          <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-stone-700">
                 Realizada el {vt.inicioReal ? rangoTexto(vt.inicioReal, vt.finReal) : formatearFechaHora(vt.capturadoEn)}
@@ -136,7 +136,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
             </p>
           </section>
 
-          <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-soft">
+          <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft">
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Temas</p>
               <div className="flex flex-wrap gap-1.5">
@@ -169,7 +169,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
           </section>
 
           {vt.fotos.length > 0 && (
-            <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+            <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Registro fotográfico ({vt.fotos.length})</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {vt.fotos.map((f, i) => (

@@ -101,10 +101,10 @@ export default async function CorrespondenciaBandejaPage({
 
   return (
     <div className="space-y-4">
-      {sp.ok && <div className="print:hidden rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="print:hidden rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="print:hidden rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="print:hidden rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <div className="print:hidden flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-soft">
+      <div className="print:hidden flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-soft">
         <nav className="flex flex-wrap gap-1" aria-label="Tipo de comunicación">
           {([
             { valor: "", etiqueta: "Todas", Icono: Layers },
@@ -121,8 +121,8 @@ export default async function CorrespondenciaBandejaPage({
               <Link
                 key={etiqueta}
                 href={href}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  activo ? "bg-menu-500 text-stone-900" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activo ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                 }`}
               >
                 <Icono className="h-4 w-4" aria-hidden />
@@ -150,7 +150,7 @@ export default async function CorrespondenciaBandejaPage({
       </div>
 
       {vencidas > 0 && sp.vencimiento !== "vencidas" && (
-        <div className="print:hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="print:hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {vencidas === 1
             ? "1 comunicación tiene el término de respuesta de ley vencido y sigue sin cerrarse."
             : `${vencidas} comunicaciones tienen el término de respuesta de ley vencido y siguen sin cerrarse.`}{" "}
@@ -159,7 +159,7 @@ export default async function CorrespondenciaBandejaPage({
       )}
 
       {sinDespachar > 0 && sp.despacho !== "sin_despachar" && (
-        <div className="print:hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="print:hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {sinDespachar === 1
             ? "1 oficio de salida está radicado y firmado pero sin despachar al destinatario."
             : `${sinDespachar} oficios de salida están radicados y firmados pero sin despachar al destinatario.`}{" "}
@@ -208,7 +208,7 @@ export default async function CorrespondenciaBandejaPage({
       </div>
 
       {firmables.length > 0 && (
-        <details className="print:hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+        <details className="print:hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
           <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-3 text-sm font-medium text-stone-700">
             <FileEdit className="h-4 w-4 text-stone-400" aria-hidden />
             Firma en lote — {firmables.length} oficio(s)/memorando(s) sin su firma
@@ -244,7 +244,7 @@ export default async function CorrespondenciaBandejaPage({
         <Semaforo color="bg-red-500">Término vencido</Semaforo>
       </div>
 
-      <details open={hayFiltros} className="print:hidden group rounded-xl border border-stone-200 bg-white shadow-soft">
+      <details open={hayFiltros} className="print:hidden group rounded-2xl border border-stone-200 bg-white shadow-soft">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-stone-700">
           <span className="flex items-center gap-1.5">
             <Search className="h-4 w-4 text-stone-400" aria-hidden />
@@ -346,7 +346,7 @@ export default async function CorrespondenciaBandejaPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft print:overflow-visible print:rounded-none print:border-none">
         <div className="overflow-x-auto">
           <TablaCorrespondencia
             filas={filas.map((c, i) => ({

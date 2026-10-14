@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRightCircle, FileWarning, Clock, CheckCircle2, PackageCheck } from "lucide-react";
+import { Archive, ArrowRightCircle, FileWarning, Clock, CheckCircle2, PackageCheck } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { getPendientesArchivisticos, listarActasEliminacion, getDisposicionesAplazadas, listarTransferenciasCentral } from "@/lib/disposicion-final-data";
@@ -49,11 +49,14 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
 
   return (
     <div className="space-y-6">
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      <TituloSeccion icon={Archive} descripcion="Transferencias a archivo central, disposición final y actas de eliminación.">
+        Disposición final
+      </TituloSeccion>
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {proximasADisponer.length > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <p className="font-medium">
             {proximasADisponer.length === 1
               ? "1 comunicación entra en disposición final dentro de los próximos 90 días:"
@@ -78,7 +81,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </SectionHelp>
 
       <section className="space-y-3">
-        <TituloSeccion icon={ArrowRightCircle} contador={pendientesTransferencia.length}>
+        <TituloSeccion variante="seccion" icon={ArrowRightCircle} contador={pendientesTransferencia.length}>
           Pendientes de transferir a archivo central
         </TituloSeccion>
         {pendientesTransferencia.length === 0 ? (
@@ -86,7 +89,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {pendientesTransferencia.map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-3">
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
                 <div className="min-w-0">
                   <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                   <p className="truncate text-xs text-stone-500">{c.asunto}</p>
@@ -107,7 +110,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <TituloSeccion icon={PackageCheck} contador={transferidasSinConfirmar.length}>
+        <TituloSeccion variante="seccion" icon={PackageCheck} contador={transferidasSinConfirmar.length}>
           Transferidas — pendientes de confirmar recepción
         </TituloSeccion>
         <SectionHelp>
@@ -120,7 +123,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         ) : (
           <div className="space-y-2">
             {transferidasSinConfirmar.map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-3">
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
                 <div className="min-w-0">
                   <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                   <p className="truncate text-xs text-stone-500">{c.asunto}</p>
@@ -141,7 +144,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <TituloSeccion icon={FileWarning} contador={pendientesDisposicion.length}>
+        <TituloSeccion variante="seccion" icon={FileWarning} contador={pendientesDisposicion.length}>
           Pendientes de disposición final
         </TituloSeccion>
         <SectionHelp>
@@ -191,12 +194,12 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
 
       {aplazadas.length > 0 && (
         <section className="space-y-3">
-          <TituloSeccion icon={Clock} contador={aplazadas.length}>
+          <TituloSeccion variante="seccion" icon={Clock} contador={aplazadas.length}>
             Disposiciones aplazadas
           </TituloSeccion>
           <div className="space-y-2">
             {aplazadas.map((c) => (
-              <div key={c.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
+              <div key={c.id} className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
                 <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">{c.radicado}</Link>
                 <p className="truncate text-xs text-stone-500">{c.asunto}</p>
                 <p className="mt-1 text-[11px] text-stone-400">
@@ -209,7 +212,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       )}
 
       <section className="space-y-3">
-        <TituloSeccion icon={ArrowRightCircle} contador={transferencias.total}>
+        <TituloSeccion variante="seccion" icon={ArrowRightCircle} contador={transferencias.total}>
           Transferencias a archivo central
         </TituloSeccion>
         <SectionHelp>
@@ -219,14 +222,14 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
         {transferencias.total === 0 ? (
           <EstadoVacio>Todavía no se ha registrado ninguna transferencia al archivo central.</EstadoVacio>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
+          <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-400">
-                  <th className="px-3 py-2 font-medium">Radicado</th>
-                  <th className="px-3 py-2 font-medium">Serie / subserie</th>
-                  <th className="px-3 py-2 font-medium">Transferida</th>
-                  <th className="px-3 py-2 font-medium">Recepción confirmada</th>
+                <tr className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  <th className="px-3 py-2">Radicado</th>
+                  <th className="px-3 py-2">Serie / subserie</th>
+                  <th className="px-3 py-2">Transferida</th>
+                  <th className="px-3 py-2">Recepción confirmada</th>
                 </tr>
               </thead>
               <tbody>
@@ -257,14 +260,14 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
       </section>
 
       <section className="space-y-3">
-        <TituloSeccion contador={actas.length}>Actas de eliminación</TituloSeccion>
+        <TituloSeccion variante="seccion" contador={actas.length}>Actas de eliminación</TituloSeccion>
         <SectionHelp>Historial de eliminaciones y selecciones ejecutadas, con responsable y fecha.</SectionHelp>
         {actas.length === 0 ? (
           <EstadoVacio>Todavía no se ha generado ningún acta.</EstadoVacio>
         ) : (
           <div className="space-y-2">
             {actas.map((a) => (
-              <div key={a.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-3 text-sm">
+              <div key={a.id} className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3 text-sm">
                 <p className="font-medium text-stone-800">Acta N.º {a.numero} — {fecha(a.fecha)}</p>
                 <p className="text-xs text-stone-500">Aprobada por {a.responsable}{a.aprobadaPor ? ` (registrada por ${a.aprobadaPor.nombre})` : ""}</p>
                 {a.motivacion && <p className="mt-1 text-xs text-stone-600">{a.motivacion}</p>}

@@ -60,7 +60,7 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre, código o ficha SUIT…"
-          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-stone-800 placeholder:text-stone-400 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
+          className="w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-stone-800 placeholder:text-stone-400 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
         />
       </div>
 
@@ -122,7 +122,7 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
       )}
 
       {totalVisible === 0 && buscando ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500 shadow-soft">
           Ningún trámite coincide con &quot;{busqueda}&quot;.
         </div>
       ) : (
@@ -167,7 +167,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   return (
     <Link prefetch={false}
       href={href}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pt-5 shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-soft-lg active:translate-y-0 active:scale-[0.98] active:shadow-soft"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 pt-5 shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-soft-lg active:translate-y-0 active:scale-[0.98] active:shadow-soft"
     >
       <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
 

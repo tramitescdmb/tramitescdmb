@@ -42,8 +42,8 @@ export default async function FlujoEditorPage({
 
   return (
     <div className="space-y-6">
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <Link href="/correspondencia/admin/flujos" className="inline-flex items-center gap-1.5 text-sm font-medium text-cdmb-700 hover:underline">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Todos los flujos
@@ -63,7 +63,7 @@ export default async function FlujoEditorPage({
       </div>
 
       {flujo.problemas.length > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <p className="flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" aria-hidden /> Revise antes de activar:
           </p>
@@ -92,7 +92,7 @@ export default async function FlujoEditorPage({
         />
       </div>
 
-      <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
+      <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
         <input type="hidden" name="accion" value="editar" />
         <div className="sm:col-span-2">
           <Field label="Nombre" required><input name="nombre" defaultValue={flujo.nombre} className={inputCls} required /></Field>
@@ -125,7 +125,7 @@ export default async function FlujoEditorPage({
         </div>
       </form>
 
-      <form action={accion} method="post" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <form action={accion} method="post" className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <input type="hidden" name="accion" value="accesos" />
         <p className="text-sm font-semibold text-stone-900">Quién puede operar este flujo</p>
         <p className="mt-0.5 text-xs text-stone-500">
@@ -146,7 +146,7 @@ export default async function FlujoEditorPage({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-stone-900">Pasos ({flujo.pasos.length})</h3>
         {flujo.pasos.map((paso, idx) => (
-          <div key={paso.id} className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+          <div key={paso.id} className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="flex items-center gap-2 font-medium text-stone-800">

@@ -48,7 +48,7 @@ export function TopesCuantiaAdmin({ topes, puedeEditar }: { topes: TopeCuantia[]
   return (
     <div className="space-y-3">
       {!topes.some((t) => t.anio === anioActual) && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
           No hay topes registrados para {anioActual}: el valor de los contratos de esta vigencia no se valida frente a la modalidad.
         </p>
       )}
@@ -82,12 +82,12 @@ export function TopesCuantiaAdmin({ topes, puedeEditar }: { topes: TopeCuantia[]
 
       <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
         <table className="w-full text-xs">
-          <thead className="bg-stone-50 text-left text-[11px] uppercase tracking-wide text-stone-400">
+          <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
             <tr>
-              <th className="px-3 py-1.5 font-medium">Vigencia</th>
-              <th className="px-3 py-1.5 font-medium">Menor cuantía</th>
-              <th className="px-3 py-1.5 font-medium">Mínima cuantía (10 %)</th>
-              <th className="px-3 py-1.5 font-medium">Soporte</th>
+              <th className="px-3 py-1.5">Vigencia</th>
+              <th className="px-3 py-1.5">Menor cuantía</th>
+              <th className="px-3 py-1.5">Mínima cuantía (10 %)</th>
+              <th className="px-3 py-1.5">Soporte</th>
               {puedeEditar && <th className="px-3 py-1.5" aria-label="Editar" />}
             </tr>
           </thead>

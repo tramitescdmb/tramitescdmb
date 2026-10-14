@@ -56,7 +56,7 @@ export default async function AdminTrdPage() {
         documental.
       </SectionHelp>
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="border-b border-stone-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-stone-900">GECON — subserie por modalidad de contratación</h2>
           <p className="text-xs text-stone-500">
@@ -74,7 +74,7 @@ export default async function AdminTrdPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="text-sm font-semibold text-stone-900">GECON — subserie de respaldo</h2>
         <p className="mb-3 text-xs text-stone-500">
           Se usa solo para los contratos cuya modalidad no tiene subserie asignada arriba.
@@ -82,7 +82,7 @@ export default async function AdminTrdPage() {
         <SelectorSubserieTrdCascada tipo="configuracion" valorInicial={subserieContratacionId} />
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="border-b border-stone-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-stone-900">GECON — tipo documental por requisito</h2>
           <p className="text-xs text-stone-500">{requisitos.length} requisitos del catálogo, agrupados por etapa.</p>
@@ -118,7 +118,7 @@ export default async function AdminTrdPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="border-b border-stone-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-stone-900">Trámites 2.0 — subserie por tipo de trámite</h2>
           <p className="text-xs text-stone-500">{tramites.length} tipos de trámite activos.</p>
@@ -135,7 +135,7 @@ export default async function AdminTrdPage() {
         </ul>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="border-b border-stone-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-stone-900">Trámites 2.0 — tipo documental por documento exigido al radicar</h2>
           <p className="text-xs text-stone-500">

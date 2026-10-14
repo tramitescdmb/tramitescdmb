@@ -46,7 +46,7 @@ export default async function BuzonCorrespondenciaPage() {
           {grupo.lista.length === 0 ? (
             <p className="rounded-xl border border-dashed border-stone-200 p-4 text-center text-xs text-stone-400">{grupo.vacio}</p>
           ) : (
-        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-soft">
+        <ul className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white shadow-soft">
           {grupo.lista.map((s) => {
             const pdfComunicacion = s.comunicacion?.documentos.find((d) => d.mimeType === "application/pdf") ?? null;
             const IconoTipo = s.comunicacion ? Mail : FileText;

@@ -250,7 +250,7 @@ export function CalendarioPlaneador({
   const vistaGrilla = vista === "dia" || vista === "laboral" || vista === "semana";
 
   return (
-    <div className="flex h-[calc(100vh-15rem)] min-h-[560px] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+    <div className="flex h-[calc(100vh-15rem)] min-h-[560px] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <aside className="hidden w-60 flex-none border-r border-stone-200 bg-stone-50/70 lg:block">{panelIzquierdo}</aside>
 
       {panelMovil && (

@@ -55,21 +55,21 @@ export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { ti
       </SectionHelp>
 
       <div className="flex flex-wrap gap-2">
-        <Link href={basePath} className={`rounded-full px-3 py-1 text-xs font-medium ${!filtro ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+        <Link href={basePath} className={`rounded-full px-3 py-1 text-xs font-medium ${!filtro ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`}>
           Todo
         </Link>
         {Object.entries(ETIQUETAS_TIPO).map(([key, { texto }]) => (
           <Link
             key={key}
             href={`${basePath}?tipo=${key}`}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${filtro === key ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${filtro === key ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`}
           >
             {texto}
           </Link>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         {registros.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-stone-400">No hay registros con este filtro.</p>
         ) : (
@@ -96,7 +96,7 @@ export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { ti
       {incluirTramites && (
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">Actividad reciente en expedientes</h2>
-          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+          <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
             {eventosExpedientes.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-stone-400">Sin actividad todavía.</p>
             ) : (

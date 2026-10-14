@@ -39,7 +39,7 @@ export function ValidarDocumentoBoton({
         onClick={validar}
         disabled={validando}
         title="Marcar este documento como validado"
-        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
       >
         <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
         {validando ? "Validando…" : "Validar"}

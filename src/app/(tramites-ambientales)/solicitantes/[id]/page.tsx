@@ -54,7 +54,7 @@ export default async function SolicitanteDetallePage({
         </p>
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos de contacto</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           {solicitante.tipo === "JURIDICA" ? (
@@ -123,18 +123,18 @@ export default async function SolicitanteDetallePage({
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
           Expedientes de este solicitante ({solicitante.expedientes.length})
         </h2>
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
           {solicitante.expedientes.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-stone-400">Todavía no tiene expedientes.</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Número</th>
-                  <th className="px-4 py-2.5 font-medium">Trámite</th>
-                  <th className="px-4 py-2.5 font-medium">Municipio</th>
-                  <th className="px-4 py-2.5 font-medium">Estado</th>
-                  <th className="px-4 py-2.5 font-medium">Último movimiento</th>
+                  <th className="px-4 py-2.5">Número</th>
+                  <th className="px-4 py-2.5">Trámite</th>
+                  <th className="px-4 py-2.5">Municipio</th>
+                  <th className="px-4 py-2.5">Estado</th>
+                  <th className="px-4 py-2.5">Último movimiento</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">

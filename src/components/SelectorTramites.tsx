@@ -61,7 +61,7 @@ export function SelectorTramites({
         {seleccionActual.size > 0 && <span className="rounded-full bg-cdmb-600 px-1.5 text-xs text-white">{seleccionActual.size}</span>}
       </button>
       {abierto && (
-        <div className="absolute z-20 mt-1.5 w-72 rounded-xl border border-stone-200 bg-white p-3 shadow-lg">
+        <div className="absolute z-20 mt-1.5 w-72 rounded-2xl border border-stone-200 bg-white p-3 shadow-lg">
           <input
             type="text"
             value={texto}

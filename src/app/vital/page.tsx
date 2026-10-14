@@ -77,16 +77,16 @@ export default async function VitalSolicitudesPage({
   return (
     <div className="space-y-4">
       {sp.sincronizado != null && (
-        <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">
           Sincronización completa: {sp.sincronizado} solicitud{sp.sincronizado === "1" ? "" : "es"} de VITAL.
           {sp.errores && <p className="mt-1 text-xs text-green-700">Con errores puntuales: {sp.errores}</p>}
         </div>
       )}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
 
-      <form method="get" className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <form method="get" className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -122,7 +122,7 @@ export default async function VitalSolicitudesPage({
 
       <ResumenResultados total={total} detalle={detalleFiltro} />
 
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
           <TablaVital
             filas={filas.map((s, i) => ({
@@ -144,7 +144,7 @@ export default async function VitalSolicitudesPage({
       </div>
 
       {esAdmin && (
-        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4" open={total === 0}>
+        <details className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4" open={total === 0}>
           <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
             <RefreshCw className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />
             Sincronizar desde VITAL

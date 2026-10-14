@@ -71,7 +71,7 @@ export function BarraModulo({
   const derecha = bloque("derecha");
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 p-1" aria-label={ariaLabel}>
+    <nav className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-white/70 p-1 shadow-soft" aria-label={ariaLabel}>
       <div className="flex flex-wrap items-center gap-1">{izquierda}</div>
       {derecha.length > 0 && <div className="flex flex-wrap items-center gap-1">{derecha}</div>}
     </nav>
@@ -81,7 +81,7 @@ export function BarraModulo({
 function claseTab(activo: boolean, bloqueado = false) {
   if (bloqueado) return "flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-400";
   return `flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-    activo ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200" : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
+    activo ? "bg-cdmb-50 text-cdmb-800 ring-1 ring-cdmb-100" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
   }`;
 }
 
@@ -172,7 +172,7 @@ function MenuGrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: bo
           id={menuId}
           role="menu"
           aria-label={grupo.label}
-          className={`absolute right-0 top-full z-20 mt-2 min-w-[16rem] rounded-xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
+          className={`absolute right-0 top-full z-20 mt-2 min-w-[16rem] rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
             grupo.lado === "derecha" ? "" : "sm:left-0 sm:right-auto"
           }`}
         >

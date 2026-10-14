@@ -120,12 +120,12 @@ export function ImportarContratistasSeccion() {
           {verFormato && (
             <div className="overflow-x-auto rounded-lg border border-stone-200">
               <table className="w-full text-xs">
-                <thead className="bg-stone-50 text-left text-[11px] uppercase tracking-wide text-stone-400">
+                <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Columna</th>
-                    <th className="px-3 py-2 font-medium">Contenido</th>
-                    <th className="px-3 py-2 font-medium">Obligatoria</th>
-                    <th className="px-3 py-2 font-medium">Ejemplo</th>
+                    <th className="px-3 py-2">Columna</th>
+                    <th className="px-3 py-2">Contenido</th>
+                    <th className="px-3 py-2">Obligatoria</th>
+                    <th className="px-3 py-2">Ejemplo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
@@ -146,7 +146,7 @@ export function ImportarContratistasSeccion() {
           )}
 
           {cargando && <p className="text-xs text-stone-500">Procesando…</p>}
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
 
           {resultados && !cargando && (
             <div className="space-y-2">
@@ -162,12 +162,12 @@ export function ImportarContratistasSeccion() {
               </div>
               <div className="max-h-80 overflow-y-auto rounded-lg border border-stone-200">
                 <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-stone-50 text-left text-[11px] uppercase tracking-wide text-stone-400">
+                  <thead className="sticky top-0 bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Fila</th>
-                      <th className="px-3 py-2 font-medium">Documento</th>
-                      <th className="px-3 py-2 font-medium">Nombre</th>
-                      <th className="px-3 py-2 font-medium">Resultado</th>
+                      <th className="px-3 py-2">Fila</th>
+                      <th className="px-3 py-2">Documento</th>
+                      <th className="px-3 py-2">Nombre</th>
+                      <th className="px-3 py-2">Resultado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">

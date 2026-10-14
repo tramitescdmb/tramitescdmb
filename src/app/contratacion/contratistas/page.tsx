@@ -99,11 +99,11 @@ export default async function ContratistasPage({
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
           <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400">Con contrato en ejecución</p>
           <p className="text-2xl font-semibold text-cdmb-700">{conActivo}</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
           <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400">{vigencia ? `Vigencia ${vigencia}` : "Resultado del filtro"}</p>
           <p className="text-2xl font-semibold text-stone-800">{total}</p>
         </div>

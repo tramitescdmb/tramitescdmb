@@ -112,14 +112,14 @@ export default async function BitacoraGeconPage({ searchParams }: { searchParams
       </form>
 
       <div className="flex flex-wrap gap-2">
-        <Link href={href(1, undefined)} className={`rounded-full px-3 py-1 text-xs font-medium ${!tipoValido ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+        <Link href={href(1, undefined)} className={`rounded-full px-3 py-1 text-xs font-medium ${!tipoValido ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`}>
           Todo
         </Link>
         {tiposExistentes.map((t) => (
           <Link
             key={t.tipo}
             href={href(1, t.tipo)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${tipoValido === t.tipo ? "bg-menu-500 text-stone-900" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${tipoValido === t.tipo ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`}
           >
             {infoEvento(t.tipo).texto} <span className="tabular-nums opacity-70">{t._count._all}</span>
           </Link>
@@ -129,7 +129,7 @@ export default async function BitacoraGeconPage({ searchParams }: { searchParams
       {eventos.length === 0 ? (
         <EstadoVacio icon={ScrollText}>No hay eventos con este filtro.</EstadoVacio>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
           <ul className="divide-y divide-stone-100">
             {eventos.map((e) => {
               const info = infoEvento(e.tipo);

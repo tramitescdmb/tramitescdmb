@@ -68,15 +68,25 @@ export function Indicador({
   );
 }
 
+function Contador({ valor }: { valor: number }) {
+  return <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500 ring-1 ring-stone-200/70">{valor.toLocaleString("es-CO")}</span>;
+}
+
 export function CabeceraTablero({
+  icon,
+  tono = "cdmb",
   antetitulo,
   titulo,
+  contador,
   descripcion,
   acciones,
   children,
 }: {
+  icon?: LucideIcon;
+  tono?: TonoTablero;
   antetitulo?: ReactNode;
   titulo: ReactNode;
+  contador?: number;
   descripcion?: ReactNode;
   acciones?: ReactNode;
   children?: ReactNode;
@@ -84,10 +94,16 @@ export function CabeceraTablero({
   return (
     <header className="rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          {antetitulo && <p className="text-xs font-medium uppercase tracking-wide text-cdmb-700">{antetitulo}</p>}
-          <h2 className="mt-0.5 text-xl font-semibold text-stone-900">{titulo}</h2>
-          {descripcion && <p className="mt-0.5 text-sm text-stone-500">{descripcion}</p>}
+        <div className="flex min-w-0 items-center gap-3">
+          {icon && <Burbuja icon={icon} tono={tono} tamano="lg" />}
+          <div className="min-w-0">
+            {antetitulo && <p className="text-xs font-medium uppercase tracking-wide text-cdmb-700">{antetitulo}</p>}
+            <h2 className="mt-0.5 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
+              {titulo}
+              {contador !== undefined && <Contador valor={contador} />}
+            </h2>
+            {descripcion && <div className="mt-0.5 text-sm text-stone-500">{descripcion}</div>}
+          </div>
         </div>
         {acciones ? <div className="flex flex-wrap items-center gap-2">{acciones}</div> : children && <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{children}</div>}
       </div>
@@ -215,7 +231,7 @@ export function Chip({ tono = "neutro", children }: { tono?: TonoTablero; childr
 
 export function PieTablero({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-xs text-stone-500">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2.5 text-xs text-stone-500">
       {children}
     </div>
   );

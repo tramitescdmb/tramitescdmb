@@ -116,9 +116,9 @@ export function MemorandoForm({
 
   return (
     <div className="space-y-4">
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={1}
           icono={<ArrowRightLeft className="h-4 w-4" aria-hidden />}
@@ -153,7 +153,7 @@ export function MemorandoForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={2}
           icono={<FileText className="h-4 w-4" aria-hidden />}
@@ -193,7 +193,7 @@ export function MemorandoForm({
 
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div>
           <EncabezadoPaso numero={3} icono={<FolderTree className="h-4 w-4" aria-hidden />} titulo="Clasificación (TRD)" />
           <SectionHelp>
@@ -211,7 +211,7 @@ export function MemorandoForm({
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+      <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
           numero={4}
           icono={<Paperclip className="h-4 w-4" aria-hidden />}

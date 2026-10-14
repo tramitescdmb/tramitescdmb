@@ -44,7 +44,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
     return (
       <div className="space-y-4">
         {selector}
-        <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
+        <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
           {rango || (tramitesSeleccionados && tramitesSeleccionados.length > 0)
             ? "No hay solicitudes de VITAL con estos filtros."
             : "Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la pestaña Solicitudes."}

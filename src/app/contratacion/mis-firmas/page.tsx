@@ -39,7 +39,7 @@ export default async function MisFirmasContratacionPage() {
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en GECON.</EstadoVacio>
       ) : (
-        <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+        <ul className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white shadow-sm">
           {firmas.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">

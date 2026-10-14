@@ -35,7 +35,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
         </p>
       </div>
 
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {dependenciasDisponibles.length === 0 ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">

@@ -1101,7 +1101,7 @@ export function GeovisorTramites({
         {ayudaAbierta && <PanelAyuda onCerrar={() => setAyudaAbierta(false)} />}
         {errorMapa && (
           <div className="absolute inset-0 z-[650] flex items-center justify-center bg-white/85 p-6">
-            <div className="max-w-sm rounded-xl border border-stone-200 bg-white p-5 text-center shadow-soft">
+            <div className="max-w-sm rounded-2xl border border-stone-200 bg-white p-5 text-center shadow-soft">
               <p className="text-sm font-semibold text-stone-900">No se pudo cargar el mapa</p>
               <p className="mt-1 text-xs text-stone-500">Es posible que la plataforma se haya actualizado mientras la tenía abierta.</p>
               <button

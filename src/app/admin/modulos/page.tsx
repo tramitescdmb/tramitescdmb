@@ -24,11 +24,11 @@ export default async function ModulosPage({ searchParams }: { searchParams: Prom
         <p className="text-sm text-stone-500">Qué módulos ven y pueden usar los funcionarios. Solo el administrador del sistema lo modifica.</p>
       </div>
 
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <form action="/api/configuracion-modulos" method="post" className="space-y-6">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
           <SectionHelp>
             Mientras un módulo esté oculto, solo un administrador lo ve y puede entrar — sirve para tenerlo en marcha sin que los funcionarios lo
             usen hasta que esté listo.

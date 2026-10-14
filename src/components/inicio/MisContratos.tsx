@@ -78,7 +78,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
   const valorTotal = c.valor;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+    <article className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -207,7 +207,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
   const { filas: visibles, total, enEjecucion, informes, firmas, porTerminar } = datos;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+    <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">

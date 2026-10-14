@@ -57,7 +57,7 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
 
   return (
     <div className="space-y-4">
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <div className="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1">
         {ORDEN_MODALIDADES.map((m) => (
@@ -82,7 +82,7 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
         ].filter((g) => g.items.length > 0);
 
         return (
-          <details key={etapa} open className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+          <details key={etapa} open className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
               <span className="text-sm font-semibold text-stone-900">{ETIQUETA_ETAPA[etapa]}</span>
               <button

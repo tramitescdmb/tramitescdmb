@@ -164,7 +164,7 @@ export function ConfirmarFirmaModal({
                     type="button"
                     onClick={() => setRechazando(true)}
                     disabled={cargando}
-                    className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
                   >
                     <XCircle className="h-3.5 w-3.5" aria-hidden />
                     Rechazar

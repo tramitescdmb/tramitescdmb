@@ -252,7 +252,7 @@ export function RegistrarVisitaForm({
   };
 
   const seccion = (n: number, titulo: string, hijos: React.ReactNode, opcional?: boolean) => (
-    <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-stone-900">
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cdmb-100 text-[11px] font-bold text-cdmb-800">{n}</span>
         {titulo}
@@ -265,7 +265,7 @@ export function RegistrarVisitaForm({
   return (
     <div className="space-y-3">
       {restaurado && (
-        <p className="rounded-md bg-sky-50 px-3 py-2 text-xs text-sky-800">
+        <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800">
           Se recuperó el borrador guardado en este dispositivo. Las fotos no se conservan en el borrador.
         </p>
       )}
@@ -459,7 +459,7 @@ export function RegistrarVisitaForm({
       )}
 
       {error && (
-        <p className="flex items-start gap-1.5 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
           {error}
         </p>

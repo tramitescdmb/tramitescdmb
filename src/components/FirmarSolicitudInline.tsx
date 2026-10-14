@@ -66,7 +66,7 @@ export function FirmarSolicitudInline({
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
       <div className="max-h-[70vh] overflow-auto bg-stone-100">
         {esPdf && <iframe src={documentoUrl} title={documentoNombre} className="h-[70vh] w-full" />}
         {esImagen && (
@@ -90,7 +90,7 @@ export function FirmarSolicitudInline({
             type="button"
             onClick={rechazar}
             disabled={cargando}
-            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
           >
             <XCircle className="h-3.5 w-3.5" aria-hidden />
             Rechazar

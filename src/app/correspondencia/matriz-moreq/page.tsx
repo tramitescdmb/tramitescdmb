@@ -138,7 +138,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
         <Indicador icon={CircleAlert} etiqueta="Pendientes" valor={general.pendientes} clase="text-red-600" />
       </div>
 
-      <form method="get" className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-2 shadow-soft print:hidden">
+      <form method="get" className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-soft print:hidden">
         <span className="flex min-w-[220px] flex-1 items-center gap-1.5 rounded-md border border-stone-200 px-2.5 py-1.5 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
           <Search className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
           <input type="text" name="q" defaultValue={q} placeholder="Número, requisito o nota" className="w-full text-xs outline-none" />
@@ -202,14 +202,14 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-stone-500">{c.descripcion}</p>
-                <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft print:overflow-visible">
+                <div className="mt-2 overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft print:overflow-visible">
                   <table className="w-full text-xs">
-                    <thead className="border-b border-stone-100 bg-stone-50 text-left text-[10px] uppercase tracking-wide text-stone-500">
+                    <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                       <tr>
-                        <th className="px-3 py-1.5 font-medium">No.</th>
-                        <th className="px-3 py-1.5 font-medium">Requisito</th>
-                        <th className="px-3 py-1.5 font-medium">Estado</th>
-                        <th className="px-3 py-1.5 font-medium">Nota</th>
+                        <th className="px-3 py-1.5">No.</th>
+                        <th className="px-3 py-1.5">Requisito</th>
+                        <th className="px-3 py-1.5">Estado</th>
+                        <th className="px-3 py-1.5">Nota</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -249,7 +249,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
               </section>
             ))}
 
-          <details className="rounded-xl border border-stone-200 bg-white p-3.5 text-xs leading-relaxed text-stone-600 shadow-soft">
+          <details className="rounded-2xl border border-stone-200 bg-white p-3.5 text-xs leading-relaxed text-stone-600 shadow-soft">
             <summary className="cursor-pointer font-medium text-stone-800">Cómo leer el porcentaje</summary>
             <div className="mt-2.5 space-y-2">
               <p>

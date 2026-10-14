@@ -292,7 +292,7 @@ export function NuevoExpedienteForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
+      <section className="space-y-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <EncabezadoPaso numero={1} icono={<IconUser className="h-4 w-4" />} titulo="Datos del solicitante" />
 
         {flujos.length > 1 && (
@@ -527,7 +527,7 @@ export function NuevoExpedienteForm({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
+      <section className="space-y-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <EncabezadoPaso numero={2} icono={<IconMapPin className="h-4 w-4" />} titulo="Lugar del trámite" />
 
         <Field
@@ -683,7 +683,7 @@ export function NuevoExpedienteForm({
         )}
       </section>
 
-      <section className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-soft p-5">
+      <section className="space-y-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <div>
           <EncabezadoPaso numero={3} icono={<IconDocument className="h-4 w-4" />} titulo="Documentos" />
           <p className="text-xs text-stone-500">
@@ -789,7 +789,7 @@ export function NuevoExpedienteForm({
         </Field>
       </section>
 
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {progreso && (
         <div className="flex items-center gap-2 rounded-md bg-cdmb-50 px-3 py-2 text-sm text-cdmb-800">
           <span className="h-3 w-3 flex-none animate-spin rounded-full border-2 border-cdmb-600 border-t-transparent" />

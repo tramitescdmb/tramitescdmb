@@ -40,7 +40,7 @@ export function TerceroForm({ terceroId, inicial }: { terceroId?: string; inicia
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+    <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
       <CamposPersona valor={persona} onChange={setPersona} identificacionBloqueada={Boolean(terceroId)} requeridos={{ identificacion: true, nombre: true }} />
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
         <span className="text-sm">

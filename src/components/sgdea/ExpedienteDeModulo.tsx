@@ -180,8 +180,8 @@ export async function ExpedienteDeModulo({
         </Link>
       </div>
 
-      {ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
-      {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <div
         className={`relative mt-3 rounded-xl rounded-tl-none border p-4 ${
@@ -269,7 +269,7 @@ export async function ExpedienteDeModulo({
             icono: <FileText className="h-4 w-4" aria-hidden />,
             contador: totalDocumentos,
             contenido: (
-              <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+              <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-stone-500">Documentos en {etiquetaOrigen}</h3>
                 {totalDocumentos === 0 ? (
                   <p className="rounded-lg border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-400">El expediente no tiene documentos.</p>
@@ -336,7 +336,7 @@ export async function ExpedienteDeModulo({
             label: "Historial",
             icono: <History className="h-4 w-4" aria-hidden />,
             contenido: (
-              <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
+              <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
                 <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Bitácora de auditoría del SGDEA</h3>
                 {bitacora.length === 0 ? (
                   <p className="text-sm text-stone-400">Sin actuaciones registradas.</p>

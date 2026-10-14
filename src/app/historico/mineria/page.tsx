@@ -30,7 +30,7 @@ const mesLegible = (ym: string) => {
 
 function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale; titulo: string; sub?: string; children: ReactNode; span?: boolean }) {
   return (
-    <section className={`rounded-xl border border-stone-200 bg-white shadow-soft p-4 ${span ? "lg:col-span-2" : ""}`}>
+    <section className={`rounded-2xl border border-stone-200 bg-white shadow-soft p-4 ${span ? "lg:col-span-2" : ""}`}>
       <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
         <Icon className="h-4 w-4 text-cdmb-600" aria-hidden />
         {titulo}
@@ -51,13 +51,13 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     if (!puedeAccederSeccion(permisos, "SINCA_MINERIA")) redirect("/");
   }
   if (!sincaConfigurado()) {
-    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
+    return <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">SINCA 1.0 no está configurado en este servidor.</p>;
   }
 
   const tipos = sp.tipo?.split(",").filter(Boolean);
   const [a, m, opciones] = await Promise.all([getAnalitica(rango, tipos), getMineria(rango, tipos), getHistoricoOpcionesFiltro()]);
   if (a.totalGeneral === 0) {
-    return <p className="rounded-xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
+    return <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">Aún no se ha cargado el histórico. Sincronice desde el panel.</p>;
   }
 
   const g = a.pronostico;
@@ -270,13 +270,13 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
         <Card icon={Boxes} titulo="Solicitantes recurrentes" sub={`Quiénes tramitan más ante la CDMB (por NIT/cédula, sobre ${pct(a.coberturaNit)} de los registros).`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="pb-1.5 font-medium">Interesado</th>
-                  <th className="pb-1.5 font-medium">NIT / cédula</th>
-                  <th className="pb-1.5 text-right font-medium">Resoluciones</th>
-                  <th className="pb-1.5 text-right font-medium">Años</th>
-                  <th className="pb-1.5 text-right font-medium">Tipos</th>
+                  <th className="pb-1.5">Interesado</th>
+                  <th className="pb-1.5">NIT / cédula</th>
+                  <th className="pb-1.5 text-right">Resoluciones</th>
+                  <th className="pb-1.5 text-right">Años</th>
+                  <th className="pb-1.5 text-right">Tipos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -320,7 +320,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
 
 function Kpi({ icon: Icon, label, valor, sub }: { icon: typeof Scale; label: string; valor: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
+    <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
         <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
         {label}

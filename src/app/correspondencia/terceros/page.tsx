@@ -71,10 +71,10 @@ export default async function TercerosPage({ searchParams }: { searchParams: Pro
       </form>
 
       {terceros.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-stone-100 text-left text-[11px] font-medium uppercase tracking-wide text-stone-400">
+              <tr className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <th className="px-3 py-2">Documento</th>
                 <th className="px-3 py-2">Nombre / razón social</th>
                 <th className="px-3 py-2">Tipo</th>

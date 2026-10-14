@@ -43,7 +43,7 @@ export default async function TerceroPage({ params }: { params: Promise<{ id: st
       {editable ? (
         <TerceroForm terceroId={tercero.id} inicial={personaDesdeTercero(tercero)} />
       ) : (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-soft sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft sm:grid-cols-4">
           <div>
             <dt className="text-xs text-stone-400">Correo</dt>
             <dd className="break-all">{tercero.email ?? "—"}</dd>
@@ -66,16 +66,16 @@ export default async function TerceroPage({ params }: { params: Promise<{ id: st
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Comunicaciones ({tercero._count.comunicaciones})</h2>
         {tercero.comunicaciones.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center text-sm text-stone-400 shadow-soft">Sin comunicaciones radicadas.</p>
+          <p className="rounded-2xl border border-stone-200 bg-white px-5 py-8 text-center text-sm text-stone-400 shadow-soft">Sin comunicaciones radicadas.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
+          <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
             <table className="w-full text-xs">
-              <thead className="border-b border-stone-100 text-left text-[11px] uppercase tracking-wide text-stone-400">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Radicado</th>
-                  <th className="px-3 py-2 font-medium">Tipo</th>
-                  <th className="px-3 py-2 font-medium">Asunto</th>
-                  <th className="px-3 py-2 font-medium">Fecha</th>
+                  <th className="px-3 py-2">Radicado</th>
+                  <th className="px-3 py-2">Tipo</th>
+                  <th className="px-3 py-2">Asunto</th>
+                  <th className="px-3 py-2">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">

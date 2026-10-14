@@ -70,9 +70,9 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
   return (
     <div className="space-y-6">
-      {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
+      {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.avisos && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <p className="font-medium">Avisos de la importación (no bloquearon nada, pero conviene revisarlos):</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             {sp.avisos.split(" | ").map((a, i) => (
@@ -81,10 +81,10 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </ul>
         </div>
       )}
-      {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+      {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       {sinClasificar.total > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <p className="font-medium">
             {sinClasificar.total === 1
               ? "1 comunicación sin clasificación TRD completa (falta serie o subserie)."
@@ -103,7 +103,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
       )}
 
       <section className="space-y-3">
-        <TituloSeccion
+        <TituloSeccion variante="seccion"
           icon={Building2}
           accion={
             <span className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           borra su historial, solo deja de estar disponible para asignar.
         </SectionHelp>
 
-        <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-4">
+        <form action="/api/correspondencia/dependencias" method="post" className="grid grid-cols-1 gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-4">
           <Field label="Código" required help="Sigla corta y única, ej. SEYCA.">
             <input name="codigo" className={inputCls} placeholder="Ej. SEYCA" required />
           </Field>
@@ -141,15 +141,15 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </div>
         </form>
 
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+        <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
+            <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
-                <th className="px-4 py-2 font-medium">Código</th>
-                <th className="px-4 py-2 font-medium">Nombre</th>
-                <th className="px-4 py-2 text-right font-medium">Funcionarios</th>
-                <th className="px-4 py-2 text-right font-medium">Comunicaciones</th>
-                <th className="px-4 py-2 font-medium">Estado</th>
+                <th className="px-4 py-2">Código</th>
+                <th className="px-4 py-2">Nombre</th>
+                <th className="px-4 py-2 text-right">Funcionarios</th>
+                <th className="px-4 py-2 text-right">Comunicaciones</th>
+                <th className="px-4 py-2">Estado</th>
                 <th className="px-4 py-2"></th>
               </tr>
             </thead>
@@ -178,7 +178,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
       </section>
 
       <section className="space-y-3">
-        <TituloSeccion
+        <TituloSeccion variante="seccion"
           icon={FolderTree}
           accion={
             <span className="flex items-center gap-3">
@@ -201,7 +201,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           cada dependencia — no es un error.
         </SectionHelp>
 
-        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+        <details className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
           <summary className="cursor-pointer text-sm font-semibold text-stone-900">Importar TRD desde un archivo (Excel, CSV o XML)</summary>
           <div className="mt-3 space-y-3">
             <SectionHelp>
@@ -266,7 +266,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
           </div>
         </details>
 
-        <details className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
+        <details className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
           <summary className="cursor-pointer text-sm font-semibold text-stone-900">Agregar una serie manualmente</summary>
         <form action="/api/correspondencia/series" method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <Field label="Código de serie" required>
@@ -305,13 +305,13 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
       </section>
 
       <section className="space-y-3">
-        <TituloSeccion icon={Tags}>Vocabulario controlado</TituloSeccion>
+        <TituloSeccion variante="seccion" icon={Tags}>Vocabulario controlado</TituloSeccion>
         <SectionHelp>
           Lista normalizada de palabras clave con la que se etiquetan las comunicaciones (MoReq 1.17/5.5).
         </SectionHelp>
         <Link
           href="/correspondencia/admin/vocabulario"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white shadow-soft px-4 py-3 text-sm font-medium text-cdmb-700 hover:bg-stone-50"
         >
           Administrar vocabulario controlado
           <ChevronRight className="h-4 w-4" aria-hidden />
@@ -320,7 +320,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
 
       {puedeAdministrarArchivo(permisos) && (
         <section className="space-y-3">
-          <TituloSeccion icon={AlertTriangle}>Mantenimiento (temporal, antes de lanzar)</TituloSeccion>
+          <TituloSeccion variante="seccion" icon={AlertTriangle}>Mantenimiento (temporal, antes de lanzar)</TituloSeccion>
           <div className="rounded-xl border border-red-200 bg-red-50/60 p-4">
             <p className="text-sm text-red-900">
               Borra <strong>todas</strong> las comunicaciones actuales (todavía son de prueba), sus archivos
