@@ -7,6 +7,7 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { tramitesEnDisposicion } from "@/lib/trd-disposicion-modulos";
 import { ETIQUETA_FASE, type FaseArchivistica } from "@/lib/disposicion-final";
 import { formatearFecha } from "@/lib/fecha";
+import { CabeceraTablero, Burbuja } from "@/components/tablero";
 
 const ORDEN_FASE: FaseArchivistica[] = ["DISPOSICION_PENDIENTE", "TRANSFERENCIA_PENDIENTE", "GESTION"];
 
@@ -25,13 +26,16 @@ export default async function DisposicionExpedientesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Disposición final de expedientes</h1>
-        <p className="text-sm text-stone-500">
-          Solo expedientes cerrados (en un estado final) cuyo tipo de trámite ya tiene subserie asignada en{" "}
-          <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.
-        </p>
-      </div>
+      <CabeceraTablero
+        icon={Archive}
+        titulo="Disposición final de expedientes"
+        descripcion={
+          <>
+            Expedientes cerrados cuyo tipo de trámite ya tiene subserie asignada en{" "}
+            <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.
+          </>
+        }
+      />
 
       {sinClasificar > 0 && (
         <SectionHelp>
@@ -45,10 +49,10 @@ export default async function DisposicionExpedientesPage() {
         if (lista.length === 0) return null;
         return (
           <section key={fase} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
-            <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3">
-              <Archive className="h-4 w-4 text-cdmb-600" aria-hidden />
+            <div className="flex items-center gap-2.5 border-b border-stone-100 px-5 py-3">
+              <Burbuja icon={Archive} />
               <h2 className="text-sm font-semibold text-stone-900">{ETIQUETA_FASE[fase]}</h2>
-              <span className="text-xs text-stone-400">{lista.length}</span>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{lista.length}</span>
             </div>
             <table className="w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">

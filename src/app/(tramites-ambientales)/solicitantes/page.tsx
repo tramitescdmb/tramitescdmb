@@ -9,6 +9,8 @@ import { Paginador } from "@/components/Paginador";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaSolicitantes } from "@/components/tablas/TablaSolicitantes";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
+import { Users } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 const POR_PAGINA = 30;
 
@@ -73,27 +75,25 @@ export default async function SolicitantesPage({
   const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-stone-900">Solicitantes</h2>
-          <p className="text-sm text-stone-500">
-            Registro único por NIT/cédula — se crea automáticamente al radicar un expediente y se reutiliza
-            en los siguientes, para no volver a pedir los mismos datos cada vez.
-          </p>
-        </div>
-        <div className="flex flex-none flex-wrap items-center gap-2">
-          <Link
-            href="/solicitantes/nuevo"
-            className="rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
-          >
-            + Nuevo solicitante
-          </Link>
-          {session?.rol === "ADMIN" && (
-            <DescargarCsvBoton href={`/api/solicitantes/exportar${qsExport ? `?${qsExport}` : ""}`} />
-          )}
-        </div>
-      </div>
+    <div className="space-y-4">
+      <CabeceraTablero
+        icon={Users}
+        titulo="Solicitantes"
+        descripcion="Registro único por NIT o cédula; se crea al radicar un expediente y se reutiliza en los siguientes."
+        acciones={
+          <>
+            <Link
+              href="/solicitantes/nuevo"
+              className="rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95"
+            >
+              + Nuevo solicitante
+            </Link>
+            {session?.rol === "ADMIN" && (
+              <DescargarCsvBoton href={`/api/solicitantes/exportar${qsExport ? `?${qsExport}` : ""}`} />
+            )}
+          </>
+        }
+      />
 
       <form action="/solicitantes" method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <div className="min-w-[220px] flex-1">

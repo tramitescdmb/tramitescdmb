@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { FolderOpen } from "lucide-react";
+import { CabeceraTablero, EnlaceTablero } from "@/components/tablero";
 import { db } from "@/lib/db";
 import { pasosParaAvance } from "@/components/ProgresoExpediente";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -110,26 +112,19 @@ export default async function ExpedientesPage({
   const detalleFiltro = clausulasFiltro.join(" ");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-stone-900">Expedientes</h2>
-          <p className="text-sm text-stone-500">
-            Todos los casos radicados, de cualquier trámite. Puede filtrarse por estado, o buscarse por
-            número, solicitante, trámite o municipio.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          {session?.rol === "ADMIN" && (
-            <Link href="/expedientes/disposicion" className="text-sm font-medium text-cdmb-700 hover:underline">
-              Disposición final (TRD)
-            </Link>
-          )}
-          <Link href={hrefGeovisor()} className="text-sm font-medium text-cdmb-700 hover:underline">
-            Ver en el visor de trámites →
-          </Link>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <CabeceraTablero
+        icon={FolderOpen}
+        titulo="Expedientes"
+        contador={total}
+        descripcion="Casos radicados de todos los trámites; filtre por estado o busque por número, solicitante, trámite o municipio."
+        acciones={
+          <>
+            {session?.rol === "ADMIN" && <EnlaceTablero href="/expedientes/disposicion">Disposición final (TRD)</EnlaceTablero>}
+            <EnlaceTablero href={hrefGeovisor()}>Ver en el visor de trámites</EnlaceTablero>
+          </>
+        }
+      />
 
       {soloMios && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cdmb-200 bg-cdmb-50/60 px-4 py-2.5 text-sm text-cdmb-900">

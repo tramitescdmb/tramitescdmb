@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
-import { SectionHelp } from "@/components/Field";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { categoriaTramite, todosLosSuitNumeros, CATEGORIAS_ORDEN } from "@/lib/tramite-categoria";
 import { CatalogoTramites, type EntradaCatalogo } from "@/components/CatalogoTramites";
 import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-formato";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { LibraryBig } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -79,19 +80,13 @@ export default async function CatalogoTramitesPage() {
   })).filter((s) => s.items.length > 0);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Catálogo de trámites</h2>
-        <p className="text-sm text-stone-500">
-          Los {tramites.length} trámites ambientales que atiende la CDMB, organizados por recurso o tema
-          — mismo criterio que usan otras Corporaciones Autónomas Regionales.
-        </p>
-      </div>
-
-      <SectionHelp>
-        Puede filtrarse por categoría, o accederse directamente a un trámite para ver el detalle completo
-        e iniciar un expediente nuevo.
-      </SectionHelp>
+    <div className="space-y-4">
+      <CabeceraTablero
+        icon={LibraryBig}
+        titulo="Catálogo de trámites"
+        contador={tramites.length}
+        descripcion="Trámites ambientales de la CDMB por recurso o tema. Abra uno para ver el detalle e iniciar un expediente."
+      />
 
       <CatalogoTramites secciones={secciones} />
     </div>

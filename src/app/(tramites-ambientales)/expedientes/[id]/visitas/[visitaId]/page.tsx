@@ -10,6 +10,7 @@ import { formatearFechaHora } from "@/lib/fecha";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { RegistrarVisitaForm } from "@/components/planeador/RegistrarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
+import { BandaTablero } from "@/components/tablero";
 
 export default async function HojaVisitaPage({ params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -65,17 +66,19 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <Link href={`/expedientes/${id}#planeador`} className="text-sm text-cdmb-700 hover:underline">
+      <BandaTablero>
+        <Link href={`/expedientes/${id}#planeador`} className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← {visita.expediente.numero}
         </Link>
-        <h2 className="mt-1 flex items-center gap-2 text-lg font-semibold text-stone-900">
-          <ClipboardCheck className="h-5 w-5 text-cdmb-700" aria-hidden />
+        <h2 className="mt-1 flex items-center gap-2.5 text-xl font-semibold text-stone-900">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
+            <ClipboardCheck className="h-4 w-4" aria-hidden />
+          </span>
           Hoja de visita técnica
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLASE_ESTADO_VISITA[visita.estado]}`}>{ETIQUETA_ESTADO_VISITA[visita.estado]}</span>
         </h2>
         <p className="text-sm text-stone-500">{visita.expediente.tramiteTipo.nombre}</p>
-      </div>
+      </BandaTablero>
 
       <section className="grid grid-cols-1 gap-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft sm:grid-cols-3">
         <p className="flex gap-2">

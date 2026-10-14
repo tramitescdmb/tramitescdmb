@@ -72,6 +72,12 @@ function Contador({ valor }: { valor: number }) {
   return <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500 ring-1 ring-stone-200/70">{valor.toLocaleString("es-CO")}</span>;
 }
 
+export function BandaTablero({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <header className={`rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft ${className}`}>{children}</header>
+  );
+}
+
 export function CabeceraTablero({
   icon,
   tono = "cdmb",
@@ -92,7 +98,7 @@ export function CabeceraTablero({
   children?: ReactNode;
 }) {
   return (
-    <header className="rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft">
+    <BandaTablero>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           {icon && <Burbuja icon={icon} tono={tono} tamano="lg" />}
@@ -105,10 +111,10 @@ export function CabeceraTablero({
             {descripcion && <div className="mt-0.5 text-sm text-stone-500">{descripcion}</div>}
           </div>
         </div>
-        {acciones ? <div className="flex flex-wrap items-center gap-2">{acciones}</div> : children && <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{children}</div>}
+        {acciones ? <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">{acciones}</div> : children && <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{children}</div>}
       </div>
       {acciones && children && <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{children}</div>}
-    </header>
+    </BandaTablero>
   );
 }
 

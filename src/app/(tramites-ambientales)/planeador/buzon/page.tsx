@@ -4,6 +4,7 @@ import type { TipoNotificacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { formatearFechaHora } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 const ICONO: Record<TipoNotificacion, { Icono: typeof Inbox; clase: string }> = {
   VISITA_SIN_PROGRAMAR: { Icono: CalendarPlus, clase: "bg-violet-50 text-violet-600" },
@@ -36,7 +37,7 @@ export default async function BuzonVisitasPage() {
     return (
       <li key={n.id}>
         <a href={`/api/notificaciones/${n.id}`} className={`flex gap-3 px-4 py-3 hover:bg-stone-50 ${atendida ? "opacity-60" : ""}`}>
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${clase}`}>
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${clase}`}>
             <Icono className="h-[18px] w-[18px]" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
@@ -57,20 +58,22 @@ export default async function BuzonVisitasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-1.5 text-base font-semibold text-stone-900">
-          <Inbox className="h-4 w-4 text-cdmb-700" aria-hidden />
-          Buzón de visitas
-          {noLeidas > 0 && <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">{noLeidas}</span>}
-        </h2>
-        {noLeidas > 0 && (
-          <form action="/api/notificaciones/leer-todas" method="post">
-            <button type="submit" className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
-              Marcar todas como leídas
-            </button>
-          </form>
-        )}
-      </div>
+      <CabeceraTablero
+        icon={Inbox}
+        tono="acento"
+        titulo="Buzón de visitas"
+        contador={noLeidas > 0 ? noLeidas : undefined}
+        descripcion="Avisos del planeador sobre visitas técnicas asignadas, reprogramadas o pendientes de registro."
+        acciones={
+          noLeidas > 0 ? (
+            <form action="/api/notificaciones/leer-todas" method="post">
+              <button type="submit" className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
+                Marcar todas como leídas
+              </button>
+            </form>
+          ) : undefined
+        }
+      />
 
       <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         {pendientes.length === 0 ? (

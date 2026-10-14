@@ -43,6 +43,7 @@ import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { MENSAJE_EXPEDIENTE_CERRADO, fichaArchivoDe, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { BandaTablero } from "@/components/tablero";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -349,9 +350,9 @@ export default async function ExpedienteDetallePage({
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/expedientes" className="text-sm text-cdmb-700 hover:underline">
+    <div className="space-y-4">
+      <BandaTablero>
+        <Link href="/expedientes" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← Expedientes
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
@@ -389,7 +390,7 @@ export default async function ExpedienteDetallePage({
             tamaño="grande"
           />
         </div>
-      </div>
+      </BandaTablero>
 
       {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
       {error && !["sin-permiso-paso", "sin-permiso-estado"].includes(error) && (

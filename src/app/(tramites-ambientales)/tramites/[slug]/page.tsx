@@ -10,6 +10,7 @@ import { cargoCanonico, cargosEnTexto, cargosQueIntervienen } from "@/lib/cargos
 import { DocumentosParaRadicar } from "@/components/DocumentosParaRadicar";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite } from "@/lib/permisos";
+import { BandaTablero } from "@/components/tablero";
 
 function pasosIdenticos(
   a: { numero: number; titulo: string; descripcion: string; tiempo: string | null; esDecision: boolean; responsables: string[]; documentos: string[] }[],
@@ -141,8 +142,8 @@ export default async function TramiteDetallePage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/tramites" className="text-sm text-cdmb-700 hover:underline">
+      <BandaTablero>
+        <Link href="/tramites" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← Catálogo de trámites
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -167,7 +168,7 @@ export default async function TramiteDetallePage({
         </div>
         <div className="mt-1 flex items-center gap-2.5">
           <span
-            className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg ${categoria.clases.icono}`}
+            className={`flex h-10 w-10 flex-none items-center justify-center rounded-full ${categoria.clases.icono}`}
             title={categoria.etiqueta}
             aria-hidden
           >
@@ -180,7 +181,7 @@ export default async function TramiteDetallePage({
             Ver el trámite completo ({tramite.nombre}, con todas sus modalidades) →
           </Link>
         )}
-      </div>
+      </BandaTablero>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">

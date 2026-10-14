@@ -9,6 +9,7 @@ import { regimenTributarioLabel } from "@/lib/regimen-tributario";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { formatearFecha } from "@/lib/fecha";
 import { personaVacia } from "@/lib/datos-persona";
+import { BandaTablero } from "@/components/tablero";
 
 export default async function SolicitanteDetallePage({
   params,
@@ -35,9 +36,9 @@ export default async function SolicitanteDetallePage({
   if (!solicitante) notFound();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link prefetch={false} href="/solicitantes" className="text-sm text-cdmb-700 hover:underline">
+    <div className="space-y-4">
+      <BandaTablero>
+        <Link prefetch={false} href="/solicitantes" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← Solicitantes
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
@@ -52,7 +53,7 @@ export default async function SolicitanteDetallePage({
           {solicitante.tipo === "JURIDICA" ? "NIT" : "Cédula de ciudadanía"}: {solicitante.identificacion} ·{" "}
           {solicitante.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
         </p>
-      </div>
+      </BandaTablero>
 
       <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos de contacto</h2>

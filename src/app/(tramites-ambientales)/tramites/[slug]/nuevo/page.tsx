@@ -6,6 +6,7 @@ import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
+import { BandaTablero } from "@/components/tablero";
 
 export default async function NuevoExpedientePage({
   params,
@@ -37,14 +38,14 @@ export default async function NuevoExpedientePage({
   const hrefVolver = flujoEnfocado ? `/tramites/${tramite.slug}?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <Link href={hrefVolver} className="text-sm text-cdmb-700 hover:underline">
+    <div className="mx-auto max-w-3xl space-y-4">
+      <BandaTablero>
+        <Link href={hrefVolver} className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← {nombreMostrado}
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-stone-900">Nuevo expediente</h1>
         <p className="text-sm text-stone-500">Trámite: {nombreMostrado} ({tramite.codigo})</p>
-      </div>
+      </BandaTablero>
 
       <SectionHelp>
         <strong>Radica</strong> la solicitud: crea el expediente en estado &quot;Radicado&quot;. Los pasos
