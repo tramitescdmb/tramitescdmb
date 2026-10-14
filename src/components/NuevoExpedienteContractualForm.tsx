@@ -271,7 +271,6 @@ export function NuevoExpedienteContractualForm({
   }
 
   async function guardar() {
-    if (!objeto.trim()) return setError("El objeto del contrato es obligatorio.");
     if (!tipoContrato) return setError("Seleccione el tipo de contrato.");
     const combinacion = errorCombinacionContrato(modalidadSeleccion, tipoContrato, causal || null);
     if (combinacion) return setError(combinacion);
@@ -337,7 +336,7 @@ export function NuevoExpedienteContractualForm({
         )}
         <TraerDeSecop onAplicar={aplicarSecop} />
         <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
-            <Field label="Objeto del contrato" required icon={<FileText className="h-4 w-4" />}>
+            <Field label="Objeto del contrato" icon={<FileText className="h-4 w-4" />} help="Opcional: si se deja vacío, se toma de SECOP II al enlazar el contrato.">
               <textarea
                 value={objeto}
                 onChange={(e) => setObjeto(e.target.value)}

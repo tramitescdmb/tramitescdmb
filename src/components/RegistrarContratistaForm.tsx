@@ -226,7 +226,7 @@ export function RegistrarContratistaForm({
         valor={persona}
         onChange={setPersona}
         tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
-        requeridos={esJuridica ? { identificacion: true, nombre: true } : { identificacion: true, nombre: true, telefono: true, celular: true }}
+        requeridos={esJuridica ? { identificacion: true, nombre: true } : { identificacion: true, nombre: true, celular: true }}
         claseCampo={CLASE_CAMPO_PERSONA}
       />
       {esJuridica && (

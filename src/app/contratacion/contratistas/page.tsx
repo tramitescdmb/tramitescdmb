@@ -38,7 +38,7 @@ export default async function ContratistasPage({
   const busqueda = q?.trim() ?? "";
   const pagina = Math.max(1, Number(pageParam) || 1);
   const vigencia = Number(vigenciaParam) || null;
-  const estado = estadoParam === "activo" || estadoParam === "inactivo" ? estadoParam : "";
+  const estado = estadoParam === "activo" || estadoParam === "precontractual" || estadoParam === "inactivo" ? estadoParam : "";
 
   const visibles = filtroContratistasVisibles(permisos);
   const where: Prisma.ContratistaWhereInput = { AND: [filtroContratistas({ busqueda, vigencia, estado }), visibles] };
@@ -93,7 +93,7 @@ export default async function ContratistasPage({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400">Con contrato activo</p>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400">Con contrato en ejecución</p>
           <p className="text-2xl font-semibold text-cdmb-700">{conActivo}</p>
         </div>
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-soft">
@@ -129,8 +129,9 @@ export default async function ContratistasPage({
           className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
         >
           <option value="">Todos</option>
-          <option value="activo">Con contrato activo</option>
-          <option value="inactivo">Sin contrato activo</option>
+          <option value="activo">Con contrato en ejecución</option>
+          <option value="precontractual">Con contrato en precontractual</option>
+          <option value="inactivo">Sin contratos abiertos</option>
         </select>
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
           Filtrar
@@ -160,6 +161,7 @@ export default async function ContratistasPage({
               porVigencia.set(v, (porVigencia.get(v) ?? 0) + 1);
             }
             const activos = c.expedientes.filter((e) => !e.cerrado && e.etapaActual === "CONTRACTUAL");
+            const enPreparacion = c.expedientes.filter((e) => !e.cerrado && e.etapaActual === "PRECONTRACTUAL");
             const contacto = [c.contactoEmail, c.contactoCelular ?? c.contactoTelefono].filter(Boolean).join(" · ");
             return (
               <Link
@@ -190,12 +192,18 @@ export default async function ContratistasPage({
                         {v}: {n}
                       </span>
                     ))}
-                  {activos.length > 0 ? (
+                  {activos.length > 0 && (
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700" title={activos.map((e) => e.numero).join(", ")}>
-                      Contrato activo{activos.length > 1 ? ` (${activos.length})` : ""}
+                      En ejecución{activos.length > 1 ? ` (${activos.length})` : ""}
                     </span>
-                  ) : (
-                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-400">Sin contrato activo</span>
+                  )}
+                  {enPreparacion.length > 0 && (
+                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700" title={enPreparacion.map((e) => e.numero).join(", ")}>
+                      En precontractual{enPreparacion.length > 1 ? ` (${enPreparacion.length})` : ""}
+                    </span>
+                  )}
+                  {activos.length === 0 && enPreparacion.length === 0 && (
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-400">Sin contratos abiertos</span>
                   )}
                 </div>
               </Link>

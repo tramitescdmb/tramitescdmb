@@ -16,7 +16,7 @@ const COLUMNAS: { titulo: string; icono: ReactNode; ancho: number }[] = [
   { titulo: "Contratista", icono: <User className="h-3.5 w-3.5" aria-hidden />, ancho: 170 },
   { titulo: "Documentos", icono: <Files className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
   { titulo: "Etapa", icono: <Flag className="h-3.5 w-3.5" aria-hidden />, ancho: 140 },
-  { titulo: "Creado", icono: <CalendarDays className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
+  { titulo: "Suscripción", icono: <CalendarDays className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
 ];
 const ANCHOS_DEFECTO = COLUMNAS.map((c) => c.ancho);
 
@@ -33,6 +33,7 @@ export type FilaExpedienteContractual = {
   documentos: number;
   etapa: string;
   tonoEtapa: "pendiente" | "cerrado" | "activa";
+  firma: string | null;
   creado: string;
 };
 
@@ -84,7 +85,7 @@ export function TablaExpedientesContractuales({ filas }: { filas: FilaExpediente
             <td className="px-3 py-2 text-xs">
               <span className={`inline-block rounded-full px-2 py-0.5 font-medium ${CLASE_ETAPA[e.tonoEtapa]}`}>{e.etapa}</span>
             </td>
-            <td className="px-3 py-2 text-xs text-stone-400">{e.creado}</td>
+            <td className="px-3 py-2 text-xs text-stone-600">{e.firma ?? "Sin suscribir"}</td>
           </tr>
         ))}
       </tbody>

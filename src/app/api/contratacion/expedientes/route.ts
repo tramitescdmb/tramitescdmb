@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
   const modalidadSeleccion = body.modalidadSeleccion as ModalidadSeleccion;
   const dependenciaSolicitanteId = String(body.dependenciaSolicitanteId || "").trim();
 
-  if (!objeto) return NextResponse.json({ error: "El objeto del contrato es obligatorio." }, { status: 400 });
   if (!esTipoContrato(body.tipoContrato)) {
     return NextResponse.json({ error: "Seleccione el tipo de contrato." }, { status: 400 });
   }

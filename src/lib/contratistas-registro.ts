@@ -2,6 +2,8 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 
 export const CONTRATO_ACTIVO = { eliminado: false, cerrado: false, etapaActual: "CONTRACTUAL" } satisfies Prisma.ExpedienteContractualWhereInput;
+export const CONTRATO_PRECONTRACTUAL = { eliminado: false, cerrado: false, etapaActual: "PRECONTRACTUAL" } satisfies Prisma.ExpedienteContractualWhereInput;
+const CONTRATO_ABIERTO = { eliminado: false, cerrado: false } satisfies Prisma.ExpedienteContractualWhereInput;
 
 export function filtroVigencia(vigencia: number): Prisma.ExpedienteContractualWhereInput {
   const desde = new Date(vigencia, 0, 1);
@@ -19,7 +21,7 @@ export function filtroContratistas({
 }: {
   busqueda: string;
   vigencia: number | null;
-  estado: "" | "activo" | "inactivo";
+  estado: "" | "activo" | "precontractual" | "inactivo";
 }): Prisma.ContratistaWhereInput {
   const condiciones: Prisma.ContratistaWhereInput[] = [];
   for (const p of busqueda.split(/\s+/).filter(Boolean).slice(0, 4)) {
@@ -34,7 +36,8 @@ export function filtroContratistas({
   }
   if (vigencia) condiciones.push({ expedientes: { some: filtroVigencia(vigencia) } });
   if (estado === "activo") condiciones.push({ expedientes: { some: CONTRATO_ACTIVO } });
-  if (estado === "inactivo") condiciones.push({ expedientes: { none: CONTRATO_ACTIVO } });
+  if (estado === "precontractual") condiciones.push({ expedientes: { some: CONTRATO_PRECONTRACTUAL } });
+  if (estado === "inactivo") condiciones.push({ expedientes: { none: CONTRATO_ABIERTO } });
   return condiciones.length > 0 ? { AND: condiciones } : {};
 }
 

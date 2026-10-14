@@ -157,6 +157,7 @@ export default async function ExpedientesContratacionPage({
                 documentos: e._count.documentos,
                 etapa: pendiente ? "Pendiente de inicio" : e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
                 tonoEtapa: pendiente ? "pendiente" : e.cerrado ? "cerrado" : "activa",
+                firma: e.fechaSuscripcion ? formatearFecha(e.fechaSuscripcion) : null,
                 creado: formatearFecha(e.createdAt),
               };
             })}

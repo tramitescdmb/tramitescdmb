@@ -1,3 +1,4 @@
+import { zonaDeFecha } from "@/lib/fecha";
 import type { SincaNitListado, SincaNitColumna } from "@/lib/sinca";
 import { FUERA_DE_JURISDICCION, esMunicipioValido } from "@/lib/municipios";
 
@@ -61,7 +62,7 @@ export function identificacionNit(n: SincaNitListado): string {
 export function fechaNit(v: string | null | undefined): string {
   if (!v) return "";
   const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" });
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: zonaDeFecha(d) });
 }
 
 export function siNoLimpio(e: unknown): string | null {

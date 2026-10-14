@@ -740,6 +740,13 @@ export default async function DetalleExpedienteContractualPage({
         </div>
       </div>
 
+      {datosSecop && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado && typeof datosSecop.fecha_de_firma === "string" && (
+        <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs text-sky-900">
+          SECOP II reporta el contrato firmado el {formatearFechaCalendario(datosSecop.fecha_de_firma)}: complete los documentos de Precontractual y apruebe el paso a
+          Contractual para empezar el seguimiento de informes y pagos.
+        </p>
+      )}
+
       {plazosLiq && ["mutuo-acuerdo", "unilateral", "residual", "sin-competencia"].includes(liquidacion.fase) && (
         <section className={`rounded-xl border p-4 shadow-sm ${liquidacion.fase === "sin-competencia" || liquidacion.dias <= 30 ? "border-red-200 bg-red-50/40" : "border-amber-200 bg-amber-50/40"}`}>
           <h2 className="text-sm font-semibold text-stone-900">

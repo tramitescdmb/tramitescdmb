@@ -370,6 +370,8 @@ export async function resolverCodigoProceso(datos: {
   throw new Error("No se pudo asignar el código de proceso.");
 }
 
+export const OBJETO_POR_DEFINIR = "Por definir: se toma de SECOP II al enlazar el contrato.";
+
 export async function crearExpedienteContractual(datos: {
   objeto: string;
   modalidadSeleccion: ModalidadSeleccion;
@@ -390,7 +392,7 @@ export async function crearExpedienteContractual(datos: {
   subserieId?: string | null;
   creadoPorId: string;
 }) {
-  if (!datos.objeto.trim()) throw new Error("El objeto del contrato es obligatorio.");
+  const objeto = datos.objeto.trim() || OBJETO_POR_DEFINIR;
   const causal = datos.modalidadSeleccion === "CONTRATACION_DIRECTA" ? datos.causalContratacionDirecta ?? null : null;
   const combinacion = errorCombinacionContrato(datos.modalidadSeleccion, datos.tipoContrato, causal);
   if (combinacion) throw new Error(combinacion);
@@ -417,7 +419,7 @@ export async function crearExpedienteContractual(datos: {
   const expediente = await db.expedienteContractual.create({
     data: {
       numero,
-      objeto: datos.objeto.trim(),
+      objeto,
       modalidadSeleccion: datos.modalidadSeleccion,
       tipoContrato: datos.tipoContrato,
       causalContratacionDirecta: causal,
@@ -1143,7 +1145,7 @@ export function faltantesRepresentanteLegal(r: RepresentanteLegalDatos): string[
   if (!r.identificacion) falta.push("cédula del representante legal");
   if (!r.nombres || !r.apellidos) falta.push("nombres y apellidos del representante legal");
   if (!r.direccion) falta.push("dirección del representante legal");
-  if (!r.telefono && !r.celular) falta.push("teléfono o celular del representante legal");
+  if (!r.celular) falta.push("celular del representante legal");
   return falta;
 }
 

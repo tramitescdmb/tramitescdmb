@@ -1,3 +1,4 @@
+import { zonaDeFecha } from "@/lib/fecha";
 import ExcelJS from "exceljs";
 
 export type FilaExportExpediente = {
@@ -27,11 +28,11 @@ const COLUMNAS: { header: string; key: keyof FilaExportExpediente; width: number
 ];
 
 function formatearFechaCorta(d: Date): string {
-  return d.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Bogota" });
+  return d.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: zonaDeFecha(d) });
 }
 
 function formatearGeneradoEl(d: Date): string {
-  return `${formatearFechaCorta(d)} ${d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}`;
+  return `${formatearFechaCorta(d)} ${d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: zonaDeFecha(d) })}`;
 }
 
 function valorColumna(f: FilaExportExpediente, key: keyof FilaExportExpediente): string {

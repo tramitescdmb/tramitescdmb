@@ -352,7 +352,7 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           En <Link href="/contratacion/contratistas" className="font-medium text-cdmb-700 hover:underline">Contratistas</Link> se
-          consulta quién tiene contrato activo y sus contratos por vigencia. Un contratista se vincula a un expediente una sola vez,
+          consulta quién tiene contratos en ejecución o en precontractual y sus contratos por vigencia. Un contratista se vincula a un expediente una sola vez,
           en cualquier etapa, desde el expediente o desde su ficha («Vincular otro expediente»). Al vincularlo recibe el rol
           Contratista y el acceso a GECON.
         </p>

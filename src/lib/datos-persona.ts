@@ -108,9 +108,9 @@ export const REQUERIDOS_CONTRATISTA: readonly CampoPersona[] = ["identificacion"
 
 // Perfil mínimo para registrar un contratista desde GECON en la etapa precontractual, cuando la
 // persona todavía no existe como Usuario del sistema (ver crearContratistaMinimo en contratacion.ts).
-// Persona jurídica no exige télefono/celular propios aquí porque esos datos de contacto los trae
+// Persona jurídica no exige celular propio aquí porque esos datos de contacto los trae
 // el representante legal (ver faltantesRepresentanteLegal).
-export const REQUERIDOS_CONTRATISTA_MINIMO_NATURAL: readonly CampoPersona[] = ["identificacion", "nombre", "telefono", "celular"];
+export const REQUERIDOS_CONTRATISTA_MINIMO_NATURAL: readonly CampoPersona[] = ["identificacion", "nombre", "celular"];
 export const REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA: readonly CampoPersona[] = ["identificacion", "nombre"];
 
 function texto(v: unknown, max = 200): string {
