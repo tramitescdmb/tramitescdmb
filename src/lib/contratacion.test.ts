@@ -47,10 +47,10 @@ describe("validarFormatoSecop", () => {
 });
 
 describe("faltantesContratistaMinimo", () => {
-  it("persona natural exige documento, nombres y apellidos, teléfono y celular", () => {
-    expect(faltantesContratistaMinimo(personaVacia())).toEqual(
-      expect.arrayContaining(["documento de identificación", "nombres y apellidos", "teléfono", "celular"])
-    );
+  it("persona natural exige documento, nombres y apellidos y celular; el teléfono es opcional", () => {
+    const faltan = faltantesContratistaMinimo(personaVacia());
+    expect(faltan).toEqual(expect.arrayContaining(["documento de identificación", "nombres y apellidos", "celular"]));
+    expect(faltan).not.toContain("teléfono");
   });
 
   it("persona natural completa no tiene faltantes", () => {
@@ -73,12 +73,12 @@ describe("faltantesContratistaMinimo", () => {
 });
 
 describe("leerRepresentanteLegal / faltantesRepresentanteLegal", () => {
-  it("exige cédula, nombres y apellidos, dirección, y teléfono o celular", () => {
+  it("exige cédula, nombres y apellidos, dirección y celular", () => {
     expect(faltantesRepresentanteLegal(leerRepresentanteLegal({}))).toEqual([
       "cédula del representante legal",
       "nombres y apellidos del representante legal",
       "dirección del representante legal",
-      "teléfono o celular del representante legal",
+      "celular del representante legal",
     ]);
   });
 
