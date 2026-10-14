@@ -107,29 +107,36 @@ function estadoDe(e: ExpedienteLanding, hoy: Date): EstadoContrato {
   return "En ejecución";
 }
 
-export async function obtenerContratosLanding(userId: string, permisos: PermisosUsuario): Promise<ContratoLanding[]> {
+export async function obtenerContratosLanding(userId: string, permisos: PermisosUsuario): Promise<{ contratos: ContratoLanding[]; terminados: number }> {
   const supervisa = [...permisos.supervisaExpedientes];
-  if (!permisos.contratistaId && supervisa.length === 0) return [];
+  if (!permisos.contratistaId && supervisa.length === 0) return { contratos: [], terminados: 0 };
   const hoy = hoyColombia();
+  const mios: Prisma.ExpedienteContractualWhereInput = {
+    eliminado: false,
+    OR: [
+      ...(permisos.contratistaId ? [{ contratistaId: permisos.contratistaId, etapaActual: { not: "PRECONTRACTUAL" as const } }] : []),
+      ...(supervisa.length ? [{ id: { in: supervisa } }] : []),
+    ],
+  };
+  const vigentes: Prisma.ExpedienteContractualWhereInput = {
+    cerrado: false,
+    etapaActual: { not: "POSTCONTRACTUAL" },
+    OR: [{ fechaFinEstimada: null }, { fechaFinEstimada: { gte: hoy } }],
+  };
+  const inicioAnio = new Date(Date.UTC(hoy.getUTCFullYear(), 0, 1));
 
-  const [expedientes, buzon] = await Promise.all([
+  const [expedientes, buzon, terminados] = await Promise.all([
     db.expedienteContractual.findMany({
-      where: {
-        eliminado: false,
-        cerrado: false,
-        OR: [
-          ...(permisos.contratistaId ? [{ contratistaId: permisos.contratistaId, etapaActual: { not: "PRECONTRACTUAL" as const } }] : []),
-          ...(supervisa.length ? [{ id: { in: supervisa } }] : []),
-        ],
-      },
+      where: { AND: [mios, vigentes] },
       orderBy: [{ fechaFinEstimada: "asc" }, { createdAt: "desc" }],
       take: 12,
       select: SELECT_CONTRATO,
     }),
     listarBuzon(userId, "documentoContrato"),
+    db.expedienteContractual.count({ where: { AND: [mios, { NOT: vigentes }, { fechaFinEstimada: { gte: inicioAnio } }] } }),
   ]);
 
-  return expedientes.map((e) => {
+  const contratos: ContratoLanding[] = expedientes.map((e) => {
     const periodos = periodosDe(e, hoy);
     let ejecucion: number | null = null;
     let diasParaTerminar: number | null = null;
@@ -174,6 +181,7 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
           : null,
     };
   });
+  return { contratos, terminados };
 }
 
 export function veSeguimientoContratos(permisos: PermisosUsuario): boolean {

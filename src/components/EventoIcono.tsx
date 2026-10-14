@@ -1,4 +1,4 @@
-import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, CalendarClock, Wallet, type LucideIcon } from "lucide-react";
+import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, CalendarClock, type LucideIcon } from "lucide-react";
 
 const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: string }> = {
   CREACION: { icono: FilePlus, etiqueta: "Creación del expediente", clase: "bg-cdmb-100 text-cdmb-700" },
@@ -20,11 +20,6 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   EXPEDIENTE_ARCHIVADO: { icono: Archive, etiqueta: "Expediente cerrado y archivado", clase: "bg-stone-200 text-stone-700" },
   EXPEDIENTE_REABIERTO: { icono: LockOpen, etiqueta: "Expediente reabierto", clase: "bg-amber-100 text-amber-700" },
   MODIFICACION_CONTRATO: { icono: CalendarClock, etiqueta: "Modificación del contrato", clase: "bg-orange-100 text-orange-700" },
-  GARANTIA_REGISTRADA: { icono: ShieldCheck, etiqueta: "Garantía registrada", clase: "bg-sky-100 text-sky-700" },
-  GARANTIA_APROBADA: { icono: ShieldCheck, etiqueta: "Garantía aprobada", clase: "bg-emerald-100 text-emerald-700" },
-  GARANTIA_ELIMINADA: { icono: ShieldCheck, etiqueta: "Garantía eliminada", clase: "bg-red-100 text-red-700" },
-  PAGO_REGISTRADO: { icono: Wallet, etiqueta: "Pago registrado", clase: "bg-emerald-100 text-emerald-700" },
-  PAGO_ELIMINADO: { icono: Wallet, etiqueta: "Pago eliminado", clase: "bg-red-100 text-red-700" },
   SECOP_SINCRONIZADO: { icono: RefreshCw, etiqueta: "Sincronizado con SECOP II", clase: "bg-cdmb-100 text-cdmb-700" },
   VISITA_PROGRAMADA: { icono: CalendarClock, etiqueta: "Visita técnica programada", clase: "bg-sky-100 text-sky-700" },
 };

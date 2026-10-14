@@ -34,11 +34,12 @@ export default async function LandingPage() {
   const conTramites = secciones.some((s) => s.modulo === "TRAMITES");
   const planificador = puedePlanearVisitas(permisos);
   const conGecon = permisos.modulos.has("GECON");
-  const [agenda, contratos, seguimiento] = await Promise.all([
+  const [agenda, misContratos, seguimiento] = await Promise.all([
     conTramites ? obtenerAgendaUsuario(session.userId, planificador) : Promise.resolve(null),
-    conGecon ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve([]),
+    conGecon ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve({ contratos: [], terminados: 0 }),
     conGecon && veSeguimientoContratos(permisos) ? obtenerSeguimientoContratos(permisos) : Promise.resolve(null),
   ]);
+  const contratos = misContratos.contratos;
   const contratosPropios = contratos.filter((c) => c.relacion === "CONTRATISTA").length;
   const ofrecerVinculacion = await debeOfrecerVinculacion(session.userId);
 
@@ -83,7 +84,7 @@ export default async function LandingPage() {
 
       {seguimiento && <SeguimientoContratos datos={seguimiento} />}
 
-      {contratos.length > 0 && <MisContratos contratos={contratos} />}
+      {(contratos.length > 0 || misContratos.terminados > 0) && <MisContratos contratos={contratos} terminados={misContratos.terminados} />}
 
       {secciones.length > 0 && <BandejaPendientes secciones={secciones} />}
 

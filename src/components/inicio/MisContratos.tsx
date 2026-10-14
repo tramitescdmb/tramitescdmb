@@ -172,7 +172,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
   );
 }
 
-export function MisContratos({ contratos }: { contratos: ContratoLanding[] }) {
+export function MisContratos({ contratos, terminados }: { contratos: ContratoLanding[]; terminados: number }) {
   const propios = contratos.filter((c) => c.relacion === "CONTRATISTA").length;
   return (
     <section className="space-y-3">
@@ -184,9 +184,16 @@ export function MisContratos({ contratos }: { contratos: ContratoLanding[] }) {
           {propios > 0 ? "Mis contratos" : "Contratos que supervisa"}
           <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{contratos.length}</span>
         </h2>
-        <Link href="/contratacion/panel" className="text-xs font-medium text-cdmb-700 hover:underline">
-          Ir a GECON
-        </Link>
+        <span className="flex items-center gap-3 text-xs">
+          {terminados > 0 && (
+            <Link href={`/contratacion/panel/contratos?vigencia=${new Date().getFullYear()}`} className="text-stone-500 hover:underline">
+              {terminados} terminado(s) este año
+            </Link>
+          )}
+          <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">
+            Ir a GECON
+          </Link>
+        </span>
       </div>
       <div className={`grid grid-cols-1 gap-3 ${contratos.length > 1 ? "xl:grid-cols-2" : ""}`}>
         {contratos.map((c) => (

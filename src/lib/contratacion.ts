@@ -928,6 +928,25 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   );
 }
 
+async function pasarAContractualPorSecop(expedienteId: string, fechaFirma: string) {
+  const ahora = new Date();
+  const comentario = `Paso automático: SECOP II reporta el contrato firmado el ${fechaFirma}.`;
+  await db.$transaction([
+    db.etapaExpedienteContractual.upsert({
+      where: { expedienteId_etapa: { expedienteId, etapa: "PRECONTRACTUAL" } },
+      update: { completadaEn: ahora, comentario },
+      create: { expedienteId, etapa: "PRECONTRACTUAL", completadaEn: ahora, comentario },
+    }),
+    db.expedienteContractual.update({ where: { id: expedienteId }, data: { etapaActual: "CONTRACTUAL" } }),
+    db.etapaExpedienteContractual.upsert({
+      where: { expedienteId_etapa: { expedienteId, etapa: "CONTRACTUAL" } },
+      update: {},
+      create: { expedienteId, etapa: "CONTRACTUAL" },
+    }),
+  ]);
+  await registrarEventoContratacion(expedienteId, "ETAPA_APROBADA", `Pasó de Precontractual a Contractual. ${comentario}`, null);
+}
+
 export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
@@ -1684,85 +1703,6 @@ export async function adjuntarSoportePresupuestalModificacion(datos: {
 }
 
 
-export async function registrarGarantia(
-  expedienteId: string,
-  datos: { aseguradora: string; numeroPoliza: string; amparos: string[]; valorAsegurado: number | null; vigenciaDesde: Date | null; vigenciaHasta: Date },
-  usuarioId: string
-) {
-  if (!datos.aseguradora.trim()) throw new Error("Indique la aseguradora o entidad que expide la garantía.");
-  if (!datos.numeroPoliza.trim()) throw new Error("Indique el número de la póliza o garantía.");
-  if (datos.amparos.length === 0) throw new Error("Seleccione al menos un amparo.");
-  if (Number.isNaN(datos.vigenciaHasta.getTime())) throw new Error("Indique hasta cuándo está vigente la garantía.");
-  if (datos.vigenciaDesde && datos.vigenciaDesde > datos.vigenciaHasta) throw new Error("La vigencia inicial no puede ser posterior a la final.");
-  await db.garantiaContrato.create({
-    data: {
-      expedienteId,
-      aseguradora: datos.aseguradora.trim().slice(0, 200),
-      numeroPoliza: datos.numeroPoliza.trim().slice(0, 80),
-      amparos: datos.amparos,
-      valorAsegurado: datos.valorAsegurado,
-      vigenciaDesde: datos.vigenciaDesde,
-      vigenciaHasta: datos.vigenciaHasta,
-      registradaPorId: usuarioId,
-    },
-  });
-  await registrarEventoContratacion(expedienteId, "GARANTIA_REGISTRADA", `Garantía ${datos.numeroPoliza.trim()} de ${datos.aseguradora.trim()}, vigente hasta ${datos.vigenciaHasta.toISOString().slice(0, 10)}`, usuarioId);
-}
-
-export async function aprobarGarantia(expedienteId: string, garantiaId: string, usuarioId: string) {
-  const g = await db.garantiaContrato.findFirst({ where: { id: garantiaId, expedienteId }, select: { numeroPoliza: true, aprobadaEn: true } });
-  if (!g) throw new Error("La garantía no existe.");
-  if (g.aprobadaEn) return;
-  await db.garantiaContrato.update({ where: { id: garantiaId }, data: { aprobadaEn: new Date(), aprobadaPorId: usuarioId } });
-  await registrarEventoContratacion(expedienteId, "GARANTIA_APROBADA", `Garantía ${g.numeroPoliza} aprobada`, usuarioId);
-}
-
-export async function eliminarGarantia(expedienteId: string, garantiaId: string, usuarioId: string) {
-  const g = await db.garantiaContrato.findFirst({ where: { id: garantiaId, expedienteId }, select: { numeroPoliza: true } });
-  if (!g) throw new Error("La garantía no existe.");
-  await db.garantiaContrato.delete({ where: { id: garantiaId } });
-  await registrarEventoContratacion(expedienteId, "GARANTIA_ELIMINADA", `Garantía ${g.numeroPoliza} eliminada`, usuarioId);
-}
-
-export async function registrarPago(
-  expedienteId: string,
-  datos: { fecha: Date; valor: number; periodoMes: string | null; observacion: string | null },
-  usuarioId: string
-) {
-  if (Number.isNaN(datos.fecha.getTime())) throw new Error("Indique la fecha del pago.");
-  if (datos.fecha.getTime() > Date.now()) throw new Error("La fecha del pago no puede ser posterior a hoy.");
-  if (!Number.isFinite(datos.valor) || datos.valor <= 0) throw new Error("Indique el valor pagado.");
-  const expediente = await db.expedienteContractual.findUniqueOrThrow({
-    where: { id: expedienteId },
-    select: { valor: true, fechaInicio: true, pagos: { select: { valor: true, numero: true } } },
-  });
-  if (expediente.fechaInicio && datos.fecha < expediente.fechaInicio) throw new Error("El pago no puede ser anterior al inicio del contrato.");
-  if (expediente.valor !== null) {
-    const total = Number(expediente.valor);
-    const pagado = expediente.pagos.reduce((a, p) => a + Number(p.valor), 0);
-    if (pagado + datos.valor > total) throw new Error(`Los pagos superarían el valor del contrato. Saldo disponible: $${Math.max(0, total - pagado).toLocaleString("es-CO")}.`);
-  }
-  const numero = Math.max(0, ...expediente.pagos.map((p) => p.numero)) + 1;
-  await db.pagoContrato.create({
-    data: {
-      expedienteId,
-      numero,
-      fecha: datos.fecha,
-      valor: Math.round(datos.valor),
-      periodoMes: datos.periodoMes && /^\d{4}-\d{2}$/.test(datos.periodoMes) ? datos.periodoMes : null,
-      observacion: datos.observacion?.trim().slice(0, 500) || null,
-      registradoPorId: usuarioId,
-    },
-  });
-  await registrarEventoContratacion(expedienteId, "PAGO_REGISTRADO", `Pago N.° ${numero} por $${Math.round(datos.valor).toLocaleString("es-CO")} del ${datos.fecha.toISOString().slice(0, 10)}`, usuarioId);
-}
-
-export async function eliminarPago(expedienteId: string, pagoId: string, usuarioId: string) {
-  const p = await db.pagoContrato.findFirst({ where: { id: pagoId, expedienteId }, select: { numero: true, valor: true } });
-  if (!p) throw new Error("El pago no existe.");
-  await db.pagoContrato.delete({ where: { id: pagoId } });
-  await registrarEventoContratacion(expedienteId, "PAGO_ELIMINADO", `Pago N.° ${p.numero} por $${Number(p.valor).toLocaleString("es-CO")} eliminado`, usuarioId);
-}
 
 const ETIQUETA_CAMPO_SECOP: Record<string, string> = {
   numeroContrato: "número de contrato",
@@ -1808,6 +1748,8 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
       tipoContrato: true,
       codigoProceso: true,
       contratistaId: true,
+      etapaActual: true,
+      cerrado: true,
       contratista: { select: { identificacion: true } },
       secop: { select: { datos: true, facturas: true, garantias: true, modificaciones: true, adiciones: true, suspensiones: true } },
     },
@@ -1908,6 +1850,8 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     `Sincronizado con SECOP II (${idContrato})`,
     Object.keys(completar).length ? `actualizado desde SECOP II: ${Object.keys(completar).map((k) => ETIQUETA_CAMPO_SECOP[k] ?? k).join(", ")}` : null,
   ].filter(Boolean);
+  const avanzo = expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado && Boolean(c.fechaSuscripcion);
+  if (avanzo) await pasarAContractualPorSecop(expedienteId, c.fechaSuscripcion!);
   const anterior = expediente.secop ? jsonEstable(expediente.secop) : null;
   const cambio = anterior !== jsonEstable(secop);
   if (cambio || Object.keys(completar).length > 0 || usuarioId) {
@@ -2024,9 +1968,14 @@ export async function resolverSolicitudVinculacion(id: string, aprobar: boolean,
 
 export async function debeOfrecerVinculacion(usuarioId: string): Promise<boolean> {
   const [usuario, pendientes, solicitud] = await Promise.all([
-    db.usuario.findUnique({ where: { id: usuarioId }, select: { cedulaONit: true, contratista: { select: { id: true } } } }),
+    db.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { rol: true, cedulaONit: true, modulosAcceso: true, rolesContratacion: true, contratista: { select: { id: true } } },
+    }),
     db.contratista.count({ where: { usuarioId: null } }),
     db.solicitudVinculacionContratista.count({ where: { usuarioId, estado: "PENDIENTE" } }),
   ]);
-  return Boolean(usuario && !usuario.contratista && !usuario.cedulaONit?.trim() && pendientes > 0 && solicitud === 0);
+  if (!usuario || usuario.rol === "ADMIN" || usuario.contratista || usuario.cedulaONit?.trim()) return false;
+  if (usuario.modulosAcceso.length > 0 || usuario.rolesContratacion.length > 0) return false;
+  return pendientes > 0 && solicitud === 0;
 }

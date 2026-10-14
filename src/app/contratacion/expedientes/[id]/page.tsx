@@ -9,8 +9,6 @@ import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { ModificacionesContrato, type ModificacionSecop } from "@/components/ModificacionesContrato";
 import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
-import { avisosGarantia, porcentajePlazo, resumenPagos } from "@/lib/garantias-pagos";
-import { GarantiasContrato, PagosContrato } from "@/components/GarantiasPagosContrato";
 import { SecopPanel } from "@/components/SecopPanel";
 import { CODIGO_ACTA_LIQUIDACION, ETIQUETA_FASE_LIQUIDACION, estadoLiquidacion, plazosLiquidacion } from "@/lib/liquidacion";
 import { subseriesPorModalidad } from "@/lib/trd-clasificacion";
@@ -166,9 +164,7 @@ export default async function DetalleExpedienteContractualPage({
       asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
       modificaciones: { orderBy: { numero: "asc" }, include: { registradoPor: { select: { nombre: true } } } },
-      garantias: { orderBy: { createdAt: "asc" } },
       secop: true,
-      pagos: { orderBy: { numero: "asc" } },
       documentos: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -253,9 +249,6 @@ export default async function DetalleExpedienteContractualPage({
   const personalOpciones = personalDisponible.map((s) => ({ id: s.id, nombre: s.nombre, dependenciaNombre: s.dependencia?.nombre ?? null }));
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
-  const valorTotalContrato =
-    expediente.valor !== null ? Number(expediente.valor) : null;
-  const pagosResumen = resumenPagos(valorTotalContrato, expediente.pagos.map((p) => ({ valor: Number(p.valor) })));
   const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
   const modificacionesSecop: ModificacionSecop[] = (() => {
     if (!expediente.secop) return [];
@@ -283,7 +276,6 @@ export default async function DetalleExpedienteContractualPage({
       })),
     ];
   })();
-  const avisosGarantias = avisosGarantia(expediente.garantias, expediente.fechaFinEstimada, expediente.modificaciones);
   const hoy = new Date();
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -740,13 +732,6 @@ export default async function DetalleExpedienteContractualPage({
         </div>
       </div>
 
-      {datosSecop && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado && typeof datosSecop.fecha_de_firma === "string" && (
-        <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs text-sky-900">
-          SECOP II reporta el contrato firmado el {formatearFechaCalendario(datosSecop.fecha_de_firma)}: complete los documentos de Precontractual y apruebe el paso a
-          Contractual para empezar el seguimiento de informes y pagos.
-        </p>
-      )}
-
       {plazosLiq && ["mutuo-acuerdo", "unilateral", "residual", "sin-competencia"].includes(liquidacion.fase) && (
         <section className={`rounded-xl border p-4 shadow-sm ${liquidacion.fase === "sin-competencia" || liquidacion.dias <= 30 ? "border-red-200 bg-red-50/40" : "border-amber-200 bg-amber-50/40"}`}>
           <h2 className="text-sm font-semibold text-stone-900">
@@ -788,45 +773,6 @@ export default async function DetalleExpedienteContractualPage({
         />
       )}
 
-      {expediente.etapaActual !== "PRECONTRACTUAL" && (
-        <>
-          <GarantiasContrato
-            expedienteId={id}
-            garantias={expediente.garantias.map((g) => ({
-              id: g.id,
-              aseguradora: g.aseguradora,
-              numeroPoliza: g.numeroPoliza,
-              amparos: g.amparos,
-              valorAsegurado: g.valorAsegurado !== null ? Number(g.valorAsegurado) : null,
-              vigenciaDesde: g.vigenciaDesde?.toISOString() ?? null,
-              vigenciaHasta: g.vigenciaHasta.toISOString(),
-              aprobadaEn: g.aprobadaEn?.toISOString() ?? null,
-            }))}
-            avisos={avisosGarantias}
-            puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
-            puedeAprobar={!expediente.cerrado && puedeGestionarContratistas(permisos)}
-          />
-          <PagosContrato
-            expedienteId={id}
-            pagos={expediente.pagos.map((p) => ({
-              id: p.id,
-              numero: p.numero,
-              fecha: p.fecha.toISOString(),
-              valor: Number(p.valor),
-              periodoMes: p.periodoMes,
-              observacion: p.observacion,
-            }))}
-            valorTotal={valorTotalContrato}
-            pagado={pagosResumen.pagado}
-            saldo={pagosResumen.saldo}
-            porcentajePagado={pagosResumen.porcentaje}
-            porcentajePlazo={porcentajePlazo(expediente.fechaInicio, expediente.fechaFinEstimada)}
-            periodos={periodosMensuales.map((p) => ({ clave: p.clave, etiqueta: etiquetaRangoPeriodo(p) }))}
-            puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
-            puedeEliminar={!expediente.cerrado && puedeGestionarContratistas(permisos)}
-          />
-        </>
-      )}
 
       <SecopPanel
         expedienteId={id}
