@@ -51,7 +51,7 @@
       "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN` y el código de proceso del manual, por ejemplo `CD-CPS-0001-2026`; si el proceso ya tenía código, se escribe en el formulario."
     ],
     "ejemplo": "`CDMB-CTO-2026-000006`, código de proceso `CD-CPS-0001-2026`, contrato `210-17017-8`: servicios profesionales como ingeniero de sistemas al proceso de Tecnologías de la Información, contratación directa por la causal de servicios profesionales y de apoyo a la gestión, $19.800.000, del 28 de julio al 12 de diciembre de 2026.",
-    "detalle": "Concurso de méritos solo admite consultoría e interventoría, y estas no se seleccionan por licitación ni por selección abreviada. La subasta inversa no admite obra, consultoría ni interventoría. La mínima cuantía admite cualquier objeto.\n\nEl tipo de contrato define parte del catálogo: obra pide el informe de supervisión para obra pública y el acta de mayores y menores cantidades; interventoría queda exenta del límite de adiciones; prestación de servicios y compraventa no exigen acta de liquidación.\n\nLa fecha de suscripción no puede ser posterior a la de inicio. Los datos generales se corrigen con «Editar datos generales». Cambiar el contratista pide confirmación.\n\nCon los topes de cuantía de la vigencia, el formulario avisa si el valor no corresponde a la modalidad.",
+    "detalle": "Concurso de méritos solo admite consultoría e interventoría, y estas no se seleccionan por licitación ni por selección abreviada. La subasta inversa no admite obra, consultoría ni interventoría. La mínima cuantía admite cualquier objeto.\n\nEl tipo de contrato define parte del catálogo: obra pide el informe de supervisión para obra pública y el acta de mayores y menores cantidades; interventoría queda exenta del límite de adiciones; prestación de servicios y compraventa no exigen acta de liquidación.\n\nLa fecha de suscripción no puede ser posterior a la de inicio. Los datos generales se corrigen con «Editar datos generales» hasta que el expediente se enlaza con SECOP II. Cambiar el contratista pide confirmación.\n\nCon los topes de cuantía de la vigencia, el formulario avisa si el valor no corresponde a la modalidad.",
     "fundamento": "Ley 80 de 1993 · Ley 1150 de 2007, art. 2 · Decreto 1082 de 2015, arts. 2.2.1.2.1.2.2 y 2.2.1.2.1.4.1 y ss. · Manual A-BS-MA01, num. 6.2."
   },
   {
@@ -209,19 +209,17 @@
     "titulo": "Modificaciones del contrato (otrosí)",
     "tituloIndice": "Modificaciones del contrato",
     "ubicacion": "Detalle del expediente → «Modificaciones del contrato» → «Registrar modificación».",
-    "resumen": "Las modificaciones se registran en un solo lugar: se elige el tipo, se diligencian solo sus datos y se carga una acta, que el sistema ubica en el requisito correspondiente.",
+    "resumen": "Cada otrosí se registra como documento del expediente: tipo, fecha de suscripción y acta, para su custodia y firma. El plazo y el valor vigentes llegan de SECOP II.",
     "pasos": [
       "Se pulsa «Registrar modificación» y se elige el tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración.",
-      "Se indica la fecha de suscripción, que debe estar entre el inicio y la terminación vigente: un contrato vencido no admite modificaciones.",
-      "Prórroga: nueva fecha de terminación. Adición: valor adicionado; el sistema muestra el saldo disponible hasta el 50 % del valor inicial en SMMLV. Suspensión: fechas de suspensión y reinicio.",
-      "Cesión: usuario de red del cesionario, que debe existir en la plataforma; el expediente pasa a él. Terminación anticipada: de mutuo acuerdo o unilateral, con su fecha.",
-      "Si la nueva terminación pasa a la vigencia siguiente se registran la clase de vigencias futuras, el acto de autorización y, por cada vigencia, el periodo cubierto en meses y días y el valor.",
-      "Se carga el acta y se registra. La terminación, el valor y los informes mensuales se actualizan.",
-      "En la tabla de modificaciones se cargan el CDP y el RP de cada adición, o solo el RP cuando la modificación no trae recursos nuevos."
+      "Se indica la fecha de suscripción y, en una terminación anticipada, si es de mutuo acuerdo o unilateral.",
+      "Se carga el acta y se registra; queda en Contractual con el nombre del formato del catálogo.",
+      "En la tabla de modificaciones se cargan el CDP y el RP de cada adición, o el RP de una vigencia futura.",
+      "El bloque lista las modificaciones que publica SECOP II y avisa si falta registrar alguna acta."
     ],
-    "ejemplo": "Contrato `210-17017-8` ($19.800.000, suscrito en 2026): una adición de $9.900.000 alcanza el límite de 5,65 SMMLV. Prorrogarlo del 12 de diciembre de 2026 al 15 de febrero de 2027 exige vigencias futuras 2027 por 1 mes y 15 días y agrega los informes de enero y febrero.",
-    "detalle": "La interventoría está exenta del límite del 50 %. La suspensión no puede ser indefinida. La terminación anticipada vuelve obligatoria la liquidación, y la cesión obliga a cambiar el tomador de la garantía.\n\nCada modificación queda numerada, con su fecha de suscripción y la terminación anterior y la nueva, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
-    "fundamento": "Ley 80 de 1993, arts. 17, 40 y 41 · Ley 1474 de 2011, art. 85 · Decreto 111 de 1996, arts. 14 y 71 · Ley 819 de 2003 · Manual A-BS-MA01, num. 7.4 a 7.6, 7.12 y 7.13."
+    "ejemplo": "`CDMB-CTO-2026-000035` (EME Ing., contrato `210-16734-8`): SECOP II reporta 110 días adicionados; el bloque pide registrar el acta de esa adición, y el valor ($378.000.000) y la terminación (10 de diciembre de 2026) ya vienen de SECOP II.",
+    "detalle": "GECON no calcula plazos ni valores de las modificaciones: los toma de SECOP II, que es la fuente oficial, y con ellos recalcula los informes mensuales. La terminación anticipada vuelve obligatoria la liquidación.\n\nCada modificación queda numerada, con su fecha de suscripción, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
+    "fundamento": "Ley 80 de 1993, arts. 17 y 41 · Manual A-BS-MA01, num. 7.4 a 7.6, 7.12 y 7.13."
   },
   {
     "orden": 14,
@@ -229,15 +227,15 @@
     "titulo": "Enlace con SECOP II",
     "tituloIndice": "Enlace con SECOP II",
     "ubicacion": "Detalle del expediente → panel «SECOP II». Nuevo expediente → «Traer datos de SECOP II».",
-    "resumen": "GECON busca cada día en los datos abiertos de SECOP II el contrato de cada expediente, lo enlaza y muestra en solo lectura lo que publica la API.",
+    "resumen": "SECOP II es la fuente oficial: GECON enlaza cada expediente con su contrato y toma de allí número, objeto, modalidad, tipo, valor, fechas y contratista.",
     "pasos": [
       "Se crea el expediente en GECON desde Precontractual.",
       "Cada día GECON busca el contrato por número de contrato o de proceso o, si faltan, por el documento del contratista entre los contratos firmados por la CDMB desde la creación del expediente.",
-      "Si encuentra un solo contrato, lo enlaza y completa los campos vacíos del expediente; si encuentra varios, pide escribir el número de contrato.",
-      "El panel «SECOP II» muestra estado, valores, fuentes de recursos, personas, facturas, modificaciones, adiciones, suspensiones y garantías, y las diferencias con GECON.",
+      "Si encuentra un solo contrato, lo enlaza; desde entonces, en cada sincronización, número de contrato y de proceso, objeto, modalidad, causal, tipo, valor, fechas y contratista se toman de SECOP II y no se editan en GECON. Si encuentra varios, pide escribir el número de contrato.",
+      "El panel «SECOP II» muestra en solo lectura todo lo que publica la API: estado, valores, fuentes de recursos, personas, facturas, modificaciones, adiciones, suspensiones y garantías.",
       "«Actualizar» trae los datos en el momento; «Ver en SECOP II» abre el proceso para consultar sus documentos."
     ],
-    "ejemplo": "`CDMB-CTO-2026-000006` quedó enlazado con `CO1.PCCNTR.9719329` (contrato `210-17017-8`): $19.800.000, facturado $9.240.000, pagado $4.840.000, recursos propios de inversión y tres facturas, dos pagadas y una en gestión.",
+    "ejemplo": "`CDMB-CTO-2026-000035` (EME Ing.) tenía en GECON $230.000.000 del 7 de octubre al 16 de diciembre; al enlazarse con `210-16734-8` quedó con los datos de SECOP II: $378.000.000, del 26 de enero al 10 de diciembre de 2026.",
     "detalle": "Los datos son de solo lectura y vienen de la API de datos abiertos (datos.gov.co, conjuntos de contratos, facturas, modificaciones, adiciones, suspensiones y garantías). GECON no copia documentos ni muestra el número de cuenta bancaria del contratista. La bitácora registra el enlace y los cambios que llegan de SECOP II.",
     "fundamento": "Ley 1712 de 2014 (datos abiertos) · Decreto 1082 de 2015, art. 2.2.1.1.1.7.1 · Manual A-BS-MA01."
   },
@@ -254,7 +252,7 @@
       "Terminado el contrato, el expediente muestra la fase de liquidación vigente y su fecha límite, y el inicio la lista en pendientes."
     ],
     "ejemplo": "En `210-17017-8` (prestación de servicios) no se exige garantía ni liquidación. En un contrato de obra terminado el 31 de enero de 2026, la liquidación de mutuo acuerdo vence el 31 de julio, la unilateral el 30 de septiembre y el término residual el 30 de septiembre de 2028.",
-    "detalle": "El bloque de garantías avisa si alguna falta por aprobar, si vence antes de la terminación o si una prórroga, adición, suspensión o cesión posterior obliga a ampliarla. Los pagos no pueden superar el valor del contrato con sus adiciones.",
+    "detalle": "El bloque de garantías avisa si alguna falta por aprobar, si vence antes de la terminación o si una prórroga, adición, suspensión o cesión posterior obliga a ampliarla. Los pagos no pueden superar el valor vigente del contrato.",
     "fundamento": "Ley 80 de 1993, art. 41 · Decreto 1082 de 2015, art. 2.2.1.2.3.1.18 · Ley 1150 de 2007, art. 11 · Manual A-BS-MA01, cap. 10."
   },
   {
@@ -270,7 +268,7 @@
       "Al crear o editar un expediente, el formulario muestra los topes del año de suscripción y avisa si el valor no corresponde a la modalidad."
     ],
     "ejemplo": "Con una menor cuantía de $500.000.000 para 2026, la mínima cuantía es $50.000.000: un contrato de $40.000.000 por concurso de méritos debe tramitarse por mínima cuantía.",
-    "detalle": "Sin tope registrado para un año, el valor no se valida. Los años anteriores se conservan para los contratos de esas vigencias.",
+    "detalle": "Sin tope registrado para un año, el valor no se valida. La validación aplica al valor escrito en GECON antes del enlace con SECOP II; una vez enlazado, rige el de SECOP II.",
     "fundamento": "Ley 1150 de 2007, art. 2, num. 2, lit. b · Ley 2069 de 2020, art. 30 · Manual A-BS-MA01, num. 6.2.2.2 y 6.2.5."
   }
 ]

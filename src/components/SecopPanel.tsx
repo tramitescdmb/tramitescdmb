@@ -190,12 +190,10 @@ function ultimaVersion(filas: Fila[]): Fila[] {
 export function SecopPanel({
   expedienteId,
   espejo,
-  diferencias,
   puedeSincronizar,
 }: {
   expedienteId: string;
   espejo: { idContrato: string; datos: Fila; facturas: Fila[]; garantias: Fila[]; modificaciones: Fila[]; adiciones: Fila[]; suspensiones: Fila[]; sincronizadoEn: Date } | null;
-  diferencias: string[];
   puedeSincronizar: boolean;
 }) {
   const d = espejo?.datos ?? {};
@@ -215,7 +213,6 @@ export function SecopPanel({
           ) : (
             <span className="text-xs font-normal text-stone-500">Sin enlazar</span>
           )}
-          {diferencias.length > 0 && <span className="rounded-full bg-amber-100 px-2 py-px text-[11px] font-medium text-amber-800">{diferencias.length} diferencia(s)</span>}
         </h2>
         <span className="flex items-center gap-3">
           {url && (
@@ -229,8 +226,9 @@ export function SecopPanel({
 
       <div className="mt-3 space-y-4">
         <p className="text-[11px] text-stone-500">
-          Datos de solo lectura tomados de la API de datos abiertos de SECOP II (datos.gov.co), que se actualizan cada día. Los documentos se
-          consultan en SECOP II; GECON no los copia.
+          Datos de solo lectura tomados de la API de datos abiertos de SECOP II (datos.gov.co), que se actualizan cada día. SECOP II es la
+          fuente oficial: el número de contrato y de proceso, el objeto, la modalidad, el tipo, el valor, las fechas y el contratista del
+          expediente se toman de aquí. Los documentos se consultan en SECOP II; GECON no los copia.
         </p>
         {!espejo && (
           <p className="text-xs text-stone-600">
@@ -238,11 +236,6 @@ export function SecopPanel({
             busca entre los contratos de la CDMB.
           </p>
         )}
-        {diferencias.map((t) => (
-          <p key={t} className="rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
-            {t}
-          </p>
-        ))}
         {espejo &&
           [
             ...GRUPOS,

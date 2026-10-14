@@ -6,7 +6,7 @@ import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck,
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
-import { ModificacionesContrato } from "@/components/ModificacionesContrato";
+import { ModificacionesContrato, type ModificacionSecop } from "@/components/ModificacionesContrato";
 import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
 import { avisosGarantia, porcentajePlazo, resumenPagos } from "@/lib/garantias-pagos";
@@ -254,27 +254,35 @@ export default async function DetalleExpedienteContractualPage({
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const valorTotalContrato =
-    expediente.valor !== null ? Number(expediente.valor) + expediente.modificaciones.reduce((a, m) => a + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0) : null;
+    expediente.valor !== null ? Number(expediente.valor) : null;
   const pagosResumen = resumenPagos(valorTotalContrato, expediente.pagos.map((p) => ({ valor: Number(p.valor) })));
   const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
-  const diferenciasSecop: string[] = [];
-  if (datosSecop) {
-    const fechaS = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : null);
-    const fechaG = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
-    const comparar = (etiqueta: string, gecon: string | null, secop: string | null) => {
-      if (secop && gecon !== secop) diferenciasSecop.push(`${etiqueta}: en GECON «${gecon ?? "vacío"}», en SECOP II «${secop}».`);
-    };
-    comparar("Número de contrato", expediente.numeroContrato, typeof datosSecop.referencia_del_contrato === "string" ? datosSecop.referencia_del_contrato : null);
-    comparar("Fecha de inicio", fechaG(expediente.fechaInicio), fechaS(datosSecop.fecha_de_inicio_del_contrato));
-    comparar("Fecha de terminación", fechaG(expediente.fechaFinEstimada), fechaS(datosSecop.fecha_de_fin_del_contrato));
-    comparar("Documento del contratista", expediente.contratista?.identificacion ?? null, typeof datosSecop.documento_proveedor === "string" ? datosSecop.documento_proveedor : null);
-    const valorSecop = Number(datosSecop.valor_del_contrato);
-    if (valorTotalContrato !== null && Number.isFinite(valorSecop) && valorSecop > 0 && Math.round(valorSecop) !== Math.round(valorTotalContrato)) {
-      diferenciasSecop.push(
-        `Valor del contrato: en GECON «$ ${Math.round(valorTotalContrato).toLocaleString("es-CO")}» (con adiciones), en SECOP II «$ ${Math.round(valorSecop).toLocaleString("es-CO")}».`
-      );
+  const modificacionesSecop: ModificacionSecop[] = (() => {
+    if (!expediente.secop) return [];
+    const texto = (v: unknown) => (typeof v === "string" && v.trim() && !/^no definido$/i.test(v) ? v.trim() : null);
+    const porId = new Map<string, Record<string, unknown>>();
+    for (const f of expediente.secop.modificaciones as Record<string, unknown>[]) {
+      const clave = String(f.identificador_modificacion ?? f.identificador ?? porId.size);
+      const previa = porId.get(clave);
+      if (!previa || Number(f.numero_version) > Number(previa.numero_version)) porId.set(clave, f);
     }
-  }
+    return [
+      ...[...porId.values()].map((f) => ({
+        proposito: texto(f.proposito_modificacion) ?? "Modificación",
+        fecha: texto(f.fecha_de_aprobacion),
+        dias: Number(f.dias_extendidos) || null,
+        valor: Number(f.valor_modificacion) || null,
+        estado: texto(f.estado_modificacion),
+      })),
+      ...(expediente.secop.suspensiones as Record<string, unknown>[]).map((f) => ({
+        proposito: texto(f.proposito_de_la_modificacion) ?? `Suspensión${texto(f.tipo) ? ` (${texto(f.tipo)})` : ""}`,
+        fecha: texto(f.fecha_de_aprobacion),
+        dias: null,
+        valor: null,
+        estado: texto(f.tipo),
+      })),
+    ];
+  })();
   const avisosGarantias = avisosGarantia(expediente.garantias, expediente.fechaFinEstimada, expediente.modificaciones);
   const hoy = new Date();
 
@@ -378,7 +386,6 @@ export default async function DetalleExpedienteContractualPage({
     );
   };
 
-  const fechaTerminacionIso = expediente.fechaFinEstimada ? expediente.fechaFinEstimada.toISOString().slice(0, 10) : null;
   const anclaUsada = new Set<string>();
   const anclaPeriodo = (clave: string) => {
     if (anclaUsada.has(clave)) return undefined;
@@ -548,6 +555,7 @@ export default async function DetalleExpedienteContractualPage({
                 tipoContratoActual={expediente.tipoContrato}
                 causalActual={expediente.causalContratacionDirecta}
                 codigoProcesoActual={expediente.codigoProceso}
+                enlazadoSecop={Boolean(expediente.idContratoSecop)}
                 topes={topesCuantia}
                 modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
                 valorActual={expediente.valor?.toString() ?? null}
@@ -676,11 +684,11 @@ export default async function DetalleExpedienteContractualPage({
                 jurídica).
               </span>
             </div>
-            {puedeEditarDatosGenerales && <VincularContratistaForm expedienteId={id} />}
+            {puedeEditarDatosGenerales && !expediente.idContratoSecop && <VincularContratistaForm expedienteId={id} />}
           </div>
         )}
 
-        {!faltaContratista && puedeEditarDatosGenerales && (
+        {!faltaContratista && puedeEditarDatosGenerales && !expediente.idContratoSecop && (
           <details className="group mt-3 text-xs" open={!expediente.contratista}>
             <summary className="cursor-pointer font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
               {expediente.contratista ? "Cambiar el contratista" : "Vincular un contratista"}
@@ -755,23 +763,14 @@ export default async function DetalleExpedienteContractualPage({
         <ModificacionesContrato
           expedienteId={id}
           puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
-          terminacion={fechaTerminacionIso}
-          inicio={expediente.fechaInicio ? expediente.fechaInicio.toISOString().slice(0, 10) : null}
-          suscripcion={expediente.fechaSuscripcion ? expediente.fechaSuscripcion.toISOString().slice(0, 10) : null}
-          tipoContrato={expediente.tipoContrato}
-          valorInicial={expediente.valor !== null ? Number(expediente.valor) : null}
+          enlazadoSecop={Boolean(expediente.idContratoSecop)}
+          modificacionesSecop={modificacionesSecop}
           modificaciones={expediente.modificaciones.map((m) => ({
             id: m.id,
             numero: m.numero,
             tipo: m.tipo,
             fecha: (m.fechaSuscripcion ?? m.createdAt).toISOString(),
-            terminacionAnterior: m.fechaTerminacionAnterior?.toISOString() ?? null,
-            terminacionNueva: m.fechaTerminacionNueva?.toISOString() ?? null,
-            valorAdicionado: m.valorAdicionado !== null ? Number(m.valorAdicionado) : null,
-            vigenciasFuturas: m.vigenciasFuturas,
-            aniosVigenciasFuturas: m.aniosVigenciasFuturas,
-            actoVigenciasFuturas: m.actoVigenciasFuturas,
-            valoresVigenciasFuturas: Array.isArray(m.valoresVigenciasFuturas) ? (m.valoresVigenciasFuturas as { anio: number; valor: number; desde?: string; hasta?: string }[]) : [],
+            claseTerminacion: m.claseTerminacion,
             observacion: m.observacion,
             documentoId: m.documentoId,
             cdpDocumentoId: m.cdpDocumentoId,
@@ -838,7 +837,6 @@ export default async function DetalleExpedienteContractualPage({
               }
             : null
         }
-        diferencias={diferenciasSecop}
         puedeSincronizar={puedeRegistrarModificacionContrato(permisos, expediente)}
       />
 

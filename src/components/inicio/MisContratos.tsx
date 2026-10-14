@@ -75,7 +75,7 @@ function LineaInformes({ periodos }: { periodos: PeriodoLanding[] }) {
 function TarjetaContrato({ c }: { c: ContratoLanding }) {
   const radicados = c.periodos.filter((p) => p.estado === "radicado").length;
   const firmasListas = c.firmas.filter((f) => f.puedeActuar).length;
-  const valorTotal = c.valorInicial !== null ? c.valorInicial + c.valorAdicionado : null;
+  const valorTotal = c.valor;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
@@ -107,7 +107,6 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
           <Dato etiqueta="Valor del contrato">
             {valorTotal !== null ? formatearPesosCO(valorTotal) : "—"}
-            {c.valorAdicionado > 0 && <span className="ml-1 text-[10px] text-acento-700">con adición</span>}
           </Dato>
           <Dato etiqueta="Inicio">{fecha(c.inicio)}</Dato>
           <Dato etiqueta="Terminación">

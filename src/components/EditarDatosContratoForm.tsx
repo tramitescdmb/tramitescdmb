@@ -30,6 +30,7 @@ export function EditarDatosContratoForm({
   fechaSuscripcionActual,
   fechaInicioActual,
   fechaFinEstimadaActual,
+  enlazadoSecop,
 }: {
   expedienteId: string;
   modalidadActual: string;
@@ -46,6 +47,7 @@ export function EditarDatosContratoForm({
   fechaSuscripcionActual: string | null;
   fechaInicioActual: string | null;
   fechaFinEstimadaActual: string | null;
+  enlazadoSecop: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -73,7 +75,7 @@ export function EditarDatosContratoForm({
   const [error, setError] = useState<string | null>(null);
 
   async function guardar() {
-    if (combinacion) return setError(combinacion);
+    if (combinacion && !enlazadoSecop) return setError(combinacion);
     if (!dependenciaSolicitanteId) return setError("Debe elegir la dependencia solicitante.");
     setGuardando(true);
     setError(null);
@@ -81,7 +83,10 @@ export function EditarDatosContratoForm({
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(
+          enlazadoSecop
+            ? { dependenciaSolicitanteId, codigoProceso: codigoEnviado }
+            : {
           modalidadSeleccion,
           tipoContrato,
           causalContratacionDirecta: modalidadSeleccion === "CONTRATACION_DIRECTA" ? causal || null : null,
@@ -93,7 +98,8 @@ export function EditarDatosContratoForm({
           fechaSuscripcion: fechaSuscripcion || null,
           fechaInicio: fechaInicio || null,
           fechaFinEstimada: fechaFinEstimada || null,
-        }),
+              }
+        ),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo guardar.");
@@ -128,6 +134,29 @@ export function EditarDatosContratoForm({
               </button>
             </div>
 
+            {enlazadoSecop ? (
+              <div className="space-y-3">
+                <p className="rounded-md bg-cdmb-50 px-3 py-2 text-xs text-cdmb-900">
+                  Este expediente está enlazado con SECOP II, la fuente oficial: modalidad, causal, tipo, valor, números de contrato y de proceso,
+                  fechas y contratista se actualizan cada día desde allí y no se editan en GECON.
+                </p>
+                <label className="block text-xs font-medium text-stone-600">
+                  Dependencia solicitante
+                  <div className="mt-1">
+                    <BuscadorDependencia dependencias={dependencias} value={dependenciaSolicitanteId} onChange={setDependenciaSolicitanteId} />
+                  </div>
+                </label>
+                <label className="block text-xs font-medium text-stone-600">
+                  Código de proceso
+                  <input
+                    value={codigoProceso}
+                    onChange={(e) => setCodigoProceso(e.target.value.toUpperCase())}
+                    placeholder={`${prefijo ?? "Elija la causal"}-0000-AAAA`}
+                    className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+                  />
+                </label>
+              </div>
+            ) : (
             <div className="space-y-3">
                             <label className="block text-xs font-medium text-stone-600">
                 Modalidad de selección
@@ -266,6 +295,7 @@ export function EditarDatosContratoForm({
                 fecha de inicio, el contrato queda «Pendiente de inicio» y no se calculan plazos.
               </p>
             </div>
+            )}
 
             <button
               type="button"

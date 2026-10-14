@@ -210,34 +210,19 @@ export default async function ContratacionAyudaPage() {
           con nombre propio. Lo crea quien gestiona el expediente; el contratista carga en él su documento.
         </p>
         <p>
-          <strong>Modificaciones.</strong> Se registran en el bloque «Modificaciones del contrato» del expediente: se elige el tipo
-          (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración), se
-          indica la fecha de suscripción,
-          se diligencian sus datos y se carga una sola acta. La fecha de terminación, el valor y los informes mensuales se actualizan.
+          <strong>Modificaciones.</strong> El bloque «Modificaciones del contrato» es el registro documental de cada otrosí: se elige el
+          tipo (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración),
+          se indica la fecha de suscripción y se carga el acta para su custodia y firma. El plazo, el valor y el contratista vigentes no se
+          calculan en GECON: llegan de SECOP II con la sincronización diaria, y con ellos se recalculan los informes mensuales.
         </p>
         <ul className="list-disc space-y-1 pl-5">
-          <li>Solo proceden durante la ejecución: entre el inicio y la terminación vigente (Manual, num. 7.5).</li>
           <li>
-            Las adiciones no superan el 50 % del valor inicial expresado en SMMLV: el valor inicial se convierte con el salario mínimo
-            del año de suscripción y cada adición con el de su año (Ley 80, art. 40; Manual, num. 7.5.3). La interventoría está exenta
-            (Ley 1474, art. 85).
+            Cada adición en valor lleva su CDP y su RP; una vigencia futura, su RP (la vigencia siguiente se respalda con el acto de
+            autorización). Se cargan desde la tabla de modificaciones.
           </li>
-          <li>La suspensión indica fecha de reinicio; no se admiten suspensiones indefinidas y la terminación se corre los días suspendidos (Manual, num. 7.4).</li>
+          <li>La terminación anticipada indica si es de mutuo acuerdo (acta A-BS-FO131) o unilateral (Ley 80, art. 17) y vuelve obligatoria la liquidación.</li>
           <li>
-            Una terminación que pasa a la vigencia siguiente exige la autorización de vigencias futuras: clase, acto de autorización y,
-            por cada vigencia, el periodo cubierto (meses y días desde el 1 de enero) y su valor.
-          </li>
-          <li>
-            Cada adición en valor exige su CDP y su RP. Una prórroga o vigencia futura sin recursos nuevos solo exige el RP: la vigencia
-            siguiente se respalda con el acto de autorización y no con CDP. Ambos se cargan desde la tabla de modificaciones.
-          </li>
-          <li>
-            La cesión (A-BS-FO114) pide el usuario de red del cesionario, que debe existir en la plataforma: el expediente pasa a él y el
-            cedente deja de verlo (Ley 80, art. 41; Manual, num. 7.6).
-          </li>
-          <li>
-            La terminación anticipada es de mutuo acuerdo (acta A-BS-FO131) o unilateral (acto administrativo, Ley 80, art. 17); fija la
-            nueva terminación y vuelve obligatoria la liquidación (Manual, num. 7.12 y 7.13).
+            El bloque lista las modificaciones y suspensiones que publica SECOP II y avisa cuando hay más en SECOP II que actas en GECON.
           </li>
         </ul>
         <p>
@@ -248,7 +233,7 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Pagos.</strong> En el bloque «Pagos» se registra cada pago con su fecha, valor y periodo. Muestra lo pagado, el saldo y
-          la ejecución financiera frente al avance del plazo, y no admite pagos que superen el valor del contrato con sus adiciones.
+          la ejecución financiera frente al avance del plazo, y no admite pagos que superen el valor vigente del contrato.
         </p>
         <p>
           <strong>Modalidad y tipo de contrato.</strong> El tipo de contrato se elige entre los que admite la modalidad: el concurso de
@@ -265,16 +250,19 @@ export default async function ContratacionAyudaPage() {
           de la circular de enero; la mínima cuantía es el 10 %. Con esos topes se valida el valor según el año de suscripción: la mínima
           cuantía y la menor cuantía no superan su tope; por debajo de la mínima prevalece la mínima cuantía (Ley 2069 de 2020, art. 30);
           una licitación por debajo de la menor cuantía corresponde a selección abreviada. Sin tope registrado para el año, no se valida.
+          La validación aplica al valor escrito en GECON antes del enlace; una vez enlazado, rige el de SECOP II.
         </p>
         <p>
-          <strong>SECOP II.</strong> El expediente se crea en GECON desde la etapa precontractual. Cada día GECON revisa los datos
-          abiertos de SECOP II (datos.gov.co, NIT de la CDMB) y enlaza cada expediente con su contrato: por el número de contrato o de
-          proceso o, si no los tiene, por el documento del contratista entre los contratos firmados desde la creación del expediente. Si
-          encuentra varios, no los adivina: pide escribir el número de contrato. Una vez enlazado, el panel «SECOP II» del expediente
-          muestra en solo lectura lo que publica la API (estado, valores facturado y pagado, fuentes de recursos, supervisor, facturas,
-          modificaciones, adiciones, suspensiones y garantías), señala las diferencias con los datos de GECON y completa los campos que
-          estén vacíos. Los documentos se consultan en SECOP II con el enlace del panel: GECON no los copia. Al crear un expediente
-          también se puede escribir el número del contrato y pulsar «Consultar» para llenar el formulario de una vez.
+          <strong>SECOP II.</strong> SECOP II es la fuente oficial de los datos del contrato. El expediente se crea en GECON desde la etapa
+          precontractual; cada día GECON consulta los datos abiertos de SECOP II (datos.gov.co, NIT de la CDMB) y enlaza el expediente con su
+          contrato: por el número de contrato o de proceso o, si faltan, por el documento del contratista entre los contratos firmados o
+          vigentes desde la creación del expediente. Si encuentra varios, pide escribir el número de contrato. Una vez enlazado, el número
+          de contrato y de proceso, el objeto, la modalidad, la causal, el tipo, el valor, las fechas de firma, inicio y terminación y el
+          contratista se toman de SECOP II, se sobrescriben en cada sincronización y no se editan en GECON. El panel «SECOP II» muestra
+          además, en solo lectura, todo lo que publica la API: valores facturado y pagado, fuentes de recursos, personas, facturas,
+          modificaciones, adiciones, suspensiones y garantías. Los documentos se consultan en SECOP II; GECON no los copia. En GECON se
+          gestionan la dependencia, la clasificación TRD, el código de proceso, el personal asignado, el supervisor, los documentos, las
+          firmas, los informes, las garantías y los pagos.
         </p>
         <p>
           <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la
@@ -285,7 +273,8 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <strong>Datos generales</strong> (modalidad, tipo de contrato, valor, dependencia, número de contrato, fechas y contratista): se corrigen con
-          «Editar datos generales». Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
+          «Editar datos generales» mientras el expediente no esté enlazado con SECOP II; después solo se editan la dependencia y el código
+          de proceso. Cambiar un contratista ya vinculado pide confirmación; el anterior pierde el acceso.
         </p>
       </Seccion>
 

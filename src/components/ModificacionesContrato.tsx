@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { formatearSmmlv } from "@/lib/smmlv";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarClock, Check, FilePlus2, UploadCloud, X } from "lucide-react";
 import { comprimirParaContratacion } from "@/lib/compresion-cliente";
@@ -10,21 +9,11 @@ import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContrata
 import {
   ETIQUETA_TIPO_MODIFICACION,
   TIPOS_MODIFICACION,
-  cambiaPlazo,
-  cambiaValor,
-  diasSuspendidos,
-  exentoLimiteAdicion,
-  limiteAdicion,
-  duracionPeriodo,
-  errorModificacion,
-  leerModificacion,
-  nuevaFechaTerminacion,
-  periodosRequeridos,
-  textoAnios,
-  CLASES_VIGENCIAS_FUTURAS,
   CLASES_TERMINACION,
   SOPORTES_PRESUPUESTALES,
   MOTIVO_SIN_CDP,
+  errorModificacion,
+  leerModificacion,
   soportesRequeridos,
   type SoportePresupuestal,
   type TipoModificacion,
@@ -35,13 +24,7 @@ export type ModificacionRegistrada = {
   numero: number;
   tipo: TipoModificacion;
   fecha: string;
-  terminacionAnterior: string | null;
-  terminacionNueva: string | null;
-  valorAdicionado: number | null;
-  vigenciasFuturas: boolean;
-  aniosVigenciasFuturas: number[];
-  actoVigenciasFuturas: string | null;
-  valoresVigenciasFuturas: { anio: number; valor: number; desde?: string; hasta?: string }[];
+  claseTerminacion: string | null;
   observacion: string | null;
   documentoId: string | null;
   cdpDocumentoId: string | null;
@@ -49,6 +32,8 @@ export type ModificacionRegistrada = {
   registradoEn: string;
   registradoPor: string;
 };
+
+export type ModificacionSecop = { proposito: string; fecha: string | null; dias: number | null; valor: number | null; estado: string | null };
 
 const pesos = (v: number) => `$ ${Math.round(v).toLocaleString("es-CO")}`;
 const fechaLarga = (iso: string | null) =>
@@ -141,109 +126,49 @@ function SoporteCelda({
 export function ModificacionesContrato({
   expedienteId,
   puedeRegistrar,
-  terminacion,
-  inicio,
-  suscripcion,
-  tipoContrato,
-  valorInicial,
   modificaciones,
+  modificacionesSecop,
+  enlazadoSecop,
 }: {
   expedienteId: string;
   puedeRegistrar: boolean;
-  terminacion: string | null;
-  inicio: string | null;
-  suscripcion: string | null;
-  tipoContrato: string;
-  valorInicial: number | null;
   modificaciones: ModificacionRegistrada[];
+  modificacionesSecop: ModificacionSecop[];
+  enlazadoSecop: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [tipo, setTipo] = useState<TipoModificacion | "">("");
   const [fecha, setFecha] = useState(() => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10));
-  const [fechaTerminacion, setFechaTerminacion] = useState("");
-  const [valorAdicionado, setValorAdicionado] = useState("");
-  const [fechaSuspension, setFechaSuspension] = useState("");
-  const [fechaReinicio, setFechaReinicio] = useState("");
-  const [vfClase, setVfClase] = useState("");
-  const [vfActo, setVfActo] = useState("");
-  const [vfHasta, setVfHasta] = useState("");
-  const [vfValores, setVfValores] = useState<Record<number, string>>({});
-  const [observacion, setObservacion] = useState("");
-  const [cesionario, setCesionario] = useState("");
   const [claseTerminacion, setClaseTerminacion] = useState("");
+  const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [requiereFirma, setRequiereFirma] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const adicionadoPrevio = modificaciones.reduce((a, m) => a + (m.valorAdicionado ?? 0), 0);
-  const actual = terminacion ? new Date(`${terminacion}T00:00:00Z`) : null;
-  const datos = useMemo(
-    () =>
-      tipo
-        ? leerModificacion({
-            tipo,
-            fecha,
-            fechaTerminacion,
-            valorAdicionado: Number(valorAdicionado),
-            fechaSuspension,
-            fechaReinicio,
-            vigenciasFuturas: { clase: vfClase, acto: vfActo, hasta: vfHasta, valores: Object.entries(vfValores).map(([anio, valor]) => ({ anio: Number(anio), valor: Number(valor) })) },
-            observacion,
-            cesionarioUsuarioRed: cesionario,
-            claseTerminacion,
-          })
-        : null,
-    [tipo, fecha, fechaTerminacion, valorAdicionado, fechaSuspension, fechaReinicio, vfClase, vfActo, vfHasta, vfValores, observacion, cesionario, claseTerminacion]
-  );
-  const nueva = datos ? nuevaFechaTerminacion(datos, actual) : null;
-  const periodos = datos ? periodosRequeridos(datos, actual) : [];
-  const anios = periodos.map((p) => p.anio);
-  const pideVigencias = tipo === "VIGENCIAS_FUTURAS" || periodos.length > 0;
+  const tipoElegido = TIPOS_MODIFICACION.find((t) => t.valor === tipo);
+  const soportesNueva = tipo ? soportesRequeridos({ tipo }) : [];
+  const conSoportes = modificaciones.some((m) => soportesRequeridos(m).length > 0);
   const soportesPendientes = modificaciones.reduce(
     (a, m) => a + soportesRequeridos(m).filter((x) => !(x === "CDP" ? m.cdpDocumentoId : m.rpDocumentoId)).length,
     0
   );
-  const conSoportes = modificaciones.some((m) => soportesRequeridos(m).length > 0);
-  const soportesNueva = datos ? soportesRequeridos({ tipo: datos.tipo, vigenciasFuturas: pideVigencias }) : [];
-  const tipoElegido = TIPOS_MODIFICACION.find((t) => t.valor === tipo);
-  const contrato = {
-    terminacion: actual,
-    inicio: inicio ? new Date(`${inicio}T00:00:00Z`) : null,
-    suscripcion: suscripcion ? new Date(`${suscripcion}T00:00:00Z`) : null,
-    valorInicial,
-    tipoContrato,
-    adiciones: modificaciones.filter((m) => m.valorAdicionado).map((m) => ({ valor: m.valorAdicionado!, fecha: new Date(m.fecha) })),
-  };
-  const limite = fecha ? limiteAdicion(contrato, new Date(`${fecha}T00:00:00Z`)) : null;
+  const sinActa = Math.max(0, modificacionesSecop.length - modificaciones.length);
 
   function cerrar() {
     setAbierto(false);
     setTipo("");
-    setFechaTerminacion("");
-    setValorAdicionado("");
-    setFechaSuspension("");
-    setFechaReinicio("");
-    setVfClase("");
-    setVfActo("");
-    setVfHasta("");
-    setVfValores({});
-    setObservacion("");
-    setCesionario("");
     setClaseTerminacion("");
+    setObservacion("");
     setArchivo(null);
     setError(null);
   }
 
-  function elegirTipo(t: TipoModificacion) {
-    setTipo(t);
-    if (t === "VIGENCIAS_FUTURAS" && !vfHasta && terminacion && Number(terminacion.slice(0, 4)) > new Date().getFullYear()) setVfHasta(terminacion.slice(0, 10));
-  }
-
   async function registrar() {
+    const datos = tipo ? leerModificacion({ tipo, fecha, claseTerminacion, observacion }) : null;
     if (!datos) return setError("Seleccione el tipo de modificación.");
-    const problema = errorModificacion(datos, contrato);
+    const problema = errorModificacion(datos);
     if (problema) return setError(problema);
     if (!archivo) return setError("Cargue el acta de la modificación.");
     setGuardando(true);
@@ -275,13 +200,8 @@ export function ModificacionesContrato({
             <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{modificaciones.length}</span>
           </h2>
           <p className="mt-0.5 text-xs text-stone-500">
-            Terminación vigente: <strong className="text-stone-800">{fechaLarga(terminacion)}</strong>
-            {valorInicial !== null && (
-              <>
-                {" "}· Valor: <strong className="text-stone-800">{pesos(valorInicial + adicionadoPrevio)}</strong>
-                {adicionadoPrevio > 0 && <span className="text-stone-400"> (inicial {pesos(valorInicial)})</span>}
-              </>
-            )}
+            Registro de las actas para su custodia y firma.
+            {enlazadoSecop && " El plazo y el valor vigentes se actualizan desde SECOP II."}
             {soportesPendientes > 0 && <span className="font-medium text-amber-700"> · {soportesPendientes} soporte(s) presupuestal(es) por cargar</span>}
           </p>
         </div>
@@ -296,6 +216,14 @@ export function ModificacionesContrato({
           </button>
         )}
       </div>
+
+      {sinActa > 0 && (
+        <p className="mt-3 flex items-start gap-1.5 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
+          <AlertTriangle className="mt-px h-3.5 w-3.5 flex-none text-amber-600" aria-hidden />
+          SECOP II reporta {modificacionesSecop.length} modificación(es) y en GECON hay {modificaciones.length} acta(s): registre aquí el acta de cada una para
+          custodiarla en el expediente.
+        </p>
+      )}
 
       {abierto && (
         <div className="mt-3 space-y-3 rounded-lg border border-acento-200 bg-acento-50/40 p-3">
@@ -317,7 +245,7 @@ export function ModificacionesContrato({
                     tipo === t.valor ? "border-acento-500 bg-acento-500 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-acento-300"
                   }`}
                 >
-                  <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => elegirTipo(t.valor)} className="sr-only" />
+                  <input type="radio" name="tipo-modificacion" checked={tipo === t.valor} onChange={() => setTipo(t.valor)} className="sr-only" />
                   {t.etiqueta}
                 </label>
               ))}
@@ -327,163 +255,47 @@ export function ModificacionesContrato({
 
           {tipo && (
             <fieldset className="space-y-2">
-              <legend className="mb-1.5 text-xs font-medium text-stone-700">2. Datos</legend>
+              <legend className="mb-1.5 text-xs font-medium text-stone-700">2. Datos del acta</legend>
               <div className="flex flex-wrap gap-3">
                 <label className="flex flex-col gap-1 text-xs text-stone-600">
                   Fecha de suscripción
-                  <input type="date" value={fecha} min={inicio ?? undefined} max={terminacion ?? undefined} onChange={(e) => setFecha(e.target.value)} className={campo} />
+                  <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={campo} />
                 </label>
                 {tipo === "TERMINACION_ANTICIPADA" && (
-                  <>
-                    <div className="flex flex-col gap-1 text-xs text-stone-600">
-                      Clase de terminación
-                      <div className="flex gap-1.5">
-                        {CLASES_TERMINACION.map((c) => (
-                          <label
-                            key={c.valor}
-                            title={c.descripcion}
-                            className={`cursor-pointer rounded-full border px-2.5 py-1 font-medium ${
-                              claseTerminacion === c.valor ? "border-acento-500 bg-acento-500 text-white" : "border-stone-200 bg-white text-stone-700"
-                            }`}
-                          >
-                            <input type="radio" name="clase-terminacion" checked={claseTerminacion === c.valor} onChange={() => setClaseTerminacion(c.valor)} className="sr-only" />
-                            {c.etiqueta}
-                          </label>
-                        ))}
-                      </div>
+                  <div className="flex flex-col gap-1 text-xs text-stone-600">
+                    Clase de terminación
+                    <div className="flex gap-1.5">
+                      {CLASES_TERMINACION.map((c) => (
+                        <label
+                          key={c.valor}
+                          title={c.descripcion}
+                          className={`cursor-pointer rounded-full border px-2.5 py-1 font-medium ${
+                            claseTerminacion === c.valor ? "border-acento-500 bg-acento-500 text-white" : "border-stone-200 bg-white text-stone-700"
+                          }`}
+                        >
+                          <input type="radio" name="clase-terminacion" checked={claseTerminacion === c.valor} onChange={() => setClaseTerminacion(c.valor)} className="sr-only" />
+                          {c.etiqueta}
+                        </label>
+                      ))}
                     </div>
-                    <label className="flex flex-col gap-1 text-xs text-stone-600">
-                      Fecha de terminación anticipada
-                      <input type="date" value={fechaTerminacion} max={terminacion ?? undefined} onChange={(e) => setFechaTerminacion(e.target.value)} className={campo} />
-                    </label>
-                  </>
-                )}
-                {tipo === "CESION" && (
-                  <label className="flex flex-col gap-1 text-xs text-stone-600">
-                    Usuario de red del cesionario
-                    <input value={cesionario} onChange={(e) => setCesionario(e.target.value.trim())} placeholder="Ej. cardel02" className={`${campo} w-48`} />
-                    <span className="text-[11px] text-stone-400">Debe existir en la plataforma. El cedente deja de ver el expediente.</span>
-                  </label>
-                )}
-                {cambiaPlazo(tipo) && (
-                  <label className="flex flex-col gap-1 text-xs text-stone-600">
-                    Nueva fecha de terminación
-                    <input type="date" value={fechaTerminacion} min={terminacion ?? undefined} onChange={(e) => setFechaTerminacion(e.target.value)} className={campo} />
-                  </label>
-                )}
-                {cambiaValor(tipo) && (
-                  <label className="flex flex-col gap-1 text-xs text-stone-600">
-                    Valor adicionado ($)
-                    <input type="number" min={1} step={1} value={valorAdicionado} onChange={(e) => setValorAdicionado(e.target.value)} className={`${campo} w-48`} />
-                    {limite ? (
-                      <span className="text-[11px] text-stone-400" title={`50 % del valor inicial: ${formatearSmmlv(limite.inicialSm / 2)}; adicionado: ${formatearSmmlv(limite.adicionadoSm)}`}>
-                        Disponible hasta el 50 %: {formatearSmmlv(limite.disponibleSm)} ≈ {pesos(limite.disponiblePesos)} (SMMLV {limite.anioAdicion})
-                      </span>
-                    ) : (
-                      exentoLimiteAdicion(tipoContrato) && <span className="text-[11px] text-stone-400">Interventoría: sin el límite del 50 % (Ley 1474 de 2011, art. 85)</span>
-                    )}
-                  </label>
-                )}
-                {tipo === "SUSPENSION" && (
-                  <>
-                    <label className="flex flex-col gap-1 text-xs text-stone-600">
-                      Fecha de suspensión
-                      <input type="date" value={fechaSuspension} onChange={(e) => setFechaSuspension(e.target.value)} className={campo} />
-                    </label>
-                    <label className="flex flex-col gap-1 text-xs text-stone-600">
-                      Fecha de reinicio
-                      <input type="date" value={fechaReinicio} min={fechaSuspension || undefined} onChange={(e) => setFechaReinicio(e.target.value)} className={campo} />
-                    </label>
-                  </>
+                  </div>
                 )}
                 <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs text-stone-600">
                   {tipo === "OTRA" ? "Descripción de la modificación" : "Observación (opcional)"}
                   <input value={observacion} onChange={(e) => setObservacion(e.target.value)} maxLength={1000} className={campo} />
                 </label>
               </div>
-
-              {(nueva || (datos?.valorAdicionado && valorInicial !== null)) && (
-                <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-md bg-white px-2.5 py-1.5 text-xs text-stone-600">
-                  {nueva && (
-                    <span>
-                      Terminación: {fechaLarga(terminacion)} → <strong className="text-stone-900">{fechaLarga(nueva.toISOString())}</strong>
-                      {tipo === "SUSPENSION" && datos && <span className="text-stone-400"> ({diasSuspendidos(datos)} día(s) suspendidos)</span>}
-                    </span>
-                  )}
-                  {datos?.valorAdicionado && valorInicial !== null ? (
-                    <span>
-                      Valor: {pesos(valorInicial + adicionadoPrevio)} → <strong className="text-stone-900">{pesos(valorInicial + adicionadoPrevio + datos.valorAdicionado)}</strong>
-                    </span>
-                  ) : null}
-                </div>
-              )}
-
-              {pideVigencias && (
-                <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                  <p className="flex items-start gap-1.5">
-                    <AlertTriangle className="mt-px h-3.5 w-3.5 flex-none text-amber-600" aria-hidden />
-                    {tipo === "VIGENCIAS_FUTURAS"
-                      ? "Registre la autorización para comprometer recursos de la vigencia siguiente, por el periodo que el contrato se ejecuta en ella."
-                      : `La nueva terminación compromete la vigencia ${textoAnios(anios)}. No se registra sin la autorización de vigencias futuras.`}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span>Clase:</span>
-                    {CLASES_VIGENCIAS_FUTURAS.map((c) => (
-                      <label
-                        key={c.valor}
-                        title={c.descripcion}
-                        className={`flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-0.5 font-medium ${
-                          vfClase === c.valor ? "border-amber-500 bg-amber-500 text-white" : "border-amber-300 bg-white text-amber-900"
-                        }`}
-                      >
-                        <input type="radio" name="clase-vf" checked={vfClase === c.valor} onChange={() => setVfClase(c.valor)} className="sr-only" />
-                        {c.etiqueta}
-                      </label>
-                    ))}
-                    {vfClase && <span className="text-amber-800/80">{CLASES_VIGENCIAS_FUTURAS.find((c) => c.valor === vfClase)?.descripcion}</span>}
-                  </div>
-                  <label className="flex flex-col gap-1">
-                    Acto de autorización (número y fecha)
-                    <input value={vfActo} onChange={(e) => setVfActo(e.target.value)} placeholder="Ej. Acuerdo del Consejo Directivo N.° 012 del 20 de noviembre de 2026" className={campo} />
-                  </label>
-                  {tipo === "VIGENCIAS_FUTURAS" && (
-                    <label className="flex flex-col gap-1">
-                      Ejecución en la vigencia siguiente hasta
-                      <input type="date" value={vfHasta} min={`${new Date().getFullYear() + 1}-01-01`} onChange={(e) => setVfHasta(e.target.value)} className={`${campo} w-48`} />
-                    </label>
-                  )}
-                  {periodos.length > 0 && (
-                    <div>
-                      <p className="mb-1">Periodo y valor comprometido en cada vigencia</p>
-                      <div className="flex flex-wrap items-end gap-3">
-                        {periodos.map((p) => (
-                          <label key={p.anio} className="flex flex-col gap-1">
-                            <span>
-                              <strong>{p.anio}</strong> · {fechaLarga(p.desde)} – {fechaLarga(p.hasta)}{" "}
-                              <span className="text-amber-800/80">({duracionPeriodo(p.desde, p.hasta)})</span>
-                            </span>
-                            <input
-                              type="number"
-                              min={1}
-                              step={1}
-                              placeholder="Valor ($)"
-                              value={vfValores[p.anio] ?? ""}
-                              onChange={(e) => setVfValores((v) => ({ ...v, [p.anio]: e.target.value }))}
-                              className={`${campo} w-48`}
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {soportesNueva.length > 0 && (
+                <p className="text-[11px] text-stone-500">
+                  Una vez registrada, cargue en la tabla {soportesNueva.length === 2 ? "el CDP y el RP" : "el RP"} de esta modificación.
+                </p>
               )}
             </fieldset>
           )}
 
           {tipo && (
             <fieldset>
-              <legend className="mb-1.5 text-xs font-medium text-stone-700">3. Acta de la modificación</legend>
+              <legend className="mb-1.5 text-xs font-medium text-stone-700">3. Acta</legend>
               <div className="flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">
                   <UploadCloud className="h-4 w-4" aria-hidden />
@@ -495,12 +307,6 @@ export function ModificacionesContrato({
                   Requiere firma
                 </label>
               </div>
-              {soportesNueva.length > 0 && (
-                <p className="mt-1.5 text-[11px] text-stone-500">
-                  Una vez registrada, cargue en la tabla {soportesNueva.length === 2 ? "el CDP y el RP" : "el RP"} de esta modificación.
-                  {soportesNueva.length === 1 && " No requiere CDP: los recursos de la vigencia siguiente se respaldan con el acto de autorización."}
-                </p>
-              )}
             </fieldset>
           )}
 
@@ -525,10 +331,8 @@ export function ModificacionesContrato({
               <tr>
                 <th className="px-3 py-1.5 font-medium">N.°</th>
                 <th className="px-3 py-1.5 font-medium">Tipo</th>
-                <th className="px-3 py-1.5 font-medium">Terminación</th>
-                <th className="px-3 py-1.5 font-medium">Valor adicionado</th>
-                {conSoportes && <th className="px-3 py-1.5 font-medium">CDP / RP</th>}
                 <th className="px-3 py-1.5 font-medium">Suscripción</th>
+                {conSoportes && <th className="px-3 py-1.5 font-medium">CDP / RP</th>}
                 <th className="px-3 py-1.5 font-medium">Registro</th>
               </tr>
             </thead>
@@ -538,21 +342,10 @@ export function ModificacionesContrato({
                   <td className="px-3 py-1.5 font-medium text-stone-800">{m.numero}</td>
                   <td className="px-3 py-1.5 text-stone-700">
                     {ETIQUETA_TIPO_MODIFICACION[m.tipo]}
-                    {m.vigenciasFuturas && (
-                      <span className="ml-1 rounded bg-amber-50 px-1 text-[10px] text-amber-700">vigencias futuras {textoAnios(m.aniosVigenciasFuturas)}</span>
-                    )}
-                    {m.actoVigenciasFuturas && <span className="block text-stone-400">{m.actoVigenciasFuturas}</span>}
-                    {m.valoresVigenciasFuturas.length > 0 && (
-                      <span className="block text-stone-400">{m.valoresVigenciasFuturas
-                          .map((v) => `${v.anio}${v.desde && v.hasta ? ` (${fechaLarga(v.desde)} – ${fechaLarga(v.hasta)}, ${duracionPeriodo(v.desde, v.hasta)})` : ""}: ${pesos(v.valor)}`)
-                          .join(" · ")}</span>
-                    )}
+                    {m.claseTerminacion && <span className="text-stone-400"> · {CLASES_TERMINACION.find((c) => c.valor === m.claseTerminacion)?.etiqueta.toLowerCase()}</span>}
                     {m.observacion && <span className="block text-stone-400">{m.observacion}</span>}
                   </td>
-                  <td className="px-3 py-1.5 text-stone-600">
-                    {m.terminacionNueva ? `${fechaLarga(m.terminacionAnterior)} → ${fechaLarga(m.terminacionNueva)}` : "Sin cambio"}
-                  </td>
-                  <td className="px-3 py-1.5 text-stone-600">{m.valorAdicionado ? pesos(m.valorAdicionado) : "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-1.5 text-stone-600">{fechaLarga(m.fecha)}</td>
                   {conSoportes && (
                     <td className="whitespace-nowrap px-3 py-1.5 text-[11px]">
                       {soportesRequeridos(m).length > 0 ? (
@@ -579,7 +372,6 @@ export function ModificacionesContrato({
                       )}
                     </td>
                   )}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-stone-600">{fechaLarga(m.fecha)}</td>
                   <td className="px-3 py-1.5 text-stone-400">
                     {fechaLarga(m.registradoEn)} · {m.registradoPor}
                     {m.documentoId && (
@@ -592,6 +384,22 @@ export function ModificacionesContrato({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {modificacionesSecop.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Publicadas en SECOP II</p>
+          <ul className="space-y-0.5 text-xs text-stone-600">
+            {modificacionesSecop.map((m, i) => (
+              <li key={i}>
+                {fechaLarga(m.fecha)} · {m.proposito}
+                {m.dias ? ` · ${m.dias} día(s)` : ""}
+                {m.valor ? ` · ${pesos(m.valor)}` : ""}
+                {m.estado ? <span className="text-stone-400"> · {m.estado}</span> : null}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

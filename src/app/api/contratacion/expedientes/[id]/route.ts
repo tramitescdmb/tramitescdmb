@@ -61,6 +61,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await registrarAccesoDenegadoAccion("vincular el contratista de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para vincular el contratista de este expediente." }, { status: 403 });
     }
+    const enlace = await db.expedienteContractual.findUnique({ where: { id }, select: { idContratoSecop: true } });
+    if (enlace?.idContratoSecop) {
+      return NextResponse.json({ error: "Este expediente está enlazado con SECOP II: el contratista se toma de allí." }, { status: 400 });
+    }
     let contratistaId = String(body.contratistaId || "").trim();
     const contratistaUsuarioId = String(body.contratistaUsuarioId || "").trim();
     if (contratistaUsuarioId) {
@@ -113,6 +117,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!puedeGestionarExpedienteCompleto(permisos, { id })) {
       await registrarAccesoDenegadoAccion("editar los datos generales de un expediente", id, session, req.headers);
       return NextResponse.json({ error: "No tiene permiso para editar los datos generales de este expediente." }, { status: 403 });
+    }
+    const CAMPOS_SECOP = ["numeroContrato", "numeroProcesoSecop", "fechaSuscripcion", "fechaInicio", "fechaFinEstimada", "modalidadSeleccion", "tipoContrato", "causalContratacionDirecta", "valor"];
+    if (CAMPOS_SECOP.some((k) => k in body)) {
+      const enlace = await db.expedienteContractual.findUnique({ where: { id }, select: { idContratoSecop: true } });
+      if (enlace?.idContratoSecop) {
+        return NextResponse.json({ error: "Este expediente está enlazado con SECOP II: esos datos se toman de allí y no se editan en GECON." }, { status: 400 });
+      }
     }
     if ("tipoContrato" in body && !esTipoContrato(body.tipoContrato)) {
       return NextResponse.json({ error: "El tipo de contrato indicado no es válido." }, { status: 400 });

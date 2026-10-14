@@ -33,8 +33,7 @@ export type ContratoLanding = {
   relacion: "CONTRATISTA" | "SUPERVISOR";
   contratista: string | null;
   supervisores: string[];
-  valorInicial: number | null;
-  valorAdicionado: number;
+  valor: number | null;
   inicio: Date | null;
   terminacion: Date | null;
   prorrogas: number;
@@ -73,7 +72,7 @@ const SELECT_CONTRATO = {
   fechaFinEstimada: true,
   contratista: { select: { nombreORazonSocial: true } },
   supervisores: { select: { usuario: { select: { nombre: true } } } },
-  modificaciones: { select: { tipo: true, valorAdicionado: true } },
+  modificaciones: { select: { tipo: true } },
   documentos: {
     where: { periodoMes: { not: null }, requisito: { codigoFormato: { in: CODIGOS_FORMATO_POR_PERIODOS } } },
     select: { id: true, periodoMes: true },
@@ -156,8 +155,7 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
       relacion: permisos.contratistaId && e.contratistaId === permisos.contratistaId ? "CONTRATISTA" : "SUPERVISOR",
       contratista: e.contratista?.nombreORazonSocial ?? null,
       supervisores: e.supervisores.map((s) => s.usuario.nombre),
-      valorInicial: e.valor !== null ? Number(e.valor) : null,
-      valorAdicionado: e.modificaciones.reduce((acc, m) => acc + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0),
+      valor: e.valor !== null ? Number(e.valor) : null,
       inicio: e.fechaInicio,
       terminacion: e.fechaFinEstimada,
       prorrogas: e.modificaciones.filter((m) => m.tipo === "PRORROGA" || m.tipo === "PRORROGA_Y_ADICION").length,

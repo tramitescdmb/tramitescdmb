@@ -17,7 +17,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, duracionPeriodo, soportesRequeridos, type SoportePresupuestal, errorModificacion, nuevaFechaTerminacion, tieneVigenciasFuturas, valoresConPeriodo, type DatosModificacion } from "@/lib/modificaciones-contrato";
+import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, soportesRequeridos, type SoportePresupuestal, errorModificacion, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
@@ -1566,58 +1566,25 @@ export async function registrarModificacionContrato(datos: {
 }) {
   const expediente = await db.expedienteContractual.findUniqueOrThrow({
     where: { id: datos.expedienteId },
-    select: {
-      fechaFinEstimada: true,
-      contratistaId: true,
-      fechaInicio: true,
-      fechaSuscripcion: true,
-      tipoContrato: true,
-      valor: true,
-      modalidadSeleccion: true,
-      modificaciones: { select: { valorAdicionado: true, fechaSuscripcion: true, createdAt: true } },
-    },
+    select: { modalidadSeleccion: true, _count: { select: { modificaciones: true } } },
   });
   const m = datos.modificacion;
-  const problema = errorModificacion(m, {
-    terminacion: expediente.fechaFinEstimada,
-    inicio: expediente.fechaInicio,
-    suscripcion: expediente.fechaSuscripcion,
-    valorInicial: expediente.valor !== null ? Number(expediente.valor) : null,
-    tipoContrato: expediente.tipoContrato,
-    adiciones: expediente.modificaciones
-      .filter((x) => x.valorAdicionado)
-      .map((x) => ({ valor: Number(x.valorAdicionado), fecha: x.fechaSuscripcion ?? x.createdAt })),
-  });
+  const problema = errorModificacion(m);
   if (problema) throw new Error(problema);
-
-  let cesion: { cedente: string | null; cesionario: string; nombre: string } | null = null;
-  if (m.tipo === "CESION") {
-    const consulta = await consultarUsuarioRedContratista(m.cesionarioUsuarioRed ?? "");
-    if (!consulta?.existe) throw new Error(`El usuario de red ${m.cesionarioUsuarioRed} no existe en la plataforma: el administrador del sistema debe crearlo en Usuarios.`);
-    if (consulta.motivo) throw new Error(consulta.motivo);
-    if (consulta.faltan.length > 0) throw new Error(`Faltan datos del cesionario en su usuario: ${consulta.faltan.join(", ")}.`);
-    const cesionario = await asegurarContratistaDeUsuario(consulta.usuarioId);
-    if (cesionario.id === expediente.contratistaId) throw new Error("El cesionario es el contratista actual del expediente.");
-    const cedente = expediente.contratistaId
-      ? await db.contratista.findUnique({ where: { id: expediente.contratistaId }, select: { nombreORazonSocial: true } })
-      : null;
-    cesion = { cedente: expediente.contratistaId, cesionario: cesionario.id, nombre: consulta.nombre };
-    m.observacion = [`Cedente: ${cedente?.nombreORazonSocial ?? "sin contratista"} → cesionario: ${consulta.nombre}`, m.observacion].filter(Boolean).join(" · ");
-  }
 
   const codigo = TIPOS_MODIFICACION.find((t) => t.valor === m.tipo)!.codigoFormato;
   const requisito = !codigo
     ? null
     : await db.requisitoDocumentoContratacion.findFirst({
-    where: {
-      activo: true,
-      etapa: "CONTRACTUAL",
-      codigoFormato: { contains: codigo },
-      OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: expediente.modalidadSeleccion }],
-    },
-    select: { id: true, nombre: true },
-  });
-  const numero = expediente.modificaciones.length + 1;
+        where: {
+          activo: true,
+          etapa: "CONTRACTUAL",
+          codigoFormato: { contains: codigo },
+          OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: expediente.modalidadSeleccion }],
+        },
+        select: { id: true, nombre: true },
+      });
+  const numero = expediente._count.modificaciones + 1;
   const documento = await agregarDocumentoContrato({
     expedienteId: datos.expedienteId,
     etapa: "CONTRACTUAL",
@@ -1632,8 +1599,6 @@ export async function registrarModificacionContrato(datos: {
     cualquierEtapa: datos.cualquierEtapa,
   });
 
-  const nuevaFecha = nuevaFechaTerminacion(m, expediente.fechaFinEstimada);
-  const valoresVf = valoresConPeriodo(m, expediente.fechaFinEstimada);
   await db.$transaction([
     db.modificacionContrato.create({
       data: {
@@ -1642,45 +1607,19 @@ export async function registrarModificacionContrato(datos: {
         documentoId: documento.id,
         tipo: m.tipo,
         fechaSuscripcion: m.fecha ? new Date(`${m.fecha}T00:00:00Z`) : null,
-        fechaTerminacionAnterior: expediente.fechaFinEstimada,
-        fechaTerminacionNueva: nuevaFecha,
-        valorAdicionado: m.valorAdicionado,
-        fechaSuspension: m.fechaSuspension ? new Date(`${m.fechaSuspension}T00:00:00Z`) : null,
-        fechaReinicio: m.fechaReinicio ? new Date(`${m.fechaReinicio}T00:00:00Z`) : null,
-        vigenciasFuturas: tieneVigenciasFuturas(m),
-        aniosVigenciasFuturas: tieneVigenciasFuturas(m) ? valoresVf.map((v) => v.anio) : [],
-        claseVigenciasFuturas: m.vigenciasFuturas.clase,
-        actoVigenciasFuturas: m.vigenciasFuturas.acto,
-        valoresVigenciasFuturas: tieneVigenciasFuturas(m) ? valoresVf : undefined,
-        cedenteContratistaId: cesion?.cedente ?? null,
-        cesionarioContratistaId: cesion?.cesionario ?? null,
         claseTerminacion: m.claseTerminacion,
         observacion: m.observacion,
         registradoPorId: datos.usuarioId,
       },
     }),
-    ...(nuevaFecha || cesion
-      ? [
-          db.expedienteContractual.update({
-            where: { id: datos.expedienteId },
-            data: {
-              ...(nuevaFecha ? { fechaFinEstimada: nuevaFecha } : {}),
-              ...(m.tipo === "TERMINACION_ANTICIPADA" ? { terminadoAnticipadamente: true } : {}),
-              ...(cesion ? { contratistaId: cesion.cesionario } : {}),
-            },
-          }),
-        ]
+    ...(m.tipo === "TERMINACION_ANTICIPADA"
+      ? [db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } })]
       : []),
   ]);
   const partes = [
     `Modificación N.° ${numero}: ${ETIQUETA_TIPO_MODIFICACION[m.tipo]}`,
-    nuevaFecha ? `terminación ${nuevaFecha.toISOString().slice(0, 10)}` : null,
-    m.valorAdicionado ? `valor adicionado $${m.valorAdicionado.toLocaleString("es-CO")}` : null,
-    cesion ? `cesionario ${cesion.nombre}` : null,
+    m.fecha ? `suscrita el ${m.fecha}` : null,
     m.claseTerminacion ? (m.claseTerminacion === "UNILATERAL" ? "unilateral" : "de mutuo acuerdo") : null,
-    tieneVigenciasFuturas(m)
-      ? `vigencias futuras ${valoresVf.map((v) => `${v.anio} (${duracionPeriodo(v.desde, v.hasta)})`).join(", ")} (${m.vigenciasFuturas.acto})`
-      : null,
   ].filter(Boolean);
   await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
   return { numero };
@@ -1771,11 +1710,11 @@ export async function registrarPago(
   if (!Number.isFinite(datos.valor) || datos.valor <= 0) throw new Error("Indique el valor pagado.");
   const expediente = await db.expedienteContractual.findUniqueOrThrow({
     where: { id: expedienteId },
-    select: { valor: true, fechaInicio: true, modificaciones: { select: { valorAdicionado: true } }, pagos: { select: { valor: true, numero: true } } },
+    select: { valor: true, fechaInicio: true, pagos: { select: { valor: true, numero: true } } },
   });
   if (expediente.fechaInicio && datos.fecha < expediente.fechaInicio) throw new Error("El pago no puede ser anterior al inicio del contrato.");
   if (expediente.valor !== null) {
-    const total = Number(expediente.valor) + expediente.modificaciones.reduce((a, m) => a + (m.valorAdicionado ? Number(m.valorAdicionado) : 0), 0);
+    const total = Number(expediente.valor);
     const pagado = expediente.pagos.reduce((a, p) => a + Number(p.valor), 0);
     if (pagado + datos.valor > total) throw new Error(`Los pagos superarían el valor del contrato. Saldo disponible: $${Math.max(0, total - pagado).toLocaleString("es-CO")}.`);
   }
@@ -1801,6 +1740,21 @@ export async function eliminarPago(expedienteId: string, pagoId: string, usuario
   await registrarEventoContratacion(expedienteId, "PAGO_ELIMINADO", `Pago N.° ${p.numero} por $${Number(p.valor).toLocaleString("es-CO")} eliminado`, usuarioId);
 }
 
+const ETIQUETA_CAMPO_SECOP: Record<string, string> = {
+  numeroContrato: "número de contrato",
+  numeroProcesoSecop: "número de proceso",
+  valor: "valor",
+  fechaSuscripcion: "fecha de firma",
+  fechaInicio: "fecha de inicio",
+  fechaFinEstimada: "fecha de terminación",
+  objeto: "objeto",
+  modalidadSeleccion: "modalidad",
+  causalContratacionDirecta: "causal",
+  tipoContrato: "tipo de contrato",
+  codigoProceso: "código de proceso",
+  contratistaId: "contratista",
+};
+
 function jsonEstable(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(jsonEstable).join(",")}]`;
   if (v && typeof v === "object") {
@@ -1824,6 +1778,12 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
       fechaInicio: true,
       fechaFinEstimada: true,
       createdAt: true,
+      objeto: true,
+      modalidadSeleccion: true,
+      causalContratacionDirecta: true,
+      tipoContrato: true,
+      codigoProceso: true,
+      contratistaId: true,
       contratista: { select: { identificacion: true } },
       secop: { select: { datos: true, facturas: true, garantias: true, modificaciones: true, adiciones: true, suspensiones: true } },
     },
@@ -1859,14 +1819,54 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   const fechaDb = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00Z`) : null);
 
 
-  const completar = {
-    ...(!expediente.numeroContrato && c.numeroContrato ? { numeroContrato: c.numeroContrato } : {}),
-    ...(!expediente.numeroProcesoSecop && c.numeroProcesoSecop ? { numeroProcesoSecop: c.numeroProcesoSecop } : {}),
-    ...(expediente.valor === null && c.valor !== null ? { valor: c.valor } : {}),
-    ...(!expediente.fechaSuscripcion && c.fechaSuscripcion ? { fechaSuscripcion: fechaDb(c.fechaSuscripcion) } : {}),
-    ...(!expediente.fechaInicio && c.fechaInicio ? { fechaInicio: fechaDb(c.fechaInicio) } : {}),
-    ...(!expediente.fechaFinEstimada && c.fechaFin ? { fechaFinEstimada: fechaDb(c.fechaFin) } : {}),
+  const desdeSecop: Record<string, unknown> = {
+    numeroContrato: c.numeroContrato,
+    numeroProcesoSecop: c.numeroProcesoSecop,
+    valor: c.valor,
+    fechaSuscripcion: fechaDb(c.fechaSuscripcion),
+    fechaInicio: fechaDb(c.fechaInicio),
+    fechaFinEstimada: fechaDb(c.fechaFin),
+    objeto: c.objeto,
+    modalidadSeleccion: c.modalidad,
+    causalContratacionDirecta: c.causal,
+    tipoContrato: c.tipoContrato,
   };
+  const actual: Record<string, unknown> = {
+    numeroContrato: expediente.numeroContrato,
+    numeroProcesoSecop: expediente.numeroProcesoSecop,
+    valor: expediente.valor !== null ? Number(expediente.valor) : null,
+    fechaSuscripcion: expediente.fechaSuscripcion,
+    fechaInicio: expediente.fechaInicio,
+    fechaFinEstimada: expediente.fechaFinEstimada,
+    objeto: expediente.objeto,
+    modalidadSeleccion: expediente.modalidadSeleccion,
+    causalContratacionDirecta: expediente.causalContratacionDirecta,
+    tipoContrato: expediente.tipoContrato,
+  };
+  const comparable = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : v ?? null);
+  const completar: Record<string, unknown> = {};
+  for (const [campo, valor] of Object.entries(desdeSecop)) {
+    if (valor === null || valor === undefined || valor === "") continue;
+    if (comparable(actual[campo]) !== comparable(valor)) completar[campo] = valor;
+  }
+  if ("modalidadSeleccion" in completar || "causalContratacionDirecta" in completar) {
+    completar.codigoProceso = await resolverCodigoProceso({
+      modalidad: String(completar.modalidadSeleccion ?? expediente.modalidadSeleccion),
+      causal: (("causalContratacionDirecta" in completar ? completar.causalContratacionDirecta : expediente.causalContratacionDirecta) as string | null) ?? null,
+      anio: (fechaDb(c.fechaSuscripcion) ?? expediente.createdAt).getUTCFullYear(),
+      actual: expediente.codigoProceso,
+      excluirId: expedienteId,
+    });
+    if (completar.codigoProceso === expediente.codigoProceso) delete completar.codigoProceso;
+  }
+  const documento = c.contratista.documento;
+  if (documento && expediente.contratista?.identificacion !== documento) {
+    const usuario = await db.usuario.findFirst({ where: { cedulaONit: documento, activo: true }, select: { id: true } });
+    if (usuario) {
+      const contratista = await asegurarContratistaDeUsuario(usuario.id);
+      if (contratista.id !== expediente.contratistaId) completar.contratistaId = contratista.id;
+    }
+  }
 
   const espejo = {
     idContrato,
@@ -1880,18 +1880,18 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   };
   await db.$transaction([
     db.secopContratoEspejo.upsert({ where: { expedienteId }, create: { expedienteId, ...espejo }, update: espejo }),
-    db.expedienteContractual.update({ where: { id: expedienteId }, data: { idContratoSecop: idContrato, ...completar } }),
+    db.expedienteContractual.update({ where: { id: expedienteId }, data: { idContratoSecop: idContrato, ...(completar as Prisma.ExpedienteContractualUncheckedUpdateInput) } }),
   ]);
   const resumen = [
     `Sincronizado con SECOP II (${idContrato})`,
-    Object.keys(completar).length ? `datos completados: ${Object.keys(completar).length}` : null,
+    Object.keys(completar).length ? `actualizado desde SECOP II: ${Object.keys(completar).map((k) => ETIQUETA_CAMPO_SECOP[k] ?? k).join(", ")}` : null,
   ].filter(Boolean);
   const anterior = expediente.secop ? jsonEstable(expediente.secop) : null;
   const cambio = anterior !== jsonEstable(secop);
   if (cambio || Object.keys(completar).length > 0 || usuarioId) {
-    await registrarEventoContratacion(expedienteId, "SECOP_SINCRONIZADO", `${resumen.join(" · ")}${cambio ? "" : " · sin cambios"}`, usuarioId);
+    await registrarEventoContratacion(expedienteId, "SECOP_SINCRONIZADO", `${resumen.join(" · ")}${cambio || Object.keys(completar).length > 0 ? "" : " · sin cambios"}`, usuarioId);
   }
-  return { idContrato, completados: Object.keys(completar).length, cambio };
+  return { idContrato, completados: Object.keys(completar).length, cambio: cambio || Object.keys(completar).length > 0 };
 }
 
 export async function sincronizarSecopTodos(): Promise<{ total: number; ok: number; cambios: number; errores: string[] }> {
