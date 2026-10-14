@@ -40,3 +40,8 @@ export function identificacionContrato(c: { codigoProceso?: string | null; numer
   const partes = [c.codigoProceso, c.numeroContrato ? `Contrato N.° ${c.numeroContrato}` : null].filter(Boolean);
   return partes.length ? partes.join(" · ") : c.numero;
 }
+
+export function etiquetaModalidadConCodigo(modalidad: string, etiqueta: string): string {
+  const prefijo = modalidad === "CONTRATACION_DIRECTA" ? "CD" : prefijoProceso(modalidad);
+  return prefijo ? `${prefijo} · ${etiqueta}` : etiqueta;
+}

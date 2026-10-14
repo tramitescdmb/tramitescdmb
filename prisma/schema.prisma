@@ -211,8 +211,6 @@ model Usuario {
   solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
   solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
 
-  modificacionesContrato ModificacionContrato[] @relation("ModificacionContratoRegistradaPor")
-
   @@index([dependenciaId])
 }
 
@@ -2052,7 +2050,6 @@ model ExpedienteContractual {
   eliminadoPor           Usuario?               @relation("ExpContractualEliminadoPor", fields: [eliminadoPorId], references: [id])
 
   supervisores                ExpedienteContractualSupervisor[]
-  modificaciones              ModificacionContrato[]
   secop                       SecopContratoEspejo?
   asignados                   ExpedienteContractualAsignado[]
   etapas                      EtapaExpedienteContractual[]
@@ -2183,10 +2180,6 @@ model DocumentoContrato {
   solicitudesFirma         SolicitudFirma[]
   avisosRechazo            AvisoRechazoDocumento[]
 
-  modificacion    ModificacionContrato? @relation("ActaModificacion")
-  cdpModificacion ModificacionContrato? @relation("CdpModificacion")
-  rpModificacion  ModificacionContrato? @relation("RpModificacion")
-
   @@index([expedienteId])
   @@index([etapa])
   @@index([requisitoId])
@@ -2280,17 +2273,6 @@ model EventoContratacion {
   @@index([expedienteId])
 }
 
-enum TipoModificacionContrato {
-  PRORROGA
-  ADICION_VALOR
-  PRORROGA_Y_ADICION
-  SUSPENSION
-  VIGENCIAS_FUTURAS
-  CESION
-  TERMINACION_ANTICIPADA
-  OTRA
-}
-
 model SolicitudVinculacionContratista {
   id            String    @id @default(cuid())
   usuarioId     String
@@ -2317,41 +2299,6 @@ model SecopContratoEspejo {
   sincronizadoEn DateTime
 
   expediente ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-}
-
-model ModificacionContrato {
-  id                       String                   @id @default(cuid())
-  numero                   Int                      @default(1)
-  expedienteId             String
-  documentoId              String?                  @unique
-  cdpDocumentoId           String?                  @unique
-  cedenteContratistaId     String?
-  cesionarioContratistaId  String?
-  claseTerminacion         String?
-  rpDocumentoId            String?                  @unique
-  tipo                     TipoModificacionContrato
-  fechaSuscripcion         DateTime?
-  fechaTerminacionAnterior DateTime?
-  fechaTerminacionNueva    DateTime?
-  valorAdicionado          Decimal?                 @db.Decimal(18, 2)
-  fechaSuspension          DateTime?
-  fechaReinicio            DateTime?
-  vigenciasFuturas         Boolean                  @default(false)
-  aniosVigenciasFuturas    Int[]                    @default([])
-  claseVigenciasFuturas    String?
-  actoVigenciasFuturas     String?
-  valoresVigenciasFuturas  Json?
-  observacion              String?                  @db.Text
-  registradoPorId          String
-  createdAt                DateTime                 @default(now())
-
-  expediente    ExpedienteContractual @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  documento     DocumentoContrato?    @relation("ActaModificacion", fields: [documentoId], references: [id], onDelete: SetNull)
-  cdpDocumento  DocumentoContrato?    @relation("CdpModificacion", fields: [cdpDocumentoId], references: [id], onDelete: SetNull)
-  rpDocumento   DocumentoContrato?    @relation("RpModificacion", fields: [rpDocumentoId], references: [id], onDelete: SetNull)
-  registradoPor Usuario               @relation("ModificacionContratoRegistradaPor", fields: [registradoPorId], references: [id])
-
-  @@index([expedienteId])
 }
 
 model TopeCuantiaContratacion {

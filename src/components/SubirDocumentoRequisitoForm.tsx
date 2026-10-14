@@ -6,7 +6,6 @@ import { UploadCloud } from "lucide-react";
 import { comprimirParaContratacion } from "@/lib/compresion-cliente";
 import { subirArchivoContrato, sha256Hex } from "@/lib/uploads-client";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
-import { esDocumentoModificacion } from "@/lib/modificaciones-contrato";
 
 type EtapaContratacion = "PRECONTRACTUAL" | "CONTRACTUAL" | "POSTCONTRACTUAL";
 
@@ -68,14 +67,6 @@ export function SubirDocumentoRequisitoForm({
     } finally {
       setSubiendo(false);
     }
-  }
-
-  if (esDocumentoModificacion(requisitoNombre)) {
-    return (
-      <a href="#modificaciones" className="inline-flex items-center gap-1.5 rounded-md border border-acento-200 bg-acento-50 px-2.5 py-1 text-xs font-medium text-acento-700 hover:bg-acento-100">
-        Registrar en Modificaciones del contrato
-      </a>
-    );
   }
 
   return (

@@ -211,17 +211,15 @@
     "etiqueta": "Modificaciones",
     "titulo": "Modificaciones del contrato (otrosí)",
     "tituloIndice": "Modificaciones del contrato",
-    "ubicacion": "Detalle del expediente → «Modificaciones del contrato» → «Registrar modificación».",
-    "resumen": "Cada otrosí se registra como documento del expediente: tipo, fecha de suscripción y acta, para su custodia y firma. El plazo y el valor vigentes llegan de SECOP II.",
+    "ubicacion": "Detalle del expediente → etapa Contractual → actas del catálogo; panel «SECOP II» → modificaciones.",
+    "resumen": "Las actas de cada otrosí se cargan como documentos del catálogo para su custodia y firma; el plazo, el valor y la modificación misma vienen de SECOP II.",
     "pasos": [
-      "Se pulsa «Registrar modificación» y se elige el tipo: prórroga del plazo, adición en valor, prórroga y adición, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración.",
-      "Se indica la fecha de suscripción y, en una terminación anticipada, si es de mutuo acuerdo o unilateral.",
-      "Se carga el acta y se registra; queda en Contractual con el nombre del formato del catálogo.",
-      "En la tabla de modificaciones se cargan el CDP y el RP de cada adición, o el RP de una vigencia futura.",
-      "El bloque lista las modificaciones que publica SECOP II y avisa si falta registrar alguna acta."
+      "En la etapa Contractual se carga el acta que corresponda: adición, prórroga, modificación o aclaración, suspensión y reinicio, cesión o terminación anticipada.",
+      "Si hay adición en valor, se cargan también el CDP y el RP de la adición.",
+      "El plazo, el valor y el contratista se actualizan desde SECOP II; el panel «SECOP II» lista las modificaciones publicadas."
     ],
-    "ejemplo": "`CDMB-CTO-2026-000035` (EME Ing., contrato `210-16734-8`): SECOP II reporta 110 días adicionados; el bloque pide registrar el acta de esa adición, y el valor ($378.000.000) y la terminación (10 de diciembre de 2026) ya vienen de SECOP II.",
-    "detalle": "GECON no calcula plazos ni valores de las modificaciones: los toma de SECOP II, que es la fuente oficial, y con ellos recalcula los informes mensuales. La terminación anticipada vuelve obligatoria la liquidación.\n\nCada modificación queda numerada, con su fecha de suscripción, en la tabla del expediente y en su bitácora. Las actas de modificación del catálogo remiten a este bloque.",
+    "ejemplo": "`CDMB-CTO-2026-000034` (`210-16302-8`): SECOP II publica una adición en valor y plazo de 61 días; en GECON se carga el acta de concertación de adición y sus soportes.",
+    "detalle": "GECON no calcula plazos ni valores de las modificaciones. Cargar el acta de terminación anticipada (A-BS-FO131) vuelve obligatoria la liquidación.",
     "fundamento": "Ley 80 de 1993, arts. 17 y 41 · Manual A-BS-MA01, num. 7.4 a 7.6, 7.12 y 7.13."
   },
   {

@@ -1,3 +1,4 @@
+import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -54,7 +55,7 @@ export default async function NuevoExpedienteContractualPage() {
         supervisores={supervisores.map(aOpcion)}
         personal={personal.map(aOpcion)}
         puedeAsignarPersonal={puedeAsignarPersonal}
-        modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
+        modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: etiquetaModalidadConCodigo(valor, ETIQUETA_MODALIDAD[valor]) }))}
       />
     </section>
   );

@@ -36,7 +36,6 @@ export type ContratoLanding = {
   valor: number | null;
   inicio: Date | null;
   terminacion: Date | null;
-  prorrogas: number;
   ejecucion: number | null;
   diasParaTerminar: number | null;
   periodos: PeriodoLanding[];
@@ -72,7 +71,6 @@ const SELECT_CONTRATO = {
   fechaFinEstimada: true,
   contratista: { select: { nombreORazonSocial: true } },
   supervisores: { select: { usuario: { select: { nombre: true } } } },
-  modificaciones: { select: { tipo: true } },
   documentos: {
     where: { periodoMes: { not: null }, requisito: { codigoFormato: { in: CODIGOS_FORMATO_POR_PERIODOS } } },
     select: { id: true, periodoMes: true },
@@ -165,7 +163,6 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
       valor: e.valor !== null ? Number(e.valor) : null,
       inicio: e.fechaInicio,
       terminacion: e.fechaFinEstimada,
-      prorrogas: e.modificaciones.filter((m) => m.tipo === "PRORROGA" || m.tipo === "PRORROGA_Y_ADICION").length,
       ejecucion,
       diasParaTerminar,
       periodos,

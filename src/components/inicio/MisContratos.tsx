@@ -111,7 +111,6 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
           <Dato etiqueta="Inicio">{fecha(c.inicio)}</Dato>
           <Dato etiqueta="Terminación">
             {fecha(c.terminacion)}
-            {c.prorrogas > 0 && <span className="ml-1 text-[10px] text-acento-700">prorrogado</span>}
           </Dato>
           <Dato etiqueta={c.relacion === "CONTRATISTA" ? "Supervisor" : "Contratista"}>
             {c.relacion === "CONTRATISTA" ? c.supervisores.join(", ") || "—" : c.contratista ?? "—"}

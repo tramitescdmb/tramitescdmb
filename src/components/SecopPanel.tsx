@@ -177,6 +177,10 @@ function Tabla({ titulo, filas, columnas }: { titulo: string; filas: Fila[]; col
   );
 }
 
+function porFecha(filas: Fila[], clave: string): Fila[] {
+  return [...filas].sort((a, b) => String(a[clave] ?? "").localeCompare(String(b[clave] ?? "")));
+}
+
 function ultimaVersion(filas: Fila[]): Fila[] {
   const porId = new Map<string, Fila>();
   for (const f of filas) {
@@ -266,8 +270,9 @@ export function SecopPanel({
           <>
             <Tabla
               titulo="Facturas"
-              filas={espejo.facturas}
+              filas={porFecha(espejo.facturas, "fecha_factura")}
               columnas={[
+                ["id_pago", "Pago N.°"],
                 ["numero_de_factura", "Factura"],
                 ["fecha_factura", "Fecha", "fecha"],
                 ["valor_total", "Valor", "pesos"],
@@ -277,18 +282,18 @@ export function SecopPanel({
             />
             <Tabla
               titulo="Modificaciones"
-              filas={ultimaVersion(espejo.modificaciones)}
+              filas={porFecha(ultimaVersion(espejo.modificaciones), "fecha_de_aprobacion")}
               columnas={[
                 ["fecha_de_aprobacion", "Aprobación", "fecha"],
                 ["proposito_modificacion", "Propósito"],
                 ["dias_extendidos", "Días extendidos"],
-                ["valor_modificacion", "Valor", "pesos"],
+                ["valor_modificacion", "Valor del contrato reportado", "pesos"],
                 ["estado_modificacion", "Estado"],
               ]}
             />
             <Tabla
               titulo="Adiciones"
-              filas={espejo.adiciones}
+              filas={porFecha(espejo.adiciones, "fecharegistro")}
               columnas={[
                 ["fecharegistro", "Registro", "fecha"],
                 ["tipo", "Tipo"],
@@ -297,7 +302,7 @@ export function SecopPanel({
             />
             <Tabla
               titulo="Suspensiones"
-              filas={espejo.suspensiones}
+              filas={porFecha(espejo.suspensiones, "fecha_de_aprobacion")}
               columnas={[
                 ["tipo", "Tipo"],
                 ["fecha_de_aprobacion", "Aprobación", "fecha"],

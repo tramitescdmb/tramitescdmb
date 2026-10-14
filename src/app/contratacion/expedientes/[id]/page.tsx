@@ -1,3 +1,4 @@
+import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
@@ -6,7 +7,6 @@ import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck,
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
-import { ModificacionesContrato, type ModificacionSecop } from "@/components/ModificacionesContrato";
 import { ETIQUETA_TIPO_CONTRATO } from "@/lib/tipo-contrato";
 import { causalDe } from "@/lib/compatibilidad-modalidad";
 import { SecopPanel } from "@/components/SecopPanel";
@@ -163,7 +163,6 @@ export default async function DetalleExpedienteContractualPage({
       supervisores: { include: { usuario: { select: { nombre: true } } } },
       asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
-      modificaciones: { orderBy: { numero: "asc" }, include: { registradoPor: { select: { nombre: true } } } },
       secop: true,
       documentos: {
         orderBy: { createdAt: "asc" },
@@ -250,32 +249,6 @@ export default async function DetalleExpedienteContractualPage({
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
-  const modificacionesSecop: ModificacionSecop[] = (() => {
-    if (!expediente.secop) return [];
-    const texto = (v: unknown) => (typeof v === "string" && v.trim() && !/^no definido$/i.test(v) ? v.trim() : null);
-    const porId = new Map<string, Record<string, unknown>>();
-    for (const f of expediente.secop.modificaciones as Record<string, unknown>[]) {
-      const clave = String(f.identificador_modificacion ?? f.identificador ?? porId.size);
-      const previa = porId.get(clave);
-      if (!previa || Number(f.numero_version) > Number(previa.numero_version)) porId.set(clave, f);
-    }
-    return [
-      ...[...porId.values()].map((f) => ({
-        proposito: texto(f.proposito_modificacion) ?? "Modificación",
-        fecha: texto(f.fecha_de_aprobacion),
-        dias: Number(f.dias_extendidos) || null,
-        valor: Number(f.valor_modificacion) || null,
-        estado: texto(f.estado_modificacion),
-      })),
-      ...(expediente.secop.suspensiones as Record<string, unknown>[]).map((f) => ({
-        proposito: texto(f.proposito_de_la_modificacion) ?? `Suspensión${texto(f.tipo) ? ` (${texto(f.tipo)})` : ""}`,
-        fecha: texto(f.fecha_de_aprobacion),
-        dias: null,
-        valor: null,
-        estado: texto(f.tipo),
-      })),
-    ];
-  })();
   const hoy = new Date();
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -549,7 +522,7 @@ export default async function DetalleExpedienteContractualPage({
                 codigoProcesoActual={expediente.codigoProceso}
                 enlazadoSecop={Boolean(expediente.idContratoSecop)}
                 topes={topesCuantia}
-                modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: ETIQUETA_MODALIDAD[valor] }))}
+                modalidades={ORDEN_MODALIDADES.map((valor) => ({ valor, etiqueta: etiquetaModalidadConCodigo(valor, ETIQUETA_MODALIDAD[valor]) }))}
                 valorActual={expediente.valor?.toString() ?? null}
                 dependenciaActualId={expediente.dependenciaSolicitanteId}
                 dependencias={dependencias}
@@ -751,27 +724,6 @@ export default async function DetalleExpedienteContractualPage({
         </section>
       )}
 
-      {(expediente.etapaActual !== "PRECONTRACTUAL" || expediente.modificaciones.length > 0) && (
-        <ModificacionesContrato
-          expedienteId={id}
-          puedeRegistrar={puedeRegistrarModificacionContrato(permisos, expediente)}
-          enlazadoSecop={Boolean(expediente.idContratoSecop)}
-          modificacionesSecop={modificacionesSecop}
-          modificaciones={expediente.modificaciones.map((m) => ({
-            id: m.id,
-            numero: m.numero,
-            tipo: m.tipo,
-            fecha: (m.fechaSuscripcion ?? m.createdAt).toISOString(),
-            claseTerminacion: m.claseTerminacion,
-            observacion: m.observacion,
-            documentoId: m.documentoId,
-            cdpDocumentoId: m.cdpDocumentoId,
-            rpDocumentoId: m.rpDocumentoId,
-            registradoEn: m.createdAt.toISOString(),
-            registradoPor: m.registradoPor.nombre,
-          }))}
-        />
-      )}
 
 
       <SecopPanel

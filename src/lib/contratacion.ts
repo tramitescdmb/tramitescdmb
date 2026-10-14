@@ -18,7 +18,6 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { ETIQUETA_TIPO_MODIFICACION, SOPORTES_PRESUPUESTALES, TIPOS_MODIFICACION, soportesRequeridos, type SoportePresupuestal, errorModificacion, type DatosModificacion } from "@/lib/modificaciones-contrato";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
@@ -115,7 +114,7 @@ export const obtenerRequisitosDeEtapa = unstable_cache(
       .map((r) => (r.codigoFormato?.includes(CODIGO_ACTA_LIQUIDACION) ? { ...r, obligatorio: false } : r))
       .sort((a, b) => Number(b.obligatorio) - Number(a.obligatorio) || a.orden - b.orden);
   },
-  ["requisitos-de-etapa-v5"],
+  ["requisitos-de-etapa-v6"],
   { tags: [TAG_CATALOGO_REQUISITOS] }
 );
 
@@ -565,6 +564,9 @@ export async function agregarDocumentoContrato(datos: {
       throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
     }
     nombre = requisito.nombre;
+    if (requisito.codigoFormato?.includes("A-BS-FO131")) {
+      await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
+    }
     categoria = null;
     tipoDocumentalId = requisito.tipoDocumentalId;
 
@@ -1603,110 +1605,6 @@ export async function vincularPerfilConUsuario(pendiente: Prisma.ContratistaGetP
 }
 
 
-export async function registrarModificacionContrato(datos: {
-  expedienteId: string;
-  modificacion: DatosModificacion;
-  archivo: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
-  requiereFirma: boolean;
-  usuarioId: string;
-  ip?: string | null;
-  userAgent?: string | null;
-  cualquierEtapa: boolean;
-}) {
-  const expediente = await db.expedienteContractual.findUniqueOrThrow({
-    where: { id: datos.expedienteId },
-    select: { modalidadSeleccion: true, _count: { select: { modificaciones: true } } },
-  });
-  const m = datos.modificacion;
-  const problema = errorModificacion(m);
-  if (problema) throw new Error(problema);
-
-  const codigo = TIPOS_MODIFICACION.find((t) => t.valor === m.tipo)!.codigoFormato;
-  const requisito = !codigo
-    ? null
-    : await db.requisitoDocumentoContratacion.findFirst({
-        where: {
-          activo: true,
-          etapa: "CONTRACTUAL",
-          codigoFormato: { contains: codigo },
-          OR: [{ modalidadSeleccion: null }, { modalidadSeleccion: expediente.modalidadSeleccion }],
-        },
-        select: { id: true, nombre: true },
-      });
-  const numero = expediente._count.modificaciones + 1;
-  const documento = await agregarDocumentoContrato({
-    expedienteId: datos.expedienteId,
-    etapa: "CONTRACTUAL",
-    requisitoId: requisito?.id ?? null,
-    categoria: requisito ? null : ETIQUETA_TIPO_MODIFICACION[m.tipo],
-    nombre: `${requisito?.nombre ?? ETIQUETA_TIPO_MODIFICACION[m.tipo]} N.° ${numero}`,
-    ...datos.archivo,
-    subidoPorId: datos.usuarioId,
-    requiereFirma: datos.requiereFirma,
-    ip: datos.ip,
-    userAgent: datos.userAgent,
-    cualquierEtapa: datos.cualquierEtapa,
-  });
-
-  await db.$transaction([
-    db.modificacionContrato.create({
-      data: {
-        expedienteId: datos.expedienteId,
-        numero,
-        documentoId: documento.id,
-        tipo: m.tipo,
-        fechaSuscripcion: m.fecha ? new Date(`${m.fecha}T00:00:00Z`) : null,
-        claseTerminacion: m.claseTerminacion,
-        observacion: m.observacion,
-        registradoPorId: datos.usuarioId,
-      },
-    }),
-    ...(m.tipo === "TERMINACION_ANTICIPADA"
-      ? [db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } })]
-      : []),
-  ]);
-  const partes = [
-    `Modificación N.° ${numero}: ${ETIQUETA_TIPO_MODIFICACION[m.tipo]}`,
-    m.fecha ? `suscrita el ${m.fecha}` : null,
-    m.claseTerminacion ? (m.claseTerminacion === "UNILATERAL" ? "unilateral" : "de mutuo acuerdo") : null,
-  ].filter(Boolean);
-  await registrarEventoContratacion(datos.expedienteId, "MODIFICACION_CONTRATO", partes.join(" · "), datos.usuarioId);
-  return { numero };
-}
-
-export async function adjuntarSoportePresupuestalModificacion(datos: {
-  expedienteId: string;
-  modificacionId: string;
-  soporte: SoportePresupuestal;
-  archivo: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
-  usuarioId: string;
-  ip?: string | null;
-  userAgent?: string | null;
-}) {
-  const modificacion = await db.modificacionContrato.findFirst({
-    where: { id: datos.modificacionId, expedienteId: datos.expedienteId },
-    select: { numero: true, tipo: true, vigenciasFuturas: true, cdpDocumentoId: true, rpDocumentoId: true },
-  });
-  if (!modificacion) throw new Error("La modificación no existe.");
-  if (!soportesRequeridos(modificacion).includes(datos.soporte)) throw new Error(`Esta modificación no requiere ${datos.soporte}.`);
-  const campo = datos.soporte === "CDP" ? "cdpDocumentoId" : "rpDocumentoId";
-  if (modificacion[campo]) throw new Error(`El ${datos.soporte} de esta modificación ya está cargado.`);
-  const soporte = SOPORTES_PRESUPUESTALES.find((x) => x.valor === datos.soporte)!;
-
-  const documento = await agregarDocumentoContrato({
-    expedienteId: datos.expedienteId,
-    etapa: "CONTRACTUAL",
-    categoria: soporte.nombre,
-    nombre: `${soporte.nombre} (${soporte.sigla}) — modificación N.° ${modificacion.numero}`,
-    ...datos.archivo,
-    subidoPorId: datos.usuarioId,
-    requiereFirma: false,
-    ip: datos.ip,
-    userAgent: datos.userAgent,
-    cualquierEtapa: true,
-  });
-  await db.modificacionContrato.update({ where: { id: datos.modificacionId }, data: { [campo]: documento.id } });
-}
 
 
 

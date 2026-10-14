@@ -210,21 +210,12 @@ export default async function ContratacionAyudaPage() {
           con nombre propio. Lo crea quien gestiona el expediente; el contratista carga en él su documento.
         </p>
         <p>
-          <strong>Modificaciones.</strong> El bloque «Modificaciones del contrato» es el registro documental de cada otrosí: se elige el
-          tipo (prórroga, adición en valor, ambas, suspensión y reinicio, vigencias futuras, cesión, terminación anticipada o aclaración),
-          se indica la fecha de suscripción y se carga el acta para su custodia y firma. El plazo, el valor y el contratista vigentes no se
-          calculan en GECON: llegan de SECOP II con la sincronización diaria, y con ellos se recalculan los informes mensuales.
+          <strong>Modificaciones.</strong> Las actas de adición, prórroga, modificación o aclaración, suspensión y reinicio, cesión y
+          terminación anticipada se cargan en la etapa Contractual como cualquier documento del catálogo, junto con el CDP y el RP de la
+          adición cuando la hay, para su custodia y firma. El plazo, el valor y el contratista vigentes no se calculan en GECON: llegan de
+          SECOP II, que también muestra cada modificación en el panel del expediente. Cargar el acta de terminación (A-BS-FO131) marca el
+          contrato como terminado anticipadamente y vuelve obligatoria la liquidación.
         </p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>
-            Cada adición en valor lleva su CDP y su RP; una vigencia futura, su RP (la vigencia siguiente se respalda con el acto de
-            autorización). Se cargan desde la tabla de modificaciones.
-          </li>
-          <li>La terminación anticipada indica si es de mutuo acuerdo (acta A-BS-FO131) o unilateral (Ley 80, art. 17) y vuelve obligatoria la liquidación.</li>
-          <li>
-            El bloque lista las modificaciones y suspensiones que publica SECOP II y avisa cuando hay más en SECOP II que actas en GECON.
-          </li>
-        </ul>
         <p>
           <strong>Modalidad y tipo de contrato.</strong> El tipo de contrato se elige entre los que admite la modalidad: el concurso de
           méritos es solo para consultoría e interventoría, que no se seleccionan por licitación ni por selección abreviada (Ley 1150,

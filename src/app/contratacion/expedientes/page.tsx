@@ -1,3 +1,4 @@
+import { Paginador } from "@/components/Paginador";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
@@ -22,7 +23,7 @@ export default async function ExpedientesContratacionPage({
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const sp = await searchParams;
-  const [{ filas, total, page, totalPaginas }, dependencias] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina }, dependencias] = await Promise.all([
     listarExpedientesContractuales(sp, permisos),
     listarDependenciasActivas(),
   ]);
@@ -177,19 +178,13 @@ export default async function ExpedientesContratacionPage({
         </div>
       )}
 
-      {totalPaginas > 1 && (
-        <div className="flex justify-center gap-1 text-sm">
-          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={`?${new URLSearchParams({ ...sp, page: String(p) }).toString()}`}
-              className={`rounded-md px-2.5 py-1 ${p === page ? "bg-menu-500 text-stone-900" : "text-stone-500 hover:bg-stone-100"}`}
-            >
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
+      <Paginador
+        paginaActual={page}
+        totalPaginas={totalPaginas}
+        total={total}
+        porPagina={porPagina}
+        hrefPagina={(p) => `?${new URLSearchParams({ ...sp, page: String(p) }).toString()}`}
+      />
     </section>
   );
 }
