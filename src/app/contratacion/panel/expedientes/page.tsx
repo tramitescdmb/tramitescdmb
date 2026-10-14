@@ -63,7 +63,7 @@ export default async function PanelExpedientesGeconPage() {
                   <th className="px-3 py-2">Dependencia</th>
                   <th className="px-3 py-2">Contratista</th>
                   <th className="px-3 py-2">Etapa</th>
-                  <th className="px-3 py-2">Creado</th>
+                  <th className="px-3 py-2">Suscripción</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,7 +79,7 @@ export default async function PanelExpedientesGeconPage() {
                     <td className="px-3 py-2 text-xs text-stone-500">{e.dependenciaSolicitante.nombre}</td>
                     <td className="px-3 py-2 text-xs text-stone-500">{e.contratista?.nombreORazonSocial ?? "—"}</td>
                     <td className="px-3 py-2 text-xs">{e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual]}</td>
-                    <td className="px-3 py-2 text-xs text-stone-400">{formatearFecha(e.createdAt)}</td>
+                    <td className="px-3 py-2 text-xs text-stone-600">{e.fechaSuscripcion ? formatearFecha(e.fechaSuscripcion) : "Sin suscribir"}</td>
                   </tr>
                 ))}
               </tbody>
