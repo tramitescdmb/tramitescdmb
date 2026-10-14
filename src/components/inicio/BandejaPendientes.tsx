@@ -27,6 +27,8 @@ const MODULOS: Record<SeccionAlertasModulo["modulo"], { icon: LucideIcon; corto:
   SGDEA: { icon: Mail, corto: "SGDEA", barra: "bg-sky-400", burbuja: "bg-sky-100 text-sky-700" },
 };
 
+const VISIBLES = 6;
+
 const TIPOS: Record<TipoAlerta, { icon: LucideIcon; tint: string }> = {
   informacion: { icon: MessageCircleQuestion, tint: "bg-sky-50 text-sky-600" },
   decision: { icon: Gavel, tint: "bg-violet-50 text-violet-600" },
@@ -42,9 +44,10 @@ const TIPOS: Record<TipoAlerta, { icon: LucideIcon; tint: string }> = {
 
 export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModulo[] }) {
   const [activo, setActivo] = useState<SeccionAlertasModulo["modulo"] | "TODOS">("TODOS");
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const total = secciones.reduce((a, s) => a + s.total, 0);
   const visibles = activo === "TODOS" ? secciones : secciones.filter((s) => s.modulo === activo);
-  const items = visibles.flatMap((s) => s.items.map((item) => ({ ...item, modulo: s.modulo })));
+  const items = visibles.flatMap((s) => (expandidos.has(s.modulo) ? s.items : s.items.slice(0, VISIBLES)).map((item) => ({ ...item, modulo: s.modulo })));
   const seccionActiva = activo === "TODOS" ? null : secciones.find((s) => s.modulo === activo);
 
   const pestanas = [
@@ -114,12 +117,26 @@ export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModu
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stone-100 px-5 py-2.5">
         {(seccionActiva ? [seccionActiva] : secciones).map((s) => {
           const { icon: Icon, burbuja } = MODULOS[s.modulo];
-          return (
+          const ocultos = expandidos.has(s.modulo) ? 0 : Math.max(0, s.items.length - VISIBLES);
+          const burbujaIcono = (
+            <span className={`flex h-5 w-5 items-center justify-center rounded-full ${burbuja}`}>
+              <Icon className="h-3 w-3" aria-hidden />
+            </span>
+          );
+          return ocultos > 0 ? (
+            <button
+              key={s.modulo}
+              type="button"
+              onClick={() => setExpandidos((prev) => new Set(prev).add(s.modulo))}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-cdmb-700"
+            >
+              {burbujaIcono}
+              {MODULOS[s.modulo].corto}: ver {ocultos} más
+            </button>
+          ) : (
             <Link key={s.modulo} href={s.masLink} className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-cdmb-700">
-              <span className={`flex h-5 w-5 items-center justify-center rounded-full ${burbuja}`}>
-                <Icon className="h-3 w-3" aria-hidden />
-              </span>
-              {s.total > s.items.length ? `${MODULOS[s.modulo].corto}: ver ${s.total - s.items.length} más` : `Ir a ${MODULOS[s.modulo].corto}`}
+              {burbujaIcono}
+              Ir a {MODULOS[s.modulo].corto}
             </Link>
           );
         })}

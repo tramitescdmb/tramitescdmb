@@ -2,12 +2,35 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ListChecks, PenLine, Hourglass, CalendarClock, UserX, FileSignature, ArrowRight } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
-import { obtenerTrabajoPendienteContratacion } from "@/lib/contratacion-panel";
+import { obtenerTrabajoPendienteContratacion, type InformePorRadicar } from "@/lib/contratacion-panel";
+import { identificacionContrato } from "@/lib/codigo-proceso";
 import { TituloSeccion, TarjetaKpi, EstadoVacio, Panel, Sub } from "@/components/sgdea/ui";
 import { formatearFechaSolo } from "@/lib/fecha";
 import { rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
+
+function FilaInforme({ i }: { i: InformePorRadicar }) {
+  return (
+    <li className="flex items-center gap-3 py-2 text-sm">
+      <CalendarClock className="h-4 w-4 flex-none text-red-500" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <Link href={`/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`} className="font-medium text-cdmb-700 hover:underline">
+          Informe de supervisión {i.numeroInforme} · {i.mes}
+        </Link>
+        <p className="truncate text-xs text-stone-600" title={i.contratista ?? undefined}>
+          {i.contratista ?? "Sin contratista"}
+        </p>
+        <p className="truncate text-xs text-stone-400">
+          {identificacionContrato(i)} · {i.rango} · desde el {formatearFechaSolo(i.radicaDesde)}
+        </p>
+      </div>
+      <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${i.diasDeRetraso > 15 ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+        {i.diasDeRetraso === 0 ? "Hoy" : `${i.diasDeRetraso} d.`}
+      </span>
+    </li>
+  );
+}
 
 export default async function PanelMiTrabajoGeconPage() {
   const session = await getSession();
@@ -76,27 +99,25 @@ export default async function PanelMiTrabajoGeconPage() {
           {p.informes.lista.length === 0 ? (
             <p className="py-6 text-center text-sm text-stone-400">No hay informes por radicar.</p>
           ) : (
-            <ul className="divide-y divide-stone-100">
-              {p.informes.lista.map((i) => (
-                <li key={`${i.expedienteId}-${i.numeroInforme}`} className="flex items-center gap-3 py-2 text-sm">
-                  <CalendarClock className="h-4 w-4 flex-none text-red-500" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/contratacion/expedientes/${i.expedienteId}`} className="font-medium text-cdmb-700 hover:underline">
-                      Informe de supervisión {i.numeroInforme}
-                    </Link>
-                    <p className="truncate text-xs text-stone-400">
-                      <span className="font-mono">{i.numero}</span> · {i.rango} · desde el {formatearFechaSolo(i.radicaDesde)}
-                    </p>
-                  </div>
-                  <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${i.diasDeRetraso > 15 ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
-                    {i.diasDeRetraso === 0 ? "Hoy" : `${i.diasDeRetraso} d.`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {p.informes.total > p.informes.lista.length && (
-            <p className="mt-2 text-xs text-stone-400">Y {p.informes.total - p.informes.lista.length} más.</p>
+            <>
+              <ul className="divide-y divide-stone-100">
+                {p.informes.lista.slice(0, 10).map((i) => (
+                  <FilaInforme key={`${i.expedienteId}-${i.numeroInforme}`} i={i} />
+                ))}
+              </ul>
+              {p.informes.lista.length > 10 && (
+                <details className="group">
+                  <summary className="mt-2 cursor-pointer list-none text-xs font-medium text-cdmb-700 hover:underline group-open:hidden">
+                    Ver {p.informes.lista.length - 10} más
+                  </summary>
+                  <ul className="divide-y divide-stone-100 border-t border-stone-100">
+                    {p.informes.lista.slice(10).map((i) => (
+                      <FilaInforme key={`${i.expedienteId}-${i.numeroInforme}`} i={i} />
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </>
           )}
         </Panel>
       </div>

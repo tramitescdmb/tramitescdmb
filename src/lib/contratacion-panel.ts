@@ -117,7 +117,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
       resumen: resumirPendientesFirma(firmas),
       lista: firmas.slice(0, 8),
     },
-    informes: { total: informes.length, lista: informes.slice(0, 10) },
+    informes: { total: informes.length, lista: informes.slice(0, 200) },
     liquidaciones,
     sinContratista,
   };

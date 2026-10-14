@@ -31,7 +31,7 @@ export type SeccionAlertasModulo = {
   masTexto: string;
 };
 
-const MAX_ITEMS_POR_SECCION = 6;
+const MAX_ITEMS_POR_SECCION = 100;
 
 /**
  * Agrega, por cada módulo al que el usuario tenga acceso, sus propios pendientes/alertas ya
