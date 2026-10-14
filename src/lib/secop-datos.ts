@@ -150,13 +150,23 @@ export async function consultarExpedienteSecop(idContrato: string): Promise<Expe
   const id = idContrato.trim().replace(/'/g, "");
   const [principal, ...relacionados] = await Promise.all([
     consultarSocrata("jbjy-vk9h", `nit_entidad='${NIT_CDMB}' AND id_contrato='${id}'`, 1),
-    ...Object.values(CONJUNTOS_RELACIONADOS).map((c) => consultarSocrata(c.id, `${c.columna}='${id}'`)),
+    ...Object.values(CONJUNTOS_RELACIONADOS).map((c) => consultarSocrata(c.id, `${c.columna}='${id}'`, c.id === "u8cx-r425" ? 2000 : 200)),
   ]);
   if (!principal[0]) return null;
   const [facturas, garantias, modificaciones, adiciones, suspensiones] = relacionados;
   const { n_mero_de_cuenta: _cuenta, ...datos } = principal[0];
   void _cuenta;
-  return { datos, facturas: facturas!, garantias: garantias!, modificaciones: modificaciones!, adiciones: adiciones!, suspensiones: suspensiones! };
+  return { datos, facturas: facturas!, garantias: garantias!, modificaciones: consolidarModificaciones(modificaciones!), adiciones: adiciones!, suspensiones: suspensiones! };
+}
+
+export function consolidarModificaciones(filas: Record<string, unknown>[]): Record<string, unknown>[] {
+  const ultima = new Map<string, Record<string, unknown>>();
+  for (const f of filas) {
+    const id = String(f.identificador_modificacion ?? f.identificador ?? "");
+    const u = ultima.get(id);
+    if (!u || Number(f.numero_version) > Number(u.numero_version)) ultima.set(id, f);
+  }
+  return [...ultima.values()];
 }
 
 export const fechaSecop = fecha;

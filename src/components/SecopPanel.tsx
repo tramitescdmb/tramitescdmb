@@ -1,5 +1,6 @@
 import { ExternalLink, Landmark } from "lucide-react";
 import { BotonSincronizarSecop } from "@/components/BotonSincronizarSecop";
+import { consolidarModificaciones } from "@/lib/secop-datos";
 
 type Fila = Record<string, unknown>;
 type Formato = "texto" | "pesos" | "fecha";
@@ -181,16 +182,6 @@ function porFecha(filas: Fila[], clave: string): Fila[] {
   return [...filas].sort((a, b) => String(a[clave] ?? "").localeCompare(String(b[clave] ?? "")));
 }
 
-function ultimaVersion(filas: Fila[]): Fila[] {
-  const porId = new Map<string, Fila>();
-  for (const f of filas) {
-    const id = String(f.identificador_modificacion ?? f.identificador ?? Math.random());
-    const previa = porId.get(id);
-    if (!previa || Number(f.numero_version) > Number(previa.numero_version)) porId.set(id, f);
-  }
-  return [...porId.values()];
-}
-
 export function SecopPanel({
   expedienteId,
   espejo,
@@ -282,7 +273,7 @@ export function SecopPanel({
             />
             <Tabla
               titulo="Modificaciones"
-              filas={porFecha(ultimaVersion(espejo.modificaciones), "fecha_de_aprobacion")}
+              filas={porFecha(consolidarModificaciones(espejo.modificaciones), "fecha_de_aprobacion")}
               columnas={[
                 ["fecha_de_aprobacion", "Aprobación", "fecha"],
                 ["proposito_modificacion", "Propósito"],
