@@ -161,7 +161,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
     total,
     items: items.slice(0, MAX_ITEMS_POR_SECCION),
     masLink: "/contratacion/panel",
-    masTexto: "Ver mi trabajo pendiente en GECON",
+    masTexto: "Ver pendientes en GECON",
   };
 }
 
@@ -201,6 +201,6 @@ async function seccionCorrespondencia(session: SessionPayload, permisos: Permiso
     total,
     items: items.slice(0, MAX_ITEMS_POR_SECCION),
     masLink: "/correspondencia/panel",
-    masTexto: "Ver mi trabajo pendiente en SGDEA",
+    masTexto: "Ver pendientes en SGDEA",
   };
 }

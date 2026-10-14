@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CheckCircle2, FolderOpen, Scale, ClipboardList, Paperclip, AlertTriangle, ClipboardCheck, CalendarClock, CalendarX, RotateCcw, CalendarPlus } from "lucide-react";
+import { CheckCircle2, FolderOpen, Scale, ClipboardList, Paperclip, AlertTriangle, ClipboardCheck, CalendarClock, CalendarX, RotateCcw, CalendarPlus, Inbox } from "lucide-react";
+import { Burbuja } from "@/components/tablero";
 import type { ItemPendiente, ResumenPendientes } from "@/lib/pendientes";
 import type { AlertaVisita, ResumenVisitas } from "@/lib/pendientes-visitas";
 
@@ -10,10 +11,8 @@ export function MisPendientes({ resumen, visitas }: { resumen: ResumenPendientes
 
   if (!resumen.hayAlgo && !visitas?.hayAlgo) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-          <CheckCircle2 className="h-[18px] w-[18px]" aria-hidden />
-        </span>
+      <div className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+        <Burbuja icon={CheckCircle2} tono="verde" />
         <div>
           <p className="text-sm font-semibold text-stone-900">Está al día</p>
           <p className="text-sm text-stone-500">
@@ -25,13 +24,16 @@ export function MisPendientes({ resumen, visitas }: { resumen: ResumenPendientes
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
-      <div className="border-b border-stone-100 px-5 py-3">
-        <h2 className="text-sm font-semibold text-stone-900">Sus pendientes</h2>
-        <p className="text-xs text-stone-500">
-          Lo que requiere su atención según su cargo y los expedientes asignados a su nombre.
-          {resumen.esAdmin && " Como administrador, ve además todas las decisiones e informaciones adicionales pendientes de la entidad."}
-        </p>
+    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+      <div className="flex items-start gap-2.5 border-b border-stone-100 px-5 pb-3 pt-4">
+        <Burbuja icon={Inbox} tono="acento" />
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900">Pendientes</h2>
+          <p className="text-xs text-stone-500">
+            Según su cargo y los expedientes asignados a su nombre.
+            {resumen.esAdmin && " Incluye las decisiones e informaciones adicionales pendientes de la entidad."}
+          </p>
+        </div>
       </div>
 
       <div className="divide-y divide-stone-100">
@@ -180,8 +182,8 @@ function IconoSeccion({
   clase: string;
 }) {
   return (
-    <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${clase}`}>
-      <Icono className="h-[18px] w-[18px]" aria-hidden />
+    <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${clase}`}>
+      <Icono className="h-4 w-4" aria-hidden />
     </span>
   );
 }

@@ -6,7 +6,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { obtenerPanelSistemaVista } from "@/lib/correspondencia-panel";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
-import { TarjetaKpi, TituloSeccion } from "@/components/sgdea/ui";
+import { CabeceraTablero, Indicador } from "@/components/tablero";
 
 export default async function PanelSistemaVistaPage() {
   const session = await getSession();
@@ -21,10 +21,14 @@ export default async function PanelSistemaVistaPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion icon={ShieldAlert}>Sistema</TituloSeccion>
+      <CabeceraTablero antetitulo="Últimos 30 días" titulo="Sistema" descripcion="Incidencias registradas en la bitácora del SGDEA.">
+        <Indicador icon={ShieldAlert} valor={s.accesosFallidos30} etiqueta="Accesos fallidos" tono={s.accesosFallidos30 > 0 ? "rojo" : "neutro"} />
+        <Indicador icon={FileWarning} valor={s.carguesFallidos30} etiqueta="Cargues fallidos" tono={s.carguesFallidos30 > 0 ? "ambar" : "neutro"} />
+        <Indicador icon={AlertTriangle} valor={s.erroresEjecucion30} etiqueta="Errores de ejecución" tono={s.erroresEjecucion30 > 0 ? "ambar" : "neutro"} />
+      </CabeceraTablero>
 
       {s.incidenciasRecientes > 0 && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           <AlertTriangle className="mr-1.5 inline h-4 w-4" aria-hidden />
           {s.incidenciasRecientes === 1
             ? "1 falla del sistema (error de ejecución o cargue rechazado) en las últimas 24 horas."
@@ -32,27 +36,6 @@ export default async function PanelSistemaVistaPage() {
           Revíselas en la Bitácora.
         </div>
       )}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <TarjetaKpi
-          icon={ShieldAlert}
-          label="Accesos fallidos (30 días)"
-          value={s.accesosFallidos30}
-          tono={s.accesosFallidos30 > 0 ? "rojo" : "neutro"}
-        />
-        <TarjetaKpi
-          icon={FileWarning}
-          label="Cargues fallidos (30 días)"
-          value={s.carguesFallidos30}
-          tono={s.carguesFallidos30 > 0 ? "ambar" : "neutro"}
-        />
-        <TarjetaKpi
-          icon={AlertTriangle}
-          label="Errores de ejecución (30 días)"
-          value={s.erroresEjecucion30}
-          tono={s.erroresEjecucion30 > 0 ? "ambar" : "neutro"}
-        />
-      </div>
 
       <p className="text-xs text-stone-400">
         <History className="mr-1 inline h-3 w-3" aria-hidden />

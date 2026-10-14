@@ -213,11 +213,11 @@
     "ubicacion": "`Panel` · `Reportes`.",
     "resumen": "La vista operativa del día para cada funcionario, y las métricas de gestión para la dirección.",
     "pasos": [
-      "«Mi trabajo pendiente» reúne lo asignado al funcionario en sesión, con lo vencido y lo que vence dentro de 3 días hábiles.",
+      "«Pendientes» reúne lo asignado al funcionario en sesión, con lo vencido y lo que vence dentro de 3 días hábiles.",
       "Los avisos del Panel muestran: recibidas **sin repartir** y cuántas fueron devueltas, oficios **sin despachar**, comunicaciones **sin clasificación TRD**, flujos con el paso vencido y fallas críticas del sistema en las últimas 24 horas.",
       "En «Reportes»: volumen, tendencia mensual por tipo, distribución por dependencia y **tiempo promedio de respuesta**, general y por dependencia, para identificar los cuellos de botella."
     ],
-    "ejemplo": "Con la sesión de la funcionaria asignada, «Mi trabajo pendiente» muestra `CDMB-R-2026-000002` con «vence en 8 días hábiles». Tras el despacho, el trámite sale de su lista. En Reportes, la respuesta cuenta para el tiempo promedio de la Subdirección de Administración del Sistema Ambiental.",
+    "ejemplo": "Con la sesión de la funcionaria asignada, «Pendientes» muestra `CDMB-R-2026-000002` con «vence en 8 días hábiles». Tras el despacho, el trámite sale de su lista. En Reportes, la respuesta cuenta para el tiempo promedio de la Subdirección de Administración del Sistema Ambiental.",
     "detalle": "Al no haber un proveedor de correo configurado, ningún aviso se envía por correo electrónico: todos residen en la aplicación, en el lugar donde la persona que debe actuar los verá. Es una decisión consciente, consignada como tal.",
     "fundamento": "MoReq 4.4 y 4.5 (informes) · 7.9, 7.19 y 7.20 (actividades pendientes, semáforos, incumplimiento) · 6.17 (fallas críticas)."
   },

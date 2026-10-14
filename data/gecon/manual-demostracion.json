@@ -161,10 +161,10 @@
     "titulo": "Panel e indicadores",
     "tituloIndice": "Panel e indicadores",
     "ubicacion": "[Panel de GECON](/contratacion/panel).",
-    "resumen": "Trabajo pendiente, expedientes por etapa, indicadores y actividad del módulo.",
+    "resumen": "Pendientes, expedientes por etapa, indicadores y actividad del módulo.",
     "pasos": [
-      "«Mi trabajo pendiente»: firmas, revisiones e informes por radicar.",
-      "«Expedientes»: cantidad por etapa y recientes.",
+      "«Pendientes»: firmas, revisiones e informes por radicar.",
+      "«Expedientes por etapa»: cantidad por etapa y recientes.",
       "«Indicadores»: tiempos por etapa, firmas, dependencias y modalidades.",
       "«Sistema»: volumen y actividad (Administrador o Jefe de Contratación).",
       "«Contratos y recursos»: valores de SECOP II (contratado, pagado, facturado, pendiente), contratos por etapa, contratistas y distribución por modalidad, dependencia, tipo y fuente de recursos (Administrador y Jefe; cada supervisor, sus contratos)."

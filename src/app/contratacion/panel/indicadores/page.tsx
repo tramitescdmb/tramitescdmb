@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { ChartColumn } from "lucide-react";
+import { Briefcase, Building2, Clock3, PenLine, Scale, Timer } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion } from "@/lib/permisos";
 import { obtenerPanelContratacionVista } from "@/lib/contratacion";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
-import { TituloSeccion, Panel, Sub } from "@/components/sgdea/ui";
+import { CabeceraTablero, Indicador, TarjetaTablero } from "@/components/tablero";
 
 export default async function PanelIndicadoresGeconPage() {
   const session = await getSession();
@@ -15,42 +15,25 @@ export default async function PanelIndicadoresGeconPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion icon={ChartColumn}>Indicadores de contratación</TituloSeccion>
+      <CabeceraTablero titulo="Indicadores de contratación" descripcion="Tiempos por etapa, firmas y distribución de los expedientes visibles para usted.">
+        <Indicador icon={Briefcase} valor={vista.totalExpedientes} etiqueta="Expedientes" tono="cdmb" />
+        <Indicador icon={PenLine} valor={vista.totalFirmasCompletadas} etiqueta="Firmas resueltas" tono="verde" />
+        {vista.totalFirmasCompletadas > 0 && <Indicador icon={Timer} valor={`${vista.tiempoResolucionFirmas} d`} etiqueta="Promedio por firma" tono="ambar" />}
+      </CabeceraTablero>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Panel>
-          <Sub>Tiempo promedio por etapa</Sub>
-          <p className="mb-4 text-xs text-stone-500">
-            Días corridos entre abrir y aprobar cada etapa, sobre {vista.totalExpedientes.toLocaleString("es-CO")} expedientes visibles.
-          </p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TarjetaTablero icon={Clock3} tono="ambar" titulo="Tiempo promedio por etapa" descripcion="Días corridos entre abrir y aprobar cada etapa.">
           <BarChartHorizontal data={vista.tiempoPorEtapa} emptyMessage="Todavía no hay etapas completadas." formatValue={(n) => `${n} días`} />
-        </Panel>
-
-        <Panel>
-          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-            <Sub>Firmas — pendientes vs. resueltas</Sub>
-            {vista.totalFirmasCompletadas > 0 && (
-              <span className="text-xs text-stone-500">
-                Tardan en promedio <strong className="tabular-nums text-stone-800">{vista.tiempoResolucionFirmas} días</strong>
-              </span>
-            )}
-          </div>
-          <p className="mb-4 text-xs text-stone-500">Solicitudes de firma (rol &ldquo;Debe firmar&rdquo;) de todos los documentos.</p>
+        </TarjetaTablero>
+        <TarjetaTablero icon={PenLine} tono="rojo" titulo="Firmas pendientes y resueltas" descripcion="Solicitudes de firma (rol «Debe firmar») de todos los documentos.">
           <BarChartHorizontal data={vista.firmas} emptyMessage="Todavía no se ha asignado ningún firmante." />
-        </Panel>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Panel>
-          <Sub>Expedientes por dependencia</Sub>
-          <p className="mb-4 text-xs text-stone-500">Las 10 dependencias solicitantes con más expedientes.</p>
+        </TarjetaTablero>
+        <TarjetaTablero icon={Building2} tono="cielo" titulo="Expedientes por dependencia" descripcion="Las 10 dependencias solicitantes con más expedientes.">
           <BarChartHorizontal data={vista.porDependencia} emptyMessage="Todavía no hay expedientes." />
-        </Panel>
-        <Panel>
-          <Sub>Expedientes por modalidad de selección</Sub>
-          <p className="mb-4 text-xs text-stone-500">Informativo (Cap. 6.2 del Manual) — no valida la modalidad elegida.</p>
+        </TarjetaTablero>
+        <TarjetaTablero icon={Scale} tono="violeta" titulo="Expedientes por modalidad de selección" descripcion="Informativo (Cap. 6.2 del Manual); no valida la modalidad elegida.">
           <BarChartHorizontal data={vista.porModalidad} emptyMessage="Todavía no hay expedientes." />
-        </Panel>
+        </TarjetaTablero>
       </div>
     </section>
   );

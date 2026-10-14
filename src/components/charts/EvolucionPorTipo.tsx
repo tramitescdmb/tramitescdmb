@@ -11,7 +11,7 @@ const SERIES: { key: SerieKey; etiqueta: string; color: string }[] = [
   { key: "INTERNA", etiqueta: "Memorandos", color: "#d97706" },
 ];
 
-const W = 640;
+const W = 960;
 const H = 220;
 const PAD = { top: 14, right: 44, bottom: 26, left: 30 };
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, ArrowRight } from "lucide-react";
+import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
@@ -17,7 +17,7 @@ import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
-import { saludo, horaBogota } from "@/lib/saludo";
+import { CabeceraTablero, Chip, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;
@@ -40,175 +40,116 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     etiqueta: t.nombre,
   }));
   const resumenFirmas = resumirPendientesFirma(buzonFirmas);
-  const primerNombre = session?.nombre.trim().split(/\s+/)[0];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">
-          {saludo(horaBogota())}{primerNombre ? `, ${primerNombre}` : ""}
-        </h2>
-        <p className="text-sm text-stone-500">Este es el resumen de trámites y expedientes de la CDMB.</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2.5">
-        <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
-        <SelectorTramites opciones={opcionesTramite} titulo="Trámites" />
-      </div>
+    <div className="space-y-4">
+      <CabeceraTablero
+        antetitulo={rango ? etiqueta : "Histórico completo"}
+        titulo="Trámites y expedientes"
+        descripcion={permisos?.esAdmin ? "Resumen de los trámites ambientales de la CDMB." : "Resumen de los trámites a los que tiene acceso."}
+        acciones={
+          <>
+            <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+            <SelectorTramites opciones={opcionesTramite} titulo="Trámites" />
+          </>
+        }
+      >
+        <Indicador icon={LibraryBig} valor={d.totalTramites} etiqueta="Trámites disponibles" tono="cdmb" href="/tramites" />
+        <Indicador icon={FolderOpen} valor={d.totalExpedientes} etiqueta="Expedientes" tono="neutro" href="/expedientes" />
+        <Indicador icon={Clock3} valor={d.activos} etiqueta="En curso" tono="ambar" href="/expedientes?estado=EN_TRAMITE" />
+        <Indicador icon={CheckCircle2} valor={d.aprobados} etiqueta="Aprobados" tono="verde" href="/expedientes?estado=APROBADO" />
+        <Indicador icon={XCircle} valor={d.negados} etiqueta="Negados o rechazados" tono="rojo" href="/expedientes?estado=NEGADO" />
+        <Indicador
+          icon={Percent}
+          valor={d.tasaAprobacion === null ? "—" : `${d.tasaAprobacion}%`}
+          etiqueta="Tasa de aprobación"
+          tono="cielo"
+          titulo={d.tasaAprobacion === null ? "Aún no hay expedientes decididos." : "Sobre los expedientes ya decididos (aprobados y negados o rechazados)."}
+        />
+      </CabeceraTablero>
 
       {resumenFirmas.total > 0 && (
-        <div className={`rounded-xl border p-4 shadow-soft ${resumenFirmas.listos > 0 ? "border-red-200 bg-red-50/40" : "border-stone-200 bg-white"}`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-              <PenLine className={`h-4 w-4 ${resumenFirmas.listos > 0 ? "text-red-600" : "text-stone-400"}`} aria-hidden />
-              Firmas pendientes
-              <GloboPendientes pendientes={resumenFirmas} />
-            </h2>
-            <Link href="/firmas/buzon" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-              Ir al buzón de firmas <ArrowRight className="h-3 w-3" aria-hidden />
-            </Link>
-          </div>
-          <p className="mt-1 text-xs text-stone-600">{textoPendientesFirma(resumenFirmas)}.</p>
-          <ul className="mt-2 divide-y divide-stone-100">
+        <TarjetaTablero
+          icon={PenLine}
+          tono="rojo"
+          titulo={
+            <>
+              Firmas pendientes <GloboPendientes pendientes={resumenFirmas} />
+            </>
+          }
+          descripcion={`${textoPendientesFirma(resumenFirmas)}.`}
+          accion={<EnlaceTablero href="/firmas/buzon">Ir al buzón de firmas</EnlaceTablero>}
+          sinRelleno
+        >
+          <ListaTablero>
             {buzonFirmas.slice(0, 5).map((s) => (
-              <li key={s.id} className="flex items-center gap-3 py-1.5 text-sm">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-stone-800">{s.documentoExpediente?.nombre}</p>
-                  <p className="truncate text-xs text-stone-400">
-                    {s.documentoExpediente?.expediente.numero} · {s.rol === "FIRMA" ? "Debe firmar" : "Visto bueno"}
-                    {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
-                  </p>
-                </div>
-                {s.puedeActuar ? (
-                  <Link href={`/firmas/firmar/${s.id}`} className="flex-none rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
-                    {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
-                  </Link>
-                ) : (
-                  <span className="flex-none text-[11px] text-stone-400">Espera turno</span>
-                )}
-              </li>
+              <FilaTablero
+                key={s.id}
+                icon={FileSignature}
+                tono="neutro"
+                titulo={s.documentoExpediente?.nombre}
+                detalle={`${s.documentoExpediente?.expediente.numero ?? ""} · ${s.rol === "FIRMA" ? "Debe firmar" : "Visto bueno"}${
+                  s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""
+                }`}
+                extra={
+                  s.puedeActuar ? (
+                    <Link href={`/firmas/firmar/${s.id}`} className="rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
+                      {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
+                    </Link>
+                  ) : (
+                    <Chip>Espera turno</Chip>
+                  )
+                }
+              />
             ))}
-          </ul>
-        </div>
+          </ListaTablero>
+        </TarjetaTablero>
       )}
 
       <MisPendientes resumen={pendientes} visitas={visitas} />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard icon={LibraryBig} label="Trámites disponibles" value={d.totalTramites} href="/tramites" />
-        <StatCard icon={FolderOpen} label="Expedientes totales" value={d.totalExpedientes} href="/expedientes" />
-        <StatCard icon={Clock3} label="En curso" value={d.activos} href="/expedientes?estado=EN_TRAMITE" accent="progreso" />
-        <StatCard icon={CheckCircle2} label="Aprobados" value={d.aprobados} href="/expedientes?estado=APROBADO" accent="good" />
-        <StatCard icon={XCircle} label="Negados / rechazados" value={d.negados} href="/expedientes?estado=NEGADO" accent="critical" />
-        <StatCard
-          icon={Percent}
-          label="Tasa de aprobación"
-          value={d.tasaAprobacion === null ? "—" : `${d.tasaAprobacion}%`}
-          href="/expedientes"
-          help={d.tasaAprobacion === null ? "Aún no hay expedientes decididos (aprobados o negados)." : "De los expedientes ya decididos (aprobados + negados/rechazados)."}
-        />
-      </div>
-
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
-        <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
-        <p className="mb-4 text-xs text-stone-500">
-          {rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.
-        </p>
+      <TarjetaTablero icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.`}>
         <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
-      </div>
+      </TarjetaTablero>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
-          <h2 className="text-sm font-semibold text-stone-900">Municipios con más solicitudes</h2>
-          <p className="mb-4 text-xs text-stone-500">
-            Municipio donde se adelanta el trámite (los 13 de la jurisdicción CDMB). Ayuda a ver dónde se concentra la demanda.
-          </p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TarjetaTablero icon={MapPin} tono="cielo" titulo="Municipios con más solicitudes" descripcion="Municipio de la jurisdicción donde se adelanta el trámite.">
           <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
-        </div>
-
-        <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-5">
-          <h2 className="text-sm font-semibold text-stone-900">Trámites más solicitados</h2>
-          <p className="mb-4 text-xs text-stone-500">Cuáles de sus {d.totalTramites} trámites concentran más expedientes.</p>
+        </TarjetaTablero>
+        <TarjetaTablero icon={LibraryBig} titulo="Trámites más solicitados" descripcion={`Trámites, de los ${d.totalTramites}, con más expedientes.`}>
           <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
-        </div>
+        </TarjetaTablero>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-soft">
-        <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-stone-900">Actividad reciente</h2>
-          <Link href="/expedientes" className="text-sm text-cdmb-700 hover:underline">
-            Ver todos
-          </Link>
-        </div>
+      <TarjetaTablero icon={FolderOpen} titulo="Actividad reciente" accion={<EnlaceTablero href="/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
         {d.recientes.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-stone-400">
-            Todavía no hay expedientes radicados.
-          </div>
+          <VacioTablero>Todavía no hay expedientes radicados.</VacioTablero>
         ) : (
-          <ul className="divide-y divide-stone-100">
+          <ListaTablero>
             {d.recientes.map((exp) => (
-              <li key={exp.id} className="flex items-center gap-4 px-5 py-3">
-                <div className="min-w-0 flex-1">
-                  <Link href={`/expedientes/${exp.id}`} className="font-medium text-stone-900 hover:text-cdmb-700">
-                    {exp.numero}
-                  </Link>
-                  <p className="truncate text-sm text-stone-500">
-                    {exp.tramiteTipo.nombre} · {exp.solicitanteNombre} · {exp.municipio}
-                  </p>
-                </div>
-                <div className="hidden w-32 flex-none sm:block">
-                  <ProgresoExpediente
-                    pasoActualNumero={exp.pasoActualNumero}
-                    totalPasos={exp.flujo.pasos.length}
-                    pasosAvance={pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo))}
-                    estado={exp.estado}
-                  />
-                </div>
-                <EstadoBadge estado={exp.estado} />
-              </li>
+              <FilaTablero
+                key={exp.id}
+                href={`/expedientes/${exp.id}`}
+                titulo={exp.numero}
+                detalle={`${exp.tramiteTipo.nombre} · ${exp.solicitanteNombre} · ${exp.municipio}`}
+                extra={
+                  <>
+                    <span className="hidden w-32 sm:block">
+                      <ProgresoExpediente
+                        pasoActualNumero={exp.pasoActualNumero}
+                        totalPasos={exp.flujo.pasos.length}
+                        pasosAvance={pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo))}
+                        estado={exp.estado}
+                      />
+                    </span>
+                    <EstadoBadge estado={exp.estado} />
+                  </>
+                }
+              />
             ))}
-          </ul>
+          </ListaTablero>
         )}
-      </div>
+      </TarjetaTablero>
     </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  href,
-  accent,
-  help,
-}: {
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  label: string;
-  value: number | string;
-  href: string;
-  accent?: "good" | "critical" | "progreso";
-  help?: string;
-}) {
-  const ESTILOS_POR_ACENTO = {
-    good: { valor: "text-emerald-700", icono: "bg-emerald-50 text-emerald-600" },
-    critical: { valor: "text-red-700", icono: "bg-red-50 text-red-600" },
-    progreso: { valor: "text-stone-900", icono: "bg-amber-50 text-amber-600" },
-  } satisfies Record<string, { valor: string; icono: string }>;
-  const estilos = accent ? ESTILOS_POR_ACENTO[accent] : { valor: "text-stone-900", icono: "bg-cdmb-50 text-cdmb-600" };
-
-  return (
-    <Link
-      href={href}
-      title={help}
-      className="group flex flex-col gap-3 rounded-xl border border-stone-200 bg-white shadow-soft p-4 transition hover:-translate-y-0.5 hover:border-cdmb-300 hover:shadow-md"
-    >
-      <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${estilos.icono}`}>
-        <Icon className="h-[18px] w-[18px]" aria-hidden />
-      </span>
-      <div>
-        <p className={`text-2xl font-semibold leading-tight ${estilos.valor}`}>{value}</p>
-        <p className="text-sm text-stone-500">{label}</p>
-      </div>
-    </Link>
   );
 }

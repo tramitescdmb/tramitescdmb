@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Clock, AlertTriangle, PenLine, ListChecks } from "lucide-react";
+import { Clock, AlertTriangle, PenLine, ListChecks, Inbox } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { obtenerPanelMiTrabajo, ETIQUETA_ESTADO_PANEL } from "@/lib/correspondencia-panel";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
-import { TarjetaKpi, TituloSeccion } from "@/components/sgdea/ui";
+import { CabeceraTablero, EnlaceTablero, Indicador, TarjetaTablero, VacioTablero } from "@/components/tablero";
+import { fechaHoyLarga } from "@/lib/saludo";
 
 export default async function PanelMiTrabajoPage() {
   const session = await getSession();
@@ -22,63 +23,63 @@ export default async function PanelMiTrabajoPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion icon={ListChecks}>Mi trabajo pendiente</TituloSeccion>
+      <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Radicados asignados a usted que siguen abiertos.">
+        <Indicador icon={ListChecks} valor={p.mis.total} etiqueta="Asignados" tono="cdmb" />
+        <Indicador icon={PenLine} valor={p.mis.porResponder} etiqueta="Por responder" tono="cielo" />
+        <Indicador icon={Clock} valor={p.mis.porVencer} etiqueta="Por vencer (3 días)" tono="ambar" />
+        <Indicador icon={AlertTriangle} valor={p.mis.vencidas} etiqueta="Vencidas" tono="rojo" alerta={p.mis.vencidas > 0} />
+      </CabeceraTablero>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <TarjetaKpi icon={ListChecks} label="Asignadas a mí" value={p.mis.total} tono="cdmb" />
-        <TarjetaKpi icon={PenLine} label="Por responder" value={p.mis.porResponder} tono="azul" />
-        <TarjetaKpi icon={Clock} label="Por vencer (3 días)" value={p.mis.porVencer} tono="ambar" />
-        <TarjetaKpi icon={AlertTriangle} label="Vencidas" value={p.mis.vencidas} tono="rojo" />
-      </div>
-      <p className="text-xs text-stone-400">
-        Cuenta los radicados asignados a usted que siguen abiertos. El detalle está en la tabla.
-      </p>
-
-      {p.mis.lista.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-400">
-                <th className="px-3 py-2 font-medium">Radicado</th>
-                <th className="px-3 py-2 font-medium">Estado</th>
-                <th className="px-3 py-2 font-medium">Vence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {p.mis.lista.map((c) => {
-                const v = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
-                return (
-                  <tr key={c.id} className="border-b border-stone-100 last:border-0">
-                    <td className="px-3 py-2">
-                      <Link href={`/correspondencia/${c.id}`} className="font-medium text-cdmb-700 hover:underline">
-                        {c.radicado}
-                      </Link>
-                      <p className="truncate text-xs text-stone-400">{c.asunto}</p>
-                    </td>
-                    <td className="px-3 py-2 text-xs text-stone-500">{ETIQUETA_ESTADO_PANEL[c.estado]}</td>
-                    <td className="px-3 py-2 text-xs">
-                      {c.fechaVencimiento ? (
-                        <span className={`rounded-full px-2 py-0.5 ${v?.clase ?? "text-stone-500"}`}>
-                          {formatearFecha(c.fechaVencimiento)}
-                        </span>
-                      ) : (
-                        <span className="text-stone-300">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="rounded-xl border border-stone-200 bg-white shadow-soft px-4 py-8 text-center text-sm text-stone-400">
-          No tiene radicados asignados pendientes.
-        </p>
-      )}
+      <TarjetaTablero
+        icon={Inbox}
+        tono="cielo"
+        titulo="Radicados asignados"
+        contador={p.mis.lista.length}
+        accion={<EnlaceTablero href="/correspondencia">Bandeja de radicados</EnlaceTablero>}
+        sinRelleno
+      >
+        {p.mis.lista.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <tr>
+                  <th className="px-5 py-1.5">Radicado</th>
+                  <th className="px-3 py-1.5">Estado</th>
+                  <th className="px-5 py-1.5">Vence</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {p.mis.lista.map((c) => {
+                  const v = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
+                  return (
+                    <tr key={c.id} className="hover:bg-stone-50/70">
+                      <td className="px-5 py-2">
+                        <Link href={`/correspondencia/${c.id}`} className="font-medium text-stone-800 hover:text-cdmb-700">
+                          {c.radicado}
+                        </Link>
+                        <p className="truncate text-[11px] text-stone-400">{c.asunto}</p>
+                      </td>
+                      <td className="px-3 py-2 text-stone-500">{ETIQUETA_ESTADO_PANEL[c.estado]}</td>
+                      <td className="whitespace-nowrap px-5 py-2">
+                        {c.fechaVencimiento ? (
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${v?.clase ?? "text-stone-500"}`}>{formatearFecha(c.fechaVencimiento)}</span>
+                        ) : (
+                          <span className="text-stone-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <VacioTablero>Sin radicados asignados pendientes.</VacioTablero>
+        )}
+      </TarjetaTablero>
 
       {p.pendientesProceso > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="inline-flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" aria-hidden />
             {p.pendientesProceso === 1
@@ -101,7 +102,7 @@ export default async function PanelMiTrabajoPage() {
       )}
 
       {p.oficiosSinDespachar > 0 && p.puedeDespachar && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="inline-flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" aria-hidden />
             {p.oficiosSinDespachar === 1
@@ -118,7 +119,7 @@ export default async function PanelMiTrabajoPage() {
       )}
 
       {p.flujosPasoVencido > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="inline-flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" aria-hidden />
             {p.flujosPasoVencido === 1

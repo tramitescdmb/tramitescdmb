@@ -134,9 +134,8 @@ export default async function CorrespondenciaAyudaPage() {
           <tr>
             <td className="px-2.5 py-1.5"><strong>Panel</strong></td>
             <td className="px-2.5 py-1.5">
-              Tablero de cuatro vistas encadenadas — <em>Mi trabajo pendiente</em> → <em>Correspondencia</em> →{" "}
-              <em>Expedientes y archivo</em> → <em>Sistema</em>. Reúne indicadores, pendientes propios y las
-              métricas de tiempo que antes estaban en «Reportes».
+              Menú con cuatro vistas: <em>Pendientes</em>, <em>Correspondencia</em>, <em>Expedientes y archivo</em> y{" "}
+              <em>Sistema</em>. Reúne indicadores, pendientes propios y métricas de tiempo de respuesta.
             </td>
             <td className="px-2.5 py-1.5">Todos; la vista «Sistema» solo el administrador de archivo</td>
           </tr>

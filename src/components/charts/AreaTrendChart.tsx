@@ -1,9 +1,9 @@
 type Point = { label: string; value: number };
 
-const LINE_COLOR = "#2a78d6";
+const LINE_COLOR = "#038f67";
 
-const WIDTH = 600;
-const HEIGHT = 180;
+const WIDTH = 900;
+const HEIGHT = 170;
 const PAD_LEFT = 8;
 const PAD_RIGHT = 8;
 const PAD_TOP = 16;
@@ -79,8 +79,9 @@ export function AreaTrendChart({ data, emptyMessage }: { data: Point[]; emptyMes
       })}
 
       <text
-        x={Math.min(points[points.length - 1].x + 6, WIDTH - 4)}
+        x={points[points.length - 1].x - 6}
         y={points[points.length - 1].y - 6}
+        textAnchor="end"
         fontSize="10"
         fontWeight="600"
         fill="#0b0b0b"

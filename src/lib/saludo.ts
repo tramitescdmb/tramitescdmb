@@ -7,3 +7,7 @@ export function saludo(hora: number): string {
 export function horaBogota(): number {
   return Number(new Intl.DateTimeFormat("es-CO", { hour: "numeric", hour12: false, timeZone: "America/Bogota" }).format(new Date()));
 }
+
+export function fechaHoyLarga(): string {
+  return new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" });
+}

@@ -1,6 +1,6 @@
 type Item = { label: string; valor: number };
 
-const COLOR = "#2a78d6";
+const COLOR = "#038f67";
 
 export function MiniColumnas({
   data,

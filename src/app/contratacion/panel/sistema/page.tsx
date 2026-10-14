@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldAlert, Briefcase, UserSquare2, FileSearch, UserCog, ScrollText, Lock, ShieldCheck } from "lucide-react";
+import { Activity, Briefcase, UserSquare2, FileSearch, UserCog, ScrollText, Lock, ShieldCheck, Settings2 } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAdministrarGecon } from "@/lib/permisos";
 import { obtenerResumenSistemaContratacion } from "@/lib/contratacion-panel";
-import { TituloSeccion, TarjetaKpi, Panel, Sub } from "@/components/sgdea/ui";
+import { CabeceraTablero, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { formatearFechaHora } from "@/lib/fecha";
 
@@ -20,62 +19,48 @@ export default async function PanelSistemaGeconPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion icon={ShieldAlert}>Sistema</TituloSeccion>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <TarjetaKpi icon={Briefcase} label="Expedientes" value={r.expedientes} tono="cdmb" href="/contratacion/expedientes" />
-        <TarjetaKpi icon={UserSquare2} label="Contratistas" value={r.contratistas} tono="azul" href="/contratacion/contratistas" />
-        <TarjetaKpi icon={FileSearch} label="Documentos por validar" value={r.documentosPorValidar} tono="ambar" />
-        <TarjetaKpi icon={UserCog} label="Usuarios con rol" value={r.usuariosConRol} tono="neutro" />
-      </div>
+      <CabeceraTablero titulo="Sistema" descripcion="Actividad reciente y registros del módulo.">
+        <Indicador icon={Briefcase} valor={r.expedientes} etiqueta="Expedientes" tono="cdmb" href="/contratacion/expedientes" />
+        <Indicador icon={UserSquare2} valor={r.contratistas} etiqueta="Contratistas" tono="cielo" href="/contratacion/contratistas" />
+        <Indicador icon={FileSearch} valor={r.documentosPorValidar} etiqueta="Documentos por validar" tono="ambar" />
+        <Indicador icon={UserCog} valor={r.usuariosConRol} etiqueta="Usuarios con rol" tono="neutro" />
+      </CabeceraTablero>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Panel className="lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <Sub>Actividad reciente</Sub>
-            <Link href="/contratacion/bitacora" className="text-xs font-medium text-cdmb-700 hover:underline">
-              Ver la bitácora completa
-            </Link>
-          </div>
+        <TarjetaTablero
+          icon={Activity}
+          titulo="Actividad reciente"
+          accion={<EnlaceTablero href="/contratacion/bitacora">Bitácora completa</EnlaceTablero>}
+          sinRelleno
+          className="lg:col-span-2"
+        >
           {r.eventos.length === 0 ? (
-            <p className="py-6 text-center text-sm text-stone-400">Sin actividad todavía.</p>
+            <VacioTablero>Sin actividad todavía.</VacioTablero>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ListaTablero>
               {r.eventos.map((e) => (
-                <li key={e.id} className="py-2 text-sm">
-                  <Link href={`/contratacion/expedientes/${e.expediente.id}`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
-                    {e.expediente.numero}
-                  </Link>{" "}
-                  <span className="text-stone-700">{e.detalle ?? e.tipo}</span>
-                  <p className="text-xs text-stone-400">
-                    {e.usuario?.nombre ?? "Sistema"} · {formatearFechaHora(e.createdAt)}
-                  </p>
-                </li>
+                <FilaTablero
+                  key={e.id}
+                  href={`/contratacion/expedientes/${e.expediente.id}`}
+                  titulo={
+                    <>
+                      <span className="font-mono text-xs text-cdmb-700">{e.expediente.numero}</span> <span className="font-normal text-stone-700">{e.detalle ?? e.tipo}</span>
+                    </>
+                  }
+                  detalle={`${e.usuario?.nombre ?? "Sistema"} · ${formatearFechaHora(e.createdAt)}`}
+                />
               ))}
-            </ul>
+            </ListaTablero>
           )}
-        </Panel>
+        </TarjetaTablero>
 
-        <Panel>
-          <Sub>Administración</Sub>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <Link href="/contratacion/bitacora" className="flex items-center gap-2 text-stone-700 hover:text-cdmb-700">
-                <ScrollText className="h-4 w-4 text-stone-400" aria-hidden /> Bitácora del GECON
-              </Link>
-            </li>
-            <li>
-              <Link href="/contratacion/auditoria" className="flex items-center gap-2 text-stone-700 hover:text-cdmb-700">
-                <ShieldCheck className="h-4 w-4 text-stone-400" aria-hidden /> Auditoría de cuentas
-              </Link>
-            </li>
-            <li>
-              <Link href="/contratacion/seguridad" className="flex items-center gap-2 text-stone-700 hover:text-cdmb-700">
-                <Lock className="h-4 w-4 text-stone-400" aria-hidden /> Seguridad
-              </Link>
-            </li>
-          </ul>
-        </Panel>
+        <TarjetaTablero icon={Settings2} tono="neutro" titulo="Administración" sinRelleno>
+          <ListaTablero>
+            <FilaTablero href="/contratacion/bitacora" icon={ScrollText} tono="neutro" titulo="Bitácora del GECON" />
+            <FilaTablero href="/contratacion/auditoria" icon={ShieldCheck} tono="neutro" titulo="Auditoría de cuentas" />
+            <FilaTablero href="/contratacion/seguridad" icon={Lock} tono="neutro" titulo="Seguridad" />
+          </ListaTablero>
+        </TarjetaTablero>
       </div>
     </section>
   );

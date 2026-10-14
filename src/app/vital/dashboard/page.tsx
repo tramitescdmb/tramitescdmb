@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox, FileStack, Layers, CalendarClock } from "lucide-react";
+import { Inbox, FileStack, Layers, CalendarClock, TrendingUp, BarChart3, Activity, Users } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
@@ -13,6 +12,7 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { CabeceraTablero, EnlaceTablero, Indicador, PieTablero, TarjetaTablero } from "@/components/tablero";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 
@@ -57,91 +57,71 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
     <div className="space-y-4">
       {selector}
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Kpi icon={Inbox} label="Solicitudes traídas" value={num(d.total)} />
-        <Kpi icon={Layers} label="Tipos de trámite" value={num(d.tramitesDistintos)} />
-        <Kpi icon={FileStack} label="Con documentos" value={num(d.conDocs)} />
-        <Kpi
+      <CabeceraTablero antetitulo={rango ? etiqueta : "Histórico completo"} titulo="Solicitudes de VITAL" descripcion="Solicitudes radicadas en VITAL para la jurisdicción de la CDMB.">
+        <Indicador icon={Inbox} valor={num(d.total)} etiqueta="Solicitudes traídas" tono="cdmb" />
+        <Indicador icon={Layers} valor={num(d.tramitesDistintos)} etiqueta="Tipos de trámite" tono="cielo" />
+        <Indicador icon={FileStack} valor={num(d.conDocs)} etiqueta="Con documentos" tono="ambar" />
+        <Indicador
           icon={CalendarClock}
-          label="Rango de radicación"
-          value={d.serieAnual.length ? `${d.serieAnual[0].anio}–${d.serieAnual[d.serieAnual.length - 1].anio}` : "—"}
+          valor={d.serieAnual.length ? `${d.serieAnual[0].anio}–${d.serieAnual[d.serieAnual.length - 1].anio}` : "—"}
+          etiqueta="Rango de radicación"
+          tono="neutro"
         />
+      </CabeceraTablero>
+
+      <div className="grid grid-cols-1 gap-4">
+        <TarjetaTablero icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.`}>
+          <AreaTrendChart data={d.serieMensual} emptyMessage="Sin datos mensuales." />
+        </TarjetaTablero>
+        {d.serieAnual.length >= 2 && (
+          <TarjetaTablero icon={BarChart3} tono="cielo" titulo="Por año" descripcion="Según la fecha que reporta VITAL.">
+            <AreaAnual data={d.serieAnual} emptyMessage="Sin datos por año." />
+          </TarjetaTablero>
+        )}
       </div>
 
-      <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-        <h2 className="text-sm font-semibold text-stone-900">Solicitudes radicadas por mes</h2>
-        <p className="mb-2 text-xs text-stone-500">{rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.</p>
-        <AreaTrendChart data={d.serieMensual} emptyMessage="Sin datos mensuales." />
-      </section>
-
-      {d.serieAnual.length >= 2 && (
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h2 className="text-sm font-semibold text-stone-900">Por año</h2>
-          <p className="mb-2 text-xs text-stone-500">Radicaciones por año (según la fecha que reporta VITAL).</p>
-          <AreaAnual data={d.serieAnual} emptyMessage="Sin datos por año." />
-        </section>
-      )}
-
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h2 className="text-sm font-semibold text-stone-900">Por tipo de trámite</h2>
-          <p className="mb-3 text-xs text-stone-500">Cuántas solicitudes hay de cada trámite VITAL.</p>
+        <TarjetaTablero icon={Layers} titulo="Por tipo de trámite" descripcion="Solicitudes de cada trámite VITAL.">
           <BarChartHorizontal data={d.porTramite} emptyMessage="Sin datos." />
-        </section>
-        <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-          <h2 className="text-sm font-semibold text-stone-900">Por actividad</h2>
-          <p className="mb-3 text-xs text-stone-500">Las 10 actividades más frecuentes en el flujo de VITAL.</p>
+        </TarjetaTablero>
+        <TarjetaTablero icon={Activity} tono="violeta" titulo="Por actividad" descripcion="Las 10 actividades más frecuentes en el flujo de VITAL.">
           <BarChartHorizontal data={d.porActividad} emptyMessage="Sin datos." />
-        </section>
+        </TarjetaTablero>
       </div>
 
       {d.recurrentes.length > 0 && (
-        <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-          <div className="border-b border-stone-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-stone-900">Solicitantes recurrentes</h2>
-            <p className="text-xs text-stone-500">Quiénes más radican en VITAL (por identificación).</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">Solicitante</th>
-                <th className="px-4 py-2 font-medium">Identificación</th>
-                <th className="px-4 py-2 text-right font-medium">Solicitudes</th>
-                <th className="px-4 py-2 text-right font-medium">Trámites distintos</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {d.recurrentes.map((r) => (
-                <tr key={r.nit}>
-                  <td className="px-4 py-2 text-stone-800">{r.nombre ?? "—"}</td>
-                  <td className="px-4 py-2 text-stone-500">{r.nit}</td>
-                  <td className="px-4 py-2 text-right font-medium tabular-nums text-stone-800">{r.total}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-stone-500">{r.tramites}</td>
+        <TarjetaTablero icon={Users} tono="ambar" titulo="Solicitantes recurrentes" descripcion="Quiénes más radican en VITAL, por identificación." sinRelleno>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <tr>
+                  <th className="px-5 py-1.5">Solicitante</th>
+                  <th className="px-3 py-1.5">Identificación</th>
+                  <th className="px-3 py-1.5 text-right">Solicitudes</th>
+                  <th className="px-5 py-1.5 text-right">Trámites distintos</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {d.recurrentes.map((r) => (
+                  <tr key={r.nit} className="hover:bg-stone-50/70">
+                    <td className="px-5 py-1.5 text-stone-800">{r.nombre ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-stone-500">{r.nit}</td>
+                    <td className="px-3 py-1.5 text-right font-medium tabular-nums text-stone-800">{r.total}</td>
+                    <td className="px-5 py-1.5 text-right tabular-nums text-stone-500">{r.tramites}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </TarjetaTablero>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs text-stone-500">
+      <PieTablero>
         <span>
           Última sincronización con VITAL: <span className="font-medium text-stone-700">{fechaHora(d.ultimaSync)}</span>
         </span>
-        <Link href="/vital" className="font-medium text-cdmb-700 hover:underline">Ver solicitudes →</Link>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ icon: Icon, label, value }: { icon: typeof Inbox; label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
-        <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
-        {label}
-      </p>
-      <p className="mt-1 text-xl font-semibold tabular-nums leading-tight text-stone-900">{value}</p>
+        <EnlaceTablero href="/vital">Ver solicitudes</EnlaceTablero>
+      </PieTablero>
     </div>
   );
 }

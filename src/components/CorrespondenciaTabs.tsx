@@ -34,7 +34,16 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
     titulo: textoPendientesFirma(pendientesFirma),
   };
   const grupos: (GrupoMenu | null)[] = [
-    { label: "Panel", icon: LayoutDashboard, href: "/correspondencia/panel" },
+    {
+      label: "Panel",
+      icon: LayoutDashboard,
+      items: [
+        { href: "/correspondencia/panel", label: "Pendientes" },
+        { href: "/correspondencia/panel/correspondencia", label: "Correspondencia" },
+        { href: "/correspondencia/panel/archivo", label: "Expedientes y archivo" },
+        ...(permitido.admin ? [{ href: "/correspondencia/panel/sistema", label: "Sistema", separador: true }] : []),
+      ],
+    },
     {
       label: "Correspondencia",
       icon: Inbox,

@@ -11,6 +11,7 @@ export type PermitidoContratacion = {
   verContratistas: boolean;
   soloAdministrador: boolean;
   gestion: boolean;
+  tableroContratos: boolean;
   administradorSistema: boolean;
 };
 
@@ -32,7 +33,21 @@ export function ContratacionTabs({
     titulo: textoPendientesFirma(pendientesFirma),
   };
   const grupos: GrupoMenu[] = [
-    { label: "Panel", icon: LayoutDashboard, href: "/contratacion/panel" },
+    {
+      label: "Panel",
+      icon: LayoutDashboard,
+      items: [
+        {
+          href: "/contratacion/panel",
+          label: "Pendientes",
+          insignia: { valor: pendientesFirma.listos, alerta: pendientesFirma.listos > 0, titulo: textoPendientesFirma(pendientesFirma) },
+        },
+        { href: "/contratacion/panel/expedientes", label: "Expedientes por etapa" },
+        { href: "/contratacion/panel/indicadores", label: "Indicadores" },
+        ...(permitido.tableroContratos ? [{ href: "/contratacion/panel/contratos", label: "Contratos y recursos" }] : []),
+        ...(permitido.gestion ? [{ href: "/contratacion/panel/sistema", label: "Sistema", separador: true }] : []),
+      ],
+    },
     {
       label: "Expedientes",
       icon: Briefcase,

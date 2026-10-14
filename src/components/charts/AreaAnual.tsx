@@ -1,7 +1,7 @@
 type Punto = { anio: number; valor: number };
 
-const COLOR = "#2a78d6";
-const W = 720;
+const COLOR = "#038f67";
+const W = 960;
 const H = 220;
 const PADL = 30;
 const PADR = 22;

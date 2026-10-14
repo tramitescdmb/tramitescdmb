@@ -372,9 +372,9 @@ export default async function ContratacionAyudaPage() {
     <>
       <Seccion n={11} id="tablero" icono={LayoutDashboard} titulo="Panel">
         <p>
-          El <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">Panel</Link> tiene cuatro
-          vistas: <strong>Mi trabajo pendiente</strong> (firmas, revisiones e informes de periodos cerrados sin cargar),{" "}
-          <strong>Expedientes</strong> (cantidad por etapa y recientes), <strong>Indicadores</strong> (tiempos por etapa, firmas,
+          El menú <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">Panel</Link> reúne las
+          vistas: <strong>Pendientes</strong> (firmas, revisiones e informes de periodos cerrados sin cargar),{" "}
+          <strong>Expedientes por etapa</strong> (cantidad por etapa y recientes), <strong>Indicadores</strong> (tiempos por etapa, firmas,
           dependencias y modalidades) y <strong>Sistema</strong> (volumen y actividad; Administrador o Jefe de Contratación).
         </p>
         <p>

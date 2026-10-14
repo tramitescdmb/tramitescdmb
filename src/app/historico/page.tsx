@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash } from "lucide-react";
+import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ListChecks, ScrollText } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
@@ -11,6 +10,7 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { CabeceraTablero, EnlaceTablero, FilaTablero, Indicador, ListaTablero, PieTablero, TarjetaTablero } from "@/components/tablero";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 
@@ -79,75 +79,64 @@ export default async function HistoricoPanelPage({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-            <Kpi icon={FileCheck2} label="Solicitudes" value={num(d.total)} />
-            <Kpi icon={Scale} label="Trámites aprobados" value={num(d.aprobadas)} />
-            <Kpi icon={Stamp} label="Tasa de aprobación" value={`${(d.tasaAprobacion * 100).toFixed(1)} %`} />
-            <Kpi
+          <CabeceraTablero antetitulo={rango ? etiqueta : "Histórico completo"} titulo="Resoluciones de SINCA 1.0" descripcion="Solicitudes resueltas en el sistema anterior, por fecha de la resolución de fondo.">
+            <Indicador icon={FileCheck2} valor={num(d.total)} etiqueta="Solicitudes" tono="cdmb" />
+            <Indicador icon={Scale} valor={num(d.aprobadas)} etiqueta="Trámites aprobados" tono="verde" />
+            <Indicador icon={Stamp} valor={`${(d.tasaAprobacion * 100).toFixed(1)} %`} etiqueta="Tasa de aprobación" tono="cielo" />
+            <Indicador
               icon={Timer}
-              label="Tiempo mediano"
-              value={d.diasResolucionP50 != null ? `${d.diasResolucionP50} d` : "…"}
-              hint={d.diasResolucionP50 != null ? "de radicación a resolución" : "en cálculo"}
+              valor={d.diasResolucionP50 != null ? `${d.diasResolucionP50} d` : "…"}
+              etiqueta="Tiempo mediano"
+              detalle={d.diasResolucionP50 != null ? "De radicación a resolución" : "En cálculo"}
+              tono="ambar"
             />
-            <Kpi
+            <Indicador
               icon={CalendarClock}
-              label="Años"
-              value={d.serieAnual.length ? `${d.serieAnual[0].label}–${d.serieAnual[d.serieAnual.length - 1].label}` : "—"}
+              valor={d.serieAnual.length ? `${d.serieAnual[0].label}–${d.serieAnual[d.serieAnual.length - 1].label}` : "—"}
+              etiqueta="Años"
+              tono="neutro"
             />
-            <Kpi icon={Hash} label="Con N.º de resolución" value={num(d.conResolucion)} />
-          </div>
+            <Indicador icon={Hash} valor={num(d.conResolucion)} etiqueta="Con N.º de resolución" tono="violeta" />
+          </CabeceraTablero>
 
-          <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-            <h2 className="text-sm font-semibold text-stone-900">Solicitudes por año</h2>
-            <p className="mb-2 text-xs text-stone-500">
-              {rango ? `${etiqueta}, por` : "Por"} fecha de la resolución de fondo. Pase el mouse para ver cualquier año.
-            </p>
+          <TarjetaTablero icon={BarChart3} tono="acento" titulo="Solicitudes por año" descripcion="Pase el mouse para ver cualquier año.">
             <AreaAnual data={d.serieAnual.map((s) => ({ anio: Number(s.label), valor: s.value }))} emptyMessage="Sin datos por año." />
-          </section>
+          </TarjetaTablero>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Panel titulo="Por tipo de trámite" sub="Los 10 tipos con más resoluciones.">
+            <TarjetaTablero icon={Layers} titulo="Por tipo de trámite" descripcion="Los 10 tipos con más resoluciones.">
               <BarChartHorizontal data={d.porTipo} emptyMessage="Sin datos." />
-            </Panel>
-            <Panel titulo="Por municipio" sub="Los 10 municipios con más resoluciones.">
+            </TarjetaTablero>
+            <TarjetaTablero icon={MapPin} tono="cielo" titulo="Por municipio" descripcion="Los 10 municipios con más resoluciones.">
               <BarChartHorizontal data={d.porMunicipio} emptyMessage="Sin datos." />
-            </Panel>
+            </TarjetaTablero>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Panel titulo="Por estado" sub="Casi todas aprobadas; el resto negadas, desistidas o sin permiso requerido.">
+            <TarjetaTablero icon={ListChecks} tono="verde" titulo="Por estado" descripcion="Aprobadas, negadas, desistidas o sin permiso requerido.">
               <BarChartHorizontal data={d.porEstado} emptyMessage="Sin datos." />
-            </Panel>
-            <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-              <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
-                <h2 className="text-sm font-semibold text-stone-900">Últimas resoluciones</h2>
-                <Link href="/historico/solicitudes" className="text-xs font-medium text-cdmb-700 hover:underline">
-                  Ver todas →
-                </Link>
-              </div>
-              <ul className="divide-y divide-stone-100">
+            </TarjetaTablero>
+            <TarjetaTablero icon={ScrollText} tono="violeta" titulo="Últimas resoluciones" accion={<EnlaceTablero href="/historico/solicitudes">Ver todas</EnlaceTablero>} sinRelleno>
+              <ListaTablero>
                 {d.recientes.map((r) => (
-                  <li key={r.nroSolicitud}>
-                    <Link href={`/historico/solicitudes/${r.nroSolicitud}`} className="block px-4 py-2 hover:bg-stone-50">
-                      <div className="flex items-baseline justify-between gap-2 text-sm">
-                        <span className="truncate font-medium text-stone-800">
-                          Res. {r.numeroResolucion ?? "—"}
-                          <span className="ml-1.5 font-normal text-stone-400">Sol. {r.nroSolicitud}</span>
-                        </span>
-                        <span className="flex-none text-xs text-stone-500">{fecha(r.fechaResolucion)}</span>
-                      </div>
-                      <p className="truncate text-xs text-stone-500">
-                        {r.tipoSolicitudNombre ?? "—"} · {r.municipio ?? "—"}
-                        {r.expediente ? ` · ${r.expediente}` : ""}
-                      </p>
-                    </Link>
-                  </li>
+                  <FilaTablero
+                    key={r.nroSolicitud}
+                    href={`/historico/solicitudes/${r.nroSolicitud}`}
+                    titulo={
+                      <>
+                        Res. {r.numeroResolucion ?? "—"}
+                        <span className="ml-1.5 font-normal text-stone-400">Sol. {r.nroSolicitud}</span>
+                      </>
+                    }
+                    detalle={`${r.tipoSolicitudNombre ?? "—"} · ${r.municipio ?? "—"}${r.expediente ? ` · ${r.expediente}` : ""}`}
+                    extra={<span className="text-xs text-stone-500">{fecha(r.fechaResolucion)}</span>}
+                  />
                 ))}
-              </ul>
-            </section>
+              </ListaTablero>
+            </TarjetaTablero>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs text-stone-500">
+          <PieTablero>
             <span>
               Última actualización:{" "}
               <span className="font-medium text-stone-700">{fechaHora(d.ultimaSync?.terminadoEn ?? d.ultimaSync?.iniciadoEn)}</span>
@@ -156,32 +145,9 @@ export default async function HistoricoPanelPage({
               {d.sinFechaValida > 0 && ` · ${num(d.sinFechaValida)} con fecha ilegible en el origen`}
             </span>
             {botonSync}
-          </div>
+          </PieTablero>
         </>
       )}
     </div>
-  );
-}
-
-function Kpi({ icon: Icon, label, value, hint }: { icon: typeof Scale; label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-soft p-3">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
-        <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
-        {label}
-      </p>
-      <p className="mt-1 text-xl font-semibold tabular-nums leading-tight text-stone-900">{value}</p>
-      {hint && <p className="text-[10px] text-stone-400">{hint}</p>}
-    </div>
-  );
-}
-
-function Panel({ titulo, sub, children }: { titulo: string; sub: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-stone-200 bg-white shadow-soft p-4">
-      <h2 className="text-sm font-semibold text-stone-900">{titulo}</h2>
-      <p className="mb-3 text-xs text-stone-500">{sub}</p>
-      {children}
-    </section>
   );
 }

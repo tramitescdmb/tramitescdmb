@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
+import { Indicador, type TonoTablero } from "@/components/tablero";
 
 export function TituloSeccion({
   icon: Icon,
@@ -34,32 +34,32 @@ export function Sub({ children }: { children: ReactNode }) {
 }
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-stone-100 bg-white p-5 shadow-soft ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-stone-200 bg-white p-5 shadow-soft ${className}`}>{children}</div>;
 }
 
 export function EstadoVacio({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
   return (
-    <div className="rounded-2xl border border-stone-100 bg-white px-4 py-10 text-center text-sm text-stone-400 shadow-soft">
+    <div className="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-sm text-stone-400 shadow-soft">
       {Icon && <Icon className="mx-auto mb-2 h-6 w-6 text-stone-300" aria-hidden />}
       {children}
     </div>
   );
 }
 
-const TONOS_KPI: Record<string, string> = {
-  neutro: "text-stone-400",
-  cdmb: "text-cdmb-600",
-  azul: "text-techblue-600",
-  ambar: "text-amber-600",
-  cian: "text-cyan-600",
-  rojo: "text-red-600",
-  verde: "text-emerald-600",
-};
+const TONOS_KPI = {
+  neutro: "neutro",
+  cdmb: "cdmb",
+  azul: "cielo",
+  ambar: "ambar",
+  cian: "cielo",
+  rojo: "rojo",
+  verde: "verde",
+} as const satisfies Record<string, TonoTablero>;
 
 export type TonoKpi = keyof typeof TONOS_KPI;
 
 export function TarjetaKpi({
-  icon: Icon,
+  icon,
   label,
   value,
   tono = "neutro",
@@ -71,28 +71,7 @@ export function TarjetaKpi({
   tono?: TonoKpi;
   href?: string;
 }) {
-  const inner = (
-    <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg">
-      <div className="flex items-center gap-2 text-stone-400">
-        <Icon className={`h-4 w-4 ${TONOS_KPI[tono]}`} aria-hidden />
-        <span className="text-xs uppercase tracking-wide">{label}</span>
-      </div>
-      <p
-        className={`mt-1 text-2xl font-semibold tabular-nums ${
-          value > 0 && tono === "rojo" ? "text-red-600" : "text-stone-900"
-        }`}
-      >
-        {value.toLocaleString("es-CO")}
-      </p>
-    </div>
-  );
-  return href ? (
-    <Link href={href} className="block">
-      {inner}
-    </Link>
-  ) : (
-    inner
-  );
+  return <Indicador icon={icon} etiqueta={label} valor={value} tono={TONOS_KPI[tono]} href={href} alerta={tono === "rojo" && value > 0} />;
 }
 
 export function Esqueleto({ className = "" }: { className?: string }) {

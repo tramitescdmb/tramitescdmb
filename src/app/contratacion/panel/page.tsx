@@ -1,38 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ListChecks, PenLine, Hourglass, CalendarClock, UserX, FileSignature, ArrowRight } from "lucide-react";
+import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, FileText } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { obtenerTrabajoPendienteContratacion, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { identificacionContrato } from "@/lib/codigo-proceso";
-import { TituloSeccion, TarjetaKpi, EstadoVacio, Panel, Sub } from "@/components/sgdea/ui";
+import { CabeceraTablero, Chip, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { formatearFechaSolo } from "@/lib/fecha";
-import { rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
+import { fechaHoyLarga } from "@/lib/saludo";
+import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
+const VISIBLES = 10;
 
 function FilaInforme({ i }: { i: InformePorRadicar }) {
   return (
-    <li className="flex items-center gap-3 py-2 text-sm">
-      <CalendarClock className="h-4 w-4 flex-none text-red-500" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <Link href={`/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`} className="font-medium text-cdmb-700 hover:underline">
-          Informe de supervisión {i.numeroInforme} · {i.mes}
-        </Link>
-        <p className="truncate text-xs text-stone-600" title={i.contratista ?? undefined}>
-          {i.contratista ?? "Sin contratista"}
-        </p>
-        <p className="truncate text-xs text-stone-400">
-          {identificacionContrato(i)} · {i.rango} · desde el {formatearFechaSolo(i.radicaDesde)}
-        </p>
-      </div>
-      <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${i.diasDeRetraso > 15 ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
-        {i.diasDeRetraso === 0 ? "Hoy" : `${i.diasDeRetraso} d.`}
-      </span>
-    </li>
+    <FilaTablero
+      href={`/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`}
+      icon={FileText}
+      tono="ambar"
+      titulo={`Informe de supervisión ${i.numeroInforme} · ${i.mes}`}
+      detalle={`${i.contratista ?? "Sin contratista"} · ${identificacionContrato(i)} · ${i.rango} · desde el ${formatearFechaSolo(i.radicaDesde)}`}
+      extra={<Chip tono={i.diasDeRetraso > 15 ? "rojo" : "ambar"}>{i.diasDeRetraso === 0 ? "Hoy" : `${i.diasDeRetraso} d`}</Chip>}
+    />
   );
 }
 
-export default async function PanelMiTrabajoGeconPage() {
+export default async function PanelPendientesGeconPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
@@ -44,87 +37,83 @@ export default async function PanelMiTrabajoGeconPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion icon={ListChecks}>Mi trabajo pendiente</TituloSeccion>
+      <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Documentos por firmar o revisar e informes de supervisión de periodos cerrados.">
+        <Indicador icon={PenLine} valor={p.firmas.listos} etiqueta="Por firmar ahora" tono="rojo" href="/contratacion/buzon" />
+        <Indicador icon={Hourglass} valor={esperando} etiqueta="Esperando turno" tono="ambar" href="/contratacion/buzon" />
+        <Indicador icon={CalendarClock} valor={p.informes.total} etiqueta="Informes por radicar" tono="acento" />
+        {gestiona && <Indicador icon={UserX} valor={p.sinContratista} etiqueta="Sin contratista" tono="neutro" href="/contratacion/expedientes" />}
+      </CabeceraTablero>
 
-      <div className={`grid grid-cols-2 gap-3 ${gestiona ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
-        <TarjetaKpi icon={PenLine} label="Por firmar ahora" value={p.firmas.listos} tono="azul" href="/contratacion/buzon" />
-        <TarjetaKpi icon={Hourglass} label="Esperando turno" value={esperando} tono="ambar" href="/contratacion/buzon" />
-        <TarjetaKpi icon={CalendarClock} label="Informes por radicar" value={p.informes.total} tono="rojo" />
-        {gestiona && <TarjetaKpi icon={UserX} label="Expedientes sin contratista" value={p.sinContratista} tono="ambar" href="/contratacion/expedientes" />}
-      </div>
-      {p.firmas.total > 0 && <p className="text-xs font-medium text-stone-600">{textoPendientesFirma(p.firmas.resumen)}.</p>}
-      <p className="text-xs text-stone-400">
-        Cuenta lo asignado a usted: documentos que esperan su firma o visto bueno, e informes de supervisión de los expedientes que usted ve cuyo
-        periodo ya cerró y aún no tienen documento cargado.
-      </p>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Panel>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <Sub>Documentos por firmar o revisar</Sub>
-            <Link href="/contratacion/buzon" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-              Ir al buzón <ArrowRight className="h-3 w-3" aria-hidden />
-            </Link>
-          </div>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <TarjetaTablero
+          icon={PenLine}
+          tono="rojo"
+          titulo="Documentos por firmar o revisar"
+          contador={p.firmas.total}
+          accion={<EnlaceTablero href="/contratacion/buzon">Ir al buzón</EnlaceTablero>}
+          sinRelleno
+        >
           {p.firmas.lista.length === 0 ? (
-            <p className="py-6 text-center text-sm text-stone-400">No tiene documentos pendientes de firma.</p>
+            <VacioTablero>Sin documentos pendientes de firma.</VacioTablero>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ListaTablero>
               {p.firmas.lista.map((s) => (
-                <li key={s.id} className="flex items-center gap-3 py-2 text-sm">
-                  <FileSignature className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-stone-800">{s.documentoContrato?.nombre}</p>
-                    <p className="truncate text-xs text-stone-400">
-                      {s.documentoContrato?.expediente.numero} · {ETIQUETA_ROL[s.rol] ?? s.rol}
-                      {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
-                    </p>
-                  </div>
-                  {s.puedeActuar ? (
-                    <Link href={`/contratacion/firmar/${s.id}`} className="flex-none rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
-                      {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
-                    </Link>
-                  ) : (
-                    <span className="flex-none text-[11px] text-stone-400">Espera turno</span>
-                  )}
-                </li>
+                <FilaTablero
+                  key={s.id}
+                  icon={FileSignature}
+                  tono="neutro"
+                  titulo={s.documentoContrato?.nombre}
+                  detalle={`${s.documentoContrato?.expediente.numero ?? ""} · ${ETIQUETA_ROL[s.rol] ?? s.rol}${
+                    s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""
+                  }`}
+                  extra={
+                    s.puedeActuar ? (
+                      <Link href={`/contratacion/firmar/${s.id}`} className="rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
+                        {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
+                      </Link>
+                    ) : (
+                      <Chip>Espera turno</Chip>
+                    )
+                  }
+                />
               ))}
-            </ul>
+            </ListaTablero>
           )}
-        </Panel>
+        </TarjetaTablero>
 
-        <Panel>
-          <Sub>Informes de supervisión por radicar</Sub>
-          <p className="mb-3 text-xs text-stone-500">Periodos cerrados, del más atrasado al más reciente.</p>
+        <TarjetaTablero
+          icon={CalendarClock}
+          tono="ambar"
+          titulo="Informes de supervisión por radicar"
+          descripcion="Del más atrasado al más reciente."
+          contador={p.informes.total}
+          sinRelleno
+        >
           {p.informes.lista.length === 0 ? (
-            <p className="py-6 text-center text-sm text-stone-400">No hay informes por radicar.</p>
+            <VacioTablero>Sin informes por radicar.</VacioTablero>
           ) : (
             <>
-              <ul className="divide-y divide-stone-100">
-                {p.informes.lista.slice(0, 10).map((i) => (
+              <ListaTablero>
+                {p.informes.lista.slice(0, VISIBLES).map((i) => (
                   <FilaInforme key={`${i.expedienteId}-${i.numeroInforme}`} i={i} />
                 ))}
-              </ul>
-              {p.informes.lista.length > 10 && (
-                <details className="group">
-                  <summary className="mt-2 cursor-pointer list-none text-xs font-medium text-cdmb-700 hover:underline group-open:hidden">
-                    Ver {p.informes.lista.length - 10} más
+              </ListaTablero>
+              {p.informes.lista.length > VISIBLES && (
+                <details className="group border-t border-stone-100">
+                  <summary className="cursor-pointer list-none px-5 py-2.5 text-xs font-medium text-cdmb-700 hover:underline group-open:hidden [&::-webkit-details-marker]:hidden">
+                    Ver {p.informes.lista.length - VISIBLES} más
                   </summary>
-                  <ul className="divide-y divide-stone-100 border-t border-stone-100">
-                    {p.informes.lista.slice(10).map((i) => (
+                  <ListaTablero>
+                    {p.informes.lista.slice(VISIBLES).map((i) => (
                       <FilaInforme key={`${i.expedienteId}-${i.numeroInforme}`} i={i} />
                     ))}
-                  </ul>
+                  </ListaTablero>
                 </details>
               )}
             </>
           )}
-        </Panel>
+        </TarjetaTablero>
       </div>
-
-      {p.firmas.total === 0 && p.informes.total === 0 && p.sinContratista === 0 && (
-        <EstadoVacio icon={ListChecks}>No tiene trabajo pendiente en este momento.</EstadoVacio>
-      )}
     </section>
   );
 }

@@ -707,7 +707,7 @@ async function flujoPeriodos(c: Record<string, Cliente>, exp: string, requisitoI
   await capturar("14-expediente-informes-contratista", c.contratista!, `/contratacion/expedientes/${exp}`);
   await capturar("15-panel-trabajo-jefe", c.jefe!, "/contratacion/panel");
   await capturar("16-panel-expedientes-jefe", c.jefe!, "/contratacion/panel/expedientes");
-  await paso("Panel · «Mi trabajo pendiente» lista el informe 2 (periodo ya cerrado y sin cargar)", async () => {
+  await paso("Panel · «Pendientes» lista el informe 2 (periodo ya cerrado y sin cargar)", async () => {
     const r = await c.jefe!.pagina("/contratacion/panel");
     esperar(r.status === 200 && r.html.includes("Informes por radicar"), `HTTP ${r.status}`);
     esperar(r.html.includes("Informe de supervisión 2"), "no aparece el informe 2 entre los pendientes por radicar");

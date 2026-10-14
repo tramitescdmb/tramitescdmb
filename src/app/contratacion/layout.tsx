@@ -6,7 +6,7 @@ import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaGecon } from "@/components/MigaGecon";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion, puedeAdministrarGecon, puedeAdministrarCatalogoContratacion, puedeCrearExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion, puedeAdministrarGecon, puedeAdministrarCatalogoContratacion, puedeCrearExpedienteContractual, puedeVerTableroContratos } from "@/lib/permisos";
 
 export default async function ContratacionLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -47,6 +47,7 @@ export default async function ContratacionLayout({ children }: { children: React
           verContratistas: puedeVerRegistroContratistas(permisos),
           soloAdministrador: puedeAdministrarContratacion(permisos),
           gestion: puedeAdministrarGecon(permisos),
+          tableroContratos: puedeVerTableroContratos(permisos),
           administradorSistema: permisos.esAdmin,
         }}
       />

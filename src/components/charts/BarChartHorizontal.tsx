@@ -1,6 +1,6 @@
 type Item = { label: string; value: number };
 
-const BAR_COLOR = "#2a78d6";
+const BAR_COLOR = "#038f67";
 
 export function BarChartHorizontal({
   data,

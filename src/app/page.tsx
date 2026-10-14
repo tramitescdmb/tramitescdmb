@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { Briefcase, CalendarCheck, CalendarDays, Inbox, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarCheck, CalendarDays, Inbox } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { obtenerSeccionesAlertas } from "@/lib/alertas-landing";
 import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
-import { saludo, horaBogota } from "@/lib/saludo";
+import { saludo, horaBogota, fechaHoyLarga } from "@/lib/saludo";
+import { Indicador } from "@/components/tablero";
 import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { BandejaPendientes } from "@/components/inicio/BandejaPendientes";
@@ -11,20 +12,6 @@ import { MisContratos, SeguimientoContratos } from "@/components/inicio/MisContr
 import { SolicitarVinculacion } from "@/components/VinculacionContratista";
 import { debeOfrecerVinculacion } from "@/lib/contratacion";
 import { obtenerContratosLanding, obtenerSeguimientoContratos, veSeguimientoContratos } from "@/lib/contratos-landing";
-
-function Indicador({ icon: Icon, valor, etiqueta, tono }: { icon: LucideIcon; valor: number; etiqueta: string; tono: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl bg-white/80 px-4 py-2.5 ring-1 ring-stone-200/70 backdrop-blur">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${tono}`}>
-        <Icon className="h-4 w-4" aria-hidden />
-      </span>
-      <span>
-        <span className="block text-lg font-semibold leading-none text-stone-900">{valor}</span>
-        <span className="text-xs text-stone-500">{etiqueta}</span>
-      </span>
-    </div>
-  );
-}
 
 export default async function LandingPage() {
   const session = await getSession();
@@ -48,7 +35,7 @@ export default async function LandingPage() {
   const hoy = agenda?.hoy;
   const visitasHoy = agenda ? agenda.visitas.filter((v) => v.dia === hoy && v.estado === "PROGRAMADA").length : 0;
   const visitasSemana = agenda && hoy ? agenda.visitas.filter((v) => v.dia >= hoy && v.dia < sumarDias(hoy, 7) && v.estado === "PROGRAMADA").length : 0;
-  const fechaLarga = new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" });
+  const fechaLarga = fechaHoyLarga();
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -70,11 +57,11 @@ export default async function LandingPage() {
           </div>
           {secciones.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {contratosPropios > 0 && <Indicador icon={Briefcase} valor={contratosPropios} etiqueta={contratosPropios === 1 ? "Contrato vigente" : "Contratos vigentes"} tono="bg-amber-100 text-amber-700" />}
-              {seguimiento && <Indicador icon={Briefcase} valor={seguimiento.enEjecucion} etiqueta="Contratos en ejecución" tono="bg-amber-100 text-amber-700" />}
-              <Indicador icon={Inbox} valor={totalGeneral} etiqueta="Pendientes" tono="bg-acento-100 text-acento-700" />
-              {agenda && <Indicador icon={CalendarCheck} valor={visitasHoy} etiqueta="Visitas hoy" tono="bg-cdmb-100 text-cdmb-700" />}
-              {agenda && <Indicador icon={CalendarDays} valor={visitasSemana} etiqueta="Próximos 7 días" tono="bg-sky-100 text-sky-700" />}
+              {contratosPropios > 0 && <Indicador icon={Briefcase} valor={contratosPropios} etiqueta={contratosPropios === 1 ? "Contrato vigente" : "Contratos vigentes"} tono="ambar" />}
+              {seguimiento && <Indicador icon={Briefcase} valor={seguimiento.enEjecucion} etiqueta="Contratos en ejecución" tono="ambar" />}
+              <Indicador icon={Inbox} valor={totalGeneral} etiqueta="Pendientes" tono="acento" />
+              {agenda && <Indicador icon={CalendarCheck} valor={visitasHoy} etiqueta="Visitas hoy" tono="cdmb" />}
+              {agenda && <Indicador icon={CalendarDays} valor={visitasSemana} etiqueta="Próximos 7 días" tono="cielo" />}
             </div>
           )}
         </div>

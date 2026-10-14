@@ -4,8 +4,10 @@ import { Briefcase, FileClock, FileCheck2, FileArchive, Lock, Plus } from "lucid
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 import { db } from "@/lib/db";
-import { TituloSeccion, TarjetaKpi, EstadoVacio } from "@/components/sgdea/ui";
+import { CabeceraTablero, Chip, EnlaceTablero, Indicador, TarjetaTablero, VacioTablero, type TonoTablero } from "@/components/tablero";
 import { formatearFecha } from "@/lib/fecha";
+
+const TONO_ETAPA: Record<string, TonoTablero> = { PRECONTRACTUAL: "ambar", CONTRACTUAL: "verde", POSTCONTRACTUAL: "cielo" };
 
 export default async function PanelExpedientesGeconPage() {
   const session = await getSession();
@@ -29,9 +31,10 @@ export default async function PanelExpedientesGeconPage() {
 
   return (
     <section className="space-y-4">
-      <TituloSeccion
-        icon={Briefcase}
-        accion={
+      <CabeceraTablero
+        titulo="Expedientes por etapa"
+        descripcion={`${(precontractual + contractual + postcontractual + cerrados).toLocaleString("es-CO")} expedientes contractuales visibles para usted.`}
+        acciones={
           puedeCrearExpedienteContractual(permisos) ? (
             <Link href="/contratacion/expedientes/nuevo" className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600">
               <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -40,55 +43,54 @@ export default async function PanelExpedientesGeconPage() {
           ) : undefined
         }
       >
-        Expedientes por etapa
-      </TituloSeccion>
+        <Indicador icon={FileClock} valor={precontractual} etiqueta="Precontractual" tono="ambar" href="/contratacion/expedientes?etapa=PRECONTRACTUAL" />
+        <Indicador icon={FileCheck2} valor={contractual} etiqueta="Contractual" tono="verde" href="/contratacion/expedientes?etapa=CONTRACTUAL" />
+        <Indicador icon={FileArchive} valor={postcontractual} etiqueta="Postcontractual" tono="cielo" href="/contratacion/expedientes?etapa=POSTCONTRACTUAL" />
+        <Indicador icon={Lock} valor={cerrados} etiqueta="Cerrados" tono="neutro" />
+      </CabeceraTablero>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <TarjetaKpi icon={FileClock} label="Precontractual" value={precontractual} tono="ambar" href="/contratacion/expedientes?etapa=PRECONTRACTUAL" />
-        <TarjetaKpi icon={FileCheck2} label="Contractual" value={contractual} tono="cdmb" href="/contratacion/expedientes?etapa=CONTRACTUAL" />
-        <TarjetaKpi icon={FileArchive} label="Postcontractual" value={postcontractual} tono="azul" href="/contratacion/expedientes?etapa=POSTCONTRACTUAL" />
-        <TarjetaKpi icon={Lock} label="Cerrados" value={cerrados} tono="neutro" />
-      </div>
-
-      <div>
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">Más recientes</h3>
-        {recientes.length > 0 ? (
-          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-soft">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
-                  <th className="px-3 py-2">Número</th>
-                  <th className="px-3 py-2">Objeto</th>
-                  <th className="px-3 py-2">Modalidad</th>
-                  <th className="px-3 py-2">Dependencia</th>
-                  <th className="px-3 py-2">Contratista</th>
-                  <th className="px-3 py-2">Etapa</th>
-                  <th className="px-3 py-2">Suscripción</th>
+      <TarjetaTablero icon={Briefcase} titulo="Más recientes" accion={<EnlaceTablero href="/contratacion/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
+        {recientes.length === 0 ? (
+          <VacioTablero>Todavía no hay expedientes de contratación.</VacioTablero>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <tr>
+                  <th className="px-5 py-1.5">Número</th>
+                  <th className="px-3 py-1.5">Objeto</th>
+                  <th className="px-3 py-1.5">Modalidad</th>
+                  <th className="px-3 py-1.5">Dependencia</th>
+                  <th className="px-3 py-1.5">Contratista</th>
+                  <th className="px-3 py-1.5">Etapa</th>
+                  <th className="px-5 py-1.5">Suscripción</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-stone-100">
                 {recientes.map((e) => (
-                  <tr key={e.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
-                    <td className="px-3 py-2 font-mono text-xs">
-                      <Link href={`/contratacion/expedientes/${e.id}`} className="text-cdmb-700 hover:underline">
+                  <tr key={e.id} className="hover:bg-stone-50/70">
+                    <td className="whitespace-nowrap px-5 py-2 font-mono">
+                      <Link href={`/contratacion/expedientes/${e.id}`} className="font-medium text-stone-800 hover:text-cdmb-700">
                         {e.numero}
                       </Link>
                     </td>
-                    <td className="max-w-xs truncate px-3 py-2" title={e.objeto}>{e.objeto}</td>
-                    <td className="px-3 py-2 text-xs text-stone-500">{ETIQUETA_MODALIDAD[e.modalidadSeleccion]}</td>
-                    <td className="px-3 py-2 text-xs text-stone-500">{e.dependenciaSolicitante.nombre}</td>
-                    <td className="px-3 py-2 text-xs text-stone-500">{e.contratista?.nombreORazonSocial ?? "—"}</td>
-                    <td className="px-3 py-2 text-xs">{e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual]}</td>
-                    <td className="px-3 py-2 text-xs text-stone-600">{e.fechaSuscripcion ? formatearFecha(e.fechaSuscripcion) : "Sin suscribir"}</td>
+                    <td className="max-w-xs truncate px-3 py-2 text-stone-700" title={e.objeto}>
+                      {e.objeto}
+                    </td>
+                    <td className="px-3 py-2 text-stone-500">{ETIQUETA_MODALIDAD[e.modalidadSeleccion]}</td>
+                    <td className="px-3 py-2 text-stone-500">{e.dependenciaSolicitante.nombre}</td>
+                    <td className="px-3 py-2 text-stone-500">{e.contratista?.nombreORazonSocial ?? "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-2">
+                      {e.cerrado ? <Chip>Cerrado</Chip> : <Chip tono={TONO_ETAPA[e.etapaActual]}>{ETIQUETA_ETAPA[e.etapaActual]}</Chip>}
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-2 text-stone-600">{e.fechaSuscripcion ? formatearFecha(e.fechaSuscripcion) : "Sin suscribir"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <EstadoVacio icon={Briefcase}>Todavía no hay expedientes de contratación.</EstadoVacio>
         )}
-      </div>
+      </TarjetaTablero>
     </section>
   );
 }
