@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
-import { buscarUsuariosParaContrato } from "@/lib/contratacion";
+import { buscarPerfilesSinUsuario, buscarUsuariosParaContrato } from "@/lib/contratacion";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -12,5 +12,6 @@ export async function GET(req: NextRequest) {
   }
 
   const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 80);
-  return NextResponse.json({ resultados: await buscarUsuariosParaContrato(q) });
+  const [resultados, perfiles] = await Promise.all([buscarUsuariosParaContrato(q), buscarPerfilesSinUsuario(q)]);
+  return NextResponse.json({ resultados, perfiles });
 }

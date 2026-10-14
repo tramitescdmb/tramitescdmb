@@ -14,6 +14,7 @@ import {
   REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA,
   TIPOS_IDENTIFICACION_USUARIO,
   type DatosPersona,
+  separarNombreCompleto,
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
@@ -1106,6 +1107,22 @@ export async function buscarUsuariosParaContrato(consulta: string, limite = 10) 
 
 export type UsuarioParaContrato = Awaited<ReturnType<typeof buscarUsuariosParaContrato>>[number];
 
+export async function buscarPerfilesSinUsuario(consulta: string, limite = 5) {
+  const palabras = consulta.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+  if (consulta.trim().length < 2) return [];
+  const perfiles = await db.contratista.findMany({
+    where: {
+      usuarioId: null,
+      AND: palabras.map((p) => ({
+        OR: [{ identificacion: { contains: p, mode: "insensitive" as const } }, { nombreORazonSocial: { contains: p, mode: "insensitive" as const } }],
+      })),
+    },
+    take: limite,
+    select: { id: true, nombreORazonSocial: true, identificacion: true, tipoPersona: true, usuarioRed: true },
+  });
+  return perfiles.map((p) => ({ contratistaId: p.id, nombre: p.nombreORazonSocial, identificacion: p.identificacion, tipoPersona: p.tipoPersona, usuarioRed: p.usuarioRed }));
+}
+
 // --- Contratista "perfil mínimo" en la etapa precontractual --------------------------------
 //
 // Antes de que exista un Usuario real para el futuro contratista (lo normal en precontractual:
@@ -1510,13 +1527,17 @@ export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor:
   if (!usuarioRed) return;
   const pendiente = await db.contratista.findFirst({ where: { usuarioRed, usuarioId: null } });
   if (!pendiente) return;
+  await vincularPerfilConUsuario(pendiente, usuarioId);
+}
+
+export async function vincularPerfilConUsuario(pendiente: Prisma.ContratistaGetPayload<object>, usuarioId: string): Promise<boolean> {
   const [usuario, yaVinculado] = await Promise.all([
     db.usuario.findUnique({ where: { id: usuarioId }, select: { ...SELECT_USUARIO_CONTRATISTA, modulosAcceso: true } }),
     db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
   ]);
-  if (!usuario || yaVinculado || motivoNoPuedeSerContratista(usuario)) return;
+  if (!usuario || yaVinculado || motivoNoPuedeSerContratista(usuario)) return false;
   const actual = personaDesdeUsuario(usuario, false);
-  if (actual.identificacion.trim() && actual.identificacion.trim() !== pendiente.identificacion) return;
+  if (actual.identificacion.trim() && actual.identificacion.trim() !== pendiente.identificacion) return false;
 
   const deContratista: Partial<DatosPersona> = {
     tipoPersona: pendiente.tipoPersona,
@@ -1553,6 +1574,7 @@ export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor:
     }),
     db.contratista.update({ where: { id: pendiente.id }, data: { usuarioId } }),
   ]);
+  return true;
 }
 
 
@@ -1864,10 +1886,8 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   const documento = c.contratista.documento;
   if (documento && expediente.contratista?.identificacion !== documento) {
     const usuario = await db.usuario.findFirst({ where: { cedulaONit: documento, activo: true }, select: { id: true } });
-    if (usuario) {
-      const contratista = await asegurarContratistaDeUsuario(usuario.id);
-      if (contratista.id !== expediente.contratistaId) completar.contratistaId = contratista.id;
-    }
+    const contratistaId = usuario ? (await asegurarContratistaDeUsuario(usuario.id)).id : await asegurarPerfilDesdeSecop(c.contratista);
+    if (contratistaId && contratistaId !== expediente.contratistaId) completar.contratistaId = contratistaId;
   }
 
   const espejo = {
@@ -1896,7 +1916,7 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   return { idContrato, completados: Object.keys(completar).length, cambio: cambio || Object.keys(completar).length > 0 };
 }
 
-export async function sincronizarSecopTodos(): Promise<{ total: number; ok: number; cambios: number; errores: string[] }> {
+export async function sincronizarSecopTodos(): Promise<{ total: number; ok: number; cambios: number; vinculados: number; errores: string[] }> {
   const expedientes = await db.expedienteContractual.findMany({
     where: {
       eliminado: false,
@@ -1916,5 +1936,97 @@ export async function sincronizarSecopTodos(): Promise<{ total: number; ok: numb
       errores.push(`${e.numero}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  return { total: expedientes.length, ok, cambios, errores };
+  const vinculados = await autovincularPerfilesPorDocumento();
+  return { total: expedientes.length, ok, cambios, vinculados, errores };
+}
+
+const soloDigitos = (v: string) => v.replace(/\D/g, "");
+
+export async function asegurarPerfilDesdeSecop(contratista: { tipoDocumento: string | null; documento: string | null; nombre: string | null }): Promise<string | null> {
+  const documento = contratista.documento ? soloDigitos(contratista.documento) : "";
+  if (documento.length < 5 || !contratista.nombre) return null;
+  const existente = await db.contratista.findUnique({ where: { identificacion: documento }, select: { id: true } });
+  if (existente) return existente.id;
+  const juridica = /nit/i.test(contratista.tipoDocumento ?? "");
+  const partes = juridica ? { nombres: "", apellidos: "" } : separarNombreCompleto(contratista.nombre);
+  const creado = await db.contratista.create({
+    data: {
+      identificacion: documento,
+      tipoPersona: juridica ? "JURIDICA" : "NATURAL",
+      nombreORazonSocial: contratista.nombre.trim(),
+      nombres: partes.nombres || null,
+      apellidos: partes.apellidos || null,
+    },
+    select: { id: true },
+  });
+  return creado.id;
+}
+
+export async function autovincularPerfilesPorDocumento(): Promise<number> {
+  const pendientes = await db.contratista.findMany({ where: { usuarioId: null } });
+  let vinculados = 0;
+  for (const p of pendientes) {
+    const usuario = await db.usuario.findFirst({ where: { cedulaONit: p.identificacion, activo: true }, select: { id: true } });
+    if (usuario && (await vincularPerfilConUsuario(p, usuario.id))) vinculados++;
+  }
+  return vinculados;
+}
+
+export async function solicitarVinculacionContratista(usuarioId: string, documentoIngresado: string) {
+  const documento = soloDigitos(documentoIngresado);
+  if (documento.length < 5) throw new Error("Escriba su número de documento sin puntos ni espacios.");
+  const [yaContratista, pendiente] = await Promise.all([
+    db.contratista.findUnique({ where: { usuarioId }, select: { id: true } }),
+    db.contratista.findFirst({ where: { identificacion: documento, usuarioId: null }, select: { id: true, nombreORazonSocial: true } }),
+  ]);
+  if (yaContratista) throw new Error("Su usuario ya está vinculado como contratista.");
+  if (!pendiente) {
+    throw new Error("No hay un contrato pendiente de vincular con ese documento. Si su contrato ya fue registrado, comuníquese con la Oficina de Contratación.");
+  }
+  await db.solicitudVinculacionContratista.upsert({
+    where: { usuarioId_contratistaId: { usuarioId, contratistaId: pendiente.id } },
+    create: { usuarioId, contratistaId: pendiente.id, documento },
+    update: { documento, estado: "PENDIENTE", resueltaEn: null, resueltaPorId: null },
+  });
+  return { contratista: pendiente.nombreORazonSocial };
+}
+
+export async function listarSolicitudesVinculacion() {
+  const solicitudes = await db.solicitudVinculacionContratista.findMany({ where: { estado: "PENDIENTE" }, orderBy: { createdAt: "asc" } });
+  if (solicitudes.length === 0) return [];
+  const [usuarios, contratistas] = await Promise.all([
+    db.usuario.findMany({ where: { id: { in: solicitudes.map((s) => s.usuarioId) } }, select: { id: true, nombre: true, email: true, directorioActivo: true } }),
+    db.contratista.findMany({ where: { id: { in: solicitudes.map((s) => s.contratistaId) } }, select: { id: true, nombreORazonSocial: true, identificacion: true } }),
+  ]);
+  return solicitudes.map((s) => ({
+    id: s.id,
+    documento: s.documento,
+    creada: s.createdAt,
+    usuario: usuarios.find((u) => u.id === s.usuarioId) ?? null,
+    contratista: contratistas.find((c) => c.id === s.contratistaId) ?? null,
+  }));
+}
+
+export async function resolverSolicitudVinculacion(id: string, aprobar: boolean, resueltaPorId: string) {
+  const s = await db.solicitudVinculacionContratista.findUnique({ where: { id } });
+  if (!s || s.estado !== "PENDIENTE") throw new Error("La solicitud ya no está pendiente.");
+  if (aprobar) {
+    const pendiente = await db.contratista.findUnique({ where: { id: s.contratistaId } });
+    if (!pendiente || pendiente.usuarioId) throw new Error("El contratista ya está vinculado a otro usuario.");
+    const ok = await vincularPerfilConUsuario(pendiente, s.usuarioId);
+    if (!ok) throw new Error("No se pudo vincular: el usuario ya es contratista, tiene otro documento registrado o no puede ser contratista.");
+  }
+  await db.solicitudVinculacionContratista.update({
+    where: { id },
+    data: { estado: aprobar ? "APROBADA" : "RECHAZADA", resueltaEn: new Date(), resueltaPorId },
+  });
+}
+
+export async function debeOfrecerVinculacion(usuarioId: string): Promise<boolean> {
+  const [usuario, pendientes, solicitud] = await Promise.all([
+    db.usuario.findUnique({ where: { id: usuarioId }, select: { cedulaONit: true, contratista: { select: { id: true } } } }),
+    db.contratista.count({ where: { usuarioId: null } }),
+    db.solicitudVinculacionContratista.count({ where: { usuarioId, estado: "PENDIENTE" } }),
+  ]);
+  return Boolean(usuario && !usuario.contratista && !usuario.cedulaONit?.trim() && pendientes > 0 && solicitud === 0);
 }

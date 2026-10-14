@@ -8,6 +8,8 @@ import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { BandejaPendientes } from "@/components/inicio/BandejaPendientes";
 import { MisContratos, SeguimientoContratos } from "@/components/inicio/MisContratos";
+import { SolicitarVinculacion } from "@/components/VinculacionContratista";
+import { debeOfrecerVinculacion } from "@/lib/contratacion";
 import { obtenerContratosLanding, obtenerSeguimientoContratos, veSeguimientoContratos } from "@/lib/contratos-landing";
 
 function Indicador({ icon: Icon, valor, etiqueta, tono }: { icon: LucideIcon; valor: number; etiqueta: string; tono: string }) {
@@ -38,6 +40,7 @@ export default async function LandingPage() {
     conGecon && veSeguimientoContratos(permisos) ? obtenerSeguimientoContratos(permisos) : Promise.resolve(null),
   ]);
   const contratosPropios = contratos.filter((c) => c.relacion === "CONTRATISTA").length;
+  const ofrecerVinculacion = await debeOfrecerVinculacion(session.userId);
 
   const primerNombre = session.nombre.trim().split(/\s+/)[0];
   const totalGeneral = secciones.reduce((acc, s) => acc + s.total, 0);
@@ -75,6 +78,8 @@ export default async function LandingPage() {
           )}
         </div>
       </header>
+
+      {ofrecerVinculacion && <SolicitarVinculacion />}
 
       {seguimiento && <SeguimientoContratos datos={seguimiento} />}
 

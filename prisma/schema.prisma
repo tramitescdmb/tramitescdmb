@@ -2312,6 +2312,20 @@ model GarantiaContrato {
   @@index([expedienteId])
 }
 
+model SolicitudVinculacionContratista {
+  id            String    @id @default(cuid())
+  usuarioId     String
+  contratistaId String
+  documento     String
+  estado        String    @default("PENDIENTE")
+  resueltaEn    DateTime?
+  resueltaPorId String?
+  createdAt     DateTime  @default(now())
+
+  @@unique([usuarioId, contratistaId])
+  @@index([estado])
+}
+
 model SecopContratoEspejo {
   expedienteId   String   @id
   idContrato     String

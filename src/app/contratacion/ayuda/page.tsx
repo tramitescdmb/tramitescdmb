@@ -343,7 +343,15 @@ export default async function ContratacionAyudaPage() {
           <strong>Registro.</strong> En «Registrar contratista» se indica primero el usuario de red. Si ya existe en la plataforma,
           se muestra la persona y se vincula directamente. Si no existe, se registra un perfil mínimo (documento, nombre y contacto)
           que queda asociado a ese usuario de red y se vincula cuando la persona ingresa por primera vez; en ese momento sus datos
-          se trasladan a su usuario. Sin usuario de red, la vinculación se hace por número de documento.
+          se trasladan a su usuario. El registro se hace también desde «Nuevo expediente», en el buscador de contratista, sin esperar a
+          SECOP II: así el expediente tiene contratista desde Precontractual.
+        </p>
+        <p>
+          <strong>Vinculación sin usuario de red.</strong> Si el perfil se registró sin usuario de red, la persona ingresa con su cuenta
+          de dominio y el inicio le pide su documento («¿Es contratista de la CDMB?»). La solicitud aparece en Contratistas, en
+          «Vinculaciones por confirmar», y el personal de contratación la confirma con un clic. Cada día el sistema vincula además, sin
+          intervención, los perfiles cuyo documento ya tenga un usuario creado por el administrador. Si SECOP II reporta un contratista
+          que no está registrado, GECON crea su perfil con el documento y el nombre de SECOP II.
         </p>
         <p>
           <strong>Carga masiva.</strong> Administrador y Jefe de Contratación pueden importar perfiles mínimos desde un archivo CSV
@@ -386,6 +394,13 @@ export default async function ContratacionAyudaPage() {
           vistas: <strong>Mi trabajo pendiente</strong> (firmas, revisiones e informes de periodos cerrados sin cargar),{" "}
           <strong>Expedientes</strong> (cantidad por etapa y recientes), <strong>Indicadores</strong> (tiempos por etapa, firmas,
           dependencias y modalidades) y <strong>Sistema</strong> (volumen y actividad; Administrador o Jefe de Contratación).
+        </p>
+        <p>
+          <strong>Contratos y recursos</strong> (Administrador y Jefe de Contratación sobre todos los contratos; cada supervisor sobre los
+          que supervisa): valor contratado, pagado, facturado y pendiente de pago según SECOP II, ejecución financiera, contratos en
+          ejecución, en precontractual, terminados y por liquidar, número de contratistas, valor por modalidad, dependencia, tipo, origen de
+          los recursos y destino del gasto, estados en SECOP II, contratistas de mayor valor, contratos que terminan en 30 días y pagos
+          rezagados frente al plazo. Se filtra por vigencia (año de suscripción).
         </p>
         <p>
           En el <strong>inicio</strong> del aplicativo, Administrador, Jefe y Personal de Contratación ven el seguimiento de los

@@ -1,3 +1,5 @@
+import { ConfirmarVinculaciones } from "@/components/VinculacionContratista";
+import { listarSolicitudesVinculacion } from "@/lib/contratacion";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
@@ -43,6 +45,7 @@ export default async function ContratistasPage({
   const visibles = filtroContratistasVisibles(permisos);
   const where: Prisma.ContratistaWhereInput = { AND: [filtroContratistas({ busqueda, vigencia, estado }), visibles] };
 
+  const solicitudes = puedeRegistrarContratistaMinimo(permisos) ? await listarSolicitudesVinculacion() : [];
   const [total, contratistas, conActivo, vigencias] = await Promise.all([
     db.contratista.count({ where }),
     db.contratista.findMany({
@@ -90,6 +93,10 @@ export default async function ContratistasPage({
       <p className="-mt-2 text-sm text-stone-500">
         Personas y empresas con expediente en GECON. Sus datos se toman de su usuario en la plataforma.
       </p>
+
+      <ConfirmarVinculaciones
+        solicitudes={solicitudes.map((x) => ({ ...x, creada: x.creada.toISOString() }))}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-soft">

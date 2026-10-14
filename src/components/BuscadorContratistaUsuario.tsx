@@ -8,6 +8,8 @@ export type ContratistaElegido =
   | { tipo: "usuario"; usuarioId: string; nombre: string; identificacion: string }
   | { tipo: "contratista"; contratistaId: string; nombre: string; identificacion: string };
 
+type Perfil = { contratistaId: string; nombre: string; identificacion: string; tipoPersona: "NATURAL" | "JURIDICA"; usuarioRed: string | null };
+
 type Resultado = {
   usuarioId: string;
   nombre: string;
@@ -31,6 +33,7 @@ export function BuscadorContratistaUsuario({
 }) {
   const [consulta, setConsulta] = useState("");
   const [resultados, setResultados] = useState<Resultado[] | null>(null);
+  const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [incompleto, setIncompleto] = useState<Resultado | null>(null);
   const [registrando, setRegistrando] = useState(false);
@@ -50,7 +53,10 @@ export function BuscadorContratistaUsuario({
       try {
         const res = await fetch(`/api/contratacion/contratistas/buscar?q=${encodeURIComponent(q)}`);
         const body = await res.json().catch(() => ({}));
-        if (mio === turno.current) setResultados(res.ok ? (body.resultados as Resultado[]) : []);
+        if (mio === turno.current) {
+          setResultados(res.ok ? (body.resultados as Resultado[]) : []);
+          setPerfiles(res.ok ? ((body.perfiles ?? []) as Perfil[]) : []);
+        }
       } finally {
         if (mio === turno.current) setBuscando(false);
       }
@@ -110,6 +116,29 @@ export function BuscadorContratistaUsuario({
         </ul>
       )}
 
+      {perfiles.length > 0 && (
+        <ul className="divide-y divide-stone-100 overflow-hidden rounded-xl border border-sky-200 bg-white">
+          {perfiles.map((p) => (
+            <li key={p.contratistaId}>
+              <button
+                type="button"
+                onClick={() => onElegir({ tipo: "contratista", contratistaId: p.contratistaId, nombre: p.nombre, identificacion: p.identificacion })}
+                className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left hover:bg-sky-50/60"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium text-stone-800">{p.nombre}</span>
+                  <span className="block truncate text-xs text-stone-500">
+                    {p.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {p.identificacion}
+                    {p.usuarioRed ? ` · usuario de red ${p.usuarioRed}` : ""}
+                  </span>
+                </span>
+                <span className="flex-none text-[11px] font-medium text-sky-700">Sin usuario aún: se vincula al ingresar</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {incompleto && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {incompleto.nombre} no tiene completos sus datos ({incompleto.faltantes.join(", ")}). El administrador del sistema debe completarlos en
@@ -117,7 +146,7 @@ export function BuscadorContratistaUsuario({
         </p>
       )}
 
-      {resultados && resultados.length === 0 && !buscando && !registrando && (
+      {resultados && resultados.length === 0 && perfiles.length === 0 && !buscando && !registrando && (
         <div className="space-y-2 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600">
           <p>Ningún usuario del sistema coincide con «{consulta.trim()}».</p>
           {permiteRegistrarNuevo && (

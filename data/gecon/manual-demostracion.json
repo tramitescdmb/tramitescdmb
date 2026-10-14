@@ -28,10 +28,12 @@
       "Si el usuario existe, se muestra la persona: «Vincular como contratista» o, si ya lo es, «Usar este contratista».",
       "Si no existe, se diligencia el perfil mínimo: tipo de persona, documento, nombre y contacto; para persona jurídica, también el representante legal.",
       "Cuando la persona ingresa por primera vez con ese usuario de red, el perfil se vincula y sus datos pasan a su usuario.",
-      "Para registrar varios contratistas se usa la importación por CSV, con plantilla y revisión fila por fila antes de guardar."
+      "Para registrar varios contratistas se usa la importación por CSV, con plantilla y revisión fila por fila antes de guardar.",
+      "Si se registró sin usuario de red, la persona ingresa con su cuenta de dominio, escribe su documento en el inicio y el personal confirma la vinculación en «Vinculaciones por confirmar».",
+      "Cada día el sistema vincula solo los perfiles cuyo documento ya tenga usuario, y crea desde SECOP II el perfil de los contratistas que aún no estén registrados."
     ],
     "ejemplo": "Al consultar `walhal01` el sistema muestra a Walid Chakib Halaby Shalaby, ya registrado como contratista.",
-    "detalle": "Sin usuario de red, el perfil se vincula por número de documento cuando exista un usuario con ese documento y datos completos.\n\nUn contratista sin expedientes puede eliminarse desde su ficha.",
+    "detalle": "Sin usuario de red, el perfil se vincula por número de documento cuando exista un usuario con ese documento y datos completos.\n\nUn contratista sin expedientes puede eliminarse desde su ficha.\n\nEl contratista se puede registrar desde «Nuevo expediente», sin esperar a SECOP II, para custodiar sus documentos desde Precontractual. Celular obligatorio; teléfono fijo opcional.",
     "fundamento": "Decreto 1082 de 2015 · Ley 1581 de 2012."
   },
   {
@@ -164,9 +166,10 @@
       "«Mi trabajo pendiente»: firmas, revisiones e informes por radicar.",
       "«Expedientes»: cantidad por etapa y recientes.",
       "«Indicadores»: tiempos por etapa, firmas, dependencias y modalidades.",
-      "«Sistema»: volumen y actividad (Administrador o Jefe de Contratación)."
+      "«Sistema»: volumen y actividad (Administrador o Jefe de Contratación).",
+      "«Contratos y recursos»: valores de SECOP II (contratado, pagado, facturado, pendiente), contratos por etapa, contratistas y distribución por modalidad, dependencia, tipo y fuente de recursos (Administrador y Jefe; cada supervisor, sus contratos)."
     ],
-    "ejemplo": "Con los datos de prueba hay dos contratos en ejecución (`210-17017-8` y `210-17098-8`), uno terminado (`210-16302-8`) y uno en Precontractual.",
+    "ejemplo": "Con los datos de prueba, «Contratos y recursos» suma los contratos de Walid, Martín, Aristivaldo y EME Ing. con sus valores y pagos reportados por SECOP II.",
     "detalle": "En el inicio del aplicativo, Administrador, Jefe y Personal de Contratación ven el seguimiento de los contratos en ejecución con informes por radicar, firmas pendientes o terminación en los próximos 15 días, los más atrasados primero.",
     "fundamento": "Decreto 1499 de 2017 (MIPG)."
   },
