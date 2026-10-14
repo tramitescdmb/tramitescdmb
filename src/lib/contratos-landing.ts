@@ -121,7 +121,6 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
     etapaActual: { not: "POSTCONTRACTUAL" },
     OR: [{ fechaFinEstimada: null }, { fechaFinEstimada: { gte: hoy } }],
   };
-  const inicioAnio = new Date(Date.UTC(hoy.getUTCFullYear(), 0, 1));
 
   const [expedientes, buzon, terminados] = await Promise.all([
     db.expedienteContractual.findMany({
@@ -131,7 +130,7 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
       select: SELECT_CONTRATO,
     }),
     listarBuzon(userId, "documentoContrato"),
-    db.expedienteContractual.count({ where: { AND: [mios, { NOT: vigentes }, { fechaFinEstimada: { gte: inicioAnio } }] } }),
+    db.expedienteContractual.count({ where: { AND: [mios, { NOT: vigentes }] } }),
   ]);
 
   const contratos: ContratoLanding[] = expedientes.map((e) => {

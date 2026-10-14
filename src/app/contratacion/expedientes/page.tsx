@@ -68,6 +68,7 @@ export default async function ExpedientesContratacionPage({
           {ETAPAS_ORDEN.map((e) => (
             <option key={e} value={e}>{ETIQUETA_ETAPA[e]}</option>
           ))}
+          <option value="TERMINADOS">Terminados</option>
         </select>
         <select
           name="dependenciaId"

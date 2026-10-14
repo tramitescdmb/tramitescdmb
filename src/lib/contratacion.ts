@@ -27,6 +27,7 @@ import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion"
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
+import { fechaArchivoColombia } from "@/lib/fecha";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -1391,6 +1392,10 @@ export function construirWhereExpedienteContractual(
 ): Prisma.ExpedienteContractualWhereInput {
   const and: Prisma.ExpedienteContractualWhereInput[] = [{ eliminado: false }, restringirPorRolContratacion(permisos)];
   if (f.etapa && (ETAPAS_ORDEN as string[]).includes(f.etapa)) and.push({ etapaActual: f.etapa as EtapaContratacion });
+  if (f.etapa === "TERMINADOS") {
+    const hoy = new Date(`${fechaArchivoColombia()}T00:00:00Z`);
+    and.push({ OR: [{ cerrado: true }, { etapaActual: "POSTCONTRACTUAL" }, { fechaFinEstimada: { lt: hoy } }] });
+  }
   if (f.modalidad) and.push({ modalidadSeleccion: f.modalidad as ModalidadSeleccion });
   if (f.dependenciaId) and.push({ dependenciaSolicitanteId: f.dependenciaId });
   if (f.vigencia && /^\d{4}$/.test(f.vigencia)) {

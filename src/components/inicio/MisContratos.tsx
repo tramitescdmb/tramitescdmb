@@ -185,8 +185,8 @@ export function MisContratos({ contratos, terminados }: { contratos: ContratoLan
         </h2>
         <span className="flex items-center gap-3 text-xs">
           {terminados > 0 && (
-            <Link href={`/contratacion/panel/contratos?vigencia=${new Date().getFullYear()}`} className="text-stone-500 hover:underline">
-              {terminados} terminado(s) este año
+            <Link href="/contratacion/expedientes?etapa=TERMINADOS" className="text-stone-500 hover:underline">
+              {terminados} terminado(s)
             </Link>
           )}
           <Link href="/contratacion/panel" className="font-medium text-cdmb-700 hover:underline">
