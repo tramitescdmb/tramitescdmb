@@ -45,6 +45,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
+import { BandaTablero } from "@/components/tablero";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada", EN_REPARTO: "En reparto", ASIGNADA: "Asignada", EN_TRAMITE: "En trámite",
@@ -316,10 +317,10 @@ export default async function CorrespondenciaDetallePage({
         </div>
       )}
 
-      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
+      <BandaTablero>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold text-stone-900">{c.radicado}</h2>
+            <h2 className="text-xl font-semibold text-stone-900">{c.radicado}</h2>
             <p className="text-xs text-stone-400">
               {ETIQUETA_TIPO[c.tipo] ?? c.tipo}
               {c.tipoPqrsd ? ` · ${ETIQUETA_TIPO_PQRSD[c.tipoPqrsd]}` : ""}
@@ -418,7 +419,7 @@ export default async function CorrespondenciaDetallePage({
             ))}
           </div>
         )}
-      </div>
+      </BandaTablero>
 
       {tieneTercero && (
         <Tarjeta titulo={c.tipo === "ENVIADA" ? "Destinatario" : "Remitente"} icono={<User className="h-3.5 w-3.5" aria-hidden />}>

@@ -8,6 +8,7 @@ import { listarTerminos } from "@/lib/vocabulario";
 import { Field, SectionHelp } from "@/components/Field";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
+import { CabeceraTablero } from "@/components/tablero";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
@@ -33,13 +34,16 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
       <section className="space-y-3">
-        <h2 className="flex flex-wrap items-center justify-between gap-2 text-base font-semibold text-stone-900">
-          <span className="flex items-center gap-2"><Tags className="h-4 w-4 text-cdmb-600" aria-hidden /> Vocabulario controlado</span>
-          <span className="flex items-center gap-3 text-xs">
-            <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar">CSV</EnlaceDescarga>
-            <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar?formato=xml">XML</EnlaceDescarga>
-          </span>
-        </h2>
+        <CabeceraTablero
+          icon={Tags}
+          titulo="Vocabulario controlado"
+          acciones={
+            <span className="flex items-center gap-3 text-xs">
+              <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar">CSV</EnlaceDescarga>
+              <EnlaceDescarga href="/api/correspondencia/vocabulario/exportar?formato=xml">XML</EnlaceDescarga>
+            </span>
+          }
+        />
         <SectionHelp>
           Lista normalizada de palabras clave (MoReq 1.17). Al etiquetar una comunicación solo se pueden usar
           términos de esta lista — así dos personas describen el mismo asunto con la misma palabra y la búsqueda

@@ -16,6 +16,7 @@ import {
 } from "@/lib/fondo-historico";
 import { getFondoDocumento } from "@/lib/fondo-historico-data";
 import { formatearFecha as fecha } from "@/lib/fecha";
+import { BandaTablero } from "@/components/tablero";
 
 export default async function FichaFondoPage({
   params,
@@ -69,12 +70,12 @@ export default async function FichaFondoPage({
         <ArrowLeft className="h-4 w-4" aria-hidden /> Volver al fondo histórico
       </Link>
 
-      <header className="rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
+      <BandaTablero>
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-amber-100 text-amber-700">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-amber-100 text-amber-700">
             <Archive className="h-4 w-4" aria-hidden />
           </span>
-          <h1 className="text-lg font-semibold text-stone-900">
+          <h1 className="text-xl font-semibold text-stone-900">
             {doc.numero || doc.numeroEntrada || doc.numeroSalida || `Documento #${doc.refId}`}
           </h1>
           <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
@@ -84,7 +85,7 @@ export default async function FichaFondoPage({
           {info.titulo} · id {doc.refId}
           {esPsdocuments && doc.serieId != null ? ` · serie ${doc.serieId}` : ""}
         </p>
-      </header>
+      </BandaTablero>
 
       <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <h2 className="mb-3 text-sm font-semibold text-stone-700">Datos del documento</h2>

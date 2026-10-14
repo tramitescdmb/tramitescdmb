@@ -6,6 +6,8 @@ import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { NuevoExpedienteDocumentalForm } from "@/components/NuevoExpedienteDocumentalForm";
+import { FolderPlus } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function NuevoExpedientePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const session = await getSession();
@@ -27,13 +29,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Abrir un expediente documental</h2>
-        <p className="text-sm text-stone-500">
-          Para archivar documentos de su gestión diaria que no llegan por correspondencia (contratos, actas internas,
-          historias laborales, etc.), conforme al Art. 4.3.2 del Acuerdo 001/2024 AGN.
-        </p>
-      </div>
+      <CabeceraTablero icon={FolderPlus} titulo="Abrir un expediente documental" descripcion="Para documentos de la gestión diaria que no llegan por correspondencia (Art. 4.3.2 del Acuerdo 001/2024 AGN)." />
 
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 

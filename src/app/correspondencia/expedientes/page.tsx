@@ -7,8 +7,6 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permi
 import { listarExpedientesDocumentales, type FiltrosExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
-import { SectionHelp } from "@/components/Field";
-import { TarjetaKpi } from "@/components/sgdea/ui";
 import { Paginador } from "@/components/Paginador";
 import { SelectorVista } from "@/components/SelectorVista";
 import { ResumenResultados } from "@/components/ResumenResultados";
@@ -18,6 +16,7 @@ import { CarpetaExpediente, CajonDependencia } from "@/components/sgdea/CarpetaE
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
 import { ETIQUETA_ORIGEN_EXPEDIENTE, ETIQUETA_CORTA_ORIGEN, CLASE_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
 import type { OrigenExpedienteDocumental } from "@prisma/client";
+import { CabeceraTablero, Indicador } from "@/components/tablero";
 const ORIGENES = Object.keys(ETIQUETA_ORIGEN_EXPEDIENTE) as OrigenExpedienteDocumental[];
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };
 
@@ -95,18 +94,16 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
       </div>
 
       <div className="print:hidden">
-        <SectionHelp>
-          Carpeta digital de un asunto o procedimiento — no requiere originarse en una comunicación radicada
-          (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un
-          archivo que tenga adentro.
-        </SectionHelp>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 print:hidden sm:grid-cols-4">
-        <TarjetaKpi icon={FolderOpen} label="Abiertos" value={abiertos} tono="cdmb" />
-        <TarjetaKpi icon={FolderCheck} label="Cerrados" value={cerrados} tono="verde" />
-        <TarjetaKpi icon={Files} label="Documentos" value={documentosTotal} />
-        <TarjetaKpi icon={Handshake} label="Préstamos activos" value={prestamosActivos} tono={prestamosActivos > 0 ? "ambar" : "neutro"} />
+        <CabeceraTablero
+          icon={FolderOpen}
+          titulo="Expedientes documentales"
+          descripcion="Carpeta digital de un asunto o procedimiento (Art. 4.3.2 Acuerdo 001/2024 AGN). La búsqueda también encuentra un expediente por el nombre de un archivo."
+        >
+          <Indicador icon={FolderOpen} valor={abiertos} etiqueta="Abiertos" tono="cdmb" />
+          <Indicador icon={FolderCheck} valor={cerrados} etiqueta="Cerrados" tono="verde" />
+          <Indicador icon={Files} valor={documentosTotal} etiqueta="Documentos" tono="neutro" />
+          <Indicador icon={Handshake} valor={prestamosActivos} etiqueta="Préstamos activos" tono={prestamosActivos > 0 ? "ambar" : "neutro"} />
+        </CabeceraTablero>
       </div>
 
       {sp.error && <div className="print:hidden rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}

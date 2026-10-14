@@ -7,6 +7,8 @@ import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { db } from "@/lib/db";
 import { MemorandoForm } from "@/components/MemorandoForm";
+import { FileEdit } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function NuevaInternaPage() {
   const session = await getSession();
@@ -28,13 +30,7 @@ export default async function NuevaInternaPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Nuevo memorando interno</h2>
-        <p className="text-sm text-stone-500">
-          Comunicación entre dependencias, con trazabilidad completa. Se radica y se firma electrónicamente (hash
-          SHA-256) en el mismo paso.
-        </p>
-      </div>
+      <CabeceraTablero icon={FileEdit} titulo="Nuevo memorando interno" descripcion="Comunicación entre dependencias. Se radica y se firma electrónicamente (SHA-256) en el mismo paso." />
       <MemorandoForm
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
         usuarios={usuarios}

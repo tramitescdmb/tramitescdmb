@@ -17,6 +17,7 @@ import { SelectorSerieBusqueda } from "@/components/SelectorSerieBusqueda";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaCorrespondencia } from "@/components/tablas/TablaCorrespondencia";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Radicada",
@@ -103,6 +104,10 @@ export default async function CorrespondenciaBandejaPage({
     <div className="space-y-4">
       {sp.ok && <div className="print:hidden rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="print:hidden rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      <div className="print:hidden">
+        <CabeceraTablero icon={Inbox} titulo="Bandeja de radicados" contador={total} descripcion="Comunicaciones recibidas, enviadas y memorandos; el semáforo de «Vence» sigue el término de ley de la PQRSD." />
+      </div>
 
       <div className="print:hidden flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-soft">
         <nav className="flex flex-wrap gap-1" aria-label="Tipo de comunicación">

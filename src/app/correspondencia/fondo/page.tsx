@@ -14,6 +14,7 @@ import {
 import { getFondoListado, getFondoPanel, type FiltrosFondo } from "@/lib/fondo-historico-data";
 import { Paginador } from "@/components/Paginador";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { BandaTablero } from "@/components/tablero";
 
 export const metadata = { title: "Fondo histórico" };
 
@@ -71,7 +72,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-stone-50/80 p-1">
+      <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-soft">
         {grupos.map((g) => {
           const activo = g.grupo === grupoActivo.grupo;
           const primero = g.miembros[0]!;
@@ -80,29 +81,27 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
               key={g.grupo}
               href={`/correspondencia/fondo?fondo=${primero.id}`}
               aria-current={activo ? "page" : undefined}
-              className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                activo
-                  ? "bg-white text-cdmb-800 shadow-sm ring-1 ring-stone-200"
-                  : "text-stone-500 hover:bg-white/70 hover:text-stone-800"
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                activo ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               }`}
             >
-              <Archive className={`h-4 w-4 ${activo ? "text-cdmb-600" : "text-stone-400"}`} aria-hidden />
+              <Archive className={`h-4 w-4 ${activo ? "text-white" : "text-stone-400"}`} aria-hidden />
               {g.label}
             </Link>
           );
         })}
       </div>
 
-      <header className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-amber-100 text-amber-700">
+      <BandaTablero className="space-y-1">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-amber-100 text-amber-700">
             <Archive className="h-4 w-4" aria-hidden />
           </span>
-          <h2 className="text-lg font-semibold text-stone-900">{info.titulo}</h2>
+          <h2 className="text-xl font-semibold text-stone-900">{info.titulo}</h2>
           <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
         </div>
         <p className="max-w-3xl text-sm text-stone-500">{info.descripcion}</p>
-      </header>
+      </BandaTablero>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tarjeta etiqueta="Documentos" valor={total.toLocaleString("es-CO")} />
@@ -297,10 +296,10 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
 function Tarjeta({ etiqueta, valor, nota }: { etiqueta: string; valor: string; nota?: string }) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-stone-400">{etiqueta}</div>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <span className="text-xl font-semibold text-stone-900">{valor}</span>
+    <div className="rounded-xl bg-white/80 px-4 py-2.5 ring-1 ring-stone-200/70">
+      <div className="text-xs text-stone-500">{etiqueta}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-lg font-semibold tabular-nums text-stone-900">{valor}</span>
         {nota && <span className="text-xs text-stone-400">{nota}</span>}
       </div>
     </div>

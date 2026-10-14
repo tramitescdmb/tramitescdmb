@@ -6,6 +6,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar } fro
 import { TerceroForm } from "@/components/TerceroForm";
 import { nombreTercero, personaDesdeTercero } from "@/lib/terceros";
 import { formatearFecha } from "@/lib/fecha";
+import { BandaTablero } from "@/components/tablero";
 
 export default async function TerceroPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,15 +31,15 @@ export default async function TerceroPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/correspondencia/terceros" className="text-sm text-cdmb-700 hover:underline">
+      <BandaTablero>
+        <Link href="/correspondencia/terceros" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← Terceros
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-stone-900">{nombreTercero(tercero)}</h1>
         <p className="text-sm text-stone-500">
           {tercero.tipoIdentificacion ?? "Documento"} {tercero.identificacion} · {tercero.tipo === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
         </p>
-      </div>
+      </BandaTablero>
 
       {editable ? (
         <TerceroForm terceroId={tercero.id} inicial={personaDesdeTercero(tercero)} />

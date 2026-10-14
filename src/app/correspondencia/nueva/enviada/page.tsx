@@ -7,6 +7,8 @@ import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
 import { RadicarEnviadaForm } from "@/components/RadicarEnviadaForm";
+import { Send } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function NuevaEnviadaPage({ searchParams }: { searchParams: Promise<{ respondeAId?: string }> }) {
   const session = await getSession();
@@ -24,13 +26,7 @@ export default async function NuevaEnviadaPage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Radicar correspondencia enviada</h2>
-        <p className="text-sm text-stone-500">
-          Oficio de salida. Se radica y se firma electrónicamente (hash SHA-256) en el mismo paso — el contenido queda
-          protegido: cualquier cambio posterior invalidaría la firma.
-        </p>
-      </div>
+      <CabeceraTablero icon={Send} titulo="Radicar correspondencia enviada" descripcion="Oficio de salida. Se radica y se firma electrónicamente (SHA-256) en el mismo paso; cualquier cambio posterior invalida la firma." />
       <RadicarEnviadaForm
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
         series={series.map((s) => ({

@@ -5,6 +5,8 @@ import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import { VentanillaRadicacionForm } from "@/components/VentanillaRadicacionForm";
+import { Inbox } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function NuevaRadicacionPage() {
   const session = await getSession();
@@ -16,13 +18,7 @@ export default async function NuevaRadicacionPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">Radicar correspondencia recibida</h2>
-        <p className="text-sm text-stone-500">
-          Ventanilla única (Acuerdo 060/2001 AGN). Capture los datos del remitente y de la comunicación; al radicar se
-          asigna el consecutivo del año y se registra en la bitácora inalterable.
-        </p>
-      </div>
+      <CabeceraTablero icon={Inbox} titulo="Radicar correspondencia recibida" descripcion="Ventanilla única (Acuerdo 060/2001 AGN). Al radicar se asigna el consecutivo del año y queda registrado en la bitácora." />
       <VentanillaRadicacionForm
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
         series={series.map((s) => ({
