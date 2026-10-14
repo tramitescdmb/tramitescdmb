@@ -1364,6 +1364,7 @@ export type FiltrosContratacion = {
   modalidad?: string;
   contratistaId?: string;
   dependenciaId?: string;
+  vigencia?: string;
   page?: string;
   vista?: string;
 };
@@ -1390,6 +1391,11 @@ export function construirWhereExpedienteContractual(
   if (f.etapa && (ETAPAS_ORDEN as string[]).includes(f.etapa)) and.push({ etapaActual: f.etapa as EtapaContratacion });
   if (f.modalidad) and.push({ modalidadSeleccion: f.modalidad as ModalidadSeleccion });
   if (f.dependenciaId) and.push({ dependenciaSolicitanteId: f.dependenciaId });
+  if (f.vigencia && /^\d{4}$/.test(f.vigencia)) {
+    const anio = Number(f.vigencia);
+    const rango = { gte: new Date(Date.UTC(anio, 0, 1)), lt: new Date(Date.UTC(anio + 1, 0, 1)) };
+    and.push({ OR: [{ fechaSuscripcion: rango }, { fechaSuscripcion: null, createdAt: rango }] });
+  }
   if (f.contratistaId) and.push({ contratistaId: f.contratistaId });
   if (f.q?.trim()) {
     const q = f.q.trim();

@@ -226,16 +226,6 @@ export default async function ContratacionAyudaPage() {
           </li>
         </ul>
         <p>
-          <strong>Garantías.</strong> En el bloque «Garantías» se registra cada póliza (aseguradora, número, amparos, valor y vigencia);
-          la aprueban Administrador o Jefe de Contratación, como requisito de ejecución (Ley 80, art. 41). El bloque avisa si hay
-          garantías sin aprobar, si la vigencia termina antes que el contrato o si después de la última garantía hubo una prórroga,
-          adición, suspensión o cesión que obliga a ampliarla (Decreto 1082, art. 2.2.1.2.3.1.18).
-        </p>
-        <p>
-          <strong>Pagos.</strong> En el bloque «Pagos» se registra cada pago con su fecha, valor y periodo. Muestra lo pagado, el saldo y
-          la ejecución financiera frente al avance del plazo, y no admite pagos que superen el valor vigente del contrato.
-        </p>
-        <p>
           <strong>Modalidad y tipo de contrato.</strong> El tipo de contrato se elige entre los que admite la modalidad: el concurso de
           méritos es solo para consultoría e interventoría, que no se seleccionan por licitación ni por selección abreviada (Ley 1150,
           art. 2, num. 3); la subasta inversa es solo para bienes y servicios de características técnicas uniformes; la enajenación, para
@@ -258,11 +248,12 @@ export default async function ContratacionAyudaPage() {
           contrato: por el número de contrato o de proceso o, si faltan, por el documento del contratista entre los contratos firmados o
           vigentes desde la creación del expediente. Si encuentra varios, pide escribir el número de contrato. Una vez enlazado, el número
           de contrato y de proceso, el objeto, la modalidad, la causal, el tipo, el valor, las fechas de firma, inicio y terminación y el
-          contratista se toman de SECOP II, se sobrescriben en cada sincronización y no se editan en GECON. El panel «SECOP II» muestra
+          contratista se toman de SECOP II, se sobrescriben en cada sincronización y no se editan en GECON. Cuando SECOP II reporta el
+          contrato firmado, el expediente pasa solo de Precontractual a Contractual y queda anotado en la bitácora. El panel «SECOP II» muestra
           además, en solo lectura, todo lo que publica la API: valores facturado y pagado, fuentes de recursos, personas, facturas,
           modificaciones, adiciones, suspensiones y garantías. Los documentos se consultan en SECOP II; GECON no los copia. En GECON se
           gestionan la dependencia, la clasificación TRD, el código de proceso, el personal asignado, el supervisor, los documentos, las
-          firmas, los informes, las garantías y los pagos.
+          firmas y los informes. Las garantías, las facturas y los pagos se consultan en el panel «SECOP II»; no se digitan en GECON.
         </p>
         <p>
           <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la

@@ -234,7 +234,7 @@
     "pasos": [
       "Se crea el expediente en GECON desde Precontractual.",
       "Cada día GECON busca el contrato por número de contrato o de proceso o, si faltan, por el documento del contratista entre los contratos firmados por la CDMB desde la creación del expediente.",
-      "Si encuentra un solo contrato, lo enlaza; desde entonces, en cada sincronización, número de contrato y de proceso, objeto, modalidad, causal, tipo, valor, fechas y contratista se toman de SECOP II y no se editan en GECON. Si encuentra varios, pide escribir el número de contrato.",
+      "Si encuentra un solo contrato, lo enlaza; desde entonces, en cada sincronización, número de contrato y de proceso, objeto, modalidad, causal, tipo, valor, fechas y contratista se toman de SECOP II y no se editan en GECON. Si encuentra varios, pide escribir el número de contrato. Si el contrato ya está firmado, el expediente pasa solo a Contractual.",
       "El panel «SECOP II» muestra en solo lectura todo lo que publica la API: estado, valores, fuentes de recursos, personas, facturas, modificaciones, adiciones, suspensiones y garantías.",
       "«Actualizar» trae los datos en el momento; «Ver en SECOP II» abre el proceso para consultar sus documentos."
     ],
@@ -244,18 +244,18 @@
   },
   {
     "orden": 15,
-    "etiqueta": "Garantías y pagos",
-    "titulo": "Garantías, pagos y liquidación",
-    "tituloIndice": "Garantías, pagos y liquidación",
-    "ubicacion": "Detalle del expediente → bloques «Garantías» y «Pagos»; aviso de liquidación tras la terminación.",
-    "resumen": "Se registran las pólizas y su aprobación, los pagos del contrato y, al terminar, el plazo para liquidarlo.",
+    "etiqueta": "Liquidación",
+    "titulo": "Plazos de liquidación",
+    "tituloIndice": "Plazos de liquidación",
+    "ubicacion": "Detalle del expediente → aviso de liquidación tras la terminación; Inicio → pendientes.",
+    "resumen": "Terminado el contrato, GECON muestra la fase de liquidación vigente y su fecha límite. Las garantías, facturas y pagos se consultan en el panel «SECOP II».",
     "pasos": [
-      "En «Garantías», «+ Registrar garantía o ampliación»: aseguradora, póliza, amparos, valor y vigencia. Administrador o Jefe de Contratación la aprueba.",
-      "En «Pagos», «+ Registrar pago»: fecha, valor y periodo. El bloque muestra lo pagado, el saldo y la ejecución financiera frente al plazo.",
-      "Terminado el contrato, el expediente muestra la fase de liquidación vigente y su fecha límite, y el inicio la lista en pendientes."
+      "Al vencer la terminación (que llega de SECOP II), el expediente muestra si corresponde liquidar de mutuo acuerdo, unilateralmente o en el término residual, con su fecha límite.",
+      "El inicio lista la liquidación en pendientes hasta que se carga el acta (A-BS-FO135).",
+      "Prestación de servicios y compraventa no exigen acta, salvo terminación anticipada."
     ],
-    "ejemplo": "En `210-17017-8` (prestación de servicios) no se exige garantía ni liquidación. En un contrato de obra terminado el 31 de enero de 2026, la liquidación de mutuo acuerdo vence el 31 de julio, la unilateral el 30 de septiembre y el término residual el 30 de septiembre de 2028.",
-    "detalle": "El bloque de garantías avisa si alguna falta por aprobar, si vence antes de la terminación o si una prórroga, adición, suspensión o cesión posterior obliga a ampliarla. Los pagos no pueden superar el valor vigente del contrato.",
+    "ejemplo": "En un contrato de obra terminado el 31 de enero de 2026, la liquidación de mutuo acuerdo vence el 31 de julio, la unilateral el 30 de septiembre y el término residual el 30 de septiembre de 2028.",
+    "detalle": "GECON no registra garantías ni pagos a mano: SECOP II es la fuente oficial y el panel del expediente muestra sus facturas, garantías y valores pagados.",
     "fundamento": "Ley 80 de 1993, art. 41 · Decreto 1082 de 2015, art. 2.2.1.2.3.1.18 · Ley 1150 de 2007, art. 11 · Manual A-BS-MA01, cap. 10."
   },
   {

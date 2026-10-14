@@ -14,7 +14,7 @@ import { TablaExpedientesContractuales } from "@/components/tablas/TablaExpedien
 export default async function ExpedientesContratacionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; etapa?: string; dependenciaId?: string; page?: string; vista?: string }>;
+  searchParams: Promise<{ q?: string; etapa?: string; dependenciaId?: string; vigencia?: string; page?: string; vista?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -76,6 +76,18 @@ export default async function ExpedientesContratacionPage({
           <option value="">Todas las dependencias</option>
           {dependencias.map((d) => (
             <option key={d.id} value={d.id}>{d.nombre}</option>
+          ))}
+        </select>
+        <select
+          name="vigencia"
+          defaultValue={sp.vigencia ?? ""}
+          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+        >
+          <option value="">Todas las vigencias</option>
+          {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
           ))}
         </select>
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
