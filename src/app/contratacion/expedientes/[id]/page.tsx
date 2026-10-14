@@ -56,7 +56,7 @@ import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, etiquetaRangoPeriodo } from "@/lib/periodos-informe";
 import { CATEGORIAS_SUGERIDAS } from "@/lib/contratacion-categorias";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
-import { formatearFecha, formatearFechaCalendario, formatearFechaHora, formatearFechaSolo } from "@/lib/fecha";
+import { formatearFechaCalendario, formatearFechaHora, formatearFechaSolo } from "@/lib/fecha";
 import { formatearPesosCO } from "@/lib/moneda";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
