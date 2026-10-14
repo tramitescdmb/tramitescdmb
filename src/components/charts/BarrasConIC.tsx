@@ -1,6 +1,6 @@
 type Item = { label: string; valor: number; lo: number; hi: number; nota?: string };
 
-const COLOR = "#2a78d6";
+const COLOR = "#038f67";
 
 export function BarrasConIC({
   data,

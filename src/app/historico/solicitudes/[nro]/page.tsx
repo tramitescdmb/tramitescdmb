@@ -8,6 +8,7 @@ import { getHistoricoResolucion } from "@/lib/sinca-data";
 import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalleApi, type SincaNit } from "@/lib/sinca";
 import { unstable_cache } from "next/cache";
 import { after } from "next/server";
+import { BandaTablero } from "@/components/tablero";
 
 const obtenerResolucionDetalleCacheado = unstable_cache(
   (nroSolicitud: number) => obtenerResolucionDetalle(nroSolicitud),
@@ -117,9 +118,9 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
         Volver al listado
       </Link>
 
-      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
+      <BandaTablero>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-stone-900">Resolución {base.numeroResolucion ?? "—"}</h2>
+          <h2 className="text-xl font-semibold text-stone-900">Resolución {base.numeroResolucion ?? "—"}</h2>
           <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">{base.estado ?? "—"}</span>
         </div>
         <p className="mt-1.5 text-sm text-stone-700">{base.proyecto || "Sin descripción del proyecto."}</p>
@@ -131,7 +132,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
           <Campo k="Tipo (SINCA)" v={txt(d?.tipo_solicitud?.tipotramite_tps)} />
           <Campo k="Tiempo objetivo" v={d?.tipo_solicitud?.tiempo_dias_tps ? `${d.tipo_solicitud.tiempo_dias_tps} días` : null} />
         </dl>
-      </div>
+      </BandaTablero>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Tarjeta icon={ClipboardList} titulo="Datos de la solicitud">

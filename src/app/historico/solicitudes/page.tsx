@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, FileCheck2 } from "lucide-react";
 import { getHistoricoListado, getHistoricoOpcionesFiltro, getUltimaSincronizacion, type FiltrosHistorico } from "@/lib/sinca-data";
 import { sincaConfigurado } from "@/lib/sinca";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
@@ -13,6 +13,7 @@ import { TablaSincaSolicitudes } from "@/components/tablas/TablaSincaSolicitudes
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 type Filtros = FiltrosHistorico & FiltrosPeriodo & { ok?: string; error?: string };
 
@@ -77,7 +78,13 @@ export default async function HistoricoSolicitudesPage({
       {filtros.ok && <div className="rounded-xl bg-cdmb-50 px-3.5 py-2.5 text-sm text-cdmb-800">{filtros.ok}</div>}
       {filtros.error && <div className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">{filtros.error}</div>}
 
-      <SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />
+      <CabeceraTablero
+        icon={FileCheck2}
+        titulo="Solicitudes de SINCA 1.0"
+        contador={total}
+        descripcion="Resoluciones del sistema anterior; busque por número de solicitud, expediente, resolución, proyecto o representante."
+        acciones={<SelectorPeriodo desdeActual={filtros.desde} hastaActual={filtros.hasta} />}
+      />
 
       <form method="get" className="rounded-2xl border border-graphite-100 bg-white p-5 shadow-soft">
         {filtros.desde && <input type="hidden" name="desde" value={filtros.desde} />}

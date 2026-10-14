@@ -19,6 +19,7 @@ import { PipelineKDD } from "@/components/PipelineKDD";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
+import { CabeceraTablero, Indicador, Burbuja } from "@/components/tablero";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
 const pctSigno = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} %`);
@@ -31,8 +32,8 @@ const mesLegible = (ym: string) => {
 function Card({ icon: Icon, titulo, sub, children, span }: { icon: typeof Scale; titulo: string; sub?: string; children: ReactNode; span?: boolean }) {
   return (
     <section className={`rounded-2xl border border-stone-200 bg-white shadow-soft p-4 ${span ? "lg:col-span-2" : ""}`}>
-      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-        <Icon className="h-4 w-4 text-cdmb-600" aria-hidden />
+      <h3 className="flex items-center gap-2.5 text-sm font-semibold text-stone-900">
+        <Burbuja icon={Icon} />
         {titulo}
       </h3>
       {sub && <p className="mb-3 mt-0.5 text-xs text-stone-500">{sub}</p>}
@@ -76,37 +77,42 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
     <div className="space-y-4">
       {selector}
 
+      <CabeceraTablero
+        icon={Sparkles}
+        titulo="Minería de datos (KDD)"
+        descripcion="Descubrimiento de conocimiento sobre las resoluciones de SINCA 1.0: tendencias, proyección, segmentos y anomalías."
+      >
+        <Indicador icon={Scale} valor={pct(a.aprobacion.p)} etiqueta="Tasa de aprobación" detalle={`IC 95 %: ${pct(a.aprobacion.lo)}–${pct(a.aprobacion.hi)}`} tono="verde" />
+        <Indicador
+          icon={Timer}
+          valor={a.diasP50 != null ? `${a.diasP50} d` : "—"}
+          etiqueta="Tiempo de resolución (mediana)"
+          detalle={a.diasP90 != null ? `p90 ≤ ${a.diasP90} d` : "En cálculo"}
+          tono="ambar"
+        />
+        <Indicador
+          icon={TrendingUp}
+          valor={a.volumen.ult12.toLocaleString("es-CO")}
+          etiqueta="Volumen últimos 12 meses"
+          detalle={`${pctSigno(a.volumen.cambio12)} frente a los 12 meses previos`}
+          tono="acento"
+        />
+        <Indicador icon={MapPinned} valor={pct(a.concentracion.top5)} etiqueta="Concentración (top 5 municipios)" detalle={`HHI ${a.concentracion.hhi.toFixed(2)}`} tono="cielo" />
+      </CabeceraTablero>
+
       <div>
-        <h2 className="flex items-center gap-2 text-base font-semibold text-stone-900">
-          <Sparkles className="h-4 w-4 text-cdmb-600" aria-hidden />
-          Minería de datos y descubrimiento de conocimiento (KDD)
-        </h2>
-        <div className="mt-3">
-          <PipelineKDD />
-        </div>
+        <PipelineKDD />
         {rango && a.total === 0 && (
-          <p className="mt-2 rounded-md bg-stone-50 px-3 py-1.5 text-xs text-stone-600">
+          <p className="mt-2 rounded-xl bg-stone-50 px-3 py-1.5 text-xs text-stone-600">
             No hay resoluciones en el período seleccionado.
           </p>
         )}
         {a.total > 0 && a.coberturaDias < 0.9 && (
-          <p className="mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
             El tiempo de trámite se calcula sobre el {pct(a.coberturaDias)} de los registros; el resto se completa con la
             sincronización diaria.
           </p>
         )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        <Kpi icon={Scale} label="Tasa de aprobación" valor={pct(a.aprobacion.p)} sub={`IC 95 %: ${pct(a.aprobacion.lo)}–${pct(a.aprobacion.hi)}`} />
-        <Kpi icon={Timer} label="Tiempo de resolución (mediana)" valor={a.diasP50 != null ? `${a.diasP50} d` : "—"} sub={a.diasP90 != null ? `p90 ≤ ${a.diasP90} d` : "en cálculo…"} />
-        <Kpi
-          icon={TrendingUp}
-          label="Volumen últimos 12 meses"
-          valor={a.volumen.ult12.toLocaleString("es-CO")}
-          sub={`${pctSigno(a.volumen.cambio12)} vs. 12 meses previos`}
-        />
-        <Kpi icon={MapPinned} label="Concentración (top 5 municipios)" valor={pct(a.concentracion.top5)} sub={`HHI ${a.concentracion.hhi.toFixed(2)}`} />
       </div>
 
       {g && (
@@ -314,19 +320,6 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
       </Card>
-    </div>
-  );
-}
-
-function Kpi({ icon: Icon, label, valor, sub }: { icon: typeof Scale; label: string; valor: string; sub: string }) {
-  return (
-    <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-3">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-stone-500">
-        <Icon className="h-3.5 w-3.5 text-stone-400" aria-hidden />
-        {label}
-      </p>
-      <p className="mt-1 text-xl font-semibold tabular-nums leading-tight text-stone-900">{valor}</p>
-      <p className="text-[10px] text-stone-400">{sub}</p>
     </div>
   );
 }

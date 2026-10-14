@@ -8,6 +8,7 @@ import { SectionHelp } from "@/components/Field";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaLarga as fecha } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 const cuandoLlego = (d: Date | null) => {
   if (!d) return "sin fecha";
   const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
@@ -32,13 +33,7 @@ export default async function VitalRecientesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-2 rounded-md border border-cdmb-200 bg-cdmb-50 px-3 py-2 text-sm text-cdmb-900">
-        <Inbox className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-        <p>
-          Lo más reciente que ha llegado del portal de VITAL, para <strong>no perder de vista una solicitud
-          nueva</strong>.
-        </p>
-      </div>
+      <CabeceraTablero icon={Inbox} titulo="Recientes" contador={recientes.length} descripcion="Lo último que ha llegado del portal de VITAL." />
 
       {recientes.length === 0 ? (
         <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-400">

@@ -1,7 +1,7 @@
 type Punto = { anio: number; valor: number };
 type Proy = { anio: number; valor: number; lo: number; hi: number };
 
-const COLOR = "#2a78d6";
+const COLOR = "#038f67";
 
 const W = 640;
 const H = 240;

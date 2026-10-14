@@ -21,6 +21,7 @@ import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
+import { BandaTablero } from "@/components/tablero";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
 const txt = (v: unknown): string | null => {
@@ -265,9 +266,9 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         Volver a las solicitudes
       </Link>
 
-      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
+      <BandaTablero>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h2>
+          <h2 className="text-xl font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h2>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">
               {nombreTramiteVital(solicitud.idTramiteVital)}
@@ -304,7 +305,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
             </Link>
           </p>
         )}
-      </div>
+      </BandaTablero>
 
       <Tarjeta
         icon={interesados.length > 0 && esPersonaJuridica(interesados[0]) ? Building2 : User}

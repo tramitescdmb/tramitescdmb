@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, Inbox } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
@@ -14,6 +14,7 @@ import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
 import { formatearFecha as fecha, fechaArchivoColombia } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 const AYER = fechaArchivoColombia(new Date(Date.now() - 86_400_000));
 
@@ -84,7 +85,13 @@ export default async function VitalSolicitudesPage({
       )}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
 
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+      <CabeceraTablero
+        icon={Inbox}
+        titulo="Solicitudes de VITAL"
+        contador={total}
+        descripcion="Solicitudes traídas de VITAL por el bus X-Road; busque por ID, solicitante, identificación o actividad."
+        acciones={<SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />}
+      />
 
       <form method="get" className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}

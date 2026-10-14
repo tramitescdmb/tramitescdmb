@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, AlertTriangle, RefreshCw } from "lucide-react";
+import { Search, AlertTriangle, RefreshCw, IdCard } from "lucide-react";
 import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
 import { OPCIONES_ORDEN_NIT, REGIMENES_NIT, procesarFiltrosNit, filtrarYOrdenarEntidadesNit, type EntidadNit } from "@/lib/sinca-nit";
@@ -15,6 +15,7 @@ import { EstadisticasNit } from "@/components/EstadisticasNit";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 type Filtros = {
   q?: string;
@@ -91,9 +92,7 @@ export default async function HistoricoNitsPage({ searchParams }: { searchParams
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-stone-900">NIT / Terceros</h2>
-      </div>
+      <CabeceraTablero icon={IdCard} titulo="NIT / Terceros" contador={totalFiltrado} descripcion="Personas naturales y jurídicas que aparecen en las resoluciones de SINCA 1.0." />
 
       {filtros.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{filtros.ok}</div>}
       {filtros.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{filtros.error}</div>}

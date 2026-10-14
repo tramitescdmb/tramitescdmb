@@ -6,6 +6,7 @@ import { sincaConfigurado } from "@/lib/sinca";
 import { obtenerSnapshotNit } from "@/lib/sinca-nit-stats";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { BandaTablero } from "@/components/tablero";
 
 function Campo({ k, v }: { k: string; v: string | null }) {
   if (!v) return null;
@@ -58,14 +59,14 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
         Volver al listado
       </Link>
 
-      <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
+      <BandaTablero>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-start gap-2.5">
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-cdmb-100 text-cdmb-700">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
               <Icono className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-base font-semibold text-stone-900">{entidad.nombre}</h2>
+              <h2 className="text-xl font-semibold text-stone-900">{entidad.nombre}</h2>
               <p className="text-sm text-stone-500">
                 {entidad.tipoLabel ?? "Identificación"} · <span className="font-medium text-stone-700">{entidad.identificacion}</span>
               </p>
@@ -75,7 +76,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
             <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">{entidad.regimen}</span>
           )}
         </div>
-      </div>
+      </BandaTablero>
 
       <Tarjeta icon={MapPin} titulo="Contacto y ubicación">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">

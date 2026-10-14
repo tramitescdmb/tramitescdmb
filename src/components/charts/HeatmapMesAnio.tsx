@@ -38,7 +38,7 @@ export function HeatmapMesAnio({ filas, emptyMessage }: { filas: Fila[]; emptyMe
                         tabIndex={0}
                         title={`${MESES_LARGO[i]} de ${f.anio}: ${v} ${v === 1 ? "resolución" : "resoluciones"}`}
                         className="h-6 w-6 rounded-sm text-center align-middle text-[10px] outline-none focus-visible:ring-2 focus-visible:ring-cdmb-400"
-                        style={{ backgroundColor: v === 0 ? "#f4f2ee" : `rgba(42,120,214,${alpha})`, color: alpha > 0.6 ? "#fff" : "#78716c" }}
+                        style={{ backgroundColor: v === 0 ? "#f4f2ee" : `rgba(3,143,103,${alpha})`, color: alpha > 0.6 ? "#fff" : "#78716c" }}
                       >
                         {v > 0 ? v : ""}
                       </td>
