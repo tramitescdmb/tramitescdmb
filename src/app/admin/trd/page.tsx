@@ -14,6 +14,8 @@ import {
   subserieContratacionActual,
   subseriesPorModalidad,
 } from "@/lib/trd-clasificacion";
+import { FolderTree } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function AdminTrdPage() {
   const session = await getSession();
@@ -40,14 +42,7 @@ export default async function AdminTrdPage() {
   return (
     <ProveedorCatalogoTrd series={series}>
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Clasificación TRD — Trámites y GECON</h1>
-        <p className="text-sm text-stone-500">
-          Asigna la serie/subserie y el tipo documental que ya existen en la TRD del SGDEA a los expedientes de Trámites
-          Ambientales 2.0 y de Contratación (GECON). Sin esta clasificación no se puede calcular la retención ni el
-          reporte de próximos a disposición final. Cada cambio se guarda de inmediato.
-        </p>
-      </div>
+      <CabeceraTablero icon={FolderTree} titulo="Clasificación TRD — Trámites y GECON" descripcion={<>Serie, subserie y tipo documental de la TRD del SGDEA para los expedientes de Trámites ambientales 2.0 y de GECON. Sin esta clasificación no se calcula la retención. Cada cambio se guarda de inmediato.</>} />
 
       <SectionHelp>
         Un expediente (de trámite o de contrato) es UN solo legajo archivístico: se clasifica una vez por tipo de

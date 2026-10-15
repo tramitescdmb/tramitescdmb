@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, Lock, UserCog, Trash2, Download, Upload, type LucideIcon } from "lucide-react";
+import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, Lock, UserCog, Trash2, Download, Upload, type LucideIcon, ShieldCheck } from "lucide-react";
 import { TipoAuditoria } from "@prisma/client";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { formatearFechaHora } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 const ETIQUETAS_TIPO: Record<TipoAuditoria, { icono: LucideIcon; clase: string; texto: string }> = {
   LOGIN_EXITOSO: { icono: LogIn, clase: "text-emerald-600", texto: "Inicio de sesión" },
@@ -42,12 +43,7 @@ export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { ti
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Auditoría de cuentas</h1>
-        <p className="text-sm text-stone-500">
-          Registro de acciones del sistema: inicios de sesión, gestión de usuarios y cambios de configuración. Solo visible para administradores.
-        </p>
-      </div>
+      <CabeceraTablero icon={ShieldCheck} titulo="Auditoría de cuentas" descripcion={<>Inicios de sesión, gestión de usuarios y cambios de configuración. Solo visible para administradores.</>} />
 
       <SectionHelp>
         Aparte de la <strong>bitácora de cada expediente</strong>: aquí se ven las cuentas y la configuración de toda la aplicación —accesos,

@@ -10,6 +10,7 @@ import { EliminarContratistaBoton } from "@/components/EliminarContratistaBoton"
 import { EditarContratistaMinimoBoton } from "@/components/EditarContratistaMinimoBoton";
 import { formatearPesosCO } from "@/lib/moneda";
 import { personaVacia } from "@/lib/datos-persona";
+import { BandaTablero } from "@/components/tablero";
 
 function fechaCorta(d: Date): string {
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -75,9 +76,9 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
   const telefono = usuario?.telefono ?? contratista.contactoTelefono;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/contratacion/contratistas" className="text-sm text-cdmb-700 hover:underline">
+    <div className="space-y-4">
+      <BandaTablero>
+        <Link href="/contratacion/contratistas" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
           ← Contratistas
         </Link>
         <h1 className="mt-1 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
@@ -105,7 +106,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </>
           )}
         </p>
-      </div>
+      </BandaTablero>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

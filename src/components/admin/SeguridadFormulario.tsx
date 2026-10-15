@@ -1,5 +1,7 @@
 import { Field, SectionHelp } from "@/components/Field";
 import type { getConfiguracionSitio } from "@/lib/config-sitio";
+import { Lock } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 type ConfiguracionSitio = Awaited<ReturnType<typeof getConfiguracionSitio>>;
 
@@ -18,10 +20,7 @@ export function SeguridadFormulario({
 }) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Seguridad</h1>
-        <p className="text-sm text-stone-500">Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</p>
-      </div>
+      <CabeceraTablero icon={Lock} titulo="Seguridad" descripcion={<>Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</>} />
 
       {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

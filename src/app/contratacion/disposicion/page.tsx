@@ -7,6 +7,7 @@ import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { contratosEnDisposicion } from "@/lib/trd-disposicion-modulos";
 import { ETIQUETA_FASE, type FaseArchivistica } from "@/lib/disposicion-final";
 import { formatearFecha } from "@/lib/fecha";
+import { CabeceraTablero } from "@/components/tablero";
 
 const ORDEN_FASE: FaseArchivistica[] = ["DISPOSICION_PENDIENTE", "TRANSFERENCIA_PENDIENTE", "GESTION"];
 
@@ -25,13 +26,8 @@ export default async function DisposicionContratosPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Disposición final de contratos</h1>
-        <p className="text-sm text-stone-500">
-          Solo expedientes contractuales cerrados. Requiere haber asignado la subserie de contratación en{" "}
-          <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.
-        </p>
-      </div>
+      <CabeceraTablero icon={Archive} titulo="Disposición final de contratos" descripcion={<>Solo expedientes contractuales cerrados. Requiere haber asignado la subserie de contratación en{" "}
+          <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.</>} />
 
       {sinClasificar > 0 && (
         <SectionHelp>

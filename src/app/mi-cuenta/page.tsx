@@ -5,6 +5,8 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword, puedeCambiarPorVigenciaMinima } from "@/lib/password-policy";
 import { Field, SectionHelp } from "@/components/Field";
 import { denominacionParaFirma, SEXOS } from "@/lib/denominacion-empleo";
+import { UserCircle } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
@@ -26,10 +28,7 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Mi cuenta</h1>
-        <p className="text-sm text-stone-500">Sus datos de ingreso a la aplicación.</p>
-      </div>
+      <CabeceraTablero icon={UserCircle} titulo="Mi cuenta" descripcion={<>Sus datos de ingreso a la aplicación.</>} />
 
       {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}

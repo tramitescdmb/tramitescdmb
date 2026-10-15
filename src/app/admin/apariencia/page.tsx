@@ -3,6 +3,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SectionHelp } from "@/components/Field";
 import { SubirLogoForm } from "@/components/SubirLogoForm";
+import { Palette } from "lucide-react";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function AparienciaPage() {
   const session = await getSession();
@@ -13,12 +15,7 @@ export default async function AparienciaPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-stone-900">Apariencia</h1>
-        <p className="text-sm text-stone-500">
-          Logo de la CDMB y sellos institucionales que se muestran en el encabezado y el pie de página.
-        </p>
-      </div>
+      <CabeceraTablero icon={Palette} titulo="Apariencia" descripcion={<>Logo de la CDMB y sellos institucionales que se muestran en el encabezado y el pie de página.</>} />
 
       <SectionHelp>
         Franja institucional arriba (sello GOV.CO) y en el pie de página (sellos de Colombia y GOV.CO), igual

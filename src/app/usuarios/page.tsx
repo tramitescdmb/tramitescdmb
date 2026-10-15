@@ -5,7 +5,7 @@ import type { EstadoCuenta, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";
-import { UserPlus, Pencil, ChevronDown, Search, AlertTriangle, Power, X, type LucideIcon } from "lucide-react";
+import { UserPlus, Pencil, ChevronDown, Search, AlertTriangle, Power, X, type LucideIcon, Users } from "lucide-react";
 import { MODULOS_USUARIO, faltanteModulo, type ModuloUsuario } from "@/lib/modulos-usuario";
 import { ICONOS_MODULO } from "@/lib/modulos-usuario-iconos";
 import { getCatalogoTramites } from "@/lib/tramites-data";
@@ -18,6 +18,7 @@ import { formatearFecha } from "@/lib/fecha";
 import { cargoParaSexo } from "@/lib/cargos";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
+import { CabeceraTablero } from "@/components/tablero";
 
 const POR_PAGINA = 20;
 
@@ -160,25 +161,27 @@ export default async function UsuariosPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-stone-900">Usuarios</h1>
-          <p className="text-sm text-stone-500">Cuentas con acceso a los aplicativos de la CDMB.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DescargarCsvBoton href="/api/usuarios/exportar" />
-          <Link
-            href={`${href({ nuevo: "1" })}#nuevo-usuario`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-acento-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-acento-600"
-          >
-            <UserPlus className="h-4 w-4" aria-hidden />
-            Nuevo usuario
-          </Link>
-        </div>
-      </div>
+      <CabeceraTablero
+        icon={Users}
+        titulo="Usuarios"
+        contador={total}
+        descripcion="Cuentas con acceso a los aplicativos de la CDMB."
+        acciones={
+          <>
+            <DescargarCsvBoton href="/api/usuarios/exportar" />
+            <Link
+              href={`${href({ nuevo: "1" })}#nuevo-usuario`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-acento-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-acento-600"
+            >
+              <UserPlus className="h-4 w-4" aria-hidden />
+              Nuevo usuario
+            </Link>
+          </>
+        }
+      />
 
-      {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      {ok && <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
+      {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
       {(conteos[3] ?? 0) > 0 && filtro.id !== "bloqueados" && (
         <Link
@@ -200,7 +203,7 @@ export default async function UsuariosPage({
                   key={f.id}
                   href={href({ estado: f.id === "todos" ? undefined : f.id, page: undefined })}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-                    activo ? "bg-cdmb-600 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                    activo ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
                   }`}
                 >
                   {f.etiqueta}

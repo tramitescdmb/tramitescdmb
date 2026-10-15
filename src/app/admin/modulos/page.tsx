@@ -5,6 +5,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { SectionHelp } from "@/components/Field";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { MODULOS_CONFIGURABLES as MODULOS } from "@/lib/modulos-visibles";
+import { CabeceraTablero } from "@/components/tablero";
 
 export default async function ModulosPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -16,13 +17,7 @@ export default async function ModulosPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-stone-900">
-          <LayoutGrid className="h-5 w-5 text-cdmb-600" aria-hidden />
-          Disponibilidad de módulos
-        </h1>
-        <p className="text-sm text-stone-500">Qué módulos ven y pueden usar los funcionarios. Solo el administrador del sistema lo modifica.</p>
-      </div>
+      <CabeceraTablero icon={LayoutGrid} titulo="Disponibilidad de módulos" descripcion={<>Qué módulos ven y pueden usar los funcionarios. Solo el administrador del sistema lo modifica.</>} />
 
       {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
