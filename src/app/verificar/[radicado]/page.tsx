@@ -88,7 +88,7 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
   if (!c) {
     return (
       <div className="mx-auto max-w-md">
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-6 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 text-center">
           <XCircle className="mx-auto h-10 w-10 text-red-500" aria-hidden />
           <h1 className="mt-3 text-lg font-semibold text-stone-900">Radicado no encontrado</h1>
           <p className="mt-1 text-sm text-stone-600">
@@ -103,7 +103,7 @@ export default async function VerificarRadicadoPage({ params }: { params: Promis
 
   return (
     <div className="mx-auto max-w-md">
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-6">
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6">
         <div className="flex items-center gap-2 border-b border-emerald-200/70 pb-3">
           <CheckCircle2 className="h-6 w-6 flex-none text-emerald-600" aria-hidden />
           <div>
@@ -162,7 +162,7 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
   if (!e || e.eliminado) {
     return (
       <div className="mx-auto max-w-md">
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-6 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 text-center">
           <XCircle className="mx-auto h-10 w-10 text-red-500" aria-hidden />
           <h1 className="mt-3 text-lg font-semibold text-stone-900">Expediente no encontrado</h1>
           <p className="mt-1 text-sm text-stone-600">
@@ -175,7 +175,7 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
 
   return (
     <div className="mx-auto max-w-md">
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-6">
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6">
         <div className="flex items-center gap-2 border-b border-emerald-200/70 pb-3">
           <CheckCircle2 className="h-6 w-6 flex-none text-emerald-600" aria-hidden />
           <div>
@@ -229,7 +229,7 @@ async function VerificarExpedienteTramite({ numero }: { numero: string }) {
   if (!e) {
     return (
       <div className="mx-auto max-w-md">
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-6 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 text-center">
           <XCircle className="mx-auto h-10 w-10 text-red-500" aria-hidden />
           <h1 className="mt-3 text-lg font-semibold text-stone-900">Expediente no encontrado</h1>
           <p className="mt-1 text-sm text-stone-600">
@@ -242,7 +242,7 @@ async function VerificarExpedienteTramite({ numero }: { numero: string }) {
 
   return (
     <div className="mx-auto max-w-md">
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-6">
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6">
         <div className="flex items-center gap-2 border-b border-emerald-200/70 pb-3">
           <CheckCircle2 className="h-6 w-6 flex-none text-emerald-600" aria-hidden />
           <div>
