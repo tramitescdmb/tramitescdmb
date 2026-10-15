@@ -12,6 +12,7 @@ import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
+import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 
 type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -34,6 +35,7 @@ export function MemorandoForm({
   usuarioNombre?: string;
 }) {
   const router = useRouter();
+  const { confirmarIdentidad, dialogo } = useConfirmacionFirma("SGDEA");
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState(dependenciaOrigenSugerida ?? "");
   const [dependenciaDestinoId, setDependenciaDestinoId] = useState("");
   const [usuarioDestinoId, setUsuarioDestinoId] = useState("");
@@ -75,6 +77,7 @@ export function MemorandoForm({
     if (!dependenciaOrigenId) return setError("Indique la dependencia de origen (quién firma este memorando).");
     if (!dependenciaDestinoId) return setError("Indique la dependencia de destino.");
     if (dependenciaOrigenId === dependenciaDestinoId) return setError("La dependencia de origen y la de destino no pueden ser la misma.");
+    if (!(await confirmarIdentidad({ detalle: `Memorando: ${asunto.trim()}` }))) return;
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
     try {
@@ -251,6 +254,7 @@ export function MemorandoForm({
         </button>
         <span className="text-xs text-stone-400">Se asigna consecutivo y se firma electrónicamente en el mismo paso.</span>
       </div>
+      {dialogo}
     </div>
   );
 }

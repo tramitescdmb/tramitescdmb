@@ -15,17 +15,17 @@ const SELECT_FIRMANTE_CARGO = {
   denominacionEncargo: true,
   sexo: true,
   rolesContratacion: true,
+  actoAdministrativoCargo: true,
 } as const;
 
-/** Cargo del usuario en este instante, ya formateado — se congela en la firma/solicitud al crearla. */
 async function cargoActualDelFirmante(
   usuarioId: string,
   modulo: ModuloFirma,
   supervisaElExpediente = false,
-): Promise<string> {
+): Promise<{ cargoAlFirmar: string; actoAdministrativoAlFirmar: string | null }> {
   const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_FIRMANTE_CARGO });
-  if (!u) return "Funcionario";
-  return cargoDelFirmante({ ...u, supervisaElExpediente }, modulo);
+  if (!u) return { cargoAlFirmar: "Funcionario", actoAdministrativoAlFirmar: null };
+  return { cargoAlFirmar: cargoDelFirmante({ ...u, supervisaElExpediente }, modulo), actoAdministrativoAlFirmar: u.actoAdministrativoCargo?.trim() || null };
 }
 
 export type ObjetivoSolicitud =
@@ -315,8 +315,8 @@ export async function completarSolicitudFirma(
     const supervisaVistoBueno = solicitud.documentoContrato
       ? (await supervisoresDelExpediente(solicitud.documentoContrato.expedienteId)).has(usuarioId)
       : false;
-    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, moduloDeObjetivo(objetivoDeSolicitud(solicitud).tipo), supervisaVistoBueno);
-    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), cargoAlFirmar, ip, userAgent } });
+    const cargo = await cargoActualDelFirmante(usuarioId, moduloDeObjetivo(objetivoDeSolicitud(solicitud).tipo), supervisaVistoBueno);
+    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), ...cargo, ip, userAgent } });
     const sgdea = solicitud.comunicacion
       ? { entidad: "Comunicacion" as const, entidadId: solicitud.comunicacion.id, ref: solicitud.comunicacion.radicado }
       : solicitud.documentoArchivo
@@ -359,14 +359,14 @@ export async function completarSolicitudFirma(
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const supervisaDocContrato = (await supervisoresDelExpediente(doc.expedienteId)).has(usuarioId);
-    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
+    const cargo = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
     const firma = await db.firmaDocumentoContrato.create({
       data: {
         documentoId: doc.id,
         usuarioId,
         hashContenido,
         calidad: solicitud.calidad,
-        cargoAlFirmar,
+        ...cargo,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,
@@ -396,14 +396,14 @@ export async function completarSolicitudFirma(
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
-    const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "TRAMITES");
+    const cargo = await cargoActualDelFirmante(usuarioId, "TRAMITES");
     const firma = await db.firmaExpedienteDocumento.create({
       data: {
         documentoId: doc.id,
         usuarioId,
         hashContenido,
         calidad: solicitud.calidad,
-        cargoAlFirmar,
+        ...cargo,
         ip,
         userAgent,
         proveedor: resuelto.proveedor,
@@ -438,7 +438,7 @@ export async function completarSolicitudFirma(
       const fechaHora = new Date();
       const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
-      const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "SGDEA");
+      const cargo = await cargoActualDelFirmante(usuarioId, "SGDEA");
       const firma = await db.firma.create({
         data: {
           calidad: solicitud.calidad,
@@ -447,7 +447,7 @@ export async function completarSolicitudFirma(
           fechaHora,
           hashContenido,
           tipo: "ELECTRONICA_HASH",
-          cargoAlFirmar,
+          ...cargo,
           ip,
           userAgent,
           proveedor: resuelto.proveedor,
@@ -480,8 +480,8 @@ export async function completarSolicitudFirma(
     if (previa) {
       firmaId = previa.id;
     } else {
-      const cargoAlFirmar = await cargoActualDelFirmante(usuarioId, "SGDEA");
-      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, cargoAlFirmar, ip, userAgent);
+      const cargo = await cargoActualDelFirmante(usuarioId, "SGDEA");
+      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, cargo, ip, userAgent);
       firmaId = firma.id;
     }
     await db.solicitudFirma.update({
@@ -504,7 +504,7 @@ async function crearFirmaDocumentoArchivo(
   doc: { id: string; nombre: string; hashSha256: string | null },
   usuarioId: string,
   calidad: CalidadFirma | null,
-  cargoAlFirmar: string,
+  cargo: { cargoAlFirmar: string; actoAdministrativoAlFirmar: string | null },
   ip: string | null,
   userAgent: string | null,
 ) {
@@ -516,7 +516,7 @@ async function crearFirmaDocumentoArchivo(
       usuarioId,
       documentoArchivoId: doc.id,
       calidad,
-      cargoAlFirmar,
+      ...cargo,
       fechaHora,
       hashContenido,
       tipo: "ELECTRONICA_HASH",
@@ -556,7 +556,7 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
     doc,
     usuarioId,
     puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
-    cargoDelFirmante(usuario, "SGDEA"),
+    { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
     ip,
     userAgent,
   );

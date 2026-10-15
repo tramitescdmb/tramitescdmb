@@ -8,7 +8,7 @@ import { validarPoliticaPassword, passwordEnHistorial, registrarHistorialPasswor
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
-import { sincronizarContratistaDeUsuario } from "@/lib/contratacion";
+import { sincronizarContratistaDeUsuario, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
 
@@ -58,6 +58,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : null)
     : undefined;
   const denominacionEncargo: boolean | undefined = "denominacionEncargo" in body ? Boolean(body.denominacionEncargo) : undefined;
+  const actoAdministrativoCargo: string | null | undefined = "actoAdministrativoCargo" in body
+    ? (typeof body.actoAdministrativoCargo === "string" && body.actoAdministrativoCargo.trim() ? body.actoAdministrativoCargo.trim().slice(0, 160) : null)
+    : undefined;
   const sexo: string | null | undefined = "sexo" in body
     ? (esSexo(body.sexo) ? body.sexo : null)
     : undefined;
@@ -157,7 +160,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const huboCambioDeCargo =
     (denominacionEmpleo !== undefined && denominacionEmpleo !== usuario.denominacionEmpleo) ||
     (denominacionComplemento !== undefined && denominacionComplemento !== usuario.denominacionComplemento) ||
-    (denominacionEncargoFinal !== undefined && denominacionEncargoFinal !== usuario.denominacionEncargo);
+    (denominacionEncargoFinal !== undefined && denominacionEncargoFinal !== usuario.denominacionEncargo) ||
+    (actoAdministrativoCargo !== undefined && actoAdministrativoCargo !== usuario.actoAdministrativoCargo);
   if (huboCambioDeCargo) {
     // Guarda el cargo que regía HASTA este momento (igual que registrarHistorialPassword con la
     // contraseña anterior) — las firmas ya hechas no dependen de esto, cada una congeló su propio
@@ -168,6 +172,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         denominacionEmpleo: usuario.denominacionEmpleo,
         denominacionComplemento: usuario.denominacionComplemento,
         denominacionEncargo: usuario.denominacionEncargo,
+        actoAdministrativoCargo: usuario.actoAdministrativoCargo,
         cambiadoPorId: session.userId,
       },
     });
@@ -182,6 +187,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(denominacionEmpleo !== undefined ? { denominacionEmpleo } : {}),
         ...(denominacionComplemento !== undefined ? { denominacionComplemento } : {}),
         ...(denominacionEncargoFinal !== undefined ? { denominacionEncargo: denominacionEncargoFinal } : {}),
+        ...(actoAdministrativoCargo !== undefined ? { actoAdministrativoCargo } : {}),
         ...(sexo !== undefined ? { sexo } : {}),
         ...(accesoFirma !== undefined ? { accesoFirma } : {}),
         ...(passwordHash ? { passwordHash, passwordCambiadaEn: new Date() } : {}),
@@ -219,6 +225,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   ]);
 
   if (persona) await sincronizarContratistaDeUsuario(id);
+  await vincularSupervisionesDeUsuario(id);
 
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",

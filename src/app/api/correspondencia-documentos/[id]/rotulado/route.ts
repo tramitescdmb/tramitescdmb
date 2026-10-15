@@ -45,6 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               fechaHora: true,
               hashContenido: true,
               cargoAlFirmar: true,
+              actoAdministrativoAlFirmar: true,
               usuario: {
                 select: {
                   nombre: true,
@@ -93,6 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     fechaHora: formatearFechaHoraLarga(f.fechaHora),
     hash: f.hashContenido,
     cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "SGDEA"),
+    actoAdministrativo: f.actoAdministrativoAlFirmar,
   }));
 
   const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");

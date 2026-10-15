@@ -3,12 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { esContratistaGecon, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { listarExpedientesContractuales, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { CarpetaExpedienteContractual } from "@/components/CarpetaExpedienteContractual";
-import { BotonDescargarZip } from "@/components/BotonDescargarZip";
 import { formatearFecha } from "@/lib/fecha";
 import { TablaExpedientesContractuales } from "@/components/tablas/TablaExpedientesContractuales";
 
@@ -29,8 +28,6 @@ export default async function ExpedientesContratacionPage({
   ]);
 
   const vista = sp.vista === "tabla" || sp.vista === "carpetas" ? sp.vista : puedeGestionarContratistas(permisos) ? "tabla" : "carpetas";
-  const paramsSinVista = new URLSearchParams(Object.entries(sp).filter(([k, v]) => k !== "vista" && v) as [string, string][]);
-  const hrefZip = `/api/contratacion/expedientes/zip-masivo?${paramsSinVista.toString()}`;
 
   return (
     <section className="space-y-4">
@@ -118,14 +115,6 @@ export default async function ExpedientesContratacionPage({
             Carpetas
           </Link>
         </div>
-        {total > 0 && !esContratistaGecon(permisos) && (
-          <BotonDescargarZip
-            href={hrefZip}
-            nombreArchivo="expedientes-gecon.zip"
-            etiqueta="Descargar ZIP de estos resultados"
-            titulo="Descarga en un ZIP los documentos de los expedientes que coinciden con el filtro (máximo 50)"
-          />
-        )}
       </div>
 
       {filas.length === 0 ? (

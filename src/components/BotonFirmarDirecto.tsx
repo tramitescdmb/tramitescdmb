@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PenTool } from "lucide-react";
+import { moduloDeEndpoint, useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 
 const CALIDADES = [
   { valor: "PROYECTO", texto: "Proyectó" },
@@ -25,10 +26,11 @@ export function BotonFirmarDirecto({
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calidad, setCalidad] = useState<string>(calidadInicial);
+  const { confirmarIdentidad, dialogo } = useConfirmacionFirma(moduloDeEndpoint(endpoint));
 
   async function firmar() {
     const etiqueta = CALIDADES.find((c) => c.valor === calidad)?.texto;
-    if (!window.confirm(`${descripcion}${conCalidad ? `\nCalidad: ${etiqueta}.` : ""}\n\n¿Confirma su firma electrónica?`)) return;
+    if (!(await confirmarIdentidad({ detalle: `${descripcion}${conCalidad ? ` Calidad: ${etiqueta}.` : ""}` }))) return;
     setCargando(true);
     setError(null);
     try {
@@ -73,6 +75,7 @@ export function BotonFirmarDirecto({
         </button>
       </span>
       {error && <span className="max-w-xs text-xs text-red-700">{error}</span>}
+      {dialogo}
     </span>
   );
 }

@@ -144,6 +144,7 @@ async function agregarDiligencia(
     seccion(ordenadas.length > 1 ? `Información asociada al firmante ${i + 1} de ${ordenadas.length}:` : "Información asociada al firmante del documento:", [
       { etiqueta: "Nombre del firmante", valor: f.nombre },
       ...(cargo ? [{ etiqueta: "Cargo del firmante", valor: cargo }] : []),
+      ...(f.actoAdministrativo ? [{ etiqueta: "Acto administrativo", valor: f.actoAdministrativo }] : []),
       { etiqueta: "Organización", valor: /contratista/i.test(cargo ?? "") ? `Contratista de la ${ENTIDAD_EMISORA}` : ENTIDAD_EMISORA },
       ...(f.dependencia ? [{ etiqueta: "Dependencia", valor: f.dependencia }] : []),
       { etiqueta: "Calidad", valor: nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }) },
@@ -270,6 +271,7 @@ export type FirmaRotuloPdf = {
   hash: string;
   calidad?: string | null;
   cargo?: string | null;
+  actoAdministrativo?: string | null;
   nivel?: number;
 };
 
@@ -360,8 +362,8 @@ export async function estamparRotulo(
 
   if (firmas.length > 0) {
     const lh = 7.4;
-    const altoBloque = 4 * lh + 3;
-    const { pagina: paginaFirma, techo } = await paginaParaSello(pdf, pdfBytes, firmas.length * altoBloque + 20);
+    const altoFirmas = firmas.reduce((acc, f) => acc + (f.actoAdministrativo ? 5 : 4) * lh + 3, 0);
+    const { pagina: paginaFirma, techo } = await paginaParaSello(pdf, pdfBytes, altoFirmas + 20);
     const anchoFirma = paginaFirma.getWidth();
     let cy = techo;
     paginaFirma.drawLine({ start: { x: 24, y: cy }, end: { x: anchoFirma - 24, y: cy }, thickness: 0.5, color: VERDE });
@@ -375,6 +377,7 @@ export async function estamparRotulo(
       const nombreLinea = `${rotulo ? `${rotulo}: ` : ""}${identificacion ? `${f.nombre} — ${identificacion}` : f.nombre}`;
       paginaFirma.drawText(nombreLinea.slice(0, 100), { x: 24, y: cy, size: 6.5, font: fontBold, color: GRIS }); cy -= lh;
       if (cargo) { paginaFirma.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
+      if (f.actoAdministrativo) { paginaFirma.drawText(f.actoAdministrativo.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       if (f.dependencia) { paginaFirma.drawText(f.dependencia.slice(0, 100), { x: 24, y: cy, size: 6, font, color: GRIS }); cy -= lh; }
       paginaFirma.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: 24, y: cy, size: 5.5, font, color: GRIS_CLARO });
       cy -= lh + 3;
@@ -416,7 +419,7 @@ async function estamparFirmasExpediente(
     const nivel = nivelSello(f.calidad);
     if (nivel === "visto") return VISTO.lh + 1.5;
     if (nivel === "secundaria") return 3 * SECUNDARIA.lh + 3;
-    return 6 * PRINCIPAL.lh + 3;
+    return (f.actoAdministrativo ? 7 : 6) * PRINCIPAL.lh + 3;
   };
   const soloVistoBueno = firmas.every((f) => nivelSello(f.calidad) === "visto");
   const altoTotal = firmas.reduce((acc, f) => acc + altoDe(f), 0);
@@ -440,7 +443,7 @@ async function estamparFirmasExpediente(
     const rotulo = rotuloCalidadFirma(f.calidad);
 
     if (nivel === "visto") {
-      const resto = [f.nombre, textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion), cargo, f.dependencia, f.fechaHora].filter(Boolean).join("  ·  ");
+      const resto = [f.nombre, textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion), cargo, f.actoAdministrativo, f.dependencia, f.fechaHora].filter(Boolean).join("  ·  ");
       conRotulo(rotulo ?? "Visto bueno", resto, VISTO.texto, font);
       cy -= VISTO.lh + 1.5;
       continue;
@@ -452,7 +455,7 @@ async function estamparFirmasExpediente(
       const identidad = identificacion ? `${f.nombre}  ·  ${identificacion}` : f.nombre;
       conRotulo(rotulo ?? "", identidad, s.nombre);
       cy -= s.lh;
-      const detalle = [cargo, f.dependencia].filter(Boolean).join("  ·  ");
+      const detalle = [cargo, f.actoAdministrativo, f.dependencia].filter(Boolean).join("  ·  ");
       if (detalle) page.drawText(detalle.slice(0, 160), { x: 24, y: cy, size: s.linea, font, color: GRIS });
       cy -= s.lh;
       page.drawText(`${f.fechaHora}  ·  SHA-256: ${f.hash}`, { x: 24, y: cy, size: s.meta, font, color: GRIS_CLARO });
@@ -470,6 +473,10 @@ async function estamparFirmasExpediente(
     }
     if (cargo) {
       page.drawText(cargo.slice(0, 100), { x: 24, y: cy, size: p.linea, font, color: GRIS });
+      cy -= p.lh;
+    }
+    if (f.actoAdministrativo) {
+      page.drawText(f.actoAdministrativo.slice(0, 100), { x: 24, y: cy, size: p.linea, font, color: GRIS });
       cy -= p.lh;
     }
     if (f.dependencia) {

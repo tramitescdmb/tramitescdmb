@@ -49,7 +49,7 @@
       "Elige la modalidad de selección; en contratación directa, también la causal.",
       "Elige el tipo de contrato entre los que admite esa modalidad o causal.",
       "Diligencia objeto, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
-      "Vincula el contratista y designa supervisores y Personal de Contratación.",
+      "Vincula el contratista y designa supervisores y Personal de Contratación. Si SECOP II reporta el supervisor, se vincula solo cuando existe un usuario con su número de documento; mientras tanto se muestra «sin usuario».",
       "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN` y el código de proceso del manual, por ejemplo `CD-CPS-0001-2026`; si el proceso ya tenía código, se escribe en el formulario."
     ],
     "ejemplo": "`CDMB-CTO-2026-000006`, código de proceso `CD-CPS-0001-2026`, contrato `210-17017-8`: servicios profesionales como ingeniero de sistemas al proceso de Tecnologías de la Información, contratación directa por la causal de servicios profesionales y de apoyo a la gestión, $19.800.000, del 28 de julio al 12 de diciembre de 2026.",
@@ -66,7 +66,7 @@
     "pasos": [
       "Se abre la etapa actual.",
       "Se carga el archivo de cada requisito.",
-      "Quien revisa lo marca como validado.",
+      "Quien revisa lo valida con un solo clic («Validar»); en Precontractual esa validación también deja registrada la verificación de recepción.",
       "Se pueden cargar documentos fuera del catálogo."
     ],
     "ejemplo": "En `CDMB-CTO-2026-000006` la etapa Precontractual exige la Hoja de vida SIGEP y el Certificado de Disponibilidad Presupuestal (CDP); la Contractual exige el Registro Presupuestal (RP) y, cada mes, el pago de aportes a seguridad social (planilla PILA).",
@@ -82,7 +82,8 @@
     "resumen": "Las etapas son secuenciales. Al aprobar Postcontractual el expediente se cierra.",
     "pasos": [
       "Administrador o Jefe de Contratación revisa los documentos de la etapa.",
-      "Pulsa «Aprobar etapa». Si faltan obligatorios, el sistema los lista y permite continuar.",
+      "Pulsa «Cerrar [etapa] → [siguiente]». Los documentos subidos que aún no estén validados se aprueban en ese mismo paso.",
+      "Solo bloquean el cierre los obligatorios sin subir, los rechazados y los que tienen firma pendiente; el sistema los lista con el motivo.",
       "Para pasar a Contractual, el contratista debe estar vinculado a su usuario."
     ],
     "ejemplo": "`CDMB-CTO-2026-000006` pasó a Contractual con el contratista vinculado al usuario `walhal01`.",
@@ -117,10 +118,11 @@
       "En el documento se pulsa «Asignar firmantes» y se elige la calidad de cada persona.",
       "Se fija el turno; un número mayor espera a los anteriores.",
       "Cada firmante revisa el documento en su buzón y firma o rechaza con motivo.",
+      "Antes de registrar la firma, el sistema muestra nombre, cargo, acto administrativo, dependencia e identificación con los que se firmará, para confirmarlos.",
       "El PDF firmado queda con el sello de los firmantes y un código QR."
     ],
     "ejemplo": "El informe de octubre del contrato `210-17017-8` lo firma primero el contratista (turno 1) y luego el supervisor (turno 2).",
-    "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo del firmante a la fecha de firma.",
+    "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo y el acto administrativo del firmante a la fecha de firma; el acto aparece debajo del cargo cuando está registrado en Usuarios.",
     "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015."
   },
   {
@@ -145,14 +147,14 @@
     "titulo": "Gestión del contratista en su expediente",
     "tituloIndice": "Vista del contratista",
     "ubicacion": "Inicio y Panel de GECON, con sesión del contratista.",
-    "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado. Los documentos de Precontractual los consulta y descarga, sin modificarlos.",
+    "resumen": "El contratista ve sus contratos desde la etapa Contractual, carga soportes y firma lo asignado. No ve la etapa Precontractual.",
     "pasos": [
       "Ingresa con su usuario de red.",
       "En el inicio ve cada contrato con su avance del plazo, los informes por mes y el siguiente paso.",
       "Carga el soporte del periodo y firma desde el buzón."
     ],
     "ejemplo": "`walhal01` ve en el inicio el contrato `210-17017-8` con el avance del plazo, sus informes mensuales y el siguiente paso.",
-    "detalle": "En Precontractual solo carga personal de la CDMB; el contratista consulta y descarga uno a uno esos documentos (hoja de vida, CDP y demás), pero no los edita, elimina ni firma. No descarga el expediente completo en ZIP.",
+    "detalle": "La etapa Precontractual es solo del personal de la CDMB: el contratista no la ve ni descarga sus documentos. Tampoco descarga el expediente completo en ZIP.",
     "fundamento": "Manual A-BS-MA01."
   },
   {

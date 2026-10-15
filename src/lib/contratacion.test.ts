@@ -6,6 +6,8 @@ import {
   faltantesContratistaMinimo,
   faltantesRepresentanteLegal,
   leerRepresentanteLegal,
+  requisitosObligatoriosFaltantes,
+  type ItemChecklist,
 } from "./contratacion";
 import { personaVacia } from "./datos-persona";
 
@@ -96,5 +98,24 @@ describe("leerRepresentanteLegal / faltantesRepresentanteLegal", () => {
       telefono: "",
       celular: "",
     });
+  });
+});
+
+describe("requisitosObligatoriosFaltantes", () => {
+  const requisito = (nombre: string, obligatorio = true) => ({ nombre, obligatorio }) as unknown as ItemChecklist;
+  const documento = (estadoValidacion: string, solicitudesFirma: { rol: string; estado: string }[] = []) => ({ estadoValidacion, solicitudesFirma });
+
+  it("no exige validar uno a uno: un documento subido y pendiente se aprueba al cerrar la etapa", () => {
+    expect(requisitosObligatoriosFaltantes([{ ...requisito("CDP"), documento: documento("PENDIENTE") } as ItemChecklist])).toEqual([]);
+  });
+
+  it("bloquea solo lo que falta subir, lo rechazado o lo que tiene firma pendiente", () => {
+    const faltantes = requisitosObligatoriosFaltantes([
+      { ...requisito("Hoja de vida"), documento: null } as ItemChecklist,
+      { ...requisito("CDP"), documento: documento("RECHAZADO") } as ItemChecklist,
+      { ...requisito("Estudios previos"), documento: documento("PENDIENTE", [{ rol: "FIRMA", estado: "PENDIENTE" }]) } as ItemChecklist,
+      { ...requisito("Opcional", false), documento: null } as ItemChecklist,
+    ]);
+    expect(faltantes).toEqual(["Hoja de vida: sin subir", "CDP: rechazado, requiere una versión corregida", "Estudios previos: firma pendiente"]);
   });
 });

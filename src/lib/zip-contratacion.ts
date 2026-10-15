@@ -6,8 +6,6 @@ import { conExtension } from "@/lib/uploads-config";
 import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { SELECT_FIRMAS_DOCUMENTO_GECON, datosRotuloGecon, firmantesDocumentoGecon, supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 
-export const MAX_EXPEDIENTES_ZIP_MASIVO = 50;
-
 function sanearNombreZip(nombre: string): string {
   return nombre.replace(/[\\/]+/g, " - ").trim();
 }
@@ -97,19 +95,5 @@ export async function construirZipExpediente(
 ): Promise<Buffer> {
   const zip = new JSZip();
   await agregarDocumentosExpediente(zip, expedienteId, numeroExpediente, baseUrl);
-  return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-}
-
-export async function construirZipMasivo(
-  expedientes: { id: string; numero: string; numeroContrato: string | null; codigoProceso: string | null }[],
-  baseUrl: string
-): Promise<Buffer> {
-  const zip = new JSZip();
-  const usados = new Set<string>();
-  for (const e of expedientes) {
-    const nombreCarpeta = nombreUnico(usados, sanearNombreZip(e.codigoProceso ?? e.numeroContrato ?? e.numero));
-    const carpeta = zip.folder(nombreCarpeta)!;
-    await agregarDocumentosExpediente(carpeta, e.id, e.numero, baseUrl);
-  }
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

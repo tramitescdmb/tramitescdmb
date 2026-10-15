@@ -32,6 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           hashContenido: true,
           calidad: true,
           cargoAlFirmar: true,
+          actoAdministrativoAlFirmar: true,
           usuario: {
             select: {
               nombre: true,
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         select: {
           completadoEn: true,
           cargoAlFirmar: true,
+          actoAdministrativoAlFirmar: true,
           usuarioAsignado: {
             select: {
               nombre: true,
@@ -110,6 +112,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       hash: f.hashContenido,
       calidad: f.calidad,
       cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "TRAMITES"),
+      actoAdministrativo: f.actoAdministrativoAlFirmar,
       nivel: nivelFirma(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
@@ -124,6 +127,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       hash: "",
       calidad: "VISTO_BUENO",
       cargo: s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
+      actoAdministrativo: s.actoAdministrativoAlFirmar,
       nivel: nivelFirma(s.usuarioAsignado),
     })),
   ];

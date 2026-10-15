@@ -220,12 +220,14 @@ export function cruzarChecklist(
 }
 
 export function requisitosObligatoriosFaltantes(checklist: ItemChecklist[]): string[] {
-  // No basta con que exista un documento para el requisito: si el último que se subió está
-  // pendiente o fue rechazado (p. ej. se eliminó uno ya aprobado y se volvió a subir sin
-  // validar), el requisito sigue sin cumplirse.
   return checklist
-    .filter((c) => c.obligatorio && (!c.documento || c.documento.estadoValidacion !== "APROBADO"))
-    .map((c) => c.nombre);
+    .filter((c) => c.obligatorio)
+    .flatMap((c) => {
+      if (!c.documento) return [`${c.nombre}: sin subir`];
+      if (c.documento.estadoValidacion === "RECHAZADO") return [`${c.nombre}: rechazado, requiere una versión corregida`];
+      if (c.documento.solicitudesFirma.some((s) => s.rol === "FIRMA" && s.estado === "PENDIENTE")) return [`${c.nombre}: firma pendiente`];
+      return [];
+    });
 }
 
 export async function listarCatalogoRequisitos() {
@@ -733,45 +735,6 @@ export async function eliminarDocumentoContratoConTraza(
   return resultado;
 }
 
-export async function verificarRecepcionDocumentoContrato(documentoId: string, usuarioId: string, observaciones: string | null): Promise<void> {
-  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { expedienteId: true, etapa: true, nombre: true } });
-  if (!doc) throw new Error("El documento no existe.");
-  if (doc.etapa !== "PRECONTRACTUAL") throw new Error("La verificación de recepción solo aplica a documentos de la etapa Precontractual.");
-  const obs = observaciones?.trim() || null;
-  await db.documentoContrato.update({
-    where: { id: documentoId },
-    data: { verificacionRecepcionEn: new Date(), verificacionRecepcionPorId: usuarioId, verificacionRecepcionObservaciones: obs },
-  });
-  await registrarEventoContratacion(
-    doc.expedienteId,
-    "VERIFICACION_RECEPCION",
-    `Se verificó la recepción de "${doc.nombre}".${obs ? ` Observaciones: ${obs}` : ""}`,
-    usuarioId
-  );
-}
-
-export async function marcarCargadoEnSecop(documentoId: string, usuarioId: string, cargado: boolean): Promise<void> {
-  const doc = await db.documentoContrato.findUnique({
-    where: { id: documentoId },
-    select: { expedienteId: true, etapa: true, nombre: true, verificacionRecepcionEn: true },
-  });
-  if (!doc) throw new Error("El documento no existe.");
-  if (doc.etapa !== "PRECONTRACTUAL") throw new Error('El estado "cargado en SECOP" solo aplica a documentos de la etapa Precontractual.');
-  if (cargado && !doc.verificacionRecepcionEn) {
-    throw new Error("Debe completar la verificación de recepción antes de marcarlo como cargado en SECOP.");
-  }
-  await db.documentoContrato.update({
-    where: { id: documentoId },
-    data: { cargadoEnSecop: cargado, cargadoEnSecopEn: cargado ? new Date() : null },
-  });
-  await registrarEventoContratacion(
-    doc.expedienteId,
-    "CARGADO_EN_SECOP",
-    cargado ? `Se marcó "${doc.nombre}" como cargado en SECOP.` : `Se desmarcó "${doc.nombre}" como cargado en SECOP.`,
-    usuarioId
-  );
-}
-
 export async function validarDocumentoContrato(
   documentoId: string,
   usuarioId: string,
@@ -779,7 +742,7 @@ export async function validarDocumentoContrato(
 ): Promise<void> {
   const doc = await db.documentoContrato.findUnique({
     where: { id: documentoId },
-    select: { nombre: true, expedienteId: true, estadoValidacion: true },
+    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, verificacionRecepcionEn: true },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
@@ -789,9 +752,15 @@ export async function validarDocumentoContrato(
     );
   }
 
+  const ahora = new Date();
   await db.documentoContrato.update({
     where: { id: documentoId },
-    data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
+    data: {
+      estadoValidacion: "APROBADO",
+      validadoPorId: usuarioId,
+      validadoEn: ahora,
+      ...(doc.etapa === "PRECONTRACTUAL" && !doc.verificacionRecepcionEn ? { verificacionRecepcionEn: ahora, verificacionRecepcionPorId: usuarioId } : {}),
+    },
   });
 
   if (opts.sinTraza) return;
@@ -810,7 +779,7 @@ export async function validarDocumentoContrato(
 
 export class FaltanRequisitosError extends Error {
   constructor(public readonly faltantes: string[]) {
-    super(`Faltan ${faltantes.length} documento(s) obligatorio(s) por subir y validar en esta etapa: ${faltantes.join("; ")}`);
+    super(`Hay ${faltantes.length} documento(s) obligatorio(s) pendiente(s) en esta etapa: ${faltantes.join("; ")}`);
     this.name = "FaltanRequisitosError";
   }
 }
@@ -1753,8 +1722,17 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   };
   await db.$transaction([
     db.secopContratoEspejo.upsert({ where: { expedienteId }, create: { expedienteId, ...espejo }, update: espejo }),
-    db.expedienteContractual.update({ where: { id: expedienteId }, data: { idContratoSecop: idContrato, ...(completar as Prisma.ExpedienteContractualUncheckedUpdateInput) } }),
+    db.expedienteContractual.update({
+      where: { id: expedienteId },
+      data: {
+        idContratoSecop: idContrato,
+        supervisorSecopNombre: c.supervisor,
+        supervisorSecopDocumento: c.supervisor ? c.supervisorDocumento : null,
+        ...(completar as Prisma.ExpedienteContractualUncheckedUpdateInput),
+      },
+    }),
   ]);
+  if (c.supervisor && c.supervisorDocumento) await vincularSupervisoresSecop({ id: expedienteId });
   const resumen = [
     `Sincronizado con SECOP II (${idContrato})`,
     Object.keys(completar).length ? `actualizado desde SECOP II: ${Object.keys(completar).map((k) => ETIQUETA_CAMPO_SECOP[k] ?? k).join(", ")}` : null,
@@ -1789,7 +1767,7 @@ export async function sincronizarSecopTodos(): Promise<{ total: number; ok: numb
       errores.push(`${e.numero}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  const vinculados = await autovincularPerfilesPorDocumento();
+  const vinculados = (await autovincularPerfilesPorDocumento()) + (await vincularSupervisoresSecop());
   return { total: expedientes.length, ok, cambios, vinculados, errores };
 }
 
@@ -1813,6 +1791,48 @@ export async function asegurarPerfilDesdeSecop(contratista: { tipoDocumento: str
     select: { id: true },
   });
   return creado.id;
+}
+
+export async function vincularSupervisoresSecop(filtro: Prisma.ExpedienteContractualWhereInput = {}): Promise<number> {
+  const pendientes = await db.expedienteContractual.findMany({
+    where: { AND: [{ eliminado: false, supervisorSecopDocumento: { not: null } }, filtro] },
+    select: { id: true, supervisorSecopDocumento: true, supervisores: { select: { usuarioId: true } } },
+  });
+  let vinculados = 0;
+  for (const e of pendientes) {
+    const usuario = await db.usuario.findFirst({
+      where: { cedulaONit: e.supervisorSecopDocumento!, activo: true },
+      select: { id: true, nombre: true, rolesContratacion: true, modulosAcceso: true },
+    });
+    if (!usuario || e.supervisores.some((s) => s.usuarioId === usuario.id)) continue;
+    const faltaRol =
+      !usuario.rolesContratacion.includes("CONTRATISTA") &&
+      (!usuario.rolesContratacion.includes("SUPERVISOR_INTERVENTOR") || !usuario.modulosAcceso.includes("GECON"));
+    await db.$transaction([
+      db.expedienteContractualSupervisor.create({ data: { expedienteId: e.id, usuarioId: usuario.id } }),
+      ...(faltaRol
+        ? [
+            db.usuario.update({
+              where: { id: usuario.id },
+              data: {
+                rolesContratacion: [...new Set([...usuario.rolesContratacion, "SUPERVISOR_INTERVENTOR" as const])],
+                modulosAcceso: [...new Set([...usuario.modulosAcceso, "GECON" as const])],
+              },
+            }),
+          ]
+        : []),
+    ]);
+    await registrarEventoContratacion(e.id, "SUPERVISORES_ACTUALIZADOS", `Supervisor vinculado desde SECOP II: ${usuario.nombre}`, null);
+    vinculados++;
+  }
+  return vinculados;
+}
+
+export async function vincularSupervisionesDeUsuario(usuarioId: string): Promise<number> {
+  const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: { cedulaONit: true, activo: true } });
+  const documento = u?.cedulaONit ? soloDigitos(u.cedulaONit) : "";
+  if (!u?.activo || documento.length < 5) return 0;
+  return vincularSupervisoresSecop({ supervisorSecopDocumento: documento });
 }
 
 export async function autovincularPerfilesPorDocumento(): Promise<number> {

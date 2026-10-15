@@ -22,12 +22,12 @@ const SELECT_FIRMANTE = {
 export const SELECT_FIRMAS_DOCUMENTO_GECON = {
   firmas: {
     orderBy: { fechaHora: "asc" },
-    select: { fechaHora: true, hashContenido: true, calidad: true, cargoAlFirmar: true, usuario: { select: SELECT_FIRMANTE } },
+    select: { fechaHora: true, hashContenido: true, calidad: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuario: { select: SELECT_FIRMANTE } },
   },
   solicitudesFirma: {
     where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
     orderBy: { completadoEn: "asc" },
-    select: { completadoEn: true, cargoAlFirmar: true, usuarioAsignado: { select: SELECT_FIRMANTE } },
+    select: { completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuarioAsignado: { select: SELECT_FIRMANTE } },
   },
 } satisfies Prisma.DocumentoContratoSelect;
 
@@ -39,7 +39,7 @@ export async function supervisoresDelExpediente(expedienteId: string): Promise<S
   return new Set(filas.map((f) => f.usuarioId));
 }
 
-function persona(u: Firmante, supervisores: Set<string>, cargoAlFirmar?: string | null) {
+function persona(u: Firmante, supervisores: Set<string>, cargoAlFirmar?: string | null, actoAdministrativo?: string | null) {
   const identidad = identidadFirmante(u);
   const conContexto = { ...u, supervisaElExpediente: supervisores.has(u.id) };
   return {
@@ -53,6 +53,7 @@ function persona(u: Firmante, supervisores: Set<string>, cargoAlFirmar?: string 
     // Preferimos el cargo congelado al momento de firmar; solo si la firma es anterior a este
     // campo (null) recurrimos al cargo actual del usuario como antes.
     cargo: cargoAlFirmar ?? cargoDelFirmante(conContexto, "GECON"),
+    actoAdministrativo: actoAdministrativo ?? null,
     nivel: nivelFirma(conContexto),
   };
 }
@@ -60,13 +61,13 @@ function persona(u: Firmante, supervisores: Set<string>, cargoAlFirmar?: string 
 export function firmantesDocumentoGecon(doc: DocumentoConFirmas, supervisores: Set<string>): FirmaRotuloPdf[] {
   return [
     ...doc.firmas.map((f) => ({
-      ...persona(f.usuario, supervisores, f.cargoAlFirmar),
+      ...persona(f.usuario, supervisores, f.cargoAlFirmar, f.actoAdministrativoAlFirmar),
       fechaHora: formatearFechaHoraLarga(f.fechaHora),
       hash: f.hashContenido,
       calidad: f.calidad,
     })),
     ...doc.solicitudesFirma.map((s) => ({
-      ...persona(s.usuarioAsignado, supervisores, s.cargoAlFirmar),
+      ...persona(s.usuarioAsignado, supervisores, s.cargoAlFirmar, s.actoAdministrativoAlFirmar),
       fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",

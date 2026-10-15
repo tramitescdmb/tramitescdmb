@@ -131,6 +131,7 @@ export default async function EditarUsuarioPage({
         denominacionEmpleoActual={usuario.denominacionEmpleo}
         denominacionComplementoActual={usuario.denominacionComplemento}
         denominacionEncargoActual={usuario.denominacionEncargo}
+        actoAdministrativoCargoActual={usuario.actoAdministrativoCargo}
         accesoFirmaActual={usuario.accesoFirma}
         politicaPassword={{ longitudMinima: config.passwordLongitudMinima, longitudMaxima: config.passwordLongitudMaxima }}
         vigenciaPassword={

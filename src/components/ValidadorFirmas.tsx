@@ -7,6 +7,7 @@ type Firma = {
   id: string;
   nombre: string;
   cargo: string;
+  actoAdministrativo?: string | null;
   calidad: string;
   fechaHora: string;
   selloTiempoEn: string | null;
@@ -153,6 +154,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
                         {f.nombre}
                       </p>
                       <p className="text-xs text-stone-600">{f.cargo}</p>
+                      {f.actoAdministrativo && <p className="text-xs text-stone-600">{f.actoAdministrativo}</p>}
                       <p className="text-xs text-stone-600">{f.entidad}</p>
                       <p className="mt-1 text-xs text-stone-500">
                         {f.calidad} · {formato.format(new Date(f.fechaHora))}

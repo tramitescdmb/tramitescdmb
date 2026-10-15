@@ -151,6 +151,7 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual,
   denominacionComplementoActual,
   denominacionEncargoActual,
+  actoAdministrativoCargoActual,
   accesoFirmaActual,
   rolesContratacionActuales = [],
   rolContratacionVigenteHastaActual,
@@ -166,6 +167,7 @@ export function EditarUsuarioAccesoForm({
   denominacionEmpleoActual: string | null;
   denominacionComplementoActual: string | null;
   denominacionEncargoActual?: boolean;
+  actoAdministrativoCargoActual?: string | null;
   accesoFirmaActual: boolean;
   rolActual: "ADMIN" | "FUNCIONARIO";
   cargoActualIds: string[];
@@ -193,6 +195,7 @@ export function EditarUsuarioAccesoForm({
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [denominacionEncargo, setDenominacionEncargo] = useState(denominacionEncargoActual ?? false);
+  const [actoAdministrativoCargo, setActoAdministrativoCargo] = useState(actoAdministrativoCargoActual ?? "");
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
@@ -346,6 +349,7 @@ export function EditarUsuarioAccesoForm({
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
           denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
+          actoAdministrativoCargo: actoAdministrativoCargo.trim() || null,
           accesoFirma,
           rol,
           estadoCuenta,
@@ -532,6 +536,17 @@ export function EditarUsuarioAccesoForm({
                 className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </label>
+            <label className="text-xs font-medium text-stone-600 sm:col-span-2">
+              Acto administrativo del cargo <span className="font-normal text-stone-400">(opcional)</span>
+              <input
+                value={actoAdministrativoCargo}
+                onChange={(e) => setActoAdministrativoCargo(e.target.value)}
+                maxLength={160}
+                placeholder="Resolución 1520 de 2026"
+                className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              />
+              <span className="mt-0.5 block text-[11px] font-normal text-stone-400">Nombramiento o encargo. Si se diligencia, aparece en la firma debajo del cargo.</span>
+            </label>
             <label className="text-xs font-medium text-stone-600">
               Dependencia
               <select
@@ -581,6 +596,7 @@ export function EditarUsuarioAccesoForm({
               {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ? (
                 <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo)}</>
               ) : null}
+              {actoAdministrativoCargo.trim() ? ` ()` : null}
               {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
                 ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
                 : null}

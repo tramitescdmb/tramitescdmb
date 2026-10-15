@@ -6,6 +6,7 @@ export type FirmaPublica = {
   id: string;
   nombre: string;
   cargo: string;
+  actoAdministrativo: string | null;
   calidad: string;
   fechaHora: Date;
   selloTiempoEn: Date | null;
@@ -32,8 +33,8 @@ const SELECT_PERSONA = {
 
 type Persona = { nombre: string; denominacionEmpleo: string | null; denominacionComplemento: string | null; sexo: string | null; rolesContratacion: string[] };
 
-type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; cargoAlFirmar: string | null; usuario: Persona };
-type VistoFila = { id: string; completadoEn: Date | null; cargoAlFirmar: string | null; usuarioAsignado: Persona };
+type FirmaFila = { id: string; fechaHora: Date; calidad: string | null; selloTiempoEn: Date | null; hashContenido: string; cargoAlFirmar: string | null; actoAdministrativoAlFirmar: string | null; usuario: Persona };
+type VistoFila = { id: string; completadoEn: Date | null; cargoAlFirmar: string | null; actoAdministrativoAlFirmar: string | null; usuarioAsignado: Persona };
 
 const ENTIDAD = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
 
@@ -47,6 +48,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
         id: f.id,
         nombre: f.usuario.nombre,
         cargo,
+        actoAdministrativo: f.actoAdministrativoAlFirmar,
         calidad: etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }),
         fechaHora: f.fechaHora,
         selloTiempoEn: f.selloTiempoEn,
@@ -62,6 +64,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
           id: v.id,
           nombre: v.usuarioAsignado.nombre,
           cargo,
+          actoAdministrativo: v.actoAdministrativoAlFirmar,
           calidad: "Visto bueno",
           fechaHora: v.completadoEn!,
           selloTiempoEn: null,
@@ -72,10 +75,10 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
   ].sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime());
 }
 
-const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, hashContenido: true, cargoAlFirmar: true, usuario: { select: SELECT_PERSONA } } as const;
+const SELECT_FIRMA = { id: true, fechaHora: true, calidad: true, selloTiempoEn: true, hashContenido: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuario: { select: SELECT_PERSONA } } as const;
 const SELECT_VISTOS = {
   where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
-  select: { id: true, completadoEn: true, cargoAlFirmar: true, usuarioAsignado: { select: SELECT_PERSONA } },
+  select: { id: true, completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuarioAsignado: { select: SELECT_PERSONA } },
 } as const;
 
 export const PLATAFORMA_FIRMA = {

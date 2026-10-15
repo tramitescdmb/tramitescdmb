@@ -20,6 +20,7 @@ export type ContratoSecop = {
   tipoSecop: string;
   estado: string | null;
   supervisor: string | null;
+  supervisorDocumento: string | null;
   contratista: { tipoDocumento: string | null; documento: string | null; nombre: string | null };
   url: string | null;
 };
@@ -104,6 +105,7 @@ export function contratoDesdeFila(f: FilaSecop): ContratoSecop {
     tipoSecop: String(f.tipo_de_contrato ?? ""),
     estado: texto(f.estado_contrato),
     supervisor: texto(f.nombre_supervisor),
+    supervisorDocumento: texto(f.n_mero_de_documento_supervisor)?.replace(/\D/g, "") || null,
     contratista: { tipoDocumento: texto(f.tipodocproveedor), documento: texto(f.documento_proveedor), nombre: texto(f.proveedor_adjudicado) },
     url,
   };

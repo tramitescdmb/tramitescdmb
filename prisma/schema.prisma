@@ -116,6 +116,7 @@ model Usuario {
   denominacionComplemento String?
   // Marca que la denominacionEmpleo actual es un encargo (interino), no un nombramiento definitivo — se muestra como "(E)".
   denominacionEncargo     Boolean                  @default(false)
+  actoAdministrativoCargo String?
   sexo                    String?
   accesoFirma             Boolean                  @default(true)
   cedulaONit              String?
@@ -239,6 +240,7 @@ model HistorialCargo {
   denominacionEmpleo      String?
   denominacionComplemento String?
   denominacionEncargo     Boolean  @default(false)
+  actoAdministrativoCargo String?
   vigenteHasta            DateTime @default(now())
   cambiadoPorId           String?
 
@@ -778,23 +780,24 @@ enum EstadoValidacionDocumento {
 }
 
 model FirmaExpedienteDocumento {
-  id                String        @id @default(cuid())
-  documentoId       String
-  usuarioId         String
-  fechaHora         DateTime      @default(now())
-  hashContenido     String
-  calidad           CalidadFirma?
-  ip                String?
-  userAgent         String?
-  proveedor         String        @default("interno")
-  formato           String        @default("hash-sha256")
-  selloTiempoEn     DateTime?
-  selloTiempoFuente String?
-  selloTiempoToken  String?
+  id                         String        @id @default(cuid())
+  documentoId                String
+  usuarioId                  String
+  fechaHora                  DateTime      @default(now())
+  hashContenido              String
+  calidad                    CalidadFirma?
+  ip                         String?
+  userAgent                  String?
+  proveedor                  String        @default("interno")
+  formato                    String        @default("hash-sha256")
+  selloTiempoEn              DateTime?
+  selloTiempoFuente          String?
+  selloTiempoToken           String?
   // Cargo exacto del firmante en el momento de firmar (ya formateado para mostrar). Se congela
   // aquí para que un cambio posterior de cargo del usuario no altere firmas ya hechas. Null en
   // filas anteriores a este campo: el renderizado cae de vuelta al cargo actual del usuario.
-  cargoAlFirmar     String?
+  cargoAlFirmar              String?
+  actoAdministrativoAlFirmar String?
 
   documento        ExpedienteDocumento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
   usuario          Usuario             @relation("FirmaExpedienteDocumentoUsuario", fields: [usuarioId], references: [id])
@@ -1517,10 +1520,11 @@ model Firma {
   selloTiempoFuente String?
   selloTiempoToken  String?
 
-  calidad            CalidadFirma?
-  documentoArchivoId String?
+  calidad                    CalidadFirma?
+  documentoArchivoId         String?
   // Ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
-  cargoAlFirmar      String?
+  cargoAlFirmar              String?
+  actoAdministrativoAlFirmar String?
 
   usuario          Usuario           @relation("FirmaUsuario", fields: [usuarioId], references: [id])
   comunicacion     Comunicacion?     @relation(fields: [comunicacionId], references: [id])
@@ -1569,14 +1573,15 @@ model SolicitudFirma {
   estado            EstadoSolicitudFirma @default(PENDIENTE)
   comentario        String?              @db.Text
 
-  asignadoPorId String
-  asignadoEn    DateTime  @default(now())
-  completadoEn  DateTime?
+  asignadoPorId              String
+  asignadoEn                 DateTime  @default(now())
+  completadoEn               DateTime?
   // Solo se usa para VISTO_BUENO (no genera fila en Firma/FirmaDocumentoContrato/
   // FirmaExpedienteDocumento): ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
-  cargoAlFirmar String?
-  ip            String?
-  userAgent     String?
+  cargoAlFirmar              String?
+  actoAdministrativoAlFirmar String?
+  ip                         String?
+  userAgent                  String?
 
   firmaId            String?
   firmaDocContratoId String?
@@ -2015,6 +2020,8 @@ model ExpedienteContractual {
   causalContratacionDirecta CausalContratacionDirecta?
   codigoProceso             String?                    @unique
   idContratoSecop           String?
+  supervisorSecopNombre     String?
+  supervisorSecopDocumento  String?
   valor                     Decimal?                   @db.Decimal(18, 2)
   numeroContrato            String?
   numeroProcesoSecop        String?
@@ -2235,21 +2242,22 @@ model PeriodoInformeEventual {
 }
 
 model FirmaDocumentoContrato {
-  id                String        @id @default(cuid())
-  documentoId       String
-  usuarioId         String
-  fechaHora         DateTime      @default(now())
-  hashContenido     String
-  calidad           CalidadFirma?
-  ip                String?
-  userAgent         String?
-  proveedor         String        @default("interno")
-  formato           String        @default("hash-sha256")
-  selloTiempoEn     DateTime?
-  selloTiempoFuente String?
-  selloTiempoToken  String?
+  id                         String        @id @default(cuid())
+  documentoId                String
+  usuarioId                  String
+  fechaHora                  DateTime      @default(now())
+  hashContenido              String
+  calidad                    CalidadFirma?
+  ip                         String?
+  userAgent                  String?
+  proveedor                  String        @default("interno")
+  formato                    String        @default("hash-sha256")
+  selloTiempoEn              DateTime?
+  selloTiempoFuente          String?
+  selloTiempoToken           String?
   // Ver nota en FirmaExpedienteDocumento.cargoAlFirmar.
-  cargoAlFirmar     String?
+  cargoAlFirmar              String?
+  actoAdministrativoAlFirmar String?
 
   documento        DocumentoContrato @relation(fields: [documentoId], references: [id], onDelete: Cascade)
   usuario          Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])

@@ -8,6 +8,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
+import { vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
   const denominacionComplemento = typeof body.denominacionComplemento === "string" ? body.denominacionComplemento.trim().slice(0, 120) || null : null;
   const denominacionEncargo = admiteEncargo(denominacionEmpleo) && Boolean(body.denominacionEncargo);
   const accesoFirma = body.accesoFirma !== false;
+  const actoAdministrativoCargo = typeof body.actoAdministrativoCargo === "string" ? body.actoAdministrativoCargo.trim().slice(0, 160) || null : null;
   const persona = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
   if (!email) {
@@ -70,12 +72,15 @@ export async function POST(req: NextRequest) {
       denominacionEmpleo,
       denominacionComplemento,
       denominacionEncargo,
+      actoAdministrativoCargo,
       accesoFirma,
       ...dataUsuarioDesdePersona(persona),
       cargoAsignaciones: { create: cargoIds.map((id: string) => ({ cargoId: id, encargo: cargoEncargoIds.has(id) })) },
     },
     select: { id: true, nombre: true, email: true },
   });
+
+  await vincularSupervisionesDeUsuario(nuevo.id);
 
   await registrarAuditoria({
     tipo: "USUARIO_CREADO",

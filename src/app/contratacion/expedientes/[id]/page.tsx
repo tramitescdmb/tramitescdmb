@@ -76,7 +76,6 @@ import { EditarPersonalAsignadoForm } from "@/components/EditarPersonalAsignadoF
 import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
 import { NuevoEspacioInformeForm, EspacioEventualAcciones } from "@/components/EspaciosInformeAcciones";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
-import { VerificacionSecopControl } from "@/components/VerificacionSecopControl";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -84,7 +83,7 @@ const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   RECHAZADO: "Rechazado",
 };
 const TITULO_ESTADO_VALIDACION: Record<string, string> = {
-  PENDIENTE: "Se aprueba al firmarse (si requiere firma), al validarlo manualmente, o al aprobar el paso de esta etapa.",
+  PENDIENTE: "Se aprueba con un solo paso: al firmarse (si requiere firma), al validarlo o al aprobar el paso de esta etapa.",
   APROBADO: "Ya fue revisado y aprobado.",
   RECHAZADO: "Quien lo revisó lo rechazó — vea el motivo en la trazabilidad, al final de la página.",
 };
@@ -161,7 +160,7 @@ export default async function DetalleExpedienteContractualPage({
       contratista: { select: { id: true, nombreORazonSocial: true, identificacion: true } },
       expedienteRelacionado: { select: { numero: true } },
       expedientesQueLoReferencian: { select: { id: true, numero: true } },
-      supervisores: { include: { usuario: { select: { nombre: true } } } },
+      supervisores: { include: { usuario: { select: { nombre: true, cedulaONit: true } } } },
       asignados: { include: { usuario: { select: { nombre: true } } } },
       periodosEventuales: { orderBy: { createdAt: "asc" } },
       secop: true,
@@ -187,12 +186,16 @@ export default async function DetalleExpedienteContractualPage({
   }
 
   const cerrado = expediente.cerrado;
+  const supervisorSecopPendiente =
+    Boolean(expediente.supervisorSecopNombre) &&
+    !expediente.supervisores.some((s) => expediente.supervisorSecopDocumento && s.usuario.cedulaONit?.replace(/\D/g, "") === expediente.supervisorSecopDocumento);
   const puedeGestionar = puedeGestionarContratistas(permisos);
   const puedeGestionDocumental = puedeGestionarExpedienteCompleto(permisos, expediente);
   const puedeEditarDatosGenerales = puedeEditarDatosContrato(permisos, expediente) && !cerrado;
   const puedeVerListaUsuarios = puedeGestionar || puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeAsignarPersonal = puedeAsignarPersonalContrato(permisos);
-  const idsDocumentos = expediente.documentos.map((d) => d.id);
+  const ocultaPrecontractualParaMi = esContratistaGecon(permisos);
+  const idsDocumentos = expediente.documentos.filter((d) => !ocultaPrecontractualParaMi || d.etapa !== "PRECONTRACTUAL").map((d) => d.id);
   const [topesCuantia, subseriePorModalidadTrd, supervisoresDisponibles, personalDisponible, usuariosOpcionesCrudo, otrosContratosDelContratista, trazabilidad, dependencias, fichaSgdea, firmasPendientes, eventoCierre] = await Promise.all([
     puedeEditarDatosGenerales ? listarTopesCuantia() : Promise.resolve([]),
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
@@ -256,7 +259,6 @@ export default async function DetalleExpedienteContractualPage({
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeValidar = !cerrado && puedeValidarDocumentoContrato(permisos, expediente);
-  const puedeGestionarSecop = !cerrado && puedeSubirDocumentoContrato(permisos, expediente, "PRECONTRACTUAL");
   const puedeRetroceder = !cerrado && puedeGestionarEtapasContratacion(permisos) && idxActual > 0;
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
@@ -569,10 +571,20 @@ export default async function DetalleExpedienteContractualPage({
             </dd>
           </div>
           <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? <Link href={`/contratacion/contratistas/${expediente.contratista.id}`} className="text-cdmb-700 hover:underline">{expediente.contratista.nombreORazonSocial} ({expediente.contratista.identificacion})</Link> : "Por definir"}</dd></div>
-          <div className="flex items-center gap-1.5 sm:col-span-2 lg:col-span-1">
+          <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 lg:col-span-1">
             <UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Supervisor(es):</dt>
-            <dd className="font-medium text-stone-800">{expediente.supervisores.length ? expediente.supervisores.map((s) => s.usuario.nombre).join(", ") : "—"}</dd>
+            <dd className="font-medium text-stone-800">
+              {expediente.supervisores.length ? expediente.supervisores.map((s) => s.usuario.nombre).join(", ") : supervisorSecopPendiente ? null : "—"}
+            </dd>
+            {supervisorSecopPendiente && (
+              <span
+                className="whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+                title={`Reportado por SECOP II${expediente.supervisorSecopDocumento ? ` (C.C. ${expediente.supervisorSecopDocumento})` : ""}. Se vincula automáticamente cuando exista en Usuarios una cuenta con ese número de documento (alta manual o primer ingreso por directorio activo).`}
+              >
+                {expediente.supervisorSecopNombre} · sin usuario
+              </span>
+            )}
             {puedeGestionarContratistas(permisos) && (
               <EditarSupervisoresForm
                 expedienteId={id}
@@ -693,6 +705,7 @@ export default async function DetalleExpedienteContractualPage({
             {!expediente.cerrado && puedeAprobar && !faltaContratista && (siguienteEtapa || esUltimaEtapa) && (
               <AprobarEtapaContratoBoton
                 expedienteId={id}
+                etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
                 etiquetaSiguiente={siguienteEtapa ? ETIQUETA_ETAPA[siguienteEtapa] : "Cierre del expediente"}
               />
             )}
@@ -753,14 +766,27 @@ export default async function DetalleExpedienteContractualPage({
             id: etapa,
             label: ETIQUETA_ETAPA[etapa],
             icono: etapa === "PRECONTRACTUAL" ? <ClipboardList className="h-4 w-4" aria-hidden /> : etapa === "CONTRACTUAL" ? <FileSignature className="h-4 w-4" aria-hidden /> : <FolderCheck className="h-4 w-4" aria-hidden />,
-            contador: expediente.documentos.filter((d) => d.etapa === etapa).length,
+            contador: etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi ? undefined : expediente.documentos.filter((d) => d.etapa === etapa).length,
             contenido: (() => {
                 const estado = expediente.cerrado || i < idxActual ? "completada" : i === idxActual ? "actual" : "bloqueada";
                 const puedeGestionarPrivilegiado = puedeGestionarExpedienteCompleto(permisos, expediente);
+                const ocultaPorRol = etapa === "PRECONTRACTUAL" && ocultaPrecontractualParaMi;
                 const puedeVerEtapaCompleta =
-                  estado !== "bloqueada" ||
+                  !ocultaPorRol &&
+                  (estado !== "bloqueada" ||
                     puedeGestionarPrivilegiado ||
-                  (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id));
+                    (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
+
+                if (ocultaPorRol) {
+                  return (
+                    <div key={etapa} className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-5 opacity-70">
+                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-500">
+                        <Lock className="h-3.5 w-3.5" aria-hidden />
+                        {ETIQUETA_ETAPA[etapa]} — no disponible para el contratista
+                      </h3>
+                    </div>
+                  );
+                }
 
                 if (!puedeVerEtapaCompleta) {
                   const checklistFuturo = checklistsPorEtapa.get(etapa) ?? [];
@@ -849,17 +875,6 @@ export default async function DetalleExpedienteContractualPage({
                                 >
                                   {item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
                                 </span>
-                              )}
-                              {etapa === "PRECONTRACTUAL" && item.documento && !esRequisitoPorPeriodos(item) && (
-                                <VerificacionSecopControl
-                                  documentoId={item.documento.id}
-                                  verificacionRecepcionEn={item.documento.verificacionRecepcionEn}
-                                  verificacionRecepcionPorNombre={item.documento.verificacionRecepcionPorNombre}
-                                  verificacionRecepcionObservaciones={item.documento.verificacionRecepcionObservaciones}
-                                  cargadoEnSecop={item.documento.cargadoEnSecop}
-                                  cargadoEnSecopEn={item.documento.cargadoEnSecopEn}
-                                  puedeGestionar={puedeGestionarSecop}
-                                />
                               )}
                             </p>
                             <p className="flex items-center gap-1 text-[11px] text-stone-400">
@@ -1010,17 +1025,6 @@ export default async function DetalleExpedienteContractualPage({
                                   >
                                     {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
                                   </span>
-                                )}
-                                {etapa === "PRECONTRACTUAL" && (
-                                  <VerificacionSecopControl
-                                    documentoId={doc.id}
-                                    verificacionRecepcionEn={doc.verificacionRecepcionEn}
-                                    verificacionRecepcionPorNombre={doc.verificacionRecepcionPor?.nombre ?? null}
-                                    verificacionRecepcionObservaciones={doc.verificacionRecepcionObservaciones}
-                                    cargadoEnSecop={doc.cargadoEnSecop}
-                                    cargadoEnSecopEn={doc.cargadoEnSecopEn}
-                                    puedeGestionar={puedeGestionarSecop}
-                                  />
                                 )}
                                 {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
                                   <div className="flex flex-wrap gap-1">
@@ -1191,7 +1195,7 @@ export default async function DetalleExpedienteContractualPage({
                         : null,
                   control:
                     esUltimaEtapa && puedeAprobar && expediente.subserieId && firmasPendientes === 0 ? (
-                      <AprobarEtapaContratoBoton expedienteId={id} etiquetaSiguiente="Cierre del expediente" />
+                      <AprobarEtapaContratoBoton expedienteId={id} etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]} etiquetaSiguiente="Cierre del expediente" />
                     ) : null,
                 }}
               />

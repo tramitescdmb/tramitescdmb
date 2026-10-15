@@ -131,11 +131,10 @@ export default async function ContratacionAyudaPage() {
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
             <td className="px-2.5 py-1.5">
-              Ver sus expedientes desde la etapa Contractual, también los terminados y cerrados (filtro «Terminados»), cargar sus documentos y firmar lo asignado. Consultar y descargar uno a uno
-              los documentos de Precontractual (hoja de vida, CDP y demás).
+              Ver sus expedientes desde la etapa Contractual, también los terminados y cerrados (filtro «Terminados»), cargar sus documentos y firmar lo asignado en Contractual y Postcontractual.
             </td>
             <td className="px-2.5 py-1.5">
-              Cargar, editar, eliminar, firmar o dar visto bueno en Precontractual; descargar el expediente en ZIP; ver contratos de otros o
+              Ver, descargar, cargar o firmar documentos de Precontractual; descargar el expediente en ZIP; ver contratos de otros o
               asignar firmantes.
             </td>
           </tr>

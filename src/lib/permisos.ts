@@ -431,6 +431,15 @@ export function puedeVerExpedienteContractual(
   return expediente.etapaActual !== "PRECONTRACTUAL" && esContratistaDelExpediente(permisos, expediente);
 }
 
+export function puedeVerDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion; eliminado: boolean },
+  documentoEtapa: EtapaContratacion
+): boolean {
+  if (esContratistaGecon(permisos) && documentoEtapa === "PRECONTRACTUAL") return false;
+  return puedeVerExpedienteContractual(permisos, expediente);
+}
+
 export async function tieneSolicitudFirmaEnExpedienteContractual(usuarioId: string, expedienteId: string): Promise<boolean> {
   const n = await db.solicitudFirma.count({ where: { usuarioAsignadoId: usuarioId, documentoContrato: { expedienteId } } });
   return n > 0;

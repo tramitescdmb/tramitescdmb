@@ -138,6 +138,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                         </p>
                         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                           <Dato k="Calidad de la firma" v={etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad })} />
+                          {f.actoAdministrativoAlFirmar && <Dato k="Acto administrativo" v={f.actoAdministrativoAlFirmar} />}
                           <Dato k={etiquetaDatoIdentificacion(f.usuario.tipoIdentificacionFirma)} v={f.usuario.cedulaONit ?? "no registrada"} mono />
                           <Dato k="Correo de notificación" v={f.usuario.correoNotificacion ?? "no registrado"} />
                           <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
@@ -162,6 +163,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                         </p>
                         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                           <Dato k="Calidad de la firma" v="Visto bueno" />
+                          {s.actoAdministrativoAlFirmar && <Dato k="Acto administrativo" v={s.actoAdministrativoAlFirmar} />}
                           <Dato k={etiquetaDatoIdentificacion(s.usuarioAsignado.tipoIdentificacionFirma)} v={s.usuarioAsignado.cedulaONit ?? "no registrada"} mono />
                           <Dato k="Correo de notificación" v={s.usuarioAsignado.correoNotificacion ?? "no registrado"} />
                           <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato, esContratistaGecon } from "@/lib/permisos";
 import Link from "next/link";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { identidadFirmante } from "@/lib/contratacion";
@@ -39,6 +39,7 @@ export default async function FichaFirmaExpedienteContractualPage({
           AND: [
             { OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }] },
             ...(documentoId ? [{ id: documentoId }] : []),
+            ...(esContratistaGecon(permisos) ? [{ etapa: { not: "PRECONTRACTUAL" as const } }] : []),
           ],
         },
         orderBy: { createdAt: "asc" },
@@ -161,6 +162,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                         <Dato k="Calidad de la firma" v={etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad })} />
+                        {f.actoAdministrativoAlFirmar && <Dato k="Acto administrativo" v={f.actoAdministrativoAlFirmar} />}
                         <Dato k={etiquetaDatoIdentificacion(identidad.tipoIdentificacion)} v={identidad.cedulaONit ?? "no registrada"} mono />
                         <Dato k="Correo de notificación" v={identidad.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
@@ -188,6 +190,7 @@ export default async function FichaFirmaExpedienteContractualPage({
                       </p>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                         <Dato k="Calidad de la firma" v="Visto bueno" />
+                        {s.actoAdministrativoAlFirmar && <Dato k="Acto administrativo" v={s.actoAdministrativoAlFirmar} />}
                         <Dato k={etiquetaDatoIdentificacion(identidadVb.tipoIdentificacion)} v={identidadVb.cedulaONit ?? "no registrada"} mono />
                         <Dato k="Correo de notificación" v={identidadVb.correoNotificacion ?? "no registrado"} />
                         <Dato k="Fecha y hora" v={s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "—"} />

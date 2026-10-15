@@ -10,6 +10,7 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { Paginador } from "@/components/Paginador";
+import { BotonFirmarLote } from "@/components/BotonFirmarLote";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { SelectorVista } from "@/components/SelectorVista";
@@ -235,9 +236,7 @@ export default async function CorrespondenciaBandejaPage({
                 </li>
               ))}
             </ul>
-            <button type="submit" className="mt-3 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">
-              Firmar seleccionadas
-            </button>
+            <BotonFirmarLote />
           </form>
         </details>
       )}

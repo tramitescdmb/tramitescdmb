@@ -11,7 +11,7 @@ import {
   guardarTokenDirectorioActivo,
   type PerfilDirectorio,
 } from "@/lib/directorio-activo";
-import { sincronizarContratistaDeUsuario, vincularContratistaPorUsuarioRed } from "@/lib/contratacion";
+import { sincronizarContratistaDeUsuario, vincularContratistaPorUsuarioRed, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 
 type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargoAsignaciones: { include: { cargo: true } } } }>;
@@ -256,6 +256,7 @@ async function ingresarPorDirectorioActivo(
 
   usuario = await completarDesdeDirectorio(usuario, perfil);
   await vincularContratistaPorUsuarioRed(usuario.id, usuarioRed).catch(() => {});
+  await vincularSupervisionesDeUsuario(usuario.id).catch(() => {});
   usuario = (await db.usuario.findUnique({ where: { id: usuario.id }, include: { cargoAsignaciones: { include: { cargo: true } } } })) ?? usuario;
 
   await createSessionCookie({

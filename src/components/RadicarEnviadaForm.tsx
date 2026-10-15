@@ -17,6 +17,7 @@ import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaS
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
 import type { DatosRespuestaRecibida } from "@/lib/correspondencia-respuesta";
+import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 
 type Dependencia = { id: string; nombre: string };
 type Serie = SerieBuscable;
@@ -45,6 +46,7 @@ export function RadicarEnviadaForm({
   const router = useRouter();
   const [persona, setPersona] = useState<DatosPersona>(inicial?.destinatario ?? personaVacia());
   const nombre = nombreCompletoPersona(persona);
+  const { confirmarIdentidad, dialogo } = useConfirmacionFirma("SGDEA");
   const [medio, setMedio] = useState("FISICO");
   const [asunto, setAsunto] = useState(inicial?.asunto ?? "");
   const [contenido, setContenido] = useState(inicial?.contenido ?? "");
@@ -110,6 +112,7 @@ export function RadicarEnviadaForm({
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
     if (!contenido.trim()) return setError("El contenido del oficio es obligatorio: es lo que queda firmado.");
     if (!nombre) return setError("El nombre o razón social del destinatario es obligatorio.");
+    if (!(await confirmarIdentidad({ detalle: `Oficio: ${asunto.trim()}` }))) return;
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
     try {
@@ -337,6 +340,7 @@ export function RadicarEnviadaForm({
         </button>
         <span className="text-xs text-stone-400">Se asigna consecutivo y se firma electrónicamente en el mismo paso.</span>
       </div>
+      {dialogo}
     </div>
   );
 }

@@ -25,6 +25,7 @@ export type PiezaExpediente = {
     fechaHora: string;
     hash: string;
     cargoAlFirmar?: string | null;
+    actoAdministrativoAlFirmar?: string | null;
   }[];
   adjuntos: { nombre: string; mimeType: string; bytes: Buffer | Uint8Array | null }[];
 };
@@ -172,7 +173,7 @@ export async function generarExpedientePdf(datosOriginales: DatosExpedientePdf, 
     }
 
     if (pieza.firmas && pieza.firmas.length > 0) {
-      sy = Math.min(sy, MARGEN + 20 + pieza.firmas.length * 30);
+      sy = Math.min(sy, MARGEN + 20 + pieza.firmas.reduce((acc, f) => acc + (f.actoAdministrativoAlFirmar ? 40 : 30), 0));
       sep.drawLine({ start: { x: MARGEN, y: sy }, end: { x: sw - MARGEN, y: sy }, thickness: 0.5, color: VERDE });
       sy -= 11;
       sep.drawText("DOCUMENTO FIRMADO ELECTRÓNICAMENTE", { x: MARGEN, y: sy, size: 7, font: fontBold, color: VERDE });
@@ -181,6 +182,7 @@ export async function generarExpedientePdf(datosOriginales: DatosExpedientePdf, 
         const cargo = f.cargoAlFirmar ?? denominacionParaFirma(f.denominacionEmpleo, f.sexo, f.denominacionComplemento);
         sep.drawText(f.nombre.slice(0, 90), { x: MARGEN, y: sy, size: 8, font: fontBold, color: GRIS }); sy -= 10;
         if (cargo) { sep.drawText(cargo.slice(0, 100), { x: MARGEN, y: sy, size: 7.5, font, color: GRIS }); sy -= 10; }
+        if (f.actoAdministrativoAlFirmar) { sep.drawText(f.actoAdministrativoAlFirmar.slice(0, 100), { x: MARGEN, y: sy, size: 7.5, font, color: GRIS }); sy -= 10; }
         if (f.dependencia) { sep.drawText(f.dependencia.slice(0, 100), { x: MARGEN, y: sy, size: 7.5, font, color: GRIS }); sy -= 10; }
         sep.drawText(`${f.fechaHora}  ·  SHA-256 ${f.hash.slice(0, 16)}…`, { x: MARGEN, y: sy, size: 6.5, font, color: GRIS_CLARO }); sy -= 13;
       }

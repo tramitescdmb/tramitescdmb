@@ -49,4 +49,9 @@ describe("mapeo de SECOP II a GECON", () => {
     expect(c).toMatchObject({ numeroContrato: "210-17708-8", valor: 6_250_000, fechaSuscripcion: "2026-10-09", supervisor: null, url: "https://community.secop.gov.co/x" });
     expect(c.contratista.documento).toBe("1015474673");
   });
+
+  it("toma el nombre y el documento del supervisor cuando SECOP II los reporta", () => {
+    const c = contratoDesdeFila({ nombre_supervisor: "NELSON ANDRES CHANG PEREZ", n_mero_de_documento_supervisor: "91.511.619" });
+    expect(c).toMatchObject({ supervisor: "NELSON ANDRES CHANG PEREZ", supervisorDocumento: "91511619" });
+  });
 });

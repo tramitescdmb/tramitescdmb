@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeVerExpedienteContractual, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerDocumentoContrato, esContratistaGecon, tieneSolicitudFirmaEnExpedienteContractual, tieneFirmaOSolicitudEnDocumentoContrato } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
@@ -24,7 +24,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   const permitido =
     !doc.expediente.eliminado &&
-    (puedeVerExpedienteContractual(permisos, doc.expediente) ||
+    !(esContratistaGecon(permisos) && doc.etapa === "PRECONTRACTUAL") &&
+    (puedeVerDocumentoContrato(permisos, doc.expediente, doc.etapa) ||
       (await tieneSolicitudFirmaEnExpedienteContractual(session.userId, doc.expediente.id)) ||
       (await tieneFirmaOSolicitudEnDocumentoContrato(session.userId, id)) ||
       (await accesoDesdeArchivoSgdea({

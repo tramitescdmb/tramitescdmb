@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PenLine, Eye, X, XCircle } from "lucide-react";
+import { moduloDeEndpoint, solicitudDeEndpoint, useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 
 export function ConfirmarFirmaModal({
   rol,
@@ -27,11 +28,13 @@ export function ConfirmarFirmaModal({
   const [error, setError] = useState<string | null>(null);
   const [rechazando, setRechazando] = useState(false);
   const [motivo, setMotivo] = useState("");
+  const { confirmarIdentidad, dialogo } = useConfirmacionFirma(moduloDeEndpoint(endpointCompletar));
 
   const esImagen = documentoMimeType?.startsWith("image/") ?? false;
   const esPdf = documentoMimeType === "application/pdf";
 
   async function confirmar() {
+    if (!(await confirmarIdentidad({ accion: rol, solicitudId: solicitudDeEndpoint(endpointCompletar), detalle: documentoNombre }))) return;
     setCargando(true);
     setError(null);
     try {
@@ -184,6 +187,7 @@ export function ConfirmarFirmaModal({
           </div>
         </div>
       )}
+      {dialogo}
     </>
   );
 }
