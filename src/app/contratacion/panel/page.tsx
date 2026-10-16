@@ -8,6 +8,7 @@ import { identificacionContrato } from "@/lib/codigo-proceso";
 import { CabeceraTablero, Chip, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { fechaHoyLarga } from "@/lib/saludo";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
+import { textoEsperaA, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
 
@@ -119,14 +120,14 @@ export default async function PanelPendientesGeconPage() {
                   titulo={s.documentoContrato?.nombre}
                   detalle={`${s.documentoContrato ? identificacionContrato(s.documentoContrato.expediente) : ""} · ${ETIQUETA_ROL[s.rol] ?? s.rol}${
                     s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""
-                  }`}
+                  }${textoRecordatorio(s.recordadoPor, s.recordadoEn) ? ` · ${textoRecordatorio(s.recordadoPor, s.recordadoEn)}` : ""}`}
                   extra={
                     s.puedeActuar ? (
                       <Link href={`/contratacion/firmar/${s.id}`} className="rounded-md bg-acento-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-acento-600">
                         {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
                       </Link>
                     ) : (
-                      <Chip>Espera turno</Chip>
+                      <span className="max-w-[220px] text-right text-[11px] leading-snug text-stone-500">{textoEsperaA(s.esperaA)}</span>
                     )
                   }
                 />

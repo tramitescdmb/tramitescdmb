@@ -11,6 +11,7 @@ import {
   FileText,
   FileWarning,
   Gavel,
+  Hourglass,
   Inbox,
   Leaf,
   ListChecks,
@@ -34,6 +35,7 @@ const VISIBLES_POR_TIPO = 5;
 
 const TIPOS: Record<TipoAlerta, { icon: LucideIcon; tint: string; etiqueta: string }> = {
   firma: { icon: PenLine, tint: "bg-red-50 text-red-600", etiqueta: "Por firmar" },
+  esperaFirma: { icon: Hourglass, tint: "bg-amber-50 text-amber-600", etiqueta: "Firmas en espera de turno" },
   sinFirmante: { icon: UserPlus, tint: "bg-orange-50 text-orange-600", etiqueta: "Sin firmante asignado" },
   validar: { icon: BadgeCheck, tint: "bg-emerald-50 text-emerald-600", etiqueta: "Por validar" },
   informe: { icon: FileText, tint: "bg-amber-50 text-amber-600", etiqueta: "Informes por radicar" },

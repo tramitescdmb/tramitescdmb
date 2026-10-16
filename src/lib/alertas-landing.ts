@@ -16,6 +16,7 @@ import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { obtenerPanelMiTrabajo } from "@/lib/correspondencia-panel";
 import type { SessionPayload } from "@/lib/auth";
+import { textoEsperaA, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 
 export type TipoAlerta =
   | "informacion"
@@ -24,6 +25,7 @@ export type TipoAlerta =
   | "documento"
   | "paso"
   | "firma"
+  | "esperaFirma"
   | "sinFirmante"
   | "validar"
   | "informe"
@@ -110,7 +112,7 @@ async function seccionTramites(session: SessionPayload, permisos: PermisosUsuari
   }
   if (buzon && buzon.listos > 0) {
     total += buzon.listos;
-    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/firmas/buzon", tipo: "firma" });
+    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/firmas/buzon", tipo: "firma", cantidad: buzon.listos });
   }
 
   return {
@@ -147,14 +149,25 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
     total++;
     items.unshift({
       titulo: `${f.documentoContrato ? identificacionContrato(f.documentoContrato.expediente) : "Contrato"} · ${f.rol === "VISTO_BUENO" ? "visto bueno" : "firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
-      detalle: `${f.documentoContrato?.expediente.contratista?.nombreORazonSocial ?? "Sin contratista"} · asignado por ${f.asignadoPor.nombre}`,
+      detalle: [
+        f.documentoContrato?.expediente.contratista?.nombreORazonSocial ?? "Sin contratista",
+        `asignado por ${f.asignadoPor.nombre}`,
+        textoRecordatorio(f.recordadoPor, f.recordadoEn),
+      ]
+        .filter(Boolean)
+        .join(" · "),
       link: `/contratacion/firmar/${f.id}`,
       tipo: "firma",
     });
   }
-  const enEspera = trabajo.firmas.total - trabajo.firmas.listos;
-  if (enEspera > 0) {
-    items.push({ titulo: `${enEspera} firma(s) en espera de turno`, detalle: "Se habilitan cuando firmen los anteriores", link: "/contratacion/buzon", tipo: "firma", cantidad: 0 });
+  total += trabajo.firmas.total - trabajo.firmas.listos;
+  for (const f of trabajo.firmas.lista.filter((x) => !x.puedeActuar)) {
+    items.push({
+      titulo: `${f.documentoContrato ? identificacionContrato(f.documentoContrato.expediente) : "Contrato"} · ${f.rol === "VISTO_BUENO" ? "visto bueno" : "firmar"}: ${f.documentoContrato?.nombre ?? "documento"}`,
+      detalle: textoEsperaA(f.esperaA),
+      link: "/contratacion/buzon",
+      tipo: "esperaFirma",
+    });
   }
   for (const l of trabajo.liquidaciones) {
     total++;
@@ -223,7 +236,7 @@ async function seccionCorrespondencia(session: SessionPayload, permisos: Permiso
   }
   if (buzon.listos > 0) {
     total += buzon.listos;
-    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/correspondencia/buzon", tipo: "firma" });
+    items.push({ titulo: `${buzon.listos} firma(s) lista(s) para firmar`, link: "/correspondencia/buzon", tipo: "firma", cantidad: buzon.listos });
   }
   const otros = panel.pendientesProceso + panel.devueltasEsperandoReparto + panel.oficiosSinDespachar + panel.flujosPasoVencido;
   if (otros > 0 && (panel.puedeDistribuir || panel.puedeDespachar)) {

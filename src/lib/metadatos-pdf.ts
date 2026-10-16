@@ -36,6 +36,6 @@ export function metadatosPdf(datos: {
     referencia: datos.referencia,
     hashArchivo: datos.hashArchivo,
     elementosEstampados: ESTAMPADO_POR_TIPO[datos.tipo],
-    disenio: 6,
+    disenio: 7,
   };
 }

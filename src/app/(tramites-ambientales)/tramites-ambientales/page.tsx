@@ -12,6 +12,7 @@ import { obtenerPermisosUsuario, puedeAccederFirmasTramite, puedeAccederTramite,
 import { getPendientesVisitas } from "@/lib/pendientes-visitas";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { resumirPendientesFirma, rotuloCalidadFirma, textoPendientesFirma } from "@/lib/calidad-firma";
+import { textoEsperaA } from "@/components/EsperaTurnoFirma";
 import { GloboPendientes } from "@/components/GloboPendientes";
 import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
@@ -97,7 +98,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {s.rol === "FIRMA" ? "Firmar" : "Revisar"}
                     </Link>
                   ) : (
-                    <Chip>Espera turno</Chip>
+                    <span className="max-w-[220px] text-right text-[11px] leading-snug text-stone-500">{textoEsperaA(s.esperaA)}</span>
                   )
                 }
               />

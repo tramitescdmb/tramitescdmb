@@ -3,7 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import { ArrowLeft, FileCheck2 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { db } from "@/lib/db";
-import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { firmantesAnteriores, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { EsperaTurnoFirma } from "@/components/EsperaTurnoFirma";
 import { FirmarSolicitudInline } from "@/components/FirmarSolicitudInline";
 import { TituloSeccion } from "@/components/sgdea/ui";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
@@ -44,7 +45,7 @@ export default async function FirmarSolicitudPage({ params }: { params: Promise<
   const conSello = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.length > 0);
   const hermanas = await db.solicitudFirma.findMany({
     where: { documentoContratoId: solicitud.documentoContratoId! },
-    select: { rol: true, orden: true, estado: true },
+    select: { rol: true, orden: true, estado: true, recordadoEn: true, usuarioAsignado: { select: { nombre: true } } },
   });
   const puedeActuarYo = solicitud.estado === "PENDIENTE" && puedeActuarSolicitud(hermanas, solicitud);
 
@@ -69,9 +70,10 @@ export default async function FirmarSolicitudPage({ params }: { params: Promise<
           Esta solicitud ya fue resuelta.
         </p>
       ) : !puedeActuarYo ? (
-        <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-6 text-center text-sm text-amber-700">
-          Debe(n) resolver primero quien(es) tiene(n) un turno anterior.
-        </p>
+        <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-6 text-center text-sm text-amber-700">
+          <p className="mb-2">Aún no es su turno: primero debe firmar quien tiene un turno anterior.</p>
+          <EsperaTurnoFirma esperaA={firmantesAnteriores(hermanas, solicitud)} solicitudId={solicitud.id} />
+        </div>
       ) : (
         <FirmarSolicitudInline
           rol={solicitud.rol === "FIRMA" ? "FIRMA" : "VISTO_BUENO"}

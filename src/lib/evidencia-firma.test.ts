@@ -23,7 +23,7 @@ describe("navegadorLegible", () => {
 describe("textoSelloTiempo", () => {
   it("distingue la bitácora interna de un token RFC 3161", () => {
     const en = new Date("2026-10-15T17:09:05Z");
-    expect(textoSelloTiempo({ en, fuente: "Bitácora encadenada del SGDEA (SHA-256)", token: null })).toMatch(/ · Bitácora SHA-256$/);
+    expect(textoSelloTiempo({ en, fuente: "Bitácora encadenada del SGDEA (SHA-256)", token: null })).not.toMatch(/Bitácora|·/);
     expect(textoSelloTiempo({ en, fuente: "https://tsa.ejemplo.co", token: "MIIB..." })).toMatch(/ · RFC 3161 \(https:\/\/tsa\.ejemplo\.co\)$/);
     expect(textoSelloTiempo({ en: null, fuente: null, token: null })).toBeNull();
   });

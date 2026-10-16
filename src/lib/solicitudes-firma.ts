@@ -775,6 +775,7 @@ export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
     where: { usuarioAsignadoId: usuarioId, estado: "PENDIENTE", ...filtroTipo },
     include: {
       asignadoPor: { select: { nombre: true } },
+      recordadoPor: { select: { nombre: true } },
       comunicacion: { select: { id: true, radicado: true, asunto: true, tipo: true, documentos: { select: { id: true, nombre: true, mimeType: true }, orderBy: { createdAt: "asc" } } } },
       documentoArchivo: {
         select: {
@@ -812,7 +813,8 @@ export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
   });
 
   const idsObjetivo = solicitudes.map(claveObjetivo);
-  const hermanasPorObjetivo = new Map<string, { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma }[]>();
+  type Hermana = { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma; recordadoEn: Date | null; usuarioAsignado: { nombre: string; correoNotificacion: string | null } };
+  const hermanasPorObjetivo = new Map<string, Hermana[]>();
   if (idsObjetivo.length > 0) {
     const hermanas = await db.solicitudFirma.findMany({
       where:
@@ -823,7 +825,17 @@ export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
             : tipo === "documentoArchivo"
               ? { documentoArchivoId: { in: idsObjetivo } }
               : { documentoExpedienteId: { in: idsObjetivo } },
-      select: { comunicacionId: true, documentoContratoId: true, documentoExpedienteId: true, documentoArchivoId: true, rol: true, orden: true, estado: true },
+      select: {
+        comunicacionId: true,
+        documentoContratoId: true,
+        documentoExpedienteId: true,
+        documentoArchivoId: true,
+        rol: true,
+        orden: true,
+        estado: true,
+        recordadoEn: true,
+        usuarioAsignado: { select: { nombre: true, correoNotificacion: true } },
+      },
     });
     for (const h of hermanas) {
       const clave = claveObjetivo(h);
@@ -833,10 +845,47 @@ export async function listarBuzon(usuarioId: string, tipo: TipoObjetivo) {
   }
 
   return solicitudes.map((s) => {
-    const clave = claveObjetivo(s);
+    const hermanas = hermanasPorObjetivo.get(claveObjetivo(s)) ?? [];
     return {
       ...s,
-      puedeActuar: puedeActuarSolicitud(hermanasPorObjetivo.get(clave) ?? [], s),
+      puedeActuar: puedeActuarSolicitud(hermanas, s),
+      esperaA: firmantesAnteriores(hermanas, s),
     };
   });
+}
+
+export type FirmanteAnterior = { nombre: string; recordadoEn: Date | null };
+
+export function firmantesAnteriores<T extends { rol: RolFirmante; orden: number; estado: EstadoSolicitudFirma; recordadoEn?: Date | null; usuarioAsignado: { nombre: string } }>(
+  todas: T[],
+  solicitud: { orden: number }
+): FirmanteAnterior[] {
+  return todas
+    .filter((s) => s.rol === "FIRMA" && s.orden < solicitud.orden && s.estado === "PENDIENTE")
+    .map((s) => ({ nombre: s.usuarioAsignado.nombre, recordadoEn: s.recordadoEn ?? null }));
+}
+
+const ESPERA_ENTRE_RECORDATORIOS_MS = 4 * 60 * 60 * 1000;
+
+export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId: string): Promise<{ avisados: string[]; yaAvisados: string[] }> {
+  const solicitud = await db.solicitudFirma.findUnique({
+    where: { id: solicitudId },
+    select: { usuarioAsignadoId: true, estado: true, orden: true, comunicacionId: true, documentoContratoId: true, documentoExpedienteId: true, documentoArchivoId: true },
+  });
+  if (!solicitud || solicitud.usuarioAsignadoId !== usuarioId) throw new Error("La solicitud no está asignada a usted.");
+  if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
+  const anteriores = await db.solicitudFirma.findMany({
+    where: { ...whereObjetivo(objetivoDeSolicitud(solicitud)), rol: "FIRMA", estado: "PENDIENTE", orden: { lt: solicitud.orden } },
+    select: { id: true, recordadoEn: true, usuarioAsignado: { select: { nombre: true } } },
+  });
+  if (anteriores.length === 0) throw new Error("Ya es su turno: no hay firmas anteriores pendientes.");
+  const limite = Date.now() - ESPERA_ENTRE_RECORDATORIOS_MS;
+  const porAvisar = anteriores.filter((a) => !a.recordadoEn || a.recordadoEn.getTime() < limite);
+  if (porAvisar.length > 0) {
+    await db.solicitudFirma.updateMany({ where: { id: { in: porAvisar.map((a) => a.id) } }, data: { recordadoEn: new Date(), recordadoPorId: usuarioId } });
+  }
+  return {
+    avisados: porAvisar.map((a) => a.usuarioAsignado.nombre),
+    yaAvisados: anteriores.filter((a) => !porAvisar.includes(a)).map((a) => a.usuarioAsignado.nombre),
+  };
 }

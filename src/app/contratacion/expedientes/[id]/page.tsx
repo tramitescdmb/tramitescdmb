@@ -75,6 +75,7 @@ import { EditarPersonalAsignadoForm } from "@/components/EditarPersonalAsignadoF
 import { EditarDatosContratoForm } from "@/components/EditarDatosContratoForm";
 import { NuevoEspacioInformeForm, EspacioEventualAcciones } from "@/components/EspaciosInformeAcciones";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
+import { MarcaRequiereFirma } from "@/components/MarcaRequiereFirma";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -87,6 +88,35 @@ const TITULO_ESTADO_VALIDACION: Record<string, string> = {
   RECHAZADO: "Quien lo revisó lo rechazó — vea el motivo en la trazabilidad, al final de la página.",
 };
 const TITULO_SIN_VALIDACION = "Desde Contractual los documentos no se validan: se firman cuando lo requieren.";
+
+function EstadoFirmaDocumento({
+  requiereFirma,
+  cargadoEnSecop,
+  solicitudes,
+  totalFirmas,
+}: {
+  requiereFirma: boolean;
+  cargadoEnSecop: boolean;
+  solicitudes: { rol: string; estado: string }[];
+  totalFirmas: number;
+}) {
+  if (!requiereFirma || cargadoEnSecop) return null;
+  const firmantes = solicitudes.filter((s) => s.rol === "FIRMA" && s.estado !== "RECHAZADA");
+  const hechas = firmantes.filter((s) => s.estado === "COMPLETADA").length;
+  const [texto, clase, titulo] =
+    firmantes.length === 0
+      ? totalFirmas > 0
+        ? ["Firmado", "bg-emerald-50 text-emerald-700", "Firmado electrónicamente"]
+        : ["Requiere asignar firmante", "animate-pulse bg-amber-100 text-amber-800", "Falta asignar quién debe firmarlo"]
+      : hechas === firmantes.length
+        ? ["Firmado", "bg-emerald-50 text-emerald-700", "Firmaron todos los firmantes asignados"]
+        : [`Firma en curso · ${hechas} de ${firmantes.length}`, "bg-sky-50 text-sky-700", "Faltan firmantes por firmar"];
+  return (
+    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${clase}`} title={titulo}>
+      {texto}
+    </span>
+  );
+}
 
 function EstadoDocumento({ estado, etapa }: { estado: string; etapa: EtapaContratacion }) {
   const conValidacion = etapa === "PRECONTRACTUAL" || estado !== "PENDIENTE";
@@ -271,6 +301,19 @@ export default async function DetalleExpedienteContractualPage({
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
   const puedeValidarEn = (etapa: EtapaContratacion) => !cerrado && puedeValidarDocumentoContrato(permisos, expediente, etapa);
+  const puedeMarcarFirmaEn = (etapa: EtapaContratacion) => !cerrado && puedeSubirDocumentoContrato(permisos, expediente, etapa);
+  const marcaFirma = (
+    doc: { id: string; requiereFirma: boolean; cargadoEnSecop: boolean; solicitudesFirma: { rol: string; estado: string }[] },
+    totalFirmas: number,
+    etapa: EtapaContratacion
+  ) =>
+    puedeMarcarFirmaEn(etapa) && !doc.cargadoEnSecop ? (
+      <MarcaRequiereFirma
+        documentoId={doc.id}
+        marcado={doc.requiereFirma}
+        puedeQuitar={totalFirmas === 0 && !doc.solicitudesFirma.some((s) => s.rol === "FIRMA" && s.estado !== "RECHAZADA")}
+      />
+    ) : null;
   const puedeRetroceder = !cerrado && puedeGestionarEtapasContratacion(permisos) && idxActual > 0;
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
@@ -317,13 +360,8 @@ export default async function DetalleExpedienteContractualPage({
     return (
       <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
         <EstadoDocumento estado={doc.estadoValidacion} etapa={etapa} />
-        {doc.requiereFirma && !doc.cargadoEnSecop && (
-          <span
-            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"}`}
-          >
-            {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
-          </span>
-        )}
+        <EstadoFirmaDocumento requiereFirma={doc.requiereFirma} cargadoEnSecop={doc.cargadoEnSecop} solicitudes={solicitudes} totalFirmas={doc.firmas.length} />
+        {marcaFirma(doc, doc.firmas.length, etapa)}
         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
         {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
         {firmado && (
@@ -862,21 +900,16 @@ export default async function DetalleExpedienteContractualPage({
                               {item.gestionadoEnSecop && (
                                 <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
                               )}
-                              {!esRequisitoPorPeriodos(item) && item.documento?.requiereFirma && !item.documento.cargadoEnSecop && (
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                    item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
-                                      ? "bg-emerald-50 text-emerald-700"
-                                      : "animate-pulse bg-amber-100 text-amber-800"
-                                  }`}
-                                  title={
-                                    item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA")
-                                      ? "Ya tiene firmante(s) asignado(s)"
-                                      : "Falta asignar quién debe firmarlo"
-                                  }
-                                >
-                                  {item.documento.solicitudesFirma.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
-                                </span>
+                              {!esRequisitoPorPeriodos(item) && item.documento && (
+                                <>
+                                  <EstadoFirmaDocumento
+                                    requiereFirma={item.documento.requiereFirma}
+                                    cargadoEnSecop={item.documento.cargadoEnSecop}
+                                    solicitudes={item.documento.solicitudesFirma}
+                                    totalFirmas={item.documento.totalFirmas}
+                                  />
+                                  {marcaFirma(item.documento, item.documento.totalFirmas, etapa)}
+                                </>
                               )}
                             </p>
                             <p className="flex items-center gap-1 text-[11px] text-stone-400">
@@ -1017,15 +1050,8 @@ export default async function DetalleExpedienteContractualPage({
                               >
                                 <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
                                 {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
-                                {doc.requiereFirma && !doc.cargadoEnSecop && (
-                                  <span
-                                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                      solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"
-                                    }`}
-                                  >
-                                    {solicitudes.some((s) => s.rol === "FIRMA") ? "Firmante asignado" : "Requiere asignar firmante"}
-                                  </span>
-                                )}
+                                <EstadoFirmaDocumento requiereFirma={doc.requiereFirma} cargadoEnSecop={doc.cargadoEnSecop} solicitudes={solicitudes} totalFirmas={doc.firmas.length} />
+                                {marcaFirma(doc, doc.firmas.length, etapa)}
                                 {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
                                   <div className="flex flex-wrap gap-1">
                                     {solicitudes

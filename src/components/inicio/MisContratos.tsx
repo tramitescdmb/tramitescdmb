@@ -18,11 +18,11 @@ function fechaCorta(d: Date) {
   return d.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
-function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
+function Dato({ etiqueta, envolver, children }: { etiqueta: string; envolver?: boolean; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-[10px] font-medium uppercase tracking-wide text-stone-400">{etiqueta}</dt>
-      <dd className="truncate text-xs text-stone-800">{children}</dd>
+      <dd className={`text-xs text-stone-800 ${envolver ? "break-words leading-snug" : "truncate"}`}>{children}</dd>
     </div>
   );
 }
@@ -112,7 +112,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
           <Dato etiqueta="Terminación">
             {fecha(c.terminacion)}
           </Dato>
-          <Dato etiqueta={c.relacion === "CONTRATISTA" ? "Supervisor" : "Contratista"}>
+          <Dato etiqueta={c.relacion === "CONTRATISTA" ? "Supervisor" : "Contratista"} envolver>
             {c.relacion === "CONTRATISTA" ? c.supervisores.join(", ") || "—" : c.contratista ?? "—"}
           </Dato>
         </dl>
@@ -250,7 +250,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
                   {f.codigoProceso && <span className="block font-mono text-[10px] text-stone-500">{f.codigoProceso}</span>}
                   <span className="block text-[10px] text-stone-400">{f.numero}</span>
                 </td>
-                <td className="max-w-[220px] truncate text-stone-600 md:px-3 md:py-1.5">{f.contratista ?? "Sin contratista"}</td>
+                <td className="max-w-[240px] break-words leading-snug text-stone-600 md:px-3 md:py-1.5">{f.contratista ?? "Sin contratista"}</td>
                 <td className="whitespace-nowrap md:px-3 md:py-1.5">
                   <span className="flex items-center gap-1 text-stone-600">
                     <CalendarClock className="h-3.5 w-3.5 text-stone-400" aria-hidden />

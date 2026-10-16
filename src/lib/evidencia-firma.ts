@@ -33,5 +33,5 @@ export function textoSelloTiempo(sello: { en: Date | null; fuente: string | null
   if (!sello.en) return null;
   const fecha = formatearFechaHoraLarga(sello.en);
   if (sello.token) return `${fecha} · RFC 3161${sello.fuente ? ` (${sello.fuente})` : ""}`;
-  return `${fecha} · Bitácora SHA-256`;
+  return fecha;
 }

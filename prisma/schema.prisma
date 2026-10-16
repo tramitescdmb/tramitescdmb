@@ -209,8 +209,9 @@ model Usuario {
   avisosRechazoRecibidos             AvisoRechazoDocumento[]           @relation("AvisoRechazoSubidoPor")
   avisosRechazoGenerados             AvisoRechazoDocumento[]           @relation("AvisoRechazoRechazadoPor")
 
-  solicitudesFirmaAsignadas SolicitudFirma[] @relation("SolicitudFirmaAsignado")
-  solicitudesFirmaCreadas   SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
+  solicitudesFirmaAsignadas  SolicitudFirma[] @relation("SolicitudFirmaAsignado")
+  solicitudesFirmaCreadas    SolicitudFirma[] @relation("SolicitudFirmaAsignadoPor")
+  solicitudesFirmaRecordadas SolicitudFirma[] @relation("SolicitudFirmaRecordadaPor")
 
   @@index([dependenciaId])
 }
@@ -1582,6 +1583,8 @@ model SolicitudFirma {
   actoAdministrativoAlFirmar String?
   ip                         String?
   userAgent                  String?
+  recordadoEn                DateTime?
+  recordadoPorId             String?
 
   firmaId            String?
   firmaDocContratoId String?
@@ -1593,6 +1596,7 @@ model SolicitudFirma {
   documentoArchivo    DocumentoArchivo?         @relation(fields: [documentoArchivoId], references: [id], onDelete: Cascade)
   usuarioAsignado     Usuario                   @relation("SolicitudFirmaAsignado", fields: [usuarioAsignadoId], references: [id])
   asignadoPor         Usuario                   @relation("SolicitudFirmaAsignadoPor", fields: [asignadoPorId], references: [id])
+  recordadoPor        Usuario?                  @relation("SolicitudFirmaRecordadaPor", fields: [recordadoPorId], references: [id], onDelete: SetNull)
   firma               Firma?                    @relation("SolicitudFirmaEvento", fields: [firmaId], references: [id])
   firmaDocContrato    FirmaDocumentoContrato?   @relation("SolicitudFirmaEventoContrato", fields: [firmaDocContratoId], references: [id])
   firmaExpediente     FirmaExpedienteDocumento? @relation("SolicitudFirmaEventoExpediente", fields: [firmaExpedienteId], references: [id])

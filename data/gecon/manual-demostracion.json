@@ -119,9 +119,9 @@
     "pasos": [
       "Administrador, Jefe o Personal de Contratación, jefe de la dependencia o supervisor pulsa «Asignar firmantes» en el documento y elige la calidad de cada persona; el documento queda marcado como que requiere firma. El contratista puede marcar «Requiere firma» al cargar, como aviso, pero no asigna firmantes.",
       "Se fija el turno; un número mayor espera a los anteriores.",
-      "Cada firmante revisa el documento en su buzón y firma o rechaza con motivo.",
+      "Cada firmante revisa el documento en su buzón y firma o rechaza con motivo. Si aún no es su turno, el buzón muestra quién firma antes y el botón «Avisar», que le deja el recordatorio en su inicio y en su buzón.",
       "Antes de registrar la firma, el sistema muestra nombre, cargo, acto administrativo, dependencia e identificación con los que se firmará, para confirmarlos.",
-      "El PDF firmado queda con el sello de los firmantes y un código QR."
+      "El PDF firmado lleva el código de verificación (CSV) en el margen de cada página y, al final, la diligencia con los datos de cada firmante y el código QR."
     ],
     "ejemplo": "El informe de octubre del contrato `210-17017-8` lo firma primero el contratista (turno 1) y luego el supervisor (turno 2).",
     "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo y el acto administrativo del firmante a la fecha de firma; el acto aparece debajo del cargo cuando está registrado en Usuarios (tipo de la lista —Resolución, Decreto, Acuerdo, Acta de posesión, Circular o Ley—, número y año; por ejemplo «Resolución 560 de 2026»).",

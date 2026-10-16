@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { EsperaTurnoFirma, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 import { redirect } from "next/navigation";
-import { Inbox, PenLine, Lock, Clock, Mail, FileText } from "lucide-react";
+import { Inbox, PenLine, Clock, Mail, FileText } from "lucide-react";
 import { formatearFechaHora } from "@/lib/fecha";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { TituloSeccion } from "@/components/sgdea/ui";
@@ -75,6 +76,9 @@ export default async function BuzonCorrespondenciaPage() {
                   {ETIQUETA_ROL[s.rol] ?? s.rol}
                   {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
                 </span>
+                {textoRecordatorio(s.recordadoPor, s.recordadoEn) && (
+                  <span className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">{textoRecordatorio(s.recordadoPor, s.recordadoEn)}</span>
+                )}
                 {s.puedeActuar ? (
                   <Link
                     href={s.comunicacion ? `/correspondencia/${s.comunicacion.id}` : `/correspondencia/expedientes/${s.documentoArchivo!.expedienteDocumentalId}`}
@@ -84,10 +88,7 @@ export default async function BuzonCorrespondenciaPage() {
                     {s.rol === "FIRMA" ? "Firmar" : "Dar visto bueno"}
                   </Link>
                 ) : (
-                  <span className="inline-flex flex-none items-center gap-1 rounded-md border border-stone-200 px-3 py-1.5 text-xs text-stone-400" title="Debe(n) resolver primero quien(es) tiene(n) un turno anterior">
-                    <Lock className="h-3.5 w-3.5" aria-hidden />
-                    Esperando turno
-                  </span>
+                  <EsperaTurnoFirma esperaA={s.esperaA} solicitudId={s.id} />
                 )}
                 {s.documentoArchivo && s.documentoArchivo.mimeType === "application/pdf" && (
                   <VistaPreviaDocumento url={`/api/documentos-archivo/${s.documentoArchivo.id}/rotulado`} nombre={s.documentoArchivo.nombre} mimeType={s.documentoArchivo.mimeType} />

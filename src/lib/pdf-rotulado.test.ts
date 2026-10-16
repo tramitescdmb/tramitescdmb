@@ -31,12 +31,18 @@ async function textoSellado(firmas: FirmaRotuloPdf[]): Promise<string> {
   const datos = {
     numeroExpediente: "CDMB-CTO-2026-000039",
     baseUrl,
-    metadatos: metadatosPdf({ tipo: "G", id: "doc1", baseUrl, documento: "Acta de inicio", referencia: "CDMB-CTO-2026-000039", hashArchivo: null }),
+    metadatos: metadatosPdf({ tipo: "G", id: "doc1", baseUrl, documento: "Acta de inicio", referencia: "CDMB-CTO-2026-000039", hashArchivo: "b".repeat(64) }),
   };
   return (await extraerTextoPdf(await estamparFirmaGecon(await pdfEnBlanco(), datos, firmas))) ?? "";
 }
 
 describe("sello de firma GECON", () => {
+  it("el documento no lleva bloque de firmas: la información está en la diligencia", async () => {
+    const texto = await textoSellado([firmante()]);
+    expect(texto).not.toMatch(/DOCUMENTO FIRMADO ELECTRÓNICAMENTE/);
+    expect(texto).toMatch(/DILIGENCIA DE DOCUMENTO ELECTRÓNICO/);
+  });
+
   it("imprime el acto administrativo justo debajo del cargo", async () => {
     const texto = await textoSellado([firmante({ actoAdministrativo: "Resolución 560 de 2026" })]);
     const cargo = texto.indexOf("Profesional Especializado de Tecnologías de Información");
@@ -47,16 +53,16 @@ describe("sello de firma GECON", () => {
     expect(dependencia).toBeGreaterThan(acto);
   });
 
-  it("la diligencia lleva la organización sin «Contratista de la», la norma completa y la evidencia de la firma", async () => {
+  it("la diligencia es compacta: cédula con el nombre, fecha con sello de tiempo e IP con navegador en una línea", async () => {
     const texto = await textoSellado([
-      firmante({ cargo: "Contratista", calidad: "PROYECTO", ip: "190.145.254.226", navegador: "Chrome 141 en Windows 10/11", selloTiempo: "15 de octubre de 2026 · bitácora encadenada SHA-256 de la plataforma" }),
+      firmante({ cargo: "Contratista", calidad: "PROYECTO", ip: "190.145.254.226", navegador: "Chrome 141 en Windows 10/11", selloTiempo: "15 de octubre de 2026 a las 12:12 p. m." }),
     ]);
-    expect(texto).not.toMatch(/Contratista de la/);
-    expect(texto).toMatch(/Organización: Corporación Autónoma Regional/);
+    expect(texto).not.toMatch(/Contratista de la|Organización|Bitácora|Evidencia registrada|DOCUMENTO FIRMADO ELECTRÓNICAMENTE/);
+    expect(texto).toMatch(/Firmante · Proyectó/);
+    expect(texto).toMatch(/Nombre: Luis Alfonso Lozano Camacho · C\.C\. 13743564/);
     expect(texto).toMatch(/Ley 527 de 1999, art\. 7 · Decreto 1074 de 2015/);
-    expect(texto).toMatch(/Dirección IP: 190\.145\.254\.226/);
-    expect(texto).toMatch(/Navegador: Chrome 141 en Windows 10\/11/);
-    expect(texto).toMatch(/Sello de tiempo: 15 de octubre de 2026/);
+    expect(texto).toMatch(/Fecha y hora \(sello de tiempo\): 15 de octubre de 2026 a las 12:12 p\. m\./);
+    expect(texto).toMatch(/IP y navegador: 190\.145\.254\.226 · Chrome 141 en Windows 10\/11/);
     expect(texto).toMatch(/Web Crypto/);
     expect(texto).toMatch(/Verificación pública/);
   });

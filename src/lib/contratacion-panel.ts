@@ -202,7 +202,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
       total: firmas.length,
       listos: firmas.filter((s) => s.puedeActuar).length,
       resumen: resumirPendientesFirma(firmas),
-      lista: firmas.slice(0, 8),
+      lista: firmas.slice(0, 50),
     },
     informes: { total: informes.length, lista: informes.slice(0, 200) },
     liquidaciones,
