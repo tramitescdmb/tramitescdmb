@@ -116,7 +116,7 @@
     "ubicacion": "Detalle del expediente → «Asignar firmantes». Pendientes: [Buzón de firmas](/contratacion/buzon).",
     "resumen": "Se designa quién firma, quién da visto bueno y quién consulta cada documento, con turno de firma.",
     "pasos": [
-      "En el documento se pulsa «Asignar firmantes» y se elige la calidad de cada persona.",
+      "Administrador, Jefe o Personal de Contratación, jefe de la dependencia o supervisor pulsa «Asignar firmantes» en el documento y elige la calidad de cada persona; el documento queda marcado como que requiere firma. El contratista puede marcar «Requiere firma» al cargar, como aviso, pero no asigna firmantes.",
       "Se fija el turno; un número mayor espera a los anteriores.",
       "Cada firmante revisa el documento en su buzón y firma o rechaza con motivo.",
       "Antes de registrar la firma, el sistema muestra nombre, cargo, acto administrativo, dependencia e identificación con los que se firmará, para confirmarlos.",
@@ -152,7 +152,7 @@
     "pasos": [
       "Ingresa con su usuario de red.",
       "En el inicio ve cada contrato con su avance del plazo, los informes por mes y el siguiente paso.",
-      "Carga el soporte del periodo y firma desde el buzón."
+      "Carga el soporte del periodo y, si debe firmarse, marca «Requiere firma»; el supervisor asigna quién firma y el contratista firma desde el buzón cuando le llega el turno."
     ],
     "ejemplo": "`walhal01` ve en el inicio el contrato `210-17017-8` con el avance del plazo, sus informes mensuales y el siguiente paso.",
     "detalle": "La etapa Precontractual es solo del personal de la CDMB: el contratista no la ve ni descarga sus documentos.",

@@ -90,7 +90,7 @@ export function useConfirmacionFirma(modulo: Modulo): { confirmarIdentidad: (opc
               </p>
             )}
             <p className="mt-2 text-[11px] text-stone-500">
-              Si el cargo, el encargo o el acto administrativo no corresponden a su situación actual, cancele y solicite la actualización en Usuarios antes de {verbo}.
+              Si el cargo, el encargo o el acto administrativo no corresponden a su situación actual, cancele y solicite la actualización de su firma con el Administrador.
             </p>
           </>
         )}

@@ -125,17 +125,17 @@ export default async function ContratacionAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.SUPERVISOR_INTERVENTOR}</strong></td>
-            <td className="px-2.5 py-1.5">En los expedientes que supervisa: ver todas las etapas, cargar, editar o eliminar documentos (con registro, salvo en Precontractual) y asignar firmantes. Ver el tablero de sus contratos.</td>
+            <td className="px-2.5 py-1.5">En los expedientes que supervisa: ver todas las etapas, cargar, editar o eliminar documentos (con registro, salvo en Precontractual) y asignar firmantes a lo que cargue el contratista (asignarlos marca el documento como que requiere firma). Ver el tablero de sus contratos.</td>
             <td className="px-2.5 py-1.5">Ver otros expedientes, editar los datos generales, cambiar el contratista, aprobar etapas o eliminar el expediente.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5"><strong>{ETIQUETA_ROL_CONTRATACION.CONTRATISTA}</strong></td>
             <td className="px-2.5 py-1.5">
-              Ver sus expedientes desde la etapa Contractual, también los terminados y cerrados (filtro «Terminados»), cargar sus documentos y firmar lo asignado en Contractual y Postcontractual.
+              Ver sus expedientes desde la etapa Contractual, también los terminados y cerrados (filtro «Terminados»), cargar sus documentos (con la marca «Requiere firma» como aviso para el supervisor) y firmar lo asignado en Contractual y Postcontractual.
             </td>
             <td className="px-2.5 py-1.5">
-              Ver, descargar, cargar o firmar documentos de Precontractual; ver contratos de otros o
-              asignar firmantes.
+              Ver, descargar, cargar o firmar documentos de Precontractual; ver contratos de otros o asignar firmantes
+              (lo hacen el supervisor o el personal de contratación).
             </td>
           </tr>
         </Tabla>
