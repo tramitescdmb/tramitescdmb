@@ -745,6 +745,7 @@ export async function validarDocumentoContrato(
     select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, verificacionRecepcionEn: true },
   });
   if (!doc) throw new Error("El documento no existe.");
+  if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan documentos de la etapa Precontractual.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
   if (doc.estadoValidacion === "RECHAZADO") {
     throw new Error(
@@ -759,7 +760,7 @@ export async function validarDocumentoContrato(
       estadoValidacion: "APROBADO",
       validadoPorId: usuarioId,
       validadoEn: ahora,
-      ...(doc.etapa === "PRECONTRACTUAL" && !doc.verificacionRecepcionEn ? { verificacionRecepcionEn: ahora, verificacionRecepcionPorId: usuarioId } : {}),
+      ...(!doc.verificacionRecepcionEn ? { verificacionRecepcionEn: ahora, verificacionRecepcionPorId: usuarioId } : {}),
     },
   });
 

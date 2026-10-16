@@ -82,10 +82,23 @@ const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   RECHAZADO: "Rechazado",
 };
 const TITULO_ESTADO_VALIDACION: Record<string, string> = {
-  PENDIENTE: "Se aprueba con un solo paso: al firmarse (si requiere firma), al validarlo o al aprobar el paso de esta etapa.",
+  PENDIENTE: "Se aprueba con un solo paso: al firmarse (si requiere firma), al validarlo o al cerrar la etapa.",
   APROBADO: "Ya fue revisado y aprobado.",
   RECHAZADO: "Quien lo revisó lo rechazó — vea el motivo en la trazabilidad, al final de la página.",
 };
+const TITULO_SIN_VALIDACION = "Desde Contractual los documentos no se validan: se firman cuando lo requieren.";
+
+function EstadoDocumento({ estado, etapa }: { estado: string; etapa: EtapaContratacion }) {
+  const conValidacion = etapa === "PRECONTRACTUAL" || estado !== "PENDIENTE";
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${conValidacion ? CLASE_ESTADO_VALIDACION[estado] : "bg-stone-100 text-stone-600"}`}
+      title={conValidacion ? TITULO_ESTADO_VALIDACION[estado] : TITULO_SIN_VALIDACION}
+    >
+      {conValidacion ? ETIQUETA_ESTADO_VALIDACION[estado] : "Cargado"}
+    </span>
+  );
+}
 const CLASE_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "bg-amber-50 text-amber-700",
   APROBADO: "bg-emerald-50 text-emerald-700",
@@ -257,7 +270,7 @@ export default async function DetalleExpedienteContractualPage({
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
   const puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoContrato(permisos, expediente);
-  const puedeValidar = !cerrado && puedeValidarDocumentoContrato(permisos, expediente);
+  const puedeValidarEn = (etapa: EtapaContratacion) => !cerrado && puedeValidarDocumentoContrato(permisos, expediente, etapa);
   const puedeRetroceder = !cerrado && puedeGestionarEtapasContratacion(permisos) && idxActual > 0;
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
@@ -303,9 +316,7 @@ export default async function DetalleExpedienteContractualPage({
     const firmado = doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA"));
     return (
       <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[doc.estadoValidacion]}>
-          {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
-        </span>
+        <EstadoDocumento estado={doc.estadoValidacion} etapa={etapa} />
         {doc.requiereFirma && !doc.cargadoEnSecop && (
           <span
             className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${solicitudes.some((s) => s.rol === "FIRMA") ? "bg-emerald-50 text-emerald-700" : "animate-pulse bg-amber-100 text-amber-800"}`}
@@ -314,7 +325,7 @@ export default async function DetalleExpedienteContractualPage({
           </span>
         )}
         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
-        {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+        {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
         {firmado && (
           <a
             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -902,15 +913,13 @@ export default async function DetalleExpedienteContractualPage({
                             </span>
                           ) : item.documento ? (
                             <div className="flex flex-none flex-wrap items-center justify-end gap-1.5">
-                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[item.documento.estadoValidacion]}`} title={TITULO_ESTADO_VALIDACION[item.documento.estadoValidacion]}>
-                                {ETIQUETA_ESTADO_VALIDACION[item.documento.estadoValidacion]}
-                              </span>
+                              <EstadoDocumento estado={item.documento.estadoValidacion} etapa={etapa} />
                               <VistaPreviaDocumento
                                 url={`/api/contratacion-documentos/${item.documento.id}${item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) ? "/rotulado" : ""}`}
                                 nombre={item.documento.nombre}
                                 mimeType={item.documento.mimeType}
                               />
-                              {puedeValidar && item.documento.estadoValidacion !== "APROBADO" && (
+                              {puedeValidarEn(etapa) && item.documento.estadoValidacion !== "APROBADO" && (
                                 <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
                               )}
                               {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
@@ -1033,7 +1042,7 @@ export default async function DetalleExpedienteContractualPage({
                                   nombre={doc.nombre}
                                   mimeType={doc.mimeType}
                                 />
-                                {puedeValidar && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+                                {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
                                 {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                                   <a
                                     href={`/api/contratacion-documentos/${doc.id}/rotulado`}

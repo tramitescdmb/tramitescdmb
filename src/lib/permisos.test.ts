@@ -265,8 +265,8 @@ describe("Acceso a expedientes contractuales (GECON) por etapa y asignación —
       const personal = permContrat("FUNCIONARIO_CONTRATACION", { asignadoExpedientes: new Set(["expAsignado"]) });
       expect(puedeGestionarExpedienteCompleto(personal, { id: "expOtroDistinto" })).toBe(false);
       expect(puedeGestionarExpedienteCompleto(personal, { id: "expAsignado" })).toBe(true);
-      expect(puedeValidarDocumentoContrato(personal, { id: "expOtroDistinto" })).toBe(false);
-      expect(puedeValidarDocumentoContrato(personal, { id: "expAsignado" })).toBe(true);
+      expect(puedeValidarDocumentoContrato(personal, { id: "expOtroDistinto", dependenciaSolicitanteId: "depA" }, "PRECONTRACTUAL")).toBe(false);
+      expect(puedeValidarDocumentoContrato(personal, { id: "expAsignado", dependenciaSolicitanteId: "depA" }, "PRECONTRACTUAL")).toBe(true);
     });
 
     it("sin ninguna asignación, no ve ningún expediente (denegado por defecto)", () => {
@@ -291,8 +291,19 @@ describe("Acceso a expedientes contractuales (GECON) por etapa y asignación —
     });
 
     it("valida documentos solo donde actúa como personal asignado", () => {
-      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expAsignado" })).toBe(true);
-      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expSupervisado" })).toBe(false);
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expAsignado", dependenciaSolicitanteId: "depA" }, "PRECONTRACTUAL")).toBe(true);
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expSupervisado", dependenciaSolicitanteId: "depA" }, "PRECONTRACTUAL")).toBe(false);
+    });
+
+    it("solo se valida en Precontractual: desde Contractual los documentos se firman", () => {
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expAsignado", dependenciaSolicitanteId: "depA" }, "CONTRACTUAL")).toBe(false);
+      expect(puedeValidarDocumentoContrato(supervisorYPersonal, { id: "expAsignado", dependenciaSolicitanteId: "depA" }, "POSTCONTRACTUAL")).toBe(false);
+    });
+
+    it("el jefe de la dependencia solicitante valida en Precontractual", () => {
+      const jefe = permContrat("JEFE_DEPENDENCIA", { dependenciaId: "depA" });
+      expect(puedeValidarDocumentoContrato(jefe, { id: "expX", dependenciaSolicitanteId: "depA" }, "PRECONTRACTUAL")).toBe(true);
+      expect(puedeValidarDocumentoContrato(jefe, { id: "expX", dependenciaSolicitanteId: "depB" }, "PRECONTRACTUAL")).toBe(false);
     });
 
     it("un jefe de dependencia que también supervisa ve los de su dependencia y los que supervisa", () => {

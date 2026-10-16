@@ -364,9 +364,14 @@ export function puedeEditarConTrazaDocumentoContrato(
   return gestionaComoSupervisor(permisos, expediente.id);
 }
 
-export function puedeValidarDocumentoContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+export function puedeValidarDocumentoContrato(
+  permisos: PermisosUsuario,
+  expediente: { id: string; dependenciaSolicitanteId: string },
+  documentoEtapa: EtapaContratacion
+): boolean {
+  if (documentoEtapa !== "PRECONTRACTUAL") return false;
   if (puedeEditarSinTrazaDocumentoContrato(permisos)) return true;
-  return gestionaComoPersonal(permisos, expediente.id);
+  return gestionaComoPersonal(permisos, expediente.id) || esJefeDeLaDependencia(permisos, expediente.dependenciaSolicitanteId);
 }
 
 export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean {

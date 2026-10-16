@@ -67,7 +67,8 @@
     "pasos": [
       "Se abre la etapa actual.",
       "Se carga el archivo de cada requisito.",
-      "Quien revisa lo valida con un solo clic («Validar»); en Precontractual esa validación también deja registrada la verificación de recepción.",
+      "En Precontractual, el Personal de Contratación asignado, el Jefe de Contratación o el jefe de la dependencia lo valida con un solo clic («Validar»), que deja registrada también la verificación de recepción.",
+      "Desde Contractual no hay validación: los documentos se firman cuando lo requieren.",
       "Se pueden cargar documentos fuera del catálogo."
     ],
     "ejemplo": "En `CDMB-CTO-2026-000006` la etapa Precontractual exige la Hoja de vida SIGEP y el Certificado de Disponibilidad Presupuestal (CDP); la Contractual exige el Registro Presupuestal (RP) y, cada mes, el pago de aportes a seguridad social (planilla PILA).",

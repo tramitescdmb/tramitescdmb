@@ -56,6 +56,7 @@ function expedientesParaAsignarFirmantes(p: PermisosUsuario) {
 function expedientesParaValidar(p: PermisosUsuario) {
   const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
   if (p.rolesContratacion.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
+  if (p.rolesContratacion.has("JEFE_DEPENDENCIA") && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
   return expedientesDonde(caminos, gestionaTodo(p));
 }
 
@@ -88,7 +89,7 @@ async function documentosPorGestionar(permisos: PermisosUsuario) {
     solicitudesFirma: { none: { rol: "FIRMA", estado: { not: "RECHAZADA" } } },
     expediente: asignables,
   };
-  const wherePorValidar: Prisma.DocumentoContratoWhereInput | null = validables && { estadoValidacion: "PENDIENTE", requiereFirma: false, expediente: validables };
+  const wherePorValidar: Prisma.DocumentoContratoWhereInput | null = validables && { etapa: "PRECONTRACTUAL", estadoValidacion: "PENDIENTE", requiereFirma: false, expediente: validables };
   const [sinFirmante, totalSinFirmante, porValidar, totalPorValidar] = await Promise.all([
     whereSinFirmante ? db.documentoContrato.findMany({ where: whereSinFirmante, orderBy: { createdAt: "asc" }, take: 200, select: SELECT_DOCUMENTO_POR_GESTIONAR }) : Promise.resolve([]),
     whereSinFirmante ? db.documentoContrato.count({ where: whereSinFirmante }) : Promise.resolve(0),

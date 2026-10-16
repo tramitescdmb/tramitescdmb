@@ -12,11 +12,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { id: true, expedienteId: true, expediente: { select: { cerrado: true } } } });
+  const doc = await db.documentoContrato.findUnique({
+    where: { id },
+    select: { id: true, etapa: true, expedienteId: true, expediente: { select: { cerrado: true, dependenciaSolicitanteId: true } } },
+  });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
   if (doc.expediente.cerrado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
-  if (!puedeValidarDocumentoContrato(permisos, { id: doc.expedienteId })) {
-    return NextResponse.json({ error: "No tiene permiso para validar documentos." }, { status: 403 });
+  if (doc.etapa !== "PRECONTRACTUAL") {
+    return NextResponse.json({ error: "Solo se validan documentos de la etapa Precontractual; en las demás etapas los documentos se firman." }, { status: 400 });
+  }
+  if (!puedeValidarDocumentoContrato(permisos, { id: doc.expedienteId, dependenciaSolicitanteId: doc.expediente.dependenciaSolicitanteId }, doc.etapa)) {
+    return NextResponse.json({ error: "Validan el personal de contratación asignado, el jefe de contratación o el jefe de la dependencia solicitante." }, { status: 403 });
   }
 
   try {
