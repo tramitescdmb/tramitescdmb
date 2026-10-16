@@ -10,6 +10,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
 import { sincronizarContratistaDeUsuario, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { normalizarActoAdministrativo } from "@/lib/acto-administrativo";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
 
 const NIVELES_VALIDOS: NivelAccesoTramite[] = ["VER", "EDITAR"];
@@ -58,9 +59,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : null)
     : undefined;
   const denominacionEncargo: boolean | undefined = "denominacionEncargo" in body ? Boolean(body.denominacionEncargo) : undefined;
-  const actoAdministrativoCargo: string | null | undefined = "actoAdministrativoCargo" in body
-    ? (typeof body.actoAdministrativoCargo === "string" && body.actoAdministrativoCargo.trim() ? body.actoAdministrativoCargo.trim().slice(0, 160) : null)
-    : undefined;
+  const acto = "actoAdministrativoCargo" in body ? normalizarActoAdministrativo(body.actoAdministrativoCargo) : null;
+  if (acto?.error) return NextResponse.json({ error: acto.error }, { status: 400 });
+  const actoAdministrativoCargo: string | null | undefined = acto ? acto.valor : undefined;
   const sexo: string | null | undefined = "sexo" in body
     ? (esSexo(body.sexo) ? body.sexo : null)
     : undefined;

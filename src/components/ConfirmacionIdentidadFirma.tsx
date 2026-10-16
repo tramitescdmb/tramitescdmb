@@ -78,10 +78,10 @@ export function useConfirmacionFirma(modulo: Modulo): { confirmarIdentidad: (opc
             <p className="mt-3 text-xs text-stone-600">Usted va a {verbo} como:</p>
             <div className="mt-1.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2.5 text-sm text-stone-800">
               <p className="font-semibold">{identidad.nombre}</p>
+              <p className="text-xs text-stone-600">{identidad.identificacion ?? "Sin número de identificación"}</p>
               <p>{identidad.cargo}</p>
               {identidad.actoAdministrativo && <p>{identidad.actoAdministrativo}</p>}
               {identidad.dependencia && <p className="text-xs text-stone-600">{identidad.dependencia}</p>}
-              <p className="text-xs text-stone-600">{identidad.identificacion ?? "Sin número de identificación"}</p>
             </div>
             {identidad.faltantes.length > 0 && (
               <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">

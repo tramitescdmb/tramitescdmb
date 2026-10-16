@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Hash, Landmark, FileSignature, FileText, ShieldCheck, Building2, User, Files, Flag, CalendarDays } from "lucide-react";
+import { Hash, Landmark, FileSignature, FileText, ShieldCheck, Building2, User, UserCog, Files, Flag, CalendarDays, CalendarCheck } from "lucide-react";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 
@@ -14,9 +14,11 @@ const COLUMNAS: { titulo: string; icono: ReactNode; ancho: number }[] = [
   { titulo: "Modalidad", icono: <ShieldCheck className="h-3.5 w-3.5" aria-hidden />, ancho: 140 },
   { titulo: "Dependencia", icono: <Building2 className="h-3.5 w-3.5" aria-hidden />, ancho: 190 },
   { titulo: "Contratista", icono: <User className="h-3.5 w-3.5" aria-hidden />, ancho: 170 },
+  { titulo: "Supervisor", icono: <UserCog className="h-3.5 w-3.5" aria-hidden />, ancho: 170 },
   { titulo: "Documentos", icono: <Files className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
   { titulo: "Etapa", icono: <Flag className="h-3.5 w-3.5" aria-hidden />, ancho: 140 },
   { titulo: "Suscripción", icono: <CalendarDays className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
+  { titulo: "Terminación", icono: <CalendarCheck className="h-3.5 w-3.5" aria-hidden />, ancho: 110 },
 ];
 const ANCHOS_DEFECTO = COLUMNAS.map((c) => c.ancho);
 
@@ -30,10 +32,13 @@ export type FilaExpedienteContractual = {
   modalidad: string;
   dependencia: string;
   contratista: string | null;
+  supervisor: string | null;
+  supervisorSinUsuario: boolean;
   documentos: number;
   etapa: string;
   tonoEtapa: "pendiente" | "cerrado" | "activa";
   firma: string | null;
+  terminacion: string | null;
   creado: string;
 };
 
@@ -44,7 +49,7 @@ const CLASE_ETAPA: Record<FilaExpedienteContractual["tonoEtapa"], string> = {
 };
 
 export function TablaExpedientesContractuales({ filas }: { filas: FilaExpedienteContractual[] }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("expedientes-contractuales", ANCHOS_DEFECTO);
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("expedientes-contractuales-v2", ANCHOS_DEFECTO);
   const anchoTotal = anchos.reduce((a, b) => a + b, 0);
 
   return (
@@ -81,11 +86,20 @@ export function TablaExpedientesContractuales({ filas }: { filas: FilaExpediente
             <td className="px-3 py-2 text-xs text-stone-500">{e.modalidad}</td>
             <td className="px-3 py-2 text-xs text-stone-500">{e.dependencia}</td>
             <td className="px-3 py-2 text-xs text-stone-500">{e.contratista ?? "—"}</td>
+            <td className="px-3 py-2 text-xs text-stone-500">
+              {e.supervisor ?? "—"}
+              {e.supervisorSinUsuario && (
+                <span className="mt-0.5 block text-[10px] text-amber-700" title="Reportado por SECOP II; aún no existe un usuario con su documento">
+                  SECOP II · sin usuario
+                </span>
+              )}
+            </td>
             <td className="px-3 py-2 text-xs text-stone-500">{e.documentos}</td>
             <td className="px-3 py-2 text-xs">
               <span className={`inline-block rounded-full px-2 py-0.5 font-medium ${CLASE_ETAPA[e.tonoEtapa]}`}>{e.etapa}</span>
             </td>
             <td className="px-3 py-2 text-xs text-stone-600">{e.firma ?? "Sin suscribir"}</td>
+            <td className="px-3 py-2 text-xs text-stone-600">{e.terminacion ?? "—"}</td>
           </tr>
         ))}
       </tbody>

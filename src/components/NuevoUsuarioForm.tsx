@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AtSign, BadgeCheck, Briefcase, FileText, KeyRound, Lock, Network, PenLine, ShieldCheck, UserRound } from "lucide-react";
+import { AtSign, BadgeCheck, Briefcase, KeyRound, Lock, Network, PenLine, ShieldCheck, UserRound } from "lucide-react";
 import { CamposPersona, CLASE_CAMPO_PERSONA } from "@/components/CamposPersona";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
-import { personaVacia, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
-import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo } from "@/lib/denominacion-empleo";
+import { nombreCompletoPersona, personaVacia, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
+import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
+import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
+import { CampoActoAdministrativo } from "@/components/CampoActoAdministrativo";
+import { VistaPreviaSelloFirma } from "@/components/VistaPreviaSelloFirma";
 import { cargoParaSexo } from "@/lib/cargos";
 
 type Acceso = "DIRECTORIO_ACTIVO" | "LOCAL";
@@ -30,7 +33,8 @@ export function NuevoUsuarioForm({
   const [denominacionEmpleo, setDenominacionEmpleo] = useState("");
   const [denominacionComplemento, setDenominacionComplemento] = useState("");
   const [denominacionEncargo, setDenominacionEncargo] = useState(false);
-  const [actoAdministrativoCargo, setActoAdministrativoCargo] = useState("");
+  const [actoAdministrativoCargo, setActoAdministrativoCargo] = useState<string | null>(null);
+  const [errorActo, setErrorActo] = useState<string | null>(null);
   const [accesoFirma, setAccesoFirma] = useState(true);
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set());
   const [cargoEncargoIds, setCargoEncargoIds] = useState<Set<string>>(new Set());
@@ -73,6 +77,7 @@ export function NuevoUsuarioForm({
     if (persona.tipoPersona === "JURIDICA" ? !persona.razonSocial.trim() : !persona.nombres.trim() || !persona.apellidos.trim()) {
       return setError(persona.tipoPersona === "JURIDICA" ? "Indique la razón social." : "Indique los nombres y los apellidos.");
     }
+    if (errorActo) return setError(errorActo);
     setGuardando(true);
     try {
       const res = await fetch("/api/usuarios", {
@@ -88,7 +93,7 @@ export function NuevoUsuarioForm({
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
           denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
-          actoAdministrativoCargo: actoAdministrativoCargo.trim() || null,
+          actoAdministrativoCargo,
           accesoFirma,
           cargoIds: Array.from(cargoIds),
           cargoEncargoIds: Array.from(cargoEncargoIds),
@@ -232,20 +237,13 @@ export function NuevoUsuarioForm({
             />
           </label>
         </div>
-        <label className="block max-w-md">
-          <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
-            <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
-            Acto administrativo del cargo <span className="font-normal text-stone-400">(opcional)</span>
-          </span>
-          <input
-            value={actoAdministrativoCargo}
-            onChange={(e) => setActoAdministrativoCargo(e.target.value)}
-            maxLength={160}
-            placeholder="Resolución 1520 de 2026"
-            className={CLASE_CAMPO_PERSONA}
-          />
-          <span className="mt-0.5 block text-[11px] text-stone-400">Si se diligencia, aparece en la firma debajo del cargo.</span>
-        </label>
+        <CampoActoAdministrativo
+          valorInicial={null}
+          onChange={(valor, err) => {
+            setActoAdministrativoCargo(valor);
+            setErrorActo(err);
+          }}
+        />
         {admiteEncargo(denominacionEmpleo) && (
           <label className="flex items-center gap-2 text-sm text-stone-700">
             <input
@@ -261,6 +259,13 @@ export function NuevoUsuarioForm({
           <input type="checkbox" checked={accesoFirma} onChange={(e) => setAccesoFirma(e.target.checked)} className="rounded border-stone-200" />
           Puede firmar electrónicamente oficios y memorandos
         </label>
+        <VistaPreviaSelloFirma
+          nombre={nombreCompletoPersona(persona)}
+          identificacion={textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}
+          cargo={denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ?? null}
+          actoAdministrativo={actoAdministrativoCargo}
+          dependencia={null}
+        />
       </div>
 
       {cargos.length > 0 && (

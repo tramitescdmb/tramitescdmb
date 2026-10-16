@@ -10,6 +10,7 @@ import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { CarpetaExpedienteContractual } from "@/components/CarpetaExpedienteContractual";
 import { formatearFecha } from "@/lib/fecha";
 import { TablaExpedientesContractuales } from "@/components/tablas/TablaExpedientesContractuales";
+import { BotonExportar } from "@/components/BotonExportar";
 
 export default async function ExpedientesContratacionPage({
   searchParams,
@@ -28,6 +29,13 @@ export default async function ExpedientesContratacionPage({
   ]);
 
   const vista = sp.vista === "tabla" || sp.vista === "carpetas" ? sp.vista : puedeGestionarContratistas(permisos) ? "tabla" : "carpetas";
+  const hrefExportar = (formato: "xlsx" | "csv") => {
+    const params = new URLSearchParams(
+      Object.entries({ q: sp.q, etapa: sp.etapa, dependenciaId: sp.dependenciaId, vigencia: sp.vigencia }).filter((par): par is [string, string] => Boolean(par[1]))
+    );
+    params.set("formato", formato);
+    return `/api/contratacion/expedientes/exportar?${params.toString()}`;
+  };
 
   return (
     <section className="space-y-4">
@@ -115,6 +123,7 @@ export default async function ExpedientesContratacionPage({
             Carpetas
           </Link>
         </div>
+        {total > 0 && <BotonExportar hrefXlsx={hrefExportar("xlsx")} hrefCsv={hrefExportar("csv")} />}
       </div>
 
       {filas.length === 0 ? (
@@ -157,10 +166,13 @@ export default async function ExpedientesContratacionPage({
                 modalidad: ETIQUETA_MODALIDAD[e.modalidadSeleccion],
                 dependencia: e.dependenciaSolicitante.nombre,
                 contratista: e.contratista?.nombreORazonSocial ?? null,
+                supervisor: e.supervisores.length ? e.supervisores.map((s) => s.usuario.nombre).join(", ") : e.supervisorSecopNombre,
+                supervisorSinUsuario: e.supervisores.length === 0 && Boolean(e.supervisorSecopNombre),
                 documentos: e._count.documentos,
                 etapa: pendiente ? "Pendiente de inicio" : e.cerrado ? "Cerrado" : ETIQUETA_ETAPA[e.etapaActual],
                 tonoEtapa: pendiente ? "pendiente" : e.cerrado ? "cerrado" : "activa",
                 firma: e.fechaSuscripcion ? formatearFecha(e.fechaSuscripcion) : null,
+                terminacion: e.fechaFinEstimada ? formatearFecha(e.fechaFinEstimada) : null,
                 creado: formatearFecha(e.createdAt),
               };
             })}

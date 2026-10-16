@@ -50,6 +50,7 @@
       "Elige el tipo de contrato entre los que admite esa modalidad o causal.",
       "Diligencia objeto, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",
       "Vincula el contratista y designa supervisores y Personal de Contratación. Si SECOP II reporta el supervisor, se vincula solo cuando existe un usuario con su número de documento; mientras tanto se muestra «sin usuario».",
+      "El listado de expedientes muestra contratista, supervisor, suscripción y terminación, y se exporta a Excel o CSV con los filtros aplicados.",
       "Al guardar, el sistema asigna el consecutivo `CDMB-CTO-AAAA-NNNNNN` y el código de proceso del manual, por ejemplo `CD-CPS-0001-2026`; si el proceso ya tenía código, se escribe en el formulario."
     ],
     "ejemplo": "`CDMB-CTO-2026-000006`, código de proceso `CD-CPS-0001-2026`, contrato `210-17017-8`: servicios profesionales como ingeniero de sistemas al proceso de Tecnologías de la Información, contratación directa por la causal de servicios profesionales y de apoyo a la gestión, $19.800.000, del 28 de julio al 12 de diciembre de 2026.",
@@ -122,7 +123,7 @@
       "El PDF firmado queda con el sello de los firmantes y un código QR."
     ],
     "ejemplo": "El informe de octubre del contrato `210-17017-8` lo firma primero el contratista (turno 1) y luego el supervisor (turno 2).",
-    "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo y el acto administrativo del firmante a la fecha de firma; el acto aparece debajo del cargo cuando está registrado en Usuarios.",
+    "detalle": "El rechazo genera un aviso para quien cargó el archivo; se cierra al reemplazarlo. Cada firma conserva el cargo y el acto administrativo del firmante a la fecha de firma; el acto aparece debajo del cargo cuando está registrado en Usuarios (tipo de la lista —Resolución, Decreto, Acuerdo, Acta de posesión, Circular o Ley—, número y año; por ejemplo «Resolución 560 de 2026»).",
     "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015."
   },
   {
@@ -138,7 +139,7 @@
       "Con sesión iniciada, la ficha técnica muestra hash, IP, agente de usuario y sello de tiempo."
     ],
     "ejemplo": "El acta firmada del contrato `210-17017-8` lleva en su última página el sello con nombre y documento de cada firmante y el QR.",
-    "detalle": "El ZIP del expediente incluye el archivo firmado.",
+    "detalle": "El PDF firmado se descarga desde «Con firma» en cada documento.",
     "fundamento": "Ley 1712 de 2014 · Ley 1581 de 2012."
   },
   {
@@ -154,7 +155,7 @@
       "Carga el soporte del periodo y firma desde el buzón."
     ],
     "ejemplo": "`walhal01` ve en el inicio el contrato `210-17017-8` con el avance del plazo, sus informes mensuales y el siguiente paso.",
-    "detalle": "La etapa Precontractual es solo del personal de la CDMB: el contratista no la ve ni descarga sus documentos. Tampoco descarga el expediente completo en ZIP.",
+    "detalle": "La etapa Precontractual es solo del personal de la CDMB: el contratista no la ve ni descarga sus documentos.",
     "fundamento": "Manual A-BS-MA01."
   },
   {

@@ -1393,6 +1393,7 @@ export async function listarExpedientesContractuales(filtro: FiltrosContratacion
   const page = Math.max(1, parseInt(filtro?.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtro?.vista);
   const where = construirWhereExpedienteContractual(filtro ?? {}, permisos);
+  const soloContractuales = !permisos.esAdmin && permisos.rolesContratacion.has("CONTRATISTA");
 
   const [total, filas] = await Promise.all([
     db.expedienteContractual.count({ where }),
@@ -1404,7 +1405,8 @@ export async function listarExpedientesContractuales(filtro: FiltrosContratacion
       include: {
         dependenciaSolicitante: { select: { nombre: true } },
         contratista: { select: { nombreORazonSocial: true, identificacion: true } },
-        _count: { select: { documentos: true } },
+        supervisores: { select: { usuario: { select: { nombre: true } } } },
+        _count: { select: { documentos: soloContractuales ? { where: { etapa: { not: "PRECONTRACTUAL" } } } : true } },
       },
     }),
   ]);

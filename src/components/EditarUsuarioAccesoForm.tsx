@@ -1,6 +1,8 @@
 "use client";
 
 import { textoIdentificacionFirma } from "@/lib/identificacion-firma";
+import { CampoActoAdministrativo } from "@/components/CampoActoAdministrativo";
+import { VistaPreviaSelloFirma } from "@/components/VistaPreviaSelloFirma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, Leaf, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
@@ -195,7 +197,8 @@ export function EditarUsuarioAccesoForm({
   const [denominacionEmpleo, setDenominacionEmpleo] = useState(denominacionEmpleoActual ?? "");
   const [denominacionComplemento, setDenominacionComplemento] = useState(denominacionComplementoActual ?? "");
   const [denominacionEncargo, setDenominacionEncargo] = useState(denominacionEncargoActual ?? false);
-  const [actoAdministrativoCargo, setActoAdministrativoCargo] = useState(actoAdministrativoCargoActual ?? "");
+  const [actoAdministrativoCargo, setActoAdministrativoCargo] = useState<string | null>(actoAdministrativoCargoActual ?? null);
+  const [errorActo, setErrorActo] = useState<string | null>(null);
   const [accesoFirma, setAccesoFirma] = useState(accesoFirmaActual);
   const [estadoCuenta, setEstadoCuenta] = useState<EstadoCuenta>(estadoCuentaActual);
   const [rol, setRol] = useState(rolActual);
@@ -331,6 +334,11 @@ export function EditarUsuarioAccesoForm({
       setPestana("datos");
       return;
     }
+    if (errorActo) {
+      setError(errorActo);
+      setPestana("firma");
+      return;
+    }
     if (nuevaContrasena && nuevaContrasena.length < politicaPassword.longitudMinima) {
       setError(`La nueva contraseña debe tener al menos ${politicaPassword.longitudMinima} caracteres.`);
       setPestana("cuenta");
@@ -349,7 +357,7 @@ export function EditarUsuarioAccesoForm({
           denominacionEmpleo: denominacionEmpleo || null,
           denominacionComplemento: denominacionComplemento.trim() || null,
           denominacionEncargo: admiteEncargo(denominacionEmpleo) && denominacionEncargo,
-          actoAdministrativoCargo: actoAdministrativoCargo.trim() || null,
+          actoAdministrativoCargo,
           accesoFirma,
           rol,
           estadoCuenta,
@@ -536,17 +544,15 @@ export function EditarUsuarioAccesoForm({
                 className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
             </label>
-            <label className="text-xs font-medium text-stone-600 sm:col-span-2">
-              Acto administrativo del cargo <span className="font-normal text-stone-400">(opcional)</span>
-              <input
-                value={actoAdministrativoCargo}
-                onChange={(e) => setActoAdministrativoCargo(e.target.value)}
-                maxLength={160}
-                placeholder="Resolución 1520 de 2026"
-                className="mt-1 block w-full max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+            <div className="sm:col-span-2">
+              <CampoActoAdministrativo
+                valorInicial={actoAdministrativoCargoActual ?? null}
+                onChange={(valor, err) => {
+                  setActoAdministrativoCargo(valor);
+                  setErrorActo(err);
+                }}
               />
-              <span className="mt-0.5 block text-[11px] font-normal text-stone-400">Nombramiento o encargo. Si se diligencia, aparece en la firma debajo del cargo.</span>
-            </label>
+            </div>
             <label className="text-xs font-medium text-stone-600">
               Dependencia
               <select
@@ -589,22 +595,13 @@ export function EditarUsuarioAccesoForm({
             </span>
           </label>
 
-          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-stone-600">
-            En la firma aparecerá:{" "}
-            <span className="font-medium text-stone-800">
-              {nombreCompletoPersona(persona) || "Nombre del funcionario"}
-              {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ? (
-                <>, {denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo)}</>
-              ) : null}
-              {actoAdministrativoCargo.trim() ? ` ()` : null}
-              {(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre
-                ? ` — ${(dependencias ?? []).find((d) => d.id === dependenciaId)!.nombre}`
-                : null}
-              {textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)
-                ? `, ${textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}`
-                : null}
-            </span>
-          </p>
+          <VistaPreviaSelloFirma
+            nombre={nombreCompletoPersona(persona)}
+            identificacion={textoIdentificacionFirma(persona.identificacion, persona.tipoIdentificacion)}
+            cargo={denominacionParaFirma(denominacionEmpleo || null, sexo || null, denominacionComplemento, denominacionEncargo) ?? (esContratista ? "Contratista" : null)}
+            actoAdministrativo={actoAdministrativoCargo}
+            dependencia={(dependencias ?? []).find((d) => d.id === dependenciaId)?.nombre ?? null}
+          />
         </section>
       </div>
 

@@ -134,7 +134,7 @@ export default async function ContratacionAyudaPage() {
               Ver sus expedientes desde la etapa Contractual, también los terminados y cerrados (filtro «Terminados»), cargar sus documentos y firmar lo asignado en Contractual y Postcontractual.
             </td>
             <td className="px-2.5 py-1.5">
-              Ver, descargar, cargar o firmar documentos de Precontractual; descargar el expediente en ZIP; ver contratos de otros o
+              Ver, descargar, cargar o firmar documentos de Precontractual; ver contratos de otros o
               asignar firmantes.
             </td>
           </tr>
@@ -249,7 +249,7 @@ export default async function ContratacionAyudaPage() {
           <strong>Código de proceso.</strong> Cada expediente se identifica con el código del Manual A-BS-MA01 (num. 6.2): prefijo de la
           modalidad o de la causal, consecutivo de cuatro dígitos por vigencia y año (LP, SA-MC, SA-SI, SA-EBE, SA-LPD, SA-AMP, SA-BP, CM, MC, CD-CPS, CD-CI,
           CD-UM, CD-UO, CD-ACT, CD-A, CD-AI, CD-C, CD-E). Ejemplo: <code>CD-CPS-0012-2026</code>. Se asigna al crear el expediente; si el
-          proceso ya tenía código, se escribe. Aparece en el encabezado, los listados, el inicio, los pendientes y el ZIP, y sirve para
+          proceso ya tenía código, se escribe. Aparece en el encabezado, los listados, el inicio, los pendientes y la exportación a Excel, y sirve para
           buscar. Si cambian la modalidad o la causal, se asigna uno nuevo y queda en la bitácora.
         </p>
         <p>
@@ -294,8 +294,8 @@ export default async function ContratacionAyudaPage() {
         </p>
         <p>
           <Link href="/contratacion/mis-firmas" className="font-medium text-cdmb-700 hover:underline">Mis firmas</Link> reúne lo
-          firmado, con el PDF estampado y su ficha técnica. El sello lleva el nombre y el documento de cada firmante; ese mismo
-          archivo es el que se descarga en el ZIP del expediente.
+          firmado, con el PDF estampado y su ficha técnica. El sello lleva el nombre, el documento, el cargo y, si está registrado, el acto
+          administrativo de cada firmante; ese mismo archivo es el que se descarga con «Con firma».
         </p>
       </Seccion>
 

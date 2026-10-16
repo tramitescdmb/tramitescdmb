@@ -68,7 +68,6 @@ import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { AprobarEtapaContratoBoton } from "@/components/AprobarEtapaContratoBoton";
 import { RetrocederEtapaBoton } from "@/components/RetrocederEtapaBoton";
 import { EliminarExpedienteBoton } from "@/components/EliminarExpedienteBoton";
-import { BotonDescargarZip } from "@/components/BotonDescargarZip";
 import { VincularContratistaForm } from "@/components/VincularContratistaForm";
 import { VincularExpedienteRelacionadoForm } from "@/components/VincularExpedienteRelacionadoForm";
 import { EditarSupervisoresForm } from "@/components/EditarSupervisoresForm";
@@ -508,14 +507,6 @@ export default async function DetalleExpedienteContractualPage({
               <FileCheck2 className="h-3.5 w-3.5" aria-hidden />
               Ficha técnica de firmas
             </Link>
-            {!esContratistaGecon(permisos) && (
-              <BotonDescargarZip
-                href={`/api/contratacion/expedientes/${id}/zip`}
-                nombreArchivo={`${expediente.numero}.zip`}
-                etiqueta="Descargar todo (ZIP)"
-                titulo="Descarga en un ZIP todos los documentos del expediente, en carpetas por etapa"
-              />
-            )}
             {puedeEditarDatosGenerales && (
               <EditarDatosContratoForm
                 expedienteId={id}

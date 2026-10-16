@@ -7,6 +7,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { esClaveDenominacion, esSexo, admiteEncargo } from "@/lib/denominacion-empleo";
 import { leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
+import { normalizarActoAdministrativo } from "@/lib/acto-administrativo";
 import { dataUsuarioDesdePersona, errorPersonaUsuario } from "@/lib/usuarios-persona";
 import { vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 
@@ -34,7 +35,9 @@ export async function POST(req: NextRequest) {
   const denominacionComplemento = typeof body.denominacionComplemento === "string" ? body.denominacionComplemento.trim().slice(0, 120) || null : null;
   const denominacionEncargo = admiteEncargo(denominacionEmpleo) && Boolean(body.denominacionEncargo);
   const accesoFirma = body.accesoFirma !== false;
-  const actoAdministrativoCargo = typeof body.actoAdministrativoCargo === "string" ? body.actoAdministrativoCargo.trim().slice(0, 160) || null : null;
+  const acto = normalizarActoAdministrativo(body.actoAdministrativoCargo);
+  if (acto.error) return NextResponse.json({ error: acto.error }, { status: 400 });
+  const actoAdministrativoCargo = acto.valor;
   const persona = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
   if (!email) {
