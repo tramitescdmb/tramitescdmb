@@ -13,13 +13,26 @@ import { getPendientes } from "@/lib/pendientes";
 import { getPendientesVisitas } from "@/lib/pendientes-visitas";
 import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
-import { obtenerTrabajoPendienteContratacion } from "@/lib/contratacion-panel";
+import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { obtenerPanelMiTrabajo } from "@/lib/correspondencia-panel";
 import type { SessionPayload } from "@/lib/auth";
 
-export type TipoAlerta = "informacion" | "decision" | "visita" | "documento" | "paso" | "firma" | "informe" | "contratista" | "correspondencia" | "flujo";
+export type TipoAlerta =
+  | "informacion"
+  | "decision"
+  | "visita"
+  | "documento"
+  | "paso"
+  | "firma"
+  | "sinFirmante"
+  | "validar"
+  | "informe"
+  | "liquidacion"
+  | "contratista"
+  | "correspondencia"
+  | "flujo";
 
-export type ItemAlerta = { titulo: string; detalle?: string; link: string; tipo: TipoAlerta };
+export type ItemAlerta = { titulo: string; detalle?: string; link: string; tipo: TipoAlerta; cantidad?: number };
 
 export type SeccionAlertasModulo = {
   modulo: "TRAMITES" | "GECON" | "SGDEA";
@@ -116,15 +129,20 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   const items: ItemAlerta[] = [];
   let total = 0;
 
-  for (const i of trabajo.informes.lista) {
-    total++;
+  for (const g of agruparInformes(trabajo.informes.lista)) {
+    const masAtrasado = g[0]!;
+    total += g.length;
     items.push({
-      titulo: `${identificacionContrato(i)} · informe de ${i.mes} por radicar`,
-      detalle: `${i.contratista ?? "Sin contratista"} · ${i.rango}${i.diasDeRetraso > 0 ? ` · ${i.diasDeRetraso} día(s) de retraso` : ""}`,
-      link: `/contratacion/expedientes/${i.expedienteId}?periodo=${i.periodoClave}#periodo-${i.periodoClave}`,
+      titulo: `${identificacionContrato(masAtrasado)} · ${g.length === 1 ? `informe de ${masAtrasado.mes}` : `${g.length} informes`} por radicar`,
+      detalle: `${masAtrasado.contratista ?? "Sin contratista"} · ${g.map((i) => `${i.mes.slice(0, 3)}${i.diasDeRetraso > 0 ? ` ${i.diasDeRetraso} d` : ""}`).join(", ")}`,
+      link: `/contratacion/expedientes/${masAtrasado.expedienteId}?periodo=${masAtrasado.periodoClave}#periodo-${masAtrasado.periodoClave}`,
       tipo: "informe",
+      cantidad: g.length,
     });
   }
+  total += trabajo.sinFirmante.total + trabajo.porValidar.total;
+  items.push(...itemsDocumentosPorContrato(trabajo.sinFirmante.lista, "sinFirmante", "sin firmante asignado"));
+  items.push(...itemsDocumentosPorContrato(trabajo.porValidar.lista, "validar", "por validar"));
   for (const f of trabajo.firmas.lista.filter((x) => x.puedeActuar)) {
     total++;
     items.unshift({
@@ -136,7 +154,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   }
   const enEspera = trabajo.firmas.total - trabajo.firmas.listos;
   if (enEspera > 0) {
-    items.push({ titulo: `${enEspera} firma(s) en espera de turno`, detalle: "Se habilitan cuando firmen los anteriores", link: "/contratacion/buzon", tipo: "firma" });
+    items.push({ titulo: `${enEspera} firma(s) en espera de turno`, detalle: "Se habilitan cuando firmen los anteriores", link: "/contratacion/buzon", tipo: "firma", cantidad: 0 });
   }
   for (const l of trabajo.liquidaciones) {
     total++;
@@ -147,7 +165,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
           ? "Venció el término para liquidar"
           : `Hasta el ${l.estado.limite!.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })} · ${l.estado.dias} día(s)`,
       link: `/contratacion/expedientes/${l.expediente.id}`,
-      tipo: "documento",
+      tipo: "liquidacion",
     });
   }
   if (trabajo.sinContratista > 0) {
@@ -163,6 +181,24 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
     masLink: "/contratacion/panel",
     masTexto: "Ver pendientes en GECON",
   };
+}
+
+function agruparInformes(informes: InformePorRadicar[]): InformePorRadicar[][] {
+  const grupos = new Map<string, InformePorRadicar[]>();
+  for (const i of informes) grupos.set(i.expedienteId, [...(grupos.get(i.expedienteId) ?? []), i]);
+  return [...grupos.values()]
+    .map((g) => [...g].sort((a, b) => b.diasDeRetraso - a.diasDeRetraso))
+    .sort((a, b) => b[0]!.diasDeRetraso - a[0]!.diasDeRetraso);
+}
+
+function itemsDocumentosPorContrato(docs: DocumentoPorGestionar[], tipo: TipoAlerta, estado: string): ItemAlerta[] {
+  return agruparPorExpediente(docs).map((g) => ({
+    titulo: `${identificacionContrato(g.expediente)} · ${g.documentos.length === 1 ? "1 documento" : `${g.documentos.length} documentos`} ${estado}`,
+    detalle: `${g.expediente.contratista ?? "Sin contratista"} · ${g.documentos.map((d) => d.nombre).join(", ")}`,
+    link: `/contratacion/expedientes/${g.expediente.id}#documento-${g.documentos[0]!.id}`,
+    tipo,
+    cantidad: g.documentos.length,
+  }));
 }
 
 async function seccionCorrespondencia(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {

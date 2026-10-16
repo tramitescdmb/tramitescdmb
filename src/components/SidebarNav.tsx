@@ -14,10 +14,13 @@ import {
   Lock,
   LayoutGrid,
   FolderClock,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string | string[] };
+
+const ITEM_INICIO: Item = { href: "/", label: "Inicio", icon: Home, exacto: true };
 
 const ITEM_TRAMITES: Item = {
   href: "/tramites-ambientales",
@@ -67,6 +70,7 @@ export function SidebarNav({
   };
 
   const principal = [
+    ITEM_INICIO,
     ...(mostrarTramites ? [ITEM_TRAMITES] : []),
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
     ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),

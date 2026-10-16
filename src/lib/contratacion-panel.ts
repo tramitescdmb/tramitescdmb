@@ -1,5 +1,6 @@
 import { CODIGO_ACTA_LIQUIDACION, estadoLiquidacion } from "@/lib/liquidacion";
 import { resumirPendientesFirma } from "@/lib/calidad-firma";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
@@ -26,12 +27,96 @@ export type InformePorRadicar = {
   diasDeRetraso: number;
 };
 
+export type DocumentoPorGestionar = {
+  id: string;
+  nombre: string;
+  creado: Date;
+  subidoPor: string;
+  expediente: { id: string; numero: string; numeroContrato: string | null; codigoProceso: string | null; contratista: string | null };
+};
+
+function gestionaTodo(p: PermisosUsuario): boolean {
+  return p.esAdmin || p.rolesContratacion.has("ADMINISTRADOR_CONTRATACION") || p.rolesContratacion.has("JEFE_CONTRATACION");
+}
+
+function expedientesDonde(caminos: Prisma.ExpedienteContractualWhereInput[], todo: boolean): Prisma.ExpedienteContractualWhereInput | null {
+  const base = { eliminado: false, cerrado: false };
+  if (todo) return base;
+  return caminos.length ? { ...base, OR: caminos } : null;
+}
+
+function expedientesParaAsignarFirmantes(p: PermisosUsuario) {
+  const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
+  if (p.rolesContratacion.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
+  if (p.rolesContratacion.has("SUPERVISOR_INTERVENTOR")) caminos.push({ id: { in: Array.from(p.supervisaExpedientes) } });
+  if (p.rolesContratacion.has("JEFE_DEPENDENCIA") && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
+  return expedientesDonde(caminos, gestionaTodo(p));
+}
+
+function expedientesParaValidar(p: PermisosUsuario) {
+  const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
+  if (p.rolesContratacion.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
+  return expedientesDonde(caminos, gestionaTodo(p));
+}
+
+const SELECT_DOCUMENTO_POR_GESTIONAR = {
+  id: true,
+  nombre: true,
+  createdAt: true,
+  subidoPor: { select: { nombre: true } },
+  expediente: { select: { id: true, numero: true, numeroContrato: true, codigoProceso: true, contratista: { select: { nombreORazonSocial: true } } } },
+} satisfies Prisma.DocumentoContratoSelect;
+
+function aDocumentoPorGestionar(d: Prisma.DocumentoContratoGetPayload<{ select: typeof SELECT_DOCUMENTO_POR_GESTIONAR }>): DocumentoPorGestionar {
+  return {
+    id: d.id,
+    nombre: d.nombre,
+    creado: d.createdAt,
+    subidoPor: d.subidoPor.nombre,
+    expediente: { ...d.expediente, contratista: d.expediente.contratista?.nombreORazonSocial ?? null },
+  };
+}
+
+async function documentosPorGestionar(permisos: PermisosUsuario) {
+  const asignables = expedientesParaAsignarFirmantes(permisos);
+  const validables = expedientesParaValidar(permisos);
+  const whereSinFirmante: Prisma.DocumentoContratoWhereInput | null = asignables && {
+    requiereFirma: true,
+    cargadoEnSecop: false,
+    estadoValidacion: "PENDIENTE",
+    firmas: { none: {} },
+    solicitudesFirma: { none: { rol: "FIRMA", estado: { not: "RECHAZADA" } } },
+    expediente: asignables,
+  };
+  const wherePorValidar: Prisma.DocumentoContratoWhereInput | null = validables && { estadoValidacion: "PENDIENTE", requiereFirma: false, expediente: validables };
+  const [sinFirmante, totalSinFirmante, porValidar, totalPorValidar] = await Promise.all([
+    whereSinFirmante ? db.documentoContrato.findMany({ where: whereSinFirmante, orderBy: { createdAt: "asc" }, take: 200, select: SELECT_DOCUMENTO_POR_GESTIONAR }) : Promise.resolve([]),
+    whereSinFirmante ? db.documentoContrato.count({ where: whereSinFirmante }) : Promise.resolve(0),
+    wherePorValidar ? db.documentoContrato.findMany({ where: wherePorValidar, orderBy: { createdAt: "asc" }, take: 200, select: SELECT_DOCUMENTO_POR_GESTIONAR }) : Promise.resolve([]),
+    wherePorValidar ? db.documentoContrato.count({ where: wherePorValidar }) : Promise.resolve(0),
+  ]);
+  return {
+    sinFirmante: { total: totalSinFirmante, lista: sinFirmante.map(aDocumentoPorGestionar), aplica: Boolean(asignables) },
+    porValidar: { total: totalPorValidar, lista: porValidar.map(aDocumentoPorGestionar), aplica: Boolean(validables) },
+  };
+}
+
+export function agruparPorExpediente(docs: DocumentoPorGestionar[]) {
+  const grupos = new Map<string, { expediente: DocumentoPorGestionar["expediente"]; documentos: DocumentoPorGestionar[] }>();
+  for (const d of docs) {
+    const g = grupos.get(d.expediente.id) ?? { expediente: d.expediente, documentos: [] };
+    g.documentos.push(d);
+    grupos.set(d.expediente.id, g);
+  }
+  return [...grupos.values()];
+}
+
 export async function obtenerTrabajoPendienteContratacion(userId: string, permisos: PermisosUsuario, verSinContratista: boolean) {
   const where = construirWhereExpedienteContractual({}, permisos);
   const hoy = hoyColombia();
 
   const gestiona = permisos.esAdmin || !permisos.rolesContratacion.has("CONTRATISTA");
-  const [buzon, enEjecucion, sinContratista, terminados] = await Promise.all([
+  const [buzon, enEjecucion, sinContratista, terminados, porGestionar] = await Promise.all([
     listarBuzon(userId, "documentoContrato"),
     db.expedienteContractual.findMany({
       where: { AND: [where, { etapaActual: "CONTRACTUAL", cerrado: false, fechaInicio: { not: null }, fechaFinEstimada: { not: null } }] },
@@ -70,6 +155,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
           },
         })
       : Promise.resolve([]),
+    documentosPorGestionar(permisos),
   ]);
 
   const liquidaciones = terminados
@@ -120,6 +206,8 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
     informes: { total: informes.length, lista: informes.slice(0, 200) },
     liquidaciones,
     sinContratista,
+    sinFirmante: porGestionar.sinFirmante,
+    porValidar: porGestionar.porValidar,
   };
 }
 
