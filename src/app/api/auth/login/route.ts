@@ -13,6 +13,7 @@ import {
 } from "@/lib/directorio-activo";
 import { sincronizarContratistaDeUsuario, vincularContratistaPorUsuarioRed, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
+import { destinoTrasIngreso } from "@/lib/destino-login";
 
 type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargoAsignaciones: { include: { cargo: true } } } }>;
 
@@ -78,8 +79,8 @@ async function completarDesdeDirectorio(usuario: UsuarioConCargos, perfil: Perfi
 
 export function GET(req: NextRequest) {
   const url = new URL("/login", req.url);
-  const next = req.nextUrl.searchParams.get("next");
-  if (next && next.startsWith("/")) url.searchParams.set("next", next);
+  const next = destinoTrasIngreso(req.nextUrl.searchParams.get("next"));
+  if (next !== "/") url.searchParams.set("next", next);
   return NextResponse.redirect(url, { status: 303 });
 }
 
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const identidad = String(form.get("email") || "").trim().toLowerCase();
   const password = String(form.get("password") || "");
-  const next = String(form.get("next") || "/");
+  const next = destinoTrasIngreso(String(form.get("next") || "/"));
   const modo = String(form.get("modo") || "institucional") === "directorio-activo"
     ? "directorio-activo"
     : "institucional";
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
     return fail(`Demasiados intentos fallidos. Espere ${ventanaMinutos} minutos antes de volver a intentar.`);
   }
 
-  const redirectTo = next && next.startsWith("/") ? next : "/";
+  const redirectTo = next;
 
   if (modo === "directorio-activo") {
     return ingresarPorDirectorioActivo(req, identidad, password, redirectTo, fail);

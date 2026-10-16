@@ -25,8 +25,9 @@ export async function middleware(req: NextRequest) {
 
   if (!resultado) {
     const loginUrl = new URL("/login", req.url);
-    if (pathname !== "/") loginUrl.searchParams.set("next", pathname);
-    const res = NextResponse.redirect(loginUrl);
+    const esLectura = req.method === "GET" || req.method === "HEAD";
+    if (esLectura && pathname !== "/") loginUrl.searchParams.set("next", pathname);
+    const res = NextResponse.redirect(loginUrl, esLectura ? 307 : 303);
     if (token) res.cookies.delete(SESSION_COOKIE_NAME);
     return res;
   }

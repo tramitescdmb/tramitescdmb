@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { destinoTrasIngreso } from "@/lib/destino-login";
 import { IconUser, IconLock, IconShieldCheck } from "@/components/icons";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { directorioActivoConfigurado } from "@/lib/directorio-activo";
@@ -19,7 +20,7 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const error = params.error ? ERRORES[params.error] ?? params.error : null;
-  const next = params.next ?? "/";
+  const next = destinoTrasIngreso(params.next);
   const modo = params.modo === "institucional" ? "institucional" : "directorio-activo";
   const config = await getConfiguracionSitio();
   const hayDirectorioActivo = directorioActivoConfigurado();
