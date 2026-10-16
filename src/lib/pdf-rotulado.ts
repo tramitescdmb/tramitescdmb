@@ -25,7 +25,6 @@ export type MetadatosDocumentoPdf = {
   plataforma: string;
   referencia: string;
   hashArchivo: string | null;
-  metodoHuellaFirma: string;
   elementosEstampados: string;
   disenio: number;
 };
@@ -87,13 +86,13 @@ async function agregarDiligencia(
     page = pdf.addPage([ancho, alto]);
     paginasDiligencia.push(page);
     y = alto - margen;
-    centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO (continuación)", 10, fontBold);
-    y -= 24;
+    centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO (continuación)", 9.5, fontBold);
+    y -= 20;
   };
 
   type Linea = { etiqueta: string; valor: string };
-  const TAM = 8;
-  const INTERLINEA = 11.5;
+  const TAM = 7.2;
+  const INTERLINEA = 9.8;
   const lineasDeDatos = (datos: Linea[]) =>
     datos.flatMap((d) => {
       const e = `${d.etiqueta}: `;
@@ -103,36 +102,36 @@ async function agregarDiligencia(
 
   const seccion = (titulo: string, datos: Linea[]) => {
     const lineas = lineasDeDatos(datos);
-    const altoCaja = lineas.length * INTERLINEA + 10;
-    if (y - (altoCaja + 18) < limiteInferior) nuevaPagina();
-    page.drawText(titulo, { x: margen, y, size: 7.8, font: fontBold, color: NEGRO });
-    y -= 6;
+    const altoCaja = lineas.length * INTERLINEA + 8;
+    if (y - (altoCaja + 14) < limiteInferior) nuevaPagina();
+    page.drawText(titulo, { x: margen, y, size: 7.2, font: fontBold, color: NEGRO });
+    y -= 5;
     page.drawRectangle({ x: margen, y: y - altoCaja, width: util, height: altoCaja, borderColor: BORDE, borderWidth: 0.6 });
-    let ly = y - 13;
+    let ly = y - 11;
     const primeraLinea = ly;
     for (const l of lineas) {
       if (l.e) page.drawText(l.e, { x: margen + 8, y: ly, size: TAM, font, color: NEGRO });
       page.drawText(l.v, { x: margen + 8 + l.anchoEtiqueta, y: ly, size: TAM, font: fontBold, color: NEGRO });
       ly -= INTERLINEA;
     }
-    y -= altoCaja + 16;
+    y -= altoCaja + 12;
     return { pagina: page, primeraLinea };
   };
 
-  centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO", 13, fontBold);
-  y -= 22;
+  centrado("DILIGENCIA DE DOCUMENTO ELECTRÓNICO", 12, fontBold);
+  y -= 18;
   for (const l of partirTexto(
     `El presente documento se expide conforme a las disposiciones sobre firma electrónica establecidas en el artículo 7 de la Ley 527 de 1999, reglamentado por el Decreto 2364 de 2012 (compilado en el Decreto 1074 de 2015). Contiene un código seguro de verificación (CSV) que permite contrastar la autenticidad e integridad de cualquier copia del mismo, ya sea electrónica o en papel.\nPara realizar la verificación deberá accederse a la dirección ${meta.urlBaseValidador} y facilitar el CSV que figura en esta diligencia (o en el margen de cualquier página del documento firmado), o leer el código QR. Obtendrá los datos del documento original y de las firmas electrónicas registradas.`,
     font,
-    7.8,
+    7.2,
     util,
   )) {
-    page.drawText(l, { x: margen, y, size: 7.8, font, color: NEGRO });
-    y -= 10.5;
+    page.drawText(l, { x: margen, y, size: 7.2, font, color: NEGRO });
+    y -= 9.6;
   }
-  y -= 14;
-  centrado("Metadatos del documento:", 10.5, fontBold);
-  y -= 20;
+  y -= 10;
+  centrado("Metadatos del documento:", 9.5, fontBold);
+  y -= 16;
 
   seccion("Información para verificación:", [
     { etiqueta: "Código seguro de verificación (CSV)", valor: meta.csv },
@@ -166,12 +165,11 @@ async function agregarDiligencia(
     { etiqueta: "Tipo de firma", valor: "Firma electrónica · Ley 527 de 1999, art. 7 · Decreto 1074 de 2015" },
     { etiqueta: "Emisor de la firma electrónica", valor: "CDMB" },
     ...(meta.hashArchivo ? [{ etiqueta: "Huella SHA-256 del documento original", valor: meta.hashArchivo }] : []),
-    { etiqueta: "Cálculo de la huella del archivo", valor: "SHA-256 en el navegador al cargar el archivo (Web Crypto)" },
-    { etiqueta: "Cálculo de la huella de cada firma", valor: meta.metodoHuellaFirma },
-    { etiqueta: "Evidencia registrada", valor: "usuario, cargo, fecha y hora, dirección IP y navegador de cada firmante" },
-    { etiqueta: "Método del sello de tiempo", valor: "bitácora encadenada SHA-256 de la plataforma o token RFC 3161 de una autoridad de sellado" },
+    { etiqueta: "Huella del archivo", valor: "SHA-256 (Web Crypto)" },
+    { etiqueta: "Evidencia registrada", valor: "Usuario, cargo, fecha y hora, IP y navegador" },
+    { etiqueta: "Tipo de sello de tiempo", valor: firmas.some((f) => f.selloTiempo?.includes("RFC 3161")) ? "Token RFC 3161" : "Bitácora encadenada SHA-256" },
     { etiqueta: "Elementos estampados", valor: meta.elementosEstampados },
-    { etiqueta: "Verificación pública", valor: `en ${meta.urlBaseValidador} con el CSV o el QR; allí se puede cargar el archivo original y recalcular su huella SHA-256 en el navegador` },
+    { etiqueta: "Verificación pública", valor: "CSV, QR y huella SHA-256 del archivo" },
   ];
   const contenido = seccion("Información asociada al contenido del documento firmado:", [
     ...datosContenido,

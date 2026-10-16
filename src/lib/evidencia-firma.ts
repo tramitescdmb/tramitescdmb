@@ -32,6 +32,6 @@ export function navegadorLegible(userAgent: string | null | undefined): string |
 export function textoSelloTiempo(sello: { en: Date | null; fuente: string | null; token: string | null }): string | null {
   if (!sello.en) return null;
   const fecha = formatearFechaHoraLarga(sello.en);
-  if (sello.token) return `${fecha} · token RFC 3161 de ${sello.fuente ?? "la autoridad de sellado configurada"}`;
-  return `${fecha} · bitácora encadenada SHA-256 de la plataforma`;
+  if (sello.token) return `${fecha} · RFC 3161${sello.fuente ? ` (${sello.fuente})` : ""}`;
+  return `${fecha} · Bitácora SHA-256`;
 }
