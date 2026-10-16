@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2 } from "lucide-react";
+import { ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2, FileSearch } from "lucide-react";
 
 type Firma = {
   id: string;
@@ -142,6 +142,7 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
                 {d.hashArchivo && (
                   <div className="sm:col-span-2 lg:col-span-4">
                     <Dato icono={<Hash className="h-3.5 w-3.5" />} k="SHA-256 del documento original" v={d.hashArchivo} mono />
+                    <ComparadorHuella esperada={d.hashArchivo} />
                   </div>
                 )}
               </div>
@@ -171,6 +172,49 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
             </article>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+async function sha256Archivo(archivo: File): Promise<string> {
+  const huella = await crypto.subtle.digest("SHA-256", await archivo.arrayBuffer());
+  return Array.from(new Uint8Array(huella), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function ComparadorHuella({ esperada }: { esperada: string }) {
+  const [estado, setEstado] = useState<{ nombre: string; huella: string } | "calculando" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function comparar(archivo: File | undefined) {
+    if (!archivo) return;
+    setError(null);
+    setEstado("calculando");
+    try {
+      setEstado({ nombre: archivo.name, huella: await sha256Archivo(archivo) });
+    } catch {
+      setEstado(null);
+      setError("No se pudo leer el archivo en este navegador.");
+    }
+  }
+
+  const coincide = estado && estado !== "calculando" ? estado.huella === esperada.toLowerCase() : null;
+
+  return (
+    <div className="mt-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs text-stone-600">
+      <label className="flex flex-wrap items-center gap-2">
+        <FileSearch className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
+        <span>Comparar con un archivo: la huella se calcula en este navegador, el archivo no se envía.</span>
+        <input type="file" onChange={(e) => comparar(e.target.files?.[0])} className="text-xs file:mr-2 file:rounded-md file:border file:border-stone-200 file:bg-stone-50 file:px-2 file:py-1 file:text-xs" />
+      </label>
+      {estado === "calculando" && <p className="mt-1.5 text-stone-500">Calculando la huella…</p>}
+      {error && <p className="mt-1.5 text-red-700">{error}</p>}
+      {estado && estado !== "calculando" && (
+        <p className={`mt-1.5 font-medium ${coincide ? "text-emerald-700" : "text-red-700"}`}>
+          {coincide
+            ? `«${estado.nombre}» es idéntico al documento original firmado.`
+            : `«${estado.nombre}» no coincide con el original (huella ${estado.huella.slice(0, 16)}…). La copia con sello y diligencia es otro archivo: compare el archivo original, sin sello.`}
+        </p>
       )}
     </div>
   );

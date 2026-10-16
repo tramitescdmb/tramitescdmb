@@ -38,8 +38,6 @@ type VistoFila = { id: string; completadoEn: Date | null; cargoAlFirmar: string 
 
 const ENTIDAD = "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — CDMB";
 
-const entidadDe = (cargo: string) => (/contratista/i.test(cargo) ? `Contratista de la ${ENTIDAD}` : ENTIDAD);
-
 function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma): FirmaPublica[] {
   return [
     ...firmas.map((f) => {
@@ -53,7 +51,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
         fechaHora: f.fechaHora,
         selloTiempoEn: f.selloTiempoEn,
         hashFirma: f.hashContenido,
-        entidad: entidadDe(cargo),
+        entidad: ENTIDAD,
       };
     }),
     ...vistos
@@ -69,7 +67,7 @@ function aPublicas(firmas: FirmaFila[], vistos: VistoFila[], modulo: ModuloFirma
           fechaHora: v.completadoEn!,
           selloTiempoEn: null,
           hashFirma: null,
-          entidad: entidadDe(cargo),
+          entidad: ENTIDAD,
         };
       }),
   ].sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime());

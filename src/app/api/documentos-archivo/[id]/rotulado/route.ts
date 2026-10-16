@@ -9,6 +9,7 @@ import { metadatosPdf } from "@/lib/metadatos-pdf";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
+import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 const USUARIO_SELLO = {
@@ -39,12 +40,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     db.firma.findMany({
       where: { documentoArchivoId: id },
       orderBy: { fechaHora: "asc" },
-      select: { fechaHora: true, hashContenido: true, calidad: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuario: { select: USUARIO_SELLO } },
+      select: {
+        fechaHora: true,
+        hashContenido: true,
+        calidad: true,
+        cargoAlFirmar: true,
+        actoAdministrativoAlFirmar: true,
+        ip: true,
+        userAgent: true,
+        selloTiempoEn: true,
+        selloTiempoFuente: true,
+        selloTiempoToken: true,
+        usuario: { select: USUARIO_SELLO },
+      },
     }),
     db.solicitudFirma.findMany({
       where: { documentoArchivoId: id, rol: "VISTO_BUENO", estado: "COMPLETADA" },
       orderBy: { completadoEn: "asc" },
-      select: { completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuarioAsignado: { select: USUARIO_SELLO } },
+      select: { completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, ip: true, userAgent: true, usuarioAsignado: { select: USUARIO_SELLO } },
     }),
   ]);
 
@@ -68,12 +81,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     nivel: nivelFirma(u),
   });
   const firmantes = [
-    ...firmas.map((f) => ({ ...aSello(f.usuario, f.cargoAlFirmar, f.actoAdministrativoAlFirmar), fechaHora: formatearFechaHoraLarga(f.fechaHora), hash: f.hashContenido, calidad: f.calidad })),
+    ...firmas.map((f) => ({
+      ...aSello(f.usuario, f.cargoAlFirmar, f.actoAdministrativoAlFirmar),
+      fechaHora: formatearFechaHoraLarga(f.fechaHora),
+      hash: f.hashContenido,
+      calidad: f.calidad,
+      ip: f.ip,
+      navegador: navegadorLegible(f.userAgent),
+      selloTiempo: textoSelloTiempo({ en: f.selloTiempoEn, fuente: f.selloTiempoFuente, token: f.selloTiempoToken }),
+    })),
     ...vistos.map((v) => ({
       ...aSello(v.usuarioAsignado, v.cargoAlFirmar, v.actoAdministrativoAlFirmar),
       fechaHora: v.completadoEn ? formatearFechaHoraLarga(v.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",
+      ip: v.ip,
+      navegador: navegadorLegible(v.userAgent),
     })),
   ];
 

@@ -10,6 +10,7 @@ import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
+import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
@@ -46,6 +47,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               hashContenido: true,
               cargoAlFirmar: true,
               actoAdministrativoAlFirmar: true,
+              ip: true,
+              userAgent: true,
+              selloTiempoEn: true,
+              selloTiempoFuente: true,
+              selloTiempoToken: true,
+              calidad: true,
               usuario: {
                 select: {
                   nombre: true,
@@ -95,6 +102,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     hash: f.hashContenido,
     cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "SGDEA"),
     actoAdministrativo: f.actoAdministrativoAlFirmar,
+    calidad: f.calidad,
+    ip: f.ip,
+    navegador: navegadorLegible(f.userAgent),
+    selloTiempo: textoSelloTiempo({ en: f.selloTiempoEn, fuente: f.selloTiempoFuente, token: f.selloTiempoToken }),
   }));
 
   const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");

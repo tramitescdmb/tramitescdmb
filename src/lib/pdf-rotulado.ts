@@ -25,6 +25,8 @@ export type MetadatosDocumentoPdf = {
   plataforma: string;
   referencia: string;
   hashArchivo: string | null;
+  metodoHuellaFirma: string;
+  elementosEstampados: string;
   disenio: number;
 };
 
@@ -145,11 +147,14 @@ async function agregarDiligencia(
       { etiqueta: "Nombre del firmante", valor: f.nombre },
       ...(cargo ? [{ etiqueta: "Cargo del firmante", valor: cargo }] : []),
       ...(f.actoAdministrativo ? [{ etiqueta: "Acto administrativo", valor: f.actoAdministrativo }] : []),
-      { etiqueta: "Organización", valor: /contratista/i.test(cargo ?? "") ? `Contratista de la ${ENTIDAD_EMISORA}` : ENTIDAD_EMISORA },
+      { etiqueta: "Organización", valor: ENTIDAD_EMISORA },
       ...(f.dependencia ? [{ etiqueta: "Dependencia", valor: f.dependencia }] : []),
       { etiqueta: "Calidad", valor: nivelSello(f.calidad) === "visto" ? "Visto bueno" : etiquetaCalidadCompleta({ rol: "FIRMA", calidad: f.calidad }) },
       ...(f.fechaHora ? [{ etiqueta: "Fecha y hora de la firma", valor: f.fechaHora }] : []),
       ...(f.hash ? [{ etiqueta: "Huella de la firma (SHA-256)", valor: f.hash }] : []),
+      ...(f.selloTiempo ? [{ etiqueta: "Sello de tiempo", valor: f.selloTiempo }] : []),
+      ...(f.ip ? [{ etiqueta: "Dirección IP", valor: f.ip }] : []),
+      ...(f.navegador ? [{ etiqueta: "Navegador", valor: f.navegador }] : []),
     ]);
   });
 
@@ -158,9 +163,15 @@ async function agregarDiligencia(
     { etiqueta: "Plataforma", valor: meta.plataforma },
     { etiqueta: "Radicado o expediente", valor: meta.referencia },
     { etiqueta: "Formato del documento", valor: "PDF" },
-    { etiqueta: "Tipo de firma", valor: "Firma electrónica (Ley 527 de 1999, art. 7)" },
+    { etiqueta: "Tipo de firma", valor: "Firma electrónica · Ley 527 de 1999, art. 7 · Decreto 1074 de 2015" },
     { etiqueta: "Emisor de la firma electrónica", valor: "CDMB" },
     ...(meta.hashArchivo ? [{ etiqueta: "Huella SHA-256 del documento original", valor: meta.hashArchivo }] : []),
+    { etiqueta: "Cálculo de la huella del archivo", valor: "SHA-256 en el navegador al cargar el archivo (Web Crypto)" },
+    { etiqueta: "Cálculo de la huella de cada firma", valor: meta.metodoHuellaFirma },
+    { etiqueta: "Evidencia registrada", valor: "usuario, cargo, fecha y hora, dirección IP y navegador de cada firmante" },
+    { etiqueta: "Método del sello de tiempo", valor: "bitácora encadenada SHA-256 de la plataforma o token RFC 3161 de una autoridad de sellado" },
+    { etiqueta: "Elementos estampados", valor: meta.elementosEstampados },
+    { etiqueta: "Verificación pública", valor: `en ${meta.urlBaseValidador} con el CSV o el QR; allí se puede cargar el archivo original y recalcular su huella SHA-256 en el navegador` },
   ];
   const contenido = seccion("Información asociada al contenido del documento firmado:", [
     ...datosContenido,
@@ -272,6 +283,9 @@ export type FirmaRotuloPdf = {
   calidad?: string | null;
   cargo?: string | null;
   actoAdministrativo?: string | null;
+  ip?: string | null;
+  navegador?: string | null;
+  selloTiempo?: string | null;
   nivel?: number;
 };
 

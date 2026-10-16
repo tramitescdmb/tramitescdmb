@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { identidadFirmante } from "@/lib/contratacion";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
+import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { metadatosPdf } from "@/lib/metadatos-pdf";
 import type { DatosFirmaGecon, FirmaRotuloPdf } from "@/lib/pdf-rotulado";
 
@@ -22,12 +23,24 @@ const SELECT_FIRMANTE = {
 export const SELECT_FIRMAS_DOCUMENTO_GECON = {
   firmas: {
     orderBy: { fechaHora: "asc" },
-    select: { fechaHora: true, hashContenido: true, calidad: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuario: { select: SELECT_FIRMANTE } },
+    select: {
+      fechaHora: true,
+      hashContenido: true,
+      calidad: true,
+      cargoAlFirmar: true,
+      actoAdministrativoAlFirmar: true,
+      ip: true,
+      userAgent: true,
+      selloTiempoEn: true,
+      selloTiempoFuente: true,
+      selloTiempoToken: true,
+      usuario: { select: SELECT_FIRMANTE },
+    },
   },
   solicitudesFirma: {
     where: { rol: "VISTO_BUENO", estado: "COMPLETADA" },
     orderBy: { completadoEn: "asc" },
-    select: { completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, usuarioAsignado: { select: SELECT_FIRMANTE } },
+    select: { completadoEn: true, cargoAlFirmar: true, actoAdministrativoAlFirmar: true, ip: true, userAgent: true, usuarioAsignado: { select: SELECT_FIRMANTE } },
   },
 } satisfies Prisma.DocumentoContratoSelect;
 
@@ -65,12 +78,17 @@ export function firmantesDocumentoGecon(doc: DocumentoConFirmas, supervisores: S
       fechaHora: formatearFechaHoraLarga(f.fechaHora),
       hash: f.hashContenido,
       calidad: f.calidad,
+      ip: f.ip,
+      navegador: navegadorLegible(f.userAgent),
+      selloTiempo: textoSelloTiempo({ en: f.selloTiempoEn, fuente: f.selloTiempoFuente, token: f.selloTiempoToken }),
     })),
     ...doc.solicitudesFirma.map((s) => ({
       ...persona(s.usuarioAsignado, supervisores, s.cargoAlFirmar, s.actoAdministrativoAlFirmar),
       fechaHora: s.completadoEn ? formatearFechaHoraLarga(s.completadoEn) : "",
       hash: "",
       calidad: "VISTO_BUENO",
+      ip: s.ip,
+      navegador: navegadorLegible(s.userAgent),
     })),
   ];
 }

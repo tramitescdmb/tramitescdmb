@@ -9,6 +9,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
 import { metadatosPdf } from "@/lib/metadatos-pdf";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
+import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 
@@ -33,6 +34,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           calidad: true,
           cargoAlFirmar: true,
           actoAdministrativoAlFirmar: true,
+          ip: true,
+          userAgent: true,
+          selloTiempoEn: true,
+          selloTiempoFuente: true,
+          selloTiempoToken: true,
           usuario: {
             select: {
               nombre: true,
@@ -54,6 +60,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           completadoEn: true,
           cargoAlFirmar: true,
           actoAdministrativoAlFirmar: true,
+          ip: true,
+          userAgent: true,
           usuarioAsignado: {
             select: {
               nombre: true,
@@ -113,6 +121,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       calidad: f.calidad,
       cargo: f.cargoAlFirmar ?? cargoDelFirmante(f.usuario, "TRAMITES"),
       actoAdministrativo: f.actoAdministrativoAlFirmar,
+      ip: f.ip,
+      navegador: navegadorLegible(f.userAgent),
+      selloTiempo: textoSelloTiempo({ en: f.selloTiempoEn, fuente: f.selloTiempoFuente, token: f.selloTiempoToken }),
       nivel: nivelFirma(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
@@ -128,6 +139,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       calidad: "VISTO_BUENO",
       cargo: s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
       actoAdministrativo: s.actoAdministrativoAlFirmar,
+      ip: s.ip,
+      navegador: navegadorLegible(s.userAgent),
       nivel: nivelFirma(s.usuarioAsignado),
     })),
   ];
