@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { Leaf } from "lucide-react";
+import { FileBadge } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { MigaTramites } from "@/components/MigaTramites";
 import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
@@ -18,7 +18,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   if (!permisos.modulos.has("TRAMITES")) {
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-soft">
-        <Leaf className="mx-auto h-6 w-6 text-stone-300" aria-hidden />
+        <FileBadge className="mx-auto h-6 w-6 text-stone-300" aria-hidden />
         <h1 className="mt-2 text-base font-semibold text-stone-900">Trámites ambientales 2.0 no está disponible</h1>
         <p className="mt-1 text-sm text-stone-500">
           {config.tramitesVisibleFuncionarios
@@ -41,7 +41,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       <div>
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
-            <Leaf className="h-4 w-4" aria-hidden />
+            <FileBadge className="h-4 w-4" aria-hidden />
           </span>
           <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
         </div>

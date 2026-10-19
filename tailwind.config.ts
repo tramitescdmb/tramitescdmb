@@ -2,8 +2,8 @@ import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
 
 const neutros = {
-  50: "#faf8f3",
-  100: "#f1f2ed",
+  50: "#f6f8f7",
+  100: "#eef1ef",
   200: "#e1e5df",
   300: "#c7cec5",
   400: "#9aa59d",
@@ -23,7 +23,13 @@ export default {
         sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans],
       },
       borderRadius: {
-        md: "0.5rem",
+        sm: "0.125rem",
+        DEFAULT: "0.25rem",
+        md: "0.25rem",
+        lg: "0.25rem",
+        xl: "0.375rem",
+        "2xl": "0.375rem",
+        "3xl": "0.5rem",
       },
       colors: {
         stone: neutros,
@@ -78,8 +84,8 @@ export default {
         },
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(27,42,32,0.04), 0 8px 24px -8px rgba(27,42,32,0.10)",
-        "soft-lg": "0 2px 6px rgba(27,42,32,0.05), 0 16px 40px -12px rgba(27,42,32,0.14)",
+        soft: "0 1px 1px rgba(24,36,51,0.04), 0 0 0 1px rgba(24,36,51,0.02)",
+        "soft-lg": "0 2px 4px rgba(24,36,51,0.06), 0 8px 20px -6px rgba(24,36,51,0.14)",
       },
     },
   },

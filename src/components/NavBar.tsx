@@ -6,10 +6,25 @@ import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondenci
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { AvisoTratamientoDatos } from "@/components/AvisoTratamientoDatos";
+import { BarraSuperior } from "@/components/BarraSuperior";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
+
+function subtituloSesion(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  return session.cargos.length > 0
+    ? session.cargos.map((c) => (session.cargosEncargo.includes(c) ? `${c} (E)` : c)).join(" · ")
+    : session.rol === "ADMIN"
+      ? "Administrador"
+      : "Funcionario";
+}
+
+export async function BarraSuperiorSesion() {
+  const session = await getSession();
+  if (!session) return null;
+  return <BarraSuperior nombre={session.nombre} subtitulo={subtituloSesion(session)} iniciales={iniciales(session.nombre)} />;
 }
 
 export async function NavBar() {
@@ -31,20 +46,15 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
-  const subtitulo =
-    session.cargos.length > 0
-      ? session.cargos.map((c) => (session.cargosEncargo.includes(c) ? `${c} (E)` : c)).join(" · ")
-      : session.rol === "ADMIN"
-        ? "Administrador"
-        : "Funcionario";
+  const subtitulo = subtituloSesion(session);
 
   const marca = (
     <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-white">
       {config.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={config.logoUrl} alt="CDMB" className="h-9 w-auto flex-none rounded-md bg-white p-0.5" />
+        <img src={config.logoUrl} alt="CDMB" className="h-8 w-auto flex-none rounded bg-white p-0.5" />
       ) : (
-        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-sm font-bold text-cdmb-700">
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded bg-white text-sm font-bold text-cdmb-700">
           C
         </span>
       )}
@@ -64,12 +74,9 @@ export async function NavBar() {
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
         mostrarContratacion={mostrarContratacion}
-        nombre={session.nombre}
-        subtitulo={subtitulo}
-        iniciales={iniciales(session.nombre)}
       />
 
-      <header className="border-b border-cdmb-800 bg-cdmb-700 lg:hidden">
+      <header className="border-b border-black/20 bg-cdmb-800 lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}
           <MobileNav

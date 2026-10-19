@@ -72,7 +72,7 @@ export function svgMarcadorExterno(forma: "rombo" | "cuadrado", color: string, t
       ? `<rect x="4.5" y="4.5" width="15" height="15" rx="2" transform="rotate(45 12 12)" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`
       : `<rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="${color}" stroke="#ffffff" stroke-width="1.6"/>`;
   const texto = letra
-    ? `<text x="12" y="16" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="2" paint-order="stroke">${letra}</text>`
+    ? `<text x="12" y="16" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="2" paint-order="stroke">${letra}</text>`
     : "";
   return `<svg width="${tamano}" height="${tamano}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))">${figura}${texto}</svg>`;
 }

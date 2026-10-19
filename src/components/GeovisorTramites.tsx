@@ -563,7 +563,7 @@ export function GeovisorTramites({
           iconCreateFunction: (c) =>
             L.divIcon({
               className: "",
-              html: `<div title="${c.getChildCount()} trámites en este sitio: haga clic para separarlos" style="display:flex;align-items:center;justify-content:center;gap:2px;width:34px;height:34px;border-radius:9999px;background:#1b2a20;border:2px solid #ffffff;color:#ffffff;font:700 11px/1 'Work Sans',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.5)"><span style="font-size:9px;opacity:.75">${letra}</span>${c.getChildCount()}</div>`,
+              html: `<div title="${c.getChildCount()} trámites en este sitio: haga clic para separarlos" style="display:flex;align-items:center;justify-content:center;gap:2px;width:34px;height:34px;border-radius:9999px;background:#1b2a20;border:2px solid #ffffff;color:#ffffff;font:700 11px/1 Inter,Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.5)"><span style="font-size:9px;opacity:.75">${letra}</span>${c.getChildCount()}</div>`,
               iconSize: [34, 34],
               iconAnchor: [17, 17],
             }),

@@ -9,11 +9,13 @@ function esRutaPublica(pathname: string) {
 
 export function Cascaron({
   navBar,
+  barraSuperior,
   encabezadoPublico,
   pie,
   children,
 }: {
   navBar: ReactNode;
+  barraSuperior: ReactNode;
   encabezadoPublico: ReactNode;
   pie: ReactNode;
   children: ReactNode;
@@ -40,6 +42,7 @@ export function Cascaron({
     <div className="flex flex-1 flex-col lg:flex-row">
       <div className="print:hidden">{navBar}</div>
       <div className="flex min-w-0 flex-1 flex-col">
+        {barraSuperior}
         <main className="w-full flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">{children}</main>
         <div className="print:hidden">{pie}</div>
       </div>

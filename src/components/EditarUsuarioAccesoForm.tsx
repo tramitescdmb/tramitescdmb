@@ -5,7 +5,7 @@ import { CampoActoAdministrativo } from "@/components/CampoActoAdministrativo";
 import { VistaPreviaSelloFirma } from "@/components/VistaPreviaSelloFirma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, Leaf, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, FileBadge, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
@@ -69,7 +69,7 @@ const PESTANAS: { id: Pestana; etiqueta: string; icono: LucideIcon }[] = [
   { id: "datos", etiqueta: "Datos personales", icono: UserRound },
   { id: "firma", etiqueta: "Firma", icono: PenLine },
   { id: "cuenta", etiqueta: "Cuenta", icono: UserCog },
-  { id: "tramites", etiqueta: "Trámites 2.0", icono: Leaf },
+  { id: "tramites", etiqueta: "Trámites 2.0", icono: FileBadge },
   { id: "modulos", etiqueta: "SGDEA y GECON", icono: Mail },
   { id: "consulta", etiqueta: "VITAL y SINCA 1.0", icono: Eye },
   { id: "visitas", etiqueta: "Visitas", icono: CalendarDays },

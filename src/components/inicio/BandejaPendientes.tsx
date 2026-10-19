@@ -13,7 +13,7 @@ import {
   Gavel,
   Hourglass,
   Inbox,
-  Leaf,
+  FileBadge,
   ListChecks,
   Mail,
   MapPin,
@@ -26,7 +26,7 @@ import {
 import type { SeccionAlertasModulo, TipoAlerta } from "@/lib/alertas-landing";
 
 const MODULOS: Record<SeccionAlertasModulo["modulo"], { icon: LucideIcon; corto: string; barra: string; burbuja: string }> = {
-  TRAMITES: { icon: Leaf, corto: "Trámites 2.0", barra: "bg-cdmb-500", burbuja: "bg-cdmb-100 text-cdmb-700" },
+  TRAMITES: { icon: FileBadge, corto: "Trámites 2.0", barra: "bg-cdmb-500", burbuja: "bg-cdmb-100 text-cdmb-700" },
   GECON: { icon: Briefcase, corto: "GECON", barra: "bg-amber-400", burbuja: "bg-amber-100 text-amber-700" },
   SGDEA: { icon: Mail, corto: "SGDEA", barra: "bg-sky-400", burbuja: "bg-sky-100 text-sky-700" },
 };

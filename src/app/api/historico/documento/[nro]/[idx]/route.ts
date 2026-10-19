@@ -14,7 +14,7 @@ function aviso(estado: number, titulo: string, detalle: string, notaAdmin?: stri
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Documento no disponible — SINCA 1.0</title>
 <style>
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f4;font-family:"Work Sans",system-ui,sans-serif;color:#1c1917;padding:16px;box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f4;font-family:Inter,system-ui,sans-serif;color:#1c1917;padding:16px;box-sizing:border-box}
 main{max-width:460px;background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 h1{font-size:16px;margin:0 0 8px}p{font-size:14px;line-height:1.5;color:#57534e;margin:0 0 12px}
 .nota{background:#fffbeb;border:1px solid #fde68a;color:#78350f;border-radius:8px;padding:10px 12px;font-size:13px}

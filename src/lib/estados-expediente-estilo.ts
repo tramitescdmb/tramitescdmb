@@ -60,7 +60,7 @@ export function svgPinEstado(estado: string, letra?: string): string {
   const { color, glifo } = estiloEstado(estado);
   const insignia = letra
     ? '<circle cx="27" cy="3" r="6.5" fill="#1b2a20" stroke="#ffffff" stroke-width="1.5"/>' +
-      `<text x="27" y="6.3" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="9" font-weight="700" fill="#ffffff">${letra}</text>`
+      `<text x="27" y="6.3" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#ffffff">${letra}</text>`
     : "";
   return (
     '<svg width="34" height="42" viewBox="0 -4 34 42" xmlns="http://www.w3.org/2000/svg">' +

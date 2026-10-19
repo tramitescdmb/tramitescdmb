@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogOut } from "lucide-react";
+import { IconMenu2 as Menu, IconX as X, IconLogout as LogOut } from "@tabler/icons-react";
 import { SidebarNav } from "@/components/SidebarNav";
 
 export function MobileNav({
@@ -54,7 +54,7 @@ export function MobileNav({
             onClick={() => setAbierto(false)}
             className="absolute inset-0 bg-graphite-900/40 backdrop-blur-[2px]"
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-cdmb-700 text-white shadow-soft-lg">
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-cdmb-800 text-white shadow-soft-lg">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <span className="font-semibold text-white">Menú</span>
               <button
@@ -78,7 +78,7 @@ export function MobileNav({
 
             <div className="border-t border-white/10 p-3">
               <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-white/10">
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-menu-500 text-xs font-semibold text-stone-900">
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded bg-acento-500 text-xs font-semibold text-white">
                   {iniciales}
                 </span>
                 <div className="min-w-0 flex-1">

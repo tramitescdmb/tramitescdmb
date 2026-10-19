@@ -7,8 +7,9 @@
 }
 
 body {
-  background-color: #faf8f3;
+  background-color: #f5f7f6;
   color: #1b2a20;
+  font-feature-settings: "cv03", "cv04", "cv11";
 }
 
 ::selection {

@@ -3,43 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Leaf,
-  Link2,
-  Archive,
-  Mail,
-  Briefcase,
-  UserCog,
-  ShieldCheck,
-  Palette,
-  Lock,
-  LayoutGrid,
-  FolderClock,
-  Home,
-  type LucideIcon,
-} from "lucide-react";
+  IconHome,
+  IconFileCertificate,
+  IconPlugConnected,
+  IconArchive,
+  IconInbox,
+  IconBriefcase,
+  IconUserCog,
+  IconShieldCheck,
+  IconPalette,
+  IconLock,
+  IconLayoutGrid,
+  IconFolders,
+  type Icon as TablerIcon,
+} from "@tabler/icons-react";
 
-type Item = { href: string; label: string; icon: LucideIcon; exacto?: boolean; prefijo?: string | string[] };
+export type Item = { href: string; label: string; icon: TablerIcon; exacto?: boolean; prefijo?: string | string[] };
 
-const ITEM_INICIO: Item = { href: "/", label: "Inicio", icon: Home, exacto: true };
+export const ITEM_INICIO: Item = { href: "/", label: "Inicio", icon: IconHome, exacto: true };
 
-const ITEM_TRAMITES: Item = {
+export const ITEM_TRAMITES: Item = {
   href: "/tramites-ambientales",
   label: "Trámites ambientales 2.0",
-  icon: Leaf,
+  icon: IconFileCertificate,
   prefijo: ["/tramites-ambientales", "/tramites", "/expedientes", "/solicitantes", "/visor-tramites", "/planeador", "/firmas"],
 };
-const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: Link2, prefijo: "/vital" };
-const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: Archive, prefijo: "/historico" };
-const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: Mail, prefijo: "/correspondencia" };
-const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GECON", icon: Briefcase, prefijo: "/contratacion" };
+export const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: IconPlugConnected, prefijo: "/vital" };
+export const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: IconArchive, prefijo: "/historico" };
+export const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: IconInbox, prefijo: "/correspondencia" };
+export const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GECON", icon: IconBriefcase, prefijo: "/contratacion" };
 
-const ITEMS_ADMIN: Item[] = [
-  { href: "/usuarios", label: "Usuarios", icon: UserCog },
-  { href: "/auditoria", label: "Auditoría", icon: ShieldCheck },
-  { href: "/admin/apariencia", label: "Apariencia", icon: Palette },
-  { href: "/admin/seguridad", label: "Seguridad", icon: Lock },
-  { href: "/admin/modulos", label: "Módulos", icon: LayoutGrid },
-  { href: "/admin/trd", label: "Clasificación TRD", icon: FolderClock },
+export const ITEMS_ADMIN: Item[] = [
+  { href: "/usuarios", label: "Usuarios", icon: IconUserCog },
+  { href: "/auditoria", label: "Auditoría", icon: IconShieldCheck },
+  { href: "/admin/apariencia", label: "Apariencia", icon: IconPalette },
+  { href: "/admin/seguridad", label: "Seguridad", icon: IconLock },
+  { href: "/admin/modulos", label: "Módulos", icon: IconLayoutGrid },
+  { href: "/admin/trd", label: "Clasificación TRD", icon: IconFolders },
 ];
 
 export function SidebarNav({
@@ -79,7 +79,7 @@ export function SidebarNav({
   ];
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-3" aria-label="Navegación">
+    <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
       <Grupo items={principal} activo={activo} colapsado={colapsado} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>
@@ -90,9 +90,9 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
   return (
     <div>
       {titulo && !colapsado && (
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{titulo}</p>
+        <p className="mb-1 px-5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-white/45">{titulo}</p>
       )}
-      <ul className="space-y-0.5">
+      <ul>
         {items.map((item) => (
           <li key={item.href}>
             <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} />
@@ -110,17 +110,11 @@ function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; c
       href={item.href}
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}
-      className={`flex items-center whitespace-nowrap rounded-xl text-sm font-medium transition-all ${
-        colapsado ? "justify-center px-0 py-1.5" : "gap-3 px-3 py-1.5"
-      } ${activo ? "bg-menu-500 text-stone-900" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+      className={`flex items-center whitespace-nowrap border-l-[3px] text-[14px] transition-colors ${
+        colapsado ? "justify-center px-0 py-3" : "gap-3 px-[17px] py-2.5"
+      } ${activo ? "border-menu-500 bg-black/20 font-semibold text-menu-500" : "border-transparent text-white/85 hover:bg-white/5 hover:text-white"}`}
     >
-      <span
-        className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg transition-colors ${
-          activo ? "bg-white/60 text-stone-900" : "text-white/70"
-        }`}
-      >
-        <Icon className="h-[17px] w-[17px]" aria-hidden />
-      </span>
+      <Icon className="h-5 w-5 flex-none" stroke={1.75} aria-hidden />
       <span className={colapsado ? "sr-only" : undefined}>{item.label}</span>
     </Link>
   );
