@@ -205,7 +205,7 @@ export async function ExpedienteDeModulo({
             </p>
           </div>
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            className={`inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-xs font-medium ${
               cerrado ? "bg-stone-200/70 text-stone-600" : "bg-amber-100 text-amber-800"
             }`}
           >
@@ -222,7 +222,7 @@ export async function ExpedienteDeModulo({
             {totalDocumentos} documento{totalDocumentos === 1 ? "" : "s"}
           </span>
           {expediente.nivelAcceso !== "PUBLICA" && (
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
+            <span className={`inline-flex items-center rounded-sm px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
               {ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]}
             </span>
           )}
@@ -296,7 +296,7 @@ export async function ExpedienteDeModulo({
                                   <span className="flex items-center gap-1.5">
                                     <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
                                     {doc.firmado && (
-                                      <span className="flex-none rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Firmado</span>
+                                      <span className="flex-none rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Firmado</span>
                                     )}
                                   </span>
                                   <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">

@@ -32,3 +32,23 @@ export function EstadoBadge({ estado }: { estado: string }) {
     </span>
   );
 }
+
+const ANILLO_COMUNICACION: Record<string, string> = {
+  RADICADA: "border-techblue-500",
+  EN_REPARTO: "border-amber-500",
+  ASIGNADA: "border-amber-500",
+  EN_TRAMITE: "border-amber-500",
+  INFORMACION_ADICIONAL_REQUERIDA: "border-orange-500",
+  RESPONDIDA: "border-emerald-500",
+  ARCHIVADA: "border-stone-400",
+  ANULADA: "border-red-500",
+};
+
+export function EstadoComunicacionBadge({ estado, etiqueta }: { estado: string; etiqueta: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-stone-700">
+      <span className={`h-3 w-3 flex-none rounded-full border-2 ${ANILLO_COMUNICACION[estado] ?? "border-stone-400"}`} aria-hidden />
+      {etiqueta}
+    </span>
+  );
+}

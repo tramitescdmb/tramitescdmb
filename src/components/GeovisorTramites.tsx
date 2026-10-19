@@ -1088,12 +1088,12 @@ export function GeovisorTramites({
         </div>
         {mensajeMapa && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-[550] flex justify-center">
-            <p className="rounded-full bg-white px-3 py-1 text-xs text-stone-600 shadow">{mensajeMapa}</p>
+            <p className="rounded-sm bg-white px-3 py-1 text-xs text-stone-600 shadow">{mensajeMapa}</p>
           </div>
         )}
         {!mensajeMapa && expedientesVisibles.length === 0 && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-[550] flex justify-center">
-            <p className="rounded-full bg-white px-3 py-1 text-xs text-stone-500 shadow">
+            <p className="rounded-sm bg-white px-3 py-1 text-xs text-stone-500 shadow">
               {expedientes.length === 0 ? "Ningún trámite con este filtro tiene ubicación registrada." : "Ningún trámite coincide con el filtro actual."}
             </p>
           </div>
@@ -1826,7 +1826,7 @@ function PanelMedir({
                   key={r}
                   type="button"
                   onClick={() => onRadioCerca(r)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                  className={`rounded-sm border px-2.5 py-1 text-[11px] ${
                     radioCerca === r ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 text-stone-600 hover:bg-stone-50"
                   }`}
                 >

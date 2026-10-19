@@ -23,7 +23,7 @@ export default async function HistoricoLayout({ children }: { children: ReactNod
           <Archive className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">SINCA 1.0</h1>
           <details className="group relative">
-            <summary className="flex cursor-pointer list-none items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500 hover:bg-stone-200 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500 hover:bg-stone-200 [&::-webkit-details-marker]:hidden">
               <Lock className="h-3 w-3" aria-hidden />
               Solo consulta
             </summary>

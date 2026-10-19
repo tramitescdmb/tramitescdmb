@@ -69,7 +69,7 @@ export function SelectorPersonasPorRol({
                 onClick={() => onAlternar(p.id)}
                 aria-pressed={activo}
                 title={p.dependenciaNombre ?? undefined}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                className={`rounded-sm border px-3.5 py-1.5 text-xs font-medium transition ${
                   activo ? "border-menu-500 bg-menu-500 text-stone-900 shadow-sm" : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:bg-cdmb-50"
                 }`}
               >

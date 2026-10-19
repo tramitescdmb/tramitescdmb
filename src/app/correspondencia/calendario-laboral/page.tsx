@@ -125,7 +125,7 @@ export default async function CalendarioLaboralPage({ searchParams }: { searchPa
                     <td className="px-3 py-2 text-stone-700">{formatearFechaSolo(d.fecha)}</td>
                     <td className="px-3 py-2 text-stone-600">{d.motivo}</td>
                     <td className="px-3 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${d.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
+                      <span className={`rounded-sm px-2 py-0.5 text-xs ${d.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
                         {d.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>

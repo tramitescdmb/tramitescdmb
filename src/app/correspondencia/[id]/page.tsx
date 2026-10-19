@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users, Undo2, Workflow, History, PenTool, Tag, Share2, MessageSquareReply } from "lucide-react";
@@ -334,14 +335,14 @@ export default async function CorrespondenciaDetallePage({
           </div>
           <div className="flex items-center gap-2">
             {vencimiento && (
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${vencimiento.clase}`}>
+              <span className={`inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-xs font-medium ${vencimiento.clase}`}>
                 <Clock className="h-3 w-3" aria-hidden />
                 {vencimiento.texto}
               </span>
             )}
-            <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">{ETIQUETA_ESTADO[c.estado] ?? c.estado}</span>
+            <EstadoComunicacionBadge estado={c.estado} etiqueta={ETIQUETA_ESTADO[c.estado] ?? c.estado} />
             {c.nivelAcceso !== "PUBLICA" && (
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[c.nivelAcceso]}`}>
+              <span className={`rounded-sm px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[c.nivelAcceso]}`}>
                 {ETIQUETA_NIVEL_ACCESO[c.nivelAcceso]}
               </span>
             )}
@@ -387,7 +388,7 @@ export default async function CorrespondenciaDetallePage({
         {c.palabrasClave.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {c.palabrasClave.map((p) => (
-              <span key={p} className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">{p}</span>
+              <span key={p} className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">{p}</span>
             ))}
           </div>
         )}
@@ -419,7 +420,7 @@ export default async function CorrespondenciaDetallePage({
             <Reply className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <span className="text-xs text-stone-500">Respondida por:</span>
             {c.respuestas.map((r) => (
-              <Link key={r.id} href={`/correspondencia/${r.id}`} className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-700 hover:underline">
+              <Link key={r.id} href={`/correspondencia/${r.id}`} className="rounded-sm bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-700 hover:underline">
                 {r.radicado}
               </Link>
             ))}
@@ -474,8 +475,8 @@ export default async function CorrespondenciaDetallePage({
                         <p className="flex items-center gap-2 font-medium text-stone-800">
                           <Users className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
                           {[d.dependencia?.nombre, d.usuario?.nombre].filter(Boolean).join(" · ") || "—"}
-                          {d.activa && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
-                          {d.devueltaEn && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Devuelta</span>}
+                          {d.activa && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cdmb-700">Vigente</span>}
+                          {d.devueltaEn && <span className="rounded-sm bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Devuelta</span>}
                         </p>
                         <p className="text-xs text-stone-500">
                           {fechaHora(d.fechaAsignacion)}{d.asignadoPor ? ` · por ${d.asignadoPor.nombre}` : ""}{d.termino ? ` · término ${d.termino} días` : ""}

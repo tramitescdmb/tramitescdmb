@@ -131,9 +131,9 @@ export function BuscadorExpediente({
                 <span className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-stone-900">{e.numero}</span>
                   {e.porProgramar ? (
-                    <span className="flex-none rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por programar</span>
+                    <span className="flex-none rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por programar</span>
                   ) : (
-                    <span className="flex-none rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Con visita</span>
+                    <span className="flex-none rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Con visita</span>
                   )}
                 </span>
                 <span className="block truncate text-stone-600">{e.tramite}</span>

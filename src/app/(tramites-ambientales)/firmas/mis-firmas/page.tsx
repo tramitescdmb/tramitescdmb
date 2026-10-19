@@ -52,7 +52,7 @@ export default async function MisFirmasTramitesPage() {
                 <p className="flex items-center gap-1.5 truncate text-sm font-medium text-stone-800">
                   {f.documento.nombre}
                   {rotuloCalidadFirma(f.calidad) && (
-                    <span className="flex-none rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
+                    <span className="flex-none rounded-sm bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{rotuloCalidadFirma(f.calidad)}</span>
                   )}
                 </p>
                 <p className="truncate text-xs text-stone-400">

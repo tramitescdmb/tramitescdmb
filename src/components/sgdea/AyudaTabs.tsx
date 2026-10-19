@@ -25,7 +25,7 @@ export function AyudaTabs({
               role="tab"
               aria-selected={sel}
               onClick={() => setActivo(g.id)}
-              className={`flex-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex-1 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
                 sel ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               }`}
             >

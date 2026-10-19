@@ -106,14 +106,14 @@ export function PanelGestionDocumental({
             {clasificacion.retencion && <p className="text-xs text-stone-500">{clasificacion.retencion}</p>}
           </div>
         ) : (
-          <p className="mb-3 inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">Sin clasificar — requerida para cerrar</p>
+          <p className="mb-3 inline-flex rounded-sm bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">Sin clasificar — requerida para cerrar</p>
         )}
         {editable && formularioTrd}
       </Seccion>
 
       <Seccion titulo="Nivel de acceso a la información (Ley 1712/2014)" icono={<ShieldCheck className="h-3.5 w-3.5 text-cdmb-600" aria-hidden />}>
         <p className="mb-3 text-sm text-stone-700">
-          <span className={`mr-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[nivelAcceso] ?? ""}`}>
+          <span className={`mr-2 inline-flex rounded-sm px-2 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[nivelAcceso] ?? ""}`}>
             {ETIQUETA_NIVEL_ACCESO[nivelAcceso] ?? nivelAcceso}
           </span>
           {fundamentoNivelAcceso && <span className="text-xs text-stone-500">Fundamento: {fundamentoNivelAcceso}</span>}

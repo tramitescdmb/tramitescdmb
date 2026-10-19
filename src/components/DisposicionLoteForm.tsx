@@ -145,7 +145,7 @@ export function DisposicionLoteForm({ items }: { items: ItemDisposicionPendiente
                         <p className="text-[11px] text-stone-400">{c.serieSubserie} — cumplió su retención el {c.fechaFinCentral}</p>
                       </div>
                     </div>
-                    <span className="flex-none rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
+                    <span className="flex-none rounded-sm bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
                       {c.sinDisposicionDefinida ? "Sin disposición definida en la TRD" : c.etiquetas}
                     </span>
                   </div>

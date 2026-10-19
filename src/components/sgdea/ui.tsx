@@ -26,7 +26,7 @@ export function TituloSeccion({
         {icon && <Burbuja icon={icon} />}
         {children}
         {contador !== undefined && (
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500">{contador.toLocaleString("es-CO")}</span>
+          <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500">{contador.toLocaleString("es-CO")}</span>
         )}
       </h2>
       {accion && <div className="text-xs">{accion}</div>}

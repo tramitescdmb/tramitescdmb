@@ -83,8 +83,8 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-stone-400">
-              <span className={`rounded-full px-2 py-px font-semibold ${CLASE_ESTADO[c.estado]}`}>{c.estado}</span>
-              {c.relacion === "SUPERVISOR" && <span className="rounded-full bg-sky-50 px-2 py-px font-semibold text-sky-700">Supervisión</span>}
+              <span className={`rounded-sm px-2 py-px font-semibold ${CLASE_ESTADO[c.estado]}`}>{c.estado}</span>
+              {c.relacion === "SUPERVISOR" && <span className="rounded-sm bg-sky-50 px-2 py-px font-semibold text-sky-700">Supervisión</span>}
               Expediente {c.numero}
             </p>
             <h3 className="mt-0.5 text-sm font-semibold text-stone-900">
@@ -181,7 +181,7 @@ export function MisContratos({ contratos, terminados }: { contratos: ContratoLan
             <Briefcase className="h-4 w-4" aria-hidden />
           </span>
           {propios > 0 ? "Mis contratos" : "Contratos que supervisa"}
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{contratos.length}</span>
+          <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{contratos.length}</span>
         </h2>
         <span className="flex items-center gap-3 text-xs">
           {terminados > 0 && (
@@ -216,10 +216,10 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
           Seguimiento de contratos
         </h2>
         <div className="flex flex-wrap gap-1.5 text-[11px]">
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700">{enEjecucion} en ejecución</span>
-          <span className="rounded-full bg-acento-50 px-2.5 py-1 font-medium text-acento-700">{informes} informe(s) por radicar</span>
-          <span className="rounded-full bg-red-50 px-2.5 py-1 font-medium text-red-700">{firmas} firma(s) pendiente(s)</span>
-          <span className="rounded-full bg-sky-50 px-2.5 py-1 font-medium text-sky-700">{porTerminar} por terminar en 15 días</span>
+          <span className="rounded-sm bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700">{enEjecucion} en ejecución</span>
+          <span className="rounded-sm bg-acento-50 px-2.5 py-1 font-medium text-acento-700">{informes} informe(s) por radicar</span>
+          <span className="rounded-sm bg-red-50 px-2.5 py-1 font-medium text-red-700">{firmas} firma(s) pendiente(s)</span>
+          <span className="rounded-sm bg-sky-50 px-2.5 py-1 font-medium text-sky-700">{porTerminar} por terminar en 15 días</span>
         </div>
       </div>
 
@@ -289,11 +289,11 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
                 <td className="md:px-3 md:py-1.5">
                   <span className="flex flex-wrap gap-1 text-[11px]">
                     {f.informesPorRadicar > 0 && (
-                      <span className="rounded-full bg-acento-50 px-2 py-0.5 font-medium text-acento-700">
+                      <span className="rounded-sm bg-acento-50 px-2 py-0.5 font-medium text-acento-700">
                         {f.informesPorRadicar} informe(s){f.maxRetraso > 0 ? ` · ${f.maxRetraso} d` : ""}
                       </span>
                     )}
-                    {f.firmasPendientes > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-700">{f.firmasPendientes} firma(s)</span>}
+                    {f.firmasPendientes > 0 && <span className="rounded-sm bg-red-50 px-2 py-0.5 font-medium text-red-700">{f.firmasPendientes} firma(s)</span>}
                   </span>
                 </td>
                 <td className="ml-auto md:ml-0 md:px-4 md:py-1.5 md:text-right">

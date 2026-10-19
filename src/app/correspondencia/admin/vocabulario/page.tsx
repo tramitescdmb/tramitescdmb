@@ -92,7 +92,7 @@ export default async function VocabularioAdminPage({ searchParams }: { searchPar
                     </td>
                     <td className="px-4 py-2 text-stone-500">{t.categoria ?? "—"}</td>
                     <td className="px-4 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${t.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
+                      <span className={`rounded-sm px-2 py-0.5 text-xs ${t.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
                         {t.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>

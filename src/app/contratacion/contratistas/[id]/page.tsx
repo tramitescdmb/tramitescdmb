@@ -83,10 +83,10 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
         </Link>
         <h1 className="mt-1 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
           {contratista.nombreORazonSocial}
-          {activos.length > 0 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Contrato activo</span>}
+          {activos.length > 0 && <span className="rounded-sm bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Contrato activo</span>}
           {!usuario && (
             <span
-              className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+              className="rounded-sm bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
               title="Todavía no corresponde a un usuario del sistema. Se vincula solo, por número de documento, cuando exista un usuario con ese documento y datos completos: al guardarlo en Usuarios, al ingresar por directorio activo o al pasar el contrato a Contractual."
             >
               Perfil mínimo · sin vincular
@@ -236,7 +236,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
                           {e.cerrado ? (
                             <span className="text-stone-500">Cerrado</span>
                           ) : e.etapaActual === "CONTRACTUAL" ? (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">En ejecución</span>
+                            <span className="rounded-sm bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">En ejecución</span>
                           ) : (
                             <span className="text-stone-500">{ETIQUETA_ETAPA[e.etapaActual]}</span>
                           )}

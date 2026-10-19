@@ -34,12 +34,12 @@ export function PanelFirmas({ filas, acciones, vacio }: { filas: FilaFirmante[];
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-stone-800">
                     {f.nombre}
-                    <span className="ml-1.5 rounded-full bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{f.calidad}</span>
+                    <span className="ml-1.5 rounded-sm bg-cdmb-50 px-1.5 py-0.5 text-[10px] font-medium text-cdmb-700">{f.calidad}</span>
                   </p>
                   <p className="text-xs text-stone-500">{f.cargo}</p>
                   {f.comentario && <p className="mt-0.5 text-xs text-red-700">Motivo: {f.comentario}</p>}
                 </div>
-                <span className={`inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${clase}`}>
+                <span className={`inline-flex flex-none items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-medium ${clase}`}>
                   <Icono className="h-3 w-3" aria-hidden />
                   {ETIQUETA_ESTADO_FILA[f.estado]}
                   {f.fecha && <span className="font-normal opacity-80"> · {formatearFechaHora(f.fecha)}</span>}

@@ -94,15 +94,15 @@ export default async function EditarUsuarioPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${estado.clase}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-medium ${estado.clase}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${estado.punto}`} aria-hidden />
             {estado.etiqueta}
           </span>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${usuario.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"}`}>
+          <span className={`rounded-sm px-2.5 py-1 text-xs font-medium ${usuario.rol === "ADMIN" ? "bg-violet-50 text-violet-700" : "bg-stone-100 text-stone-600"}`}>
             {usuario.rol === "ADMIN" ? "Administrador" : "Funcionario"}
           </span>
           {usuario.directorioActivo && (
-            <span className="rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700" title="Ingresa con las credenciales de la red CDMB, no con una contraseña local">
+            <span className="rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700" title="Ingresa con las credenciales de la red CDMB, no con una contraseña local">
               Directorio activo
             </span>
           )}

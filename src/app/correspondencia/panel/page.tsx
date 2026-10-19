@@ -62,7 +62,7 @@ export default async function PanelMiTrabajoPage() {
                       <td className="px-3 py-2 text-stone-500">{ETIQUETA_ESTADO_PANEL[c.estado]}</td>
                       <td className="whitespace-nowrap px-5 py-2">
                         {c.fechaVencimiento ? (
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${v?.clase ?? "text-stone-500"}`}>{formatearFecha(c.fechaVencimiento)}</span>
+                          <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${v?.clase ?? "text-stone-500"}`}>{formatearFecha(c.fechaVencimiento)}</span>
                         ) : (
                           <span className="text-stone-300">—</span>
                         )}

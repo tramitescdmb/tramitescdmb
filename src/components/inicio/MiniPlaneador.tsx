@@ -147,7 +147,7 @@ export function MiniPlaneador({ agenda, planificador, titulo = "Mis visitas" }: 
                         <Clock className="h-3 w-3 text-stone-400" aria-hidden />
                         {hora12(v.hora)} – {hora12(v.horaFin)}
                       </span>
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE[estadoDe(v)] ?? ""}`}>
+                      <span className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE[estadoDe(v)] ?? ""}`}>
                         {ETIQUETA[estadoDe(v)] ?? v.estado}
                       </span>
                     </span>

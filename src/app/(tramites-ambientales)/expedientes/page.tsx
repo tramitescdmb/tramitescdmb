@@ -146,7 +146,7 @@ export default async function ExpedientesPage({
               <Link
                 key={anio}
                 href={conFiltro({ desde: `${anio}-01-01`, hasta: `${anio}-12-31` })}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`rounded-sm px-3 py-1 text-xs font-medium ${
                   activa ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
                 }`}
               >
@@ -220,7 +220,7 @@ export default async function ExpedientesPage({
       <div className="flex flex-wrap gap-2">
         <Link
           href={conFiltro({ estado: undefined })}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
+          className={`rounded-sm px-3 py-1 text-xs font-medium ${
             !estado ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
           }`}
         >
@@ -230,7 +230,7 @@ export default async function ExpedientesPage({
           <Link
             key={e}
             href={conFiltro({ estado: e })}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+            className={`rounded-sm px-3 py-1 text-xs font-medium ${
               estado === e ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
             }`}
           >

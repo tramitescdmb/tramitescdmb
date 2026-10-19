@@ -89,11 +89,11 @@ export default async function CamposMetadatoPage({ searchParams }: { searchParam
             <details key={c.id} className={`rounded-2xl border border-stone-200 bg-white shadow-soft p-4 ${c.activo ? "" : "opacity-60"}`}>
               <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm font-medium text-stone-800">
                 {c.nombre}
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_TIPO_CAMPO[c.tipo]}</span>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_AMBITO_CAMPO[c.ambito]}</span>
-                {c.serie && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-normal text-cdmb-700">Serie {c.serie.codigo}</span>}
-                {c.obligatorio && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-normal text-amber-700">Obligatorio</span>}
-                {!c.activo && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Inactivo</span>}
+                <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_TIPO_CAMPO[c.tipo]}</span>
+                <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_AMBITO_CAMPO[c.ambito]}</span>
+                {c.serie && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-normal text-cdmb-700">Serie {c.serie.codigo}</span>}
+                {c.obligatorio && <span className="rounded-sm bg-amber-50 px-2 py-0.5 text-[11px] font-normal text-amber-700">Obligatorio</span>}
+                {!c.activo && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Inactivo</span>}
               </summary>
               <form action={`/api/correspondencia/metadatos/${c.id}`} method="post" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <input type="hidden" name="accion" value="editar" />

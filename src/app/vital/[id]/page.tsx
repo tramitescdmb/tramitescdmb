@@ -114,7 +114,7 @@ function Tarjeta({
 
 function ChipDato({ icon: Icon, children }: { icon: typeof MapPin; children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-50 px-2.5 py-1 text-xs text-stone-600">
+    <span className="inline-flex items-center gap-1.5 rounded-sm bg-stone-50 px-2.5 py-1 text-xs text-stone-600">
       <Icon className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
       {children}
     </span>
@@ -270,7 +270,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-semibold text-stone-900">Solicitud VITAL {solicitud.idVital}</h2>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">
+            <span className="rounded-sm bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">
               {nombreTramiteVital(solicitud.idTramiteVital)}
             </span>
             <a

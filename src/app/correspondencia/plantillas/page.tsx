@@ -115,9 +115,9 @@ export default async function PlantillasPage({ searchParams }: { searchParams: P
                 <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm font-medium text-stone-800">
                   <Eye className="h-3.5 w-3.5 flex-none text-stone-400" aria-hidden />
                   {p.nombre}
-                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_AMBITO[p.ambito]}</span>
+                  <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_AMBITO[p.ambito]}</span>
                   {p.vecesUsada > 0 && <span className="text-[11px] font-normal text-stone-400">· usada {p.vecesUsada} {p.vecesUsada === 1 ? "vez" : "veces"}</span>}
-                  {!p.activo && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Inactiva</span>}
+                  {!p.activo && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Inactiva</span>}
                 </summary>
 
                 <div className="mt-3 space-y-2">

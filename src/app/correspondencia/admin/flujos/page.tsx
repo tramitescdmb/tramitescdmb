@@ -98,8 +98,8 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
                     <CircleDashed className="h-4 w-4 flex-none text-stone-400" aria-hidden />
                   )}
                   {f.nombre}
-                  {f.esPlantilla && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Plantilla</span>}
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${f.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
+                  {f.esPlantilla && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Plantilla</span>}
+                  <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${f.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
                     {f.activo ? "Activo" : "Inactivo"}
                   </span>
                 </p>

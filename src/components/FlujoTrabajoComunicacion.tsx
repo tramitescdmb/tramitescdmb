@@ -68,7 +68,7 @@ export async function FlujoTrabajoComunicacion({
               <p className="flex flex-wrap items-center gap-1.5">
                 <CircleDot className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
                 <strong className="text-stone-900">{enCurso.pasoActual.nombre}</strong>
-                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">
+                <span className="rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">
                   {ETIQUETA_TIPO_PASO[enCurso.pasoActual.tipo]}
                 </span>
               </p>

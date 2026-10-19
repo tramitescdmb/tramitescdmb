@@ -53,7 +53,7 @@ export function CarpetaExpediente({ c }: { c: CarpetaData }) {
           )}
         </span>
         <span
-          className={`inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+          className={`inline-flex flex-none items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] font-medium ${
             cerrada ? "bg-stone-200/70 text-stone-600" : "bg-emerald-100 text-emerald-800"
           }`}
         >
@@ -110,7 +110,7 @@ export function CajonDependencia({
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-100/60">
         <FolderCheck className="h-4 w-4 flex-none text-stone-400" aria-hidden />
         {nombre}
-        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500">{total}</span>
+        <span className="rounded-sm bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500">{total}</span>
       </summary>
       <div className="grid grid-cols-1 gap-x-3 gap-y-5 px-4 pb-4 pt-2 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </details>

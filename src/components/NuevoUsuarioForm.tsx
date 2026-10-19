@@ -282,7 +282,7 @@ export function NuevoUsuarioForm({
                     type="button"
                     onClick={() => alternarCargo(c.id)}
                     aria-pressed={activo}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                       activo ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
                     }`}
                   >
@@ -294,7 +294,7 @@ export function NuevoUsuarioForm({
                       onClick={() => alternarCargoEncargo(c.id)}
                       aria-pressed={esEncargo}
                       title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
-                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                      className={`rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold transition ${
                         esEncargo
                           ? "border-amber-400 bg-amber-100 text-amber-800"
                           : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"

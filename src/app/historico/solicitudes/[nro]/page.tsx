@@ -121,7 +121,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
       <BandaTablero>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-semibold text-stone-900">Resolución {base.numeroResolucion ?? "—"}</h2>
-          <span className="rounded-full bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">{base.estado ?? "—"}</span>
+          <span className="rounded-sm bg-cdmb-50 px-2.5 py-0.5 text-xs font-medium text-cdmb-800">{base.estado ?? "—"}</span>
         </div>
         <p className="mt-1.5 text-sm text-stone-700">{base.proyecto || "Sin descripción del proyecto."}</p>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-6">

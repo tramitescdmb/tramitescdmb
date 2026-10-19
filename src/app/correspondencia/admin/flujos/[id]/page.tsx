@@ -52,7 +52,7 @@ export default async function FlujoEditorPage({
       <div className="space-y-2">
         <TituloSeccion>
           {flujo.nombre}
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${flujo.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
+          <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${flujo.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
             {flujo.activo ? "Activo" : "Inactivo"}
           </span>
         </TituloSeccion>
@@ -152,7 +152,7 @@ export default async function FlujoEditorPage({
                 <p className="flex items-center gap-2 font-medium text-stone-800">
                   <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-700">{paso.orden}</span>
                   {paso.nombre}
-                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_TIPO_PASO[paso.tipo]}</span>
+                  <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">{ETIQUETA_TIPO_PASO[paso.tipo]}</span>
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
                   Responsable: {ETIQUETA_ASIGNACION[paso.asignacion]}

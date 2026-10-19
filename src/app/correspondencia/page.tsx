@@ -127,7 +127,7 @@ export default async function CorrespondenciaBandejaPage({
               <Link
                 key={etiqueta}
                 href={href}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
                   activo ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                 }`}
               >
@@ -253,7 +253,7 @@ export default async function CorrespondenciaBandejaPage({
           <span className="flex items-center gap-1.5">
             <Search className="h-4 w-4 text-stone-400" aria-hidden />
             Filtros y período
-            {hayFiltros && <span className="rounded-full bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">Activos</span>}
+            {hayFiltros && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-xs font-medium text-cdmb-700">Activos</span>}
           </span>
           <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
         </summary>

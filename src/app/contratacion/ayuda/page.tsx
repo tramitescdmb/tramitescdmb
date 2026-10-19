@@ -31,7 +31,7 @@ const TONO: Record<string, string> = {
 
 function Chip({ tono, children }: { tono: keyof typeof TONO; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[10.5px] font-medium ${TONO[tono]}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-sm border px-2 py-0.5 font-mono text-[10.5px] font-medium ${TONO[tono]}`}>
       {children}
     </span>
   );

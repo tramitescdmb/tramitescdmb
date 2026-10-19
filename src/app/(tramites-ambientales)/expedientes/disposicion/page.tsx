@@ -52,7 +52,7 @@ export default async function DisposicionExpedientesPage() {
             <div className="flex items-center gap-2.5 border-b border-stone-100 px-5 py-3">
               <Burbuja icon={Archive} />
               <h2 className="text-sm font-semibold text-stone-900">{ETIQUETA_FASE[fase]}</h2>
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{lista.length}</span>
+              <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{lista.length}</span>
             </div>
             <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">

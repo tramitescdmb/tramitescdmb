@@ -218,7 +218,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
                           <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px] text-stone-500">{r.numero}</td>
                           <td className="min-w-[220px] px-3 py-2 font-medium leading-snug text-stone-800">{r.titulo}</td>
                           <td className="whitespace-nowrap px-3 py-2">
-                            <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${CLASE_ESTADO[r.estado]}`}>
+                            <span className={`inline-flex rounded-sm px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${CLASE_ESTADO[r.estado]}`}>
                               {ETIQUETA_ESTADO_MOREQ[r.estado]}
                             </span>
                           </td>

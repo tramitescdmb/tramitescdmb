@@ -82,13 +82,13 @@ export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModu
               key={p.id}
               type="button"
               onClick={() => setActivo(p.id)}
-              className={`inline-flex flex-none items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+              className={`inline-flex flex-none items-center gap-1.5 rounded-sm px-3 py-1 text-xs font-medium transition ${
                 activo === p.id ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               }`}
             >
               {p.etiqueta}
               {p.total > 0 && (
-                <span className={`rounded-full px-1.5 text-[10px] ${activo === p.id ? "bg-white/20" : "bg-amber-100 text-amber-800"}`}>{p.total}</span>
+                <span className={`rounded-sm px-1.5 text-[10px] ${activo === p.id ? "bg-white/20" : "bg-amber-100 text-amber-800"}`}>{p.total}</span>
               )}
             </button>
           ))}
@@ -114,7 +114,7 @@ export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModu
                     <TipoIcon className="h-3 w-3" aria-hidden />
                   </span>
                   {etiqueta}
-                  <span className="rounded-full bg-white px-1.5 text-[10px] font-medium text-stone-500 ring-1 ring-stone-200">
+                  <span className="rounded-sm bg-white px-1.5 text-[10px] font-medium text-stone-500 ring-1 ring-stone-200">
                     {delTipo.reduce((a, i) => a + (i.cantidad ?? 1), 0)}
                   </span>
                 </p>

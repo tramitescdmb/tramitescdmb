@@ -256,7 +256,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium ${
                             e.estado === "ABIERTO" ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-600"
                           }`}
                         >
@@ -264,7 +264,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
                           {e.estado === "ABIERTO" ? "Abierto" : "Cerrado"}
                         </span>
                         {e.nivelAcceso !== "PUBLICA" && (
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[e.nivelAcceso]}`}>
+                          <span className={`rounded-sm px-2 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[e.nivelAcceso]}`}>
                             {ETIQUETA_NIVEL_ACCESO[e.nivelAcceso]}
                           </span>
                         )}

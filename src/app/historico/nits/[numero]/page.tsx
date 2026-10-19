@@ -73,7 +73,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
             </div>
           </div>
           {entidad.regimen && (
-            <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">{entidad.regimen}</span>
+            <span className="flex-none rounded-sm bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">{entidad.regimen}</span>
           )}
         </div>
       </BandaTablero>

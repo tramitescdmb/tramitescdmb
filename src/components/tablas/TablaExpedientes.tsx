@@ -66,7 +66,7 @@ export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
                 <EstadoBadge estado={f.estado} />
                 {f.archivado && (
                   <span
-                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-stone-800 px-2 py-0.5 text-xs font-medium text-white"
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm bg-stone-800 px-2 py-0.5 text-xs font-medium text-white"
                     title="Cerrado y archivado en el SGDEA"
                   >
                     <Lock className="h-3 w-3" aria-hidden />

@@ -44,7 +44,7 @@ export default async function SolicitanteDetallePage({
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold text-stone-900">{nombreCompletoSolicitante(solicitante)}</h1>
           {solicitante.granContribuyente && (
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+            <span className="inline-flex items-center rounded-sm bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
               Gran contribuyente
             </span>
           )}

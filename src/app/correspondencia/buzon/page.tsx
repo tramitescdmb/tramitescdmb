@@ -42,7 +42,7 @@ export default async function BuzonCorrespondenciaPage() {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-800">
             <grupo.Icono className="h-4 w-4 text-cdmb-600" aria-hidden />
             {grupo.titulo}
-            <span className="rounded-full bg-stone-100 px-2 text-xs font-medium text-stone-500">{grupo.lista.length}</span>
+            <span className="rounded-sm bg-stone-100 px-2 text-xs font-medium text-stone-500">{grupo.lista.length}</span>
           </h2>
           {grupo.lista.length === 0 ? (
             <p className="rounded-xl border border-dashed border-stone-200 p-4 text-center text-xs text-stone-400">{grupo.vacio}</p>
@@ -72,12 +72,12 @@ export default async function BuzonCorrespondenciaPage() {
                     · Asignado por {s.asignadoPor.nombre} el {formatearFechaHora(s.asignadoEn)}
                   </p>
                 </div>
-                <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
+                <span className="flex-none rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
                   {ETIQUETA_ROL[s.rol] ?? s.rol}
                   {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}
                 </span>
                 {textoRecordatorio(s.recordadoPor, s.recordadoEn) && (
-                  <span className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">{textoRecordatorio(s.recordadoPor, s.recordadoEn)}</span>
+                  <span className="flex-none rounded-sm bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">{textoRecordatorio(s.recordadoPor, s.recordadoEn)}</span>
                 )}
                 {s.puedeActuar ? (
                   <Link

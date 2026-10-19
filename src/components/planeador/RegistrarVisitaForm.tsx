@@ -241,7 +241,7 @@ export function RegistrarVisitaForm({
         type="button"
         onClick={() => alternarTema(t.id)}
         aria-pressed={activo}
-        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-left text-xs ${
+        className={`inline-flex items-center gap-1 rounded-sm border px-2.5 py-1 text-left text-xs ${
           activo ? "border-cdmb-600 bg-cdmb-600 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-cdmb-300 hover:bg-cdmb-50"
         }`}
       >
@@ -352,7 +352,7 @@ export function RegistrarVisitaForm({
           <div className="flex flex-wrap gap-1.5">
             {sugeridos.map(chip)}
             {b.temasNuevos.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 rounded-full border border-violet-600 bg-violet-600 px-2.5 py-1 text-xs text-white">
+              <span key={t} className="inline-flex items-center gap-1 rounded-sm border border-violet-600 bg-violet-600 px-2.5 py-1 text-xs text-white">
                 <Plus className="h-3 w-3" aria-hidden />
                 {t}
                 <button type="button" onClick={() => fijar("temasNuevos", b.temasNuevos.filter((x) => x !== t))} aria-label={`Quitar ${t}`} className="rounded-full hover:bg-white/20">

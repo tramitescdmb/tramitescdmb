@@ -213,7 +213,7 @@ export default async function ExpedienteDetallePage({
             </p>
           </div>
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            className={`inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-xs font-medium ${
               abierto ? "bg-emerald-100 text-emerald-800" : "bg-stone-200/70 text-stone-600"
             }`}
           >
@@ -227,7 +227,7 @@ export default async function ExpedienteDetallePage({
           {expediente.documentos.length > 0 && ` · ${totalFolios} folio${totalFolios === 1 ? "" : "s"}`}
         </p>
         {expediente.nivelAcceso !== "PUBLICA" && (
-          <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
+          <span className={`mt-2 inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-xs font-medium ${CLASE_NIVEL_ACCESO[expediente.nivelAcceso]}`}>
             {ETIQUETA_NIVEL_ACCESO[expediente.nivelAcceso]}
           </span>
         )}
@@ -367,7 +367,7 @@ export default async function ExpedienteDetallePage({
                           <span className="flex items-center gap-1.5">
                             <span className="block truncate text-sm text-stone-800" title={doc.nombre}>{doc.nombre}</span>
                             {doc.tipoDocumental && (
-                              <span className="flex-none rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
+                              <span className="flex-none rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500">{doc.tipoDocumental.nombre}</span>
                             )}
                           </span>
                           <span className="flex flex-wrap items-center gap-1 text-[10px] text-stone-400">
@@ -387,12 +387,12 @@ export default async function ExpedienteDetallePage({
                               </span>
                             )}
                             {doc.reemplaza && (
-                              <span className="rounded-full bg-cdmb-50 px-1.5 py-0.5 font-medium text-cdmb-700" title={doc.reemplaza.nombre}>
+                              <span className="rounded-sm bg-cdmb-50 px-1.5 py-0.5 font-medium text-cdmb-700" title={doc.reemplaza.nombre}>
                                 Versión de {String(doc.reemplaza.ordenIndice).padStart(3, "0")}
                               </span>
                             )}
                             {doc.reemplazadoPor.length > 0 && (
-                              <span className="rounded-full bg-stone-100 px-1.5 py-0.5 font-medium text-stone-500" title={doc.reemplazadoPor.map((r) => r.nombre).join(", ")}>
+                              <span className="rounded-sm bg-stone-100 px-1.5 py-0.5 font-medium text-stone-500" title={doc.reemplazadoPor.map((r) => r.nombre).join(", ")}>
                                 Reemplazado por {doc.reemplazadoPor.map((r) => String(r.ordenIndice).padStart(3, "0")).join(", ")}
                               </span>
                             )}

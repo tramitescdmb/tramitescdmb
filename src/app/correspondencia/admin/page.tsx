@@ -161,7 +161,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
                   <td className="px-4 py-2 text-right tabular-nums text-stone-500">{d._count.usuarios}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-stone-500">{d._count.comunicacionesDestino}</td>
                   <td className="px-4 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${d.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
+                    <span className={`rounded-sm px-2 py-0.5 text-xs ${d.activo ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"}`}>
                       {d.activo ? "Activa" : "Inactiva"}
                     </span>
                   </td>

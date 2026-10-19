@@ -697,7 +697,7 @@ function VistaAgenda({
                       {v.profesional}
                     </span>
                   </span>
-                  <span className={`h-fit flex-none rounded-full px-2 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
+                  <span className={`h-fit flex-none rounded-sm px-2 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
                     {ETIQUETA_ESTADO_VISITA[v.estado]}
                   </span>
                 </button>
@@ -737,7 +737,7 @@ function DetalleVisita({
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
-        <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>{ETIQUETA_ESTADO_VISITA[v.estado]}</span>
+        <span className={`inline-block rounded-sm px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>{ETIQUETA_ESTADO_VISITA[v.estado]}</span>
         <dl className="space-y-2.5">
           <div className="flex gap-2.5">
             <Clock className="mt-0.5 h-4 w-4 flex-none text-stone-400" aria-hidden />

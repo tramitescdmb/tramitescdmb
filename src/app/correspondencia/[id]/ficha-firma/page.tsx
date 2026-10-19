@@ -109,7 +109,7 @@ export default async function FichaFirmaComunicacionPage({ params }: { params: P
                   <Eye className="h-3.5 w-3.5 text-sky-600" aria-hidden />
                   {s.usuarioAsignado.nombre}
                   <span className="font-normal text-stone-500"> — {s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "SGDEA")}</span>
-                  <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
+                  <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Visto bueno</span>
                 </p>
                 <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                   <Dato k="Calidad de la firma" v="Visto bueno" />

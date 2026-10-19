@@ -278,7 +278,7 @@ export default async function ExpedienteDetallePage({
               {solicitudes
                 .filter((s) => s.estado !== "RECHAZADA")
                 .map((s) => (
-                  <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                  <span key={s.id} className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
                     {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
                   </span>
                 ))}
@@ -286,7 +286,7 @@ export default async function ExpedienteDetallePage({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 lg:max-w-[60%] lg:justify-end">
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
+          <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VALIDACION[doc.estadoValidacion]}`}>
             {ETIQUETA_ESTADO_VALIDACION[doc.estadoValidacion]}
           </span>
           {doc.requiereFirma && (
@@ -479,13 +479,13 @@ export default async function ExpedienteDetallePage({
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {expediente.usuariosAsignados.map((u) => (
-                        <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
+                        <span key={u.id} className="inline-flex items-center gap-1 rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
                           <User className="h-3 w-3" aria-hidden />
                           {u.nombre}
                         </span>
                       ))}
                       {expediente.cargosAsignados.map((c) => (
-                        <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
+                        <span key={c.id} className="inline-flex items-center gap-1 rounded-sm bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
                           <Tag className="h-3 w-3" aria-hidden />
                           {c.nombre}
                         </span>
@@ -502,7 +502,7 @@ export default async function ExpedienteDetallePage({
                       Paso actual ({pasoActual.numero} de {pasos.length})
                     </p>
                     {esMiPaso && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                         <Hand className="h-3 w-3" aria-hidden />
                         Corresponde a su cargo ({misCargosConEncargo.join(", ")})
                       </span>
@@ -596,7 +596,7 @@ export default async function ExpedienteDetallePage({
                                     {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)} – {horaCorta(finEfectivo(v))}
                                   </span>{" "}
                                   · {v.profesional.nombre}
-                                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
+                                  <span className={`ml-2 rounded-sm px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
                                     {ETIQUETA_ESTADO_VISITA[v.estado]}
                                   </span>
                                 </span>
@@ -772,13 +772,13 @@ export default async function ExpedienteDetallePage({
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {expediente.usuariosAsignados.map((u) => (
-                        <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
+                        <span key={u.id} className="inline-flex items-center gap-1 rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-800">
                           <User className="h-3 w-3" aria-hidden />
                           {u.nombre}
                         </span>
                       ))}
                       {expediente.cargosAsignados.map((c) => (
-                        <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
+                        <span key={c.id} className="inline-flex items-center gap-1 rounded-sm bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
                           <Tag className="h-3 w-3" aria-hidden />
                           {c.nombre}
                         </span>
@@ -840,11 +840,11 @@ export default async function ExpedienteDetallePage({
                             <div className="min-w-0">
                               <p className="font-medium text-stone-800">
                                 {formatearFecha(v.fechaHora)} · {horaCorta(v.fechaHora)} – {horaCorta(finEfectivo(v))}
-                                <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
+                                <span className={`ml-2 rounded-sm px-2 py-0.5 text-[11px] font-medium ${CLASE_ESTADO_VISITA[v.estado]}`}>
                                   {ETIQUETA_ESTADO_VISITA[v.estado]}
                                 </span>
                                 {v.visitaTecnica?.resultado && (
-                                  <span className={`ml-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASE_RESULTADO_VISITA[v.visitaTecnica.resultado]}`}>
+                                  <span className={`ml-1 rounded-sm px-2 py-0.5 text-[11px] font-medium ${CLASE_RESULTADO_VISITA[v.visitaTecnica.resultado]}`}>
                                     {ETIQUETA_RESULTADO_VISITA[v.visitaTecnica.resultado]}
                                   </span>
                                 )}
@@ -1042,12 +1042,12 @@ export default async function ExpedienteDetallePage({
                                 `Paso ${numeroPaso}${tituloPaso ? ` · ${tituloPaso}` : ""}`
                               )}
                               {esActual && (
-                                <span className="rounded-full bg-cdmb-600 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-white">Paso actual</span>
+                                <span className="rounded-sm bg-cdmb-600 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-white">Paso actual</span>
                               )}
                             </span>
                             <span className="flex flex-none items-center gap-2 text-xs text-stone-400">
                               {sinFirmante > 0 && (
-                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                                <span className="rounded-sm bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
                                   {sinFirmante} sin firmante
                                 </span>
                               )}
@@ -1114,7 +1114,7 @@ export default async function ExpedienteDetallePage({
                             <Link
                               key={v.id}
                               href={`/expedientes/${expediente.id}/visitas/${v.visitaProgramadaId}`}
-                              className="ml-auto inline-flex flex-none items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+                              className="ml-auto inline-flex flex-none items-center gap-1 rounded-sm bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                             >
                               <ClipboardCheck className="h-3 w-3" aria-hidden />
                               Hoja de visita · {formatearFecha(v.inicioReal ?? v.capturadoEn)}
@@ -1222,7 +1222,7 @@ export default async function ExpedienteDetallePage({
                 <ul className="divide-y divide-stone-100 text-xs">
                   {[...trazabilidad].reverse().map((mov) => (
                     <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                      <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
+                      <span className={`flex-none rounded-sm px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
                         {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>

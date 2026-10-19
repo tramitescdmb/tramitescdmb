@@ -157,7 +157,7 @@ export default async function TramiteDetallePage({
               href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${numero}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
+              className="inline-flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
               title="Ver la ficha oficial de este trámite en el SUIT (Sistema Único de Información de Trámites del Gobierno de Colombia)"
             >
               <Landmark className="h-3 w-3" aria-hidden />
@@ -202,7 +202,7 @@ export default async function TramiteDetallePage({
                   {cargosResponsables.map((c) => (
                     <span
                       key={c}
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
+                      className={`inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
                     >
                       {c}
                     </span>
@@ -233,7 +233,7 @@ export default async function TramiteDetallePage({
                 {cargos.map((c) => (
                   <span
                     key={c}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
+                    className={`inline-flex items-center gap-1 rounded-sm px-2.5 py-1 text-xs font-medium ${categoria.clases.badge}`}
                   >
                     <User className="h-3 w-3" aria-hidden />
                     {c}
@@ -296,7 +296,7 @@ export default async function TramiteDetallePage({
                           href={`https://visorsuit.funcionpublica.gov.co/auth/visor?fi=${flujo.suitNumero}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
+                          className="inline-flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-200"
                           title="Ver la ficha oficial de esta modalidad en el SUIT"
                         >
                           <Landmark className="h-3 w-3" aria-hidden />

@@ -75,7 +75,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
             <ClipboardCheck className="h-4 w-4" aria-hidden />
           </span>
           Hoja de visita técnica
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLASE_ESTADO_VISITA[visita.estado]}`}>{ETIQUETA_ESTADO_VISITA[visita.estado]}</span>
+          <span className={`rounded-sm px-2 py-0.5 text-xs font-medium ${CLASE_ESTADO_VISITA[visita.estado]}`}>{ETIQUETA_ESTADO_VISITA[visita.estado]}</span>
         </h2>
         <p className="text-sm text-stone-500">{visita.expediente.tramiteTipo.nombre}</p>
       </BandaTablero>
@@ -127,7 +127,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
                 Realizada el {vt.inicioReal ? rangoTexto(vt.inicioReal, vt.finReal) : formatearFechaHora(vt.capturadoEn)}
               </p>
               {vt.resultado && (
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CLASE_RESULTADO_VISITA[vt.resultado]}`}>{ETIQUETA_RESULTADO_VISITA[vt.resultado]}</span>
+                <span className={`rounded-sm px-2.5 py-0.5 text-xs font-medium ${CLASE_RESULTADO_VISITA[vt.resultado]}`}>{ETIQUETA_RESULTADO_VISITA[vt.resultado]}</span>
               )}
             </div>
             <MapaSoloLectura lat={vt.lat} lon={vt.lon} />
@@ -144,7 +144,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Temas</p>
               <div className="flex flex-wrap gap-1.5">
                 {vt.temas.map((t) => (
-                  <span key={t.id} className="rounded-full bg-cdmb-50 px-2.5 py-1 text-xs text-cdmb-800">
+                  <span key={t.id} className="rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs text-cdmb-800">
                     {t.nombre}
                   </span>
                 ))}

@@ -36,7 +36,7 @@ const TONO: Record<string, string> = {
 
 function Chip({ tono, children }: { tono: keyof typeof TONO; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[10.5px] font-medium ${TONO[tono]}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-sm border px-2 py-0.5 font-mono text-[10.5px] font-medium ${TONO[tono]}`}>
       {children}
     </span>
   );
@@ -398,7 +398,7 @@ export default async function CorrespondenciaAyudaPage() {
           {(["PUBLICA", "CLASIFICADA", "RESERVADA"] as const).map((n) => (
             <tr key={n}>
               <td className="px-2.5 py-1.5">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10.5px] font-medium ${CLASE_NIVEL_ACCESO[n]}`}>
+                <span className={`inline-flex items-center rounded-sm px-2 py-0.5 font-mono text-[10.5px] font-medium ${CLASE_NIVEL_ACCESO[n]}`}>
                   {ETIQUETA_NIVEL_ACCESO[n]}
                 </span>
               </td>

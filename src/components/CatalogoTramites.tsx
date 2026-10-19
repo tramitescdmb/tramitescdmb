@@ -213,7 +213,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
           {suits.map((numero) => (
             <span
               key={numero}
-              className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
+              className="inline-flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
               title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. El enlace a la ficha oficial está disponible dentro del trámite.`}
             >
               <Landmark className="h-3 w-3" aria-hidden />
@@ -242,7 +242,7 @@ function CountPill({ value, label, color }: { value: number; label: string; colo
     red: { chip: "bg-red-50 text-red-700 ring-red-600/20", punto: "bg-red-500" },
   }[color];
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estilo.chip}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estilo.chip}`}>
       <span className={`h-1.5 w-1.5 flex-none rounded-full ${estilo.punto}`} aria-hidden />
       {value} {label}
       {value === 1 ? "" : "s"}

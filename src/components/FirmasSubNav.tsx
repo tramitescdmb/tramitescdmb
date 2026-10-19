@@ -41,7 +41,7 @@ export function FirmasSubNav({
             {item.href === rutas.buzon && pendientes.total > 0 && <GloboPendientes pendientes={pendientes} />}
             {item.href === rutas.rechazos && rechazosPorAtender > 0 && (
               <span
-                className="rounded-full bg-red-600 px-1.5 text-[10px] font-semibold leading-4 text-white"
+                className="rounded-sm bg-red-600 px-1.5 text-[10px] font-semibold leading-4 text-white"
                 title={`${rechazosPorAtender} rechazo${rechazosPorAtender === 1 ? "" : "s"} por atender`}
               >
                 {rechazosPorAtender}

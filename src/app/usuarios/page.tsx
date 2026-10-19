@@ -202,12 +202,12 @@ export default async function UsuariosPage({
                 <Link
                   key={f.id}
                   href={href({ estado: f.id === "todos" ? undefined : f.id, page: undefined })}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1 text-xs font-medium transition ${
                     activo ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
                   }`}
                 >
                   {f.etiqueta}
-                  <span className={`rounded-full px-1.5 text-[10px] ${activo ? "bg-white/20" : "bg-stone-100 text-stone-500"}`}>{conteos[i]}</span>
+                  <span className={`rounded-sm px-1.5 text-[10px] ${activo ? "bg-white/20" : "bg-stone-100 text-stone-500"}`}>{conteos[i]}</span>
                 </Link>
               );
             })}

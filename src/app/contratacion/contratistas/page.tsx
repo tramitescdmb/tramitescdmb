@@ -183,7 +183,7 @@ export default async function ContratistasPage({
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-1.5 font-medium text-stone-800">
                     {c.nombreORazonSocial}
-                    {c.tipoPersona === "JURIDICA" && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">Jurídica</span>}
+                    {c.tipoPersona === "JURIDICA" && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">Jurídica</span>}
                   </p>
                   <p className="truncate text-xs text-stone-400">
                     {c.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {c.identificacion}
@@ -195,22 +195,22 @@ export default async function ContratistasPage({
                   {Array.from(porVigencia.entries())
                     .sort((a, b) => b[0] - a[0])
                     .map(([v, n]) => (
-                      <span key={v} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${v === vigencia ? "bg-cdmb-100 text-cdmb-800" : "bg-stone-100 text-stone-600"}`}>
+                      <span key={v} className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${v === vigencia ? "bg-cdmb-100 text-cdmb-800" : "bg-stone-100 text-stone-600"}`}>
                         {v}: {n}
                       </span>
                     ))}
                   {activos.length > 0 && (
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700" title={activos.map((e) => e.numero).join(", ")}>
+                    <span className="rounded-sm bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700" title={activos.map((e) => e.numero).join(", ")}>
                       En ejecución{activos.length > 1 ? ` (${activos.length})` : ""}
                     </span>
                   )}
                   {enPreparacion.length > 0 && (
-                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700" title={enPreparacion.map((e) => e.numero).join(", ")}>
+                    <span className="rounded-sm bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700" title={enPreparacion.map((e) => e.numero).join(", ")}>
                       En precontractual{enPreparacion.length > 1 ? ` (${enPreparacion.length})` : ""}
                     </span>
                   )}
                   {activos.length === 0 && enPreparacion.length === 0 && (
-                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-400">Sin contratos abiertos</span>
+                    <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-400">Sin contratos abiertos</span>
                   )}
                 </div>
               </Link>

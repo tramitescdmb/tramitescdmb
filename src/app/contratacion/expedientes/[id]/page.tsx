@@ -112,7 +112,7 @@ function EstadoFirmaDocumento({
         ? ["Firmado", "bg-emerald-50 text-emerald-700", "Firmaron todos los firmantes asignados"]
         : [`Firma en curso · ${hechas} de ${firmantes.length}`, "bg-sky-50 text-sky-700", "Faltan firmantes por firmar"];
   return (
-    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${clase}`} title={titulo}>
+    <span className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${clase}`} title={titulo}>
       {texto}
     </span>
   );
@@ -122,7 +122,7 @@ function EstadoDocumento({ estado, etapa }: { estado: string; etapa: EtapaContra
   const conValidacion = etapa === "PRECONTRACTUAL" || estado !== "PENDIENTE";
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${conValidacion ? CLASE_ESTADO_VALIDACION[estado] : "bg-stone-100 text-stone-600"}`}
+      className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${conValidacion ? CLASE_ESTADO_VALIDACION[estado] : "bg-stone-100 text-stone-600"}`}
       title={conValidacion ? TITULO_ESTADO_VALIDACION[estado] : TITULO_SIN_VALIDACION}
     >
       {conValidacion ? ETIQUETA_ESTADO_VALIDACION[estado] : "Cargado"}
@@ -436,7 +436,7 @@ export default async function DetalleExpedienteContractualPage({
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-stone-800">
             {titulo}
-            {!doc && pendiente && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por radicar</span>}
+            {!doc && pendiente && <span className="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">Por radicar</span>}
           </p>
           <p className="text-[11px] text-stone-400">{subtitulo}</p>
           {doc && (
@@ -602,7 +602,7 @@ export default async function DetalleExpedienteContractualPage({
             <dd className="font-medium text-stone-800">
               {!expediente.fechaInicio && expediente.etapaActual === "CONTRACTUAL" && !expediente.cerrado ? (
                 <span
-                  className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                  className="rounded-sm bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
                   title="Sin fecha de inicio (acta de inicio) no se calculan plazos ni vencimientos."
                 >
                   Pendiente de inicio
@@ -621,7 +621,7 @@ export default async function DetalleExpedienteContractualPage({
             </dd>
             {supervisorSecopPendiente && (
               <span
-                className="whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+                className="whitespace-nowrap rounded-sm bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
                 title={`Reportado por SECOP II${expediente.supervisorSecopDocumento ? ` (C.C. ${expediente.supervisorSecopDocumento})` : ""}. Se vincula automáticamente cuando exista en Usuarios una cuenta con ese número de documento (alta manual o primer ingreso por directorio activo).`}
               >
                 {expediente.supervisorSecopNombre} · sin usuario
@@ -661,7 +661,7 @@ export default async function DetalleExpedienteContractualPage({
                 <span className="block text-xs text-stone-500">{resumenRetencion(subserieBuscable({ id: expediente.subserieId!, ...expediente.subserie }))}</span>
               </span>
             ) : (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin clasificar</span>
+              <span className="rounded-sm bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin clasificar</span>
             )}
             {!esContratistaGecon(permisos) && (
               <a href="#gestion-documental" className="text-xs font-medium text-cdmb-700 hover:underline">
@@ -728,7 +728,7 @@ export default async function DetalleExpedienteContractualPage({
             return (
               <span
                 key={etapa}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`rounded-sm px-3 py-1 text-xs font-medium ${
                   actual ? "bg-menu-500 text-stone-900" : pasada ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-400"
                 }`}
               >
@@ -736,7 +736,7 @@ export default async function DetalleExpedienteContractualPage({
               </span>
             );
           })}
-          {expediente.cerrado && <span className="rounded-full bg-stone-800 px-3 py-1 text-xs font-medium text-white">Cerrado</span>}
+          {expediente.cerrado && <span className="rounded-sm bg-stone-800 px-3 py-1 text-xs font-medium text-white">Cerrado</span>}
           <div className="ml-auto flex items-center gap-2">
             {puedeRetroceder && (
               <RetrocederEtapaBoton
@@ -896,11 +896,11 @@ export default async function DetalleExpedienteContractualPage({
                             <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-800">
                               {destacado && <ArrowRight className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />}
                               {item.nombre}
-                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${item.obligatorio ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-500"}`}>
+                              <span className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${item.obligatorio ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-500"}`}>
                                 {item.obligatorio ? "Obligatorio" : "Opcional"}
                               </span>
                               {item.gestionadoEnSecop && (
-                                <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
+                                <span className="rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">Se gestiona en SECOP II</span>
                               )}
                               {!esRequisitoPorPeriodos(item) && item.documento && (
                                 <>
@@ -935,7 +935,7 @@ export default async function DetalleExpedienteContractualPage({
                                 {item.documento.solicitudesFirma
                                   .filter((s) => s.estado !== "RECHAZADA")
                                   .map((s) => (
-                                    <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                    <span key={s.id} className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
                                       {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
                                     </span>
                                   ))}
@@ -1051,7 +1051,7 @@ export default async function DetalleExpedienteContractualPage({
                                 className="flex flex-wrap items-center gap-2 rounded-md border border-stone-100 bg-stone-50/60 p-2 text-sm scroll-mt-4 target:bg-amber-50 target:ring-1 target:ring-amber-300"
                               >
                                 <span className="min-w-0 flex-1 truncate text-stone-700" title={doc.nombre}>{doc.nombre}</span>
-                                {doc.categoria && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
+                                {doc.categoria && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{doc.categoria}</span>}
                                 <EstadoFirmaDocumento requiereFirma={doc.requiereFirma} cargadoEnSecop={doc.cargadoEnSecop} solicitudes={solicitudes} totalFirmas={doc.firmas.length} />
                                 {marcaFirma(doc, doc.firmas.length, etapa)}
                                 {solicitudes.some((s) => s.estado !== "RECHAZADA") && (
@@ -1059,7 +1059,7 @@ export default async function DetalleExpedienteContractualPage({
                                     {solicitudes
                                       .filter((s) => s.estado !== "RECHAZADA")
                                       .map((s) => (
-                                        <span key={s.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                                        <span key={s.id} className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
                                           {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)}
                                         </span>
                                       ))}
@@ -1154,7 +1154,7 @@ export default async function DetalleExpedienteContractualPage({
                   <ul className="divide-y divide-stone-100 text-xs">
                     {[...trazabilidad].reverse().map((mov) => (
                       <li key={mov.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                        <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
+                        <span className={`flex-none rounded-sm px-2 py-0.5 font-medium ${CLASE_ACCION_AUDITORIA[mov.accion] ?? "bg-stone-100 text-stone-600"}`}>
                           {ETIQUETA_ACCION_AUDITORIA[mov.accion] ?? mov.accion}
                         </span>
                         <span className="min-w-0 flex-1 truncate text-stone-700" title={mov.detalle ?? undefined}>{mov.detalle}</span>

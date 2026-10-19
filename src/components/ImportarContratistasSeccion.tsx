@@ -153,7 +153,7 @@ export function ImportarContratistasSeccion() {
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {(["listo", "creado", "existente", "error"] as const).map((e) =>
                   conteo(e) > 0 ? (
-                    <span key={e} className={`rounded-full px-2 py-0.5 font-medium ${ESTADO[e].clase}`}>
+                    <span key={e} className={`rounded-sm px-2 py-0.5 font-medium ${ESTADO[e].clase}`}>
                       {conteo(e)} · {ESTADO[e].texto}
                     </span>
                   ) : null
@@ -185,7 +185,7 @@ export function ImportarContratistasSeccion() {
                           )}
                         </td>
                         <td className="px-3 py-1.5">
-                          <span className={`rounded-full px-2 py-0.5 font-medium ${ESTADO[r.estado].clase}`}>{ESTADO[r.estado].texto}</span>
+                          <span className={`rounded-sm px-2 py-0.5 font-medium ${ESTADO[r.estado].clase}`}>{ESTADO[r.estado].texto}</span>
                           {r.detalle && <span className="ml-2 text-stone-500">{r.detalle}</span>}
                         </td>
                       </tr>

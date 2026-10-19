@@ -136,21 +136,21 @@ export function CatalogoRequisitosAdmin({ requisitos }: { requisitos: RequisitoC
                                 })
                               )
                             }
-                            className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${r.aplicaTipoContrato === "TODOS" ? "bg-stone-100 text-stone-500" : "bg-sky-100 text-sky-800"}`}
+                            className={`flex-none rounded-sm px-2 py-0.5 text-[11px] font-medium ${r.aplicaTipoContrato === "TODOS" ? "bg-stone-100 text-stone-500" : "bg-sky-100 text-sky-800"}`}
                           >
                             {ETIQUETA_APLICA_TIPO[r.aplicaTipoContrato]}
                           </button>
                           <button
                             type="button"
                             onClick={() => alternar(r.id, "obligatorio", r.obligatorio)}
-                            className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${r.obligatorio ? "bg-amber-100 text-amber-800" : "bg-stone-100 text-stone-500"}`}
+                            className={`flex-none rounded-sm px-2 py-0.5 text-[11px] font-medium ${r.obligatorio ? "bg-amber-100 text-amber-800" : "bg-stone-100 text-stone-500"}`}
                           >
                             {r.obligatorio ? "Obligatorio" : "Opcional"}
                           </button>
                           <button
                             type="button"
                             onClick={() => alternar(r.id, "activo", r.activo)}
-                            className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${r.activo ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"}`}
+                            className={`flex-none rounded-sm px-2 py-0.5 text-[11px] font-medium ${r.activo ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"}`}
                           >
                             {r.activo ? "Activo" : "Inactivo"}
                           </button>

@@ -146,7 +146,7 @@ export function AsignarFirmantesModal({
                           {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""}
                         </span>
                       </span>
-                      <span className={`flex-none rounded-full px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
+                      <span className={`flex-none rounded-sm px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
                     </div>
                     <span className="text-[11px] text-stone-400">
                       Turno: {etiquetaTurno(f.orden)}
@@ -195,7 +195,7 @@ export function AsignarFirmantesModal({
                           type="button"
                           onClick={() => setUsuarioId(u.id)}
                           aria-pressed={activo}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                          className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                             activo ? "border-menu-500 bg-menu-500 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                           }`}
                         >

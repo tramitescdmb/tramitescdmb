@@ -81,7 +81,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
               key={g.grupo}
               href={`/correspondencia/fondo?fondo=${primero.id}`}
               aria-current={activo ? "page" : undefined}
-              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
                 activo ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               }`}
             >
@@ -98,7 +98,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
             <Archive className="h-4 w-4" aria-hidden />
           </span>
           <h2 className="text-xl font-semibold text-stone-900">{info.titulo}</h2>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
+          <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
         </div>
         <p className="max-w-3xl text-sm text-stone-500">{info.descripcion}</p>
       </BandaTablero>

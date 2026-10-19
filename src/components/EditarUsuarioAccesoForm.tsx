@@ -124,7 +124,7 @@ function BotonAtajo({
     ver: "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100",
   }[tono];
   return (
-    <button type="button" onClick={onClick} title={title} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${clases}`}>
+    <button type="button" onClick={onClick} title={title} className={`rounded-sm border px-2.5 py-1 text-[11px] font-medium transition ${clases}`}>
       {children}
     </button>
   );
@@ -463,7 +463,7 @@ export function EditarUsuarioAccesoForm({
               <Icono className={`h-3.5 w-3.5 ${activa ? "text-cdmb-600" : ""}`} aria-hidden />
               {p.etiqueta}
               {conteo !== null && rol !== "ADMIN" && (
-                <span className={`rounded-full px-1.5 text-[10px] ${conteo > 0 ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"}`}>{conteo}</span>
+                <span className={`rounded-sm px-1.5 text-[10px] ${conteo > 0 ? "bg-cdmb-50 text-cdmb-700" : "bg-stone-100 text-stone-400"}`}>{conteo}</span>
               )}
             </button>
           );
@@ -735,7 +735,7 @@ export function EditarUsuarioAccesoForm({
                     onClick={() => alternarCargo(c.id)}
                     aria-pressed={activo}
                     title={activo ? `Quitar el cargo "${etiqueta}"` : `Asignar el cargo "${etiqueta}"`}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                       activo
                         ? "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
@@ -749,7 +749,7 @@ export function EditarUsuarioAccesoForm({
                       onClick={() => alternarCargoEncargo(c.id)}
                       aria-pressed={esEncargo}
                       title={esEncargo ? "Marcado como encargo (E) — clic para quitar" : "Marcar como encargo (E): interino, no un nombramiento definitivo"}
-                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                      className={`rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold transition ${
                         esEncargo
                           ? "border-amber-400 bg-amber-100 text-amber-800"
                           : "border-stone-200 bg-white text-stone-400 hover:border-amber-300 hover:text-amber-600"
@@ -770,7 +770,7 @@ export function EditarUsuarioAccesoForm({
               titulo='Trámites de "Trámites ambientales 2.0"'
               ayuda="Ver: solo consulta. Editar: además puede actuar sobre el trámite."
             />
-            <span className="flex-none rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+            <span className="flex-none rounded-sm bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
               {totalConAcceso} con acceso
             </span>
           </div>
@@ -812,7 +812,7 @@ export function EditarUsuarioAccesoForm({
                       className="flex min-w-0 flex-1 items-center gap-2 text-left"
                     >
                       <ChevronDown className={`h-4 w-4 flex-none text-stone-400 transition-transform ${abierta ? "rotate-180" : ""}`} aria-hidden />
-                      <span className={`inline-flex flex-none items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
+                      <span className={`inline-flex flex-none items-center rounded-sm px-2.5 py-0.5 text-xs font-semibold ${grupo.claseBadge}`}>
                         {grupo.etiqueta}
                       </span>
                       <span className={`truncate text-xs ${editar + ver === 0 ? "text-stone-400" : "text-stone-600"}`}>
@@ -896,7 +896,7 @@ export function EditarUsuarioAccesoForm({
                   onClick={() => setRolCorrespondencia("")}
                   aria-pressed={rolCorrespondencia === ""}
                   title="Sin acceso al módulo de correspondencia"
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                     rolCorrespondencia === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
                   }`}
                 >
@@ -909,7 +909,7 @@ export function EditarUsuarioAccesoForm({
                     onClick={() => setRolCorrespondencia(r.valor)}
                     aria-pressed={rolCorrespondencia === r.valor}
                     title={r.ayuda}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                       rolCorrespondencia === r.valor
                         ? "border-menu-500 bg-menu-500 text-stone-900"
                         : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
@@ -945,7 +945,7 @@ export function EditarUsuarioAccesoForm({
               onClick={() => setRolesContratacion(new Set())}
               aria-pressed={rolesContratacion.size === 0}
               title="Sin acceso al módulo de Contratación"
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                 rolesContratacion.size === 0 ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
               }`}
             >
@@ -958,7 +958,7 @@ export function EditarUsuarioAccesoForm({
                 onClick={() => alternarRolContratacion(r.valor)}
                 aria-pressed={rolesContratacion.has(r.valor)}
                 title={r.ayuda}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                className={`inline-flex items-center gap-1 rounded-sm border px-3 py-1 text-xs font-medium transition ${
                   rolesContratacion.has(r.valor)
                     ? "border-menu-500 bg-menu-500 text-stone-900"
                     : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
@@ -1030,7 +1030,7 @@ export function EditarUsuarioAccesoForm({
                       onClick={() => alternarSeccion(s.valor)}
                       aria-pressed={activo}
                       title={s.ayuda}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                         activo
                           ? "border-menu-500 bg-menu-500 text-stone-900"
                           : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
@@ -1070,7 +1070,7 @@ export function EditarUsuarioAccesoForm({
                       onClick={() => alternarSeccion(s.valor)}
                       aria-pressed={activo}
                       title={s.ayuda}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
                         activo
                           ? s.valor === "SINCA_MINERIA"
                             ? "border-amber-600 bg-amber-600 text-white"

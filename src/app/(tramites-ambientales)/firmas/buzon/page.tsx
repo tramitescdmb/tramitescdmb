@@ -60,10 +60,10 @@ export default async function BuzonFirmasTramitesPage() {
                   · Asignado por {s.asignadoPor.nombre}
                 </p>
               </div>
-              <span className="flex-none rounded-full bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}
+              <span className="flex-none rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">{ETIQUETA_ROL[s.rol] ?? s.rol}
                 {s.rol === "FIRMA" && rotuloCalidadFirma(s.calidad) ? ` · ${rotuloCalidadFirma(s.calidad)}` : ""}</span>
               {textoRecordatorio(s.recordadoPor, s.recordadoEn) && (
-                <span className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">{textoRecordatorio(s.recordadoPor, s.recordadoEn)}</span>
+                <span className="flex-none rounded-sm bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">{textoRecordatorio(s.recordadoPor, s.recordadoEn)}</span>
               )}
               {s.puedeActuar ? (
                 <Link

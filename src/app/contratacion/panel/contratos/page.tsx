@@ -75,7 +75,7 @@ export default async function TableroContratosPage({ searchParams }: { searchPar
               <Link
                 key={v ?? "todas"}
                 href={v ? `/contratacion/panel/contratos?vigencia=${v}` : "/contratacion/panel/contratos"}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`rounded-sm px-3 py-1 text-xs font-medium transition ${
                   v === vigencia ? "bg-stone-900 text-white" : "bg-white/70 text-stone-600 ring-1 ring-stone-200 hover:bg-white hover:text-stone-900"
                 }`}
               >

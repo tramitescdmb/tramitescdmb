@@ -78,7 +78,7 @@ export default async function FichaFondoPage({
           <h1 className="text-xl font-semibold text-stone-900">
             {doc.numero || doc.numeroEntrada || doc.numeroSalida || `Documento #${doc.refId}`}
           </h1>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
+          <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">Solo consulta</span>
         </div>
         {doc.asunto && <p className="mt-2 text-sm text-stone-700">{doc.asunto}</p>}
         <p className="mt-2 text-xs text-stone-400">

@@ -58,7 +58,7 @@ export function SelectorTramites({
       >
         <ListFilter className="h-3.5 w-3.5" aria-hidden />
         {titulo}
-        {seleccionActual.size > 0 && <span className="rounded-full bg-cdmb-600 px-1.5 text-xs text-white">{seleccionActual.size}</span>}
+        {seleccionActual.size > 0 && <span className="rounded-sm bg-cdmb-600 px-1.5 text-xs text-white">{seleccionActual.size}</span>}
       </button>
       {abierto && (
         <div className="absolute z-20 mt-1.5 w-72 rounded-2xl border border-stone-200 bg-white p-3 shadow-lg">

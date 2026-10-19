@@ -44,7 +44,7 @@ export function DocumentosParaRadicar({
               type="button"
               onClick={() => setFiltro(f.id)}
               aria-pressed={filtro === f.id}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+              className={`rounded-sm px-3 py-1 text-xs font-medium transition ${
                 filtro === f.id ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
               }`}
             >
@@ -65,12 +65,12 @@ export function DocumentosParaRadicar({
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-sm font-medium text-stone-800">{d.nombre}</span>
                 {d.obligatorio ? (
-                  <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
+                  <span className="inline-flex items-center rounded-sm bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
                     Obligatorio
                     {d.aplicaA === "JURIDICA" ? " · solo persona jurídica" : d.aplicaA === "NATURAL" ? " · solo persona natural" : ""}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+                  <span className="inline-flex items-center rounded-sm bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">
                     Opcional
                   </span>
                 )}
