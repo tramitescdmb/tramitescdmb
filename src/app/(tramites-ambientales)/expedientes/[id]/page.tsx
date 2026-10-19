@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -352,16 +352,21 @@ export default async function ExpedienteDetallePage({
   return (
     <div className="space-y-4">
       <BandaTablero>
-        <Link href="/expedientes" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
-          ← Expedientes
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/expedientes"
+            title="Volver al listado de expedientes"
+            aria-label="Volver al listado de expedientes"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+          >
+            <ListOrdered className="h-4 w-4" aria-hidden />
+          </Link>
           <h1 className="text-xl font-semibold text-stone-900">{expediente.numero}</h1>
           <EstadoBadge estado={expediente.estado} />
           {cerrado && (
             <a
               href="#gestion-documental"
-              className="inline-flex items-center gap-1 rounded-full bg-stone-800 px-2.5 py-0.5 text-xs font-medium text-white hover:bg-stone-700"
+              className="inline-flex items-center gap-1 rounded-sm bg-stone-800 px-2 py-0.5 text-xs font-medium text-white hover:bg-stone-700"
             >
               <Lock className="h-3 w-3" aria-hidden />
               Cerrado y archivado
@@ -539,7 +544,7 @@ export default async function ExpedienteDetallePage({
                   </dl>
 
                   {puedeEditar && (
-                    <div className="mt-4 border-t border-stone-100 pt-4">
+                    <div id="adjuntar" className="mt-4 scroll-mt-28 border-t border-stone-100 pt-4">
                       <SubirDocumentoPasoForm
                         expedienteId={expediente.id}
                         pasoNumero={pasoActual.numero}
@@ -650,7 +655,7 @@ export default async function ExpedienteDetallePage({
                   </div>
                   )}
 
-                  <div className="mt-4 border-t border-stone-100 pt-4">
+                  <div id="avanzar" className="mt-4 scroll-mt-28 border-t border-stone-100 pt-4">
                     {cerrado ? (
                       <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                         <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
@@ -1136,7 +1141,7 @@ export default async function ExpedienteDetallePage({
                   La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
                 </p>
                 {puedeEditar && (
-                  <form action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex gap-2">
+                  <form id="comentar" action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex scroll-mt-28 gap-2">
                     <input
                       name="texto"
                       placeholder="Agregar una nota o comentario al expediente…"
@@ -1340,6 +1345,38 @@ export default async function ExpedienteDetallePage({
           },
         ]}
       />
+      {!cerrado && puedeEditar && (
+        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-4 py-2.5 shadow-soft-lg print:hidden">
+          <div className="flex flex-wrap items-center gap-2">
+            <a href="#comentar" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <MessageSquare className="h-4 w-4" aria-hidden />
+              Comentar
+            </a>
+            {pasoActual && (
+              <a href="#adjuntar" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Paperclip className="h-4 w-4" aria-hidden />
+                Adjuntar documento
+              </a>
+            )}
+          </div>
+          {pasoActual && puedeAvanzar && (
+            pasoActual.esDecision ? (
+              <a href="#avanzar" className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600">
+                <GitBranch className="h-4 w-4" aria-hidden />
+                Decidir paso {pasoActual.numero}
+              </a>
+            ) : siguientePaso ? (
+              <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
+                <button type="submit" className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600">
+                  <CheckCheck className="h-4 w-4" aria-hidden />
+                  Completar paso {pasoActual.numero}
+                </button>
+              </form>
+            ) : null
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,13 +1,13 @@
-const ESTILOS: Record<string, { chip: string; punto: string }> = {
-  RADICADO: { chip: "bg-techblue-50 text-techblue-700 ring-techblue-600/20", punto: "bg-techblue-500" },
-  EN_TRAMITE: { chip: "bg-amber-50 text-amber-800 ring-amber-600/20", punto: "bg-amber-500" },
-  INFORMACION_ADICIONAL_REQUERIDA: { chip: "bg-orange-50 text-orange-800 ring-orange-600/20", punto: "bg-orange-500" },
-  SUSPENDIDO: { chip: "bg-stone-100 text-stone-600 ring-stone-500/20", punto: "bg-stone-400" },
-  APROBADO: { chip: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", punto: "bg-emerald-500" },
-  NEGADO: { chip: "bg-red-50 text-red-700 ring-red-600/20", punto: "bg-red-500" },
-  DESISTIDO: { chip: "bg-stone-100 text-stone-500 ring-stone-500/20", punto: "bg-stone-400" },
-  ARCHIVADO: { chip: "bg-stone-100 text-stone-500 ring-stone-500/20", punto: "bg-stone-400" },
-  RECHAZADO: { chip: "bg-red-50 text-red-700 ring-red-600/20", punto: "bg-red-500" },
+const ESTILOS: Record<string, { anillo: string }> = {
+  RADICADO: { anillo: "border-techblue-500" },
+  EN_TRAMITE: { anillo: "border-amber-500" },
+  INFORMACION_ADICIONAL_REQUERIDA: { anillo: "border-orange-500" },
+  SUSPENDIDO: { anillo: "border-stone-400" },
+  APROBADO: { anillo: "border-emerald-500" },
+  NEGADO: { anillo: "border-red-500" },
+  DESISTIDO: { anillo: "border-stone-400" },
+  ARCHIVADO: { anillo: "border-stone-400" },
+  RECHAZADO: { anillo: "border-red-500" },
 };
 
 const ETIQUETAS: Record<string, string> = {
@@ -23,13 +23,11 @@ const ETIQUETAS: Record<string, string> = {
 };
 
 export function EstadoBadge({ estado }: { estado: string }) {
-  const estilo = ESTILOS[estado] ?? { chip: "bg-stone-100 text-stone-600 ring-stone-500/20", punto: "bg-stone-400" };
+  const estilo = ESTILOS[estado] ?? { anillo: "border-stone-400" };
   const etiqueta = ETIQUETAS[estado] ?? estado;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estilo.chip}`}
-    >
-      <span className={`h-1.5 w-1.5 flex-none rounded-full ${estilo.punto}`} aria-hidden />
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-stone-700">
+      <span className={`h-3 w-3 flex-none rounded-full border-2 ${estilo.anillo}`} aria-hidden />
       {etiqueta}
     </span>
   );
