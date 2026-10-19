@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useMenuModulo } from "@/components/MenuModulo";
 import { IconChevronsLeft, IconChevronsRight } from "@tabler/icons-react";
 import { SidebarNav } from "@/components/SidebarNav";
 
@@ -23,18 +22,13 @@ export function Sidebar({
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
 }) {
-  const [colapsado, setColapsado] = useState(true);
-  const pathname = usePathname();
-  const modulo = pathname?.split("/")[1] ?? "";
-
-  useEffect(() => {
-    setColapsado(true);
-  }, [modulo]);
+  const { expandido, setExpandido } = useMenuModulo();
+  const colapsado = !expandido;
 
   return (
     <aside
       className={`sticky top-0 hidden h-[calc(100vh-2rem)] max-h-screen flex-none flex-col bg-cdmb-800 text-white transition-[width] duration-200 lg:flex ${
-        colapsado ? "w-16" : "w-64"
+        colapsado ? "w-16" : "w-[17.5rem]"
       }`}
     >
       <Link prefetch={false}
@@ -65,7 +59,7 @@ export function Sidebar({
 
       <button
         type="button"
-        onClick={() => setColapsado((actual) => !actual)}
+        onClick={() => setExpandido(colapsado)}
         aria-label={colapsado ? "Expandir menú" : "Contraer menú"}
         title={colapsado ? "Expandir menú" : undefined}
         className={`flex flex-none items-center gap-2 border-t border-black/20 py-3 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/5 hover:text-white ${

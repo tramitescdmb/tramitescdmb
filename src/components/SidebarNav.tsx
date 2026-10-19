@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconChevronDown } from "@tabler/icons-react";
+import { useMenuModulo } from "@/components/MenuModulo";
+import { SubmenuModulo } from "@/components/SubmenuModulo";
 import {
   IconHome,
   IconFileCertificate,
@@ -58,6 +61,7 @@ export function SidebarNav({
   colapsado?: boolean;
 }) {
   const pathname = usePathname();
+  const { menu } = useMenuModulo();
   const activo = (item: Item) => {
     if (item.prefijo) {
       const prefijos = Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo];
@@ -78,13 +82,25 @@ export function SidebarNav({
 
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
-      <Grupo items={principal} activo={activo} colapsado={colapsado} />
+      <Grupo items={principal} activo={activo} colapsado={colapsado} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>
   );
 }
 
-function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: Item[]; activo: (item: Item) => boolean; colapsado: boolean }) {
+function Grupo({
+  titulo,
+  items,
+  activo,
+  colapsado,
+  submenu,
+}: {
+  titulo?: string;
+  items: Item[];
+  activo: (item: Item) => boolean;
+  colapsado: boolean;
+  submenu?: React.ReactNode;
+}) {
   return (
     <div>
       {titulo && !colapsado && (
@@ -93,7 +109,8 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
       <ul>
         {items.map((item) => (
           <li key={item.href}>
-            <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} />
+            <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO} />
+            {submenu && activo(item) && item !== ITEM_INICIO && submenu}
           </li>
         ))}
       </ul>
@@ -101,7 +118,7 @@ function Grupo({ titulo, items, activo, colapsado }: { titulo?: string; items: I
   );
 }
 
-function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; colapsado: boolean }) {
+function EnlaceNav({ item, activo, colapsado, desplegado }: { item: Item; activo: boolean; colapsado: boolean; desplegado?: boolean }) {
   const Icon = item.icon;
   return (
     <Link prefetch={false}
@@ -113,7 +130,8 @@ function EnlaceNav({ item, activo, colapsado }: { item: Item; activo: boolean; c
       } ${activo ? "border-menu-500 bg-black/20 font-semibold text-menu-500" : "border-transparent text-white/85 hover:bg-white/5 hover:text-white"}`}
     >
       <Icon className="h-5 w-5 flex-none" stroke={1.75} aria-hidden />
-      <span className={colapsado ? "sr-only" : undefined}>{item.label}</span>
+      <span className={colapsado ? "sr-only" : "min-w-0 flex-1 truncate"}>{item.label}</span>
+      {desplegado && <IconChevronDown className="h-4 w-4 flex-none opacity-80" stroke={1.75} aria-hidden />}
     </Link>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { ProveedorMenuModulo } from "@/components/MenuModulo";
 
 function esRutaPublica(pathname: string) {
   return pathname === "/pqrsd" || pathname.startsWith("/pqrsd/") || pathname.startsWith("/verificar/") || pathname === "/validar-firma";
@@ -39,6 +40,7 @@ export function Cascaron({
   }
 
   return (
+    <ProveedorMenuModulo>
     <div className="flex flex-1 flex-col lg:flex-row">
       <div className="print:hidden">{navBar}</div>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -47,5 +49,6 @@ export function Cascaron({
         <div className="print:hidden">{pie}</div>
       </div>
     </div>
+    </ProveedorMenuModulo>
   );
 }

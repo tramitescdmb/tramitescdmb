@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ExternalLink, Lock, type LucideIcon } from "lucide-react";
+import { useMenuModulo, usePublicarMenu } from "@/components/MenuModulo";
 
 export type ItemMenu = {
   href: string;
@@ -26,18 +27,9 @@ export type GrupoMenu = {
   insignia?: { valor: number; alerta: boolean; titulo: string };
 };
 
-export function BarraModulo({
-  grupos,
-  ariaLabel,
-  esItemActivo,
-}: {
-  grupos: GrupoMenu[];
-  ariaLabel: string;
-  esItemActivo?: (item: ItemMenu, pathname: string) => boolean;
-}) {
-  const pathname = usePathname();
-  const rutaDe = (href: string) => href.split("?")[0]!;
+const rutaDe = (href: string) => href.split("?")[0]!;
 
+export function actividadMenu(pathname: string, esItemActivo?: (item: ItemMenu, pathname: string) => boolean) {
   const itemActivo = (it: ItemMenu) => {
     if (it.bloqueadoPara) return false;
     if (it.href.includes("?")) return false;
@@ -56,6 +48,23 @@ export function BarraModulo({
     return (g.items ?? []).some(itemActivo);
   };
 
+  return { itemActivo, grupoActivo };
+}
+
+export function BarraModulo({
+  grupos,
+  ariaLabel,
+  esItemActivo,
+}: {
+  grupos: GrupoMenu[];
+  ariaLabel: string;
+  esItemActivo?: (item: ItemMenu, pathname: string) => boolean;
+}) {
+  const pathname = usePathname();
+  const { expandido } = useMenuModulo();
+  usePublicarMenu({ grupos, esItemActivo });
+  const { itemActivo, grupoActivo } = actividadMenu(pathname, esItemActivo);
+
   const bloque = (lado: "izquierda" | "derecha") =>
     grupos
       .filter((g) => (g.lado ?? "izquierda") === lado)
@@ -71,7 +80,10 @@ export function BarraModulo({
   const derecha = bloque("derecha");
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-white/70 p-1 shadow-soft" aria-label={ariaLabel}>
+    <nav
+      className={`flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white p-1 ${expandido ? "lg:hidden" : ""}`}
+      aria-label={ariaLabel}
+    >
       <div className="flex flex-wrap items-center gap-1">{izquierda}</div>
       {derecha.length > 0 && <div className="flex flex-wrap items-center gap-1">{derecha}</div>}
     </nav>
