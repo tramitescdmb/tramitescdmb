@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users, Undo2, Workflow, History, PenTool, Tag } from "lucide-react";
+import { ArrowLeft, FileText, Download, Printer, Send, ShieldCheck, User, Building2, Archive, Reply, PauseCircle, PlayCircle, Clock, Ban, FolderTree, Lock, Compass, CheckCircle2, MailCheck, Users, Undo2, Workflow, History, PenTool, Tag, Share2, MessageSquareReply } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -297,6 +297,12 @@ export default async function CorrespondenciaDetallePage({
     },
   );
 
+  const botoneraRepartir =
+    c.tipo === "RECIBIDA" && !ESTADOS_CERRADOS.includes(c.estado) && (puedeDistribuirUsuario || puedeSubdistribuirUsuario);
+  const botoneraResponder = puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0;
+  const botoneraRadicar = puedeRadicarUsuario && Boolean(c.respuestaTexto) && c.respuestas.length === 0 && !bloqueoRespuesta;
+  const hayBotonera = botoneraRepartir || puedeDevolverUsuario || botoneraResponder || botoneraRadicar;
+
   return (
     <div className="space-y-4">
       <Link href="/correspondencia" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
@@ -487,7 +493,9 @@ export default async function CorrespondenciaDetallePage({
                 )}
 
                 {puedeDistribuirUsuario && c.tipo === "RECIBIDA" && !ESTADOS_CERRADOS.includes(c.estado) && (
-                  <DistribuirForm comunicacionId={id} dependencias={dependencias} usuarios={usuarios} />
+                  <div id="repartir" className="scroll-mt-28">
+                    <DistribuirForm comunicacionId={id} dependencias={dependencias} usuarios={usuarios} />
+                  </div>
                 )}
                 {puedeDistribuirUsuario && c.tipo === "RECIBIDA" && ESTADOS_CERRADOS.includes(c.estado) && (
                   <p className="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
@@ -495,6 +503,7 @@ export default async function CorrespondenciaDetallePage({
                   </p>
                 )}
                 {!puedeDistribuirUsuario && puedeSubdistribuirUsuario && !ESTADOS_CERRADOS.includes(c.estado) && (
+                  <div id="repartir" className="scroll-mt-28">
                   <DistribuirForm
                     comunicacionId={id}
                     dependencias={[]}
@@ -502,10 +511,11 @@ export default async function CorrespondenciaDetallePage({
                     dependenciaFija={{ id: permisos.dependenciaId!, nombre: c.dependenciaDestino?.nombre ?? "Mi dependencia" }}
                     tituloLista="Colaborador(es) a cargo"
                   />
+                  </div>
                 )}
 
                 {puedeDevolverUsuario && (
-                  <div className="mt-4 border-t border-stone-100 pt-4">
+                  <div id="devolver" className="mt-4 scroll-mt-28 border-t border-stone-100 pt-4">
                     {devolucionATiempo ? (
                       <form action={`/api/correspondencia/${id}/devolver-reparto`} method="post" className="flex flex-wrap items-end gap-3">
                         <div className="min-w-[260px] flex-1">
@@ -576,6 +586,7 @@ export default async function CorrespondenciaDetallePage({
                   </ul>
                 )}
                 {puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0 ? (
+                  <div id="responder" className="scroll-mt-28">
                   <RespuestaFuncionarioForm
                     comunicacionId={id}
                     textoInicial={c.respuestaTexto ?? ""}
@@ -588,6 +599,7 @@ export default async function CorrespondenciaDetallePage({
                       FUNCIONARIO: session.nombre,
                     }}
                   />
+                  </div>
                 ) : (
                   !c.respuestaTexto && <p className="text-sm text-stone-400">Todavía no hay respuesta.</p>
                 )}
@@ -1070,6 +1082,42 @@ export default async function CorrespondenciaDetallePage({
           },
         ]}
       />
+
+      {hayBotonera && (
+        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-4 py-2.5 shadow-soft-lg print:hidden">
+          <div className="flex flex-wrap items-center gap-2">
+            {botoneraRepartir && (
+              <a href="#repartir" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Share2 className="h-4 w-4" aria-hidden />
+                Repartir
+              </a>
+            )}
+            {puedeDevolverUsuario && (
+              <a href="#devolver" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Undo2 className="h-4 w-4" aria-hidden />
+                Devolver a ventanilla
+              </a>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {botoneraResponder && (
+              <a href="#responder" className={`inline-flex items-center gap-1.5 rounded px-4 py-2 text-sm font-semibold ${botoneraRadicar ? "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50" : "bg-acento-500 text-white hover:bg-acento-600"}`}>
+                <MessageSquareReply className="h-4 w-4" aria-hidden />
+                Responder
+              </a>
+            )}
+            {botoneraRadicar && (
+              <Link
+                href={`/correspondencia/nueva/enviada?respondeAId=${id}`}
+                className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600"
+              >
+                <Send className="h-4 w-4" aria-hidden />
+                Radicar respuesta
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

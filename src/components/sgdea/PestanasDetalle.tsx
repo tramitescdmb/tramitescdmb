@@ -25,6 +25,9 @@ export function PestanasDetalle({
       const panel = destino?.closest<HTMLElement>("[data-pestana]");
       if (!destino || !panel || !contenedor.current.contains(panel)) return;
       setActivo(panel.dataset.pestana!);
+      for (let el: HTMLElement | null = destino; el && el !== panel; el = el.parentElement) {
+        if (el instanceof HTMLDetailsElement) el.open = true;
+      }
       requestAnimationFrame(() => destino.scrollIntoView({ behavior: "smooth", block: "start" }));
     }
     irAlAncla();

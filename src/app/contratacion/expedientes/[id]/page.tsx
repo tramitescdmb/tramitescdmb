@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2 } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine } from "lucide-react";
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -318,6 +318,8 @@ export default async function DetalleExpedienteContractualPage({
   const siguienteEtapa = !expediente.cerrado && idxActual < ETAPAS_ORDEN.length - 1 ? ETAPAS_ORDEN[idxActual + 1] : null;
   const esUltimaEtapa = idxActual === ETAPAS_ORDEN.length - 1;
   const faltaContratista = !expediente.contratista && expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado;
+  const puedeSubirEtapaActual = !expediente.cerrado && puedeSubirDocumentoContrato(permisos, expediente, expediente.etapaActual);
+  const puedeAprobarDesdeBotonera = !expediente.cerrado && puedeAprobar && !faltaContratista && Boolean(siguienteEtapa);
   const motivoEtapaOculta = expediente.cerrado
     ? null
     : !puedeAprobar
@@ -1115,7 +1117,7 @@ export default async function DetalleExpedienteContractualPage({
                     )}
 
                     {puedeSubir && (
-                      <details className="group">
+                      <details id={`subir-${etapa}`} className="group scroll-mt-28">
                         <summary className="cursor-pointer text-xs font-medium text-cdmb-700 [&::-webkit-details-marker]:hidden">
                           + Subir otro documento no listado en el catálogo
                         </summary>
@@ -1229,6 +1231,42 @@ export default async function DetalleExpedienteContractualPage({
           },
         ]}
       />
+
+      {!expediente.cerrado && (puedeSubirEtapaActual || puedeAprobarDesdeBotonera || puedeRetroceder) && (
+        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-4 py-2.5 shadow-soft-lg print:hidden">
+          <div className="flex flex-wrap items-center gap-2">
+            {puedeSubirEtapaActual && (
+              <a
+                href={`#subir-${expediente.etapaActual}`}
+                className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              >
+                <Paperclip className="h-4 w-4" aria-hidden />
+                Subir documento
+              </a>
+            )}
+            <Link
+              prefetch={false}
+              href="/contratacion/buzon"
+              className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              <PenLine className="h-4 w-4" aria-hidden />
+              Buzón de firmas
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {puedeRetroceder && (
+              <RetrocederEtapaBoton expedienteId={id} etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[idxActual - 1]!]} />
+            )}
+            {puedeAprobarDesdeBotonera && (
+              <AprobarEtapaContratoBoton
+                expedienteId={id}
+                etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
+                etiquetaSiguiente={ETIQUETA_ETAPA[siguienteEtapa!]}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </section>
     </ProveedorUsuariosFirma>
   );
