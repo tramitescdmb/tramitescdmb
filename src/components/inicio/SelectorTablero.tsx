@@ -1,7 +1,8 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { IconLayoutDashboard } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconMaximize, IconRefresh } from "@tabler/icons-react";
 
 export type OpcionTablero = { href: string; label: string; grupo?: string };
 
@@ -37,5 +38,29 @@ export function SelectorTablero({ opciones, actual }: { opciones: OpcionTablero[
         ))}
       </select>
     </label>
+  );
+}
+
+export function AccionesTablero() {
+  const router = useRouter();
+  const [refrescando, iniciar] = useTransition();
+
+  function pantallaCompleta() {
+    const el = document.getElementById("tablero");
+    if (!el) return;
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void el.requestFullscreen();
+  }
+
+  const boton = "flex h-9 w-9 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800";
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" onClick={() => iniciar(() => router.refresh())} title="Actualizar cifras" aria-label="Actualizar cifras" className={boton}>
+        <IconRefresh className={`h-5 w-5 ${refrescando ? "animate-spin" : ""}`} stroke={1.75} aria-hidden />
+      </button>
+      <button type="button" onClick={pantallaCompleta} title="Pantalla completa" aria-label="Pantalla completa" className={boton}>
+        <IconMaximize className="h-5 w-5" stroke={1.75} aria-hidden />
+      </button>
+    </div>
   );
 }
