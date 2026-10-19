@@ -232,7 +232,7 @@ export default async function UsuariosPage({
         {usuarios.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-stone-400">No hay usuarios con este filtro.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="tabla-listado w-full text-sm">
             <thead className="hidden bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400 md:table-header-group">
               <tr>
                 <th className="px-4 py-2 font-semibold">Usuario</th>
@@ -382,7 +382,7 @@ export default async function UsuariosPage({
 
       <details id="nuevo-usuario" open={nuevo === "1"} className="group scroll-mt-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
         <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-acento-50 text-acento-600">
+          <span className="flex h-8 w-8 flex-none items-center justify-center text-acento-600">
             <UserPlus className="h-4 w-4" aria-hidden />
           </span>
           <div className="flex-1">

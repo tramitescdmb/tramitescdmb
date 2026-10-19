@@ -19,11 +19,9 @@ export default async function ContratacionLayout({ children }: { children: React
     <div className="space-y-4">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
-            <Briefcase className="h-4 w-4" aria-hidden />
-          </span>
+          <Briefcase className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">GECON</h1>
-          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+          <span className="flex items-center gap-1 rounded-sm bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Manejador de expedientes digitales
           </span>

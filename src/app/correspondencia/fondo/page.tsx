@@ -94,7 +94,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
       <BandaTablero className="space-y-1">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <span className="flex h-9 w-9 flex-none items-center justify-center text-amber-700">
             <Archive className="h-4 w-4" aria-hidden />
           </span>
           <h2 className="text-xl font-semibold text-stone-900">{info.titulo}</h2>
@@ -217,7 +217,7 @@ export default async function FondoHistoricoPage({ searchParams }: { searchParam
 
       <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[52rem] text-sm">
+          <table className="tabla-listado w-full min-w-[52rem] text-sm">
             <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Documento</th>

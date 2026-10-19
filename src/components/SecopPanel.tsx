@@ -151,7 +151,7 @@ function Tabla({ titulo, filas, columnas }: { titulo: string; filas: Fila[]; col
         {titulo} ({filas.length})
       </p>
       <div className="overflow-x-auto rounded-lg border border-stone-100">
-        <table className="w-full text-xs">
+        <table className="tabla-listado w-full text-xs">
           <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
             <tr>
               {columnas.map(([, etiqueta]) => (

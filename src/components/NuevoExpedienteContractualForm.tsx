@@ -316,7 +316,7 @@ export function NuevoExpedienteContractualForm({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-soft-lg">
-      <div className="flex items-center gap-2.5 border-b border-stone-100 bg-gradient-to-br from-cdmb-50/70 to-white px-5 py-3.5">
+      <div className="flex items-center gap-2.5 border-b border-stone-100 bg-stone-50 px-5 py-3.5">
         <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-cdmb-600 text-white">
           <FileText className="h-4 w-4" aria-hidden />
         </span>

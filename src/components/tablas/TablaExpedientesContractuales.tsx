@@ -53,7 +53,7 @@ export function TablaExpedientesContractuales({ filas }: { filas: FilaExpediente
   const anchoTotal = anchos.reduce((a, b) => a + b, 0);
 
   return (
-    <table className="table-fixed text-sm" style={{ width: anchoTotal, minWidth: "100%" }}>
+    <table className="tabla-listado table-fixed text-sm" style={{ width: anchoTotal, minWidth: "100%" }}>
       <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
         <tr>
           {COLUMNAS.map((c, i) => (

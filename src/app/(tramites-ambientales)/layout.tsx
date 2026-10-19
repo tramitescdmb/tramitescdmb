@@ -40,14 +40,12 @@ export default async function TramitesAmbientalesLayout({ children }: { children
     <div className="space-y-4">
       <div>
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
-            <FileBadge className="h-4 w-4" aria-hidden />
-          </span>
+          <FileBadge className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
         </div>
       </div>
 
-      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} />
+      <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} esAdmin={session.rol === "ADMIN"} />
 
       <MigaTramites />
 

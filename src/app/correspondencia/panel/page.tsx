@@ -40,7 +40,7 @@ export default async function PanelMiTrabajoPage() {
       >
         {p.mis.lista.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="tabla-listado w-full text-xs">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-5 py-1.5">Radicado</th>

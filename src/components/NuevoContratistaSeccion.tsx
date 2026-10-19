@@ -12,7 +12,7 @@ export function NuevoContratistaSeccion() {
   return (
     <div className="rounded-2xl border border-dashed border-cdmb-300 bg-cdmb-50/40 p-5">
       <button type="button" onClick={() => setAbierto((v) => !v)} className="flex w-full items-center gap-2 text-left">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
+        <span className="flex h-9 w-9 flex-none items-center justify-center text-cdmb-700">
           <UserPlus className="h-4 w-4" aria-hidden />
         </span>
         <div className="flex-1">

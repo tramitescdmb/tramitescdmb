@@ -97,7 +97,7 @@ function EncabezadoSeccion({ icono: Icono, titulo, ayuda }: { icono: typeof Shie
   return (
     <div className="mb-3 flex items-center gap-2.5">
       <span
-        className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700"
+        className="flex h-9 w-9 flex-none items-center justify-center text-cdmb-700"
         title={ayuda}
       >
         <Icono className="h-4 w-4" aria-hidden />

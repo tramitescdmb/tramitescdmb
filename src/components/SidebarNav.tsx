@@ -14,7 +14,6 @@ import {
   IconPalette,
   IconLock,
   IconLayoutGrid,
-  IconFolders,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -39,7 +38,6 @@ export const ITEMS_ADMIN: Item[] = [
   { href: "/admin/apariencia", label: "Apariencia", icon: IconPalette },
   { href: "/admin/seguridad", label: "Seguridad", icon: IconLock },
   { href: "/admin/modulos", label: "Módulos", icon: IconLayoutGrid },
-  { href: "/admin/trd", label: "Clasificación TRD", icon: IconFolders },
 ];
 
 export function SidebarNav({

@@ -177,7 +177,7 @@ export default async function ContratistasPage({
                 href={`/contratacion/contratistas/${c.id}`}
                 className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-cdmb-300 hover:shadow-md"
               >
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-xs font-semibold text-cdmb-800">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded bg-cdmb-100 text-xs font-semibold text-cdmb-800">
                   {iniciales(c.nombreORazonSocial)}
                 </span>
                 <div className="min-w-0 flex-1">

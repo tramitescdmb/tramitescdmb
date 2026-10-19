@@ -38,6 +38,24 @@ body {
   }
 }
 
+.tabla-listado > thead {
+  background-color: #ffffff;
+  color: #435047;
+  border-bottom: 1px solid #c7cec5;
+}
+
+.tabla-listado > thead th {
+  font-weight: 700;
+}
+
+.tabla-listado > tbody > tr:nth-child(even) {
+  background-color: #f1f4f2;
+}
+
+.tabla-listado > tbody > tr:hover {
+  background-color: #e3f1ea;
+}
+
 .leaflet-interactive:focus {
   outline: none;
 }

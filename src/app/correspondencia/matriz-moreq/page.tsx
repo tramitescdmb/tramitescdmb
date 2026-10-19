@@ -203,7 +203,7 @@ export default async function MatrizMoreqPage({ searchParams }: { searchParams: 
                 </div>
                 <p className="mt-1 text-[11px] text-stone-500">{c.descripcion}</p>
                 <div className="mt-2 overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft print:overflow-visible">
-                  <table className="w-full text-xs">
+                  <table className="tabla-listado w-full text-xs">
                     <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                       <tr>
                         <th className="px-3 py-1.5">No.</th>

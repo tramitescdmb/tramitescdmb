@@ -92,7 +92,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
       {d.recurrentes.length > 0 && (
         <TarjetaTablero icon={Users} tono="ambar" titulo="Solicitantes recurrentes" descripcion="Quiénes más radican en VITAL, por identificación." sinRelleno>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="tabla-listado w-full text-xs">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-5 py-1.5">Solicitante</th>

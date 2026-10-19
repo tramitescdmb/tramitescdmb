@@ -97,7 +97,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
           </div>
           <Link
             href={`/contratacion/expedientes/${c.id}`}
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-stone-50 text-stone-500 hover:bg-cdmb-50 hover:text-cdmb-700"
+            className="flex h-8 w-8 flex-none items-center justify-center text-stone-500 hover:bg-cdmb-50 hover:text-cdmb-700"
             title="Abrir expediente"
           >
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -126,7 +126,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
               </span>
             </div>
             <div className="mt-1 h-1 overflow-hidden rounded-full bg-stone-100">
-              <div className="h-full rounded-full bg-gradient-to-r from-cdmb-500 to-acento-500" style={{ width: `${c.ejecucion}%` }} />
+              <div className="h-full rounded-full bg-cdmb-500" style={{ width: `${c.ejecucion}%` }} />
             </div>
           </div>
         )}
@@ -151,7 +151,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
       {c.siguiente ? (
         <Link
           href={c.siguiente.link}
-          className="group mt-auto flex items-center justify-between gap-3 bg-gradient-to-r from-acento-500 to-acento-600 px-4 py-2 text-white hover:from-acento-600 hover:to-acento-700"
+          className="group mt-auto flex items-center justify-between gap-3 bg-acento-500 px-4 py-2 text-white hover:bg-acento-600"
         >
           <span className="min-w-0">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/80">Siguiente paso</span>
@@ -177,7 +177,7 @@ export function MisContratos({ contratos, terminados }: { contratos: ContratoLan
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <span className="flex h-8 w-8 items-center justify-center text-amber-700">
             <Briefcase className="h-4 w-4" aria-hidden />
           </span>
           {propios > 0 ? "Mis contratos" : "Contratos que supervisa"}
@@ -210,7 +210,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
     <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <span className="flex h-8 w-8 items-center justify-center text-amber-700">
             <Briefcase className="h-4 w-4" aria-hidden />
           </span>
           Seguimiento de contratos
@@ -229,7 +229,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
           Todos los contratos en ejecución están al día.
         </p>
       ) : (
-        <table className="w-full text-xs">
+        <table className="tabla-listado w-full text-xs">
           <thead className="hidden bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400 md:table-header-group">
             <tr>
               <th className="px-4 py-1.5">Contrato</th>

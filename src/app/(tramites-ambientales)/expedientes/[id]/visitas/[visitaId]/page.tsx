@@ -71,7 +71,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
           ← {visita.expediente.numero}
         </Link>
         <h2 className="mt-1 flex items-center gap-2.5 text-xl font-semibold text-stone-900">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
+          <span className="flex h-9 w-9 flex-none items-center justify-center text-cdmb-700">
             <ClipboardCheck className="h-4 w-4" aria-hidden />
           </span>
           Hoja de visita técnica

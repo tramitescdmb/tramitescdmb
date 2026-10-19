@@ -18,6 +18,7 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/tramites\/[^/]+/, trail: ["Catálogo de trámites", "Trámite"] },
   { re: /^\/tramites$/, trail: ["Catálogo de trámites"] },
   { re: /^\/expedientes\/disposicion/, trail: ["Expedientes", "Disposición final (TRD)"] },
+  { re: /^\/expedientes\/clasificacion-trd/, trail: ["Expedientes", "Clasificación TRD"] },
   { re: /^\/expedientes\/[^/]+\/ficha-firma/, trail: ["Expedientes", "Expediente", "Ficha de firma"] },
   { re: /^\/expedientes\/[^/]+\/visitas\//, trail: ["Expedientes", "Expediente", "Hoja de visita"] },
   { re: /^\/expedientes\/[^/]+/, trail: ["Expedientes", "Expediente"] },

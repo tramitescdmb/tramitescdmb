@@ -206,7 +206,7 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
                 <p className="border-b border-stone-100 bg-stone-50 px-4 py-2 text-xs font-semibold text-stone-700">
                   Vigencia {vigencia} · {expedientes.length} contrato{expedientes.length === 1 ? "" : "s"}
                 </p>
-                <table className="w-full text-xs">
+                <table className="tabla-listado w-full text-xs">
                   <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                     <tr>
                       <th className="px-4 py-2">Número</th>

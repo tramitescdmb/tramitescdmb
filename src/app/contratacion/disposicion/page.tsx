@@ -27,7 +27,7 @@ export default async function DisposicionContratosPage() {
   return (
     <div className="space-y-4">
       <CabeceraTablero icon={Archive} titulo="Disposición final de contratos" descripcion={<>Solo expedientes contractuales cerrados. Requiere haber asignado la subserie de contratación en{" "}
-          <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.</>} />
+          <Link href="/contratacion/clasificacion-trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.</>} />
 
       {sinClasificar > 0 && (
         <SectionHelp>
@@ -46,7 +46,7 @@ export default async function DisposicionContratosPage() {
               <h2 className="text-sm font-semibold text-stone-900">{ETIQUETA_FASE[fase]}</h2>
               <span className="text-xs text-stone-400">{lista.length}</span>
             </div>
-            <table className="w-full text-sm">
+            <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-4 py-2">Contrato</th>

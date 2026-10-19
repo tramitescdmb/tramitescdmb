@@ -1,25 +1,36 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, ChevronRight, type LucideIcon } from "lucide-react";
 
 const TONOS = {
-  cdmb: "bg-cdmb-100 text-cdmb-700",
-  acento: "bg-acento-100 text-acento-700",
-  ambar: "bg-amber-100 text-amber-700",
-  cielo: "bg-sky-100 text-sky-700",
-  rojo: "bg-red-100 text-red-700",
-  verde: "bg-emerald-100 text-emerald-700",
-  violeta: "bg-violet-100 text-violet-700",
-  neutro: "bg-stone-100 text-stone-500",
+  cdmb: "text-cdmb-600",
+  acento: "text-acento-600",
+  ambar: "text-amber-600",
+  cielo: "text-sky-600",
+  rojo: "text-red-600",
+  verde: "text-emerald-600",
+  violeta: "text-violet-600",
+  neutro: "text-stone-500",
+} as const;
+
+const MOSAICOS = {
+  cdmb: "bg-cdmb-500 text-white",
+  acento: "bg-acento-400 text-stone-900",
+  ambar: "bg-amber-300 text-stone-900",
+  cielo: "bg-sky-200 text-sky-950",
+  rojo: "bg-red-300 text-red-950",
+  verde: "bg-emerald-300 text-emerald-950",
+  violeta: "bg-violet-200 text-violet-950",
+  neutro: "bg-stone-200 text-stone-800",
 } as const;
 
 export type TonoTablero = keyof typeof TONOS;
 
 export function Burbuja({ icon: Icon, tono = "cdmb", tamano = "md" }: { icon: LucideIcon; tono?: TonoTablero; tamano?: "sm" | "md" | "lg" }) {
-  const caja = { sm: "h-7 w-7", md: "h-8 w-8", lg: "h-9 w-9" }[tamano];
-  const icono = tamano === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const caja = { sm: "h-5 w-5", md: "h-6 w-6", lg: "h-7 w-7" }[tamano];
+  const icono = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-6 w-6" }[tamano];
   return (
-    <span className={`flex ${caja} flex-none items-center justify-center rounded-full ${TONOS[tono]}`}>
+    <span className={`flex ${caja} flex-none items-center justify-center ${TONOS[tono]}`}>
       <Icon className={icono} aria-hidden />
     </span>
   );
@@ -44,21 +55,22 @@ export function Indicador({
   titulo?: string;
   alerta?: boolean;
 }) {
+  const Icon = icon;
   const contenido = (
     <>
-      <Burbuja icon={icon} tono={tono} tamano="lg" />
       <span className="min-w-0">
-        <span className={`block text-lg font-semibold leading-none tabular-nums ${alerta ? "text-red-600" : "text-stone-900"}`}>
+        <span className="block text-xl font-semibold leading-tight tabular-nums">
           {typeof valor === "number" ? valor.toLocaleString("es-CO") : valor}
         </span>
-        <span className="block text-xs text-stone-500">{etiqueta}</span>
-        {detalle && <span className="block text-[10px] leading-tight text-stone-400">{detalle}</span>}
+        <span className="block text-[13px] leading-snug opacity-90">{etiqueta}</span>
+        {detalle && <span className="block text-[11px] leading-tight opacity-75">{detalle}</span>}
       </span>
+      <Icon className="h-6 w-6 flex-none opacity-80" aria-hidden />
     </>
   );
-  const clase = "flex items-center gap-3 rounded-xl bg-white/80 px-4 py-2.5 ring-1 ring-stone-200/70 backdrop-blur";
+  const clase = `flex min-h-[4.25rem] min-w-[9.5rem] items-start justify-between gap-3 rounded px-3 py-2.5 ${MOSAICOS[alerta ? "rojo" : tono]}`;
   return href ? (
-    <Link href={href} title={titulo} className={`${clase} transition hover:bg-white hover:ring-cdmb-300`}>
+    <Link href={href} title={titulo} className={`${clase} transition hover:brightness-95`}>
       {contenido}
     </Link>
   ) : (
@@ -69,12 +81,12 @@ export function Indicador({
 }
 
 function Contador({ valor }: { valor: number }) {
-  return <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500 ring-1 ring-stone-200/70">{valor.toLocaleString("es-CO")}</span>;
+  return <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-sky-800">{valor.toLocaleString("es-CO")}</span>;
 }
 
 export function BandaTablero({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <header className={`rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft ${className}`}>{children}</header>
+    <header className={`rounded-md border border-stone-200 bg-white px-5 py-4 ${className}`}>{children}</header>
   );
 }
 
@@ -103,7 +115,7 @@ export function CabeceraTablero({
         <div className="flex min-w-0 items-center gap-3">
           {icon && <Burbuja icon={icon} tono={tono} tamano="lg" />}
           <div className="min-w-0">
-            {antetitulo && <p className="text-xs font-medium uppercase tracking-wide text-cdmb-700">{antetitulo}</p>}
+            {antetitulo && <p className="text-xs text-stone-500">{antetitulo}</p>}
             <h2 className="mt-0.5 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
               {titulo}
               {contador !== undefined && <Contador valor={contador} />}
@@ -140,15 +152,15 @@ export function TarjetaTablero({
   children: ReactNode;
 }) {
   return (
-    <section className={`flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft ${className}`}>
-      <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
+    <section className={`flex flex-col overflow-hidden rounded-md border border-stone-200 bg-white ${className}`}>
+      <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-5 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           {icon && <Burbuja icon={icon} tono={tono} />}
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
               {titulo}
               {contador !== undefined && (
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-500">{contador.toLocaleString("es-CO")}</span>
+                <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-sky-800">{contador.toLocaleString("es-CO")}</span>
               )}
             </h2>
             {descripcion && <p className="text-xs text-stone-500">{descripcion}</p>}
@@ -156,7 +168,7 @@ export function TarjetaTablero({
         </div>
         {accion && <div className="flex-none text-xs">{accion}</div>}
       </div>
-      <div className={sinRelleno ? "flex-1 border-t border-stone-100" : "flex-1 px-5 pb-5"}>{children}</div>
+      <div className={sinRelleno ? "flex-1" : "flex-1 px-5 py-4"}>{children}</div>
     </section>
   );
 }
@@ -189,14 +201,14 @@ export function FilaTablero({
 }) {
   const contenido = (
     <>
-      {barra && <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full ${barra}`} aria-hidden />}
+      {barra && <span className={`absolute inset-y-0 left-0 w-[3px] ${barra}`} aria-hidden />}
       {icon && <Burbuja icon={icon} tono={tono} />}
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium text-stone-800">{titulo}</span>
         {detalle && <span className="block truncate text-xs text-stone-400">{detalle}</span>}
       </span>
       {extra && <span className="flex flex-none items-center gap-2">{extra}</span>}
-      {href && <ArrowRight className="h-3.5 w-3.5 flex-none text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-cdmb-600" aria-hidden />}
+      {href && <ChevronRight className="h-4 w-4 flex-none text-stone-300 group-hover:text-cdmb-600" aria-hidden />}
     </>
   );
   const clase = "relative flex items-center gap-3 px-5 py-2.5 text-sm";
@@ -232,12 +244,12 @@ export function Chip({ tono = "neutro", children }: { tono?: TonoTablero; childr
     violeta: "bg-violet-50 text-violet-700",
     neutro: "bg-stone-100 text-stone-600",
   }[tono];
-  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${clase}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-[11px] font-medium ${clase}`}>{children}</span>;
 }
 
 export function PieTablero({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2.5 text-xs text-stone-500">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-4 py-2.5 text-xs text-stone-500">
       {children}
     </div>
   );

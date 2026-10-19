@@ -69,7 +69,7 @@ export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModu
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex items-center gap-2 px-5 pb-2 pt-4">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-acento-50 text-acento-600">
+        <span className="flex h-8 w-8 items-center justify-center text-acento-600">
           <Inbox className="h-4 w-4" aria-hidden />
         </span>
         <h2 className="text-sm font-semibold text-stone-900">Pendientes</h2>
@@ -97,7 +97,7 @@ export function BandejaPendientes({ secciones }: { secciones: SeccionAlertasModu
 
       {items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 py-10 text-center">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
+          <span className="flex h-10 w-10 items-center justify-center">
             <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-hidden />
           </span>
           <p className="text-sm text-stone-400">Sin pendientes.</p>

@@ -128,7 +128,7 @@ export default async function SolicitanteDetallePage({
           {solicitante.expedientes.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-stone-400">Todavía no tiene expedientes.</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-4 py-2.5">Número</th>

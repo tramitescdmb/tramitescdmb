@@ -424,7 +424,7 @@ export default async function CorrespondenciaDetallePage({
       {tieneTercero && (
         <Tarjeta titulo={c.tipo === "ENVIADA" ? "Destinatario" : "Remitente"} icono={<User className="h-3.5 w-3.5" aria-hidden />}>
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
+            <span className="flex h-9 w-9 flex-none items-center justify-center text-cdmb-700">
               {c.terceroTipo === "JURIDICA" ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
             </span>
             <div className="min-w-0">

@@ -70,7 +70,7 @@ export default async function TerceroPage({ params }: { params: Promise<{ id: st
           <p className="rounded-2xl border border-stone-200 bg-white px-5 py-8 text-center text-sm text-stone-400 shadow-soft">Sin comunicaciones radicadas.</p>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-soft">
-            <table className="w-full text-xs">
+            <table className="tabla-listado w-full text-xs">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-3 py-2">Radicado</th>

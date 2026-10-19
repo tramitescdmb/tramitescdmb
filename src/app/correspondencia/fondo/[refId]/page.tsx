@@ -72,7 +72,7 @@ export default async function FichaFondoPage({
 
       <BandaTablero>
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <span className="flex h-9 w-9 flex-none items-center justify-center text-amber-700">
             <Archive className="h-4 w-4" aria-hidden />
           </span>
           <h1 className="text-xl font-semibold text-stone-900">

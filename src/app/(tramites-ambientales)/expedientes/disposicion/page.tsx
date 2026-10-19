@@ -32,7 +32,7 @@ export default async function DisposicionExpedientesPage() {
         descripcion={
           <>
             Expedientes cerrados cuyo tipo de trámite ya tiene subserie asignada en{" "}
-            <Link href="/admin/trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.
+            <Link href="/expedientes/clasificacion-trd" className="text-cdmb-700 hover:underline">Clasificación TRD</Link>.
           </>
         }
       />
@@ -54,7 +54,7 @@ export default async function DisposicionExpedientesPage() {
               <h2 className="text-sm font-semibold text-stone-900">{ETIQUETA_FASE[fase]}</h2>
               <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{lista.length}</span>
             </div>
-            <table className="w-full text-sm">
+            <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-4 py-2">Expediente</th>

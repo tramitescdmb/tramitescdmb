@@ -62,7 +62,7 @@ export default async function NitDetallePage({ params }: { params: Promise<{ num
       <BandaTablero>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-start gap-2.5">
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
+            <span className="flex h-10 w-10 flex-none items-center justify-center text-cdmb-700">
               <Icono className="h-5 w-5" aria-hidden />
             </span>
             <div>

@@ -214,7 +214,7 @@ export default async function ExpedientesPage({ searchParams }: { searchParams: 
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="px-4 py-2">Número</th>

@@ -61,7 +61,7 @@ export function MiniPlaneador({ agenda, planificador, titulo = "Mis visitas" }: 
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex items-center justify-between gap-2 px-5 pb-2 pt-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cdmb-100 text-cdmb-700">
+          <span className="flex h-8 w-8 items-center justify-center text-cdmb-700">
             <CalendarDays className="h-4 w-4" aria-hidden />
           </span>
           {titulo}

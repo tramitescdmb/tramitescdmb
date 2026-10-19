@@ -34,7 +34,7 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
   const { anchos, cambiarAncho, restablecer } = useAnchosColumna("correspondencia-v5", ANCHOS_DEFECTO);
 
   return (
-    <table className="w-full table-fixed text-sm">
+    <table className="tabla-listado w-full table-fixed text-sm">
       <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
         <tr>
           {ENCABEZADOS.map((titulo, i) => (

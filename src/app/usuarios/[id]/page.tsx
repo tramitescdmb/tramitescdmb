@@ -78,7 +78,7 @@ export default async function EditarUsuarioPage({
         Usuarios
       </Link>
 
-      <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft">
+      <header className="flex flex-wrap items-center gap-4 rounded-md border border-stone-200 bg-white px-5 py-4">
         <span
           className={`flex h-12 w-12 flex-none items-center justify-center rounded-full text-base font-semibold ${
             usuario.rol === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-cdmb-100 text-cdmb-800"

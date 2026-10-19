@@ -94,7 +94,7 @@ export default async function BitacoraPage({
         </form>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="tabla-listado w-full text-sm">
             <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
                 <th className="py-2 pr-3">Acción</th>

@@ -174,7 +174,7 @@ function DatosInteresado({ i }: { i: Interesado }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700">
+        <span className="flex h-9 w-9 flex-none items-center justify-center text-cdmb-700">
           {esPersonaJuridica(i) ? <Building2 className="h-4 w-4" aria-hidden /> : <User className="h-4 w-4" aria-hidden />}
         </span>
         <div className="min-w-0">

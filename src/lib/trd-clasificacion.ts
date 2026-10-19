@@ -1,4 +1,4 @@
-// Datos para la pantalla de administración /admin/trd — preclasificación TRD de Trámites 2.0 y GECON
+// Datos para las pantallas de Clasificación TRD de Trámites 2.0 y GECON
 // (reusa el catálogo de series/subseries/tipos documentales del SGDEA, ya real y completo).
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";

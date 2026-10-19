@@ -119,7 +119,7 @@ export function ImportarContratistasSeccion() {
 
           {verFormato && (
             <div className="overflow-x-auto rounded-lg border border-stone-200">
-              <table className="w-full text-xs">
+              <table className="tabla-listado w-full text-xs">
                 <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                   <tr>
                     <th className="px-3 py-2">Columna</th>
@@ -161,7 +161,7 @@ export function ImportarContratistasSeccion() {
                 {ignoradas.length > 0 && <span className="text-stone-400">Columnas no reconocidas (se ignoran): {ignoradas.join(", ")}</span>}
               </div>
               <div className="max-h-80 overflow-y-auto rounded-lg border border-stone-200">
-                <table className="w-full text-xs">
+                <table className="tabla-listado w-full text-xs">
                   <thead className="sticky top-0 bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                     <tr>
                       <th className="px-3 py-2">Fila</th>

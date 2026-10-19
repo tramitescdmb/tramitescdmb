@@ -275,7 +275,7 @@ export default async function MineriaPage({ searchParams }: { searchParams: Prom
       {a.recurrentes.length > 0 && (
         <Card icon={Boxes} titulo="Solicitantes recurrentes" sub={`Quiénes tramitan más ante la CDMB (por NIT/cédula, sobre ${pct(a.coberturaNit)} de los registros).`}>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="tabla-listado w-full text-sm">
               <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
                 <tr>
                   <th className="pb-1.5">Interesado</th>

@@ -85,7 +85,7 @@ export function Esqueleto({ className = "" }: { className?: string }) {
 
 export function EsqueletoTitulo() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-cdmb-100 bg-gradient-to-br from-cdmb-50 via-white to-acento-50/60 px-5 py-4 shadow-soft">
+    <div className="flex items-center gap-3 rounded-md border border-stone-200 bg-white px-5 py-4">
       <Esqueleto className="h-9 w-9 rounded-full" />
       <div className="space-y-1.5">
         <Esqueleto className="h-5 w-56" />

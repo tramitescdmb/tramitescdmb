@@ -142,7 +142,7 @@ export default async function CorrespondenciaAdminPage({ searchParams }: { searc
         </form>
 
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
-          <table className="w-full text-sm">
+          <table className="tabla-listado w-full text-sm">
             <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
               <tr>
                 <th className="px-4 py-2">Código</th>
