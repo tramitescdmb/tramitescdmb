@@ -159,6 +159,8 @@ model Usuario {
   notificaciones        Notificacion[]             @relation("NotificacionUsuario")
   historialPasswords    HistorialPassword[]
   historialCargos       HistorialCargo[]           @relation("HistorialCargoUsuario")
+  perfiles              UsuarioPerfil[]            @relation("UsuarioPerfilUsuario")
+  excepcionesPermiso    ExcepcionPermisoUsuario[]  @relation("ExcepcionPermisoUsuario")
   historialCargosHechos HistorialCargo[]           @relation("HistorialCargoCambiadoPor")
 
   dependenciaId                  String?
@@ -2349,4 +2351,59 @@ enum AplicaTipoContrato {
   TODOS
   SOLO_OBRA
   EXCEPTO_OBRA
+}
+
+enum TipoExcepcionPermiso {
+  CONCEDER
+  QUITAR
+}
+
+model Perfil {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?  @db.Text
+  modulo      String   @default("GENERAL")
+  claveOrigen String?  @unique
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permisos PermisoPerfil[]
+  usuarios UsuarioPerfil[]
+}
+
+model PermisoPerfil {
+  perfilId      String
+  funcionalidad String
+  acciones      String[] @default([])
+
+  perfil Perfil @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+
+  @@id([perfilId, funcionalidad])
+}
+
+model UsuarioPerfil {
+  usuarioId String
+  perfilId  String
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation("UsuarioPerfilUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  perfil  Perfil  @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, perfilId])
+  @@index([perfilId])
+}
+
+model ExcepcionPermisoUsuario {
+  usuarioId     String
+  funcionalidad String
+  tipo          TipoExcepcionPermiso
+  acciones      String[]             @default([])
+  motivo        String?              @db.Text
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  usuario Usuario @relation("ExcepcionPermisoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, funcionalidad, tipo])
 }
