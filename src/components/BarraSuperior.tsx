@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconLogout, IconUserCircle, type Icon as TablerIcon } from "@tabler/icons-react";
+import { BuscadorGlobal } from "@/components/BuscadorGlobal";
 import {
   ITEM_INICIO,
   ITEM_TRAMITES,
@@ -49,7 +50,7 @@ export function BarraSuperior({ nombre, subtitulo, iniciales }: { nombre: string
 
   return (
     <header className="sticky top-0 z-30 hidden h-14 flex-none items-center justify-between gap-4 border-b border-stone-200 bg-white px-6 lg:flex print:hidden">
-      <nav aria-label="Ruta" className="flex min-w-0 items-center gap-2 text-[15px]">
+      <nav aria-label="Ruta" className="flex min-w-0 flex-none items-center gap-2 text-[15px]">
         <Miga icon={ITEM_INICIO.icon} label={ITEM_INICIO.label} href="/" actual={!seccion} />
         {seccion && (
           <>
@@ -60,6 +61,10 @@ export function BarraSuperior({ nombre, subtitulo, iniciales }: { nombre: string
           </>
         )}
       </nav>
+
+      <div className="flex min-w-0 flex-1 justify-end px-2">
+        <BuscadorGlobal />
+      </div>
 
       <div className="flex flex-none items-center gap-1">
         <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-3 rounded px-2 py-1 hover:bg-stone-100">
