@@ -15,6 +15,39 @@ describe("perfil del directorio activo", () => {
     ).toEqual({ nombres: "Luis Alfonso", apellidos: "Lozano Camacho", email: "luiloz01@cdmb.gov.co", celular: "3001234567", documento: "13743584" });
   });
 
+  it("lee la respuesta del API con los campos usu_* dentro de data", () => {
+    expect(
+      extraerPerfil(
+        {
+          token: "1643|abc",
+          data: {
+            usu_apodo: "luiloz01",
+            usu_nombre: "Luis Alfonso",
+            usu_apellido: "Lozano Camacho",
+            usu_telefono: "6076970000",
+            email: "luiloz01@cdmb.gov.co",
+            usu_nombre_mostrar: null,
+            usu_movil: "3001234567",
+            usu_id_empleado: "13743584",
+            usu_direccion_postal: null,
+            usu_departamento: "Oficina de Tecnologías",
+            usu_titulo: null,
+          },
+          message: "Inicio de sesión exitoso",
+        },
+        "luiloz01"
+      )
+    ).toEqual({
+      nombres: "Luis Alfonso",
+      apellidos: "Lozano Camacho",
+      telefono: "6076970000",
+      email: "luiloz01@cdmb.gov.co",
+      celular: "3001234567",
+      documento: "13743584",
+      dependencia: "Oficina de Tecnologías",
+    });
+  });
+
   it("sin datos de la persona devuelve un perfil vacío", () => {
     expect(extraerPerfil({ token: "1|abc", message: "Bienvenido" })).toEqual({});
   });

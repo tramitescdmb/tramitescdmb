@@ -28,23 +28,18 @@ export type ResultadoAutenticacion =
   | { ok: true; token: string; perfil: PerfilDirectorio }
   | { ok: false; mensaje: string };
 
-// Nombres de campo "candidatos" por los que preguntamos, combinando el estándar LDAP/Active
-// Directory (givenName, sn, streetAddress, physicalDeliveryOfficeName...) con variantes en
-// español que distintos backends suelen usar. Nunca vimos una respuesta real de este API en
-// este repo (ver el log "[directorio-activo] campos de la respuesta del login" más abajo, que
-// existe justo para confirmarlo) — esto es mejor esfuerzo hasta tener una muestra real.
 const CLAVES_PERFIL: Record<keyof PerfilDirectorio, string[]> = {
-  nombres: ["givenname", "nombres", "nombre", "nombre1", "first_name", "firstname"],
-  apellidos: ["sn", "surname", "apellidos", "apellido", "apellido1", "last_name", "lastname"],
-  nombreCompleto: ["displayname", "cn", "name", "nombre_completo", "fullname"],
+  nombres: ["usu_nombre", "givenname", "nombres", "nombre", "nombre1", "first_name", "firstname"],
+  apellidos: ["usu_apellido", "sn", "surname", "apellidos", "apellido", "apellido1", "last_name", "lastname"],
+  nombreCompleto: ["usu_nombre_mostrar", "displayname", "cn", "name", "nombre_completo", "fullname"],
   email: ["mail", "email", "correo", "userprincipalname"],
-  celular: ["mobile", "celular", "movil", "telefono_movil"],
-  telefono: ["telephonenumber", "telefono", "phone"],
-  documento: ["employeeid", "employeenumber", "cedula", "documento", "identificacion"],
+  celular: ["usu_movil", "mobile", "celular", "movil", "telefono_movil"],
+  telefono: ["usu_telefono", "telephonenumber", "telefono", "phone"],
+  documento: ["usu_id_empleado", "employeeid", "employeenumber", "cedula", "documento", "identificacion"],
   // "departamento" se deja fuera a propósito: en esta app ya significa la división
   // geográfica (Santander, etc.), no la dependencia/oficina del funcionario.
-  direccion: ["streetaddress", "direccion", "address", "postaladdress"],
-  dependencia: ["physicaldeliveryofficename", "department", "dependencia", "office", "oficina", "ou"],
+  direccion: ["usu_direccion_postal", "streetaddress", "direccion", "address", "postaladdress"],
+  dependencia: ["usu_departamento", "physicaldeliveryofficename", "department", "dependencia", "office", "oficina", "ou"],
 };
 
 /**
