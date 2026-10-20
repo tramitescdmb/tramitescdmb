@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { MosaicosFiltro } from "@/components/MosaicosFiltro";
+import { estiloEstado } from "@/lib/estados-expediente-estilo";
 import { FolderOpen } from "lucide-react";
 import { CabeceraTablero, EnlaceTablero } from "@/components/tablero";
 import { db } from "@/lib/db";
@@ -59,7 +61,17 @@ export default async function ExpedientesPage({
     cargos: session?.cargos,
   });
 
-  const [total, expedientes] = await Promise.all([
+  const whereSinEstado = construirWhereExpedientes({
+    tramiteIdsPermitidos,
+    tramite,
+    municipio,
+    rango,
+    busqueda,
+    soloMios,
+    usuarioId: session?.userId,
+    cargos: session?.cargos,
+  });
+  const [total, expedientes, porEstado] = await Promise.all([
     db.expediente.count({ where }),
     db.expediente.findMany({
       where,
@@ -68,6 +80,7 @@ export default async function ExpedientesPage({
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
     }),
+    db.expediente.groupBy({ by: ["estado"], where: whereSinEstado, _count: { _all: true } }),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
@@ -217,27 +230,26 @@ export default async function ExpedientesPage({
         )}
       </form>
 
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={conFiltro({ estado: undefined })}
-          className={`rounded-sm px-3 py-1 text-xs font-medium ${
-            !estado ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
-          }`}
-        >
-          Todos
-        </Link>
-        {ESTADOS_EXPEDIENTE.map((e) => (
-          <Link
-            key={e}
-            href={conFiltro({ estado: e })}
-            className={`rounded-sm px-3 py-1 text-xs font-medium ${
-              estado === e ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"
-            }`}
-          >
-            {e.replaceAll("_", " ")}
-          </Link>
-        ))}
-      </div>
+      <MosaicosFiltro
+        mosaicos={[
+          {
+            clave: "todos",
+            etiqueta: "Expedientes",
+            valor: porEstado.reduce((t, e) => t + e._count._all, 0),
+            href: conFiltro({ estado: undefined }),
+            color: "#d99a00",
+            activo: !estado,
+          },
+          ...ESTADOS_EXPEDIENTE.map((e) => ({
+            clave: e,
+            etiqueta: estiloEstado(e).etiqueta,
+            valor: porEstado.find((x) => x.estado === e)?._count._all ?? 0,
+            href: conFiltro({ estado: e }),
+            color: estiloEstado(e).color,
+            activo: estado === e,
+          })),
+        ]}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ResumenResultados total={total} detalle={detalleFiltro} />

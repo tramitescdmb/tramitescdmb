@@ -1,10 +1,12 @@
 import { Paginador } from "@/components/Paginador";
+import { db } from "@/lib/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
-import { listarExpedientesContractuales, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
+import { listarExpedientesContractuales, construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
+import { MosaicosFiltro } from "@/components/MosaicosFiltro";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { CarpetaExpedienteContractual } from "@/components/CarpetaExpedienteContractual";
@@ -23,10 +25,19 @@ export default async function ExpedientesContratacionPage({
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const sp = await searchParams;
-  const [{ filas, total, page, totalPaginas, porPagina }, dependencias] = await Promise.all([
+  const sinEtapa = { ...sp, etapa: undefined };
+  const [{ filas, total, page, totalPaginas, porPagina }, dependencias, porEtapa, terminados] = await Promise.all([
     listarExpedientesContractuales(sp, permisos),
     listarDependenciasActivas(),
+    db.expedienteContractual.groupBy({ by: ["etapaActual"], where: construirWhereExpedienteContractual(sinEtapa, permisos), _count: { _all: true } }),
+    db.expedienteContractual.count({ where: construirWhereExpedienteContractual({ ...sinEtapa, etapa: "TERMINADOS" }, permisos) }),
   ]);
+  const hrefEtapa = (etapa?: string) => {
+    const params = new URLSearchParams(Object.entries({ ...sinEtapa, page: undefined }).filter((par): par is [string, string] => Boolean(par[1])));
+    if (etapa) params.set("etapa", etapa);
+    return `?${params.toString()}`;
+  };
+  const COLOR_ETAPA: Record<string, string> = { PRECONTRACTUAL: "#2a78d6", CONTRACTUAL: "#d16f00", POSTCONTRACTUAL: "#4a3aa7" };
 
   const vista = sp.vista === "tabla" || sp.vista === "carpetas" ? sp.vista : puedeGestionarContratistas(permisos) ? "tabla" : "carpetas";
   const hrefExportar = (formato: "xlsx" | "csv") => {
@@ -56,6 +67,21 @@ export default async function ExpedientesContratacionPage({
       >
         Expedientes contractuales
       </TituloSeccion>
+
+      <MosaicosFiltro
+        mosaicos={[
+          { clave: "todos", etiqueta: "Expedientes", valor: porEtapa.reduce((t, e) => t + e._count._all, 0), href: hrefEtapa(), color: "#d99a00", activo: !sp.etapa },
+          ...ETAPAS_ORDEN.map((e) => ({
+            clave: e,
+            etiqueta: ETIQUETA_ETAPA[e],
+            valor: porEtapa.find((x) => x.etapaActual === e)?._count._all ?? 0,
+            href: hrefEtapa(e),
+            color: COLOR_ETAPA[e]!,
+            activo: sp.etapa === e,
+          })),
+          { clave: "terminados", etiqueta: "Terminados", valor: terminados, href: hrefEtapa("TERMINADOS"), color: "#76847a", activo: sp.etapa === "TERMINADOS" },
+        ]}
+      />
 
       <form className="flex flex-wrap items-center gap-2" method="get">
         <input

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { BarraDashboard } from "@/components/inicio/BarraDashboard";
 import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ListChecks, ScrollText } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
@@ -62,6 +63,7 @@ export default async function HistoricoPanelPage({
 
   return (
     <div className="space-y-4">
+      <BarraDashboard actual="/historico" />
       {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 

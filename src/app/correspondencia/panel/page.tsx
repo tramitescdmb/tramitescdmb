@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarraDashboard } from "@/components/inicio/BarraDashboard";
 import { redirect } from "next/navigation";
 import { Clock, AlertTriangle, PenLine, ListChecks, Inbox } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -23,6 +24,7 @@ export default async function PanelMiTrabajoPage() {
 
   return (
     <section className="space-y-4">
+      <BarraDashboard actual="/correspondencia/panel" />
       <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Radicados asignados a usted que siguen abiertos.">
         <Indicador icon={ListChecks} valor={p.mis.total} etiqueta="Asignados" tono="cdmb" />
         <Indicador icon={PenLine} valor={p.mis.porResponder} etiqueta="Por responder" tono="cielo" />

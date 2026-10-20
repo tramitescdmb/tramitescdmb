@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 export function NuevoPerfilForm({ modulos, perfiles }: { modulos: { valor: string; etiqueta: string }[]; perfiles: { id: string; nombre: string }[] }) {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
-  const [modulo, setModulo] = useState("GENERAL");
+  const [modulo, setModulo] = useState(modulos[0]?.valor ?? "GENERAL");
   const [descripcion, setDescripcion] = useState("");
   const [copiarDeId, setCopiarDeId] = useState("");
   const [error, setError] = useState<string | null>(null);

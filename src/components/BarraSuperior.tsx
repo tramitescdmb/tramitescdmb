@@ -7,6 +7,7 @@ import { BuscadorGlobal } from "@/components/BuscadorGlobal";
 import { CampanaAvisos } from "@/components/CampanaAvisos";
 import {
   ITEM_INICIO,
+  ITEM_DASHBOARD,
   ITEM_TRAMITES,
   ITEM_VITAL,
   ITEM_HISTORICO,
@@ -17,7 +18,7 @@ import {
 } from "@/components/SidebarNav";
 
 const ITEM_MI_CUENTA: Item = { href: "/mi-cuenta", label: "Mi cuenta", icon: IconUserCircle };
-const ITEMS: Item[] = [ITEM_TRAMITES, ITEM_VITAL, ITEM_HISTORICO, ITEM_CORRESPONDENCIA, ITEM_CONTRATACION, ...ITEMS_ADMIN, ITEM_MI_CUENTA];
+const ITEMS: Item[] = [ITEM_DASHBOARD, ITEM_TRAMITES, ITEM_VITAL, ITEM_HISTORICO, ITEM_CORRESPONDENCIA, ITEM_CONTRATACION, ...ITEMS_ADMIN, ITEM_MI_CUENTA];
 
 function coincide(item: Item, pathname: string) {
   const prefijos = item.prefijo ? (Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo]) : [item.href];

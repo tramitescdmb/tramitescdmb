@@ -4,7 +4,9 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { IconLayoutDashboard, IconMaximize, IconRefresh } from "@tabler/icons-react";
 
-export type OpcionTablero = { href: string; label: string; grupo?: string };
+import type { OpcionTablero } from "@/lib/tableros";
+
+export type { OpcionTablero };
 
 export function SelectorTablero({ opciones, actual }: { opciones: OpcionTablero[]; actual: string }) {
   const router = useRouter();

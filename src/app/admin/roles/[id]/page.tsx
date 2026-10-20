@@ -36,7 +36,6 @@ export default async function RolDetallePage({ params }: { params: Promise<{ id:
         descripcionInicial={perfil.descripcion ?? ""}
         moduloPerfil={perfil.modulo}
         matrizInicial={perfil.matriz}
-        matrizRolActual={null}
         eliminable={!perfil.claveOrigen}
       />
     </div>

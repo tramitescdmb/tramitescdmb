@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { BarraDashboard } from "@/components/inicio/BarraDashboard";
 import { Inbox, FileStack, Layers, CalendarClock, TrendingUp, BarChart3, Activity, Users } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -55,6 +56,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-4">
+      <BarraDashboard actual="/vital/dashboard" />
       {selector}
 
       <CabeceraTablero antetitulo={rango ? etiqueta : "Histórico completo"} titulo="Solicitudes de VITAL" descripcion="Solicitudes radicadas en VITAL para la jurisdicción de la CDMB.">

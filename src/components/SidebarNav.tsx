@@ -13,7 +13,8 @@ import {
   IconInbox,
   IconBriefcase,
   IconUserCog,
-  IconUserShield,
+  IconKey,
+  IconLayoutDashboard,
   IconShieldCheck,
   IconPalette,
   IconLock,
@@ -24,6 +25,7 @@ import {
 export type Item = { href: string; label: string; icon: TablerIcon; exacto?: boolean; prefijo?: string | string[] };
 
 export const ITEM_INICIO: Item = { href: "/", label: "Inicio", icon: IconHome, exacto: true };
+export const ITEM_DASHBOARD: Item = { href: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard, prefijo: "/dashboard" };
 
 export const ITEM_TRAMITES: Item = {
   href: "/tramites-ambientales",
@@ -38,7 +40,7 @@ export const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GE
 
 export const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: IconUserCog },
-  { href: "/admin/roles", label: "Roles", icon: IconUserShield },
+  { href: "/admin/roles", label: "Roles", icon: IconKey },
   { href: "/auditoria", label: "Auditoría", icon: IconShieldCheck },
   { href: "/admin/apariencia", label: "Apariencia", icon: IconPalette },
   { href: "/admin/seguridad", label: "Seguridad", icon: IconLock },
@@ -75,6 +77,7 @@ export function SidebarNav({
 
   const principal = [
     ITEM_INICIO,
+    ITEM_DASHBOARD,
     ...(mostrarTramites ? [ITEM_TRAMITES] : []),
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
     ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),
@@ -111,8 +114,8 @@ function Grupo({
       <ul>
         {items.map((item) => (
           <li key={item.href}>
-            <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO} />
-            {submenu && activo(item) && item !== ITEM_INICIO && submenu}
+            <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD} />
+            {submenu && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD && submenu}
           </li>
         ))}
       </ul>

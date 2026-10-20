@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit, ChevronDown, Inbox, Layers } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeFirmar, puedeDespachar } from "@/lib/permisos";
-import { getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, contarOficiosSinDespachar, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
+import { db } from "@/lib/db";
+import { MosaicosFiltro } from "@/components/MosaicosFiltro";
+import { construirWhereCorrespondencia, getCorrespondenciaListado, getCorrespondenciaOpcionesFiltro, contarComunicacionesVencidas, contarOficiosSinDespachar, ETIQUETA_ORDEN, type FiltrosCorrespondencia } from "@/lib/correspondencia-data";
 import { comunicacionesFirmablesPor } from "@/lib/correspondencia";
 import { respuestasListasParaRadicar } from "@/lib/correspondencia-respuesta";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
@@ -29,6 +31,15 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   RESPONDIDA: "Respondida",
   ARCHIVADA: "Archivada",
   ANULADA: "Anulada",
+};
+const COLOR_ESTADO: Record<string, string> = {
+  RADICADA: "#2a78d6",
+  EN_REPARTO: "#4a3aa7",
+  ASIGNADA: "#0f8f8a",
+  EN_TRAMITE: "#d16f00",
+  INFORMACION_ADICIONAL_REQUERIDA: "#c2410c",
+  RESPONDIDA: "#038f67",
+  ARCHIVADA: "#76847a",
 };
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
@@ -56,7 +67,7 @@ export default async function CorrespondenciaBandejaPage({
 
   const sp = await searchParams;
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables, listasParaRadicar] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables, listasParaRadicar, porEstado] = await Promise.all([
     getCorrespondenciaListado(sp, rango),
     getCorrespondenciaOpcionesFiltro(sp.serieId || undefined),
     contarComunicacionesVencidas(),
@@ -64,7 +75,13 @@ export default async function CorrespondenciaBandejaPage({
     getCalendarioLaboral(),
     puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
     puedeRadicarUsuario ? respuestasListasParaRadicar() : Promise.resolve([]),
+    db.comunicacion.groupBy({ by: ["estado"], where: construirWhereCorrespondencia({ ...sp, estado: undefined }, rango), _count: { _all: true } }),
   ]);
+  const hrefEstado = (estado?: string) => {
+    const params = new URLSearchParams(Object.entries({ ...sp, estado: undefined, page: undefined }).filter((par): par is [string, string] => typeof par[1] === "string" && par[1] !== ""));
+    if (estado) params.set("estado", estado);
+    return `?${params.toString()}`;
+  };
 
   const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || sp.despacho || rango);
   const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "vencimiento", "despacho", "orden", "desde", "hasta"] as const;
@@ -245,6 +262,22 @@ export default async function CorrespondenciaBandejaPage({
         <Semaforo color="bg-emerald-500">A tiempo</Semaforo>
         <Semaforo color="bg-amber-400">Vence en 3 días hábiles o menos</Semaforo>
         <Semaforo color="bg-red-500">Término vencido</Semaforo>
+      </div>
+
+      <div className="print:hidden">
+        <MosaicosFiltro
+          mosaicos={[
+            { clave: "todos", etiqueta: "Comunicaciones", valor: porEstado.filter((e) => e.estado !== "ANULADA").reduce((t, e) => t + e._count._all, 0), href: hrefEstado(), color: "#d99a00", activo: !sp.estado },
+            ...Object.keys(COLOR_ESTADO).map((e) => ({
+              clave: e,
+              etiqueta: ETIQUETA_ESTADO[e]!,
+              valor: porEstado.find((x) => x.estado === e)?._count._all ?? 0,
+              href: hrefEstado(e),
+              color: COLOR_ESTADO[e]!,
+              activo: sp.estado === e,
+            })),
+          ]}
+        />
       </div>
 
       <details open={hayFiltros} className="print:hidden group rounded-2xl border border-stone-200 bg-white shadow-soft">

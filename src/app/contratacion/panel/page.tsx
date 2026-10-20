@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarraDashboard } from "@/components/inicio/BarraDashboard";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck } from "lucide-react";
@@ -90,6 +91,7 @@ export default async function PanelPendientesGeconPage() {
 
   return (
     <section className="space-y-4">
+      <BarraDashboard actual="/contratacion/panel" />
       <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Por tipo y agrupados por contrato.">
         <Indicador icon={PenLine} valor={p.firmas.listos} etiqueta="Por firmar ahora" tono="rojo" href="/contratacion/buzon" />
         <Indicador icon={Hourglass} valor={esperando} etiqueta="Esperando turno" tono="ambar" href="/contratacion/buzon" />

@@ -1,15 +1,6 @@
 import { redirect } from "next/navigation";
 import { Archive, Briefcase, CalendarCheck, CalendarDays, CircleCheck, FileBadge, FolderOpen, Inbox, Link2, Mail, MessageSquareWarning } from "lucide-react";
-import {
-  verificarSesion as getSession,
-  obtenerPermisosUsuario,
-  puedePlanearVisitas,
-  puedeAccederSeccion,
-  puedeAccederCorrespondencia,
-  puedeAccederContratacion,
-  type PermisosUsuario,
-} from "@/lib/permisos";
-import { sincaConfigurado } from "@/lib/sinca";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { tableroTramites, tableroContratos } from "@/lib/tablero-general";
 import { estiloEstado } from "@/lib/estados-expediente-estilo";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
@@ -20,6 +11,7 @@ import { obtenerSeccionesAlertas } from "@/lib/alertas-landing";
 import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
 import { BandaTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero } from "@/components/tablero";
 import { SelectorTablero, AccionesTablero, type OpcionTablero } from "@/components/inicio/SelectorTablero";
+import { opcionesTablero, tablerosDeModulo } from "@/lib/tableros";
 import type { SeccionAlertasModulo } from "@/lib/alertas-landing";
 import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
@@ -28,17 +20,6 @@ import { MisContratos, SeguimientoContratos } from "@/components/inicio/MisContr
 import { SolicitarVinculacion } from "@/components/VinculacionContratista";
 import { debeOfrecerVinculacion } from "@/lib/contratacion";
 import { obtenerContratosLanding, obtenerSeguimientoContratos, veSeguimientoContratos } from "@/lib/contratos-landing";
-
-function tablerosDeModulo(permisos: PermisosUsuario): OpcionTablero[] {
-  const grupo = "Tableros de módulo";
-  return [
-    ...(permisos.modulos.has("TRAMITES") ? [{ href: "/tramites-ambientales", label: "Trámites ambientales 2.0", grupo }] : []),
-    ...(puedeAccederContratacion(permisos) ? [{ href: "/contratacion/panel", label: "GECON", grupo }] : []),
-    ...(puedeAccederCorrespondencia(permisos) ? [{ href: "/correspondencia/panel", label: "SGDEA CDMB", grupo }] : []),
-    ...(puedeAccederSeccion(permisos, "VITAL_DASHBOARD") ? [{ href: "/vital/dashboard", label: "VITAL", grupo }] : []),
-    ...(sincaConfigurado() && puedeAccederSeccion(permisos, "SINCA_DASHBOARD") ? [{ href: "/historico", label: "SINCA 1.0", grupo }] : []),
-  ];
-}
 
 const ICONO_MODULO: Record<string, typeof Inbox> = {
   "/tramites-ambientales": FileBadge,
@@ -85,12 +66,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const visitasHoy = agenda ? agenda.visitas.filter((v) => v.dia === hoy && v.estado === "PROGRAMADA").length : 0;
   const visitasSemana = agenda && hoy ? agenda.visitas.filter((v) => v.dia >= hoy && v.dia < sumarDias(hoy, 7) && v.estado === "PROGRAMADA").length : 0;
   const modulos = tablerosDeModulo(permisos);
-  const opciones: OpcionTablero[] = [{ href: "/", label: "Mi trabajo" }, { href: "/?vista=general", label: "General" }, ...modulos];
+  const opciones: OpcionTablero[] = opcionesTablero(permisos);
 
   return (
     <div id="tablero" className={`mx-auto space-y-3 bg-[#f5f7f6] ${general ? "max-w-7xl" : "max-w-6xl"}`}>
       <BandaTablero className="flex flex-wrap items-center justify-between gap-3 !py-3">
-        <SelectorTablero opciones={opciones} actual={general ? "/?vista=general" : "/"} />
+        <SelectorTablero opciones={opciones} actual={general ? "/dashboard" : "/"} />
         {general ? (
           <AccionesTablero />
         ) : (

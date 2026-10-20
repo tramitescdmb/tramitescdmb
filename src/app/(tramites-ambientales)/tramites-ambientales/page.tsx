@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarraDashboard } from "@/components/inicio/BarraDashboard";
 import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
@@ -44,6 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-4">
+      <BarraDashboard actual="/tramites-ambientales" />
       <CabeceraTablero
         antetitulo={rango ? etiqueta : "Histórico completo"}
         titulo="Trámites y expedientes"

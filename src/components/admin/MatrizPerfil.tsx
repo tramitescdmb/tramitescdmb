@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Trash2, RotateCcw } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import {
   ACCIONES,
   ETIQUETA_ACCION,
@@ -20,13 +20,12 @@ type Props = {
   descripcionInicial: string;
   moduloPerfil: ModuloPerfil;
   matrizInicial: Matriz;
-  matrizRolActual: Matriz | null;
   eliminable: boolean;
 };
 
 const aSets = (m: Matriz) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, new Set<Accion>(v)]));
 
-export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerfil, matrizInicial, matrizRolActual, eliminable }: Props) {
+export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerfil, matrizInicial, eliminable }: Props) {
   const router = useRouter();
   const [nombre, setNombre] = useState(nombreInicial);
   const [descripcion, setDescripcion] = useState(descripcionInicial);
@@ -89,8 +88,6 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
   }
 
   const funcionalidades = FUNCIONALIDADES.filter((f) => f.modulo === pestana);
-  const difiereDelRol = (clave: string, accion: Accion) =>
-    matrizRolActual !== null && (matrizRolActual[clave]?.includes(accion) ?? false) !== (matriz[clave]?.has(accion) ?? false);
 
   return (
     <div className="space-y-4 pb-16">
@@ -158,7 +155,7 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
                               checked={marcado}
                               onChange={() => alternar(f.clave, a)}
                               aria-label={`${f.nombre}: ${f.etiquetas?.[a] ?? ETIQUETA_ACCION[a]}`}
-                              className={`h-4 w-4 ${difiereDelRol(f.clave, a) ? "outline outline-2 outline-offset-2 outline-amber-400" : ""}`}
+                              className="h-4 w-4"
                             />
                             {f.etiquetas?.[a] && <span className="text-[10px] text-stone-500">{f.etiquetas[a]}</span>}
                           </label>
@@ -183,11 +180,6 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
               ))}
             </tbody>
           </table>
-          {matrizRolActual && (
-            <p className="border-t border-stone-200 px-4 py-2 text-[11px] text-stone-500">
-              Las casillas con borde ámbar difieren de lo que el rol actual permite hoy.
-            </p>
-          )}
         </div>
       </div>
 
@@ -197,19 +189,6 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
             <button type="button" onClick={eliminar} className="inline-flex items-center gap-1.5 rounded border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
               <Trash2 className="h-4 w-4" aria-hidden />
               Eliminar rol
-            </button>
-          )}
-          {matrizRolActual && (
-            <button
-              type="button"
-              onClick={() => {
-                setMatriz(aSets(matrizRolActual));
-                setEstado(null);
-              }}
-              className="inline-flex items-center gap-1.5 rounded border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden />
-              Volver al rol actual
             </button>
           )}
           {estado && <span className={`text-sm ${estado.tipo === "ok" ? "text-emerald-700" : "text-red-700"}`}>{estado.texto}</span>}
