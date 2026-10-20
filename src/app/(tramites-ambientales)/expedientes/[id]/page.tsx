@@ -404,8 +404,7 @@ export default async function ExpedienteDetallePage({
       {!puedeEditarPorRol && (
         <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
           <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-          Solo puede consultar este expediente — su acceso a este trámite es de solo lectura. No puede
-          adjuntar documentos, comentar, ni avanzar pasos.
+          Solo lectura.
         </div>
       )}
       {error === "sin-permiso-paso" && (
@@ -581,7 +580,7 @@ export default async function ExpedienteDetallePage({
                       (visitasVigentesLista.length === 0 ? (
                         <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-                          Este paso requiere visita técnica y aún no está programada. La programan el Coordinador de Evaluación o el Subdirector SEYCA desde el Planeador.
+                          Visita técnica sin programar.
                         </p>
                       ) : (
                         <ul className="space-y-1.5">
@@ -683,8 +682,7 @@ export default async function ExpedienteDetallePage({
                       <div className="space-y-2">
                         <p className="flex items-start gap-1.5 text-xs font-medium text-stone-500">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-                          Este paso requiere una decisión. Seleccione la opción correspondiente para que el
-                          expediente siga el camino correcto:
+                          Seleccione la decisión:
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {Array.isArray(pasoActual.opciones) &&
@@ -730,8 +728,7 @@ export default async function ExpedienteDetallePage({
                       </form>
                     ) : (
                       <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-                        Este es el último paso del flujo. Si el trámite ya quedó resuelto, debe definirse el
-                        estado final mediante &quot;Cambiar estado manualmente&quot; en la pestaña Administración.
+                        Último paso. Defina el estado final en Administración.
                       </p>
                     )}
                   </div>
@@ -1216,8 +1213,7 @@ export default async function ExpedienteDetallePage({
                   </span>
                 </summary>
                 <p className="mb-3 text-xs text-stone-500">
-                  Registro inalterable con cadena de hash (cada movimiento encadena su hash con el del anterior) —
-                  el mismo mecanismo del SGDEA.
+                  Registro encadenado por hash.
                 </p>
                 <ul className="divide-y divide-stone-100 text-xs">
                   {[...trazabilidad].reverse().map((mov) => (
@@ -1275,7 +1271,7 @@ export default async function ExpedienteDetallePage({
                 puedeReabrir={session?.rol === "ADMIN"}
                 cierre={{
                   descripcion:
-                    "Al cerrarlo, el expediente queda en solo lectura y se archiva en el SGDEA con su clasificación TRD, sin copiar los documentos. Requiere estado final del trámite, clasificación TRD y ninguna firma pendiente.",
+                    "Queda en solo lectura y se archiva en el SGDEA. Requiere estado final, TRD y firmas completas.",
                   bloqueo: !esTerminal
                     ? `El trámite aún no tiene un estado final (${(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).map((e) => e.toLowerCase()).join(", ")}).`
                     : !expediente.subserieId
@@ -1295,14 +1291,12 @@ export default async function ExpedienteDetallePage({
               <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                 <h2 className="text-sm font-semibold text-stone-900">Cambiar estado manualmente</h2>
                 <p className="mb-3 text-xs text-stone-500">
-                  Para definir el estado cuando el flujo no tiene una decisión que corresponda (por ejemplo, un
-                  archivo por desistimiento tácito o una suspensión mientras llega información externa).
+                  Cambio de estado fuera del flujo.
                 </p>
                 {session?.rol !== "ADMIN" ? (
                   <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                     <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-                    Solo un administrador puede cambiar el estado a mano — esta opción salta el paso a paso
-                    del flujo. Gestione el expediente desde la pestaña Paso actual.
+                    Solo el administrador cambia el estado a mano.
                   </p>
                 ) : (
                 <form action={`/api/expedientes/${expediente.id}/estado`} method="post" className="flex flex-wrap items-end gap-3">

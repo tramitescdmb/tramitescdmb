@@ -150,8 +150,7 @@ export function EditarEliminarDocumentoContrato({
             <div className="mt-4 border-t border-stone-100 pt-3">
               <p className="mb-1.5 text-xs font-medium text-stone-600">Reemplazar archivo</p>
               <p className="mb-2 text-[11px] text-stone-400">
-                Sube un archivo nuevo en lugar del actual. El archivo anterior se borra y cualquier firma ya
-                registrada sobre él queda invalidada (deberá volver a firmarse).
+                Sube un archivo nuevo en lugar del actual. Las firmas registradas sobre él quedan invalidadas.
               </p>
               <input
                 ref={fileRef}

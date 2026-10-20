@@ -185,8 +185,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
       <Tarjeta icon={FileText} titulo="Documentos de la resolución">
         {errorDetalle ? (
           <p className="text-sm text-stone-500">
-            SINCA 1.0 no respondió a tiempo: se muestran los datos guardados en esta plataforma. Los documentos y el detalle
-            ampliado se siguen consultando en segundo plano; vuelva a abrir el trámite en unos segundos.
+            SINCA 1.0 no respondió a tiempo: se muestran los datos guardados en esta plataforma.
           </p>
         ) : docs.length === 0 ? (
           <p className="text-sm text-stone-500">Sin documentos registrados en SINCA 1.0.</p>

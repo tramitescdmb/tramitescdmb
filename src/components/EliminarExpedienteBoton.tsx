@@ -64,8 +64,7 @@ export function EliminarExpedienteBoton({
               </button>
             </div>
             <p className="mb-3 text-xs text-stone-500">
-              El expediente deja de aparecer en listados, búsquedas y reportes, pero queda registrado en la bitácora
-              de auditoría junto con el motivo. Documentos y firmas no se borran.
+              El expediente deja de aparecer en listados, búsquedas y reportes, pero queda registrado en la bitácora de auditoría junto con el motivo.
             </p>
 
             <label className="mb-2 block text-xs font-medium text-stone-600">

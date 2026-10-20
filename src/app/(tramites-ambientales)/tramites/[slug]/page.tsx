@@ -226,8 +226,6 @@ export default async function TramiteDetallePage({
               <h2 className="text-sm font-semibold text-stone-900">Quiénes intervienen</h2>
               <p className="mt-0.5 text-xs text-stone-500">
                 Cargos de la CDMB que participan en algún paso de este trámite, según el procedimiento oficial.
-                En un expediente, cada paso solo puede avanzarlo el funcionario con el cargo que corresponde
-                (o un administrador).
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {cargos.map((c) => (

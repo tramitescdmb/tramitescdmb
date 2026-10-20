@@ -98,8 +98,7 @@ export function ConfirmarVinculaciones({ solicitudes }: { solicitudes: Solicitud
     <section className="rounded-xl border border-amber-200 bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-stone-900">Vinculaciones por confirmar ({solicitudes.length})</h2>
       <p className="mt-0.5 text-xs text-stone-500">
-        Personas que ingresaron con su usuario de red y declararon el documento de un contratista. Confirme solo si el usuario corresponde a esa
-        persona.
+        Personas que ingresaron con su usuario de red y declararon el documento de un contratista.
       </p>
       <ul className="mt-2 divide-y divide-stone-100 text-xs">
         {solicitudes.map((s) => (

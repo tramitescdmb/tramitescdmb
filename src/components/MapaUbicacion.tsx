@@ -195,9 +195,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
         {errorBusqueda && <p className="text-xs text-red-600">{errorBusqueda}</p>}
 
         <p className="text-xs text-stone-500">
-          El botón &quot;Buscar en el mapa&quot; junto a la dirección anterior ubica el punto aquí. También
-          puede seleccionarse el punto exacto directamente en el mapa, o registrarse coordenadas de otra
-          fuente (GPS, levantamiento topográfico, plano) a continuación — se aceptan las tres formas.
+          El botón &quot;Buscar en el mapa&quot; junto a la dirección anterior ubica el punto aquí.
         </p>
 
         <div className="flex gap-1.5">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rolesDeUsuario, sincronizarPerfilesPorRoles } from "@/lib/perfiles-usuario";
 import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta, ModuloAplicativo } from "@prisma/client";
 import { IDS_MODULOS_USUARIO } from "@/lib/modulos-usuario";
 import { db } from "@/lib/db";
@@ -179,6 +180,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  const rolesAntes = await rolesDeUsuario(id);
   await db.$transaction([
     db.usuario.update({
       where: { id },
@@ -227,6 +229,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (persona) await sincronizarContratistaDeUsuario(id);
   await vincularSupervisionesDeUsuario(id);
+  await sincronizarPerfilesPorRoles(id, rolesAntes);
 
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",

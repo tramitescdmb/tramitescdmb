@@ -16,9 +16,7 @@ export function PanelFirmas({ filas, acciones, vacio }: { filas: FilaFirmante[];
   return (
     <div className="space-y-3">
       <p className="text-xs text-stone-500">
-        Orden de firma por cargo: Dirección General → Secretaría General → Subdirección o Jefatura de Oficina → Funcionario o
-        Supervisor → Contratista. Los cargos del mismo nivel firman en cualquier orden entre sí; un contratista no puede ser
-        firmante principal ni solicitar firmas.
+        Orden de firma por cargo: Dirección General → Secretaría General → Subdirección o Jefatura de Oficina → Funcionario o Supervisor → Contratista.
       </p>
       {filas.length === 0 ? (
         <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50/60 p-3 text-center text-xs text-stone-400">

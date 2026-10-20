@@ -579,8 +579,7 @@ export function EditarUsuarioAccesoForm({
               <span>
                 Es un encargo (E), no un nombramiento definitivo
                 <span className="mt-0.5 block text-xs text-stone-400">
-                  Se muestra como «(E)» junto a la denominación. Si más adelante vuelve a su cargo anterior, cambie la
-                  denominación de nuevo: los documentos ya firmados con este cargo no se alteran.
+                  Se muestra como «(E)».
                 </span>
               </span>
             </label>
@@ -625,8 +624,7 @@ export function EditarUsuarioAccesoForm({
           </div>
           {estadoCuentaActual === "BLOQUEADA" && estadoCuenta === "BLOQUEADA" && (
             <p className="mt-2.5 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800">
-              El sistema la bloqueó automáticamente por exceso de intentos fallidos. Elija «Habilitada» para permitirle
-              volver a iniciar sesión.
+              Bloqueada por intentos fallidos.
             </p>
           )}
         </section>
@@ -720,8 +718,7 @@ export function EditarUsuarioAccesoForm({
         <section id="seccion-cargos" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={Briefcase} titulo="Cargo(s) para Trámites Ambientales 2.0" ayuda="Determina qué pasos de un trámite puede gestionar. No afecta SGDEA ni GECON." />
           <p className="mb-2.5 text-xs text-stone-400">
-            Marque uno, varios, o todos los que correspondan. Con un cargo activo, use el botón «E» para marcarlo como encargo (interino) —
-            se muestra como «(E)» donde aparezca ese cargo en un trámite.
+            «E» = encargo.
           </p>
           <div className="flex flex-wrap gap-1.5 rounded-lg border border-stone-100 bg-stone-50/60 p-2.5">
             {cargos.map((c) => {
@@ -884,8 +881,7 @@ export function EditarUsuarioAccesoForm({
         <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
           <p className="mb-3 text-xs text-stone-400">
-            Sin rol asignado, no ve el módulo. Es independiente del cargo de Trámites 2.0. La dependencia se asigna en la
-            pestaña Firma.
+            Cada rol asigna su perfil equivalente.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:max-w-md">
             <div>
@@ -987,8 +983,7 @@ export function EditarUsuarioAccesoForm({
 
           {esContratista && (
             <p className="rounded-lg border border-stone-100 bg-stone-50/60 px-3 py-2 text-xs text-stone-500">
-              Como contratista, GECON toma sus datos personales de esta página. Para iniciar un contrato debe tener completos
-              el documento, el nombre, el correo, la dirección, el departamento y la ciudad, y el régimen tributario.
+              GECON usa los datos personales de esta página.
             </p>
           )}
         </section>

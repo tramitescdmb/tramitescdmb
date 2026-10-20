@@ -35,8 +35,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
 
       {dependenciasDisponibles.length === 0 ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Su cuenta no tiene una dependencia asignada, así que no puede abrir un expediente todavía. Pídale a un
-          administrador que se la asigne desde Usuarios.
+          Su cuenta no tiene una dependencia asignada, así que no puede abrir un expediente todavía.
         </p>
       ) : (
         <NuevoExpedienteDocumentalForm

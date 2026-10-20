@@ -701,8 +701,7 @@ export default async function DetalleExpedienteContractualPage({
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
               <span>
-                Este expediente no puede pasar a la etapa Contractual sin conocer al contratista (persona natural o
-                jurídica).
+                Falta el contratista para pasar a Contractual.
               </span>
             </div>
             {puedeEditarDatosGenerales && !expediente.idContratoSecop && <VincularContratistaForm expedienteId={id} />}
@@ -715,8 +714,7 @@ export default async function DetalleExpedienteContractualPage({
               {expediente.contratista ? "Cambiar el contratista" : "Vincular un contratista"}
             </summary>
             <p className="mt-1.5 text-stone-500">
-              El contratista se elige entre los usuarios registrados. Con el vínculo puede consultar este expediente (Contractual y
-              Postcontractual) y cargar sus documentos. El cambio queda en la bitácora.
+              Contratista entre los usuarios registrados.
             </p>
             <VincularContratistaForm expedienteId={id} contratistaActual={expediente.contratista} />
           </details>
@@ -1149,8 +1147,7 @@ export default async function DetalleExpedienteContractualPage({
                     </span>
                   </summary>
                   <p className="mb-3 text-xs text-stone-500">
-                    Registro inalterable con cadena de hash: cada movimiento encadena su hash con el del anterior. Las
-                    acciones de Administrador y Jefe de Contratación no se registran aquí.
+                    Registro encadenado por hash.
                   </p>
                   <ul className="divide-y divide-stone-100 text-xs">
                     {[...trazabilidad].reverse().map((mov) => (
@@ -1214,7 +1211,7 @@ export default async function DetalleExpedienteContractualPage({
                 puedeReabrir={puedeGestionarEtapasContratacion(permisos)}
                 cierre={{
                   descripcion:
-                    "El expediente se cierra al aprobar la etapa Postcontractual. Al cerrarlo queda en solo lectura y se archiva en el SGDEA con su clasificación TRD, sin copiar los documentos. Requiere clasificación TRD y ninguna firma pendiente.",
+                    "Se cierra al aprobar Postcontractual y se archiva en el SGDEA. Requiere TRD y firmas completas.",
                   bloqueo: !esUltimaEtapa
                     ? "Disponible al llegar a la etapa Postcontractual."
                     : !expediente.subserieId

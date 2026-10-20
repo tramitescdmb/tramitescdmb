@@ -696,9 +696,7 @@ export function NuevoExpedienteForm({
 
         {documentosAplicables.length === 0 && (
           <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-            Este trámite no cuenta con una lista fija de documentos en el procedimiento oficial para el tipo de
-            solicitante seleccionado. Utilice el campo &quot;Otros documentos&quot; para adjuntar la información
-            correspondiente.
+            Sin lista fija de documentos para este tipo de solicitante: use «Otros documentos».
           </p>
         )}
 

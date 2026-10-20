@@ -27,9 +27,7 @@ export default async function VitalLayout({ children }: { children: ReactNode })
               Solo lectura
             </summary>
             <p className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-stone-200 bg-white p-3 text-xs text-stone-600 shadow-lg">
-              Las solicitudes se traen de VITAL por el bus X-Road de la CDMB. No se reporta ni modifica nada
-              de vuelta a VITAL desde esta aplicación.
-            </p>
+              Las solicitudes se traen de VITAL por el bus X-Road de la CDMB.            </p>
           </details>
         </div>
       </div>

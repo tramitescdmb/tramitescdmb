@@ -165,3 +165,24 @@ export async function usuariosSinPerfil(modulo: string): Promise<{ id: string; n
 export async function usuariosSinPerfilSgdea() {
   return usuariosSinPerfil("SGDEA");
 }
+
+export async function rolesDeUsuario(usuarioId: string): Promise<UsuarioConRoles | null> {
+  return db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_ROLES });
+}
+
+export async function sincronizarPerfilesPorRoles(usuarioId: string, antes: UsuarioConRoles | null): Promise<void> {
+  const despues = await rolesDeUsuario(usuarioId);
+  if (!despues) return;
+  const previas = new Set(antes ? clavesSugeridas(antes) : []);
+  const nuevas = new Set(clavesSugeridas(despues));
+  const agregar = [...nuevas].filter((c) => !previas.has(c));
+  const quitar = [...previas].filter((c) => !nuevas.has(c));
+  if (agregar.length === 0 && quitar.length === 0) return;
+  await asegurarPerfilesIniciales();
+  const perfiles = await db.perfil.findMany({ where: { claveOrigen: { in: [...agregar, ...quitar] } }, select: { id: true, claveOrigen: true } });
+  const id = (c: string) => perfiles.find((p) => p.claveOrigen === c)?.id;
+  const quitarIds = quitar.map(id).filter((x): x is string => Boolean(x));
+  const agregarIds = agregar.map(id).filter((x): x is string => Boolean(x));
+  if (quitarIds.length) await db.usuarioPerfil.deleteMany({ where: { usuarioId, perfilId: { in: quitarIds } } });
+  if (agregarIds.length) await db.usuarioPerfil.createMany({ data: agregarIds.map((perfilId) => ({ usuarioId, perfilId })), skipDuplicates: true });
+}

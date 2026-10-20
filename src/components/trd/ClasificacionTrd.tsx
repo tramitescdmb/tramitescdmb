@@ -133,8 +133,7 @@ export async function ClasificacionTrdGecon() {
           <div className="border-b border-stone-200 px-4 py-3">
             <h2 className="text-sm font-semibold text-stone-900">Subserie por modalidad de contratación</h2>
             <p className="text-xs text-stone-500">
-              Cada expediente contractual se clasifica automáticamente con la subserie de su modalidad, al crearlo y al cambiarle la
-              modalidad. Un contrato puntual se puede reclasificar desde su expediente.
+              Cada expediente contractual se clasifica automáticamente con la subserie de su modalidad, al crearlo y al cambiarle la modalidad.
             </p>
           </div>
           <div className="divide-y divide-stone-100">

@@ -291,8 +291,7 @@ export function EditarDatosContratoForm({
                 </label>
               </div>
               <p className="text-[11px] text-stone-400">
-                Los plazos y vencimientos de los informes se calculan desde la fecha de inicio (acta de inicio). Sin
-                fecha de inicio, el contrato queda «Pendiente de inicio» y no se calculan plazos.
+                Los plazos y vencimientos de los informes se calculan desde la fecha de inicio (acta de inicio).
               </p>
             </div>
             )}

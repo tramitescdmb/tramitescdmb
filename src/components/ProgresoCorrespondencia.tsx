@@ -2,11 +2,7 @@ const PASOS = ["Radicada", "Distribuida", "En trámite", "Respondida / archivada
 const PASOS_MEMORANDO = ["Firmado", "Asignado", "Respuesta proyectada", "Respondido"];
 
 const EXPLICACION_MEMORANDO: Record<string, string> = {
-  RADICADA: "Firmado y radicado. Espera respuesta de la oficina de destino.",
-  ASIGNADA: "Asignado en la oficina de destino. Espera que se proyecte la respuesta.",
-  EN_TRAMITE: "La respuesta ya está proyectada. Falta que quien dirige la oficina la firme y la envíe.",
-  RESPONDIDA: "Respondido con un memorando nuevo, vinculado a este.",
-  ARCHIVADA: "Quedó guardado dentro de un expediente.",
+
 };
 const TOTAL_PASOS = PASOS.length;
 
@@ -21,14 +17,7 @@ const PASO_POR_ESTADO: Record<string, number> = {
 };
 
 const EXPLICACION_POR_ESTADO: Record<string, string> = {
-  RADICADA: "Se recibió y quedó con número de radicado. Todavía no se ha distribuido a ningún área.",
-  EN_REPARTO: "Está pendiente de asignarse a una dependencia o funcionario.",
-  ASIGNADA: "Ya se asignó a una dependencia o funcionario para que la atienda.",
-  EN_TRAMITE: "Un funcionario la está gestionando.",
-  INFORMACION_ADICIONAL_REQUERIDA: "En pausa: se le pidió información adicional al peticionario. El plazo de respuesta también está en pausa hasta que la envíe.",
-  RESPONDIDA: "Ya se le dio respuesta al peticionario.",
-  ARCHIVADA: "Quedó guardada dentro de un expediente.",
-  ANULADA: "Se anuló: no continúa el trámite.",
+  INFORMACION_ADICIONAL_REQUERIDA: "En pausa hasta recibir la información solicitada.",
 };
 
 const ETIQUETA_TERMINADO: Record<string, string> = {
@@ -36,8 +25,7 @@ const ETIQUETA_TERMINADO: Record<string, string> = {
   INTERNA: "Memorando firmado",
 };
 
-const EXPLICACION_TERMINADO =
-  "Ya quedó firmado y radicado — es un documento definitivo, no requiere ningún paso más. Si se distribuyó a alguien después, es solo seguimiento interno opcional, no cambia este estado.";
+const EXPLICACION_TERMINADO = "";
 
 export function ProgresoCorrespondencia({
   estado,

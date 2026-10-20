@@ -221,14 +221,11 @@ export function SecopPanel({
 
       <div className="mt-3 space-y-4">
         <p className="text-[11px] text-stone-500">
-          Datos de solo lectura tomados de la API de datos abiertos de SECOP II (datos.gov.co), que se actualizan cada día. SECOP II es la
-          fuente oficial: el número de contrato y de proceso, el objeto, la modalidad, el tipo, el valor, las fechas y el contratista del
-          expediente se toman de aquí. Los documentos se consultan en SECOP II; GECON no los copia.
+          Datos de solo lectura tomados de la API de datos abiertos de SECOP II (datos.gov.co), que se actualizan cada día.
         </p>
         {!espejo && (
           <p className="text-xs text-stone-600">
-            Este expediente aún no está enlazado. Con el número de contrato o de proceso en los datos generales, «Enlazar con SECOP II» lo
-            busca entre los contratos de la CDMB.
+            Este expediente aún no está enlazado.
           </p>
         )}
         {espejo &&

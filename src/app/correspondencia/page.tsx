@@ -181,8 +181,7 @@ export default async function CorrespondenciaBandejaPage({
           </summary>
           <div className="border-t border-cdmb-100 p-3">
             <p className="mb-2 text-xs text-stone-500">
-              El funcionario asignado ya guardó la respuesta. Gestión documental la revisa, la radica como oficio de salida
-              (con los datos del peticionario ya cargados) y luego registra el despacho.
+              El funcionario asignado ya guardó la respuesta.
             </p>
             <ul className="space-y-1.5">
               {listasParaRadicar.map((c) => (

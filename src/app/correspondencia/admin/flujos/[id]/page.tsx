@@ -129,8 +129,7 @@ export default async function FlujoEditorPage({
         <input type="hidden" name="accion" value="accesos" />
         <p className="text-sm font-semibold text-stone-900">Quién puede operar este flujo</p>
         <p className="mt-0.5 text-xs text-stone-500">
-          Sin nada marcado: cualquier funcionario con permiso de distribución. Con dependencias marcadas: solo
-          quienes pertenecen a una de ellas (más el administrador de archivo).
+          Sin nada marcado: cualquier funcionario con permiso de distribución.
         </p>
         <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
           {dependencias.map((d) => (

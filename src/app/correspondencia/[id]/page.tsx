@@ -79,53 +79,53 @@ function proximoPaso(c: {
   devuelta: boolean;
 }, permisos: { puedeDistribuir: boolean; puedeResponder: boolean; puedeRadicar: boolean; puedeDespachar: boolean }): ProximoPaso {
   if (c.tipo === "INTERNA") {
-    return { texto: "El memorando ya quedó firmado y radicado — es un documento definitivo. Si lo distribuyó, es solo para seguimiento interno.", cerrado: true };
+    return { texto: "Memorando firmado y radicado.", cerrado: true };
   }
   if (c.tipo === "ENVIADA") {
-    if (c.estado === "ANULADA") return { texto: "El oficio quedó anulado — no requiere ninguna acción más.", cerrado: true };
-    if (c.despachadaEn) return { texto: "Radicado, firmado y despachado al destinatario — el ciclo está cerrado.", cerrado: true };
+    if (c.estado === "ANULADA") return { texto: "Anulado.", cerrado: true };
+    if (c.despachadaEn) return { texto: "Firmado, radicado y despachado.", cerrado: true };
     if (permisos.puedeDespachar) {
       return {
         texto: c.respondeAId
-          ? "El oficio ya está firmado y radicado. Paso final de la ventanilla de salida: registrar el despacho efectivo (envío al peticionario) — eso cierra el ciclo de la recibida."
-          : "El oficio ya está firmado y radicado. Cuando se envíe al destinatario, registre el despacho efectivo para dejar constancia.",
+          ? "Firmado y radicado. Falta registrar el despacho al peticionario."
+          : "Firmado y radicado. Falta registrar el despacho.",
         accionHref: "#despacho",
-        accionTexto: "Ir a registrar el despacho",
+        accionTexto: "Registrar despacho",
       };
     }
-    return { texto: "El oficio ya está firmado y radicado. Falta que la ventanilla de salida registre el despacho efectivo al destinatario." };
+    return { texto: "Firmado y radicado. Pendiente de despacho en ventanilla." };
   }
-  if (c.estado === "ANULADA") return { texto: "Quedó anulada — no requiere ninguna acción más.", cerrado: true };
-  if (c.estado === "ARCHIVADA") return { texto: "Quedó archivada — el ciclo de esta comunicación está cerrado.", cerrado: true };
+  if (c.estado === "ANULADA") return { texto: "Anulada.", cerrado: true };
+  if (c.estado === "ARCHIVADA") return { texto: "Archivada.", cerrado: true };
   if (c.estado === "RESPONDIDA") {
     const despachada = c.respuestas.some((r) => r.despachadaEn);
-    if (despachada) return { texto: "Se respondió y el oficio de salida ya se despachó al peticionario — el ciclo de esta recibida está cerrado.", cerrado: true };
+    if (despachada) return { texto: "Respondida y despachada.", cerrado: true };
     return permisos.puedeDespachar
-      ? { texto: "Ya se radicó el oficio de respuesta. Falta registrar su despacho efectivo (abra la enviada de «Respondida por» y registre el envío) para cerrar el ciclo." }
-      : { texto: "Ya se radicó el oficio de respuesta. Falta que la ventanilla de salida registre el despacho al peticionario.", cerrado: true };
+      ? { texto: "Respuesta radicada. Falta registrar el despacho en la enviada de «Respondida por»." }
+      : { texto: "Respuesta radicada. Pendiente de despacho en ventanilla.", cerrado: true };
   }
   if (c.estado === "INFORMACION_ADICIONAL_REQUERIDA") {
-    return { texto: "El trámite está detenido (vea el motivo más abajo). Se reanuda cuando se resuelva lo que lo detuvo; si tenía término de ley, se reanuda por lo que faltaba." };
+    return { texto: "Trámite detenido. El término se reanuda por lo que faltaba." };
   }
   if (c.estado === "RADICADA" || c.estado === "EN_REPARTO") {
-    const devueltaTxt = c.devuelta ? "Fue devuelta a la ventanilla (vea el motivo en «Distribución / reparto»). " : "";
+    const devueltaTxt = c.devuelta ? "Devuelta a la ventanilla. " : "";
     return permisos.puedeDistribuir
-      ? { texto: `${devueltaTxt}${c.devuelta ? "Repártala de nuevo" : "Todavía no se ha repartido. Siguiente paso: asígnela"} a la dependencia o funcionario(s) que deben atenderla.`, accionHref: "#distribucion", accionTexto: "Ir a Distribución / reparto" }
-      : { texto: `${devueltaTxt}La ventanilla ${c.devuelta ? "debe repartirla de nuevo" : "aún no la ha repartido"}.` };
+      ? { texto: `${devueltaTxt}Pendiente de reparto.`, accionHref: "#distribucion", accionTexto: "Repartir" }
+      : { texto: `${devueltaTxt}Pendiente de reparto en ventanilla.` };
   }
   if (!c.respuestaTexto) {
     return permisos.puedeResponder
-      ? { texto: "Ya está asignada a usted. Siguiente paso: escriba su respuesta más abajo, en «Respuesta del funcionario». Es un borrador; la ventanilla de salida la radica y la despacha.", accionHref: "#respuesta", accionTexto: "Ir a Respuesta del funcionario" }
-      : { texto: "Ya está repartida — falta que el funcionario a cargo escriba el borrador de respuesta." };
+      ? { texto: "Asignada a usted. Pendiente de respuesta.", accionHref: "#respuesta", accionTexto: "Responder" }
+      : { texto: "Repartida. Pendiente de respuesta del funcionario." };
   }
   if (!c.respuestaFirmada) {
     return permisos.puedeResponder
-      ? { texto: "Ya hay respuesta. Siguiente paso: fírmela y solicite las firmas que correspondan (Revisó, Firma principal).", accionHref: "#firmas", accionTexto: "Ir a Firmas de la respuesta" }
-      : { texto: "Ya hay respuesta, pero le faltan firmas: gestión documental la radica como salida cuando tenga la firma principal y ninguna pendiente." };
+      ? { texto: "Respuesta escrita. Pendiente de firmas.", accionHref: "#firmas", accionTexto: "Firmas" }
+      : { texto: "Respuesta escrita. Pendiente de firmas." };
   }
   return permisos.puedeRadicar
-    ? { texto: "La respuesta está firmada. Siguiente paso de gestión documental: radicarla como oficio de salida y luego registrar el despacho.", accionHref: "#respuesta", accionTexto: "Ir a radicar la respuesta" }
-    : { texto: "La respuesta está firmada. Falta que gestión documental la radique como oficio de salida y la despache." };
+    ? { texto: "Respuesta firmada. Pendiente de radicar como oficio de salida.", accionHref: "#respuesta", accionTexto: "Radicar respuesta" }
+    : { texto: "Respuesta firmada. Pendiente de radicación de salida." };
 }
 
 function Campo({ k, v }: { k: string; v: ReactNode }) {
@@ -565,8 +565,7 @@ export default async function CorrespondenciaDetallePage({
                       </form>
                     ) : (
                       <p className="text-xs text-amber-700">
-                        Ya no se puede devolver a la ventanilla: faltan 3 días hábiles o menos para el vencimiento del
-                        término de ley. Atiéndala o coordínelo directamente con la ventanilla.
+                        Ya no se puede devolver a la ventanilla: faltan 3 días hábiles o menos para el vencimiento del término de ley.
                       </p>
                     )}
                   </div>

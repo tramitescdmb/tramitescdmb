@@ -160,9 +160,7 @@ export function RadicarEnviadaForm({
       <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso numero={1} icono={<Reply className="h-4 w-4" aria-hidden />} titulo="¿Responde a una comunicación recibida?" />
         <p className="mb-3 text-xs text-stone-400">
-          Busque por radicado, asunto o tercero. Al elegirla se cargan el destinatario, el asunto, la respuesta del
-          funcionario, la dependencia que respondió, la clasificación TRD y los documentos de la respuesta. Esa recibida
-          pasa a estado &quot;Respondida&quot; al radicar esta enviada.
+          Busque por radicado, asunto o tercero.
         </p>
         <BuscadorRecibidaPendiente
           valorInicial={inicial ? { id: inicial.respondeAId, label: inicial.respondeALabel } : null}

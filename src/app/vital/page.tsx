@@ -178,7 +178,7 @@ export default async function VitalSolicitudesPage({
               Sincronizar
             </button>
           </form>
-          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico. &quot;Todos los trámites&quot; puede tardar varios minutos.</p>
+          <p className="mt-2 text-xs text-stone-400">El cron diario ya mantiene al día los últimos 45 días de todos los trámites; esto es para el histórico.</p>
         </details>
       )}
 

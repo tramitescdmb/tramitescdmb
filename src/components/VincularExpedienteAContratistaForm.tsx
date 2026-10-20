@@ -44,7 +44,7 @@ export function VincularExpedienteAContratistaForm({
   return (
     <div className="space-y-2">
       <p className="text-xs text-stone-500">
-        Expedientes que aún no tienen contratista. Al vincular uno, este contratista podrá consultarlo (Contractual y Postcontractual) y cargar sus documentos.
+        Expedientes que aún no tienen contratista.
       </p>
       {opciones.length === 0 ? (
         <p className="text-xs text-stone-400">No hay expedientes sin contratista para vincular.</p>
