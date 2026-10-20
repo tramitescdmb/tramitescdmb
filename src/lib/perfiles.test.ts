@@ -71,3 +71,38 @@ describe("perfiles iniciales equivalentes a los roles actuales", () => {
     for (const s of PERFILES_SEMILLA) expect(matricesIguales(matrizSemilla(s), matrizDesdeReglas(permisosDeReferencia(s.rol)))).toBe(true);
   });
 });
+
+describe("perfiles de un usuario", () => {
+  it("sugiere un perfil por cada rol actual", async () => {
+    const { clavesSugeridas } = await import("@/lib/perfiles-usuario");
+    expect(
+      clavesSugeridas({
+        rol: "FUNCIONARIO",
+        tramitesAcceso: [{ nivel: "VER" }, { nivel: "EDITAR" }],
+        seccionesAcceso: [{ seccion: "VITAL_BASE" }],
+        rolCorrespondencia: "JEFE_DEPENDENCIA",
+        rolesContratacion: ["SUPERVISOR_INTERVENTOR", "JEFE_DEPENDENCIA"],
+      })
+    ).toEqual(["TRAMITES:EDITAR", "SGDEA:JEFE_DEPENDENCIA", "GECON:SUPERVISOR_INTERVENTOR", "GECON:JEFE_DEPENDENCIA", "SECCION:VITAL_BASE"]);
+  });
+
+  it("el administrador solo recibe el perfil de administrador", async () => {
+    const { clavesSugeridas } = await import("@/lib/perfiles-usuario");
+    expect(clavesSugeridas({ rol: "ADMIN", tramitesAcceso: [], seccionesAcceso: [], rolCorrespondencia: "ADMIN_ARCHIVO", rolesContratacion: [] })).toEqual(["ADMIN"]);
+  });
+
+  it("las excepciones conceden y quitan sobre lo que dan los perfiles", async () => {
+    const { permisosEfectivos, tieneAccion } = await import("@/lib/perfiles-efectivos");
+    const ef = permisosEfectivos(
+      [{ nombre: "Ventanilla", matriz: { "sgdea.radicacion": ["CREAR", "ACTUALIZAR"] } }],
+      [
+        { funcionalidad: "sgdea.radicacion", tipo: "QUITAR", acciones: ["ACTUALIZAR"], motivo: null },
+        { funcionalidad: "sgdea.archivo", tipo: "CONCEDER", acciones: ["ACTUALIZAR"], motivo: "Apoyo temporal" },
+      ]
+    );
+    const de = (clave: string, accion: string) => tieneAccion(ef[clave]!.find((o) => o.accion === accion)!);
+    expect(de("sgdea.radicacion", "CREAR")).toBe(true);
+    expect(de("sgdea.radicacion", "ACTUALIZAR")).toBe(false);
+    expect(de("sgdea.archivo", "ACTUALIZAR")).toBe(true);
+  });
+});

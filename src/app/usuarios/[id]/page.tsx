@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { obtenerPerfilesDeUsuario } from "@/lib/perfiles-usuario";
+import { PerfilesUsuario } from "@/components/usuarios/PerfilesUsuario";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -57,7 +59,7 @@ export default async function EditarUsuarioPage({
     getConfiguracionSitio(),
   ]);
   if (!usuario) notFound();
-  const agenda = await obtenerAgendaUsuario(usuario.id, false);
+  const [agenda, perfilesUsuario] = await Promise.all([obtenerAgendaUsuario(usuario.id, false), obtenerPerfilesDeUsuario(usuario.id)]);
 
   const tramitesPorCategoria = agruparTramitesPorCategoria(tramites).map((g) => ({
     etiqueta: g.etiqueta,
@@ -144,6 +146,15 @@ export default async function EditarUsuarioPage({
         agendaVisitas={agenda ? <MiniPlaneador agenda={agenda} planificador={false} titulo="Visitas del funcionario" /> : undefined}
         visiblesGlobal={Object.fromEntries(MODULOS_USUARIO.map((m) => [m.id, config[m.campoGlobal]])) as Record<ModuloUsuario, boolean>}
       />
+
+      {perfilesUsuario && (
+        <PerfilesUsuario
+          usuarioId={usuario.id}
+          perfiles={perfilesUsuario.perfiles}
+          asignadosIniciales={perfilesUsuario.asignados}
+          excepcionesIniciales={perfilesUsuario.excepciones}
+        />
+      )}
     </div>
   );
 }
