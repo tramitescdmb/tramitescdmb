@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeRadicar } from "@/lib/permisos";
+import { obtenerPermisosUsuario } from "@/lib/permisos";
+import { eligeOrigenLibre, memorandoPendienteDe, contextoMemorandos, PLAZOS_RESPUESTA_MEMORANDO } from "@/lib/memorandos";
+import { sumarDiasHabiles } from "@/lib/dias-habiles";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { radicarInterna, type EntradaDocumento } from "@/lib/correspondencia";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -10,10 +13,6 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeRadicar(permisos)) {
-    return NextResponse.json({ error: "No tiene permiso para radicar memorandos." }, { status: 403 });
-  }
-
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -21,10 +20,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
+  const propio = await contextoMemorandos(session.userId, permisos);
+  if (!propio.firmante) {
+    return NextResponse.json({ error: "Los memorandos los firman y envían la Dirección, la Secretaría General, las subdirecciones, las jefaturas de oficina, la asesoría de dirección y la revisoría fiscal." }, { status: 403 });
+  }
+  const respondeAId = body.respondeAId ? String(body.respondeAId) : null;
+  if (respondeAId && !(await memorandoPendienteDe(respondeAId, propio))) {
+    return NextResponse.json({ error: "El memorando que intenta responder ya fue respondido o no está dirigido a su oficina." }, { status: 400 });
+  }
+
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
-  const dependenciaOrigenId = String(body.dependenciaOrigenId ?? "");
+  let dependenciaOrigenId = String(body.dependenciaOrigenId ?? "");
+  if (!eligeOrigenLibre(permisos)) {
+    if (!propio.dependenciaId) {
+      return NextResponse.json({ error: "Su usuario no tiene dependencia asignada: solicítela a un administrador para poder enviar memorandos." }, { status: 400 });
+    }
+    dependenciaOrigenId = propio.dependenciaId;
+  }
   const dependenciaDestinoId = String(body.dependenciaDestinoId ?? "");
 
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
@@ -72,8 +86,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const plazo = Number(body.plazoRespuestaDias) || 0;
+  const requiereRespuesta = plazo > 0;
+  if (requiereRespuesta && !(PLAZOS_RESPUESTA_MEMORANDO as readonly number[]).includes(plazo)) {
+    return NextResponse.json({ error: "Plazo de respuesta no válido." }, { status: 400 });
+  }
+  if (requiereRespuesta && !usuarioDestinoIdRaw) {
+    return NextResponse.json({ error: "Si el memorando requiere respuesta, indique la persona responsable de responderlo." }, { status: 400 });
+  }
+
+  const fechaLimiteRespuesta = requiereRespuesta ? sumarDiasHabiles(new Date(), plazo, await getCalendarioLaboral()) : null;
+
   try {
     const comunicacion = await radicarInterna({
+      fechaLimiteRespuesta,
+      respondeAId,
       asunto,
       contenido,
       folios,
@@ -94,7 +121,7 @@ export async function POST(req: NextRequest) {
       usuarioId: session.userId,
       ip,
       userAgent,
-      detalle: `Radicó y firmó ${comunicacion.radicado} (memorando interno) — ${asunto.slice(0, 200)}`,
+      detalle: `Radicó y firmó ${comunicacion.radicado} (memorando interno${respondeAId ? ", en respuesta a otro memorando" : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""}) — ${asunto.slice(0, 200)}`,
     });
 
     return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado });

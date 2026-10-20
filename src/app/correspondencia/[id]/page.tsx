@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { contextoMemorandos, marcarMemorandoLeido, memorandoPendienteDe } from "@/lib/memorandos";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -196,6 +197,12 @@ export default async function CorrespondenciaDetallePage({
   });
   if (!c) notFound();
 
+  const ctxMemo = c.tipo === "INTERNA" ? await contextoMemorandos(session.userId, permisos) : null;
+  const memorandoPorResponder = ctxMemo ? await memorandoPendienteDe(c.id, ctxMemo) : null;
+  if (c.tipo === "INTERNA") await marcarMemorandoLeido(c.id, session.userId);
+  const firmaMemorandos = ctxMemo?.firmante ?? false;
+  const memoEnPlazo = c.tipo === "INTERNA" && Boolean(c.fechaVencimiento) && !["RESPONDIDA", "ANULADA", "ARCHIVADA"].includes(c.estado);
+
   const { ip, userAgent } = datosPeticion(await headers());
 
   const puedeDistribuirUsuario = puedeDistribuir(permisos);
@@ -214,7 +221,11 @@ export default async function CorrespondenciaDetallePage({
   const puedoActuarMiSolicitud = miSolicitudFirma && puedeActuarSolicitud(c.solicitudesFirma, miSolicitudFirma);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
-  const puedeSubdistribuirUsuario = puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes);
+  const puedeSubdistribuirUsuario =
+    puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes) ||
+    (c.tipo === "INTERNA" && firmaMemorandos && Boolean(ctxMemo?.dependenciaId) && c.dependenciaDestinoId === ctxMemo?.dependenciaId);
+  const proyectaMemorando =
+    memoEnPlazo && !firmaMemorandos && c.respuestas.length === 0 && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const puedeResponder = c.tipo === "RECIBIDA" && puedeResponderComoAsignado(permisos, session.userId, distribucionesVigentes);
   const devolucionesPrevias = c.distribuciones.filter((d) => d.devueltaEn);
   const documentosOriginales = c.documentos.filter((d) => !d.esRespuesta);
@@ -266,7 +277,7 @@ export default async function CorrespondenciaDetallePage({
         })
       : Promise.resolve([]),
     getCalendarioLaboral(),
-    puedeResponder ? listarPlantillas("RESPUESTA") : Promise.resolve([]),
+    puedeResponder || proyectaMemorando ? listarPlantillas("RESPUESTA") : Promise.resolve([]),
     puedeDistribuirUsuario && c.estado !== "ANULADA" ? listarTerminos() : Promise.resolve([]),
     puedeDistribuirUsuario
       ? Promise.all([
@@ -288,7 +299,7 @@ export default async function CorrespondenciaDetallePage({
 
   const tieneTercero = c.tipo !== "INTERNA";
   const vencimiento = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
-  const siguientePaso = proximoPaso(
+  const siguientePasoBase = proximoPaso(
     { ...c, devuelta: devolucionesPrevias.length > 0 && distribucionesVigentes.length === 0, respuestaFirmada: bloqueoRespuesta === null },
     {
       puedeDistribuir: puedeDistribuirUsuario,
@@ -297,12 +308,36 @@ export default async function CorrespondenciaDetallePage({
       puedeDespachar: puedeDespacharUsuario,
     },
   );
+  const plazoMemo = c.fechaVencimiento ? ` a más tardar el ${fechaHora(c.fechaVencimiento)}` : "";
+  const siguientePaso: ProximoPaso = memorandoPorResponder && firmaMemorandos
+    ? {
+        texto: c.respuestaTexto
+          ? `${c.respuestaPor?.nombre ?? "Su colaborador"} ya proyectó la respuesta. Revísela, fírmela y envíela${plazoMemo}. También puede asignar el memorando a un colaborador de su oficina.`
+          : `Este memorando requiere respuesta de su oficina${plazoMemo}. Puede asignarlo a un colaborador para que proyecte la respuesta, o responderlo directamente.`,
+        accionHref: `/correspondencia/nueva/interna?respondeAId=${c.id}`,
+        accionTexto: "Firmar y enviar respuesta",
+      }
+    : proyectaMemorando
+      ? {
+          texto: c.respuestaTexto
+            ? "Su respuesta proyectada quedó guardada. Quien dirige la oficina la revisa, la firma y la envía; puede corregirla mientras tanto."
+            : `Le asignaron proyectar la respuesta de este memorando${plazoMemo}. Quien dirige la oficina la firma y la envía.`,
+          accionHref: "#proyectar",
+          accionTexto: c.respuestaTexto ? "Corregir la respuesta proyectada" : "Proyectar respuesta",
+        }
+    : memoEnPlazo
+      ? { texto: `Memorando firmado y radicado. Está a la espera de respuesta, con plazo hasta el ${fechaHora(c.fechaVencimiento!)}.` }
+      : c.tipo === "INTERNA" && c.estado === "RESPONDIDA"
+        ? { texto: "Memorando respondido: la respuesta quedó radicada y vinculada a este memorando.", cerrado: true }
+        : siguientePasoBase;
 
   const botoneraRepartir =
     c.tipo === "RECIBIDA" && !ESTADOS_CERRADOS.includes(c.estado) && (puedeDistribuirUsuario || puedeSubdistribuirUsuario);
   const botoneraResponder = puedeResponder && c.estado !== "ANULADA" && c.respuestas.length === 0;
-  const botoneraRadicar = puedeRadicarUsuario && Boolean(c.respuestaTexto) && c.respuestas.length === 0 && !bloqueoRespuesta;
-  const hayBotonera = botoneraRepartir || puedeDevolverUsuario || botoneraResponder || botoneraRadicar;
+  const botoneraRadicar = c.tipo === "RECIBIDA" && puedeRadicarUsuario && Boolean(c.respuestaTexto) && c.respuestas.length === 0 && !bloqueoRespuesta;
+  const botoneraRepartirMemo = c.tipo === "INTERNA" && memoEnPlazo && puedeSubdistribuirUsuario;
+  const hayBotonera =
+    botoneraRepartir || botoneraRepartirMemo || puedeDevolverUsuario || botoneraResponder || botoneraRadicar || (Boolean(memorandoPorResponder) && firmaMemorandos) || proyectaMemorando;
 
   return (
     <div className="space-y-4">
@@ -357,7 +392,7 @@ export default async function CorrespondenciaDetallePage({
           </div>
         </div>
         <div className="mt-3 max-w-md">
-          <ProgresoCorrespondencia estado={c.estado} tipo={c.tipo} tamaño="grande" />
+          <ProgresoCorrespondencia estado={c.estado} tipo={c.tipo} tamaño="grande" esperaRespuesta={Boolean(c.fechaVencimiento)} />
         </div>
         {c.estado !== "ANULADA" && (
           <div
@@ -401,7 +436,7 @@ export default async function CorrespondenciaDetallePage({
           <Campo k="Dependencia origen" v={c.dependenciaOrigen?.nombre} />
           <Campo k="Dependencia destino" v={c.dependenciaDestino?.nombre} />
           <Campo k="Término de ley" v={c.terminoDiasHabiles ? `${c.terminoDiasHabiles} días hábiles` : null} />
-          <Campo k="Vence" v={c.fechaVencimiento ? fechaHora(c.fechaVencimiento) : null} />
+          <Campo k={c.tipo === "INTERNA" ? "Responder antes de" : "Vence"} v={c.fechaVencimiento ? fechaHora(c.fechaVencimiento) : null} />
           <Campo k="Serie (TRD)" v={c.serie ? `${c.serie.codigo} — ${c.serie.nombre}` : null} />
           <Campo k="Subserie" v={c.subserie ? `${c.subserie.codigo} — ${c.subserie.nombre}` : null} />
           <Campo k="Nivel de acceso (Ley 1712/2014)" v={ETIQUETA_NIVEL_ACCESO[c.nivelAcceso]} />
@@ -536,6 +571,37 @@ export default async function CorrespondenciaDetallePage({
                       </p>
                     )}
                   </div>
+                )}
+              </Tarjeta>
+            )}
+
+            {c.tipo === "INTERNA" && c.fechaVencimiento && (c.respuestaTexto || proyectaMemorando) && (
+              <Tarjeta id="proyectar" titulo="Respuesta proyectada" icono={<Reply className="h-3.5 w-3.5" aria-hidden />}>
+                <SectionHelp>
+                  El colaborador asignado proyecta la respuesta; quien dirige la oficina la revisa, la firma y la envía como un memorando nuevo
+                  dirigido a quien envió este.
+                </SectionHelp>
+                {c.respuestaTexto && (
+                  <div className="mb-3 rounded border border-stone-200 bg-stone-50 p-3">
+                    <p className="whitespace-pre-wrap text-sm text-stone-700">{c.respuestaTexto}</p>
+                    <p className="mt-2 text-xs text-stone-400">
+                      Proyectó: {c.respuestaPor?.nombre ?? "—"} · {fechaHora(c.respuestaEn)}
+                    </p>
+                  </div>
+                )}
+                {proyectaMemorando && (
+                  <RespuestaFuncionarioForm
+                    comunicacionId={id}
+                    textoInicial={c.respuestaTexto ?? ""}
+                    plantillas={plantillasRespuesta}
+                    contexto={{
+                      RADICADO: c.radicado,
+                      ASUNTO: c.asunto,
+                      DESTINATARIO: c.dependenciaOrigen?.nombre ?? "",
+                      REMITENTE: c.dependenciaOrigen?.nombre ?? "",
+                      FUNCIONARIO: session.nombre,
+                    }}
+                  />
                 )}
               </Tarjeta>
             )}
@@ -1087,6 +1153,12 @@ export default async function CorrespondenciaDetallePage({
       {hayBotonera && (
         <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-4 py-2.5 shadow-soft-lg print:hidden">
           <div className="flex flex-wrap items-center gap-2">
+            {botoneraRepartirMemo && (
+              <a href="#repartir" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <Share2 className="h-4 w-4" aria-hidden />
+                Asignar a un colaborador
+              </a>
+            )}
             {botoneraRepartir && (
               <a href="#repartir" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 <Share2 className="h-4 w-4" aria-hidden />
@@ -1106,6 +1178,21 @@ export default async function CorrespondenciaDetallePage({
                 <MessageSquareReply className="h-4 w-4" aria-hidden />
                 Responder
               </a>
+            )}
+            {proyectaMemorando && (
+              <a href="#proyectar" className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600">
+                <MessageSquareReply className="h-4 w-4" aria-hidden />
+                {c.respuestaTexto ? "Corregir respuesta proyectada" : "Proyectar respuesta"}
+              </a>
+            )}
+            {memorandoPorResponder && firmaMemorandos && (
+              <Link
+                href={`/correspondencia/nueva/interna?respondeAId=${id}`}
+                className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600"
+              >
+                <MessageSquareReply className="h-4 w-4" aria-hidden />
+                Firmar y enviar respuesta
+              </Link>
             )}
             {botoneraRadicar && (
               <Link

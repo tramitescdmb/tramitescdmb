@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconLogout, IconUserCircle, type Icon as TablerIcon } from "@tabler/icons-react";
 import { BuscadorGlobal } from "@/components/BuscadorGlobal";
+import { CampanaAvisos } from "@/components/CampanaAvisos";
 import {
   ITEM_INICIO,
   ITEM_TRAMITES,
@@ -67,10 +68,13 @@ export function BarraSuperior({ nombre, subtitulo, iniciales }: { nombre: string
       </div>
 
       <div className="flex flex-none items-center gap-1">
+        <CampanaAvisos />
         <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-3 rounded px-2 py-1 hover:bg-stone-100">
           <div className="max-w-[16rem] text-right leading-tight">
             <p className="truncate text-sm font-medium text-stone-800">{nombre}</p>
-            <p className="truncate text-xs text-stone-500">{subtitulo}</p>
+            <p className="truncate text-xs text-stone-500" title={subtitulo}>
+              {subtitulo}
+            </p>
           </div>
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded bg-acento-500 text-sm font-semibold text-white">
             {iniciales}

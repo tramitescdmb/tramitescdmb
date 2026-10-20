@@ -7,24 +7,27 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { AvisoTratamientoDatos } from "@/components/AvisoTratamientoDatos";
 import { BarraSuperior } from "@/components/BarraSuperior";
+import { db } from "@/lib/db";
+import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
   return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
 }
 
-function subtituloSesion(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
-  return session.cargos.length > 0
-    ? session.cargos.map((c) => (session.cargosEncargo.includes(c) ? `${c} (E)` : c)).join(" · ")
-    : session.rol === "ADMIN"
-      ? "Administrador"
-      : "Funcionario";
+async function subtituloSesion(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  const u = await db.usuario.findUnique({
+    where: { id: session.userId },
+    select: { denominacionEmpleo: true, denominacionComplemento: true, denominacionEncargo: true, sexo: true, rolesContratacion: true },
+  });
+  if (!u?.denominacionEmpleo && !u?.rolesContratacion.includes("CONTRATISTA") && session.rol === "ADMIN") return "Administrador";
+  return u ? cargoDelFirmante(u) : "Funcionario";
 }
 
 export async function BarraSuperiorSesion() {
   const session = await getSession();
   if (!session) return null;
-  return <BarraSuperior nombre={session.nombre} subtitulo={subtituloSesion(session)} iniciales={iniciales(session.nombre)} />;
+  return <BarraSuperior nombre={session.nombre} subtitulo={await subtituloSesion(session)} iniciales={iniciales(session.nombre)} />;
 }
 
 export async function NavBar() {
@@ -46,7 +49,7 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
-  const subtitulo = subtituloSesion(session);
+  const subtitulo = await subtituloSesion(session);
 
   const marca = (
     <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5 font-semibold text-white">

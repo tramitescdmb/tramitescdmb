@@ -1,4 +1,13 @@
 const PASOS = ["Radicada", "Distribuida", "En trámite", "Respondida / archivada"];
+const PASOS_MEMORANDO = ["Firmado", "Asignado", "Respuesta proyectada", "Respondido"];
+
+const EXPLICACION_MEMORANDO: Record<string, string> = {
+  RADICADA: "Firmado y radicado. Espera respuesta de la oficina de destino.",
+  ASIGNADA: "Asignado en la oficina de destino. Espera que se proyecte la respuesta.",
+  EN_TRAMITE: "La respuesta ya está proyectada. Falta que quien dirige la oficina la firme y la envíe.",
+  RESPONDIDA: "Respondido con un memorando nuevo, vinculado a este.",
+  ARCHIVADA: "Quedó guardado dentro de un expediente.",
+};
 const TOTAL_PASOS = PASOS.length;
 
 const PASO_POR_ESTADO: Record<string, number> = {
@@ -34,12 +43,15 @@ export function ProgresoCorrespondencia({
   estado,
   tipo,
   tamaño = "chico",
+  esperaRespuesta = false,
 }: {
   estado: string;
   tipo?: string;
   tamaño?: "chico" | "grande";
+  esperaRespuesta?: boolean;
 }) {
-  const siempreTerminado = tipo === "ENVIADA" || tipo === "INTERNA";
+  const memorandoConRespuesta = tipo === "INTERNA" && esperaRespuesta;
+  const siempreTerminado = (tipo === "ENVIADA" || tipo === "INTERNA") && !memorandoConRespuesta;
   const anulada = !siempreTerminado && estado === "ANULADA";
   const enPausa = !siempreTerminado && estado === "INFORMACION_ADICIONAL_REQUERIDA";
   const terminal = siempreTerminado || estado === "RESPONDIDA" || estado === "ARCHIVADA";
@@ -56,15 +68,19 @@ export function ProgresoCorrespondencia({
           lleno: "bg-emerald-500",
           actual: "bg-emerald-500",
           texto: "text-emerald-700",
-          etiqueta: siempreTerminado ? ETIQUETA_TERMINADO[tipo!] : estado === "RESPONDIDA" ? "Respondida" : "Archivada",
+          etiqueta: siempreTerminado
+            ? ETIQUETA_TERMINADO[tipo!]
+            : memorandoConRespuesta
+              ? estado === "RESPONDIDA" ? "Respondido" : "Archivado"
+              : estado === "RESPONDIDA" ? "Respondida" : "Archivada",
         }
       : enPausa
         ? { lleno: "bg-orange-400", actual: "bg-orange-500 ring-2 ring-orange-200", texto: "text-orange-700", etiqueta: "Esperando información adicional" }
-        : { lleno: "bg-cdmb-500", actual: "bg-cdmb-600 ring-2 ring-cdmb-200", texto: "text-stone-700", etiqueta: PASOS[pasoActual - 1] };
+        : { lleno: "bg-cdmb-500", actual: "bg-cdmb-600 ring-2 ring-cdmb-200", texto: "text-stone-700", etiqueta: (memorandoConRespuesta ? PASOS_MEMORANDO : PASOS)[pasoActual - 1] };
 
   const alto = tamaño === "grande" ? "h-2.5" : "h-2";
   const textoTamaño = tamaño === "grande" ? "text-xs" : "text-[11px]";
-  const explicacion = siempreTerminado ? EXPLICACION_TERMINADO : EXPLICACION_POR_ESTADO[estado];
+  const explicacion = siempreTerminado ? EXPLICACION_TERMINADO : memorandoConRespuesta ? EXPLICACION_MEMORANDO[estado] : EXPLICACION_POR_ESTADO[estado];
 
   return (
     <div className="w-full" role="img" aria-label={`${paleta.etiqueta}. Avance: ${pct}% (${pasosAlcanzados} de ${TOTAL_PASOS} etapas).`}>

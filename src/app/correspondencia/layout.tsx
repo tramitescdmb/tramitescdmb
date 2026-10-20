@@ -10,6 +10,7 @@ import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, pued
 import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
+import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 
 export default async function CorrespondenciaLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -37,8 +38,14 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
     admin: puedeAdministrarArchivo(permisos),
     administradorSistema: permisos.esAdmin,
     fondoHistorico: fondoHistoricoConfigurado(),
+    enviarMemorandos: false,
   };
-  const pendientesFirma = await contarPendientesBuzonSgdea(session.userId);
+  const [pendientesFirma, ctxMemos] = await Promise.all([
+    contarPendientesBuzonSgdea(session.userId),
+    contextoMemorandos(session.userId, permisos),
+  ]);
+  const memorandos = await contarMemorandos(ctxMemos);
+  permitido.enviarMemorandos = ctxMemos.firmante;
 
   return (
     <div className="space-y-4">
@@ -94,7 +101,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
         </div>
       </div>
 
-      <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} />
+      <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} memorandos={memorandos} />
 
       <MigaSgdea />
 

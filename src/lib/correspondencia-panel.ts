@@ -80,7 +80,7 @@ export async function obtenerPanelMiTrabajo(userId: string, permisos: PermisosUs
     vistas.add(c.id);
     misPendientes.push({
       id: c.id, radicado: c.radicado, asunto: c.asunto, estado: c.estado, tipo: c.tipo,
-      fechaVencimiento: c.fechaVencimiento, sinResponder: !c.respuestaTexto,
+      fechaVencimiento: c.fechaVencimiento, sinResponder: c.tipo === "INTERNA" ? Boolean(c.fechaVencimiento) : !c.respuestaTexto,
     });
   }
   const misVencidas = misPendientes.filter((c) => c.fechaVencimiento && c.fechaVencimiento < ahora).length;

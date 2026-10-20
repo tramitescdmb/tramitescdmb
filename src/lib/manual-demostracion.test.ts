@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { filasSemillaManual, parrafos, pasosDesdeTexto, segmentosTexto, validarDatosApartado } from "./manual-demostracion";
 
 describe("manual de demostración del SGDEA", () => {
-  it("trae los 17 apartados completos y en orden", () => {
+  it("trae los 18 apartados completos y en orden", () => {
     const apartados = filasSemillaManual();
-    expect(apartados).toHaveLength(17);
-    expect(apartados.map((a) => a.orden)).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+    expect(apartados).toHaveLength(18);
+    expect(apartados.map((a) => a.orden)).toEqual(Array.from({ length: 18 }, (_, i) => i + 1));
     expect(apartados.every((a) => a.titulo && a.etiqueta && a.resumen && a.pasos.length >= 3 && a.fundamento)).toBe(true);
   });
 

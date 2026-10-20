@@ -103,7 +103,7 @@ export function TablaCorrespondencia({ filas, sinResultadosTexto }: { filas: Fil
                   )}
                 </td>
                 <td className="px-2.5 py-2">
-                  <ProgresoCorrespondencia estado={f.estado} tipo={f.tipo} />
+                  <ProgresoCorrespondencia estado={f.estado} tipo={f.tipo} esperaRespuesta={f.tipo === "INTERNA" && f.vencimiento !== null} />
                 </td>
                 <td className="truncate px-2.5 py-2">
                   {f.vencimiento ? (

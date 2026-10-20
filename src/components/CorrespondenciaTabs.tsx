@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, PenLine, Contact } from "lucide-react";
+import { Inbox, Settings2, FolderOpen, FileText, LayoutDashboard, PenLine, Contact, FileEdit } from "lucide-react";
 import { BarraModulo, type GrupoMenu, type ItemMenu } from "@/components/BarraModulo";
 import { textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -12,11 +12,14 @@ type Permitido = {
   admin: boolean;
   administradorSistema: boolean;
   fondoHistorico: boolean;
+  enviarMemorandos: boolean;
 };
+
+export type ConteoMemorandos = { porResponder: number; vencidos: number; sinLeer: number };
 
 const NO_BANDEJA = [
   "nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes",
-  "bitacora", "ayuda", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion", "terceros",
+  "bitacora", "ayuda", "memorandos", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion", "terceros",
 ];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
@@ -27,7 +30,23 @@ const SOLO_ADMIN = "Solo administrador";
 const paraAdmin = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.admin ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 const paraAdminSistema = (permitido: Permitido, it: ItemMenu): ItemMenu => (permitido.administradorSistema ? it : { ...it, bloqueadoPara: SOLO_ADMIN });
 
-export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido: Permitido; pendientesFirma: ResumenPendientesFirma }) {
+export function CorrespondenciaTabs({
+  permitido,
+  pendientesFirma,
+  memorandos,
+}: {
+  permitido: Permitido;
+  pendientesFirma: ResumenPendientesFirma;
+  memorandos: ConteoMemorandos;
+}) {
+  const insigniaMemorandos =
+    memorandos.porResponder > 0
+      ? {
+          valor: memorandos.porResponder,
+          alerta: memorandos.vencidos > 0,
+          titulo: `${memorandos.porResponder} memorando(s) por responder${memorandos.vencidos > 0 ? `, ${memorandos.vencidos} con plazo vencido` : ""}`,
+        }
+      : { valor: memorandos.sinLeer, alerta: false, titulo: `${memorandos.sinLeer} memorando(s) sin leer` };
   const insigniaFirmas = {
     valor: pendientesFirma.total,
     alerta: pendientesFirma.listos > 0,
@@ -53,10 +72,18 @@ export function CorrespondenciaTabs({ permitido, pendientesFirma }: { permitido:
           ? [
               { href: "/correspondencia/nueva", label: "Radicar recibida" },
               { href: "/correspondencia/nueva/enviada", label: "Radicar enviada" },
-              { href: "/correspondencia/nueva/interna", label: "Radicar memorando" },
             ]
           : []),
         ...(permitido.distribuir ? [{ href: "/correspondencia?tipo=RECIBIDA&estado=EN_REPARTO", label: "Distribución y reparto" }] : []),
+      ],
+    },
+    {
+      label: "Memorandos",
+      icon: FileEdit,
+      insignia: insigniaMemorandos,
+      items: [
+        { href: "/correspondencia/memorandos", label: "Bandeja de memorandos", insignia: insigniaMemorandos },
+        ...(permitido.enviarMemorandos ? [{ href: "/correspondencia/nueva/interna", label: "Nuevo memorando" }] : []),
       ],
     },
     {

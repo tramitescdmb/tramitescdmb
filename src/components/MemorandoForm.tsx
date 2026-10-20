@@ -18,6 +18,9 @@ type Dependencia = { id: string; nombre: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
 type UsuarioDestino = { id: string; nombre: string; dependenciaId: string | null; rolCorrespondencia: string | null };
+export type RespuestaA = { id: string; radicado: string; asunto: string; contenido: string | null; dependenciaDestinoId: string; usuarioDestinoId: string | null };
+
+const PLAZOS = [3, 5, 10, 15];
 
 export function MemorandoForm({
   dependencias,
@@ -26,6 +29,8 @@ export function MemorandoForm({
   dependenciaOrigenSugerida,
   plantillas = [],
   usuarioNombre = "",
+  origenFijo = false,
+  respondeA = null,
 }: {
   dependencias: Dependencia[];
   series: Serie[];
@@ -33,14 +38,17 @@ export function MemorandoForm({
   dependenciaOrigenSugerida: string | null;
   plantillas?: PlantillaOpcion[];
   usuarioNombre?: string;
+  origenFijo?: boolean;
+  respondeA?: RespuestaA | null;
 }) {
   const router = useRouter();
   const { confirmarIdentidad, dialogo } = useConfirmacionFirma("SGDEA");
   const [dependenciaOrigenId, setDependenciaOrigenId] = useState(dependenciaOrigenSugerida ?? "");
-  const [dependenciaDestinoId, setDependenciaDestinoId] = useState("");
-  const [usuarioDestinoId, setUsuarioDestinoId] = useState("");
-  const [asunto, setAsunto] = useState("");
-  const [contenido, setContenido] = useState("");
+  const [dependenciaDestinoId, setDependenciaDestinoId] = useState(respondeA?.dependenciaDestinoId ?? "");
+  const [usuarioDestinoId, setUsuarioDestinoId] = useState(respondeA?.usuarioDestinoId ?? "");
+  const [asunto, setAsunto] = useState(respondeA ? `Respuesta a ${respondeA.radicado} — ${respondeA.asunto}` : "");
+  const [plazo, setPlazo] = useState(0);
+  const [contenido, setContenido] = useState(respondeA?.contenido ?? "");
   const [folios, setFolios] = useState(1);
   const [serieId, setSerieId] = useState("");
   const [subserieId, setSubserieId] = useState("");
@@ -77,6 +85,7 @@ export function MemorandoForm({
     if (!dependenciaOrigenId) return setError("Indique la dependencia de origen (quién firma este memorando).");
     if (!dependenciaDestinoId) return setError("Indique la dependencia de destino.");
     if (dependenciaOrigenId === dependenciaDestinoId) return setError("La dependencia de origen y la de destino no pueden ser la misma.");
+    if (plazo > 0 && !usuarioDestinoId) return setError("Si el memorando requiere respuesta, elija la persona que debe responderlo en «Asignar a».");
     if (!(await confirmarIdentidad({ detalle: `Memorando: ${asunto.trim()}` }))) return;
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
@@ -99,6 +108,8 @@ export function MemorandoForm({
           dependenciaOrigenId,
           dependenciaDestinoId,
           usuarioDestinoId: usuarioDestinoId || null,
+          plazoRespuestaDias: plazo || null,
+          respondeAId: respondeA?.id ?? null,
           serieId: serieId || null,
           subserieId: subserieId || null,
           documentos,
@@ -120,6 +131,11 @@ export function MemorandoForm({
   return (
     <div className="space-y-4">
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {respondeA && (
+        <div className="rounded-md border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm text-sky-900">
+          Responde al memorando <span className="font-semibold">{respondeA.radicado}</span>. Al radicar esta respuesta, ese memorando queda como respondido.
+        </div>
+      )}
 
       <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <EncabezadoPaso
@@ -129,8 +145,8 @@ export function MemorandoForm({
           descripcion="Comunicación interna entre dependencias: no sale de la entidad."
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Field label="Dependencia de origen" required help="Quién firma este memorando.">
-            <select value={dependenciaOrigenId} onChange={(e) => cambiarDependenciaOrigen(e.target.value)} className={inputCls}>
+          <Field label="Dependencia de origen" required help={origenFijo ? "Su dependencia: desde ella se firma el memorando." : "Quién firma este memorando."}>
+            <select value={dependenciaOrigenId} onChange={(e) => cambiarDependenciaOrigen(e.target.value)} disabled={origenFijo} className={`${inputCls} disabled:bg-stone-50 disabled:text-stone-600`}>
               <option value="">— Seleccione —</option>
               {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
             </select>
@@ -142,7 +158,7 @@ export function MemorandoForm({
             </select>
           </Field>
           {dependenciaDestinoId && (
-            <Field label="Asignar a" help="Casi siempre el jefe de esa oficina, para que él lo redistribuya a sus colaboradores.">
+            <Field label="Asignar a" required={plazo > 0} help="Casi siempre el jefe de esa oficina, para que él lo redistribuya a sus colaboradores.">
               <select value={usuarioDestinoId} onChange={(e) => setUsuarioDestinoId(e.target.value)} className={inputCls}>
                 <option value="">— Sin asignar (queda para repartir después) —</option>
                 {usuariosDestino.map((u) => (
@@ -172,6 +188,18 @@ export function MemorandoForm({
           <Field label="N.º de folios">
             <input type="number" min={1} value={folios} onChange={(e) => setFolios(Math.max(1, Number(e.target.value) || 1))} className={inputCls} />
           </Field>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Respuesta" help="Si requiere respuesta, la persona asignada lo verá como pendiente con su plazo y recibirá el aviso.">
+              <select value={plazo} onChange={(e) => setPlazo(Number(e.target.value))} className={`${inputCls} max-w-sm`}>
+                <option value={0}>No requiere respuesta (informativo)</option>
+                {PLAZOS.map((d) => (
+                  <option key={d} value={d}>
+                    Requiere respuesta en {d} días hábiles
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
           <div className="sm:col-span-2 lg:col-span-4 space-y-2">
             <PlantillaSelector
               plantillas={plantillas}

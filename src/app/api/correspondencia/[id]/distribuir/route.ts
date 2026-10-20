@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir, puedeSubdistribuirInternamente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { contextoMemorandos } from "@/lib/memorandos";
 
 const ESTADOS_CERRADOS = ["RESPONDIDA", "ARCHIVADA", "ANULADA"];
 const ETIQUETA_ESTADO_MIN: Record<string, string> = { RESPONDIDA: "respondida", ARCHIVADA: "archivada", ANULADA: "anulada" };
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       id: true,
       radicado: true,
       estado: true,
+      tipo: true,
       dependenciaDestinoId: true,
       distribuciones: { where: { activa: true }, select: { id: true, usuarioId: true, dependenciaId: true } },
     },
@@ -38,8 +40,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const esReparoCentralizado = puedeDistribuir(permisos);
+  const ctxMemo = comunicacion.tipo === "INTERNA" ? await contextoMemorandos(session.userId, permisos) : null;
   const esSubdistribucion =
-    !esReparoCentralizado && puedeSubdistribuirInternamente(permisos, session.userId, comunicacion, comunicacion.distribuciones);
+    !esReparoCentralizado &&
+    (puedeSubdistribuirInternamente(permisos, session.userId, comunicacion, comunicacion.distribuciones) ||
+      Boolean(ctxMemo?.firmante && ctxMemo.dependenciaId && ctxMemo.dependenciaId === comunicacion.dependenciaDestinoId));
   if (!esReparoCentralizado && !esSubdistribucion) {
     await registrarAccesoDenegadoAccion("distribuir la comunicación", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para repartir esta comunicación.");

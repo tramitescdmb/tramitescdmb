@@ -483,6 +483,8 @@ export type EntradaRadicacionInterna = {
   subserieId?: string | null;
   documentos?: EntradaDocumento[];
   radicadoPorId: string;
+  fechaLimiteRespuesta?: Date | null;
+  respondeAId?: string | null;
 };
 
 export async function radicarInterna(entrada: EntradaRadicacionInterna) {
@@ -505,8 +507,14 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
         serieId: entrada.serieId ?? null,
         subserieId: entrada.subserieId ?? null,
         radicadoPorId: entrada.radicadoPorId,
+        fechaVencimiento: entrada.fechaLimiteRespuesta ?? null,
+        respondeAId: entrada.respondeAId ?? null,
       },
     });
+
+    if (entrada.respondeAId) {
+      await tx.comunicacion.update({ where: { id: entrada.respondeAId }, data: { estado: "RESPONDIDA" } });
+    }
 
     if (entrada.usuarioDestinoId) {
       await tx.distribucion.create({
@@ -585,16 +593,21 @@ export async function registrarRespuestaFuncionario(
       id: true,
       tipo: true,
       estado: true,
+      fechaVencimiento: true,
       _count: { select: { respuestas: true } },
       firmas: { select: { id: true, usuarioId: true, usuario: { select: { nombre: true } } } },
     },
   });
   if (!c) throw new Error("La comunicación no existe.");
-  if (c.tipo !== "RECIBIDA") throw new Error("Solo se responde a comunicaciones recibidas.");
+  const esMemorando = c.tipo === "INTERNA";
+  if (esMemorando && !c.fechaVencimiento) throw new Error("Este memorando es informativo: no requiere respuesta.");
+  if (c.tipo === "ENVIADA") throw new Error("Solo se responde a comunicaciones recibidas o a memorandos que requieren respuesta.");
+  if (esMemorando && ["RESPONDIDA", "ARCHIVADA"].includes(c.estado)) throw new Error("Este memorando ya fue respondido.");
   if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");
   if (c._count.respuestas > 0) throw new Error("Ya se radicó una respuesta formal para esta comunicación.");
   if (!texto.trim()) throw new Error("Escriba el contenido de la respuesta.");
-  const firmasAjenas = c.firmas.filter((f) => f.usuarioId !== usuarioId);
+  const firmasRespuesta = esMemorando ? [] : c.firmas;
+  const firmasAjenas = firmasRespuesta.filter((f) => f.usuarioId !== usuarioId);
   if (firmasAjenas.length > 0) {
     throw new Error(
       `La respuesta ya tiene la firma de ${firmasAjenas.map((f) => f.usuario.nombre).join(", ")}: no se puede modificar sin invalidarla. Pida que rechacen o retiren su firma antes de corregirla.`
@@ -604,8 +617,8 @@ export async function registrarRespuestaFuncionario(
   const pasaAEnTramite = c.estado === "ASIGNADA" || c.estado === "EN_REPARTO";
 
   return db.$transaction(async (tx) => {
-    if (c.firmas.length > 0) {
-      const idsFirmas = c.firmas.map((f) => f.id);
+    if (firmasRespuesta.length > 0) {
+      const idsFirmas = firmasRespuesta.map((f) => f.id);
       await tx.solicitudFirma.updateMany({
         where: { firmaId: { in: idsFirmas } },
         data: { estado: "PENDIENTE", firmaId: null, completadoEn: null },

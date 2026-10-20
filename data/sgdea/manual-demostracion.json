@@ -288,5 +288,23 @@
     "ejemplo": "El permiso de ocupación de cauces `M-DA-PR39-2026-0001`, en estado «Aprobado», hereda la subserie 540.7 «Permisos de ocupación de cauce, playas y lechos». Desde «Administración» se cierra y archiva: aparece en el SGDEA en el cajón de SEYCA – Grupo Seguimiento para la Sostenibilidad, con la etiqueta «Trámites 2.0» y sus 7 documentos.\n\nDel mismo modo, el contrato `CDMB-CTO-2026-000034`, al aprobarse su etapa Postcontractual, queda en el cajón de la Oficina de Contratación con la etiqueta «GECON» y la subserie 210.8 «Contratos de prestación de servicios».",
     "detalle": "La Corporación tiene un solo archivo: los expedientes de los módulos usan la misma TRD, el mismo nivel de acceso y las mismas reglas de cierre que los del SGDEA, y se listan, filtran e inventarían (FUID) junto a ellos. Cada consulta de uno de sus documentos desde el archivo queda en la bitácora inalterable.\n\nLos documentos no se duplican: el original y sus firmas permanecen en el módulo que los produjo y el SGDEA los enlaza. No existen dos versiones de un mismo documento que puedan diferir.",
     "fundamento": "Acuerdo 001 de 2024 AGN, artículo 4.3.2 (expediente electrónico y su cierre) · Acuerdo 004 de 2019 AGN (TRD; la retención se cuenta desde el cierre del expediente) · Ley 1712 de 2014 (nivel de acceso) · MoReq 1.13, 1.14, 1.33 y 1.35."
+  },
+  {
+    "orden": 18,
+    "etiqueta": "Memorandos",
+    "titulo": "Memorandos internos con respuesta, avisos y proyección por colaborador",
+    "tituloIndice": "Memorandos internos",
+    "ubicacion": "en el menú del SGDEA, `Memorandos → Bandeja de memorandos` y `Memorandos → Nuevo memorando`. La campana de la barra superior avisa los pendientes.",
+    "resumen": "Los memorandos los firman y envían la Dirección General, la Secretaría General, las subdirecciones, las jefaturas de oficina, la asesoría de dirección y la revisoría fiscal. Pueden pedir respuesta con plazo en días hábiles; quien dirige la oficina de destino puede asignarlo a un colaborador para que proyecte la respuesta y luego la firma y la envía.",
+    "pasos": [
+      "Quien envía elige la dependencia de destino, la persona a quien se asigna y, en «Respuesta», si es **informativo** o si **requiere respuesta en 3, 5, 10 o 15 días hábiles**. Al radicar se firma en el mismo paso.",
+      "El destinatario ve el memorando en «Por responder» y «Sin leer», en la campana de avisos y en los pendientes de Inicio. Al abrirlo queda marcado como leído.",
+      "Quien dirige la oficina de destino puede usar «Asignar a un colaborador»: el colaborador ve «Proyectar respuesta», escribe el texto y lo guarda; puede corregirlo mientras no se haya enviado.",
+      "Quien dirige la oficina pulsa «Firmar y enviar respuesta»: el formulario llega con el texto proyectado, dirigido a la oficina y a la persona que envió el memorando. Al radicarla, el memorando original queda «Respondido» y ambos quedan vinculados.",
+      "Quien envió el memorando lo sigue en «Esperando respuesta», con el plazo y los días hábiles restantes."
+    ],
+    "ejemplo": "La Dirección General envía `CDMB-I-2026-000003` «Solicitud de informe de avance» a la Oficina Asesora de Direccionamiento Estratégico con respuesta en 3 días hábiles. La oficina lo responde con `CDMB-I-2026-000004` y el original pasa a «Respondido».",
+    "detalle": "El plazo se cuenta en días hábiles con el calendario laboral del SGDEA. La persona asignada a proyectar solo guarda el texto: no firma ni envía. Los memorandos informativos no generan pendientes de respuesta, solo el aviso de «Sin leer».",
+    "fundamento": "Acuerdo 060 de 2001 AGN (comunicaciones oficiales internas) · Ley 527 de 1999 y Decreto 2364 de 2012 (firma electrónica) · Ley 1437 de 2011 (términos en días hábiles)"
   }
 ]

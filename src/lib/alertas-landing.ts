@@ -1,4 +1,5 @@
 import { ETIQUETA_FASE_LIQUIDACION } from "@/lib/liquidacion";
+import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { identificacionContrato } from "@/lib/codigo-proceso";
 import {
   obtenerPermisosUsuario,
@@ -215,15 +216,31 @@ function itemsDocumentosPorContrato(docs: DocumentoPorGestionar[], tipo: TipoAle
 }
 
 async function seccionCorrespondencia(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {
-  const [panel, buzon] = await Promise.all([
+  const [panel, buzon, memorandos] = await Promise.all([
     obtenerPanelMiTrabajo(session.userId, permisos),
     contarPendientesBuzonSgdea(session.userId),
+    contextoMemorandos(session.userId, permisos).then(contarMemorandos),
   ]);
 
   const items: ItemAlerta[] = [];
   let total = 0;
 
+  if (memorandos.porResponder > 0) {
+    total += memorandos.porResponder;
+    items.push({
+      titulo: `${memorandos.porResponder} memorando(s) por responder${memorandos.vencidos > 0 ? ` — ${memorandos.vencidos} con plazo vencido` : ""}`,
+      link: "/correspondencia/memorandos?vista=por-responder",
+      tipo: "correspondencia",
+      cantidad: memorandos.porResponder,
+    });
+  }
+  if (memorandos.sinLeer > 0) {
+    total += memorandos.sinLeer;
+    items.push({ titulo: `${memorandos.sinLeer} memorando(s) sin leer`, link: "/correspondencia/memorandos?vista=sin-leer", tipo: "correspondencia", cantidad: memorandos.sinLeer });
+  }
+
   for (const c of panel.mis.lista) {
+    if (c.tipo === "INTERNA") continue;
     const vencida = Boolean(c.fechaVencimiento && c.fechaVencimiento < new Date());
     if (!c.sinResponder && !vencida) continue;
     total++;
