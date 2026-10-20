@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { IconLayoutDashboard, IconMaximize, IconRefresh } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconMaximize, IconMinimize, IconRefresh } from "@tabler/icons-react";
 
 import type { OpcionTablero } from "@/lib/tableros";
 
@@ -47,11 +47,21 @@ export function AccionesTablero() {
   const router = useRouter();
   const [refrescando, iniciar] = useTransition();
 
-  function pantallaCompleta() {
-    const el = document.getElementById("tablero");
-    if (!el) return;
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void el.requestFullscreen();
+  const [completa, setCompleta] = useState(false);
+
+  useEffect(() => {
+    const alCambiar = () => setCompleta(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", alCambiar);
+    return () => document.removeEventListener("fullscreenchange", alCambiar);
+  }, []);
+
+  function pantallaCompleta(e: React.MouseEvent<HTMLButtonElement>) {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    const el = e.currentTarget.closest("main") ?? document.documentElement;
+    el.requestFullscreen?.().catch(() => undefined);
   }
 
   const boton = "flex h-9 w-9 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800";
@@ -60,8 +70,8 @@ export function AccionesTablero() {
       <button type="button" onClick={() => iniciar(() => router.refresh())} title="Actualizar cifras" aria-label="Actualizar cifras" className={boton}>
         <IconRefresh className={`h-5 w-5 ${refrescando ? "animate-spin" : ""}`} stroke={1.75} aria-hidden />
       </button>
-      <button type="button" onClick={pantallaCompleta} title="Pantalla completa" aria-label="Pantalla completa" className={boton}>
-        <IconMaximize className="h-5 w-5" stroke={1.75} aria-hidden />
+      <button type="button" onClick={pantallaCompleta} title={completa ? "Salir de pantalla completa" : "Pantalla completa"} aria-label={completa ? "Salir de pantalla completa" : "Pantalla completa"} className={boton}>
+        {completa ? <IconMinimize className="h-5 w-5" stroke={1.75} aria-hidden /> : <IconMaximize className="h-5 w-5" stroke={1.75} aria-hidden />}
       </button>
     </div>
   );

@@ -78,3 +78,8 @@ body {
 .leaflet-tooltip.etiqueta-vereda::before {
   display: none;
 }
+
+main:fullscreen {
+  overflow-y: auto;
+  background-color: #f5f7f6;
+}

@@ -69,7 +69,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const opciones: OpcionTablero[] = opcionesTablero(permisos);
 
   return (
-    <div id="tablero" className={`mx-auto space-y-3 bg-[#f5f7f6] ${general ? "max-w-7xl" : "max-w-6xl"}`}>
+    <div className={`mx-auto space-y-3 bg-[#f5f7f6] ${general ? "max-w-7xl" : "max-w-6xl"}`}>
       <BandaTablero className="flex flex-wrap items-center justify-between gap-3 !py-3">
         <SelectorTablero opciones={opciones} actual={general ? "/dashboard" : "/"} />
         {general ? (
