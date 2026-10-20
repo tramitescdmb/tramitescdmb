@@ -33,7 +33,7 @@ function LineaInformes({ periodos }: { periodos: PeriodoLanding[] }) {
       {periodos.map((p, i) => {
         const punto = {
           radicado: "bg-emerald-500 text-white",
-          pendiente: "bg-acento-500 text-white ring-2 ring-acento-100",
+          pendiente: "bg-white text-acento-600 ring-2 ring-acento-400",
           "en-curso": "bg-white text-sky-600 ring-2 ring-sky-300",
           futuro: "bg-stone-200 text-stone-400",
         }[p.estado];
@@ -78,7 +78,7 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
   const valorTotal = c.valor;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+    <article className="flex flex-col overflow-hidden rounded-md border border-stone-200 bg-white">
       <div className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -151,18 +151,18 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
       {c.siguiente ? (
         <Link
           href={c.siguiente.link}
-          className="group mt-auto flex items-center justify-between gap-3 bg-acento-500 px-4 py-2 text-white hover:bg-acento-600"
+          className="group relative mt-auto flex items-center justify-between gap-3 border-t border-stone-200 bg-stone-50 px-4 py-2 hover:bg-stone-100"
         >
-          <span className="min-w-0">
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/80">Siguiente paso</span>
-            <span className="block truncate text-xs font-semibold">
-              {c.siguiente.texto} · <span className="font-normal">{c.siguiente.detalle}</span>
-            </span>
+          <span className="absolute inset-y-0 left-0 w-[3px] bg-acento-500" aria-hidden />
+          <span className="min-w-0 text-xs">
+            <span className="text-stone-500">Siguiente paso: </span>
+            <span className="font-semibold text-stone-800">{c.siguiente.texto}</span>
+            <span className="text-stone-500"> · {c.siguiente.detalle}</span>
           </span>
-          <ArrowRight className="h-4 w-4 flex-none transition group-hover:translate-x-1" aria-hidden />
+          <ArrowRight className="h-4 w-4 flex-none text-acento-600" aria-hidden />
         </Link>
       ) : (
-        <div className="mt-auto flex items-center gap-2 bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700">
+        <div className="mt-auto flex items-center gap-2 border-t border-stone-200 px-4 py-2 text-xs font-medium text-emerald-700">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
           Al día
         </div>
@@ -171,18 +171,132 @@ function TarjetaContrato({ c }: { c: ContratoLanding }) {
   );
 }
 
-export function MisContratos({ contratos, terminados }: { contratos: ContratoLanding[]; terminados: number }) {
-  const propios = contratos.filter((c) => c.relacion === "CONTRATISTA").length;
+const ANILLO_ESTADO: Record<EstadoContrato, string> = {
+  "En ejecución": "border-emerald-500",
+  "Por iniciar": "border-sky-500",
+  "Plazo vencido": "border-red-500",
+  "En liquidación": "border-violet-500",
+};
+
+function ChipsInformes({ periodos }: { periodos: PeriodoLanding[] }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-          <span className="flex h-8 w-8 items-center justify-center text-amber-700">
-            <Briefcase className="h-4 w-4" aria-hidden />
+    <span className="flex flex-wrap items-center gap-0.5">
+      {periodos.map((p) => {
+        const clase = {
+          radicado: "bg-emerald-500 text-white",
+          pendiente: "bg-acento-500 text-white",
+          "en-curso": "bg-white text-sky-600 ring-1 ring-sky-300",
+          futuro: "bg-stone-100 text-stone-400",
+        }[p.estado];
+        const titulo = `Informe ${p.rango}${p.estado === "pendiente" && p.diasDeRetraso > 0 ? ` · ${p.diasDeRetraso} día(s) de retraso` : ""}`;
+        const punto = <span className={`flex h-5 min-w-[1.75rem] items-center justify-center rounded px-1 text-[10px] font-semibold capitalize ${clase}`}>{p.mes}</span>;
+        return p.link ? (
+          <Link key={p.clave} href={p.link} title={titulo}>
+            {punto}
+          </Link>
+        ) : (
+          <span key={p.clave} title={titulo}>
+            {punto}
           </span>
-          {propios > 0 ? "Mis contratos" : "Contratos que supervisa"}
-          <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">{contratos.length}</span>
-        </h2>
+        );
+      })}
+    </span>
+  );
+}
+
+function TablaContratos({ contratos }: { contratos: ContratoLanding[] }) {
+  return (
+    <div className="overflow-hidden rounded-md border border-stone-200 bg-white">
+      <table className="tabla-listado w-full text-xs">
+        <thead className="hidden text-left text-[11px] font-semibold uppercase tracking-wide md:table-header-group">
+          <tr>
+            <th className="px-4 py-2">Contrato</th>
+            <th className="px-3 py-2">Contratista</th>
+            <th className="px-3 py-2">Plazo</th>
+            <th className="px-3 py-2">Informes mensuales</th>
+            <th className="px-4 py-2">Siguiente paso</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-stone-100">
+          {contratos.map((c) => {
+            const firmasListas = c.firmas.filter((f) => f.puedeActuar).length;
+            return (
+              <tr key={c.id} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-4 py-2 md:table-row md:p-0">
+                <td className="basis-full align-top md:max-w-[22rem] md:px-4 md:py-2">
+                  <Link href={`/contratacion/expedientes/${c.id}`} className="font-semibold text-stone-800 hover:text-cdmb-700">
+                    N.° {c.numeroContrato ?? "sin número"}
+                  </Link>
+                  {c.codigoProceso && <span className="ml-1.5 font-mono text-[10px] text-stone-500">{c.codigoProceso}</span>}
+                  <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-stone-600">
+                    <span className={`h-2.5 w-2.5 flex-none rounded-full border-2 ${ANILLO_ESTADO[c.estado]}`} aria-hidden />
+                    {c.estado}
+                  </span>
+                  <span className="mt-0.5 line-clamp-1 text-[11px] text-stone-400" title={c.objeto}>
+                    {c.objeto}
+                  </span>
+                </td>
+                <td className="max-w-[200px] break-words align-top leading-snug text-stone-600 md:px-3 md:py-2">
+                  {c.relacion === "CONTRATISTA" ? c.supervisores.join(", ") || "—" : c.contratista ?? "Sin contratista"}
+                </td>
+                <td className="w-40 align-top md:px-3 md:py-2">
+                  <span className="text-stone-700">{fecha(c.terminacion)}</span>
+                  {c.ejecucion !== null && (
+                    <>
+                      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-stone-200">
+                        <span className="block h-full bg-cdmb-500" style={{ width: `${c.ejecucion}%` }} />
+                      </span>
+                      <span className={`text-[10px] ${c.diasParaTerminar !== null && c.diasParaTerminar < 0 ? "font-medium text-red-600" : "text-stone-400"}`}>
+                        {c.ejecucion}% ·{" "}
+                        {c.diasParaTerminar !== null && c.diasParaTerminar >= 0 ? `${c.diasParaTerminar} día(s)` : "vencida"}
+                      </span>
+                    </>
+                  )}
+                </td>
+                <td className="align-top md:px-3 md:py-2">
+                  <ChipsInformes periodos={c.periodos} />
+                </td>
+                <td className="align-top md:px-4 md:py-2">
+                  {c.siguiente ? (
+                    <Link href={c.siguiente.link} className="group block max-w-[16rem]">
+                      <span className="flex items-center gap-1 font-medium text-cdmb-700 group-hover:underline">
+                        {c.siguiente.texto}
+                        <ArrowRight className="h-3 w-3 flex-none" aria-hidden />
+                      </span>
+                      <span className="block truncate text-[10px] text-stone-500">{c.siguiente.detalle}</span>
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                      Al día
+                    </span>
+                  )}
+                  {c.firmas.length > 0 && (
+                    <span className="mt-0.5 flex items-center gap-1 text-[10px] text-red-700">
+                      <PenLine className="h-3 w-3" aria-hidden />
+                      {firmasListas > 0 ? `${firmasListas} para firmar` : `${c.firmas.length} en espera de turno`}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function MisContratos({ contratos, terminados }: { contratos: ContratoLanding[]; terminados: number }) {
+  const propios = contratos.filter((c) => c.relacion === "CONTRATISTA");
+  const supervisados = contratos.filter((c) => c.relacion === "SUPERVISOR");
+  const encabezado = (titulo: string, cantidad: number, conEnlaces: boolean) => (
+    <div className="flex items-center justify-between gap-2">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
+        <Briefcase className="h-4 w-4 text-stone-500" aria-hidden />
+        {titulo}
+        <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-xs font-semibold text-sky-800">{cantidad}</span>
+      </h2>
+      {conEnlaces && (
         <span className="flex items-center gap-3 text-xs">
           {terminados > 0 && (
             <Link href="/contratacion/expedientes?etapa=TERMINADOS" className="text-stone-500 hover:underline">
@@ -193,13 +307,29 @@ export function MisContratos({ contratos, terminados }: { contratos: ContratoLan
             Ir a GECON
           </Link>
         </span>
-      </div>
-      <div className={`grid grid-cols-1 gap-3 ${contratos.length > 1 ? "xl:grid-cols-2" : ""}`}>
-        {contratos.map((c) => (
-          <TarjetaContrato key={c.id} c={c} />
-        ))}
-      </div>
-    </section>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {propios.length > 0 && (
+        <section className="space-y-2">
+          {encabezado("Mis contratos", propios.length, true)}
+          <div className={`grid grid-cols-1 gap-3 ${propios.length > 1 ? "xl:grid-cols-2" : ""}`}>
+            {propios.map((c) => (
+              <TarjetaContrato key={c.id} c={c} />
+            ))}
+          </div>
+        </section>
+      )}
+      {(supervisados.length > 0 || propios.length === 0) && (
+        <section className="space-y-2">
+          {encabezado("Contratos que supervisa", supervisados.length, propios.length === 0)}
+          {supervisados.length > 0 && <TablaContratos contratos={supervisados} />}
+        </section>
+      )}
+    </div>
   );
 }
 
@@ -207,8 +337,8 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
   const { filas: visibles, total, enEjecucion, informes, firmas, porTerminar } = datos;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 px-4 py-2.5">
+    <section className="overflow-hidden rounded-md border border-stone-200 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
           <span className="flex h-8 w-8 items-center justify-center text-amber-700">
             <Briefcase className="h-4 w-4" aria-hidden />
@@ -263,28 +393,7 @@ export function SeguimientoContratos({ datos }: { datos: DatosSeguimiento }) {
                   )}
                 </td>
                 <td className="md:px-3 md:py-1.5">
-                  <span className="flex flex-wrap items-center gap-0.5">
-                    {f.periodos.map((p) => {
-                      const clase = {
-                        radicado: "bg-emerald-500 text-white",
-                        pendiente: "bg-acento-500 text-white",
-                        "en-curso": "bg-white text-sky-600 ring-1 ring-sky-300",
-                        futuro: "bg-stone-100 text-stone-400",
-                      }[p.estado];
-                      const punto = (
-                        <span className={`flex h-5 min-w-[1.75rem] items-center justify-center rounded px-1 text-[10px] font-semibold capitalize ${clase}`}>{p.mes}</span>
-                      );
-                      return p.link ? (
-                        <Link key={p.clave} href={p.link} title={`Informe ${p.rango}`}>
-                          {punto}
-                        </Link>
-                      ) : (
-                        <span key={p.clave} title={`Informe ${p.rango}`}>
-                          {punto}
-                        </span>
-                      );
-                    })}
-                  </span>
+                  <ChipsInformes periodos={f.periodos} />
                 </td>
                 <td className="md:px-3 md:py-1.5">
                   <span className="flex flex-wrap gap-1 text-[11px]">
