@@ -137,11 +137,9 @@ export function PerfilesUsuario({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-stone-900">Perfiles y permisos</h2>
-          <p className="text-xs text-stone-500">
-            {modulosActivos.length > 0
-              ? `Rigen en: ${modulosActivos.map((m) => ETIQUETA_MODULO_PERFIL[m as ModuloPerfil] ?? m).join(", ")}. En los demás módulos los accesos todavía salen de los roles configurados arriba.`
-              : "En preparación: los accesos todavía salen de los roles configurados arriba. Aquí se definen los perfiles que los reemplazarán."}
-          </p>
+          {modulosActivos.length > 0 && (
+            <p className="text-xs text-stone-500">Rigen en: {modulosActivos.map((m) => ETIQUETA_MODULO_PERFIL[m as ModuloPerfil] ?? m).join(", ")}</p>
+          )}
         </div>
         {haySugeridos && (
           <button
@@ -182,12 +180,6 @@ export function PerfilesUsuario({
         </nav>
 
         <div className="min-w-0 space-y-4 p-4">
-          {modulosActivos.includes(modulo) && (
-            <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-              Este módulo ya se rige por perfiles: lo que se marque aquí es lo que la persona puede hacer. El rol del módulo en la ficha de arriba ya no
-              concede accesos; solo se conserva su fecha de vigencia.
-            </p>
-          )}
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Perfiles de {ETIQUETA_MODULO_PERFIL[modulo]}</h3>
             {perfilesModulo.length === 0 ? (
@@ -215,10 +207,12 @@ export function PerfilesUsuario({
           </div>
 
           <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Permisos efectivos</h3>
-            <p className="mb-2 text-xs text-stone-500">
-              Haga clic en una casilla para crear una excepción solo para esta persona: concede lo que su perfil no da o quita lo que sí da.
-            </p>
+            <h3
+              className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500"
+              title="Clic en una casilla: excepción solo para esta persona."
+            >
+              Permisos efectivos
+            </h3>
             <div className="overflow-x-auto rounded border border-stone-200">
               <table className="tabla-listado w-full text-sm">
                 <thead className="text-left text-[11px] uppercase tracking-wide">

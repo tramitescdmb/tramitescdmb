@@ -43,7 +43,7 @@ export async function AuditoriaCuentas({ tipo, basePath, incluirTramites }: { ti
 
   return (
     <div className="space-y-6">
-      <CabeceraTablero icon={ShieldCheck} titulo="Auditoría de cuentas" descripcion={<>Inicios de sesión, gestión de usuarios y cambios de configuración. Solo visible para administradores.</>} />
+      <CabeceraTablero icon={ShieldCheck} titulo="Auditoría de cuentas" descripcion="Inicios de sesión, gestión de usuarios y cambios de configuración. Solo visible para administradores." />
 
       <SectionHelp>
         Aparte de la <strong>bitácora de cada expediente</strong>: aquí se ven las cuentas y la configuración de toda la aplicación —accesos,

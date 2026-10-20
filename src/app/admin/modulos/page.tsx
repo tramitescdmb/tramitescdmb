@@ -17,7 +17,7 @@ export default async function ModulosPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <CabeceraTablero icon={LayoutGrid} titulo="Disponibilidad de módulos" descripcion={<>Qué módulos ven y pueden usar los funcionarios. Solo el administrador del sistema lo modifica.</>} />
+      <CabeceraTablero icon={LayoutGrid} titulo="Disponibilidad de módulos" descripcion="Qué módulos ven y pueden usar los funcionarios. Solo el administrador del sistema lo modifica." />
 
       {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}

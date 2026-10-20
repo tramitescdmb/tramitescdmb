@@ -313,23 +313,21 @@ export default async function CorrespondenciaDetallePage({
   const siguientePaso: ProximoPaso = memorandoPorResponder && firmaMemorandos
     ? {
         texto: c.respuestaTexto
-          ? `${c.respuestaPor?.nombre ?? "Su colaborador"} ya proyectó la respuesta. Revísela, fírmela y envíela${plazoMemo}. También puede asignar el memorando a un colaborador de su oficina.`
-          : `Este memorando requiere respuesta de su oficina${plazoMemo}. Puede asignarlo a un colaborador para que proyecte la respuesta, o responderlo directamente.`,
+          ? `Respuesta proyectada por ${c.respuestaPor?.nombre ?? "un colaborador"}. Pendiente de firma${plazoMemo}.`
+          : `Requiere respuesta${plazoMemo}.`,
         accionHref: `/correspondencia/nueva/interna?respondeAId=${c.id}`,
         accionTexto: "Firmar y enviar respuesta",
       }
     : proyectaMemorando
       ? {
-          texto: c.respuestaTexto
-            ? "Su respuesta proyectada quedó guardada. Quien dirige la oficina la revisa, la firma y la envía; puede corregirla mientras tanto."
-            : `Le asignaron proyectar la respuesta de este memorando${plazoMemo}. Quien dirige la oficina la firma y la envía.`,
+          texto: c.respuestaTexto ? "Respuesta proyectada. Pendiente de firma del jefe de la oficina." : `Proyectar respuesta${plazoMemo}.`,
           accionHref: "#proyectar",
           accionTexto: c.respuestaTexto ? "Corregir la respuesta proyectada" : "Proyectar respuesta",
         }
     : memoEnPlazo
-      ? { texto: `Memorando firmado y radicado. Está a la espera de respuesta, con plazo hasta el ${fechaHora(c.fechaVencimiento!)}.` }
+      ? { texto: `Esperando respuesta hasta el ${fechaHora(c.fechaVencimiento!)}.` }
       : c.tipo === "INTERNA" && c.estado === "RESPONDIDA"
-        ? { texto: "Memorando respondido: la respuesta quedó radicada y vinculada a este memorando.", cerrado: true }
+        ? { texto: "Respondido.", cerrado: true }
         : siguientePasoBase;
 
   const botoneraRepartir =

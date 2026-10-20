@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, ChevronRight, Info, type LucideIcon } from "lucide-react";
 
 const TONOS = {
   cdmb: "text-cdmb-600",
@@ -84,6 +84,20 @@ function Contador({ valor }: { valor: number }) {
   return <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-sky-800">{valor.toLocaleString("es-CO")}</span>;
 }
 
+const LARGO_DESCRIPCION = 90;
+
+function esLarga(descripcion: ReactNode): descripcion is string {
+  return typeof descripcion === "string" && descripcion.length > LARGO_DESCRIPCION;
+}
+
+function IconoAyuda({ texto }: { texto: string }) {
+  return (
+    <span title={texto} aria-label={texto} className="inline-flex cursor-help text-stone-400 hover:text-cdmb-600">
+      <Info className="h-4 w-4" aria-hidden />
+    </span>
+  );
+}
+
 export function BandaTablero({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <header className={`rounded-md border border-stone-200 bg-white px-5 py-4 ${className}`}>{children}</header>
@@ -119,8 +133,9 @@ export function CabeceraTablero({
             <h2 className="mt-0.5 flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
               {titulo}
               {contador !== undefined && <Contador valor={contador} />}
+              {esLarga(descripcion) && <IconoAyuda texto={descripcion} />}
             </h2>
-            {descripcion && <div className="mt-0.5 text-sm text-stone-500">{descripcion}</div>}
+            {descripcion && !esLarga(descripcion) && <div className="mt-0.5 text-sm text-stone-500">{descripcion}</div>}
           </div>
         </div>
         {acciones ? <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">{acciones}</div> : children && <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{children}</div>}
@@ -162,8 +177,9 @@ export function TarjetaTablero({
               {contador !== undefined && (
                 <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-sky-800">{contador.toLocaleString("es-CO")}</span>
               )}
+              {esLarga(descripcion) && <IconoAyuda texto={descripcion} />}
             </h2>
-            {descripcion && <p className="text-xs text-stone-500">{descripcion}</p>}
+            {descripcion && !esLarga(descripcion) && <p className="text-xs text-stone-500">{descripcion}</p>}
           </div>
         </div>
         {accion && <div className="flex-none text-xs">{accion}</div>}

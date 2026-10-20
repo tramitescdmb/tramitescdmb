@@ -3,10 +3,10 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerModulosPorPerfil } from "@/lib/permisos";
-import { usuariosSinPerfilSgdea } from "@/lib/perfiles-usuario";
+import { usuariosSinPerfil } from "@/lib/perfiles-usuario";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-const ACTIVABLES = ["SGDEA"];
+const ACTIVABLES = ["SGDEA", "GECON", "TRAMITES", "VITAL", "SINCA"];
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -16,11 +16,11 @@ export async function POST(req: NextRequest) {
   const activo = body.activo === true;
   if (!ACTIVABLES.includes(modulo)) return NextResponse.json({ error: "Ese módulo todavía no se puede regir por perfiles." }, { status: 400 });
 
-  if (activo && modulo === "SGDEA") {
-    const faltan = await usuariosSinPerfilSgdea();
+  if (activo) {
+    const faltan = await usuariosSinPerfil(modulo);
     if (faltan.length > 0) {
       return NextResponse.json(
-        { error: `Estas personas tienen hoy acceso al SGDEA por su rol y quedarían sin él: ${faltan.map((u) => u.nombre).join(", ")}. Asígneles un perfil del SGDEA antes de activar.`, faltan },
+        { error: `Estas personas perderían accesos que hoy tienen por su rol: ${faltan.map((u) => u.nombre).join(", ")}. Asígneles el perfil correspondiente antes de activar.`, faltan },
         { status: 409 }
       );
     }

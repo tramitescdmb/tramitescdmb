@@ -9,7 +9,7 @@ import { ETIQUETA_MODULO_PERFIL, MODULOS_PERFIL } from "@/lib/perfiles-catalogo"
 import { NuevoPerfilForm } from "@/components/admin/NuevoPerfilForm";
 import { AsignarSegunRolesBoton } from "@/components/admin/AsignarSegunRolesBoton";
 import { ActivacionPerfiles } from "@/components/admin/ActivacionPerfiles";
-import { usuariosSinPerfilSgdea } from "@/lib/perfiles-usuario";
+import { usuariosSinPerfil } from "@/lib/perfiles-usuario";
 import { obtenerModulosPorPerfil } from "@/lib/permisos";
 
 export default async function PerfilesPage() {
@@ -18,7 +18,10 @@ export default async function PerfilesPage() {
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Perfiles y permisos" quien="administrador del sistema" volverHref="/" volverLabel="Ir al inicio" />;
 
   const [perfiles, activos] = await Promise.all([listarPerfiles(), obtenerModulosPorPerfil()]);
-  const sinPerfilSgdea = await usuariosSinPerfilSgdea();
+  const modulosActivables = ["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"];
+  const sinPerfil = Object.fromEntries(
+    await Promise.all(modulosActivables.map(async (m) => [m, activos.includes(m) ? [] : await usuariosSinPerfil(m)] as const))
+  );
   const asignaciones = perfiles.reduce((t, p) => t + p.usuariosAsignados, 0);
 
   return (
@@ -26,18 +29,13 @@ export default async function PerfilesPage() {
       <CabeceraTablero
         icon={ShieldCheck}
         titulo="Perfiles y permisos"
-        descripcion="Cada perfil define qué puede ver, crear, editar o eliminar en cada funcionalidad. Los perfiles iniciales reproducen los roles actuales."
+        descripcion="Ver, crear, editar y eliminar por funcionalidad."
       />
 
-      <ActivacionPerfiles activos={activos} sinPerfilSgdea={sinPerfilSgdea} />
+      <ActivacionPerfiles activos={activos} sinPerfil={sinPerfil} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-4 py-3">
-        <p className="text-sm text-stone-600">
-          {asignaciones > 0
-            ? `${asignaciones} asignación(es) de perfil a usuarios.`
-            : "Ningún usuario tiene perfiles asignados todavía."}{" "}
-          Puede asignarlos uno a uno desde la ficha del usuario o de una vez según sus roles actuales.
-        </p>
+        <p className="text-sm text-stone-600">{asignaciones} asignaciones de perfil</p>
         <AsignarSegunRolesBoton />
       </div>
 

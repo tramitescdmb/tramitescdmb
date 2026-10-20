@@ -20,7 +20,7 @@ export function SeguridadFormulario({
 }) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <CabeceraTablero icon={Lock} titulo="Seguridad" descripcion={<>Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas.</>} />
+      <CabeceraTablero icon={Lock} titulo="Seguridad" descripcion="Acceso, contraseñas, formatos de archivo permitidos y sello de tiempo de las firmas." />
 
       {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{ok}</div>}
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

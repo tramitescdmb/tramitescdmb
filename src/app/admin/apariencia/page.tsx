@@ -15,7 +15,7 @@ export default async function AparienciaPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <CabeceraTablero icon={Palette} titulo="Apariencia" descripcion={<>Logo de la CDMB y sellos institucionales que se muestran en el encabezado y el pie de página.</>} />
+      <CabeceraTablero icon={Palette} titulo="Apariencia" descripcion="Logo de la CDMB y sellos institucionales que se muestran en el encabezado y el pie de página." />
 
       <SectionHelp>
         Franja institucional arriba (sello GOV.CO) y en el pie de página (sellos de Colombia y GOV.CO), igual

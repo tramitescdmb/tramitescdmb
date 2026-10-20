@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoContrato } from "@/lib/permisos";
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (doc.etapa === "PRECONTRACTUAL") {
     const contratistas = await db.usuario.count({
-      where: { id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) }, rolesContratacion: { has: "CONTRATISTA" } },
+      where: { id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) }, AND: [await whereDesignacionGecon("CONTRATISTA")] },
     });
     if (contratistas > 0) return NextResponse.json({ error: "El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos." }, { status: 400 });
   }

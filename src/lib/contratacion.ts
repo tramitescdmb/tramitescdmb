@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { rigePorPerfil, tienePermiso, puedeAccederContratacion, veTodosLosContratos, veContratosDeSuDependencia, esContratistaGecon } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
@@ -1343,6 +1344,20 @@ export type FiltrosContratacion = {
 };
 
 function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.ExpedienteContractualWhereInput {
+  if (rigePorPerfil(permisos, "GECON") && !permisos.esAdmin) {
+    if (!puedeAccederContratacion(permisos) || !tienePermiso(permisos, "gecon.expedientes", "LEER")) return { id: "__sin_acceso__" };
+    if (veTodosLosContratos(permisos)) return {};
+    const verPre = tienePermiso(permisos, "gecon.precontractual", "LEER");
+    const caminos: Prisma.ExpedienteContractualWhereInput[] = [
+      { id: { in: Array.from(permisos.asignadoExpedientes) } },
+      { id: { in: Array.from(permisos.supervisaExpedientes) } },
+    ];
+    if (veContratosDeSuDependencia(permisos)) caminos.push({ dependenciaSolicitanteId: permisos.dependenciaId ?? "__sin_dependencia__" });
+    if (permisos.contratistaId) {
+      caminos.push({ contratistaId: permisos.contratistaId, ...(verPre ? {} : { etapaActual: { not: "PRECONTRACTUAL" as const } }) });
+    }
+    return { OR: caminos };
+  }
   const roles = permisos.rolesContratacion;
   if (permisos.esAdmin || roles.has("ADMINISTRADOR_CONTRATACION") || roles.has("JEFE_CONTRATACION")) return {};
   const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
@@ -1394,7 +1409,7 @@ export async function listarExpedientesContractuales(filtro: FiltrosContratacion
   const page = Math.max(1, parseInt(filtro?.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtro?.vista);
   const where = construirWhereExpedienteContractual(filtro ?? {}, permisos);
-  const soloContractuales = !permisos.esAdmin && permisos.rolesContratacion.has("CONTRATISTA");
+  const soloContractuales = esContratistaGecon(permisos);
 
   const [total, filas] = await Promise.all([
     db.expedienteContractual.count({ where }),

@@ -28,7 +28,7 @@ export default async function MiCuentaPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <CabeceraTablero icon={UserCircle} titulo="Mi cuenta" descripcion={<>Sus datos de ingreso a la aplicación.</>} />
+      <CabeceraTablero icon={UserCircle} titulo="Mi cuenta" descripcion="Sus datos de ingreso a la aplicación." />
 
       {sp.ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}

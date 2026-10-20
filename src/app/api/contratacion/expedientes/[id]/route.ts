@@ -1,4 +1,5 @@
 import { errorCombinacionContrato, esCausalContratacionDirecta } from "@/lib/compatibilidad-modalidad";
+import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { NextRequest, NextResponse } from "next/server";
 import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { CausalContratacionDirecta, ModalidadSeleccion } from "@prisma/client";
@@ -275,7 +276,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const personalAsignadoIds = Array.isArray(idsBody) ? [...new Set(idsBody.filter((v): v is string => typeof v === "string" && v.trim() !== ""))] : [];
     if (personalAsignadoIds.length > 0) {
       const usuarios = await db.usuario.findMany({
-        where: { id: { in: personalAsignadoIds }, activo: true, rolesContratacion: { has: "FUNCIONARIO_CONTRATACION" } },
+        where: { id: { in: personalAsignadoIds }, activo: true, AND: [await whereDesignacionGecon("FUNCIONARIO_CONTRATACION")] },
         select: { id: true },
       });
       if (usuarios.length !== personalAsignadoIds.length) {

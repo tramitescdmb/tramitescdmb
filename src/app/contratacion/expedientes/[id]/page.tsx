@@ -1,4 +1,5 @@
 import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
+import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import Link from "next/link";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
@@ -37,7 +38,7 @@ import {
   puedeGestionarPeriodosInforme,
   puedeValidarDocumentoContrato,
   esContratistaGecon,
-  tieneRolContratacion,
+  supervisaElExpediente,
 } from "@/lib/permisos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import {
@@ -243,14 +244,14 @@ export default async function DetalleExpedienteContractualPage({
     puedeEditarDatosGenerales ? subseriesPorModalidad() : Promise.resolve({}),
     puedeGestionar
       ? db.usuario.findMany({
-          where: { rolesContratacion: { has: "SUPERVISOR_INTERVENTOR" }, activo: true },
+          where: { AND: [await whereDesignacionGecon("SUPERVISOR_INTERVENTOR")], activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })
       : Promise.resolve([]),
     puedeAsignarPersonal
       ? db.usuario.findMany({
-          where: { rolesContratacion: { has: "FUNCIONARIO_CONTRATACION" }, activo: true },
+          where: { AND: [await whereDesignacionGecon("FUNCIONARIO_CONTRATACION")], activo: true },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true, dependencia: { select: { nombre: true } } },
         })
@@ -817,7 +818,7 @@ export default async function DetalleExpedienteContractualPage({
                   !ocultaPorRol &&
                   (estado !== "bloqueada" ||
                     puedeGestionarPrivilegiado ||
-                    (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
+                    (supervisaElExpediente(permisos, expediente.id)));
 
                 if (ocultaPorRol) {
                   return (
@@ -859,7 +860,7 @@ export default async function DetalleExpedienteContractualPage({
                 const puedeGestionarEtapaCerrada =
                   !cerrado &&
                   !(etapa === "PRECONTRACTUAL" && esContratistaGecon(permisos)) &&
-                  (estado === "actual" || puedeGestionarPrivilegiado || (tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expediente.id)));
+                  (estado === "actual" || puedeGestionarPrivilegiado || (supervisaElExpediente(permisos, expediente.id)));
 
                 return (
                   <details key={etapa} open className={`group rounded-2xl border p-5 shadow-sm ${etapaInfo}`}>

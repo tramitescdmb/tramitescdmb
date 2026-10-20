@@ -114,6 +114,9 @@ export function matrizDesdeReglas(p: PermisosUsuario): Matriz {
     "sgdea.configuracion": { ACTUALIZAR: puedeAdministrarArchivo(p) },
 
     "gecon.acceso": { LEER: puedeAccederContratacion(p) },
+    "gecon.todos": { LEER: puedeAdministrarContratacion(p) || puedeAprobarEtapaContratacion(p) },
+    "gecon.dependencia": { LEER: p.esAdmin || p.rolesContratacion.has("JEFE_DEPENDENCIA") },
+    "gecon.disposicion": { ACTUALIZAR: puedeAdministrarContratacion(p) },
     "gecon.expedientes": {
       LEER: puedeAccederContratacion(p) && puedeVerExpedienteContractual(p, expediente),
       CREAR: puedeCrearExpedienteContractual(p),

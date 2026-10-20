@@ -118,6 +118,19 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
 
   { clave: "gecon.acceso", modulo: "GECON", nombre: "Entrar al módulo", acciones: ["LEER"] },
   {
+    clave: "gecon.todos",
+    modulo: "GECON",
+    nombre: "Alcance: todos los expedientes contractuales",
+    acciones: ["LEER"],
+    alcance: "Sin esta casilla, solo los expedientes asignados, supervisados, propios o de su dependencia.",
+  },
+  {
+    clave: "gecon.dependencia",
+    modulo: "GECON",
+    nombre: "Alcance: expedientes de su dependencia",
+    acciones: ["LEER"],
+  },
+  {
     clave: "gecon.expedientes",
     modulo: "GECON",
     nombre: "Expedientes contractuales",
@@ -151,6 +164,7 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
   { clave: "gecon.tablero", modulo: "GECON", nombre: "Tablero de contratos y recursos", acciones: ["LEER"] },
   { clave: "gecon.catalogo", modulo: "GECON", nombre: "Catálogo de requisitos", acciones: ["ACTUALIZAR"] },
   { clave: "gecon.administracion", modulo: "GECON", nombre: "Cuantías, bitácora y seguridad del módulo", acciones: ["ACTUALIZAR"] },
+  { clave: "gecon.disposicion", modulo: "GECON", nombre: "Disposición final y administración plena del módulo", acciones: ["ACTUALIZAR"] },
 
   { clave: "vital.solicitudes", modulo: "VITAL", nombre: "Solicitudes VITAL", acciones: ["LEER"] },
   { clave: "vital.tablero", modulo: "VITAL", nombre: "Tablero VITAL", acciones: ["LEER"] },

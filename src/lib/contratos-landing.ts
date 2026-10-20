@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { puedeGestionarContratistas, tieneRolContratacion, type PermisosUsuario } from "@/lib/permisos";
+import { puedeGestionarContratistas, tieneRolContratacion, type PermisosUsuario, esPersonalContratacion } from "@/lib/permisos";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { hoyColombia } from "@/lib/contratacion-panel";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
@@ -181,7 +181,7 @@ export async function obtenerContratosLanding(userId: string, permisos: Permisos
 }
 
 export function veSeguimientoContratos(permisos: PermisosUsuario): boolean {
-  return puedeGestionarContratistas(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
+  return puedeGestionarContratistas(permisos) || esPersonalContratacion(permisos);
 }
 
 const SELECT_SEGUIMIENTO = {

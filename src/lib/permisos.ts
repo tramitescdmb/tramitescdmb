@@ -21,6 +21,7 @@ export type PermisosUsuario = {
   modulos: Set<ModuloAplicativo>;
   porPerfil: Set<string>;
   matriz: Map<string, Set<string>>;
+  vigenciaVencida?: Set<string>;
 };
 
 type UsuarioFresco = {
@@ -121,7 +122,7 @@ function sgdeaPorPerfil(permisos: PermisosUsuario): boolean {
 }
 
 function sgdeaPermite(permisos: PermisosUsuario, funcionalidad: string, accion: string): boolean {
-  return permisos.modulos.has("SGDEA") && tienePermiso(permisos, funcionalidad, accion);
+  return permisos.modulos.has("SGDEA") && !permisos.vigenciaVencida?.has("SGDEA") && tienePermiso(permisos, funcionalidad, accion);
 }
 
 export async function terminosAceptados(userId: string): Promise<boolean> {
@@ -132,6 +133,46 @@ export const obtenerModulosPorPerfil = cache(async (): Promise<string[]> => {
   const fila = await db.configuracionSitio.findUnique({ where: { id: "singleton" }, select: { modulosPorPerfil: true } });
   return fila?.modulosPorPerfil ?? [];
 });
+
+const SECCION_FUNCIONALIDAD: Record<SeccionSoloLectura, string> = {
+  VITAL_BASE: "vital.solicitudes",
+  VITAL_DASHBOARD: "vital.tablero",
+  SINCA_BASE: "sinca.solicitudes",
+  SINCA_DASHBOARD: "sinca.tablero",
+  SINCA_MINERIA: "sinca.mineria",
+};
+
+export function derivarAlcances(entrada: {
+  modulos: Set<ModuloAplicativo>;
+  porPerfil: Set<string>;
+  matriz: Map<string, Set<string>>;
+  tramitesAcceso: { tramiteTipoId: string; nivel: NivelAccesoTramite }[];
+  seccionesAcceso: { seccion: SeccionSoloLectura }[];
+}): { tramites: Map<string, NivelAccesoTramite>; secciones: Set<SeccionSoloLectura> } {
+  const { modulos, porPerfil, matriz } = entrada;
+  const concede = (funcionalidad: string, accion: string) => matriz.get(funcionalidad)?.has(accion) ?? false;
+  const tramites = new Map<string, NivelAccesoTramite>();
+  const secciones = new Set<SeccionSoloLectura>();
+  if (modulos.has("TRAMITES")) {
+    if (porPerfil.has("TRAMITES")) {
+      if (concede("tramites.expedientes", "LEER")) {
+        const gestiona = concede("tramites.expedientes", "ACTUALIZAR");
+        for (const t of entrada.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel === "EDITAR" && gestiona ? "EDITAR" : "VER");
+      }
+    } else {
+      for (const t of entrada.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
+    }
+  }
+  for (const seccion of Object.keys(SECCION_FUNCIONALIDAD) as SeccionSoloLectura[]) {
+    const modulo = seccion.startsWith("VITAL_") ? "VITAL" : "SINCA";
+    if (!modulos.has(modulo)) continue;
+    const otorgada = porPerfil.has(modulo)
+      ? concede(SECCION_FUNCIONALIDAD[seccion], "LEER")
+      : entrada.seccionesAcceso.some((x) => x.seccion === seccion);
+    if (otorgada) secciones.add(seccion);
+  }
+  return { tramites, secciones };
+}
 
 export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
   const [usuario, config, modulosPorPerfil] = await Promise.all([obtenerUsuarioFresco(userId), getConfiguracionSitio(), obtenerModulosPorPerfil()]);
@@ -149,13 +190,12 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
   const modulos = new Set<ModuloAplicativo>(
     (Object.keys(visiblesGlobal) as ModuloAplicativo[]).filter((m) => esAdmin || (Boolean(usuario?.activo) && habilitados.has(m) && visiblesGlobal[m]))
   );
+  const porPerfil = new Set(modulosPorPerfil);
+  const matriz = usuario?.activo ? construirMatriz(usuario.permisosPerfil, usuario.excepciones) : new Map<string, Set<string>>();
   if (usuario?.activo && !esAdmin) {
-    if (modulos.has("TRAMITES")) {
-      for (const t of usuario.tramitesAcceso) tramites.set(t.tramiteTipoId, t.nivel);
-    }
-    for (const s of usuario.seccionesAcceso) {
-      if (modulos.has(s.seccion.startsWith("VITAL_") ? "VITAL" : "SINCA")) secciones.add(s.seccion);
-    }
+    const alcances = derivarAlcances({ modulos, porPerfil, matriz, tramitesAcceso: usuario.tramitesAcceso, seccionesAcceso: usuario.seccionesAcceso });
+    for (const [k, v] of alcances.tramites) tramites.set(k, v);
+    for (const x of alcances.secciones) secciones.add(x);
   }
   const rolVencido = Boolean(usuario?.rolCorrespondenciaVigenteHasta && usuario.rolCorrespondenciaVigenteHasta < new Date());
   const sgdeaOculto = !modulos.has("SGDEA");
@@ -177,8 +217,9 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
     cargosEncargo: new Set(usuario?.activo ? usuario.cargosEncargo : []),
     modulos,
-    porPerfil: new Set(modulosPorPerfil),
-    matriz: usuario?.activo && !rolVencido ? construirMatriz(usuario.permisosPerfil, usuario.excepciones) : new Map(),
+    porPerfil,
+    matriz,
+    vigenciaVencida: new Set([...(rolVencido ? ["SGDEA"] : []), ...(rolContratacionVencido ? ["GECON"] : [])]),
   };
 });
 
@@ -209,7 +250,16 @@ export function puedeAccederSeccion(permisos: PermisosUsuario, seccion: SeccionS
   return permisos.esAdmin || permisos.secciones.has(seccion);
 }
 
+function tramitesPorPerfil(permisos: PermisosUsuario): boolean {
+  return !permisos.esAdmin && rigePorPerfil(permisos, "TRAMITES");
+}
+
+function tramitesPermite(permisos: PermisosUsuario, funcionalidad: string, accion: string): boolean {
+  return permisos.modulos.has("TRAMITES") && tienePermiso(permisos, funcionalidad, accion);
+}
+
 export function puedeAccederSolicitantes(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos)) return tramitesPermite(permisos, "tramites.solicitantes", "LEER") && permisos.tramites.size > 0;
   return permisos.esAdmin || permisos.tramites.size > 0;
 }
 
@@ -338,31 +388,66 @@ export function tieneRolContratacion(permisos: PermisosUsuario, rol: RolContrata
   return permisos.rolesContratacion.has(rol);
 }
 
+function geconPorPerfil(permisos: PermisosUsuario): boolean {
+  return !permisos.esAdmin && rigePorPerfil(permisos, "GECON");
+}
+
+function geconPermite(permisos: PermisosUsuario, funcionalidad: string, accion: string): boolean {
+  return permisos.modulos.has("GECON") && !permisos.vigenciaVencida?.has("GECON") && tienePermiso(permisos, funcionalidad, accion);
+}
+
+export function veTodosLosContratos(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.todos", "LEER");
+  return permisos.esAdmin || tieneRolContratacion(permisos, "ADMINISTRADOR_CONTRATACION") || tieneRolContratacion(permisos, "JEFE_CONTRATACION");
+}
+
+export function veContratosDeSuDependencia(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.dependencia", "LEER");
+  return tieneRolContratacion(permisos, "JEFE_DEPENDENCIA");
+}
+
+export function esPersonalContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.expedientes", "CREAR") && !veTodosLosContratos(permisos);
+  return tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
+}
+
+export function supervisaElExpediente(permisos: PermisosUsuario, expedienteId: string): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.acceso", "LEER") && permisos.supervisaExpedientes.has(expedienteId);
+  return tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expedienteId);
+}
+
 export function esContratistaGecon(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.acceso", "LEER") && !geconPermite(permisos, "gecon.precontractual", "LEER");
   return !permisos.esAdmin && permisos.rolesContratacion.has("CONTRATISTA");
 }
 
 export function puedeAccederContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.acceso", "LEER");
   return permisos.esAdmin || permisos.rolesContratacion.size > 0;
 }
 
 export function puedeAdministrarContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.disposicion", "ACTUALIZAR");
   return permisos.esAdmin || tieneRolContratacion(permisos, "ADMINISTRADOR_CONTRATACION");
 }
 
 export function puedeAprobarEtapaContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.etapas", "ACTUALIZAR");
   return permisos.esAdmin || tieneRolContratacion(permisos, "JEFE_CONTRATACION") || tieneRolContratacion(permisos, "ADMINISTRADOR_CONTRATACION");
 }
 
 export function puedeAdministrarCatalogoContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.catalogo", "ACTUALIZAR");
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeCrearExpedienteContractual(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.expedientes", "CREAR");
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
 }
 
 export function puedeVerTableroContratos(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.tablero", "LEER");
   return (
     puedeAdministrarContratacion(permisos) ||
     puedeAprobarEtapaContratacion(permisos) ||
@@ -371,40 +456,65 @@ export function puedeVerTableroContratos(permisos: PermisosUsuario): boolean {
 }
 
 function gestionaComoPersonal(permisos: PermisosUsuario, expedienteId: string): boolean {
+  if (geconPorPerfil(permisos)) return permisos.asignadoExpedientes.has(expedienteId);
   return tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") && permisos.asignadoExpedientes.has(expedienteId);
 }
 
 function gestionaComoSupervisor(permisos: PermisosUsuario, expedienteId: string): boolean {
+  if (geconPorPerfil(permisos)) return permisos.supervisaExpedientes.has(expedienteId);
   return tieneRolContratacion(permisos, "SUPERVISOR_INTERVENTOR") && permisos.supervisaExpedientes.has(expedienteId);
 }
 
 function esJefeDeLaDependencia(permisos: PermisosUsuario, dependenciaId: string): boolean {
-  return tieneRolContratacion(permisos, "JEFE_DEPENDENCIA") && permisos.dependenciaId === dependenciaId;
+  return veContratosDeSuDependencia(permisos) && permisos.dependenciaId === dependenciaId;
 }
 
 function esContratistaDelExpediente(permisos: PermisosUsuario, expediente: { contratistaId: string | null }): boolean {
-  return tieneRolContratacion(permisos, "CONTRATISTA") && permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  const propio = permisos.contratistaId !== null && permisos.contratistaId === expediente.contratistaId;
+  if (geconPorPerfil(permisos)) return propio;
+  return tieneRolContratacion(permisos, "CONTRATISTA") && propio;
+}
+
+type ExpedienteAlcance = { id: string; contratistaId: string | null; dependenciaSolicitanteId: string };
+
+function enAlcance(permisos: PermisosUsuario, expediente: ExpedienteAlcance, etapa?: EtapaContratacion): boolean {
+  if (veTodosLosContratos(permisos)) return true;
+  const relacionado =
+    gestionaComoPersonal(permisos, expediente.id) ||
+    gestionaComoSupervisor(permisos, expediente.id) ||
+    esContratistaDelExpediente(permisos, expediente) ||
+    esJefeDeLaDependencia(permisos, expediente.dependenciaSolicitanteId);
+  if (!relacionado) return false;
+  return etapa !== "PRECONTRACTUAL" || geconPermite(permisos, "gecon.precontractual", "LEER");
 }
 
 export function puedeEditarSinTrazaDocumentoContrato(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.documentos", "ACTUALIZAR") && veTodosLosContratos(permisos);
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeSubirDocumentoContrato(
   permisos: PermisosUsuario,
-  expediente: { id: string; contratistaId: string | null },
+  expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId?: string },
   etapa: EtapaContratacion
 ): boolean {
+  if (geconPorPerfil(permisos)) {
+    return geconPermite(permisos, "gecon.documentos", "CREAR") && enAlcance(permisos, { dependenciaSolicitanteId: "", ...expediente }, etapa);
+  }
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   if (gestionaComoPersonal(permisos, expediente.id) || gestionaComoSupervisor(permisos, expediente.id)) return true;
   return etapa !== "PRECONTRACTUAL" && esContratistaDelExpediente(permisos, expediente);
 }
 
 export function puedeAdministrarGecon(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.administracion", "ACTUALIZAR");
   return permisos.esAdmin || puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeGestionarPeriodosInforme(permisos: PermisosUsuario, expediente: { id: string; contratistaId: string | null }): boolean {
+  if (geconPorPerfil(permisos)) {
+    return geconPermite(permisos, "gecon.informes", "ACTUALIZAR") && enAlcance(permisos, { dependenciaSolicitanteId: "", ...expediente }, "CONTRACTUAL");
+  }
   return !esContratistaGecon(permisos) && puedeSubirDocumentoContrato(permisos, expediente, "CONTRACTUAL");
 }
 
@@ -419,6 +529,15 @@ export function puedeAsignarFirmantesDocumentoContrato(
   permisos: PermisosUsuario,
   expediente: { id: string; dependenciaSolicitanteId: string }
 ): boolean {
+  if (geconPorPerfil(permisos)) {
+    if (!geconPermite(permisos, "gecon.firmantes", "ACTUALIZAR")) return false;
+    return (
+      veTodosLosContratos(permisos) ||
+      gestionaComoPersonal(permisos, expediente.id) ||
+      esJefeDeLaDependencia(permisos, expediente.dependenciaSolicitanteId) ||
+      gestionaComoSupervisor(permisos, expediente.id)
+    );
+  }
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   return (
     gestionaComoPersonal(permisos, expediente.id) ||
@@ -432,6 +551,11 @@ export function puedeEditarConTrazaDocumentoContrato(
   expediente: { id: string },
   documentoEtapa: EtapaContratacion
 ): boolean {
+  if (geconPorPerfil(permisos)) {
+    if (!geconPermite(permisos, "gecon.documentos", "ACTUALIZAR") || veTodosLosContratos(permisos)) return false;
+    if (gestionaComoPersonal(permisos, expediente.id)) return true;
+    return documentoEtapa !== "PRECONTRACTUAL" && gestionaComoSupervisor(permisos, expediente.id);
+  }
   if (gestionaComoPersonal(permisos, expediente.id)) return true;
   if (documentoEtapa === "PRECONTRACTUAL") return false;
   return gestionaComoSupervisor(permisos, expediente.id);
@@ -443,11 +567,20 @@ export function puedeValidarDocumentoContrato(
   documentoEtapa: EtapaContratacion
 ): boolean {
   if (documentoEtapa !== "PRECONTRACTUAL") return false;
+  if (geconPorPerfil(permisos)) {
+    if (!geconPermite(permisos, "gecon.validacion", "ACTUALIZAR")) return false;
+    return (
+      veTodosLosContratos(permisos) ||
+      gestionaComoPersonal(permisos, expediente.id) ||
+      esJefeDeLaDependencia(permisos, expediente.dependenciaSolicitanteId)
+    );
+  }
   if (puedeEditarSinTrazaDocumentoContrato(permisos)) return true;
   return gestionaComoPersonal(permisos, expediente.id) || esJefeDeLaDependencia(permisos, expediente.dependenciaSolicitanteId);
 }
 
 export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.contratistas", "LEER");
   return (
     permisos.esAdmin ||
     (["ADMINISTRADOR_CONTRATACION", "JEFE_CONTRATACION", "FUNCIONARIO_CONTRATACION", "SUPERVISOR_INTERVENTOR"] as const).some((r) =>
@@ -457,39 +590,51 @@ export function puedeVerRegistroContratistas(permisos: PermisosUsuario): boolean
 }
 
 export function puedeGestionarContratistas(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.contratistas", "ACTUALIZAR");
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
-/** Registrar/editar el perfil mínimo (sin Usuario) de un contratista: también el Personal de
- * Contratación en general, no solo cuando está asignado a un expediente puntual — a diferencia de
- * vincular un expediente ya existente a un contratista, que sigue siendo cosa de quien gestiona. */
 export function puedeRegistrarContratistaMinimo(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.contratistas", "CREAR");
   return puedeGestionarContratistas(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
 }
 
 export function puedeAsignarPersonalContrato(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.personal", "ACTUALIZAR");
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeSubirEnCualquierEtapaContrato(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) {
+    return geconPermite(permisos, "gecon.documentos", "CREAR") && (veTodosLosContratos(permisos) || geconPermite(permisos, "gecon.expedientes", "CREAR"));
+  }
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos) || tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION");
 }
 
 export function puedeGestionarExpedienteCompleto(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (geconPorPerfil(permisos)) {
+    if (!geconPermite(permisos, "gecon.documentos", "ACTUALIZAR")) return false;
+    return veTodosLosContratos(permisos) || gestionaComoPersonal(permisos, expediente.id) || gestionaComoSupervisor(permisos, expediente.id);
+  }
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   return gestionaComoPersonal(permisos, expediente.id) || gestionaComoSupervisor(permisos, expediente.id);
 }
 
 export function puedeEditarDatosContrato(permisos: PermisosUsuario, expediente: { id: string }): boolean {
+  if (geconPorPerfil(permisos)) {
+    return geconPermite(permisos, "gecon.expedientes", "ACTUALIZAR") && (veTodosLosContratos(permisos) || gestionaComoPersonal(permisos, expediente.id));
+  }
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   return gestionaComoPersonal(permisos, expediente.id);
 }
 
 export function puedeGestionarEtapasContratacion(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.etapas", "ACTUALIZAR");
   return puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos);
 }
 
 export function puedeEliminarExpedienteContractual(permisos: PermisosUsuario): boolean {
+  if (geconPorPerfil(permisos)) return geconPermite(permisos, "gecon.expedientes", "ELIMINAR");
   return permisos.esAdmin || puedeAprobarEtapaContratacion(permisos);
 }
 
@@ -498,6 +643,9 @@ export function puedeVerExpedienteContractual(
   expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion; eliminado: boolean }
 ): boolean {
   if (expediente.eliminado) return false;
+  if (geconPorPerfil(permisos)) {
+    return geconPermite(permisos, "gecon.expedientes", "LEER") && enAlcance(permisos, expediente, expediente.etapaActual);
+  }
   if (puedeAdministrarContratacion(permisos) || puedeAprobarEtapaContratacion(permisos)) return true;
   if (
     gestionaComoPersonal(permisos, expediente.id) ||
@@ -514,6 +662,10 @@ export function puedeVerDocumentoContrato(
   expediente: { id: string; contratistaId: string | null; dependenciaSolicitanteId: string; etapaActual: EtapaContratacion; eliminado: boolean },
   documentoEtapa: EtapaContratacion
 ): boolean {
+  if (geconPorPerfil(permisos)) {
+    if (documentoEtapa === "PRECONTRACTUAL" && !geconPermite(permisos, "gecon.precontractual", "LEER")) return false;
+    return puedeVerExpedienteContractual(permisos, expediente);
+  }
   if (esContratistaGecon(permisos) && documentoEtapa === "PRECONTRACTUAL") return false;
   return puedeVerExpedienteContractual(permisos, expediente);
 }
@@ -567,14 +719,17 @@ function tieneCargoEspecifico(permisos: PermisosUsuario): boolean {
 }
 
 export function puedeAccederFirmasTramite(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos)) return tramitesPermite(permisos, "tramites.firmas", "LEER") && permisos.tramites.size > 0;
   return permisos.esAdmin || permisos.tramites.size > 0;
 }
 
 export function puedeAsignarFirmantesDocumentoTramite(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos) && tramitesPermite(permisos, "tramites.firmantes", "ACTUALIZAR")) return true;
   return permisos.esAdmin || tieneCargoEspecifico(permisos);
 }
 
 export function puedeValidarDocumentoTramite(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos) && tramitesPermite(permisos, "tramites.firmantes", "ACTUALIZAR")) return true;
   return permisos.esAdmin || tieneCargoEspecifico(permisos);
 }
 
@@ -584,6 +739,7 @@ export const CARGOS_PLANEADOR = [
 ];
 
 export function puedePlanearVisitas(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos) && tramitesPermite(permisos, "tramites.planeador", "ACTUALIZAR")) return true;
   return permisos.esAdmin || CARGOS_PLANEADOR.some((c) => permisos.cargos.has(c));
 }
 
@@ -593,7 +749,7 @@ export function filtroContratistasVisibles(permisos: PermisosUsuario): Prisma.Co
   return {
     OR: [
       { expedientes: { some: { id: { in: propios }, eliminado: false } } },
-      ...(tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") ? [{ expedientes: { none: { eliminado: false } } }] : []),
+      ...(esPersonalContratacion(permisos) ? [{ expedientes: { none: { eliminado: false } } }] : []),
     ],
   };
 }
@@ -601,12 +757,12 @@ export function filtroContratistasVisibles(permisos: PermisosUsuario): Prisma.Co
 export function puedeVerContratista(permisos: PermisosUsuario, contratista: { expedientes: { id: string }[] }): boolean {
   if (puedeGestionarContratistas(permisos)) return true;
   if (contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id) || permisos.supervisaExpedientes.has(e.id))) return true;
-  return tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION") && contratista.expedientes.length === 0;
+  return esPersonalContratacion(permisos) && contratista.expedientes.length === 0;
 }
 
 export function puedeEditarContratistaMinimo(permisos: PermisosUsuario, contratista: { expedientes: { id: string }[] }): boolean {
   if (puedeGestionarContratistas(permisos)) return true;
-  if (!tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")) return false;
+  if (!esPersonalContratacion(permisos)) return false;
   return contratista.expedientes.length === 0 || contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id));
 }
 

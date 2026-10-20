@@ -1,4 +1,5 @@
 import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
+import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -12,9 +13,9 @@ import { NuevoExpedienteContractualForm } from "@/components/NuevoExpedienteCont
 import { listarTopesCuantia } from "@/lib/contratacion";
 import type { RolContratacion } from "@prisma/client";
 
-function personasConRol(rol: RolContratacion) {
+async function personasConRol(rol: RolContratacion) {
   return db.usuario.findMany({
-    where: { rolesContratacion: { has: rol }, activo: true },
+    where: { AND: [await whereDesignacionGecon(rol)], activo: true },
     orderBy: { nombre: "asc" },
     select: { id: true, nombre: true, cedulaONit: true, dependencia: { select: { nombre: true } } },
   });

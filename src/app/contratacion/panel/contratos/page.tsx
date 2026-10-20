@@ -18,7 +18,7 @@ import {
   Wallet,
   PlayCircle,
 } from "lucide-react";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas, puedeVerTableroContratos, tieneRolContratacion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas, puedeVerTableroContratos, veContratosDeSuDependencia, esPersonalContratacion } from "@/lib/permisos";
 import { obtenerTableroContratos, type FilaContrato } from "@/lib/contratacion-tablero";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
@@ -53,9 +53,9 @@ export default async function TableroContratosPage({ searchParams }: { searchPar
   if (!puedeVerTableroContratos(permisos)) {
     return <AccesoRestringido titulo="Contratos y recursos" volverHref="/contratacion/panel" volverLabel="Volver al panel" />;
   }
-  const titulo = tieneRolContratacion(permisos, "JEFE_DEPENDENCIA")
+  const titulo = veContratosDeSuDependencia(permisos)
     ? "Contratos de su dependencia"
-    : tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")
+    : esPersonalContratacion(permisos)
       ? "Contratos a su cargo"
       : "Mis contratos supervisados";
   const sp = await searchParams;

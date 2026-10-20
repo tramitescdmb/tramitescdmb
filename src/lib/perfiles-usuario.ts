@@ -1,5 +1,6 @@
 import type { NivelAccesoTramite, RolContratacion, RolCorrespondencia, SeccionSoloLectura } from "@prisma/client";
 import { db } from "@/lib/db";
+import { construirMatriz } from "@/lib/permisos";
 import { asegurarPerfilesIniciales, matrizDePerfil } from "@/lib/perfiles";
 import { normalizarMatriz } from "@/lib/perfiles-catalogo";
 import type { Excepcion } from "@/lib/perfiles-efectivos";
@@ -91,30 +92,76 @@ export async function asignarPerfilesSegunRoles(): Promise<{ usuarios: number; a
   return { usuarios: new Set(filas.map((f) => f.usuarioId)).size, asignaciones: r.count };
 }
 
-export async function usuariosSinPerfilSgdea(): Promise<{ id: string; nombre: string }[]> {
+type Requisito = [string, string];
+
+function requisitosLegados(
+  modulo: string,
+  u: {
+    rolCorrespondencia: string | null;
+    rolesContratacion: string[];
+    tramitesAcceso: { nivel: string }[];
+    seccionesAcceso: { seccion: string }[];
+  }
+): Requisito[] {
+  switch (modulo) {
+    case "SGDEA":
+      return u.rolCorrespondencia ? [["sgdea.bandeja", "LEER"]] : [];
+    case "GECON":
+      return u.rolesContratacion.length > 0 ? [["gecon.acceso", "LEER"]] : [];
+    case "TRAMITES": {
+      const r: Requisito[] = u.tramitesAcceso.length > 0 ? [["tramites.expedientes", "LEER"]] : [];
+      if (u.tramitesAcceso.some((t) => t.nivel === "EDITAR")) r.push(["tramites.expedientes", "ACTUALIZAR"]);
+      return r;
+    }
+    case "VITAL":
+    case "SINCA": {
+      const mapa: Record<string, string> = {
+        VITAL_BASE: "vital.solicitudes",
+        VITAL_DASHBOARD: "vital.tablero",
+        SINCA_BASE: "sinca.solicitudes",
+        SINCA_DASHBOARD: "sinca.tablero",
+        SINCA_MINERIA: "sinca.mineria",
+      };
+      return u.seccionesAcceso.filter((x) => x.seccion.startsWith(`${modulo}_`)).map((x) => [mapa[x.seccion]!, "LEER"] as Requisito);
+    }
+    default:
+      return [];
+  }
+}
+
+export async function usuariosSinPerfil(modulo: string): Promise<{ id: string; nombre: string; falta: string[] }[]> {
   const ahora = new Date();
   const candidatos = await db.usuario.findMany({
-    where: {
-      activo: true,
-      rol: { not: "ADMIN" },
-      rolCorrespondencia: { not: null },
-      modulosAcceso: { has: "SGDEA" },
-      OR: [{ rolCorrespondenciaVigenteHasta: null }, { rolCorrespondenciaVigenteHasta: { gte: ahora } }],
-    },
+    where: { activo: true, rol: { not: "ADMIN" }, modulosAcceso: { has: modulo as never } },
     select: {
       id: true,
       nombre: true,
+      rolCorrespondencia: true,
+      rolCorrespondenciaVigenteHasta: true,
+      rolesContratacion: true,
+      rolContratacionVigenteHasta: true,
+      tramitesAcceso: { select: { nivel: true } },
+      seccionesAcceso: { select: { seccion: true } },
       perfiles: { select: { perfil: { select: { activo: true, permisos: { select: { funcionalidad: true, acciones: true } } } } } },
       excepcionesPermiso: { select: { funcionalidad: true, tipo: true, acciones: true } },
     },
   });
-  return candidatos
-    .filter((u) => {
-      const conceden =
-        u.perfiles.some((up) => up.perfil.activo && up.perfil.permisos.some((p) => p.funcionalidad === "sgdea.bandeja" && p.acciones.includes("LEER"))) ||
-        u.excepcionesPermiso.some((e) => e.funcionalidad === "sgdea.bandeja" && e.tipo === "CONCEDER" && e.acciones.includes("LEER"));
-      const quitan = u.excepcionesPermiso.some((e) => e.funcionalidad === "sgdea.bandeja" && e.tipo === "QUITAR" && e.acciones.includes("LEER"));
-      return !conceden || quitan;
-    })
-    .map((u) => ({ id: u.id, nombre: u.nombre }));
+  const salida: { id: string; nombre: string; falta: string[] }[] = [];
+  for (const u of candidatos) {
+    if (modulo === "SGDEA" && u.rolCorrespondenciaVigenteHasta && u.rolCorrespondenciaVigenteHasta < ahora) continue;
+    if (modulo === "GECON" && u.rolContratacionVigenteHasta && u.rolContratacionVigenteHasta < ahora) continue;
+    const requisitos = requisitosLegados(modulo, u);
+    if (requisitos.length === 0) continue;
+    const matriz = construirMatriz(
+      u.perfiles.filter((up) => up.perfil.activo).flatMap((up) => up.perfil.permisos),
+      u.excepcionesPermiso
+    );
+    const falta = requisitos.filter(([f, a]) => !matriz.get(f)?.has(a)).map(([f, a]) => `${f}:${a}`);
+    if (falta.length > 0) salida.push({ id: u.id, nombre: u.nombre, falta });
+  }
+  return salida;
+}
+
+export async function usuariosSinPerfilSgdea() {
+  return usuariosSinPerfil("SGDEA");
 }

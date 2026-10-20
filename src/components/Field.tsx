@@ -23,18 +23,30 @@ export function Field({
           </span>
         )}
         {label} {required && <span className="text-red-500">*</span>}
+        {help && (
+          <span title={help} aria-label={help} className="inline-flex cursor-help text-stone-400 hover:text-cdmb-600">
+            <Info className="h-3.5 w-3.5" aria-hidden />
+          </span>
+        )}
       </label>
       {children}
-      {help && <p className="mt-1 text-xs text-stone-500">{help}</p>}
     </div>
   );
 }
 
 export function SectionHelp({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-4 flex gap-2.5 rounded-xl bg-white/80 px-3.5 py-2 text-[13px] leading-snug text-stone-600 ring-1 ring-stone-200/70">
-      <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
-      <p>{children}</p>
-    </div>
+    <details className="group relative z-10 float-right mb-1 ml-2">
+      <summary
+        aria-label="Ayuda"
+        title="Ayuda"
+        className="flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-sm text-stone-400 hover:bg-stone-100 hover:text-cdmb-600 group-open:text-cdmb-600 [&::-webkit-details-marker]:hidden"
+      >
+        <Info className="h-4 w-4" aria-hidden />
+      </summary>
+      <div className="absolute right-0 top-7 w-80 rounded-md border border-stone-200 bg-white p-3 text-[13px] leading-snug text-stone-600 shadow-soft-lg">
+        {children}
+      </div>
+    </details>
   );
 }

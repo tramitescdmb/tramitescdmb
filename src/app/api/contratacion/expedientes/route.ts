@@ -1,9 +1,10 @@
 import { errorCombinacionContrato, esCausalContratacionDirecta } from "@/lib/compatibilidad-modalidad";
+import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { NextRequest, NextResponse } from "next/server";
 import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, esPersonalContratacion } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato, tieneRolContratacion } from "@/lib/permisos";
 import { sincronizarExpedienteSecop, asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!puedeAsignarPersonalContrato(permisos)) {
       return NextResponse.json({ error: "No tiene permiso para asignar personal de contratación." }, { status: 403 });
     }
-    const validos = await db.usuario.count({ where: { id: { in: personalAsignadoIds }, activo: true, rolesContratacion: { has: "FUNCIONARIO_CONTRATACION" } } });
+    const validos = await db.usuario.count({ where: { id: { in: personalAsignadoIds }, activo: true, AND: [await whereDesignacionGecon("FUNCIONARIO_CONTRATACION")] } });
     if (validos !== personalAsignadoIds.length) {
       return NextResponse.json({ error: "Alguno de los usuarios elegidos no existe, está inactivo o no tiene el rol Personal de Contratación." }, { status: 400 });
     }
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
       contratistaId,
       supervisorUsuarioIds,
       personalAsignadoIds:
-        !puedeAsignarPersonalContrato(permisos) && tieneRolContratacion(permisos, "FUNCIONARIO_CONTRATACION")
+        !puedeAsignarPersonalContrato(permisos) && esPersonalContratacion(permisos)
           ? [...new Set([...personalAsignadoIds, session.userId])]
           : personalAsignadoIds,
       subserieId: body.subserieId ? String(body.subserieId) : null,

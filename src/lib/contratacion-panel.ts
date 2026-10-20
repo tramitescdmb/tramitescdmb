@@ -1,4 +1,5 @@
 import { CODIGO_ACTA_LIQUIDACION, estadoLiquidacion } from "@/lib/liquidacion";
+import { veTodosLosContratos, rigePorPerfil, esPersonalContratacion, veContratosDeSuDependencia, tienePermiso, esContratistaGecon } from "@/lib/permisos";
 import { resumirPendientesFirma } from "@/lib/calidad-firma";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -36,7 +37,11 @@ export type DocumentoPorGestionar = {
 };
 
 function gestionaTodo(p: PermisosUsuario): boolean {
-  return p.esAdmin || p.rolesContratacion.has("ADMINISTRADOR_CONTRATACION") || p.rolesContratacion.has("JEFE_CONTRATACION");
+  return veTodosLosContratos(p);
+}
+
+function supervisaPorRolOPerfil(p: PermisosUsuario): boolean {
+  return rigePorPerfil(p, "GECON") ? p.supervisaExpedientes.size > 0 : p.rolesContratacion.has("SUPERVISOR_INTERVENTOR");
 }
 
 function expedientesDonde(caminos: Prisma.ExpedienteContractualWhereInput[], todo: boolean): Prisma.ExpedienteContractualWhereInput | null {
@@ -47,16 +52,18 @@ function expedientesDonde(caminos: Prisma.ExpedienteContractualWhereInput[], tod
 
 function expedientesParaAsignarFirmantes(p: PermisosUsuario) {
   const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
-  if (p.rolesContratacion.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
-  if (p.rolesContratacion.has("SUPERVISOR_INTERVENTOR")) caminos.push({ id: { in: Array.from(p.supervisaExpedientes) } });
-  if (p.rolesContratacion.has("JEFE_DEPENDENCIA") && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
+  if (esPersonalContratacion(p)) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
+  if (supervisaPorRolOPerfil(p)) caminos.push({ id: { in: Array.from(p.supervisaExpedientes) } });
+  if (veContratosDeSuDependencia(p) && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
+  if (rigePorPerfil(p, "GECON") && !tienePermiso(p, "gecon.firmantes", "ACTUALIZAR") && !p.esAdmin) return null;
   return expedientesDonde(caminos, gestionaTodo(p));
 }
 
 function expedientesParaValidar(p: PermisosUsuario) {
   const caminos: Prisma.ExpedienteContractualWhereInput[] = [];
-  if (p.rolesContratacion.has("FUNCIONARIO_CONTRATACION")) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
-  if (p.rolesContratacion.has("JEFE_DEPENDENCIA") && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
+  if (esPersonalContratacion(p)) caminos.push({ id: { in: Array.from(p.asignadoExpedientes) } });
+  if (veContratosDeSuDependencia(p) && p.dependenciaId) caminos.push({ dependenciaSolicitanteId: p.dependenciaId });
+  if (rigePorPerfil(p, "GECON") && !tienePermiso(p, "gecon.validacion", "ACTUALIZAR") && !p.esAdmin) return null;
   return expedientesDonde(caminos, gestionaTodo(p));
 }
 
@@ -116,7 +123,7 @@ export async function obtenerTrabajoPendienteContratacion(userId: string, permis
   const where = construirWhereExpedienteContractual({}, permisos);
   const hoy = hoyColombia();
 
-  const gestiona = permisos.esAdmin || !permisos.rolesContratacion.has("CONTRATISTA");
+  const gestiona = permisos.esAdmin || !esContratistaGecon(permisos);
   const [buzon, enEjecucion, sinContratista, terminados, porGestionar] = await Promise.all([
     listarBuzon(userId, "documentoContrato"),
     db.expedienteContractual.findMany({
