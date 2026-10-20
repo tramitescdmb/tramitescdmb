@@ -90,3 +90,31 @@ export async function asignarPerfilesSegunRoles(): Promise<{ usuarios: number; a
   const r = await db.usuarioPerfil.createMany({ data: filas, skipDuplicates: true });
   return { usuarios: new Set(filas.map((f) => f.usuarioId)).size, asignaciones: r.count };
 }
+
+export async function usuariosSinPerfilSgdea(): Promise<{ id: string; nombre: string }[]> {
+  const ahora = new Date();
+  const candidatos = await db.usuario.findMany({
+    where: {
+      activo: true,
+      rol: { not: "ADMIN" },
+      rolCorrespondencia: { not: null },
+      modulosAcceso: { has: "SGDEA" },
+      OR: [{ rolCorrespondenciaVigenteHasta: null }, { rolCorrespondenciaVigenteHasta: { gte: ahora } }],
+    },
+    select: {
+      id: true,
+      nombre: true,
+      perfiles: { select: { perfil: { select: { activo: true, permisos: { select: { funcionalidad: true, acciones: true } } } } } },
+      excepcionesPermiso: { select: { funcionalidad: true, tipo: true, acciones: true } },
+    },
+  });
+  return candidatos
+    .filter((u) => {
+      const conceden =
+        u.perfiles.some((up) => up.perfil.activo && up.perfil.permisos.some((p) => p.funcionalidad === "sgdea.bandeja" && p.acciones.includes("LEER"))) ||
+        u.excepcionesPermiso.some((e) => e.funcionalidad === "sgdea.bandeja" && e.tipo === "CONCEDER" && e.acciones.includes("LEER"));
+      const quitan = u.excepcionesPermiso.some((e) => e.funcionalidad === "sgdea.bandeja" && e.tipo === "QUITAR" && e.acciones.includes("LEER"));
+      return !conceden || quitan;
+    })
+    .map((u) => ({ id: u.id, nombre: u.nombre }));
+}

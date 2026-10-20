@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck } from "lucide-react";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
@@ -179,7 +179,7 @@ export default async function ExpedienteDetallePage({
     puedeEditarPorRol = puedeEditarTramite(permisos, expediente.tramiteTipoId);
     puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
-    puedeCorrespondencia = permisos.esAdmin || permisos.correspondencia !== null;
+    puedeCorrespondencia = puedeAccederCorrespondencia(permisos);
     planificador = puedePlanearVisitas(permisos);
   }
   const enEjecucion = expedienteEnEjecucion(expediente);

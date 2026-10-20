@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarArchivo } from "@/lib/permisos";
 import { aplazarDisposicion } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const volver = new URL("/correspondencia/disposicion", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) {
+  if (!puedeGestionarArchivo(permisos)) {
     await registrarAccesoDenegadoAccion("aplazar la disposición final", id, session, req.headers);
     volver.searchParams.set("error", "No tiene permiso para administrar el archivo.");
     return NextResponse.redirect(volver, { status: 303 });

@@ -4,7 +4,7 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import type { PermisosUsuario } from "@/lib/permisos";
-import { puedeAdministrarArchivo, puedeDistribuir } from "@/lib/permisos";
+import { esJefeDeReparto, puedeAdministrarArchivo, puedeDistribuir } from "@/lib/permisos";
 
 export const ETIQUETA_TIPO_PASO: Record<TipoPasoFlujo, string> = {
   TAREA: "Tarea",
@@ -637,6 +637,6 @@ export function puedeOperarFlujos(permisos: PermisosUsuario) {
   return (
     puedeAdministrarArchivo(permisos) ||
     puedeDistribuir(permisos) ||
-    permisos.correspondencia === "JEFE_DEPENDENCIA"
+    esJefeDeReparto(permisos)
   );
 }

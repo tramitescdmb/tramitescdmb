@@ -36,6 +36,8 @@ const BASE_CONTRATACION = {
   cargos: new Set<string>(),
   cargosEncargo: new Set<string>(),
   modulos: new Set<ModuloAplicativo>(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
+  porPerfil: new Set<string>(),
+  matriz: new Map<string, Set<string>>(),
 };
 
 const admin: PermisosUsuario = { esAdmin: true, tramites: new Map(), secciones: new Set(), correspondencia: null, dependenciaId: null, puedeFirmar: true, ...BASE_CONTRATACION };
@@ -216,6 +218,8 @@ const permContrat = (roles: RolContratacion | RolContratacion[] | null, extra: P
   cargos: new Set<string>(),
   cargosEncargo: new Set<string>(),
   modulos: new Set<ModuloAplicativo>(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
+  porPerfil: new Set<string>(),
+  matriz: new Map<string, Set<string>>(),
   ...extra,
 });
 

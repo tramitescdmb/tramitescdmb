@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeGestionarArchivo } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
@@ -22,7 +22,7 @@ export default async function NuevoExpedientePage({ searchParams }: { searchPara
     listarPlantillas("EXPEDIENTE"),
   ]);
 
-  const puedeCualquiera = permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
+  const puedeCualquiera = permisos.esAdmin || puedeGestionarArchivo(permisos);
   const dependenciasDisponibles = puedeCualquiera
     ? todasDependencias
     : todasDependencias.filter((d) => d.id === permisos.dependenciaId);

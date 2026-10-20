@@ -33,6 +33,7 @@ const VACIA = {
   jornadaHoraFin: "17:00",
   jornadaHoraInicioTarde: null,
   jornadaHoraFinTarde: null,
+  modulosPorPerfil: [] as string[],
 } as const;
 
 export const getConfiguracionSitio = unstable_cache(

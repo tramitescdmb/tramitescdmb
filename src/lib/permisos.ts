@@ -19,6 +19,8 @@ export type PermisosUsuario = {
   /** Nombres de los cargos (de entre `cargos`) que este usuario ejerce en encargo — se muestran con "(E)". */
   cargosEncargo: Set<string>;
   modulos: Set<ModuloAplicativo>;
+  porPerfil: Set<string>;
+  matriz: Map<string, Set<string>>;
 };
 
 type UsuarioFresco = {
@@ -39,6 +41,8 @@ type UsuarioFresco = {
   supervisaExpedientes: string[];
   asignadoExpedientes: string[];
   terminosAceptadosEn: Date | null;
+  permisosPerfil: { funcionalidad: string; acciones: string[] }[];
+  excepciones: { funcionalidad: string; tipo: "CONCEDER" | "QUITAR"; acciones: string[] }[];
 } | null;
 
 const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco> => {
@@ -61,6 +65,8 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       supervisionesContrato: { select: { expedienteId: true } },
       asignacionesContrato: { select: { expedienteId: true } },
       terminosAceptadosEn: true,
+      perfiles: { select: { perfil: { select: { activo: true, permisos: { select: { funcionalidad: true, acciones: true } } } } } },
+      excepcionesPermiso: { select: { funcionalidad: true, tipo: true, acciones: true } },
     },
   });
   if (!usuario) return null;
@@ -82,15 +88,53 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
     asignadoExpedientes: usuario.asignacionesContrato.map((a) => a.expedienteId),
     terminosAceptadosEn: usuario.terminosAceptadosEn,
+    permisosPerfil: usuario.perfiles.filter((up) => up.perfil.activo).flatMap((up) => up.perfil.permisos),
+    excepciones: usuario.excepcionesPermiso,
   };
 });
+
+export function construirMatriz(
+  permisosPerfil: { funcionalidad: string; acciones: string[] }[],
+  excepciones: { funcionalidad: string; tipo: "CONCEDER" | "QUITAR"; acciones: string[] }[]
+): Map<string, Set<string>> {
+  const matriz = new Map<string, Set<string>>();
+  const agregar = (f: string, a: string) => {
+    if (!matriz.has(f)) matriz.set(f, new Set());
+    matriz.get(f)!.add(a);
+  };
+  for (const p of permisosPerfil) for (const a of p.acciones) agregar(p.funcionalidad, a);
+  for (const e of excepciones) if (e.tipo === "CONCEDER") for (const a of e.acciones) agregar(e.funcionalidad, a);
+  for (const e of excepciones) if (e.tipo === "QUITAR") for (const a of e.acciones) matriz.get(e.funcionalidad)?.delete(a);
+  return matriz;
+}
+
+export function rigePorPerfil(permisos: PermisosUsuario, modulo: string): boolean {
+  return permisos.porPerfil.has(modulo);
+}
+
+export function tienePermiso(permisos: PermisosUsuario, funcionalidad: string, accion: string): boolean {
+  return permisos.matriz.get(funcionalidad)?.has(accion) ?? false;
+}
+
+function sgdeaPorPerfil(permisos: PermisosUsuario): boolean {
+  return !permisos.esAdmin && rigePorPerfil(permisos, "SGDEA");
+}
+
+function sgdeaPermite(permisos: PermisosUsuario, funcionalidad: string, accion: string): boolean {
+  return permisos.modulos.has("SGDEA") && tienePermiso(permisos, funcionalidad, accion);
+}
 
 export async function terminosAceptados(userId: string): Promise<boolean> {
   return Boolean((await obtenerUsuarioFresco(userId))?.terminosAceptadosEn);
 }
 
+export const obtenerModulosPorPerfil = cache(async (): Promise<string[]> => {
+  const fila = await db.configuracionSitio.findUnique({ where: { id: "singleton" }, select: { modulosPorPerfil: true } });
+  return fila?.modulosPorPerfil ?? [];
+});
+
 export const obtenerPermisosUsuario = cache(async (userId: string): Promise<PermisosUsuario> => {
-  const [usuario, config] = await Promise.all([obtenerUsuarioFresco(userId), getConfiguracionSitio()]);
+  const [usuario, config, modulosPorPerfil] = await Promise.all([obtenerUsuarioFresco(userId), getConfiguracionSitio(), obtenerModulosPorPerfil()]);
   const esAdmin = Boolean(usuario?.activo) && usuario?.rol === "ADMIN";
   const tramites = new Map<string, NivelAccesoTramite>();
   const secciones = new Set<SeccionSoloLectura>();
@@ -133,6 +177,8 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
     cargosEncargo: new Set(usuario?.activo ? usuario.cargosEncargo : []),
     modulos,
+    porPerfil: new Set(modulosPorPerfil),
+    matriz: usuario?.activo && !rolVencido ? construirMatriz(usuario.permisosPerfil, usuario.excepciones) : new Map(),
   };
 });
 
@@ -176,27 +222,47 @@ export async function puedeEditarExpediente(userId: string, expedienteId: string
 }
 
 export function puedeAccederCorrespondencia(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.bandeja", "LEER");
   return permisos.esAdmin || permisos.correspondencia !== null;
 }
 
 export function puedeRadicar(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.radicacion", "CREAR");
   return permisos.esAdmin || permisos.correspondencia === "OPERADOR_VENTANILLA" || permisos.correspondencia === "ADMIN_ARCHIVO";
 }
 
 export function puedeDespachar(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.radicacion", "ACTUALIZAR");
   return puedeRadicar(permisos);
 }
 
 export function puedeFirmar(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return permisos.puedeFirmar && sgdeaPermite(permisos, "sgdea.firma", "ACTUALIZAR");
   return puedeAccederCorrespondencia(permisos) && permisos.puedeFirmar;
 }
 
 export function puedeDistribuir(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.reparto", "ACTUALIZAR");
   return (
     permisos.esAdmin ||
     permisos.correspondencia === "OPERADOR_VENTANILLA" ||
     permisos.correspondencia === "ADMIN_ARCHIVO"
   );
+}
+
+export function esJefeDeReparto(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.reparto-interno", "ACTUALIZAR");
+  return permisos.correspondencia === "JEFE_DEPENDENCIA";
+}
+
+export function puedeGestionarArchivo(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.archivo", "ACTUALIZAR");
+  return puedeAdministrarArchivo(permisos);
+}
+
+export function puedeEnviarMemorandoPorPerfil(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.memorandos", "CREAR");
+  return puedeRadicar(permisos);
 }
 
 export function puedeDevolverReparto(
@@ -218,7 +284,7 @@ export function puedeSubdistribuirInternamente(
   comunicacion: { dependenciaDestinoId: string | null },
   distribucionesVigentes: { usuarioId: string | null; dependenciaId: string | null }[]
 ): boolean {
-  if (permisos.correspondencia !== "JEFE_DEPENDENCIA") return false;
+  if (!esJefeDeReparto(permisos)) return false;
   if (!permisos.dependenciaId || comunicacion.dependenciaDestinoId !== permisos.dependenciaId) return false;
   return distribucionesVigentes.some(
     (d) => d.usuarioId === usuarioId || (!d.usuarioId && d.dependenciaId === permisos.dependenciaId)
@@ -226,6 +292,7 @@ export function puedeSubdistribuirInternamente(
 }
 
 export function puedeAdministrarArchivo(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return sgdeaPermite(permisos, "sgdea.configuracion", "ACTUALIZAR");
   return permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO";
 }
 
@@ -236,6 +303,7 @@ export function puedeResponderComoAsignado(
 ): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
   if (permisos.esAdmin) return true;
+  if (sgdeaPorPerfil(permisos) && !sgdeaPermite(permisos, "sgdea.respuesta", "CREAR")) return false;
   return distribucionesVigentes.some((d) =>
     d.usuarioId
       ? d.usuarioId === usuarioId
@@ -245,7 +313,8 @@ export function puedeResponderComoAsignado(
 
 export function puedeGestionarExpedienteDeDependencia(permisos: PermisosUsuario, dependenciaId: string): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
-  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return true;
+  if (sgdeaPorPerfil(permisos) && !sgdeaPermite(permisos, "sgdea.expedientes", "ACTUALIZAR")) return false;
+  if (permisos.esAdmin || puedeGestionarArchivo(permisos)) return true;
   return permisos.dependenciaId === dependenciaId;
 }
 
@@ -254,11 +323,15 @@ export function puedeVerNivelAccesoExpediente(
   expediente: { nivelAcceso: string; dependenciaId: string }
 ): boolean {
   if (expediente.nivelAcceso === "PUBLICA") return puedeAccederCorrespondencia(permisos);
+  if (sgdeaPorPerfil(permisos)) {
+    if (!puedeAccederCorrespondencia(permisos) || !sgdeaPermite(permisos, "sgdea.expedientes", "LEER")) return false;
+    return puedeGestionarArchivo(permisos) || permisos.dependenciaId === expediente.dependenciaId;
+  }
   return puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
 }
 
 export function puedeCerrarExpediente(permisos: PermisosUsuario): boolean {
-  return puedeAdministrarArchivo(permisos);
+  return puedeGestionarArchivo(permisos);
 }
 
 export function tieneRolContratacion(permisos: PermisosUsuario, rol: RolContratacion): boolean {
@@ -458,9 +531,14 @@ export async function tieneFirmaOSolicitudEnDocumentoContrato(usuarioId: string,
   return firmas + solicitudes > 0;
 }
 
+function esVentanilla(permisos: PermisosUsuario): boolean {
+  if (sgdeaPorPerfil(permisos)) return puedeRadicar(permisos) && !puedeAdministrarArchivo(permisos);
+  return permisos.correspondencia === "OPERADOR_VENTANILLA";
+}
+
 function actuaComoRadicador(permisos: PermisosUsuario, comunicacion: { radicadoPorId: string | null }, usuarioId: string): boolean {
   if (permisos.esAdmin) return false;
-  return permisos.correspondencia === "OPERADOR_VENTANILLA" || comunicacion.radicadoPorId === usuarioId;
+  return esVentanilla(permisos) || comunicacion.radicadoPorId === usuarioId;
 }
 
 export function puedeAsignarFirmantesComunicacion(

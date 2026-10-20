@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree } from "lucide-react";
 import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
@@ -47,7 +48,7 @@ export default async function ExpedienteDetallePage({
   const sp = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
-  const permisos = await obtenerPermisosUsuario(session.userId);
+  const [permisos, accesoSgdea] = await Promise.all([obtenerPermisosUsuario(session.userId), whereAccesoSgdea()]);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/correspondencia");
 
   const expediente = await db.expedienteDocumental.findUnique({
@@ -132,7 +133,7 @@ export default async function ExpedienteDetallePage({
       include: { prestadoA: { select: { nombre: true } } },
     }),
     db.usuario.findMany({
-      where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+      where: { activo: true, AND: [accesoSgdea] },
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true },
     }),

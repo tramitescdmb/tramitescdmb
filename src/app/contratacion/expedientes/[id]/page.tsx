@@ -16,7 +16,7 @@ import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { ReclasificarTrdContratoForm } from "@/components/ReclasificarTrdContratoForm";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, puedeAccederCorrespondencia } from "@/lib/permisos";
 import {
   obtenerPermisosUsuario,
   puedeVerExpedienteContractual,
@@ -279,7 +279,7 @@ export default async function DetalleExpedienteContractualPage({
     puedeEditarDatosGenerales
       ? db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } })
       : Promise.resolve([]),
-    permisos.esAdmin || permisos.correspondencia !== null ? fichaArchivoDe(id) : Promise.resolve(null),
+    puedeAccederCorrespondencia(permisos) ? fichaArchivoDe(id) : Promise.resolve(null),
     cerrado ? Promise.resolve(0) : firmasPendientesContrato(id),
     cerrado
       ? db.eventoContratacion.findFirst({

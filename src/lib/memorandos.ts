@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_ACTIVOS } from "@/lib/correspondencia-panel";
-import { puedeAccederCorrespondencia, puedeRadicar, type PermisosUsuario } from "@/lib/permisos";
+import { puedeAccederCorrespondencia, puedeEnviarMemorandoPorPerfil, puedeRadicar, type PermisosUsuario } from "@/lib/permisos";
 import type { DenominacionEmpleoClave } from "@/lib/denominacion-empleo";
 
 export const PLAZOS_RESPUESTA_MEMORANDO = [3, 5, 10, 15] as const;
@@ -27,7 +27,7 @@ export const DENOMINACIONES_QUE_ENVIAN_MEMORANDOS: ReadonlySet<string> = new Set
 
 export function puedeEnviarMemorando(permisos: PermisosUsuario, denominacionEmpleo: string | null | undefined): boolean {
   if (!puedeAccederCorrespondencia(permisos)) return false;
-  return puedeRadicar(permisos) || DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(denominacionEmpleo ?? "");
+  return puedeEnviarMemorandoPorPerfil(permisos) || DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(denominacionEmpleo ?? "");
 }
 
 export function eligeOrigenLibre(permisos: PermisosUsuario): boolean {

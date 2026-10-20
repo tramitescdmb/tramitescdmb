@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeDistribuir, puedeSubdistribuirInternamente } from "@/lib/permisos";
@@ -85,7 +86,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.redirect(volver, { status: 303 });
     }
   }
-  const sinAcceso = usuarios.filter((u) => u.activo && u.rol !== "ADMIN" && !u.rolCorrespondencia);
+  const conAcceso = new Set(
+    (await db.usuario.findMany({ where: { id: { in: usuarios.map((u) => u.id) }, AND: [await whereAccesoSgdea()] }, select: { id: true } })).map((u) => u.id)
+  );
+  const sinAcceso = usuarios.filter((u) => u.activo && !conAcceso.has(u.id));
   if (sinAcceso.length > 0) {
     volver.searchParams.set(
       "error",

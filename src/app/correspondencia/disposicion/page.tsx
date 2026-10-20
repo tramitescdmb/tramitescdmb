@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Archive, ArrowRightCircle, FileWarning, Clock, CheckCircle2, PackageCheck } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarArchivo } from "@/lib/permisos";
 import { getPendientesArchivisticos, listarActasEliminacion, getDisposicionesAplazadas, listarTransferenciasCentral } from "@/lib/disposicion-final-data";
 import { algunaRequiereActa } from "@/lib/disposicion-final";
 import { ETIQUETA_DISPOSICION } from "@/lib/trd";
@@ -17,7 +17,7 @@ export default async function DisposicionFinalPage({ searchParams }: { searchPar
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) {
+  if (!puedeGestionarArchivo(permisos)) {
     await registrarAccesoDenegadoSeccion("Disposición final", session, await headers());
     redirect("/correspondencia");
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { obtenerModulosPorPerfil } from "@/lib/permisos";
 import { obtenerPerfilesDeUsuario } from "@/lib/perfiles-usuario";
 import { PerfilesUsuario } from "@/components/usuarios/PerfilesUsuario";
 import { notFound, redirect } from "next/navigation";
@@ -153,6 +154,7 @@ export default async function EditarUsuarioPage({
           perfiles={perfilesUsuario.perfiles}
           asignadosIniciales={perfilesUsuario.asignados}
           excepcionesIniciales={perfilesUsuario.excepciones}
+          modulosActivos={await obtenerModulosPorPerfil()}
         />
       )}
     </div>

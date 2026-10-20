@@ -8,13 +8,17 @@ import { listarPerfiles } from "@/lib/perfiles";
 import { ETIQUETA_MODULO_PERFIL, MODULOS_PERFIL } from "@/lib/perfiles-catalogo";
 import { NuevoPerfilForm } from "@/components/admin/NuevoPerfilForm";
 import { AsignarSegunRolesBoton } from "@/components/admin/AsignarSegunRolesBoton";
+import { ActivacionPerfiles } from "@/components/admin/ActivacionPerfiles";
+import { usuariosSinPerfilSgdea } from "@/lib/perfiles-usuario";
+import { obtenerModulosPorPerfil } from "@/lib/permisos";
 
 export default async function PerfilesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Perfiles y permisos" quien="administrador del sistema" volverHref="/" volverLabel="Ir al inicio" />;
 
-  const perfiles = await listarPerfiles();
+  const [perfiles, activos] = await Promise.all([listarPerfiles(), obtenerModulosPorPerfil()]);
+  const sinPerfilSgdea = await usuariosSinPerfilSgdea();
   const asignaciones = perfiles.reduce((t, p) => t + p.usuariosAsignados, 0);
 
   return (
@@ -25,10 +29,7 @@ export default async function PerfilesPage() {
         descripcion="Cada perfil define qué puede ver, crear, editar o eliminar en cada funcionalidad. Los perfiles iniciales reproducen los roles actuales."
       />
 
-      <div className="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-        Etapa de preparación: los accesos de los usuarios todavía salen de sus roles actuales. Los perfiles se pueden revisar y ajustar desde ya;
-        se aplicarán módulo por módulo cuando se active cada uno.
-      </div>
+      <ActivacionPerfiles activos={activos} sinPerfilSgdea={sinPerfilSgdea} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-4 py-3">
         <p className="text-sm text-stone-600">

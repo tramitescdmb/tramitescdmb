@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import { listarDependenciasActivas } from "@/lib/dependencias";
@@ -16,7 +17,7 @@ export default async function NuevaInternaPage({ searchParams }: { searchParams:
   const session = await getSession();
   if (!session) redirect("/login");
   const { respondeAId } = await searchParams;
-  const permisos = await obtenerPermisosUsuario(session.userId);
+  const [permisos, accesoSgdea] = await Promise.all([obtenerPermisosUsuario(session.userId), whereAccesoSgdea()]);
   const ctx = await contextoMemorandos(session.userId, permisos);
 
   const original = respondeAId && ctx.firmante ? await memorandoPendienteDe(respondeAId, ctx) : null;
@@ -41,7 +42,7 @@ export default async function NuevaInternaPage({ searchParams }: { searchParams:
     listarSeriesVigentes(),
     listarPlantillas("INTERNA"),
     db.usuario.findMany({
-      where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+      where: { activo: true, AND: [accesoSgdea] },
       select: { id: true, nombre: true, dependenciaId: true, rolCorrespondencia: true },
       orderBy: { nombre: "asc" },
     }),

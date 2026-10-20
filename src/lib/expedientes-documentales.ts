@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
-import type { PermisosUsuario } from "@/lib/permisos";
+import { puedeGestionarArchivo, type PermisosUsuario } from "@/lib/permisos";
 import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
@@ -300,7 +300,7 @@ export type FiltrosExpedienteDocumental = {
 };
 
 function restringirPorNivelAcceso(permisos: PermisosUsuario): Prisma.ExpedienteDocumentalWhereInput {
-  if (permisos.esAdmin || permisos.correspondencia === "ADMIN_ARCHIVO") return {};
+  if (permisos.esAdmin || puedeGestionarArchivo(permisos)) return {};
   return { OR: [{ nivelAcceso: "PUBLICA" }, { dependenciaId: permisos.dependenciaId ?? "__sin_dependencia__" }] };
 }
 

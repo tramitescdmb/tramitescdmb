@@ -25,11 +25,13 @@ export function PerfilesUsuario({
   perfiles,
   asignadosIniciales,
   excepcionesIniciales,
+  modulosActivos = [],
 }: {
   usuarioId: string;
   perfiles: PerfilOpcion[];
   asignadosIniciales: string[];
   excepcionesIniciales: Excepcion[];
+  modulosActivos?: string[];
 }) {
   const router = useRouter();
   const [asignados, setAsignados] = useState(() => new Set(asignadosIniciales));
@@ -136,7 +138,9 @@ export function PerfilesUsuario({
         <div>
           <h2 className="text-sm font-semibold text-stone-900">Perfiles y permisos</h2>
           <p className="text-xs text-stone-500">
-            En preparación: los accesos todavía salen de los roles configurados arriba. Aquí se definen los perfiles que los reemplazarán.
+            {modulosActivos.length > 0
+              ? `Rigen en: ${modulosActivos.map((m) => ETIQUETA_MODULO_PERFIL[m as ModuloPerfil] ?? m).join(", ")}. En los demás módulos los accesos todavía salen de los roles configurados arriba.`
+              : "En preparación: los accesos todavía salen de los roles configurados arriba. Aquí se definen los perfiles que los reemplazarán."}
           </p>
         </div>
         {haySugeridos && (
@@ -178,6 +182,12 @@ export function PerfilesUsuario({
         </nav>
 
         <div className="min-w-0 space-y-4 p-4">
+          {modulosActivos.includes(modulo) && (
+            <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+              Este módulo ya se rige por perfiles: lo que se marque aquí es lo que la persona puede hacer. El rol del módulo en la ficha de arriba ya no
+              concede accesos; solo se conserva su fecha de vigencia.
+            </p>
+          )}
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Perfiles de {ETIQUETA_MODULO_PERFIL[modulo]}</h3>
             {perfilesModulo.length === 0 ? (

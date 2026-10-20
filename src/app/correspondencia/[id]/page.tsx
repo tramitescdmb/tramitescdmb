@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { contextoMemorandos, marcarMemorandoLeido, memorandoPendienteDe } from "@/lib/memorandos";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
 import { notFound, redirect } from "next/navigation";
@@ -163,7 +164,7 @@ export default async function CorrespondenciaDetallePage({
   const sp = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
-  const permisos = await obtenerPermisosUsuario(session.userId);
+  const [permisos, accesoSgdea] = await Promise.all([obtenerPermisosUsuario(session.userId), whereAccesoSgdea()]);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/");
 
   const c = await db.comunicacion.findUnique({
@@ -271,7 +272,7 @@ export default async function CorrespondenciaDetallePage({
       : Promise.resolve([]),
     puedeSubdistribuirUsuario
       ? db.usuario.findMany({
-          where: { activo: true, dependenciaId: permisos.dependenciaId, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+          where: { activo: true, dependenciaId: permisos.dependenciaId, AND: [accesoSgdea] },
           orderBy: { nombre: "asc" },
           select: { id: true, nombre: true },
         })
@@ -283,7 +284,7 @@ export default async function CorrespondenciaDetallePage({
       ? Promise.all([
           listarDependenciasActivas(),
           db.usuario.findMany({
-            where: { activo: true, OR: [{ rol: "ADMIN" }, { rolCorrespondencia: { not: null } }] },
+            where: { activo: true, AND: [accesoSgdea] },
             orderBy: { nombre: "asc" },
             select: { id: true, nombre: true },
           }),

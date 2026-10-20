@@ -12,6 +12,7 @@ datasource db {
 
 model ConfiguracionSitio {
   id               String  @id @default("singleton")
+  modulosPorPerfil String[] @default([])
   logoUrl          String?
   logoPath         String?
   logoGovcoUrl     String?

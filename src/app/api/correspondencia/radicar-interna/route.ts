@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     if (destino.dependenciaId !== dependenciaDestinoId) {
       return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
     }
-    if (destino.rol !== "ADMIN" && !destino.rolCorrespondencia) {
+    if (!(await db.usuario.count({ where: { id: usuarioDestinoIdRaw, AND: [await whereAccesoSgdea()] } }))) {
       return NextResponse.json({ error: "El destinatario no tiene acceso al módulo de correspondencia." }, { status: 400 });
     }
   }

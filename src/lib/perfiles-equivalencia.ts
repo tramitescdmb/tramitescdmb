@@ -64,6 +64,8 @@ export function permisosDeReferencia(rol: RolLegado): PermisosUsuario {
     cargos: new Set(),
     cargosEncargo: new Set(),
     modulos: new Set(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
+    porPerfil: new Set(),
+    matriz: new Map(),
   };
 }
 
@@ -98,7 +100,7 @@ export function matrizDesdeReglas(p: PermisosUsuario): Matriz {
     "sgdea.radicacion": { CREAR: puedeRadicar(p), ACTUALIZAR: puedeDespachar(p) },
     "sgdea.reparto": { ACTUALIZAR: puedeDistribuir(p) },
     "sgdea.reparto-interno": {
-      ACTUALIZAR: puedeDistribuir(p) || puedeSubdistribuirInternamente(p, USUARIO, { dependenciaDestinoId: DEPENDENCIA }, reparto),
+      ACTUALIZAR: p.esAdmin || puedeSubdistribuirInternamente(p, USUARIO, { dependenciaDestinoId: DEPENDENCIA }, reparto),
     },
     "sgdea.respuesta": { CREAR: puedeResponderComoAsignado(p, USUARIO, reparto) },
     "sgdea.firma": { ACTUALIZAR: puedeFirmar(p) },

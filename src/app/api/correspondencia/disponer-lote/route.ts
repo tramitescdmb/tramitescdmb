@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeGestionarArchivo } from "@/lib/permisos";
 import { ejecutarDisposicionFinalLote } from "@/lib/correspondencia";
 import { registrarAuditoriaDoc, datosPeticion, registrarErrorEjecucion, registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarArchivo(permisos)) {
+  if (!puedeGestionarArchivo(permisos)) {
     await registrarAccesoDenegadoAccion("ejecutar disposición final por lote", "(lote)", session, req.headers);
     return NextResponse.json({ error: "No tiene permiso para administrar el archivo." }, { status: 403 });
   }
