@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sincronizarPerfilesPorRoles } from "@/lib/perfiles-usuario";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { hashPassword } from "@/lib/password";
@@ -85,7 +84,6 @@ export async function POST(req: NextRequest) {
   });
 
   await vincularSupervisionesDeUsuario(nuevo.id);
-  await sincronizarPerfilesPorRoles(nuevo.id, null);
 
   await registrarAuditoria({
     tipo: "USUARIO_CREADO",

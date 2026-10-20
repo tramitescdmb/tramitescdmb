@@ -7,7 +7,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema asigna perfiles." }, { status: 403 });
+  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema asigna roles." }, { status: 403 });
   const usuario = await db.usuario.findUnique({ where: { id }, select: { nombre: true } });
   if (!usuario) return NextResponse.json({ error: "El usuario no existe." }, { status: 404 });
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -21,11 +21,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       motivo: String(x.motivo ?? "").trim() || null,
     } as Excepcion;
   });
-  const r = await guardarPerfilesDeUsuario(id, perfilIds, excepciones);
+  let r: { perfiles: number; excepciones: number };
+  try {
+    r = await guardarPerfilesDeUsuario(id, perfilIds, excepciones);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "No se pudieron guardar los roles." }, { status: 400 });
+  }
   const nombres = (await db.perfil.findMany({ where: { id: { in: perfilIds } }, select: { nombre: true } })).map((p) => p.nombre);
   await registrarAuditoria({
     tipo: "USUARIO_ACTUALIZADO",
-    descripcion: `Perfiles de ${usuario.nombre}: ${nombres.join(", ") || "ninguno"}${r.excepciones ? ` · ${r.excepciones} excepción(es)` : ""}`.slice(0, 4000),
+    descripcion: `Roles de ${usuario.nombre}: ${nombres.join(", ") || "ninguno"}${r.excepciones ? ` · ${r.excepciones} excepción(es)` : ""}`.slice(0, 4000),
     usuarioId: session.userId,
   });
   return NextResponse.json({ ok: true, ...r });

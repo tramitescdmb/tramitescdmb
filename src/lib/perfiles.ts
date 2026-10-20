@@ -117,8 +117,8 @@ export async function crearPerfil(datos: { nombre: string; modulo: ModuloPerfil;
 
 export async function eliminarPerfil(id: string) {
   const p = await db.perfil.findUnique({ where: { id }, select: { claveOrigen: true, nombre: true } });
-  if (!p) throw new Error("El perfil no existe.");
-  if (p.claveOrigen) throw new Error("Los perfiles que reproducen un rol actual no se eliminan.");
+  if (!p) throw new Error("El rol no existe.");
+  if (p.claveOrigen) throw new Error("Los roles base no se eliminan.");
   await db.perfil.delete({ where: { id } });
   return p.nombre;
 }

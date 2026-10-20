@@ -71,7 +71,7 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || "No se pudo guardar.");
-      setEstado({ tipo: "ok", texto: "Perfil guardado." });
+      setEstado({ tipo: "ok", texto: "Rol guardado." });
       router.refresh();
     } catch (e) {
       setEstado({ tipo: "error", texto: e instanceof Error ? e.message : "No se pudo guardar." });
@@ -81,11 +81,11 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
   }
 
   async function eliminar() {
-    if (!window.confirm(`¿Eliminar el perfil «${nombreInicial}»?`)) return;
+    if (!window.confirm(`¿Eliminar el rol «${nombreInicial}»?`)) return;
     const res = await fetch(`/api/admin/perfiles/${id}`, { method: "DELETE" });
     const body = await res.json();
     if (!res.ok) return setEstado({ tipo: "error", texto: body.error || "No se pudo eliminar." });
-    router.push("/admin/perfiles");
+    router.push("/admin/roles");
   }
 
   const funcionalidades = FUNCIONALIDADES.filter((f) => f.modulo === pestana);
@@ -96,7 +96,7 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
     <div className="space-y-4 pb-16">
       <div className="grid grid-cols-1 gap-3 rounded-md border border-stone-200 bg-white p-4 md:grid-cols-2">
         <label className="text-xs font-medium text-stone-600">
-          Nombre del perfil
+          Nombre del rol
           <input value={nombre} onChange={(e) => setNombre(e.target.value)} className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm" />
         </label>
         <label className="text-xs font-medium text-stone-600">
@@ -196,7 +196,7 @@ export function MatrizPerfil({ id, nombreInicial, descripcionInicial, moduloPerf
           {eliminable && (
             <button type="button" onClick={eliminar} className="inline-flex items-center gap-1.5 rounded border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
               <Trash2 className="h-4 w-4" aria-hidden />
-              Eliminar perfil
+              Eliminar rol
             </button>
           )}
           {matrizRolActual && (

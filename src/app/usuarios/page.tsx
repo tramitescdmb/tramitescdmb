@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";
 import { UserPlus, Pencil, ChevronDown, Search, AlertTriangle, Power, X, type LucideIcon, Users } from "lucide-react";
-import { MODULOS_USUARIO, faltanteModulo, type ModuloUsuario } from "@/lib/modulos-usuario";
+import { MODULOS_USUARIO } from "@/lib/modulos-usuario";
 import { ICONOS_MODULO } from "@/lib/modulos-usuario-iconos";
 import { getCatalogoTramites } from "@/lib/tramites-data";
 import { agruparTramitesPorCategoria } from "@/lib/tramite-categoria";
@@ -14,10 +14,8 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estadoVigenciaPassword } from "@/lib/password-policy";
 import { Paginador } from "@/components/Paginador";
 import { DescargarCsvBoton } from "@/components/DescargarCsvBoton";
-import { formatearFecha } from "@/lib/fecha";
 import { cargoParaSexo } from "@/lib/cargos";
 import { denominacionParaFirma } from "@/lib/denominacion-empleo";
-import { ETIQUETA_ROL_CONTRATACION } from "@/lib/contratacion";
 import { CabeceraTablero } from "@/components/tablero";
 
 const POR_PAGINA = 20;
@@ -28,21 +26,6 @@ function iniciales(nombre: string) {
 }
 
 type AccesoTramite = { tramiteTipoId: string; nivel: "VER" | "EDITAR" };
-
-const ETIQUETAS_ROL_CORRESPONDENCIA: Record<string, string> = {
-  OPERADOR_VENTANILLA: "Ventanilla",
-  FUNCIONARIO_DEPENDENCIA: "Funcionario",
-  JEFE_DEPENDENCIA: "Jefe de dependencia",
-  ADMIN_ARCHIVO: "Administrador de archivo",
-};
-
-const ETIQUETAS_SECCION_CORTA: Record<string, string> = {
-  VITAL_BASE: "VITAL: Solicitudes",
-  VITAL_DASHBOARD: "VITAL: Dashboard",
-  SINCA_BASE: "SINCA: Solicitudes",
-  SINCA_DASHBOARD: "SINCA: Dashboard",
-  SINCA_MINERIA: "SINCA: Minería",
-};
 
 const ESTADOS: Record<EstadoCuenta, { etiqueta: string; punto: string; texto: string }> = {
   HABILITADA: { etiqueta: "Habilitada", punto: "bg-emerald-500", texto: "text-stone-700" },
@@ -132,6 +115,7 @@ export default async function UsuariosPage({
         cargoAsignaciones: { include: { cargo: true } },
         tramitesAcceso: { select: { tramiteTipoId: true, nivel: true } },
         seccionesAcceso: { select: { seccion: true } },
+        perfiles: { select: { perfil: { select: { nombre: true, modulo: true } } } },
       },
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
@@ -251,39 +235,14 @@ export default async function UsuariosPage({
                 const tramites = esAdmin ? "Acceso total" : resumenTramitesTexto(u.tramitesAcceso, categoriaDeId, totalPorCategoria);
                 const sgdeaVence = u.rolCorrespondencia && u.rolCorrespondenciaVigenteHasta;
                 const geconVence = u.rolesContratacion.length > 0 && u.rolContratacionVigenteHasta;
-                const sgdea = esAdmin
-                  ? "SGDEA: acceso total"
-                  : u.rolCorrespondencia
-                    ? `SGDEA: ${ETIQUETAS_ROL_CORRESPONDENCIA[u.rolCorrespondencia] ?? u.rolCorrespondencia}${sgdeaVence ? ` (vence ${formatearFecha(u.rolCorrespondenciaVigenteHasta!)})` : ""}`
-                    : "SGDEA: sin acceso";
-                const gecon = esAdmin
-                  ? "GECON: acceso total"
-                  : u.rolesContratacion.length > 0
-                    ? `GECON: ${u.rolesContratacion.map((r) => ETIQUETA_ROL_CONTRATACION[r] ?? r).join(", ")}${geconVence ? ` (vence ${formatearFecha(u.rolContratacionVigenteHasta!)})` : ""}`
-                    : "GECON: sin acceso";
-                const seccionesDe = (prefijo: string) =>
-                  u.seccionesAcceso.filter((s) => s.seccion.startsWith(prefijo)).map((s) => ETIQUETAS_SECCION_CORTA[s.seccion] ?? s.seccion).join(", ");
-                const detalle: Record<ModuloUsuario, string> = {
-                  TRAMITES: `Trámites 2.0: ${tramites}`,
-                  SGDEA: sgdea,
-                  GECON: gecon,
-                  VITAL: `VITAL: ${seccionesDe("VITAL_")}`,
-                  SINCA: `SINCA 1.0: ${seccionesDe("SINCA_")}`,
-                };
-                const habilitados = new Set(u.modulosAcceso);
-                const configuracion = {
-                  tramites: u.tramitesAcceso.length,
-                  rolCorrespondencia: u.rolCorrespondencia,
-                  rolesContratacion: u.rolesContratacion,
-                  secciones: u.seccionesAcceso.map((s) => s.seccion),
-                };
+                const rolesDe = (modulo: string) => u.perfiles.filter((p) => p.perfil.modulo === modulo).map((p) => p.perfil.nombre.replace(/^.*? — /, ""));
                 const modulos = MODULOS_USUARIO.map((m) => {
                   if (esAdmin) return { m, tono: "ok" as TonoModulo, titulo: `${m.corto}: acceso total` };
-                  if (!habilitados.has(m.id)) return { m, tono: "no" as TonoModulo, titulo: `${m.corto}: sin acceso` };
-                  if (!config[m.campoGlobal]) return { m, tono: "pendiente" as TonoModulo, titulo: `${m.corto}: oculto para todos en Administración → Módulos` };
-                  const falta = faltanteModulo(m.id, configuracion);
-                  if (falta) return { m, tono: "pendiente" as TonoModulo, titulo: `${m.corto}: activado, falta configurar (${falta.toLowerCase()})` };
-                  return { m, tono: "ok" as TonoModulo, titulo: detalle[m.id] };
+                  const roles = rolesDe(m.id);
+                  if (roles.length === 0) return { m, tono: "no" as TonoModulo, titulo: `${m.corto}: sin rol` };
+                  if (!config[m.campoGlobal]) return { m, tono: "pendiente" as TonoModulo, titulo: `${m.corto}: módulo oculto en Administración → Módulos` };
+                  const extra = m.id === "TRAMITES" ? ` · ${tramites}` : "";
+                  return { m, tono: "ok" as TonoModulo, titulo: `${m.corto}: ${roles.join(", ")}${extra}` };
                 });
                 const avisos = [
                   vigencia?.vencida ? "Contraseña vencida" : vigencia && vigencia.diasRestantes !== null && vigencia.diasRestantes <= 7 ? `Contraseña vence en ${vigencia.diasRestantes} d.` : null,

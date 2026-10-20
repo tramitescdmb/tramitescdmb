@@ -38,7 +38,7 @@ export const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GE
 
 export const ITEMS_ADMIN: Item[] = [
   { href: "/usuarios", label: "Usuarios", icon: IconUserCog },
-  { href: "/admin/perfiles", label: "Perfiles y permisos", icon: IconUserShield },
+  { href: "/admin/roles", label: "Roles", icon: IconUserShield },
   { href: "/auditoria", label: "Auditoría", icon: IconShieldCheck },
   { href: "/admin/apariencia", label: "Apariencia", icon: IconPalette },
   { href: "/admin/seguridad", label: "Seguridad", icon: IconLock },

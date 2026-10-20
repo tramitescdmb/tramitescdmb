@@ -5,13 +5,12 @@ import { CampoActoAdministrativo } from "@/components/CampoActoAdministrativo";
 import { VistaPreviaSelloFirma } from "@/components/VistaPreviaSelloFirma";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, Mail, UserCog, PenLine, FileBadge, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Briefcase, Layers, Eye, EyeOff, UserRound, KeyRound, Copy, Check, RefreshCw, UserCog, PenLine, FileBadge, ChevronDown, CalendarDays, type LucideIcon } from "lucide-react";
 import { CamposPersona } from "@/components/CamposPersona";
 import { nombreCompletoPersona, TIPOS_IDENTIFICACION_USUARIO, type DatosPersona } from "@/lib/datos-persona";
 import { CLAVES_DENOMINACION_EMPLEO, DENOMINACIONES_EMPLEO, SEXOS, admiteEncargo, denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { cargoParaSexo } from "@/lib/cargos";
-import { MODULOS_USUARIO, faltanteModulo, type ModuloUsuario, type PestanaFichaUsuario } from "@/lib/modulos-usuario";
-import { AccesoModulosPanel } from "@/components/usuarios/AccesoModulosPanel";
+import { MODULOS_USUARIO, type ModuloUsuario, type PestanaFichaUsuario } from "@/lib/modulos-usuario";
 
 type Opcion = { id: string; nombre: string };
 type TramiteOpcion = { id: string; codigo: string; nombre: string };
@@ -35,33 +34,9 @@ const ESTADOS_CUENTA: { valor: EstadoCuenta; etiqueta: string; ayuda: string; cl
   { valor: "SUSPENDIDA", etiqueta: "Suspendida", ayuda: "Fuera de servicio temporalmente (ej. licencia), a diferencia de deshabilitada.", clase: "border-amber-400 bg-amber-50 text-amber-800" },
 ];
 
-const ROLES_CORRESPONDENCIA: { valor: RolCorrespondencia; etiqueta: string; ayuda: string }[] = [
-  { valor: "OPERADOR_VENTANILLA", etiqueta: "Operador de ventanilla", ayuda: "Radica correspondencia y la distribuye a cualquier dependencia." },
-  { valor: "FUNCIONARIO_DEPENDENCIA", etiqueta: "Funcionario de dependencia", ayuda: "Recibe y gestiona lo que le distribuyan a su dependencia." },
-  { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia", ayuda: "Además puede repartir dentro de su propia dependencia." },
-  { valor: "ADMIN_ARCHIVO", etiqueta: "Administrador de archivo", ayuda: "Administra dependencias y TRD/CCD; ve todo el módulo." },
-];
-
-const ROLES_CONTRATACION: { valor: RolContratacion; etiqueta: string; ayuda: string }[] = [
-  { valor: "ADMINISTRADOR_CONTRATACION", etiqueta: "Administrador de Contratación", ayuda: "El encargado de sistemas — permisos totales sobre el módulo. Mismo nivel que Jefe de Contratación." },
-  { valor: "JEFE_CONTRATACION", etiqueta: "Jefe de Contratación", ayuda: "Ve y gestiona TODOS los expedientes de la entidad: crea, aprueba etapas, edita/elimina documentos, elimina expedientes completos." },
-  { valor: "FUNCIONARIO_CONTRATACION", etiqueta: "Personal de Contratación", ayuda: "Ve toda la contratación y sube documentos (con traza), y puede asignar quién firma cada documento — sin poder de gestión (no aprueba etapas ni elimina nada)." },
-  { valor: "JEFE_DEPENDENCIA", etiqueta: "Jefe de dependencia / Subdirector", ayuda: "Ve y asigna firmantes solo en los expedientes de SU PROPIA dependencia solicitante, no de toda la entidad." },
-  { valor: "SUPERVISOR_INTERVENTOR", etiqueta: "Supervisor / Interventor", ayuda: "Ve, sube, firma y puede editar/eliminar (con traza) documentos solo de los expedientes que supervisa." },
-  { valor: "CONTRATISTA", etiqueta: "Contratista", ayuda: "Sube soportes y firma solo en Contractual/Postcontractual de su propio expediente. Nunca puede asignar firmantes." },
-];
 
 const SEGMENTO = "px-2.5 py-1 text-[11px] font-medium transition";
 
-const SECCIONES_VITAL: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
-  { valor: "VITAL_BASE", etiqueta: "Solicitudes y Recientes", ayuda: "Ver las solicitudes de VITAL y las últimas radicadas." },
-  { valor: "VITAL_DASHBOARD", etiqueta: "Dashboard", ayuda: "Ver las estadísticas e indicadores de VITAL." },
-];
-const SECCIONES_SINCA: { valor: Seccion; etiqueta: string; ayuda: string }[] = [
-  { valor: "SINCA_BASE", etiqueta: "Solicitudes", ayuda: "Ver el histórico de solicitudes de SINCA 1.0." },
-  { valor: "SINCA_DASHBOARD", etiqueta: "Dashboard", ayuda: "Ver las estadísticas e indicadores de SINCA 1.0." },
-  { valor: "SINCA_MINERIA", etiqueta: "Minería de datos", ayuda: "Sección sensible: reservada para directivos, no para cualquier funcionario." },
-];
 
 type Pestana = PestanaFichaUsuario;
 
@@ -70,12 +45,10 @@ const PESTANAS: { id: Pestana; etiqueta: string; icono: LucideIcon }[] = [
   { id: "firma", etiqueta: "Firma", icono: PenLine },
   { id: "cuenta", etiqueta: "Cuenta", icono: UserCog },
   { id: "tramites", etiqueta: "Trámites 2.0", icono: FileBadge },
-  { id: "modulos", etiqueta: "SGDEA y GECON", icono: Mail },
-  { id: "consulta", etiqueta: "VITAL y SINCA 1.0", icono: Eye },
   { id: "visitas", etiqueta: "Visitas", icono: CalendarDays },
 ];
 
-const PESTANAS_DE_ACCESO: Pestana[] = ["tramites", "modulos", "consulta"];
+const PESTANAS_DE_ACCESO: Pestana[] = ["tramites"];
 
 function generarContrasena(): string {
   const mayus = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -139,12 +112,9 @@ export function EditarUsuarioAccesoForm({
   cargoActualIds,
   cargoEncargoIdsActuales = [],
   accesoActual,
-  seccionesActuales,
   cargos,
   tramitesPorCategoria,
   dependenciaActualId,
-  rolCorrespondenciaActual,
-  rolCorrespondenciaVigenteHastaActual,
   dependencias,
   politicaPassword,
   vigenciaPassword,
@@ -156,9 +126,7 @@ export function EditarUsuarioAccesoForm({
   actoAdministrativoCargoActual,
   accesoFirmaActual,
   rolesContratacionActuales = [],
-  rolContratacionVigenteHastaActual,
   modulosActuales,
-  visiblesGlobal,
   agendaVisitas,
 }: {
   usuarioId: string;
@@ -205,28 +173,10 @@ export function EditarUsuarioAccesoForm({
   const [cargoIds, setCargoIds] = useState<Set<string>>(new Set(cargoActualIds));
   const [cargoEncargoIds, setCargoEncargoIds] = useState<Set<string>>(new Set(cargoEncargoIdsActuales));
   const [acceso, setAcceso] = useState<Map<string, Nivel>>(new Map(accesoActual.map((a) => [a.tramiteTipoId, a.nivel])));
-  const [secciones, setSecciones] = useState<Set<Seccion>>(new Set(seccionesActuales));
   const [dependenciaId, setDependenciaId] = useState<string>(dependenciaActualId ?? "");
-  const [rolCorrespondencia, setRolCorrespondencia] = useState<RolCorrespondencia | "">(rolCorrespondenciaActual ?? "");
-  const [rolCorrespondenciaVigenteHasta, setRolCorrespondenciaVigenteHasta] = useState(rolCorrespondenciaVigenteHastaActual ?? "");
-  const [rolesContratacion, setRolesContratacion] = useState<Set<RolContratacion>>(new Set(rolesContratacionActuales));
+  const [rolesContratacion] = useState<Set<RolContratacion>>(new Set(rolesContratacionActuales));
   const esContratista = rolesContratacion.has("CONTRATISTA");
 
-  function alternarRolContratacion(rolElegido: RolContratacion) {
-    setRolesContratacion((prev) => {
-      if (prev.has(rolElegido)) {
-        const next = new Set(prev);
-        next.delete(rolElegido);
-        return next;
-      }
-      if (rolElegido === "CONTRATISTA") return new Set<RolContratacion>(["CONTRATISTA"]);
-      const next = new Set(prev);
-      next.delete("CONTRATISTA");
-      next.add(rolElegido);
-      return next;
-    });
-  }
-  const [rolContratacionVigenteHasta, setRolContratacionVigenteHasta] = useState(rolContratacionVigenteHastaActual ?? "");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -234,7 +184,7 @@ export function EditarUsuarioAccesoForm({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [pestana, setPestana] = useState<Pestana>("datos");
-  const [modulos, setModulos] = useState<Set<ModuloUsuario>>(new Set(modulosActuales));
+  const [modulos] = useState<Set<ModuloUsuario>>(new Set(modulosActuales));
   const [categoriasAbiertas, setCategoriasAbiertas] = useState<Set<string>>(new Set());
 
   function alternarCategoria(etiqueta: string) {
@@ -274,25 +224,7 @@ export function EditarUsuarioAccesoForm({
     });
   }
 
-  function alternarSeccion(s: Seccion) {
-    setSecciones((prev) => {
-      const next = new Set(prev);
-      if (next.has(s)) next.delete(s);
-      else next.add(s);
-      return next;
-    });
-  }
 
-  function marcarSecciones(valores: Seccion[], marcar: boolean) {
-    setSecciones((prev) => {
-      const next = new Set(prev);
-      for (const v of valores) {
-        if (marcar) next.add(v);
-        else next.delete(v);
-      }
-      return next;
-    });
-  }
 
   function ponerNivel(tramiteId: string, nivel: Nivel | null) {
     setAcceso((prev) => {
@@ -364,13 +296,7 @@ export function EditarUsuarioAccesoForm({
           cargoIds: Array.from(cargoIds),
           cargoEncargoIds: Array.from(cargoEncargoIds),
           accesoTramites: Array.from(acceso.entries()).map(([tramiteTipoId, nivel]) => ({ tramiteTipoId, nivel })),
-          secciones: Array.from(secciones),
           dependenciaId: dependenciaId || null,
-          rolCorrespondencia: rolCorrespondencia || null,
-          rolCorrespondenciaVigenteHasta: rolCorrespondencia ? (rolCorrespondenciaVigenteHasta || null) : null,
-          rolesContratacion: Array.from(rolesContratacion),
-          modulosAcceso: Array.from(modulos),
-          rolContratacionVigenteHasta: rolesContratacion.size > 0 ? (rolContratacionVigenteHasta || null) : null,
           ...(nuevaContrasena ? { password: nuevaContrasena } : {}),
         }),
       });
@@ -389,31 +315,7 @@ export function EditarUsuarioAccesoForm({
     }
   }
 
-  const configuracionAcceso = {
-    tramites: totalConAcceso,
-    rolCorrespondencia: rolCorrespondencia || null,
-    rolesContratacion: Array.from(rolesContratacion),
-    secciones: Array.from(secciones),
-  };
-  const seccionesDe = (prefijo: string) => Array.from(secciones).filter((s) => s.startsWith(prefijo)).length;
-  const resumenModulos: Record<ModuloUsuario, string> = {
-    TRAMITES: `${totalConAcceso} trámite(s)${cargoIds.size ? ` · ${cargoIds.size} cargo(s)` : ""}`,
-    SGDEA: ROLES_CORRESPONDENCIA.find((r) => r.valor === rolCorrespondencia)?.etiqueta ?? "",
-    GECON: ROLES_CONTRATACION.filter((r) => rolesContratacion.has(r.valor)).map((r) => r.etiqueta).join(", "),
-    VITAL: `${seccionesDe("VITAL_")} sección(es)`,
-    SINCA: `${seccionesDe("SINCA_")} sección(es)`,
-  };
 
-  function cambiarModulo(id: ModuloUsuario, activo: boolean) {
-    setModulos((prev) => {
-      const next = new Set(prev);
-      if (activo) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-    const modulo = MODULOS_USUARIO.find((m) => m.id === id)!;
-    if (activo && faltanteModulo(id, configuracionAcceso)) setPestana(modulo.pestana);
-  }
 
   function avisoModulosInactivos(p: Pestana) {
     if (rol === "ADMIN") return null;
@@ -421,24 +323,13 @@ export function EditarUsuarioAccesoForm({
     if (inactivos.length === 0) return null;
     return (
       <p className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-500">
-        {inactivos.length === 1 ? "Módulo sin acceso" : "Módulos sin acceso"}: <strong>{inactivos.map((m) => m.corto).join(" y ")}</strong>. Lo que se
-        configure aquí se conserva, pero no tiene efecto hasta activar el módulo en «Acceso a módulos».
+        Sin rol de <strong>{inactivos.map((m) => m.corto).join(" y ")}</strong>.
       </p>
     );
   }
 
   return (
     <div className="space-y-5 pb-4">
-      <AccesoModulosPanel
-        modulos={modulos}
-        onCambiar={cambiarModulo}
-        esAdmin={rol === "ADMIN"}
-        visiblesGlobal={visiblesGlobal}
-        configuracion={configuracionAcceso}
-        resumen={resumenModulos}
-        onConfigurar={setPestana}
-      />
-
       <nav
         className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-stone-200 bg-stone-50/95 p-1 shadow-soft backdrop-blur"
         role="tablist"
@@ -448,7 +339,7 @@ export function EditarUsuarioAccesoForm({
           const Icono = p.icono;
           const activa = pestana === p.id;
           const conteo =
-            p.id === "tramites" ? totalConAcceso : p.id === "modulos" ? (rolCorrespondencia ? 1 : 0) + rolesContratacion.size : p.id === "consulta" ? secciones.size : null;
+            p.id === "tramites" ? totalConAcceso : null;
           return (
             <button
               key={p.id}
@@ -872,213 +763,6 @@ export function EditarUsuarioAccesoForm({
                 </div>
               );
             })}
-          </div>
-        </section>
-      </div>
-
-      <div hidden={pestana !== "modulos"} className="space-y-5">
-        {avisoModulosInactivos("modulos")}
-        <section id="seccion-correspondencia" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <EncabezadoSeccion icono={Mail} titulo="Correspondencia (SGDEA)" ayuda="Acceso al módulo de correspondencia y gestión documental." />
-          <p className="mb-3 text-xs text-stone-400">
-            Cada rol asigna su perfil equivalente.
-          </p>
-          <div className="grid grid-cols-1 gap-4 sm:max-w-md">
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Rol dentro del módulo</p>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setRolCorrespondencia("")}
-                  aria-pressed={rolCorrespondencia === ""}
-                  title="Sin acceso al módulo de correspondencia"
-                  className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                    rolCorrespondencia === "" ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
-                  }`}
-                >
-                  Sin acceso
-                </button>
-                {ROLES_CORRESPONDENCIA.map((r) => (
-                  <button
-                    key={r.valor}
-                    type="button"
-                    onClick={() => setRolCorrespondencia(r.valor)}
-                    aria-pressed={rolCorrespondencia === r.valor}
-                    title={r.ayuda}
-                    className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                      rolCorrespondencia === r.valor
-                        ? "border-menu-500 bg-menu-500 text-stone-900"
-                        : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                    }`}
-                  >
-                    {r.etiqueta}
-                  </button>
-                ))}
-              </div>
-              {rolCorrespondencia !== "" && (
-                <label className="mt-3 flex items-center gap-2 text-xs text-stone-600">
-                  Vigente hasta
-                  <input
-                    type="date"
-                    value={rolCorrespondenciaVigenteHasta}
-                    onChange={(e) => setRolCorrespondenciaVigenteHasta(e.target.value)}
-                    className="rounded-md border border-stone-200 px-2 py-1 text-sm"
-                  />
-                  <span className="text-stone-400">Opcional — pasada esa fecha pierde el rol automáticamente, sin que un ADMIN tenga que quitárselo.</span>
-                </label>
-              )}
-            </div>
-          </div>
-        </section>
-        <section id="seccion-contratacion" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <EncabezadoSeccion icono={Briefcase} titulo="Contratación" ayuda="Acceso al manejador de expedientes digitales de contratación." />
-          <p className="mb-3 text-xs text-stone-400">
-            Puede tener varios roles a la vez (por ejemplo, Supervisor y Personal de Contratación). Contratista no se combina con otros.
-          </p>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => setRolesContratacion(new Set())}
-              aria-pressed={rolesContratacion.size === 0}
-              title="Sin acceso al módulo de Contratación"
-              className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                rolesContratacion.size === 0 ? "border-stone-400 bg-stone-100 text-stone-700" : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
-              }`}
-            >
-              Sin acceso
-            </button>
-            {ROLES_CONTRATACION.map((r) => (
-              <button
-                key={r.valor}
-                type="button"
-                onClick={() => alternarRolContratacion(r.valor)}
-                aria-pressed={rolesContratacion.has(r.valor)}
-                title={r.ayuda}
-                className={`inline-flex items-center gap-1 rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                  rolesContratacion.has(r.valor)
-                    ? "border-menu-500 bg-menu-500 text-stone-900"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                }`}
-              >
-                {rolesContratacion.has(r.valor) && <Check className="h-3 w-3" aria-hidden />}
-                {r.etiqueta}
-              </button>
-            ))}
-          </div>
-
-          {rolesContratacion.size > 0 && (
-            <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone-600">
-              Vigente hasta
-              <input
-                type="date"
-                value={rolContratacionVigenteHasta}
-                onChange={(e) => setRolContratacionVigenteHasta(e.target.value)}
-                className="rounded-md border border-stone-200 px-2 py-1 text-sm"
-              />
-              <span className="text-stone-400">
-                Opcional — pensado para que venza solo al terminar el contrato, sin quitárselo a mano.
-              </span>
-            </label>
-          )}
-
-          {esContratista && (
-            <p className="rounded-lg border border-stone-100 bg-stone-50/60 px-3 py-2 text-xs text-stone-500">
-              GECON usa los datos personales de esta página.
-            </p>
-          )}
-        </section>
-      </div>
-
-      <div hidden={pestana !== "consulta"} className="space-y-5">
-        {avisoModulosInactivos("consulta")}
-        <section id="seccion-lectura" className="scroll-mt-16 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <EncabezadoSeccion icono={Eye} titulo="VITAL y SINCA 1.0" ayuda="Solo consulta: define a qué pestañas puede entrar." />
-          <p className="mb-3 text-xs text-stone-400">
-            Solo consulta, no hay edición. <strong>Minería de datos</strong> es la sección más sensible — resérvela para directivos.
-          </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">VITAL</p>
-                <BotonAtajo
-                  tono="activar"
-                  title="Dar acceso a todas las pestañas de VITAL"
-                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), true)}
-                >
-                  Todos
-                </BotonAtajo>
-                <BotonAtajo
-                  tono="desactivar"
-                  title="Quitar el acceso a todas las pestañas de VITAL"
-                  onClick={() => marcarSecciones(SECCIONES_VITAL.map((s) => s.valor), false)}
-                >
-                  Ninguno
-                </BotonAtajo>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {SECCIONES_VITAL.map((s) => {
-                  const activo = secciones.has(s.valor);
-                  return (
-                    <button
-                      key={s.valor}
-                      type="button"
-                      onClick={() => alternarSeccion(s.valor)}
-                      aria-pressed={activo}
-                      title={s.ayuda}
-                      className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                        activo
-                          ? "border-menu-500 bg-menu-500 text-stone-900"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                      }`}
-                    >
-                      {s.etiqueta}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">SINCA 1.0</p>
-                <BotonAtajo
-                  tono="activar"
-                  title="Dar acceso a todas las pestañas de SINCA 1.0"
-                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), true)}
-                >
-                  Todos
-                </BotonAtajo>
-                <BotonAtajo
-                  tono="desactivar"
-                  title="Quitar el acceso a todas las pestañas de SINCA 1.0"
-                  onClick={() => marcarSecciones(SECCIONES_SINCA.map((s) => s.valor), false)}
-                >
-                  Ninguno
-                </BotonAtajo>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {SECCIONES_SINCA.map((s) => {
-                  const activo = secciones.has(s.valor);
-                  return (
-                    <button
-                      key={s.valor}
-                      type="button"
-                      onClick={() => alternarSeccion(s.valor)}
-                      aria-pressed={activo}
-                      title={s.ayuda}
-                      className={`rounded-sm border px-3 py-1 text-xs font-medium transition ${
-                        activo
-                          ? s.valor === "SINCA_MINERIA"
-                            ? "border-amber-600 bg-amber-600 text-white"
-                            : "border-menu-500 bg-menu-500 text-stone-900"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-cdmb-300 hover:text-cdmb-700"
-                      }`}
-                    >
-                      {s.etiqueta}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </section>
       </div>

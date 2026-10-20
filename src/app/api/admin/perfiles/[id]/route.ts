@@ -22,35 +22,35 @@ function describirCambios(antes: Record<string, string[]>, despues: Record<strin
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema gestiona perfiles." }, { status: 403 });
+  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema gestiona roles." }, { status: 403 });
   const actual = await obtenerPerfil(id);
-  if (!actual) return NextResponse.json({ error: "El perfil no existe." }, { status: 404 });
+  if (!actual) return NextResponse.json({ error: "El rol no existe." }, { status: 404 });
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const nombre = String(body.nombre ?? "").trim();
-  if (!nombre) return NextResponse.json({ error: "Escriba el nombre del perfil." }, { status: 400 });
+  if (!nombre) return NextResponse.json({ error: "Escriba el nombre del rol." }, { status: 400 });
   const matrizEntrada = (body.matriz && typeof body.matriz === "object" ? body.matriz : {}) as Record<string, string[]>;
   try {
     const matriz = await guardarPerfil(id, { nombre, descripcion: String(body.descripcion ?? "").trim() || null, matriz: matrizEntrada });
     const cambios = describirCambios(actual.matriz, matriz);
     await registrarAuditoria({
       tipo: "CONFIGURACION_ACTUALIZADA",
-      descripcion: `Actualizó el perfil «${nombre}»${cambios ? `: ${cambios}` : ""}`.slice(0, 4000),
+      descripcion: `Actualizó el rol «${nombre}»${cambios ? `: ${cambios}` : ""}`.slice(0, 4000),
       usuarioId: session.userId,
     });
     return NextResponse.json({ ok: true });
   } catch (e) {
     const duplicado = e instanceof Error && e.message.includes("Unique constraint");
-    return NextResponse.json({ error: duplicado ? "Ya existe un perfil con ese nombre." : "No se pudo guardar el perfil." }, { status: 400 });
+    return NextResponse.json({ error: duplicado ? "Ya existe un rol con ese nombre." : "No se pudo guardar el rol." }, { status: 400 });
   }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema gestiona perfiles." }, { status: 403 });
+  if (!session || session.rol !== "ADMIN") return NextResponse.json({ error: "Solo el administrador del sistema gestiona roles." }, { status: 403 });
   try {
     const nombre = await eliminarPerfil(id);
-    await registrarAuditoria({ tipo: "CONFIGURACION_ACTUALIZADA", descripcion: `Eliminó el perfil «${nombre}»`, usuarioId: session.userId });
+    await registrarAuditoria({ tipo: "CONFIGURACION_ACTUALIZADA", descripcion: `Eliminó el rol «${nombre}»`, usuarioId: session.userId });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "No se pudo eliminar." }, { status: 400 });

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Wand2, Check, Plus, Minus } from "lucide-react";
+import { Save, Check, Plus, Minus } from "lucide-react";
 import {
   ACCIONES,
   ETIQUETA_ACCION,
@@ -20,18 +20,18 @@ type PerfilOpcion = { id: string; nombre: string; modulo: string; descripcion: s
 
 const clave = (funcionalidad: string, tipo: Excepcion["tipo"]) => `${funcionalidad}|${tipo}`;
 
+const MODULOS = MODULOS_PERFIL.filter((m) => m !== "GENERAL");
+
 export function PerfilesUsuario({
   usuarioId,
   perfiles,
   asignadosIniciales,
   excepcionesIniciales,
-  modulosActivos = [],
 }: {
   usuarioId: string;
   perfiles: PerfilOpcion[];
   asignadosIniciales: string[];
   excepcionesIniciales: Excepcion[];
-  modulosActivos?: string[];
 }) {
   const router = useRouter();
   const [asignados, setAsignados] = useState(() => new Set(asignadosIniciales));
@@ -39,8 +39,8 @@ export function PerfilesUsuario({
     () => new Map(excepcionesIniciales.map((e) => [clave(e.funcionalidad, e.tipo), e]))
   );
   const [modulo, setModulo] = useState<ModuloPerfil>(() => {
-    const conAlgo = MODULOS_PERFIL.find((m) => perfiles.some((p) => p.modulo === m && asignadosIniciales.includes(p.id)));
-    return conAlgo ?? "GENERAL";
+    const conAlgo = MODULOS.find((m) => perfiles.some((p) => p.modulo === m && asignadosIniciales.includes(p.id)));
+    return conAlgo ?? "TRAMITES";
   });
   const [estado, setEstado] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -69,11 +69,6 @@ export function PerfilesUsuario({
       else s.add(id);
       return s;
     });
-    setEstado(null);
-  }
-
-  function aplicarSugeridos() {
-    setAsignados(new Set(perfiles.filter((p) => p.sugerido).map((p) => p.id)));
     setEstado(null);
   }
 
@@ -118,7 +113,7 @@ export function PerfilesUsuario({
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || "No se pudo guardar.");
-      setEstado({ tipo: "ok", texto: "Perfiles guardados." });
+      setEstado({ tipo: "ok", texto: "Roles guardados." });
       router.refresh();
     } catch (e) {
       setEstado({ tipo: "error", texto: e instanceof Error ? e.message : "No se pudo guardar." });
@@ -130,32 +125,12 @@ export function PerfilesUsuario({
   const perfilesModulo = perfiles.filter((p) => p.modulo === modulo);
   const funcionalidades = FUNCIONALIDADES.filter((f) => f.modulo === modulo);
   const excepcionesModulo = [...excepciones.entries()].filter(([, e]) => e.acciones.length > 0 && FUNCIONALIDAD_POR_CLAVE.get(e.funcionalidad)?.modulo === modulo);
-  const haySugeridos = perfiles.some((p) => p.sugerido);
 
   return (
     <section className="rounded-md border border-stone-200 bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
-        <div>
-          <h2 className="text-sm font-semibold text-stone-900">Perfiles y permisos</h2>
-          {modulosActivos.length > 0 && (
-            <p className="text-xs text-stone-500">Rigen en: {modulosActivos.map((m) => ETIQUETA_MODULO_PERFIL[m as ModuloPerfil] ?? m).join(", ")}</p>
-          )}
-        </div>
-        {haySugeridos && (
-          <button
-            type="button"
-            onClick={aplicarSugeridos}
-            className="inline-flex items-center gap-1.5 rounded border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50"
-          >
-            <Wand2 className="h-4 w-4" aria-hidden />
-            Asignar según sus roles actuales
-          </button>
-        )}
-      </div>
-
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
         <nav className="flex overflow-x-auto border-b border-stone-200 lg:flex-col lg:border-b-0 lg:border-r" aria-label="Módulos">
-          {MODULOS_PERFIL.map((m) => {
+          {MODULOS.map((m) => {
             const sel = m === modulo;
             const r = resumen[m];
             return (
@@ -181,9 +156,9 @@ export function PerfilesUsuario({
 
         <div className="min-w-0 space-y-4 p-4">
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Perfiles de {ETIQUETA_MODULO_PERFIL[modulo]}</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Roles de {ETIQUETA_MODULO_PERFIL[modulo]}</h3>
             {perfilesModulo.length === 0 ? (
-              <p className="text-sm text-stone-400">No hay perfiles en este módulo.</p>
+              <p className="text-sm text-stone-400">Sin roles en este módulo.</p>
             ) : (
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {perfilesModulo.map((p) => (
@@ -197,7 +172,6 @@ export function PerfilesUsuario({
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-stone-800">{p.nombre}</span>
                         {p.descripcion && <span className="block text-xs text-stone-500">{p.descripcion}</span>}
-                        {p.sugerido && <span className="mt-0.5 inline-block rounded-sm bg-sky-50 px-1.5 text-[10px] font-medium text-sky-700">Corresponde a su rol actual</span>}
                       </span>
                     </label>
                   </li>
@@ -211,7 +185,7 @@ export function PerfilesUsuario({
               className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500"
               title="Clic en una casilla: excepción solo para esta persona."
             >
-              Permisos efectivos
+              Permisos
             </h3>
             <div className="overflow-x-auto rounded border border-stone-200">
               <table className="tabla-listado w-full text-sm">
@@ -244,7 +218,7 @@ export function PerfilesUsuario({
                           : o?.concedidaPorExcepcion && !o.perfiles.length
                             ? "Concedido por excepción"
                             : o?.perfiles.length
-                              ? `Por perfil: ${o.perfiles.join(", ")}`
+                              ? `Por rol: ${o.perfiles.join(", ")}`
                               : "Sin permiso";
                         return (
                           <td key={a} className="px-2 py-1.5 text-center">
@@ -280,7 +254,7 @@ export function PerfilesUsuario({
               </table>
             </div>
             <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stone-500">
-              <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm border border-emerald-300 bg-emerald-50" />Por perfil</span>
+              <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm border border-emerald-300 bg-emerald-50" />Por rol</span>
               <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm border border-amber-300 bg-amber-50" />Concedido por excepción</span>
               <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm border border-red-300 bg-red-50" />Quitado por excepción</span>
             </p>
@@ -321,7 +295,7 @@ export function PerfilesUsuario({
           className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600 disabled:opacity-60"
         >
           <Save className="h-4 w-4" aria-hidden />
-          {guardando ? "Guardando…" : "Guardar perfiles"}
+          {guardando ? "Guardando…" : "Guardar"}
         </button>
       </div>
     </section>

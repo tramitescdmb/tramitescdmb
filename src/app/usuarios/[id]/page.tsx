@@ -1,7 +1,4 @@
 import Link from "next/link";
-import { obtenerModulosPorPerfil } from "@/lib/permisos";
-import { obtenerPerfilesDeUsuario } from "@/lib/perfiles-usuario";
-import { PerfilesUsuario } from "@/components/usuarios/PerfilesUsuario";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -17,7 +14,7 @@ import { denominacionParaFirma } from "@/lib/denominacion-empleo";
 import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { MODULOS_USUARIO, type ModuloUsuario } from "@/lib/modulos-usuario";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import type { EstadoCuenta } from "@prisma/client";
 
 const ESTADOS: Record<EstadoCuenta, { etiqueta: string; punto: string; clase: string }> = {
@@ -60,7 +57,10 @@ export default async function EditarUsuarioPage({
     getConfiguracionSitio(),
   ]);
   if (!usuario) notFound();
-  const [agenda, perfilesUsuario] = await Promise.all([obtenerAgendaUsuario(usuario.id, false), obtenerPerfilesDeUsuario(usuario.id)]);
+  const [agenda, rolesAsignados] = await Promise.all([
+    obtenerAgendaUsuario(usuario.id, false),
+    db.usuarioPerfil.findMany({ where: { usuarioId: usuario.id, perfil: { modulo: { not: "GENERAL" } } }, select: { perfil: { select: { nombre: true } } } }),
+  ]);
 
   const tramitesPorCategoria = agruparTramitesPorCategoria(tramites).map((g) => ({
     etiqueta: g.etiqueta,
@@ -97,6 +97,15 @@ export default async function EditarUsuarioPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          <Link
+            href={`/usuarios/${usuario.id}/roles`}
+            title={rolesAsignados.map((r) => r.perfil.nombre).join(", ") || "Sin roles"}
+            className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-acento-600"
+          >
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+            Roles
+            <span className="rounded-sm bg-white/25 px-1.5 text-xs">{rolesAsignados.length}</span>
+          </Link>
           <span className={`inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-medium ${estado.clase}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${estado.punto}`} aria-hidden />
             {estado.etiqueta}
@@ -148,15 +157,7 @@ export default async function EditarUsuarioPage({
         visiblesGlobal={Object.fromEntries(MODULOS_USUARIO.map((m) => [m.id, config[m.campoGlobal]])) as Record<ModuloUsuario, boolean>}
       />
 
-      {perfilesUsuario && (
-        <PerfilesUsuario
-          usuarioId={usuario.id}
-          perfiles={perfilesUsuario.perfiles}
-          asignadosIniciales={perfilesUsuario.asignados}
-          excepcionesIniciales={perfilesUsuario.excepciones}
-          modulosActivos={await obtenerModulosPorPerfil()}
-        />
-      )}
+
     </div>
   );
 }
