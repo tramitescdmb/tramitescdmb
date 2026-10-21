@@ -128,6 +128,7 @@ export async function getDashboardData(
     aprobados,
     negados,
     tasaAprobacion,
+    porEstado: porEstado.map((p) => ({ clave: p.estado as string, valor: p._count._all })).sort((a, b) => b.valor - a.valor),
     recientes,
     topMunicipios,
     topTramites,

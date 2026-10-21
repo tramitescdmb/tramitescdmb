@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
-import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
+import { PieChart, LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
-import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
-import { LineasMensuales } from "@/components/charts/LineasMensuales";
+import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { Dona } from "@/components/charts/Dona";
+import { estiloEstado } from "@/lib/estados-expediente-estilo";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -68,6 +69,51 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         />
       </RejillaIndicadores>
 
+      <RejillaTarjetas>
+        <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.`}>
+          <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Expedientes por estado" contador={d.totalExpedientes}>
+          <Dona
+            unidad="expedientes"
+            vacio="Sin expedientes."
+            segmentos={d.porEstado.map((e) => ({
+              etiqueta: estiloEstado(e.clave).etiqueta,
+              valor: e.valor,
+              color: estiloEstado(e.clave).color,
+              href: `/expedientes?estado=${e.clave}`,
+            }))}
+          />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={LibraryBig} titulo="Por tipo de trámite" descripcion={`Los trámites, de ${d.totalTramites}, con más expedientes.`}>
+          <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={MapPin} tono="cielo" titulo="Por municipio" descripcion="Municipio donde se adelanta el trámite.">
+          <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={FolderOpen} tono="violeta" titulo="Actividad reciente" accion={<EnlaceTablero href="/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
+          {d.recientes.length === 0 ? (
+            <VacioTablero>Todavía no hay expedientes radicados.</VacioTablero>
+          ) : (
+            <ListaTablero>
+              {d.recientes.map((exp) => (
+                <FilaTablero
+                  key={exp.id}
+                  href={`/expedientes/${exp.id}`}
+                  titulo={exp.numero}
+                  detalle={`${exp.tramiteTipo.nombre} · ${exp.municipio}`}
+                  extra={
+                    <>
+                      <EstadoBadge estado={exp.estado} />
+                    </>
+                  }
+                />
+              ))}
+            </ListaTablero>
+          )}
+        </TarjetaTablero>
+      </RejillaTarjetas>
+
       {resumenFirmas.total > 0 && (
         <TarjetaTablero
           icon={PenLine}
@@ -107,52 +153,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       )}
 
       <MisPendientes resumen={pendientes} visitas={visitas} />
-
-      <RejillaTarjetas>
-      <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.`}>
-        <LineasMensuales
-          series={[{ nombre: "Radicadas", color: "#2a78d6" }]}
-          datos={d.serieMensual.map((p) => ({ etiqueta: p.label, valores: [p.value] }))}
-          vacio="Todavía no hay expedientes radicados para mostrar una tendencia."
-        />
-      </TarjetaTablero>
-      <TarjetaTablero className="lg:col-span-4" icon={MapPin} tono="cielo" titulo="Municipios con más solicitudes" descripcion="Municipio de la jurisdicción donde se adelanta el trámite.">
-        <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
-      </TarjetaTablero>
-      <TarjetaTablero className="lg:col-span-4" icon={LibraryBig} titulo="Trámites más solicitados" descripcion={`Trámites, de los ${d.totalTramites}, con más expedientes.`}>
-        <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
-      </TarjetaTablero>
-
-      <TarjetaTablero className="lg:col-span-8" icon={FolderOpen} titulo="Actividad reciente" accion={<EnlaceTablero href="/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
-        {d.recientes.length === 0 ? (
-          <VacioTablero>Todavía no hay expedientes radicados.</VacioTablero>
-        ) : (
-          <ListaTablero>
-            {d.recientes.map((exp) => (
-              <FilaTablero
-                key={exp.id}
-                href={`/expedientes/${exp.id}`}
-                titulo={exp.numero}
-                detalle={`${exp.tramiteTipo.nombre} · ${exp.solicitanteNombre} · ${exp.municipio}`}
-                extra={
-                  <>
-                    <span className="hidden w-32 sm:block">
-                      <ProgresoExpediente
-                        pasoActualNumero={exp.pasoActualNumero}
-                        totalPasos={exp.flujo.pasos.length}
-                        pasosAvance={pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo))}
-                        estado={exp.estado}
-                      />
-                    </span>
-                    <EstadoBadge estado={exp.estado} />
-                  </>
-                }
-              />
-            ))}
-          </ListaTablero>
-        )}
-      </TarjetaTablero>
-      </RejillaTarjetas>
     </MarcoDashboard>
   );
 }
