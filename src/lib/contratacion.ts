@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { rigePorPerfil, tienePermiso, puedeAccederContratacion, veTodosLosContratos, veContratosDeSuDependencia, esContratistaGecon } from "@/lib/permisos";
 import { db } from "@/lib/db";
+import { asignarRolBase } from "@/lib/perfiles";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { calcularPeriodosInforme, esRequisitoPorPeriodos, nombreDocumentoPeriodo } from "@/lib/periodos-informe";
@@ -1037,6 +1038,7 @@ export async function asegurarContratistaDeUsuario(usuarioId: string): Promise<{
   if (!u.rolesContratacion.includes("CONTRATISTA")) {
     await db.usuario.update({ where: { id: usuarioId }, data: { rolesContratacion: ["CONTRATISTA"], modulosAcceso: { push: "GECON" } } });
   }
+  await asignarRolBase(usuarioId, "GECON:CONTRATISTA");
   return { id, nombre: datos.nombreORazonSocial };
 }
 
@@ -1329,6 +1331,7 @@ export async function intentarVincularContratistaConUsuario(contratistaId: strin
   if (!usuario.rolesContratacion.includes("CONTRATISTA")) {
     await db.usuario.update({ where: { id: usuario.id }, data: { rolesContratacion: ["CONTRATISTA"], modulosAcceso: { push: "GECON" } } });
   }
+  await asignarRolBase(usuario.id, "GECON:CONTRATISTA");
   return true;
 }
 
@@ -1595,6 +1598,7 @@ export async function vincularPerfilConUsuario(pendiente: Prisma.ContratistaGetP
     }),
     db.contratista.update({ where: { id: pendiente.id }, data: { usuarioId } }),
   ]);
+  await asignarRolBase(usuarioId, "GECON:CONTRATISTA");
   return true;
 }
 
@@ -1842,6 +1846,7 @@ export async function vincularSupervisoresSecop(filtro: Prisma.ExpedienteContrac
           ]
         : []),
     ]);
+    if (!usuario.rolesContratacion.includes("CONTRATISTA")) await asignarRolBase(usuario.id, "GECON:SUPERVISOR_INTERVENTOR");
     await registrarEventoContratacion(e.id, "SUPERVISORES_ACTUALIZADOS", `Supervisor vinculado desde SECOP II: ${usuario.nombre}`, null);
     vinculados++;
   }

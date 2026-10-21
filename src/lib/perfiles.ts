@@ -122,3 +122,10 @@ export async function eliminarPerfil(id: string) {
   await db.perfil.delete({ where: { id } });
   return p.nombre;
 }
+
+export async function asignarRolBase(usuarioId: string, claveOrigen: string): Promise<void> {
+  await asegurarPerfilesIniciales();
+  const perfil = await db.perfil.findFirst({ where: { claveOrigen, activo: true }, select: { id: true } });
+  if (!perfil) return;
+  await db.usuarioPerfil.createMany({ data: [{ usuarioId, perfilId: perfil.id }], skipDuplicates: true });
+}
