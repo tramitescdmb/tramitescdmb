@@ -1,23 +1,18 @@
 import Link from "next/link";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
-import { LineasMensuales } from "@/components/charts/LineasMensuales";
+import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { Dona } from "@/components/charts/Dona";
 import { tableroCorrespondencia } from "@/lib/tablero-general";
 import { redirect } from "next/navigation";
-import { Clock, AlertTriangle, PenLine, ListChecks, Inbox, Archive, TrendingUp } from "lucide-react";
+import { Clock, AlertTriangle, PenLine, ListChecks, Inbox, Archive, TrendingUp, PieChart, Layers, Building2 } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { obtenerPanelMiTrabajo, ETIQUETA_ESTADO_PANEL } from "@/lib/correspondencia-panel";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
-import { EnlaceTablero, Indicador, TarjetaTablero, VacioTablero } from "@/components/tablero";
-
-const SERIES_TIPO = [
-  { nombre: "Recibidas", color: "#2a78d6" },
-  { nombre: "Enviadas", color: "#d16f00" },
-  { nombre: "Memorandos", color: "#4a3aa7" },
-];
+import { FilaTablero, ListaTablero, EnlaceTablero, Indicador, TarjetaTablero, VacioTablero } from "@/components/tablero";
 
 const COLOR_ESTADO: Record<string, string> = {
   RADICADA: "#2a78d6",
@@ -54,9 +49,9 @@ export default async function PanelMiTrabajoPage() {
 
       <RejillaTarjetas>
       <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Radicados por mes" descripcion="Últimos 12 meses, por fecha de radicación.">
-        <LineasMensuales series={SERIES_TIPO} datos={resumen.evolucion} vacio="Sin radicados en los últimos 12 meses." />
+        <AreaTrendChart data={resumen.mensual} emptyMessage="Sin radicados en los últimos 12 meses." />
       </TarjetaTablero>
-      <TarjetaTablero className="lg:col-span-4" titulo="Comunicaciones por estado" contador={resumen.porEstado.reduce((t, e) => t + e.valor, 0)}>
+      <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Comunicaciones por estado" contador={resumen.porEstado.reduce((t, e) => t + e.valor, 0)}>
         <Dona
           unidad="comunicaciones"
           vacio="Sin comunicaciones."
@@ -69,8 +64,14 @@ export default async function PanelMiTrabajoPage() {
         />
       </TarjetaTablero>
 
+      <TarjetaTablero className="lg:col-span-4" icon={Layers} titulo="Por tipo" descripcion="Recibidas, enviadas y memorandos.">
+        <BarChartHorizontal data={resumen.porTipo} emptyMessage="Sin comunicaciones." />
+      </TarjetaTablero>
+      <TarjetaTablero className="lg:col-span-4" icon={Building2} tono="cielo" titulo="Por dependencia" descripcion="Dependencias que más reciben.">
+        <BarChartHorizontal data={resumen.porDependencia} emptyMessage="Sin dependencias asignadas." />
+      </TarjetaTablero>
       <TarjetaTablero
-        className="lg:col-span-12"
+        className="lg:col-span-4"
         icon={Inbox}
         tono="cielo"
         titulo="Radicados asignados"
@@ -79,40 +80,24 @@ export default async function PanelMiTrabajoPage() {
         sinRelleno
       >
         {p.mis.lista.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="tabla-listado w-full text-xs">
-              <thead className="bg-stone-50/70 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-400">
-                <tr>
-                  <th className="px-5 py-1.5">Radicado</th>
-                  <th className="px-3 py-1.5">Estado</th>
-                  <th className="px-5 py-1.5">Vence</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {p.mis.lista.map((c) => {
-                  const v = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
-                  return (
-                    <tr key={c.id} className="hover:bg-stone-50/70">
-                      <td className="px-5 py-2">
-                        <Link href={`/correspondencia/${c.id}`} className="font-medium text-stone-800 hover:text-cdmb-700">
-                          {c.radicado}
-                        </Link>
-                        <p className="truncate text-[11px] text-stone-400">{c.asunto}</p>
-                      </td>
-                      <td className="px-3 py-2 text-stone-500">{ETIQUETA_ESTADO_PANEL[c.estado]}</td>
-                      <td className="whitespace-nowrap px-5 py-2">
-                        {c.fechaVencimiento ? (
-                          <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${v?.clase ?? "text-stone-500"}`}>{formatearFecha(c.fechaVencimiento)}</span>
-                        ) : (
-                          <span className="text-stone-300">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ListaTablero>
+            {p.mis.lista.map((c) => {
+              const v = estadoVencimiento(c.fechaVencimiento, undefined, calendario);
+              return (
+                <FilaTablero
+                  key={c.id}
+                  href={`/correspondencia/${c.id}`}
+                  titulo={c.radicado}
+                  detalle={`${ETIQUETA_ESTADO_PANEL[c.estado]} · ${c.asunto}`}
+                  extra={
+                    c.fechaVencimiento ? (
+                      <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${v?.clase ?? "text-stone-500"}`}>{formatearFecha(c.fechaVencimiento)}</span>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
+          </ListaTablero>
         ) : (
           <VacioTablero>Sin radicados asignados pendientes.</VacioTablero>
         )}

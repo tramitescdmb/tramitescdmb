@@ -32,5 +32,5 @@ export function RejillaIndicadores({ children }: { children: ReactNode }) {
 }
 
 export function RejillaTarjetas({ children }: { children: ReactNode }) {
-  return <div className="grid items-start gap-3 lg:grid-cols-12">{children}</div>;
+  return <div className="grid gap-3 lg:grid-cols-12">{children}</div>;
 }

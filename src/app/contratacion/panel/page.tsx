@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { Dona } from "@/components/charts/Dona";
-import { tableroContratos } from "@/lib/tablero-general";
-import { veSeguimientoContratos } from "@/lib/contratos-landing";
-import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
+import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
+import { tableroGecon } from "@/lib/tablero-general";
+import { construirWhereExpedienteContractual } from "@/lib/contratacion";
+import { ETAPAS_ORDEN, ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck } from "lucide-react";
+import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck, TrendingUp, PieChart, Layers, Building2 } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { identificacionContrato } from "@/lib/codigo-proceso";
@@ -91,9 +93,9 @@ export default async function PanelPendientesGeconPage() {
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const gestiona = puedeGestionarContratistas(permisos);
-  const [p, porEtapa] = await Promise.all([
+  const [p, g] = await Promise.all([
     obtenerTrabajoPendienteContratacion(session.userId, permisos, gestiona),
-    veSeguimientoContratos(permisos) ? tableroContratos() : Promise.resolve(null),
+    tableroGecon(construirWhereExpedienteContractual({}, permisos)),
   ]);
   const esperando = p.firmas.total - p.firmas.listos;
 
@@ -109,8 +111,35 @@ export default async function PanelPendientesGeconPage() {
       </RejillaIndicadores>
 
       <RejillaTarjetas>
+        <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Expedientes creados por mes" descripcion="Últimos 12 meses.">
+          <AreaTrendChart data={g.mensual} emptyMessage="Sin expedientes creados en los últimos 12 meses." />
+        </TarjetaTablero>
         <TarjetaTablero
-          className={porEtapa ? "lg:col-span-8" : "lg:col-span-6"}
+          className="lg:col-span-4"
+          icon={PieChart}
+          tono="cielo"
+          titulo="Contratos abiertos por etapa"
+          contador={g.porEtapa.reduce((t, e) => t + e.valor, 0)}
+        >
+          <Dona
+            unidad="contratos"
+            vacio="Sin contratos abiertos."
+            segmentos={ETAPAS_ORDEN.map((clave) => ({
+              etiqueta: ETIQUETA_ETAPA[clave],
+              valor: g.porEtapa.find((e) => e.clave === clave)?.valor ?? 0,
+              color: COLOR_ETAPA[clave] ?? "#76847a",
+              href: `/contratacion/expedientes?etapa=${clave}`,
+            }))}
+          />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={Layers} titulo="Por modalidad" descripcion="Modalidad de selección.">
+          <BarChartHorizontal data={g.porModalidad} emptyMessage="Sin expedientes." />
+        </TarjetaTablero>
+        <TarjetaTablero className="lg:col-span-4" icon={Building2} tono="cielo" titulo="Por dependencia" descripcion="Dependencia solicitante.">
+          <BarChartHorizontal data={g.porDependencia} emptyMessage="Sin expedientes." />
+        </TarjetaTablero>
+        <TarjetaTablero
+          className="lg:col-span-4"
           icon={PenLine}
           tono="rojo"
           titulo="Documentos por firmar o revisar"
@@ -146,20 +175,6 @@ export default async function PanelPendientesGeconPage() {
           )}
         </TarjetaTablero>
 
-        {porEtapa && (
-          <TarjetaTablero className="lg:col-span-4" titulo="Contratos abiertos por etapa" accion={<EnlaceTablero href="/contratacion/expedientes">Ver expedientes</EnlaceTablero>}>
-            <Dona
-              unidad="contratos"
-              vacio="Sin contratos abiertos."
-              segmentos={porEtapa.map((e) => ({
-                etiqueta: ETIQUETA_ETAPA[e.clave as keyof typeof ETIQUETA_ETAPA] ?? e.clave,
-                valor: e.valor,
-                color: COLOR_ETAPA[e.clave] ?? "#76847a",
-                href: `/contratacion/expedientes?etapa=${e.clave}`,
-              }))}
-            />
-          </TarjetaTablero>
-        )}
 
         {p.sinFirmante.aplica && (
           <TarjetaDocumentos

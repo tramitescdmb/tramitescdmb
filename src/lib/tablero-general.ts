@@ -1,4 +1,6 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
 import type { PermisosUsuario } from "@/lib/permisos";
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -69,20 +71,64 @@ export async function tableroCorrespondencia() {
   const meses = ultimosMeses(12);
   const hoy = new Date();
   const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1);
-  const [porEstado, recientes] = await Promise.all([
-    db.comunicacion.groupBy({ by: ["estado"], where: { estado: { not: "ANULADA" } }, _count: { _all: true } }),
-    db.comunicacion.findMany({ where: { estado: { not: "ANULADA" }, fechaRadicacion: { gte: desde } }, select: { tipo: true, fechaRadicacion: true } }),
+  const vigentes = { estado: { not: "ANULADA" as const } };
+  const [porEstado, porTipo, porDependencia, recientes] = await Promise.all([
+    db.comunicacion.groupBy({ by: ["estado"], where: vigentes, _count: { _all: true } }),
+    db.comunicacion.groupBy({ by: ["tipo"], where: vigentes, _count: { _all: true } }),
+    db.comunicacion.groupBy({
+      by: ["dependenciaDestinoId"],
+      where: { ...vigentes, dependenciaDestinoId: { not: null } },
+      _count: { _all: true },
+      orderBy: { _count: { dependenciaDestinoId: "desc" } },
+      take: 8,
+    }),
+    db.comunicacion.findMany({ where: { ...vigentes, fechaRadicacion: { gte: desde } }, select: { fechaRadicacion: true } }),
   ]);
-  const conteo = new Map<string, number[]>();
-  const indice = { RECIBIDA: 0, ENVIADA: 1, INTERNA: 2 } as const;
-  for (const c of recientes) {
-    const k = claveMes(c.fechaRadicacion);
-    const fila = conteo.get(k) ?? [0, 0, 0];
-    fila[indice[c.tipo]] += 1;
-    conteo.set(k, fila);
-  }
+  const dependencias = await db.dependencia.findMany({
+    where: { id: { in: porDependencia.map((d) => d.dependenciaDestinoId!) } },
+    select: { id: true, nombre: true },
+  });
+  const nombreDependencia = new Map(dependencias.map((d) => [d.id, d.nombre]));
+  const conteo = new Map<string, number>();
+  for (const c of recientes) conteo.set(claveMes(c.fechaRadicacion), (conteo.get(claveMes(c.fechaRadicacion)) ?? 0) + 1);
+  const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibidas", ENVIADA: "Enviadas", INTERNA: "Memorandos" };
   return {
-    porEstado: porEstado.map((e) => ({ clave: e.estado as string, valor: e._count._all })),
-    evolucion: meses.map((m) => ({ etiqueta: m.etiqueta, valores: conteo.get(m.clave) ?? [0, 0, 0] })),
+    porEstado: porEstado.map((e) => ({ clave: e.estado as string, valor: e._count._all })).sort((a, b) => b.valor - a.valor),
+    porTipo: porTipo.map((t) => ({ label: ETIQUETA_TIPO[t.tipo] ?? t.tipo, value: t._count._all })).sort((a, b) => b.value - a.value),
+    porDependencia: porDependencia.map((d) => ({ label: nombreDependencia.get(d.dependenciaDestinoId!) ?? "—", value: d._count._all })),
+    mensual: meses.map((m) => ({ label: m.etiqueta, value: conteo.get(m.clave) ?? 0 })),
+  };
+}
+
+export async function tableroGecon(where: Prisma.ExpedienteContractualWhereInput) {
+  const meses = ultimosMeses(12);
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1);
+  const [porEtapa, porModalidad, porDependencia, recientes] = await Promise.all([
+    db.expedienteContractual.groupBy({ by: ["etapaActual"], where: { AND: [where, { cerrado: false }] }, _count: { _all: true } }),
+    db.expedienteContractual.groupBy({ by: ["modalidadSeleccion"], where, _count: { _all: true } }),
+    db.expedienteContractual.groupBy({
+      by: ["dependenciaSolicitanteId"],
+      where,
+      _count: { _all: true },
+      orderBy: { _count: { dependenciaSolicitanteId: "desc" } },
+      take: 8,
+    }),
+    db.expedienteContractual.findMany({ where: { AND: [where, { createdAt: { gte: desde } }] }, select: { createdAt: true } }),
+  ]);
+  const dependencias = await db.dependencia.findMany({
+    where: { id: { in: porDependencia.map((d) => d.dependenciaSolicitanteId) } },
+    select: { id: true, nombre: true },
+  });
+  const nombreDependencia = new Map(dependencias.map((d) => [d.id, d.nombre]));
+  const conteo = new Map<string, number>();
+  for (const c of recientes) conteo.set(claveMes(c.createdAt), (conteo.get(claveMes(c.createdAt)) ?? 0) + 1);
+  return {
+    porEtapa: porEtapa.map((e) => ({ clave: e.etapaActual as string, valor: e._count._all })),
+    porModalidad: porModalidad
+      .map((m) => ({ label: ETIQUETA_MODALIDAD[m.modalidadSeleccion] ?? m.modalidadSeleccion, value: m._count._all }))
+      .sort((a, b) => b.value - a.value),
+    porDependencia: porDependencia.map((d) => ({ label: nombreDependencia.get(d.dependenciaSolicitanteId) ?? "—", value: d._count._all })),
+    mensual: meses.map((m) => ({ label: m.etiqueta, value: conteo.get(m.clave) ?? 0 })),
   };
 }

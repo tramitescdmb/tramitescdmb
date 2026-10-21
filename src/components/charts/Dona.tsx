@@ -20,7 +20,7 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
   const separacion = arcos.length > 1 ? 2 : 0;
 
   return (
-    <div className="flex flex-wrap items-center gap-5">
+    <div className="flex flex-col items-center gap-3">
       <svg viewBox="0 0 140 140" className="h-36 w-36 flex-none" role="img" aria-label={`Distribución de ${total} ${unidad}`}>
         <g transform="rotate(-90 70 70)">
           {arcos.map((a) => (
@@ -47,12 +47,12 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
           {unidad}
         </text>
       </svg>
-      <ul className="min-w-0 flex-1 space-y-1 text-xs">
+      <ul className="w-full space-y-0.5 text-xs">
         {arcos.map((a) => {
           const fila = (
             <>
               <span className="h-2.5 w-2.5 flex-none rounded-sm" style={{ backgroundColor: a.color }} aria-hidden />
-              <span className="min-w-0 flex-1 truncate text-stone-700">{a.etiqueta}</span>
+              <span className="min-w-0 flex-1 truncate text-stone-700" title={a.etiqueta}>{a.etiqueta}</span>
               <span className="tabular-nums font-medium text-stone-900">{a.valor.toLocaleString("es-CO")}</span>
               <span className="w-11 whitespace-nowrap text-right tabular-nums text-stone-500">{Math.round((a.valor / total) * 100)} %</span>
             </>

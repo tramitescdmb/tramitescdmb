@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { Dona } from "@/components/charts/Dona";
+import { PALETA_TIPOS } from "@/lib/geovisor-capas-externas";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
-import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ListChecks, ScrollText } from "lucide-react";
+import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ScrollText, PieChart } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { sincaConfigurado } from "@/lib/sinca";
@@ -14,6 +16,15 @@ import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/
 import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, PieTablero, TarjetaTablero } from "@/components/tablero";
 
 const num = (v: number) => v.toLocaleString("es-CO");
+
+const COLOR_ESTADO_SINCA: Record<string, string> = {
+  aprobada: "#038f67",
+  negada: "#e34948",
+  desestimiento: "#eda100",
+  desistimiento: "#eda100",
+  "no requiere permiso": "#2a78d6",
+  estudio: "#4a3aa7",
+};
 
 export default async function HistoricoPanelPage({
   searchParams,
@@ -102,8 +113,16 @@ export default async function HistoricoPanelPage({
           <TarjetaTablero className="lg:col-span-8" icon={BarChart3} tono="acento" titulo="Solicitudes por año" descripcion="Pase el mouse para ver cualquier año.">
             <AreaAnual data={d.serieAnual.map((s) => ({ anio: Number(s.label), valor: s.value }))} emptyMessage="Sin datos por año." />
           </TarjetaTablero>
-            <TarjetaTablero className="lg:col-span-4" icon={ListChecks} tono="verde" titulo="Por estado" descripcion="Aprobadas, negadas, desistidas o sin permiso requerido.">
-              <BarChartHorizontal data={d.porEstado} emptyMessage="Sin datos." />
+            <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Por estado" contador={d.porEstado.reduce((t, e) => t + e.value, 0)}>
+              <Dona
+                unidad="resoluciones"
+                vacio="Sin datos."
+                segmentos={d.porEstado.map((e, i) => ({
+                  etiqueta: e.label,
+                  valor: e.value,
+                  color: COLOR_ESTADO_SINCA[e.label.toLowerCase()] ?? PALETA_TIPOS[i % PALETA_TIPOS.length]!,
+                }))}
+              />
             </TarjetaTablero>
             <TarjetaTablero className="lg:col-span-4" icon={Layers} titulo="Por tipo de trámite" descripcion="Los 10 tipos con más resoluciones.">
               <BarChartHorizontal data={d.porTipo} emptyMessage="Sin datos." />
