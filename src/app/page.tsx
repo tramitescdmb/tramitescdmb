@@ -126,7 +126,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               </>
             )}
             {contratosPorEtapa && (
-              <TarjetaTablero className="lg:col-span-4" icon={Briefcase} tono="violeta" titulo="Contratos abiertos por etapa">
+              <TarjetaTablero className="lg:col-span-4" icon={Briefcase} tono="violeta" titulo="Contratos por etapa">
                 <Dona
                   unidad="contratos"
                   vacio="Sin contratos abiertos."
@@ -134,6 +134,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                     etiqueta: ETIQUETA_ETAPA[e.clave as keyof typeof ETIQUETA_ETAPA] ?? e.clave,
                     valor: e.valor,
                     color: COLOR_ETAPA[e.clave] ?? "#76847a",
+                    href: `/contratacion/expedientes?etapa=${e.clave}`,
                   }))}
                 />
               </TarjetaTablero>

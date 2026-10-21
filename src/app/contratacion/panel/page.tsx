@@ -119,12 +119,12 @@ export default async function PanelPendientesGeconPage() {
           className="lg:col-span-4"
           icon={PieChart}
           tono="cielo"
-          titulo="Contratos abiertos por etapa"
+          titulo="Contratos por etapa"
           contador={g.porEtapa.reduce((t, e) => t + e.valor, 0)}
         >
           <Dona
             unidad="contratos"
-            vacio="Sin contratos abiertos."
+            vacio="Sin contratos."
             segmentos={ETAPAS_ORDEN.map((clave) => ({
               etiqueta: ETIQUETA_ETAPA[clave],
               valor: g.porEtapa.find((e) => e.clave === clave)?.valor ?? 0,

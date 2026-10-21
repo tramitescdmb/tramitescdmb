@@ -61,7 +61,7 @@ export async function tableroTramites(permisos: PermisosUsuario) {
 export async function tableroContratos() {
   const porEtapa = await db.expedienteContractual.groupBy({
     by: ["etapaActual"],
-    where: { eliminadoEn: null, fechaCierre: null },
+    where: { eliminado: false },
     _count: { _all: true },
   });
   return porEtapa.map((e) => ({ clave: e.etapaActual as string, valor: e._count._all }));
@@ -105,7 +105,7 @@ export async function tableroGecon(where: Prisma.ExpedienteContractualWhereInput
   const hoy = new Date();
   const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1);
   const [porEtapa, porModalidad, porDependencia, recientes] = await Promise.all([
-    db.expedienteContractual.groupBy({ by: ["etapaActual"], where: { AND: [where, { cerrado: false }] }, _count: { _all: true } }),
+    db.expedienteContractual.groupBy({ by: ["etapaActual"], where, _count: { _all: true } }),
     db.expedienteContractual.groupBy({ by: ["modalidadSeleccion"], where, _count: { _all: true } }),
     db.expedienteContractual.groupBy({
       by: ["dependenciaSolicitanteId"],

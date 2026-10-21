@@ -23,7 +23,8 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
     <div className="flex flex-col items-center gap-3">
       <svg viewBox="0 0 140 140" className="h-36 w-36 flex-none" role="img" aria-label={`Distribución de ${total} ${unidad}`}>
         <g transform="rotate(-90 70 70)">
-          {arcos.map((a) => (
+          {arcos.map((a) => {
+            const arco = (
             <circle
               key={a.etiqueta}
               cx={70}
@@ -34,11 +35,19 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
               strokeWidth={GROSOR}
               strokeDasharray={`${Math.max(a.largo - separacion, 0.5)} ${C}`}
               strokeDashoffset={-a.inicio}
-              className="transition-opacity hover:opacity-80"
+              className={`transition-opacity hover:opacity-80 ${a.href ? "cursor-pointer" : ""}`}
             >
               <title>{`${a.etiqueta}: ${a.valor.toLocaleString("es-CO")} (${Math.round((a.valor / total) * 100)} %)`}</title>
             </circle>
-          ))}
+            );
+            return a.href ? (
+              <a key={a.etiqueta} href={a.href} aria-label={`${a.etiqueta}: ${a.valor.toLocaleString("es-CO")}`}>
+                {arco}
+              </a>
+            ) : (
+              arco
+            );
+          })}
         </g>
         <text x={70} y={68} textAnchor="middle" fontSize="22" fontWeight="600" fill="#1b2a20">
           {total.toLocaleString("es-CO")}

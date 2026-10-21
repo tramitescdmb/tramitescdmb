@@ -79,7 +79,12 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
             unidad="solicitudes"
             vacio="Sin datos por año."
             segmentos={[
-              ...d.serieAnual.map((a, i) => ({ etiqueta: String(a.anio), valor: a.valor, color: PALETA_TIPOS[i % PALETA_TIPOS.length]! })),
+              ...d.serieAnual.map((a, i) => ({
+                etiqueta: String(a.anio),
+                valor: a.valor,
+                color: PALETA_TIPOS[i % PALETA_TIPOS.length]!,
+                href: hrefLista("/vital", { tramite: sp.tramite, desde: `${a.anio}-01-01`, hasta: `${a.anio}-12-31` }),
+              })),
               { etiqueta: "Sin fecha", valor: Math.max(0, d.total - d.serieAnual.reduce((t, a) => t + a.valor, 0)), color: "#b9c2bc" },
             ]}
           />
