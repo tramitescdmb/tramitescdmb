@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { EtapaContratacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
+import { etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
 import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
-    select: { id: true, contratistaId: true, cerrado: true },
+    select: { id: true, contratistaId: true, cerrado: true, etapaActual: true },
   });
   if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
 
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const etapa = body.etapa as EtapaContratacion;
   if (!(ETAPAS_ORDEN as string[]).includes(etapa)) {
     return NextResponse.json({ error: "Etapa inválida." }, { status: 400 });
+  }
+  if (!puedeSubirEnCualquierEtapaContrato(permisos) && !etapaHabilitada(expediente.etapaActual, etapa)) {
+    return NextResponse.json({ error: mensajeEtapaNoHabilitada(etapa) }, { status: 409 });
   }
   if (!puedeSubirDocumentoContrato(permisos, expediente, etapa)) {
     return NextResponse.json({ error: "No tiene permiso para subir documentos en esta etapa de este expediente." }, { status: 403 });
