@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Segmento = { etiqueta: string; valor: number; color: string; href?: string };
 
 const R = 52;
@@ -41,9 +43,9 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
             </circle>
             );
             return a.href ? (
-              <a key={a.etiqueta} href={a.href} aria-label={`${a.etiqueta}: ${a.valor.toLocaleString("es-CO")}`}>
+              <Link key={a.etiqueta} href={a.href} aria-label={`${a.etiqueta}: ${a.valor.toLocaleString("es-CO")}`}>
                 {arco}
-              </a>
+              </Link>
             ) : (
               arco
             );
@@ -69,9 +71,9 @@ export function Dona({ segmentos, vacio, unidad }: { segmentos: Segmento[]; vaci
           return (
             <li key={a.etiqueta}>
               {a.href ? (
-                <a href={a.href} className="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-stone-50">
+                <Link href={a.href} className="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-stone-50 hover:text-cdmb-700">
                   {fila}
-                </a>
+                </Link>
               ) : (
                 <div className="flex items-center gap-2 px-1 py-0.5">{fila}</div>
               )}
