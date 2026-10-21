@@ -32,6 +32,7 @@ import { puntoEnGeometria, type GeometriaPoligono } from "@/lib/jurisdiccion-cdm
 import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
 import { estiloEstado, svgIconoEstado, svgPinEstado } from "@/lib/estados-expediente-estilo";
 import { normalizar } from "@/lib/cargos";
+import { UbicarPuntos } from "@/components/visor/UbicarPuntos";
 import { csvTramites, geoJsonTramites, htmlReporte, parseZonaParam, zonaAParam, type CapaContextoReporte, type PuntoReporte } from "@/lib/geovisor-exportar";
 import {
   clasificarPorTipo,
@@ -746,6 +747,24 @@ export function GeovisorTramites({
     L.marker(miUbicacion, { icon: iconoPunto("#ea580c", L), zIndexOffset: 1000 }).addTo(capa);
   }, [miUbicacion]);
 
+  function agregarPuntos(puntos: [number, number][]) {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (puntos.length === 0) return;
+    if (modoCerca) setPuntoCerca(puntos[puntos.length - 1]!);
+    else {
+      if (!modoMedir) {
+        setModoMedir(true);
+        setPuntoCerca(null);
+      }
+      setMedida((prev) => [...prev, ...puntos]);
+    }
+    if (!L || !map) return;
+    const todos = modoCerca || !modoMedir ? puntos : [...medida, ...puntos];
+    if (todos.length === 1) map.setView(todos[0]!, Math.max(map.getZoom(), 15));
+    else map.fitBounds(L.latLngBounds(todos), { padding: [40, 40], maxZoom: 16 });
+  }
+
   function activarMedir(v: boolean) {
     setModoMedir(v);
     setMedida([]);
@@ -1058,6 +1077,8 @@ export function GeovisorTramites({
                 onDescargarReporte={descargarReporte}
                 totalVisibles={expedientesVisibles.length + externosVisibles.length}
                 onDescargarVisibles={descargarVisibles}
+                municipios={municipiosGeo}
+                onAgregarPuntos={agregarPuntos}
               />
             )}
           </div>
@@ -1637,6 +1658,8 @@ function PanelMedir({
   onDescargarReporte,
   totalVisibles,
   onDescargarVisibles,
+  municipios,
+  onAgregarPuntos,
 }: {
   modoMedir: boolean;
   onModoMedir: (v: boolean) => void;
@@ -1665,6 +1688,8 @@ function PanelMedir({
   onDescargarReporte: () => void;
   totalVisibles: number;
   onDescargarVisibles: (csv: boolean) => void;
+  municipios: FeatureCollection | null;
+  onAgregarPuntos: (puntos: [number, number][]) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -1696,6 +1721,7 @@ function PanelMedir({
               ? "Haga clic en el mapa para marcar puntos. Con 3 o más se cierra la zona y se puede descargar."
               : "Haga clic en el mapa para marcar el recorrido a medir."}
           </p>
+          <UbicarPuntos destino="medir" municipios={municipios} onAgregar={onAgregarPuntos} />
 
           {medida.length >= 2 && (
             <p className="text-xs font-semibold text-stone-700">
@@ -1819,6 +1845,8 @@ function PanelMedir({
                 Mi ubicación
               </button>
             </div>
+
+            <UbicarPuntos destino="cerca" municipios={municipios} onAgregar={onAgregarPuntos} />
 
             <div className="flex flex-wrap gap-1.5">
               {[500, 1000, 2000, 5000].map((r) => (

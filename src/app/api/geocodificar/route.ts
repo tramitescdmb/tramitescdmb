@@ -11,8 +11,13 @@ export async function GET(req: NextRequest) {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", q);
   url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "1");
+  const lista = req.nextUrl.searchParams.get("lista") === "1";
+  url.searchParams.set("limit", lista ? "6" : "1");
   url.searchParams.set("countrycodes", "co");
+  if (lista) {
+    url.searchParams.set("viewbox", "-75.5,9,-71.5,5.5");
+    url.searchParams.set("bounded", "1");
+  }
 
   const res = await fetch(url, {
     headers: { "User-Agent": "tramitescdmb-app/1.0 (uso interno CDMB)" },
@@ -22,6 +27,11 @@ export async function GET(req: NextRequest) {
   }
 
   const resultados = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+  if (lista) {
+    return NextResponse.json({
+      resultados: resultados.map((r) => ({ lat: Number(r.lat), lon: Number(r.lon), nombre: r.display_name })),
+    });
+  }
   if (resultados.length === 0) {
     return NextResponse.json({ error: "No se encontró esa dirección." }, { status: 404 });
   }
