@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { rigePorPerfil, tienePermiso, puedeAccederContratacion, veTodosLosContratos, veContratosDeSuDependencia, esContratistaGecon } from "@/lib/permisos";
+import { rigePorPerfil, tienePermiso, puedeAccederContratacion, veTodosLosContratos, veContratosDeSuDependencia, esContratistaGecon, puedeGestionarContratistas, esPersonalContratacion } from "@/lib/permisos";
 import { db } from "@/lib/db";
 import { asignarRolBase } from "@/lib/perfiles";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
@@ -1373,6 +1373,29 @@ function restringirPorRolContratacion(permisos: PermisosUsuario): Prisma.Expedie
   }
   if (caminos.length === 0) return { id: "__sin_acceso__" };
   return caminos.length === 1 ? caminos[0]! : { OR: caminos };
+}
+
+export function usaSelectorDeVigencia(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || veTodosLosContratos(permisos) || puedeGestionarContratistas(permisos) || esPersonalContratacion(permisos);
+}
+
+export function vigenciaPorDefecto(permisos: PermisosUsuario, vigencia: string | undefined): string | undefined {
+  if (vigencia === "todas") return undefined;
+  if (vigencia) return vigencia;
+  return usaSelectorDeVigencia(permisos) ? String(new Date().getFullYear()) : undefined;
+}
+
+export async function aniosDeExpedientes(where: Prisma.ExpedienteContractualWhereInput) {
+  const filas = await db.expedienteContractual.findMany({ where, select: { fechaSuscripcion: true, createdAt: true } });
+  const conteo = new Map<number, number>([[new Date().getFullYear(), 0]]);
+  for (const f of filas) {
+    const anio = (f.fechaSuscripcion ?? f.createdAt).getUTCFullYear();
+    conteo.set(anio, (conteo.get(anio) ?? 0) + 1);
+  }
+  return {
+    total: filas.length,
+    anios: [...conteo.entries()].map(([anio, total]) => ({ anio, total })).sort((a, b) => b.anio - a.anio),
+  };
 }
 
 export function construirWhereExpedienteContractual(

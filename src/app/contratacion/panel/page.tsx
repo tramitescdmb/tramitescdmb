@@ -4,7 +4,9 @@ import { Dona } from "@/components/charts/Dona";
 import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { tableroGecon } from "@/lib/tablero-general";
-import { construirWhereExpedienteContractual } from "@/lib/contratacion";
+import { construirWhereExpedienteContractual, vigenciaPorDefecto, aniosDeExpedientes, usaSelectorDeVigencia } from "@/lib/contratacion";
+import { SelectorAnios } from "@/components/SelectorAnios";
+import { hrefLista } from "@/lib/tableros";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -87,21 +89,32 @@ function agruparInformes(informes: InformePorRadicar[]) {
   return [...grupos.values()].sort((a, b) => Math.max(...b.map((i) => i.diasDeRetraso)) - Math.max(...a.map((i) => i.diasDeRetraso)));
 }
 
-export default async function PanelPendientesGeconPage() {
+export default async function PanelPendientesGeconPage({ searchParams }: { searchParams: Promise<{ vigencia?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const gestiona = puedeGestionarContratistas(permisos);
-  const [p, g] = await Promise.all([
+  const sp = await searchParams;
+  const vigencia = vigenciaPorDefecto(permisos, sp.vigencia);
+  const conVigencia = usaSelectorDeVigencia(permisos) ? vigencia ?? "todas" : null;
+  const [p, g, anios] = await Promise.all([
     obtenerTrabajoPendienteContratacion(session.userId, permisos, gestiona),
-    tableroGecon(construirWhereExpedienteContractual({}, permisos)),
+    tableroGecon(construirWhereExpedienteContractual({ vigencia }, permisos)),
+    conVigencia ? aniosDeExpedientes(construirWhereExpedienteContractual({}, permisos)) : Promise.resolve(null),
   ]);
   const esperando = p.firmas.total - p.firmas.listos;
 
   return (
-    <MarcoDashboard actual="/contratacion/panel">
+    <MarcoDashboard
+      actual="/contratacion/panel"
+      filtros={
+        anios && conVigencia ? (
+          <SelectorAnios anios={anios.anios} total={anios.total} actual={conVigencia} href={(v) => `/contratacion/panel?vigencia=${v}`} />
+        ) : undefined
+      }
+    >
       <RejillaIndicadores>
         <Indicador icon={PenLine} valor={p.firmas.listos} etiqueta="Por firmar ahora" tono="rojo" href="/contratacion/buzon" />
         <Indicador icon={Hourglass} valor={esperando} etiqueta="Esperando turno" tono="ambar" href="/contratacion/buzon" />
@@ -120,6 +133,7 @@ export default async function PanelPendientesGeconPage() {
           icon={PieChart}
           tono="cielo"
           titulo="Contratos por etapa"
+          descripcion={vigencia ? `Vigencia ${vigencia}.` : "Todas las vigencias."}
           contador={g.porEtapa.reduce((t, e) => t + e.valor, 0)}
         >
           <Dona
@@ -129,7 +143,7 @@ export default async function PanelPendientesGeconPage() {
               etiqueta: ETIQUETA_ETAPA[clave],
               valor: g.porEtapa.find((e) => e.clave === clave)?.valor ?? 0,
               color: COLOR_ETAPA[clave] ?? "#76847a",
-              href: `/contratacion/expedientes?etapa=${clave}`,
+              href: hrefLista("/contratacion/expedientes", { etapa: clave, vigencia: conVigencia ?? undefined }),
             }))}
           />
         </TarjetaTablero>

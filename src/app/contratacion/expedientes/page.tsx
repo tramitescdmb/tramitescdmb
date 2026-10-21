@@ -6,8 +6,9 @@ import { Briefcase, Plus, Table2, FolderOpen, X } from "lucide-react";
 import { hrefLista } from "@/lib/tableros";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
-import { listarExpedientesContractuales, construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
+import { listarExpedientesContractuales, construirWhereExpedienteContractual, vigenciaPorDefecto, aniosDeExpedientes, usaSelectorDeVigencia, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { MosaicosFiltro } from "@/components/MosaicosFiltro";
+import { SelectorAnios } from "@/components/SelectorAnios";
 import { listarDependenciasActivas } from "@/lib/dependencias";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
 import { CarpetaExpedienteContractual } from "@/components/CarpetaExpedienteContractual";
@@ -26,12 +27,16 @@ export default async function ExpedientesContratacionPage({
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const sp = await searchParams;
+  const vigencia = vigenciaPorDefecto(permisos, sp.vigencia);
+  const consulta = { ...sp, vigencia };
   const sinEtapa = { ...sp, etapa: undefined };
-  const [{ filas, total, page, totalPaginas, porPagina }, dependencias, porEtapa, terminados] = await Promise.all([
-    listarExpedientesContractuales(sp, permisos),
+  const consultaSinEtapa = { ...consulta, etapa: undefined };
+  const [{ filas, total, page, totalPaginas, porPagina }, dependencias, porEtapa, terminados, anios] = await Promise.all([
+    listarExpedientesContractuales(consulta, permisos),
     listarDependenciasActivas(),
-    db.expedienteContractual.groupBy({ by: ["etapaActual"], where: construirWhereExpedienteContractual(sinEtapa, permisos), _count: { _all: true } }),
-    db.expedienteContractual.count({ where: construirWhereExpedienteContractual({ ...sinEtapa, etapa: "TERMINADOS" }, permisos) }),
+    db.expedienteContractual.groupBy({ by: ["etapaActual"], where: construirWhereExpedienteContractual(consultaSinEtapa, permisos), _count: { _all: true } }),
+    db.expedienteContractual.count({ where: construirWhereExpedienteContractual({ ...consultaSinEtapa, etapa: "TERMINADOS" }, permisos) }),
+    aniosDeExpedientes(construirWhereExpedienteContractual({ ...sp, vigencia: undefined, etapa: undefined }, permisos)),
   ]);
   const hrefEtapa = (etapa?: string) => {
     const params = new URLSearchParams(Object.entries({ ...sinEtapa, page: undefined }).filter((par): par is [string, string] => Boolean(par[1])));
@@ -43,7 +48,7 @@ export default async function ExpedientesContratacionPage({
   const vista = sp.vista === "tabla" || sp.vista === "carpetas" ? sp.vista : puedeGestionarContratistas(permisos) ? "tabla" : "carpetas";
   const hrefExportar = (formato: "xlsx" | "csv") => {
     const params = new URLSearchParams(
-      Object.entries({ q: sp.q, etapa: sp.etapa, dependenciaId: sp.dependenciaId, vigencia: sp.vigencia }).filter((par): par is [string, string] => Boolean(par[1]))
+      Object.entries({ q: sp.q, etapa: sp.etapa, dependenciaId: sp.dependenciaId, vigencia }).filter((par): par is [string, string] => Boolean(par[1]))
     );
     params.set("formato", formato);
     return `/api/contratacion/expedientes/exportar?${params.toString()}`;
@@ -74,6 +79,14 @@ export default async function ExpedientesContratacionPage({
           Sin contratista asignado
           <X className="h-3 w-3" aria-hidden />
         </Link>
+      )}
+      {usaSelectorDeVigencia(permisos) && (
+      <SelectorAnios
+        anios={anios.anios}
+        total={anios.total}
+        actual={vigencia ?? "todas"}
+        href={(v) => hrefLista("/contratacion/expedientes", { ...sp, vigencia: v, page: undefined })}
+      />
       )}
       <MosaicosFiltro
         mosaicos={[
@@ -118,18 +131,7 @@ export default async function ExpedientesContratacionPage({
             <option key={d.id} value={d.id}>{d.nombre}</option>
           ))}
         </select>
-        <select
-          name="vigencia"
-          defaultValue={sp.vigencia ?? ""}
-          className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
-        >
-          <option value="">Todas las vigencias</option>
-          {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+        {sp.vigencia && <input type="hidden" name="vigencia" value={sp.vigencia} />}
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
           Filtrar
         </button>
