@@ -8,7 +8,7 @@ const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0))
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MAX_MESES_SERIE = 120;
 
-export type FiltrosVital = { q?: string; tramite?: string; page?: string; vista?: string };
+export type FiltrosVital = { q?: string; tramite?: string; documentos?: string; page?: string; vista?: string };
 
 export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
@@ -23,7 +23,9 @@ export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null)
       ],
     });
   }
-  if (f.tramite && /^\d+$/.test(f.tramite)) and.push({ idTramiteVital: parseInt(f.tramite, 10) });
+  const tramites = (f.tramite ?? "").split(",").filter((t) => /^\d+$/.test(t)).map((t) => parseInt(t, 10));
+  if (tramites.length > 0) and.push({ idTramiteVital: { in: tramites } });
+  if (f.documentos === "con") and.push({ documentos: { some: {} } });
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }

@@ -105,6 +105,7 @@ export type FiltrosHistorico = {
   tipo?: string;
   municipio?: string;
   estado?: string;
+  resolucion?: string;
   coordenadas?: string;
   page?: string;
   vista?: string;
@@ -128,7 +129,9 @@ export function construirWhereHistorico(filtros: FiltrosHistorico, rango: RangoP
     });
   }
   if (rango) and.push({ fechaResolucion: { gte: rango.desde, lt: rango.hasta } });
-  if (filtros.tipo?.trim()) and.push({ tipoSolicitudCodigo: filtros.tipo.trim() });
+  const tipos = (filtros.tipo ?? "").split(",").map((t) => t.trim()).filter(Boolean);
+  if (tipos.length > 0) and.push({ tipoSolicitudCodigo: { in: tipos } });
+  if (filtros.resolucion === "con") and.push({ numeroResolucion: { not: null } });
   if (filtros.municipio?.trim()) and.push({ municipio: filtros.municipio.trim() });
   if (filtros.estado?.trim()) and.push({ estado: filtros.estado.trim() });
   if (filtros.coordenadas === "con") and.push({ lat: { not: null }, lon: { not: null } });

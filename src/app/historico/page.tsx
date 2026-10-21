@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Dona } from "@/components/charts/Dona";
 import { PALETA_TIPOS } from "@/lib/geovisor-capas-externas";
+import { hrefLista } from "@/lib/tableros";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ScrollText, PieChart } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -52,6 +53,7 @@ export default async function HistoricoPanelPage({
   const tipos = sp.tipo?.split(",").filter(Boolean);
   const [d, opciones] = await Promise.all([getHistoricoDashboard(rango, tipos), getHistoricoOpcionesFiltro()]);
   const sinDatos = d.total === 0;
+  const hrefSinca = (extra: Record<string, string> = {}) => hrefLista("/historico/solicitudes", { tipo: sp.tipo, desde: sp.desde, hasta: sp.hasta, ...extra });
   const filtros = (
     <>
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} compacto />
@@ -90,8 +92,8 @@ export default async function HistoricoPanelPage({
       ) : (
         <>
           <RejillaIndicadores>
-            <Indicador icon={FileCheck2} valor={num(d.total)} etiqueta="Solicitudes" tono="cdmb" />
-            <Indicador icon={Scale} valor={num(d.aprobadas)} etiqueta="Trámites aprobados" tono="verde" />
+            <Indicador icon={FileCheck2} valor={num(d.total)} etiqueta="Solicitudes" tono="cdmb" href={hrefSinca()} />
+            <Indicador icon={Scale} valor={num(d.aprobadas)} etiqueta="Trámites aprobados" tono="verde" href={hrefSinca({ estado: "Aprobada" })} />
             <Indicador icon={Stamp} valor={`${(d.tasaAprobacion * 100).toFixed(1)} %`} etiqueta="Tasa de aprobación" tono="cielo" />
             <Indicador
               icon={Timer}
@@ -106,7 +108,7 @@ export default async function HistoricoPanelPage({
               etiqueta="Años"
               tono="neutro"
             />
-            <Indicador icon={Hash} valor={num(d.conResolucion)} etiqueta="Con N.º de resolución" tono="violeta" />
+            <Indicador icon={Hash} valor={num(d.conResolucion)} etiqueta="Con N.º de resolución" tono="violeta" href={hrefSinca({ resolucion: "con" })} />
           </RejillaIndicadores>
 
           <RejillaTarjetas>
@@ -121,6 +123,7 @@ export default async function HistoricoPanelPage({
                   etiqueta: e.label,
                   valor: e.value,
                   color: COLOR_ESTADO_SINCA[e.label.toLowerCase()] ?? PALETA_TIPOS[i % PALETA_TIPOS.length]!,
+                  href: e.label === "Sin estado" ? undefined : hrefSinca({ estado: e.label }),
                 }))}
               />
             </TarjetaTablero>

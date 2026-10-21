@@ -118,7 +118,7 @@ export default async function ExpedientesPage({
     clausulasFiltro.push(`de ${t ? `${t.codigo} — ${t.nombre}` : tramite}`);
   }
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
-  if (estado) clausulasFiltro.push(`en estado "${estado.replaceAll("_", " ")}"`);
+  if (estado) clausulasFiltro.push(estado === "EN_CURSO" ? "en curso" : estado === "NEGADOS" ? "negados o rechazados" : `en estado "${estiloEstado(estado).etiqueta}"`);
   if (rango) clausulasFiltro.push(`radicados entre ${etiquetaPeriodo}`);
   if (soloMios) clausulasFiltro.push("asignados a usted");
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);

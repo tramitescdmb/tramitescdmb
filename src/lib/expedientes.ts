@@ -20,8 +20,10 @@ export type FiltrosExpedientes = {
 export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.ExpedienteWhereInput {
   const filtros: Prisma.ExpedienteWhereInput[] = [];
   if (f.tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: f.tramiteIdsPermitidos } });
-  if (f.estado) filtros.push({ estado: f.estado as EstadoExpediente });
-  if (f.tramite) filtros.push({ tramiteTipoId: f.tramite });
+  if (f.estado === "EN_CURSO") filtros.push({ estado: { in: ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"] } });
+  else if (f.estado === "NEGADOS") filtros.push({ estado: { in: ["NEGADO", "RECHAZADO"] } });
+  else if (f.estado) filtros.push({ estado: f.estado as EstadoExpediente });
+  if (f.tramite) filtros.push({ tramiteTipoId: { in: f.tramite.split(",").filter(Boolean) } });
   if (f.tramites && f.tramites.length > 0) filtros.push({ tramiteTipoId: { in: f.tramites } });
   if (f.municipio) filtros.push({ municipio: f.municipio });
   if (f.rango) filtros.push({ fechaRadicacion: { gte: f.rango.desde, lt: f.rango.hasta } });

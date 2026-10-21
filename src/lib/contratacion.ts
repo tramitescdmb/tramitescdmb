@@ -1334,6 +1334,7 @@ export async function intentarVincularContratistaConUsuario(contratistaId: strin
 
 export type FiltrosContratacion = {
   q?: string;
+  contratista?: string;
   etapa?: string;
   modalidad?: string;
   contratistaId?: string;
@@ -1382,6 +1383,7 @@ export function construirWhereExpedienteContractual(
     and.push({ OR: [{ cerrado: true }, { etapaActual: "POSTCONTRACTUAL" }, { fechaFinEstimada: { lt: hoy } }] });
   }
   if (f.modalidad) and.push({ modalidadSeleccion: f.modalidad as ModalidadSeleccion });
+  if (f.contratista === "sin") and.push({ contratistaId: null, cerrado: false });
   if (f.dependenciaId) and.push({ dependenciaSolicitanteId: f.dependenciaId });
   if (f.vigencia && /^\d{4}$/.test(f.vigencia)) {
     const anio = Number(f.vigencia);

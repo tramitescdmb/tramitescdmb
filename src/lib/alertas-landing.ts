@@ -184,7 +184,7 @@ async function seccionContratacion(session: SessionPayload, permisos: PermisosUs
   }
   if (trabajo.sinContratista > 0) {
     total += trabajo.sinContratista;
-    items.push({ titulo: `${trabajo.sinContratista} expediente(s) sin contratista asignado`, link: "/contratacion/expedientes", tipo: "contratista" });
+    items.push({ titulo: `${trabajo.sinContratista} expediente(s) sin contratista asignado`, link: "/contratacion/expedientes?contratista=sin", tipo: "contratista" });
   }
 
   return {

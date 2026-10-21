@@ -73,7 +73,7 @@ export async function tableroCorrespondencia() {
   const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1);
   const vigentes = { estado: { not: "ANULADA" as const } };
   const [porEstado, porTipo, porDependencia, recientes] = await Promise.all([
-    db.comunicacion.groupBy({ by: ["estado"], where: vigentes, _count: { _all: true } }),
+    db.comunicacion.groupBy({ by: ["estado"], where: { ...vigentes, tipo: { in: ["RECIBIDA", "ENVIADA"] } }, _count: { _all: true } }),
     db.comunicacion.groupBy({ by: ["tipo"], where: vigentes, _count: { _all: true } }),
     db.comunicacion.groupBy({
       by: ["dependenciaDestinoId"],

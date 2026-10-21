@@ -154,6 +154,7 @@ export function TarjetaTablero({
   accion,
   sinRelleno,
   className = "",
+  id,
   children,
 }: {
   icon?: LucideIcon;
@@ -164,10 +165,11 @@ export function TarjetaTablero({
   accion?: ReactNode;
   sinRelleno?: boolean;
   className?: string;
+  id?: string;
   children: ReactNode;
 }) {
   return (
-    <section className={`flex flex-col overflow-hidden rounded-md border border-stone-200 bg-white ${className}`}>
+    <section id={id} className={`flex scroll-mt-20 flex-col overflow-hidden rounded-md border border-stone-200 bg-white ${className}`}>
       <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-5 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           {icon && <Burbuja icon={icon} tono={tono} />}

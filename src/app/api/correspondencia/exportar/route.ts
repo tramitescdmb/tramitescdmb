@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     serieId: sp.get("serieId") ?? undefined,
     vencimiento: sp.get("vencimiento") ?? undefined,
     despacho: sp.get("despacho") ?? undefined,
+    asignadas: sp.get("asignadas") ?? undefined,
+    pendiente: sp.get("pendiente") ?? undefined,
+    usuarioId: sp.get("asignadas") === "mi" ? session.userId : undefined,
   };
   const filtrosPeriodo: FiltrosPeriodo = { desde: sp.get("desde") ?? undefined, hasta: sp.get("hasta") ?? undefined };
   const { rango } = resolverPeriodo(filtrosPeriodo);

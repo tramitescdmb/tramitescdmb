@@ -2,7 +2,8 @@ import { Paginador } from "@/components/Paginador";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Briefcase, Plus, Table2, FolderOpen } from "lucide-react";
+import { Briefcase, Plus, Table2, FolderOpen, X } from "lucide-react";
+import { hrefLista } from "@/lib/tableros";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
 import { listarExpedientesContractuales, construirWhereExpedienteContractual, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
@@ -17,7 +18,7 @@ import { BotonExportar } from "@/components/BotonExportar";
 export default async function ExpedientesContratacionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; etapa?: string; dependenciaId?: string; vigencia?: string; page?: string; vista?: string }>;
+  searchParams: Promise<{ q?: string; contratista?: string; etapa?: string; dependenciaId?: string; vigencia?: string; page?: string; vista?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -68,6 +69,12 @@ export default async function ExpedientesContratacionPage({
         Expedientes contractuales
       </TituloSeccion>
 
+      {sp.contratista === "sin" && (
+        <Link href={hrefLista("/contratacion/expedientes", { ...sp, contratista: undefined, page: undefined })} className="inline-flex w-fit items-center gap-1.5 rounded-sm bg-stone-100 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200">
+          Sin contratista asignado
+          <X className="h-3 w-3" aria-hidden />
+        </Link>
+      )}
       <MosaicosFiltro
         mosaicos={[
           { clave: "todos", etiqueta: "Expedientes", valor: porEtapa.reduce((t, e) => t + e._count._all, 0), href: hrefEtapa(), color: "#d99a00", activo: !sp.etapa },

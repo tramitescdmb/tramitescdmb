@@ -39,10 +39,10 @@ export default async function PanelMiTrabajoPage() {
   return (
     <MarcoDashboard actual="/correspondencia/panel">
       <RejillaIndicadores>
-        <Indicador icon={ListChecks} valor={p.mis.total} etiqueta="Asignados" tono="cdmb" />
-        <Indicador icon={PenLine} valor={p.mis.porResponder} etiqueta="Por responder" tono="cielo" />
-        <Indicador icon={Clock} valor={p.mis.porVencer} etiqueta="Por vencer (3 días)" tono="ambar" />
-        <Indicador icon={AlertTriangle} valor={p.mis.vencidas} etiqueta="Vencidas" tono="rojo" alerta={p.mis.vencidas > 0} />
+        <Indicador icon={ListChecks} valor={p.mis.total} etiqueta="Asignados" tono="cdmb" href="/correspondencia?asignadas=mi" />
+        <Indicador icon={PenLine} valor={p.mis.porResponder} etiqueta="Por responder" tono="cielo" href="/correspondencia?asignadas=mi&pendiente=responder" />
+        <Indicador icon={Clock} valor={p.mis.porVencer} etiqueta="Por vencer (3 días)" tono="ambar" href="/correspondencia?asignadas=mi&vencimiento=por_vencer" />
+        <Indicador icon={AlertTriangle} valor={p.mis.vencidas} etiqueta="Vencidas" tono="rojo" alerta={p.mis.vencidas > 0} href="/correspondencia?asignadas=mi&vencimiento=vencidas" />
         <Indicador icon={Archive} valor={p.global.porVencer} etiqueta="Por vencer en la Corporación" tono="neutro" href="/correspondencia?vencimiento=por_vencer" />
         <Indicador icon={AlertTriangle} valor={p.global.vencidas} etiqueta="Vencidas en la Corporación" tono="violeta" href="/correspondencia?vencimiento=vencidas" />
       </RejillaIndicadores>
@@ -51,15 +51,15 @@ export default async function PanelMiTrabajoPage() {
       <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Radicados por mes" descripcion="Últimos 12 meses, por fecha de radicación.">
         <AreaTrendChart data={resumen.mensual} emptyMessage="Sin radicados en los últimos 12 meses." />
       </TarjetaTablero>
-      <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Comunicaciones por estado" contador={resumen.porEstado.reduce((t, e) => t + e.valor, 0)}>
+      <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Correspondencia por estado" descripcion="Recibidas y enviadas." contador={resumen.porEstado.reduce((t, e) => t + e.valor, 0)}>
         <Dona
-          unidad="comunicaciones"
+          unidad="radicados"
           vacio="Sin comunicaciones."
           segmentos={resumen.porEstado.map((e) => ({
             etiqueta: ETIQUETA_ESTADO_PANEL[e.clave as keyof typeof ETIQUETA_ESTADO_PANEL] ?? e.clave,
             valor: e.valor,
             color: COLOR_ESTADO[e.clave] ?? "#76847a",
-            href: `/correspondencia?estado=${e.clave}`,
+            href: `/correspondencia?tipo=EXTERNA&estado=${e.clave}`,
           }))}
         />
       </TarjetaTablero>

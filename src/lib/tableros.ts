@@ -17,3 +17,9 @@ export function tablerosDeModulo(permisos: PermisosUsuario): OpcionTablero[] {
 export function opcionesTablero(permisos: PermisosUsuario): OpcionTablero[] {
   return [{ href: "/", label: "Mi trabajo" }, { href: "/dashboard", label: "Dashboard general" }, ...tablerosDeModulo(permisos)];
 }
+
+export function hrefLista(base: string, params: Record<string, string | undefined | null>): string {
+  const q = new URLSearchParams(Object.entries(params).filter((p): p is [string, string] => Boolean(p[1])));
+  const texto = q.toString();
+  return texto ? `${base}?${texto}` : base;
+}

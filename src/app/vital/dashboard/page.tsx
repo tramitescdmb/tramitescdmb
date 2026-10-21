@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { hrefLista } from "@/lib/tableros";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { Inbox, FileStack, Layers, CalendarClock, TrendingUp, Activity, Users, PieChart } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
@@ -32,6 +33,7 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
   const tramitesSeleccionados = sp.tramite?.split(",").map((x) => parseInt(x, 10)).filter(Number.isFinite);
   const [d, opciones] = await Promise.all([getVitalDashboard(rango, tramitesSeleccionados), getVitalOpcionesFiltro()]);
+  const hrefVital = (extra: Record<string, string> = {}) => hrefLista("/vital", { tramite: sp.tramite, desde: sp.desde, hasta: sp.hasta, ...extra });
   const filtros = (
     <>
       <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} compacto />
@@ -57,9 +59,9 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
   return (
     <MarcoDashboard actual="/vital/dashboard" filtros={filtros}>
       <RejillaIndicadores>
-        <Indicador icon={Inbox} valor={num(d.total)} etiqueta="Solicitudes traídas" tono="cdmb" />
+        <Indicador icon={Inbox} valor={num(d.total)} etiqueta="Solicitudes traídas" tono="cdmb" href={hrefVital()} />
         <Indicador icon={Layers} valor={num(d.tramitesDistintos)} etiqueta="Tipos de trámite" tono="cielo" />
-        <Indicador icon={FileStack} valor={num(d.conDocs)} etiqueta="Con documentos" tono="ambar" />
+        <Indicador icon={FileStack} valor={num(d.conDocs)} etiqueta="Con documentos" tono="ambar" href={hrefVital({ documentos: "con" })} />
         <Indicador
           icon={CalendarClock}
           valor={d.serieAnual.length ? `${d.serieAnual[0].anio}–${d.serieAnual[d.serieAnual.length - 1].anio}` : "—"}

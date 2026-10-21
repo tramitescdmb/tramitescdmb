@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hrefLista } from "@/lib/tableros";
 import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { PieChart, LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
@@ -43,6 +44,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     etiqueta: t.nombre,
   }));
   const resumenFirmas = resumirPendientesFirma(buzonFirmas);
+  const hrefExp = (estado?: string) => hrefLista("/expedientes", { estado, tramite: sp.tramite, desde: sp.desde, hasta: sp.hasta });
 
   return (
     <MarcoDashboard
@@ -56,10 +58,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     >
       <RejillaIndicadores>
         <Indicador icon={LibraryBig} valor={d.totalTramites} etiqueta="Trámites disponibles" tono="cdmb" href="/tramites" />
-        <Indicador icon={FolderOpen} valor={d.totalExpedientes} etiqueta="Expedientes" tono="neutro" href="/expedientes" />
-        <Indicador icon={Clock3} valor={d.activos} etiqueta="En curso" tono="ambar" href="/expedientes?estado=EN_TRAMITE" />
-        <Indicador icon={CheckCircle2} valor={d.aprobados} etiqueta="Aprobados" tono="verde" href="/expedientes?estado=APROBADO" />
-        <Indicador icon={XCircle} valor={d.negados} etiqueta="Negados o rechazados" tono="rojo" href="/expedientes?estado=NEGADO" />
+        <Indicador icon={FolderOpen} valor={d.totalExpedientes} etiqueta="Expedientes" tono="neutro" href={hrefExp()} />
+        <Indicador icon={Clock3} valor={d.activos} etiqueta="En curso" tono="ambar" href={hrefExp("EN_CURSO")} />
+        <Indicador icon={CheckCircle2} valor={d.aprobados} etiqueta="Aprobados" tono="verde" href={hrefExp("APROBADO")} />
+        <Indicador icon={XCircle} valor={d.negados} etiqueta="Negados o rechazados" tono="rojo" href={hrefExp("NEGADOS")} />
         <Indicador
           icon={Percent}
           valor={d.tasaAprobacion === null ? "—" : `${d.tasaAprobacion}%`}
@@ -81,7 +83,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               etiqueta: estiloEstado(e.clave).etiqueta,
               valor: e.valor,
               color: estiloEstado(e.clave).color,
-              href: `/expedientes?estado=${e.clave}`,
+              href: hrefExp(e.clave),
             }))}
           />
         </TarjetaTablero>

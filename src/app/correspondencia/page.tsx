@@ -41,7 +41,7 @@ const COLOR_ESTADO: Record<string, string> = {
   RESPONDIDA: "#038f67",
   ARCHIVADA: "#76847a",
 };
-const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
+const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando", EXTERNA: "Recibida o enviada" };
 
 function Semaforo({ color, children }: { color: string; children: React.ReactNode }) {
   return (
@@ -66,16 +66,17 @@ export default async function CorrespondenciaBandejaPage({
   const puedeDespacharUsuario = puedeDespachar(permisos);
 
   const sp = await searchParams;
+  const filtros = { ...sp, usuarioId: sp.asignadas === "mi" ? session.userId : undefined };
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
   const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables, listasParaRadicar, porEstado] = await Promise.all([
-    getCorrespondenciaListado(sp, rango),
+    getCorrespondenciaListado(filtros, rango),
     getCorrespondenciaOpcionesFiltro(sp.serieId || undefined),
     contarComunicacionesVencidas(),
     puedeDespacharUsuario ? contarOficiosSinDespachar() : Promise.resolve(0),
     getCalendarioLaboral(),
     puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
     puedeRadicarUsuario ? respuestasListasParaRadicar() : Promise.resolve([]),
-    db.comunicacion.groupBy({ by: ["estado"], where: construirWhereCorrespondencia({ ...sp, estado: undefined }, rango), _count: { _all: true } }),
+    db.comunicacion.groupBy({ by: ["estado"], where: construirWhereCorrespondencia({ ...filtros, estado: undefined }, rango), _count: { _all: true } }),
   ]);
   const hrefEstado = (estado?: string) => {
     const params = new URLSearchParams(Object.entries({ ...sp, estado: undefined, page: undefined }).filter((par): par is [string, string] => typeof par[1] === "string" && par[1] !== ""));
@@ -83,10 +84,12 @@ export default async function CorrespondenciaBandejaPage({
     return `?${params.toString()}`;
   };
 
-  const hayFiltros = Boolean(sp.q || sp.tipo || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || sp.despacho || rango);
+  const hayFiltros = Boolean(sp.q || sp.tipo || sp.asignadas || sp.pendiente || sp.estado || sp.dependencia || sp.serieId || sp.vencimiento || sp.despacho || rango);
   const CAMPOS_FILTRO = ["q", "tipo", "estado", "dependencia", "serieId", "vencimiento", "despacho", "orden", "desde", "hasta"] as const;
 
   const clausulas: string[] = [];
+  if (sp.asignadas === "mi") clausulas.push("asignadas a usted");
+  if (sp.pendiente === "responder") clausulas.push("pendientes de respuesta");
   if (sp.tipo) clausulas.push(`de tipo "${ETIQUETA_TIPO[sp.tipo] ?? sp.tipo}"`);
   if (sp.estado) clausulas.push(`en estado "${ETIQUETA_ESTADO[sp.estado] ?? sp.estado}"`);
   if (sp.dependencia) {
@@ -290,6 +293,8 @@ export default async function CorrespondenciaBandejaPage({
           <ChevronDown className="h-4 w-4 text-stone-400 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
         <form method="get" className="flex flex-wrap items-end gap-2 border-t border-stone-100 p-3">
+          {sp.asignadas && <input type="hidden" name="asignadas" value={sp.asignadas} />}
+          {sp.pendiente && <input type="hidden" name="pendiente" value={sp.pendiente} />}
           <label className="min-w-[220px] flex-1">
             <span className="mb-1 block text-xs font-medium text-stone-600">Buscar</span>
             <span className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2 focus-within:border-vivo-500 focus-within:ring-1 focus-within:ring-vivo-500">
@@ -305,6 +310,7 @@ export default async function CorrespondenciaBandejaPage({
               {opciones.tipos.map((t) => (
                 <option key={t} value={t}>{ETIQUETA_TIPO[t] ?? t}</option>
               ))}
+              <option value="EXTERNA">Recibidas y enviadas</option>
             </select>
           </label>
 

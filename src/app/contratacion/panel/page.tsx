@@ -52,7 +52,8 @@ function EnlaceDocumento({ d }: { d: DocumentoPorGestionar }) {
   );
 }
 
-function TarjetaDocumentos({ titulo, icon, tono, descripcion, total, docs, vacio }: {
+function TarjetaDocumentos({ id, titulo, icon, tono, descripcion, total, docs, vacio }: {
+  id: string;
   titulo: string;
   icon: typeof UserPlus;
   tono: "acento" | "verde";
@@ -62,7 +63,7 @@ function TarjetaDocumentos({ titulo, icon, tono, descripcion, total, docs, vacio
   vacio: string;
 }) {
   return (
-    <TarjetaTablero className="lg:col-span-6" icon={icon} tono={tono} titulo={titulo} descripcion={descripcion} contador={total} sinRelleno>
+    <TarjetaTablero id={id} className="lg:col-span-6" icon={icon} tono={tono} titulo={titulo} descripcion={descripcion} contador={total} sinRelleno>
       {docs.length === 0 ? (
         <VacioTablero>{vacio}</VacioTablero>
       ) : (
@@ -104,10 +105,10 @@ export default async function PanelPendientesGeconPage() {
       <RejillaIndicadores>
         <Indicador icon={PenLine} valor={p.firmas.listos} etiqueta="Por firmar ahora" tono="rojo" href="/contratacion/buzon" />
         <Indicador icon={Hourglass} valor={esperando} etiqueta="Esperando turno" tono="ambar" href="/contratacion/buzon" />
-        {p.sinFirmante.aplica && <Indicador icon={UserPlus} valor={p.sinFirmante.total} etiqueta="Sin firmante" tono="acento" />}
-        {p.porValidar.aplica && <Indicador icon={BadgeCheck} valor={p.porValidar.total} etiqueta="Por validar" tono="verde" />}
-        <Indicador icon={CalendarClock} valor={p.informes.total} etiqueta="Informes por radicar" tono="acento" />
-        {gestiona && <Indicador icon={UserX} valor={p.sinContratista} etiqueta="Sin contratista" tono="neutro" href="/contratacion/expedientes" />}
+        {p.sinFirmante.aplica && <Indicador icon={UserPlus} valor={p.sinFirmante.total} etiqueta="Sin firmante" tono="acento" href="#sin-firmante" />}
+        {p.porValidar.aplica && <Indicador icon={BadgeCheck} valor={p.porValidar.total} etiqueta="Por validar" tono="verde" href="#por-validar" />}
+        <Indicador icon={CalendarClock} valor={p.informes.total} etiqueta="Informes por radicar" tono="acento" href="#informes" />
+        {gestiona && <Indicador icon={UserX} valor={p.sinContratista} etiqueta="Sin contratista" tono="neutro" href="/contratacion/expedientes?contratista=sin" />}
       </RejillaIndicadores>
 
       <RejillaTarjetas>
@@ -178,6 +179,7 @@ export default async function PanelPendientesGeconPage() {
 
         {p.sinFirmante.aplica && (
           <TarjetaDocumentos
+            id="sin-firmante"
             titulo="Sin firmante asignado"
             icon={UserPlus}
             tono="acento"
@@ -190,6 +192,7 @@ export default async function PanelPendientesGeconPage() {
 
         {p.porValidar.aplica && (
           <TarjetaDocumentos
+            id="por-validar"
             titulo="Por validar"
             icon={BadgeCheck}
             tono="verde"
@@ -201,6 +204,7 @@ export default async function PanelPendientesGeconPage() {
         )}
 
         <TarjetaTablero
+          id="informes"
           className="lg:col-span-6"
           icon={CalendarClock}
           tono="ambar"

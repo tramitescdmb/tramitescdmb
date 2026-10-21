@@ -11,6 +11,9 @@ export type FiltrosCorrespondencia = {
   serieId?: string;
   vencimiento?: string;
   despacho?: string;
+  asignadas?: string;
+  pendiente?: string;
+  usuarioId?: string;
   orden?: string;
   page?: string;
   vista?: string;
@@ -127,6 +130,13 @@ export function construirWhereCorrespondencia(
 ): Prisma.ComunicacionWhereInput {
   const and: Prisma.ComunicacionWhereInput[] = [];
   if (esTipoValido(f.tipo)) and.push({ tipo: f.tipo });
+  if (f.tipo === "EXTERNA") and.push({ tipo: { in: ["RECIBIDA", "ENVIADA"] } });
+  if (f.asignadas === "mi" && f.usuarioId) {
+    and.push({ estado: { in: ESTADOS_ABIERTOS_TERMINO }, distribuciones: { some: { usuarioId: f.usuarioId, activa: true } } });
+  }
+  if (f.pendiente === "responder") {
+    and.push({ OR: [{ tipo: "INTERNA", fechaVencimiento: { not: null } }, { tipo: { not: "INTERNA" }, respuestaTexto: null }] });
+  }
   if (f.q?.trim()) {
     for (const { texto, excluir } of parseConsultaBusqueda(f.q)) {
       and.push(excluir ? clausulaExcluirBusqueda(texto) : { OR: camposBusqueda(texto) });
