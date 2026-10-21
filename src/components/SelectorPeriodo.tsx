@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { CalendarRange, X } from "lucide-react";
 
-export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: string; hastaActual?: string }) {
+export function SelectorPeriodo({ desdeActual, hastaActual, compacto }: { desdeActual?: string; hastaActual?: string; compacto?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -34,7 +34,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-stone-200 bg-white shadow-soft px-4 py-3">
+    <div className={compacto ? "flex flex-wrap items-center gap-2" : "flex flex-wrap items-center gap-2.5 rounded-2xl border border-stone-200 bg-white shadow-soft px-4 py-3"}>
       <span className="flex items-center gap-1.5 text-xs font-medium text-stone-500">
         <CalendarRange className="h-4 w-4 text-cdmb-600" aria-hidden />
         Período
@@ -73,7 +73,7 @@ export function SelectorPeriodo({ desdeActual, hastaActual }: { desdeActual?: st
           Ver total
         </button>
       ) : (
-        <span className="text-xs text-stone-400">Histórico completo</span>
+        !compacto && <span className="text-xs text-stone-400">Histórico completo</span>
       )}
     </div>
   );

@@ -83,3 +83,10 @@ main:fullscreen {
   overflow-y: auto;
   background-color: #f5f7f6;
 }
+
+main:has([data-tablero]) .encabezado-modulo {
+  display: none;
+}
+main:has([data-tablero]) .encabezado-modulo ~ :not(.encabezado-modulo) {
+  margin-top: 0 !important;
+}

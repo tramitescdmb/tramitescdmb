@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Archive, Briefcase, CalendarCheck, CalendarDays, CircleCheck, FileBadge, FolderOpen, Inbox, Link2, Mail, MessageSquareWarning } from "lucide-react";
+import { Archive, Briefcase, CalendarCheck, CalendarDays, CircleCheck, FileBadge, FolderOpen, Inbox, LayoutGrid, LibraryBig, Link2, Mail, MessageSquareWarning, PieChart, TrendingUp } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { tableroTramites, tableroContratos } from "@/lib/tablero-general";
 import { estiloEstado } from "@/lib/estados-expediente-estilo";
@@ -9,9 +9,9 @@ import { Dona } from "@/components/charts/Dona";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { obtenerSeccionesAlertas } from "@/lib/alertas-landing";
 import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
-import { BandaTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero } from "@/components/tablero";
-import { SelectorTablero, AccionesTablero, type OpcionTablero } from "@/components/inicio/SelectorTablero";
-import { opcionesTablero, tablerosDeModulo } from "@/lib/tableros";
+import { FilaTablero, Indicador, ListaTablero, TarjetaTablero } from "@/components/tablero";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
+import { tablerosDeModulo } from "@/lib/tableros";
 import type { SeccionAlertasModulo } from "@/lib/alertas-landing";
 import { sumarDias } from "@/lib/planeador";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
@@ -66,15 +66,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const visitasHoy = agenda ? agenda.visitas.filter((v) => v.dia === hoy && v.estado === "PROGRAMADA").length : 0;
   const visitasSemana = agenda && hoy ? agenda.visitas.filter((v) => v.dia >= hoy && v.dia < sumarDias(hoy, 7) && v.estado === "PROGRAMADA").length : 0;
   const modulos = tablerosDeModulo(permisos);
-  const opciones: OpcionTablero[] = opcionesTablero(permisos);
 
   return (
-    <div className={`mx-auto space-y-3 bg-[#f5f7f6] ${general ? "max-w-7xl" : "max-w-6xl"}`}>
-      <BandaTablero className="flex flex-wrap items-center justify-between gap-3 !py-3">
-        <SelectorTablero opciones={opciones} actual={general ? "/dashboard" : "/"} />
-        {general ? (
-          <AccionesTablero />
-        ) : (
+    <MarcoDashboard
+      actual={general ? "/dashboard" : "/"}
+      derecha={
+        general ? undefined : (
         <p className="text-sm text-stone-500">
           {secciones.length === 0
             ? "Sin acceso a módulos. Si debería tenerlo, contacte a un administrador."
@@ -82,12 +79,13 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               ? "Sin pendientes en sus módulos."
               : `${totalGeneral.toLocaleString("es-CO")} pendiente${totalGeneral === 1 ? "" : "s"} entre sus módulos.`}
         </p>
-        )}
-      </BandaTablero>
+        )
+      }
+    >
 
       {general ? (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <RejillaIndicadores>
             <Indicador icon={Inbox} valor={totalGeneral} etiqueta="Pendientes" tono="acento" />
             {secciones.map((s) => (
               <Indicador key={s.modulo} icon={Inbox} valor={s.total} etiqueta={`Pendientes ${NOMBRE_CORTO[s.modulo]}`} tono={TONO_SECCION[s.modulo]} href={s.masLink} />
@@ -102,15 +100,15 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
             {seguimiento && <Indicador icon={Briefcase} valor={seguimiento.enEjecucion} etiqueta="Contratos en ejecución" tono="violeta" href="/contratacion/panel" />}
             {agenda && <Indicador icon={CalendarCheck} valor={visitasHoy} etiqueta="Visitas hoy" tono="cdmb" href="/planeador" />}
             {agenda && <Indicador icon={CalendarDays} valor={visitasSemana} etiqueta="Visitas próximos 7 días" tono="cielo" href="/planeador" />}
-          </div>
+          </RejillaIndicadores>
 
-          <div className="grid items-start gap-3 lg:grid-cols-12">
+          <RejillaTarjetas>
             {tramites && (
               <>
-                <TarjetaTablero className="lg:col-span-8" titulo="Evolución de expedientes en los últimos 12 meses" descripcion="Radicados y cerrados por mes, Trámites ambientales 2.0.">
+                <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Evolución de expedientes en los últimos 12 meses" descripcion="Radicados y cerrados por mes, Trámites ambientales 2.0.">
                   <LineasMensuales series={SERIES_EVOLUCION} datos={tramites.evolucion} vacio="Sin expedientes radicados en los últimos 12 meses." />
                 </TarjetaTablero>
-                <TarjetaTablero className="lg:col-span-4" titulo="Expedientes por estado" contador={tramites.total}>
+                <TarjetaTablero className="lg:col-span-4" icon={PieChart} tono="cielo" titulo="Expedientes por estado" contador={tramites.total}>
                   <Dona
                     unidad="expedientes"
                     vacio="Sin expedientes."
@@ -122,13 +120,13 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                     }))}
                   />
                 </TarjetaTablero>
-                <TarjetaTablero className="lg:col-span-4" titulo="Trámites más solicitados" descripcion="Expedientes por tipo de trámite.">
+                <TarjetaTablero className="lg:col-span-4" icon={LibraryBig} titulo="Trámites más solicitados" descripcion="Expedientes por tipo de trámite.">
                   <BarChartHorizontal data={tramites.porTramite} emptyMessage="Sin expedientes." />
                 </TarjetaTablero>
               </>
             )}
             {contratosPorEtapa && (
-              <TarjetaTablero className="lg:col-span-4" titulo="Contratos abiertos por etapa">
+              <TarjetaTablero className="lg:col-span-4" icon={Briefcase} tono="violeta" titulo="Contratos abiertos por etapa">
                 <Dona
                   unidad="contratos"
                   vacio="Sin contratos abiertos."
@@ -141,7 +139,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               </TarjetaTablero>
             )}
             {modulos.length > 0 && (
-              <TarjetaTablero className="lg:col-span-4" titulo="Tableros de módulo" sinRelleno>
+              <TarjetaTablero className="lg:col-span-4" icon={LayoutGrid} tono="neutro" titulo="Tableros de módulo" sinRelleno>
                 <ListaTablero>
                   {modulos.map((m) => (
                     <FilaTablero key={m.href} href={m.href} icon={ICONO_MODULO[m.href]} titulo={m.label} />
@@ -149,7 +147,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 </ListaTablero>
               </TarjetaTablero>
             )}
-          </div>
+          </RejillaTarjetas>
         </>
       ) : (
         <>
@@ -174,6 +172,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           {agenda && <MiniPlaneador agenda={agenda} planificador={planificador} />}
         </>
       )}
-    </div>
+    </MarcoDashboard>
   );
 }

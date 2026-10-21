@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { BarraDashboard } from "@/components/inicio/BarraDashboard";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { Inbox, FileStack, Layers, CalendarClock, TrendingUp, BarChart3, Activity, Users } from "lucide-react";
 import { vitalConfigurado } from "@/lib/vital";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -8,12 +8,12 @@ import { getVitalDashboard, getVitalOpcionesFiltro } from "@/lib/vital-data";
 import { SectionHelp } from "@/components/Field";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
 import { AreaAnual } from "@/components/charts/AreaAnual";
-import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { LineasMensuales } from "@/components/charts/LineasMensuales";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
-import { CabeceraTablero, EnlaceTablero, Indicador, PieTablero, TarjetaTablero } from "@/components/tablero";
+import { EnlaceTablero, Indicador, PieTablero, TarjetaTablero } from "@/components/tablero";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 
@@ -31,35 +31,31 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
 
   const tramitesSeleccionados = sp.tramite?.split(",").map((x) => parseInt(x, 10)).filter(Number.isFinite);
   const [d, opciones] = await Promise.all([getVitalDashboard(rango, tramitesSeleccionados), getVitalOpcionesFiltro()]);
-  const selector = (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+  const filtros = (
+    <>
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} compacto />
       <SelectorTramites
         opciones={opciones.tramites.map((t) => ({ valor: String(t.id), etiqueta: t.nombre, total: t.total }))}
         paramName="tramite"
         titulo="Trámite"
       />
-    </div>
+    </>
   );
   if (d.total === 0) {
     return (
-      <div className="space-y-4">
-        {selector}
+      <MarcoDashboard actual="/vital/dashboard" filtros={filtros}>
         <p className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center text-sm text-stone-600">
           {rango || (tramitesSeleccionados && tramitesSeleccionados.length > 0)
             ? "No hay solicitudes de VITAL con estos filtros."
             : "Todavía no se ha traído ninguna solicitud de VITAL. Un administrador puede sincronizar desde la pestaña Solicitudes."}
         </p>
-      </div>
+      </MarcoDashboard>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <BarraDashboard actual="/vital/dashboard" />
-      {selector}
-
-      <CabeceraTablero antetitulo={rango ? etiqueta : "Histórico completo"} titulo="Solicitudes de VITAL" descripcion="Solicitudes radicadas en VITAL para la jurisdicción de la CDMB.">
+    <MarcoDashboard actual="/vital/dashboard" filtros={filtros}>
+      <RejillaIndicadores>
         <Indicador icon={Inbox} valor={num(d.total)} etiqueta="Solicitudes traídas" tono="cdmb" />
         <Indicador icon={Layers} valor={num(d.tramitesDistintos)} etiqueta="Tipos de trámite" tono="cielo" />
         <Indicador icon={FileStack} valor={num(d.conDocs)} etiqueta="Con documentos" tono="ambar" />
@@ -69,27 +65,24 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
           etiqueta="Rango de radicación"
           tono="neutro"
         />
-      </CabeceraTablero>
+      </RejillaIndicadores>
 
-      <div className="grid grid-cols-1 gap-4">
-        <TarjetaTablero icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.`}>
-          <AreaTrendChart data={d.serieMensual} emptyMessage="Sin datos mensuales." />
+      <RejillaTarjetas>
+        <TarjetaTablero className={d.serieAnual.length >= 2 ? "lg:col-span-8" : "lg:col-span-12"} icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 24 meses"}, por fecha de radicación en VITAL.`}>
+          <LineasMensuales series={[{ nombre: "Radicadas", color: "#2a78d6" }]} datos={d.serieMensual.map((p) => ({ etiqueta: p.label, valores: [p.value] }))} vacio="Sin datos mensuales." />
         </TarjetaTablero>
         {d.serieAnual.length >= 2 && (
-          <TarjetaTablero icon={BarChart3} tono="cielo" titulo="Por año" descripcion="Según la fecha que reporta VITAL.">
+          <TarjetaTablero className="lg:col-span-4" icon={BarChart3} tono="cielo" titulo="Por año" descripcion="Según la fecha que reporta VITAL.">
             <AreaAnual data={d.serieAnual} emptyMessage="Sin datos por año." />
           </TarjetaTablero>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <TarjetaTablero icon={Layers} titulo="Por tipo de trámite" descripcion="Solicitudes de cada trámite VITAL.">
+        <TarjetaTablero className="lg:col-span-6" icon={Layers} titulo="Por tipo de trámite" descripcion="Solicitudes de cada trámite VITAL.">
           <BarChartHorizontal data={d.porTramite} emptyMessage="Sin datos." />
         </TarjetaTablero>
-        <TarjetaTablero icon={Activity} tono="violeta" titulo="Por actividad" descripcion="Las 10 actividades más frecuentes en el flujo de VITAL.">
+        <TarjetaTablero className="lg:col-span-6" icon={Activity} tono="violeta" titulo="Por actividad" descripcion="Las 10 actividades más frecuentes en el flujo de VITAL.">
           <BarChartHorizontal data={d.porActividad} emptyMessage="Sin datos." />
         </TarjetaTablero>
-      </div>
+      </RejillaTarjetas>
 
       {d.recurrentes.length > 0 && (
         <TarjetaTablero icon={Users} tono="ambar" titulo="Solicitantes recurrentes" descripcion="Quiénes más radican en VITAL, por identificación." sinRelleno>
@@ -124,6 +117,6 @@ export default async function VitalDashboardPage({ searchParams }: { searchParam
         </span>
         <EnlaceTablero href="/vital">Ver solicitudes</EnlaceTablero>
       </PieTablero>
-    </div>
+    </MarcoDashboard>
   );
 }

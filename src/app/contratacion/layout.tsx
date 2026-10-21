@@ -17,7 +17,7 @@ export default async function ContratacionLayout({ children }: { children: React
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="encabezado-modulo">
         <div className="flex flex-wrap items-center gap-2">
           <Briefcase className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">GECON</h1>
@@ -36,21 +36,25 @@ export default async function ContratacionLayout({ children }: { children: React
         </div>
       </div>
 
-      <ContratacionTabs
-        pendientesFirma={pendientesFirma}
-        permitido={{
-          administrar: puedeGestionarContratistas(permisos),
-          crearExpediente: puedeCrearExpedienteContractual(permisos),
-          catalogo: puedeAdministrarCatalogoContratacion(permisos),
-          verContratistas: puedeVerRegistroContratistas(permisos),
-          soloAdministrador: puedeAdministrarContratacion(permisos),
-          gestion: puedeAdministrarGecon(permisos),
-          tableroContratos: puedeVerTableroContratos(permisos),
-          administradorSistema: permisos.esAdmin,
-        }}
-      />
+      <div className="encabezado-modulo">
+        <ContratacionTabs
+          pendientesFirma={pendientesFirma}
+          permitido={{
+            administrar: puedeGestionarContratistas(permisos),
+            crearExpediente: puedeCrearExpedienteContractual(permisos),
+            catalogo: puedeAdministrarCatalogoContratacion(permisos),
+            verContratistas: puedeVerRegistroContratistas(permisos),
+            soloAdministrador: puedeAdministrarContratacion(permisos),
+            gestion: puedeAdministrarGecon(permisos),
+            tableroContratos: puedeVerTableroContratos(permisos),
+            administradorSistema: permisos.esAdmin,
+          }}
+        />
+      </div>
 
-      <MigaGecon />
+      <div className="encabezado-modulo">
+        <MigaGecon />
+      </div>
 
       <div>{children}</div>
     </div>

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { BarraDashboard } from "@/components/inicio/BarraDashboard";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { LibraryBig, FolderOpen, Clock3, CheckCircle2, XCircle, Percent, PenLine, FileSignature, MapPin, TrendingUp } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpediente";
 import { BarChartHorizontal } from "@/components/charts/BarChartHorizontal";
-import { AreaTrendChart } from "@/components/charts/AreaTrendChart";
+import { LineasMensuales } from "@/components/charts/LineasMensuales";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -19,7 +19,7 @@ import { MisPendientes } from "@/components/MisPendientes";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
-import { CabeceraTablero, Chip, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
+import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;
@@ -44,19 +44,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const resumenFirmas = resumirPendientesFirma(buzonFirmas);
 
   return (
-    <div className="space-y-4">
-      <BarraDashboard actual="/tramites-ambientales" />
-      <CabeceraTablero
-        antetitulo={rango ? etiqueta : "Histórico completo"}
-        titulo="Trámites y expedientes"
-        descripcion={permisos?.esAdmin ? "Resumen de los trámites ambientales de la CDMB." : "Resumen de los trámites a los que tiene acceso."}
-        acciones={
-          <>
-            <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
-            <SelectorTramites opciones={opcionesTramite} titulo="Trámites" />
-          </>
-        }
-      >
+    <MarcoDashboard
+      actual="/tramites-ambientales"
+      filtros={
+        <>
+          <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} compacto />
+          <SelectorTramites opciones={opcionesTramite} titulo="Trámites" />
+        </>
+      }
+    >
+      <RejillaIndicadores>
         <Indicador icon={LibraryBig} valor={d.totalTramites} etiqueta="Trámites disponibles" tono="cdmb" href="/tramites" />
         <Indicador icon={FolderOpen} valor={d.totalExpedientes} etiqueta="Expedientes" tono="neutro" href="/expedientes" />
         <Indicador icon={Clock3} valor={d.activos} etiqueta="En curso" tono="ambar" href="/expedientes?estado=EN_TRAMITE" />
@@ -69,7 +66,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           tono="cielo"
           titulo={d.tasaAprobacion === null ? "Aún no hay expedientes decididos." : "Sobre los expedientes ya decididos (aprobados y negados o rechazados)."}
         />
-      </CabeceraTablero>
+      </RejillaIndicadores>
 
       {resumenFirmas.total > 0 && (
         <TarjetaTablero
@@ -111,20 +108,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       <MisPendientes resumen={pendientes} visitas={visitas} />
 
-      <TarjetaTablero icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.`}>
-        <AreaTrendChart data={d.serieMensual} emptyMessage="Todavía no hay expedientes radicados para mostrar una tendencia." />
+      <RejillaTarjetas>
+      <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Solicitudes radicadas por mes" descripcion={`${rango ? etiqueta : "Últimos 12 meses"}, por fecha de radicación del expediente.`}>
+        <LineasMensuales
+          series={[{ nombre: "Radicadas", color: "#2a78d6" }]}
+          datos={d.serieMensual.map((p) => ({ etiqueta: p.label, valores: [p.value] }))}
+          vacio="Todavía no hay expedientes radicados para mostrar una tendencia."
+        />
+      </TarjetaTablero>
+      <TarjetaTablero className="lg:col-span-4" icon={MapPin} tono="cielo" titulo="Municipios con más solicitudes" descripcion="Municipio de la jurisdicción donde se adelanta el trámite.">
+        <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
+      </TarjetaTablero>
+      <TarjetaTablero className="lg:col-span-4" icon={LibraryBig} titulo="Trámites más solicitados" descripcion={`Trámites, de los ${d.totalTramites}, con más expedientes.`}>
+        <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
       </TarjetaTablero>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <TarjetaTablero icon={MapPin} tono="cielo" titulo="Municipios con más solicitudes" descripcion="Municipio de la jurisdicción donde se adelanta el trámite.">
-          <BarChartHorizontal data={d.topMunicipios} emptyMessage="Todavía no hay expedientes con municipio registrado." />
-        </TarjetaTablero>
-        <TarjetaTablero icon={LibraryBig} titulo="Trámites más solicitados" descripcion={`Trámites, de los ${d.totalTramites}, con más expedientes.`}>
-          <BarChartHorizontal data={d.topTramites} emptyMessage="Todavía no hay expedientes radicados." />
-        </TarjetaTablero>
-      </div>
-
-      <TarjetaTablero icon={FolderOpen} titulo="Actividad reciente" accion={<EnlaceTablero href="/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
+      <TarjetaTablero className="lg:col-span-8" icon={FolderOpen} titulo="Actividad reciente" accion={<EnlaceTablero href="/expedientes">Ver todos</EnlaceTablero>} sinRelleno>
         {d.recientes.length === 0 ? (
           <VacioTablero>Todavía no hay expedientes radicados.</VacioTablero>
         ) : (
@@ -153,6 +152,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </ListaTablero>
         )}
       </TarjetaTablero>
-    </div>
+      </RejillaTarjetas>
+    </MarcoDashboard>
   );
 }

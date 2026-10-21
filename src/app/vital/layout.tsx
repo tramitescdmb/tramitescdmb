@@ -17,7 +17,7 @@ export default async function VitalLayout({ children }: { children: ReactNode })
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="encabezado-modulo">
         <div className="flex flex-wrap items-center gap-2">
           <Link2 className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">VITAL</h1>
@@ -32,7 +32,9 @@ export default async function VitalLayout({ children }: { children: ReactNode })
         </div>
       </div>
 
-      <VitalTabs permitido={permitido} />
+      <div className="encabezado-modulo">
+        <VitalTabs permitido={permitido} />
+      </div>
 
       {children}
     </div>

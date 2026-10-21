@@ -55,7 +55,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
       >
         Saltar al contenido
       </a>
-      <div>
+      <div className="encabezado-modulo">
         <div className="flex flex-wrap items-center gap-2">
           <Mail className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">SGDEA — Correspondencia y Archivo</h1>
@@ -101,9 +101,13 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
         </div>
       </div>
 
-      <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} memorandos={memorandos} />
+      <div className="encabezado-modulo">
+        <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} memorandos={memorandos} />
+      </div>
 
-      <MigaSgdea />
+      <div className="encabezado-modulo">
+        <MigaSgdea />
+      </div>
 
       <div id="contenido-sgdea">{children}</div>
     </div>

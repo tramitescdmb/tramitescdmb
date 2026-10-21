@@ -1,15 +1,20 @@
 import Link from "next/link";
-import { BarraDashboard } from "@/components/inicio/BarraDashboard";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
+import { Dona } from "@/components/charts/Dona";
+import { tableroContratos } from "@/lib/tablero-general";
+import { veSeguimientoContratos } from "@/lib/contratos-landing";
+import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { identificacionContrato } from "@/lib/codigo-proceso";
-import { CabeceraTablero, Chip, EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
-import { fechaHoyLarga } from "@/lib/saludo";
+import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { textoEsperaA, textoRecordatorio } from "@/components/EsperaTurnoFirma";
+
+const COLOR_ETAPA: Record<string, string> = { PRECONTRACTUAL: "#2a78d6", CONTRACTUAL: "#d16f00", POSTCONTRACTUAL: "#4a3aa7" };
 
 const ETIQUETA_ROL: Record<string, string> = { FIRMA: "Debe firmar", VISTO_BUENO: "Visto bueno" };
 
@@ -55,7 +60,7 @@ function TarjetaDocumentos({ titulo, icon, tono, descripcion, total, docs, vacio
   vacio: string;
 }) {
   return (
-    <TarjetaTablero icon={icon} tono={tono} titulo={titulo} descripcion={descripcion} contador={total} sinRelleno>
+    <TarjetaTablero className="lg:col-span-6" icon={icon} tono={tono} titulo={titulo} descripcion={descripcion} contador={total} sinRelleno>
       {docs.length === 0 ? (
         <VacioTablero>{vacio}</VacioTablero>
       ) : (
@@ -86,23 +91,26 @@ export default async function PanelPendientesGeconPage() {
   if (!puedeAccederContratacion(permisos)) redirect("/");
 
   const gestiona = puedeGestionarContratistas(permisos);
-  const p = await obtenerTrabajoPendienteContratacion(session.userId, permisos, gestiona);
+  const [p, porEtapa] = await Promise.all([
+    obtenerTrabajoPendienteContratacion(session.userId, permisos, gestiona),
+    veSeguimientoContratos(permisos) ? tableroContratos() : Promise.resolve(null),
+  ]);
   const esperando = p.firmas.total - p.firmas.listos;
 
   return (
-    <section className="space-y-4">
-      <BarraDashboard actual="/contratacion/panel" />
-      <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Por tipo y agrupados por contrato.">
+    <MarcoDashboard actual="/contratacion/panel">
+      <RejillaIndicadores>
         <Indicador icon={PenLine} valor={p.firmas.listos} etiqueta="Por firmar ahora" tono="rojo" href="/contratacion/buzon" />
         <Indicador icon={Hourglass} valor={esperando} etiqueta="Esperando turno" tono="ambar" href="/contratacion/buzon" />
         {p.sinFirmante.aplica && <Indicador icon={UserPlus} valor={p.sinFirmante.total} etiqueta="Sin firmante" tono="acento" />}
         {p.porValidar.aplica && <Indicador icon={BadgeCheck} valor={p.porValidar.total} etiqueta="Por validar" tono="verde" />}
         <Indicador icon={CalendarClock} valor={p.informes.total} etiqueta="Informes por radicar" tono="acento" />
         {gestiona && <Indicador icon={UserX} valor={p.sinContratista} etiqueta="Sin contratista" tono="neutro" href="/contratacion/expedientes" />}
-      </CabeceraTablero>
+      </RejillaIndicadores>
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+      <RejillaTarjetas>
         <TarjetaTablero
+          className={porEtapa ? "lg:col-span-8" : "lg:col-span-6"}
           icon={PenLine}
           tono="rojo"
           titulo="Documentos por firmar o revisar"
@@ -138,6 +146,21 @@ export default async function PanelPendientesGeconPage() {
           )}
         </TarjetaTablero>
 
+        {porEtapa && (
+          <TarjetaTablero className="lg:col-span-4" titulo="Contratos abiertos por etapa" accion={<EnlaceTablero href="/contratacion/expedientes">Ver expedientes</EnlaceTablero>}>
+            <Dona
+              unidad="contratos"
+              vacio="Sin contratos abiertos."
+              segmentos={porEtapa.map((e) => ({
+                etiqueta: ETIQUETA_ETAPA[e.clave as keyof typeof ETIQUETA_ETAPA] ?? e.clave,
+                valor: e.valor,
+                color: COLOR_ETAPA[e.clave] ?? "#76847a",
+                href: `/contratacion/expedientes?etapa=${e.clave}`,
+              }))}
+            />
+          </TarjetaTablero>
+        )}
+
         {p.sinFirmante.aplica && (
           <TarjetaDocumentos
             titulo="Sin firmante asignado"
@@ -163,6 +186,7 @@ export default async function PanelPendientesGeconPage() {
         )}
 
         <TarjetaTablero
+          className="lg:col-span-6"
           icon={CalendarClock}
           tono="ambar"
           titulo="Informes de supervisión por radicar"
@@ -191,7 +215,7 @@ export default async function PanelPendientesGeconPage() {
             </ListaTablero>
           )}
         </TarjetaTablero>
-      </div>
-    </section>
+      </RejillaTarjetas>
+    </MarcoDashboard>
   );
 }

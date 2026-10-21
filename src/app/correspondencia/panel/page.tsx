@@ -1,15 +1,33 @@
 import Link from "next/link";
-import { BarraDashboard } from "@/components/inicio/BarraDashboard";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
+import { LineasMensuales } from "@/components/charts/LineasMensuales";
+import { Dona } from "@/components/charts/Dona";
+import { tableroCorrespondencia } from "@/lib/tablero-general";
 import { redirect } from "next/navigation";
-import { Clock, AlertTriangle, PenLine, ListChecks, Inbox } from "lucide-react";
+import { Clock, AlertTriangle, PenLine, ListChecks, Inbox, Archive, TrendingUp } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
 import { obtenerPanelMiTrabajo, ETIQUETA_ESTADO_PANEL } from "@/lib/correspondencia-panel";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
-import { CabeceraTablero, EnlaceTablero, Indicador, TarjetaTablero, VacioTablero } from "@/components/tablero";
-import { fechaHoyLarga } from "@/lib/saludo";
+import { EnlaceTablero, Indicador, TarjetaTablero, VacioTablero } from "@/components/tablero";
+
+const SERIES_TIPO = [
+  { nombre: "Recibidas", color: "#2a78d6" },
+  { nombre: "Enviadas", color: "#d16f00" },
+  { nombre: "Memorandos", color: "#4a3aa7" },
+];
+
+const COLOR_ESTADO: Record<string, string> = {
+  RADICADA: "#2a78d6",
+  EN_REPARTO: "#4a3aa7",
+  ASIGNADA: "#0f8f8a",
+  EN_TRAMITE: "#d16f00",
+  INFORMACION_ADICIONAL_REQUERIDA: "#c2410c",
+  RESPONDIDA: "#038f67",
+  ARCHIVADA: "#76847a",
+};
 
 export default async function PanelMiTrabajoPage() {
   const session = await getSession();
@@ -17,22 +35,42 @@ export default async function PanelMiTrabajoPage() {
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederCorrespondencia(permisos)) redirect("/");
 
-  const [p, calendario] = await Promise.all([
+  const [p, calendario, resumen] = await Promise.all([
     obtenerPanelMiTrabajo(session.userId, permisos),
     getCalendarioLaboral(),
+    tableroCorrespondencia(),
   ]);
 
   return (
-    <section className="space-y-4">
-      <BarraDashboard actual="/correspondencia/panel" />
-      <CabeceraTablero antetitulo={fechaHoyLarga()} titulo="Pendientes" descripcion="Radicados asignados a usted que siguen abiertos.">
+    <MarcoDashboard actual="/correspondencia/panel">
+      <RejillaIndicadores>
         <Indicador icon={ListChecks} valor={p.mis.total} etiqueta="Asignados" tono="cdmb" />
         <Indicador icon={PenLine} valor={p.mis.porResponder} etiqueta="Por responder" tono="cielo" />
         <Indicador icon={Clock} valor={p.mis.porVencer} etiqueta="Por vencer (3 días)" tono="ambar" />
         <Indicador icon={AlertTriangle} valor={p.mis.vencidas} etiqueta="Vencidas" tono="rojo" alerta={p.mis.vencidas > 0} />
-      </CabeceraTablero>
+        <Indicador icon={Archive} valor={p.global.porVencer} etiqueta="Por vencer en la Corporación" tono="neutro" href="/correspondencia?vencimiento=por_vencer" />
+        <Indicador icon={AlertTriangle} valor={p.global.vencidas} etiqueta="Vencidas en la Corporación" tono="violeta" href="/correspondencia?vencimiento=vencidas" />
+      </RejillaIndicadores>
+
+      <RejillaTarjetas>
+      <TarjetaTablero className="lg:col-span-8" icon={TrendingUp} tono="acento" titulo="Radicados por mes" descripcion="Últimos 12 meses, por fecha de radicación.">
+        <LineasMensuales series={SERIES_TIPO} datos={resumen.evolucion} vacio="Sin radicados en los últimos 12 meses." />
+      </TarjetaTablero>
+      <TarjetaTablero className="lg:col-span-4" titulo="Comunicaciones por estado" contador={resumen.porEstado.reduce((t, e) => t + e.valor, 0)}>
+        <Dona
+          unidad="comunicaciones"
+          vacio="Sin comunicaciones."
+          segmentos={resumen.porEstado.map((e) => ({
+            etiqueta: ETIQUETA_ESTADO_PANEL[e.clave as keyof typeof ETIQUETA_ESTADO_PANEL] ?? e.clave,
+            valor: e.valor,
+            color: COLOR_ESTADO[e.clave] ?? "#76847a",
+            href: `/correspondencia?estado=${e.clave}`,
+          }))}
+        />
+      </TarjetaTablero>
 
       <TarjetaTablero
+        className="lg:col-span-12"
         icon={Inbox}
         tono="cielo"
         titulo="Radicados asignados"
@@ -79,6 +117,7 @@ export default async function PanelMiTrabajoPage() {
           <VacioTablero>Sin radicados asignados pendientes.</VacioTablero>
         )}
       </TarjetaTablero>
+      </RejillaTarjetas>
 
       {p.pendientesProceso > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -131,19 +170,6 @@ export default async function PanelMiTrabajoPage() {
         </div>
       )}
 
-      {(p.global.vencidas > 0 || p.global.porVencer > 0) && (
-        <p className="text-xs text-stone-400">
-          En toda la Corporación hay{" "}
-          <Link href="/correspondencia?vencimiento=vencidas" className="font-medium text-cdmb-700 hover:underline">
-            {p.global.vencidas.toLocaleString("es-CO")} vencidas
-          </Link>{" "}
-          y{" "}
-          <Link href="/correspondencia?vencimiento=por_vencer" className="font-medium text-cdmb-700 hover:underline">
-            {p.global.porVencer.toLocaleString("es-CO")} por vencer
-          </Link>
-          .
-        </p>
-      )}
-    </section>
+    </MarcoDashboard>
   );
 }

@@ -64,3 +64,25 @@ export async function tableroContratos() {
   });
   return porEtapa.map((e) => ({ clave: e.etapaActual as string, valor: e._count._all }));
 }
+
+export async function tableroCorrespondencia() {
+  const meses = ultimosMeses(12);
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1);
+  const [porEstado, recientes] = await Promise.all([
+    db.comunicacion.groupBy({ by: ["estado"], where: { estado: { not: "ANULADA" } }, _count: { _all: true } }),
+    db.comunicacion.findMany({ where: { estado: { not: "ANULADA" }, fechaRadicacion: { gte: desde } }, select: { tipo: true, fechaRadicacion: true } }),
+  ]);
+  const conteo = new Map<string, number[]>();
+  const indice = { RECIBIDA: 0, ENVIADA: 1, INTERNA: 2 } as const;
+  for (const c of recientes) {
+    const k = claveMes(c.fechaRadicacion);
+    const fila = conteo.get(k) ?? [0, 0, 0];
+    fila[indice[c.tipo]] += 1;
+    conteo.set(k, fila);
+  }
+  return {
+    porEstado: porEstado.map((e) => ({ clave: e.estado as string, valor: e._count._all })),
+    evolucion: meses.map((m) => ({ etiqueta: m.etiqueta, valores: conteo.get(m.clave) ?? [0, 0, 0] })),
+  };
+}

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { BarraDashboard } from "@/components/inicio/BarraDashboard";
+import { MarcoDashboard, RejillaIndicadores, RejillaTarjetas } from "@/components/inicio/BarraDashboard";
 import { FileCheck2, Stamp, CalendarClock, RefreshCw, Timer, Scale, Hash, BarChart3, Layers, MapPin, ListChecks, ScrollText } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
@@ -11,7 +11,7 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
 import { formatearFecha as fecha, formatearFechaHora as fechaHora } from "@/lib/fecha";
-import { CabeceraTablero, EnlaceTablero, FilaTablero, Indicador, ListaTablero, PieTablero, TarjetaTablero } from "@/components/tablero";
+import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, PieTablero, TarjetaTablero } from "@/components/tablero";
 
 const num = (v: number) => v.toLocaleString("es-CO");
 
@@ -22,7 +22,7 @@ export default async function HistoricoPanelPage({
 }) {
   const sp = await searchParams;
   const { ok, error } = sp;
-  const { rango, etiqueta } = resolverPeriodo(sp);
+  const { rango } = resolverPeriodo(sp);
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -41,15 +41,15 @@ export default async function HistoricoPanelPage({
   const tipos = sp.tipo?.split(",").filter(Boolean);
   const [d, opciones] = await Promise.all([getHistoricoDashboard(rango, tipos), getHistoricoOpcionesFiltro()]);
   const sinDatos = d.total === 0;
-  const selector = (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} />
+  const filtros = (
+    <>
+      <SelectorPeriodo desdeActual={sp.desde} hastaActual={sp.hasta} compacto />
       <SelectorTramites
         opciones={opciones.tipos.map((t) => ({ valor: t.codigo, etiqueta: t.nombre, total: t.total }))}
         paramName="tipo"
         titulo="Tipo de trámite"
       />
-    </div>
+    </>
   );
 
   const botonSync = esAdmin ? (
@@ -62,12 +62,9 @@ export default async function HistoricoPanelPage({
   ) : null;
 
   return (
-    <div className="space-y-4">
-      <BarraDashboard actual="/historico" />
+    <MarcoDashboard actual="/historico" filtros={filtros}>
       {ok && <div className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-
-      {selector}
 
       {sinDatos ? (
         <div className="rounded-2xl border border-stone-200 bg-white shadow-soft p-8 text-center">
@@ -81,7 +78,7 @@ export default async function HistoricoPanelPage({
         </div>
       ) : (
         <>
-          <CabeceraTablero antetitulo={rango ? etiqueta : "Histórico completo"} titulo="Resoluciones de SINCA 1.0" descripcion="Solicitudes resueltas en el sistema anterior, por fecha de la resolución de fondo.">
+          <RejillaIndicadores>
             <Indicador icon={FileCheck2} valor={num(d.total)} etiqueta="Solicitudes" tono="cdmb" />
             <Indicador icon={Scale} valor={num(d.aprobadas)} etiqueta="Trámites aprobados" tono="verde" />
             <Indicador icon={Stamp} valor={`${(d.tasaAprobacion * 100).toFixed(1)} %`} etiqueta="Tasa de aprobación" tono="cielo" />
@@ -99,26 +96,22 @@ export default async function HistoricoPanelPage({
               tono="neutro"
             />
             <Indicador icon={Hash} valor={num(d.conResolucion)} etiqueta="Con N.º de resolución" tono="violeta" />
-          </CabeceraTablero>
+          </RejillaIndicadores>
 
-          <TarjetaTablero icon={BarChart3} tono="acento" titulo="Solicitudes por año" descripcion="Pase el mouse para ver cualquier año.">
+          <RejillaTarjetas>
+          <TarjetaTablero className="lg:col-span-8" icon={BarChart3} tono="acento" titulo="Solicitudes por año" descripcion="Pase el mouse para ver cualquier año.">
             <AreaAnual data={d.serieAnual.map((s) => ({ anio: Number(s.label), valor: s.value }))} emptyMessage="Sin datos por año." />
           </TarjetaTablero>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <TarjetaTablero icon={Layers} titulo="Por tipo de trámite" descripcion="Los 10 tipos con más resoluciones.">
-              <BarChartHorizontal data={d.porTipo} emptyMessage="Sin datos." />
-            </TarjetaTablero>
-            <TarjetaTablero icon={MapPin} tono="cielo" titulo="Por municipio" descripcion="Los 10 municipios con más resoluciones.">
-              <BarChartHorizontal data={d.porMunicipio} emptyMessage="Sin datos." />
-            </TarjetaTablero>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <TarjetaTablero icon={ListChecks} tono="verde" titulo="Por estado" descripcion="Aprobadas, negadas, desistidas o sin permiso requerido.">
+            <TarjetaTablero className="lg:col-span-4" icon={ListChecks} tono="verde" titulo="Por estado" descripcion="Aprobadas, negadas, desistidas o sin permiso requerido.">
               <BarChartHorizontal data={d.porEstado} emptyMessage="Sin datos." />
             </TarjetaTablero>
-            <TarjetaTablero icon={ScrollText} tono="violeta" titulo="Últimas resoluciones" accion={<EnlaceTablero href="/historico/solicitudes">Ver todas</EnlaceTablero>} sinRelleno>
+            <TarjetaTablero className="lg:col-span-4" icon={Layers} titulo="Por tipo de trámite" descripcion="Los 10 tipos con más resoluciones.">
+              <BarChartHorizontal data={d.porTipo} emptyMessage="Sin datos." />
+            </TarjetaTablero>
+            <TarjetaTablero className="lg:col-span-4" icon={MapPin} tono="cielo" titulo="Por municipio" descripcion="Los 10 municipios con más resoluciones.">
+              <BarChartHorizontal data={d.porMunicipio} emptyMessage="Sin datos." />
+            </TarjetaTablero>
+            <TarjetaTablero className="lg:col-span-4" icon={ScrollText} tono="violeta" titulo="Últimas resoluciones" accion={<EnlaceTablero href="/historico/solicitudes">Ver todas</EnlaceTablero>} sinRelleno>
               <ListaTablero>
                 {d.recientes.map((r) => (
                   <FilaTablero
@@ -136,7 +129,7 @@ export default async function HistoricoPanelPage({
                 ))}
               </ListaTablero>
             </TarjetaTablero>
-          </div>
+          </RejillaTarjetas>
 
           <PieTablero>
             <span>
@@ -150,6 +143,6 @@ export default async function HistoricoPanelPage({
           </PieTablero>
         </>
       )}
-    </div>
+    </MarcoDashboard>
   );
 }
