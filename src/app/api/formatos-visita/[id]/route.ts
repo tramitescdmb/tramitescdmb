@@ -33,17 +33,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  await db.formatoVisita.update({
-    where: { id },
-    data: {
-      codigo,
-      nombre,
-      titulo,
-      versionDocumento: textoLimpio(body.versionDocumento, 20) || "1",
-      fechaDocumento: textoLimpio(body.fechaDocumento, 20) || null,
-      tramites,
-      activo,
-    },
-  });
+  const porDefecto = activo && body.porDefecto === true;
+  await db.$transaction([
+    ...(porDefecto ? [db.formatoVisita.updateMany({ where: { porDefecto: true, NOT: { id } }, data: { porDefecto: false } })] : []),
+    db.formatoVisita.update({
+      where: { id },
+      data: {
+        codigo,
+        nombre,
+        titulo,
+        versionDocumento: textoLimpio(body.versionDocumento, 20) || "1",
+        fechaDocumento: textoLimpio(body.fechaDocumento, 20) || null,
+        tramites,
+        activo,
+        porDefecto,
+      },
+    }),
+  ]);
   return NextResponse.json({ ok: true });
 }

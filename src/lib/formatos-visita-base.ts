@@ -7,6 +7,7 @@ export type FormatoBase = {
   version: string;
   fechaFormato: string;
   tramites: string[];
+  porDefecto?: boolean;
   estructura: EstructuraFormato;
 };
 
@@ -72,13 +73,14 @@ export const FORMATO_FORESTAL: FormatoBase = {
         titulo: "1. Desarrollo de la visita — ubicación del predio",
         campos: [
           t("municipio", "Municipio", { precarga: "municipio", obligatorio: true }),
-          t("vereda", "Vereda"),
+          t("vereda", "Vereda", { zona: "vereda", desde: "coordenadas" }),
           t("matricula", "Matrícula inmobiliaria", { precarga: "matricula" }),
           t("direccion_predio", "Dirección del predio", { precarga: "direccion_predio" }),
           t("predio", "Nombre del predio", { precarga: "predio" }),
           n("area_predio", "Área del predio", "ha", { precarga: "area_predio" }),
           n("superficie_aprovechar", "Extensión de la superficie a aprovechar", "ha"),
           { id: "coordenadas", etiqueta: "Coordenadas", tipo: "coordenadas", obligatorio: true },
+          p("determinantes_ambientales", "Determinantes ambientales del punto", { zona: "resumen_ambiental", desde: "coordenadas", ayuda: "Se llena con las capas de la jurisdicción al capturar las coordenadas; puede ajustarse." }),
         ],
       },
       {
@@ -235,7 +237,7 @@ export const FORMATO_AGUAS: FormatoBase = {
           ...datosSolicitante,
           t("ciiu", "Código CIIU"),
           t("municipio", "Municipio", { precarga: "municipio", obligatorio: true }),
-          t("vereda", "Vereda"),
+          t("vereda", "Vereda", { zona: "vereda", desde: "coord_captacion" }),
           t("matricula", "Matrícula inmobiliaria", { precarga: "matricula" }),
           t("predio", "Nombre o dirección del predio", { precarga: "predio" }),
           n("area_predio", "Área del predio", "ha", { precarga: "area_predio" }),
@@ -264,10 +266,11 @@ export const FORMATO_AGUAS: FormatoBase = {
           t("codigo_fuente", "Código de la fuente"),
           t("microcuenca", "Microcuenca"),
           t("subcuenca", "Subcuenca"),
-          t("cuenca", "Cuenca"),
+          t("cuenca", "Cuenca / subzona hidrográfica", { zona: "subzona_hidrografica", desde: "coord_captacion" }),
           sel("tipo_fuente", "Tipo de fuente hídrica", ["Caño", "Quebrada", "Río", "Nacimiento", "Manantial", "Lago o laguna", "Otro"]),
           p("condiciones_biofisicas", "Condiciones biofísicas"),
           { id: "coord_captacion", etiqueta: "Coordenadas del punto de captación", tipo: "coordenadas", conCota: true, obligatorio: true },
+          p("determinantes_ambientales", "Determinantes ambientales del punto de captación", { zona: "resumen_ambiental", desde: "coord_captacion" }),
           p("predios_beneficiados", "Nombre del predio(s), municipio o comunidades que se van a beneficiar y su jurisdicción (incluya la vía de acceso)"),
           p("clasificacion_suelo", "Clasificación del suelo"),
           p("tipo_centro_poblado", "Tipo de centro poblado"),
@@ -460,7 +463,7 @@ export const FORMATO_VERTIMIENTOS: FormatoBase = {
           t("telefono", "Teléfono", { precarga: "telefono" }),
           t("correo", "Correo electrónico", { precarga: "correo" }),
           t("municipio", "Municipio", { precarga: "municipio", obligatorio: true }),
-          t("vereda", "Vereda"),
+          t("vereda", "Vereda", { zona: "vereda", desde: "coord_predio" }),
           p("matricula", "Matrícula inmobiliaria", { precarga: "matricula" }),
           t("predio", "Predio", { precarga: "predio" }),
           p("catastral", "No. catastral", { precarga: "catastral" }),
@@ -478,7 +481,7 @@ export const FORMATO_VERTIMIENTOS: FormatoBase = {
         titulo: "Descripción general del establecimiento",
         campos: [
           p("fuente_abastecimiento", "Fuente de abastecimiento"),
-          p("ecosistemas_clave", "Localización de los ecosistemas considerados clave para la regulación de la oferta hídrica"),
+          p("ecosistemas_clave", "Localización de los ecosistemas considerados clave para la regulación de la oferta hídrica", { zona: "resumen_ambiental", desde: "coord_vertimiento" }),
           { id: "coord_predio", etiqueta: "Georreferenciación del predio (sistema de tratamiento)", tipo: "coordenadas", conCota: true, obligatorio: true },
           { id: "coord_vertimiento", etiqueta: "Georreferenciación del vertimiento", tipo: "coordenadas", conCota: true, obligatorio: true },
           p("actividades_vertimiento", "Características de las actividades que generan vertimiento"),
@@ -615,4 +618,173 @@ export const FORMATO_VERTIMIENTOS: FormatoBase = {
   },
 };
 
-export const FORMATOS_BASE: FormatoBase[] = [FORMATO_FORESTAL, FORMATO_AGUAS, FORMATO_VERTIMIENTOS];
+function formatoDeVisita(seccionesEspecificas: EstructuraFormato["secciones"]): EstructuraFormato {
+  return {
+    secciones: [
+      {
+        id: "datos_generales",
+        titulo: "Datos generales",
+        campos: [...datosSolicitante, p("nombre_proyecto", "Nombre del proyecto, obra o actividad", { obligatorio: true }), ...datosVisita],
+      },
+      {
+        id: "ubicacion",
+        titulo: "1. Ubicación",
+        campos: [
+          t("municipio", "Municipio", { precarga: "municipio", obligatorio: true }),
+          t("vereda", "Vereda", { zona: "vereda", desde: "coordenadas" }),
+          t("predio", "Nombre del predio", { precarga: "predio" }),
+          t("direccion_predio", "Dirección del predio", { precarga: "direccion_predio" }),
+          t("matricula", "Matrícula inmobiliaria", { precarga: "matricula" }),
+          t("catastral", "No. catastral", { precarga: "catastral" }),
+          n("area_predio", "Área del predio", "ha", { precarga: "area_predio" }),
+          { id: "coordenadas", etiqueta: "Coordenadas del sitio visitado", tipo: "coordenadas", conCota: true, obligatorio: true },
+          p("determinantes_ambientales", "Determinantes ambientales del punto", {
+            zona: "resumen_ambiental",
+            desde: "coordenadas",
+            ayuda: "Se llena con las capas de la jurisdicción al capturar las coordenadas; puede ajustarse.",
+          }),
+          p("uso_suelo", "Uso del suelo según el instrumento de ordenamiento territorial (POT / EOT)"),
+        ],
+      },
+      {
+        id: "desarrollo",
+        titulo: "2. Desarrollo de la visita",
+        campos: [
+          p("descripcion_visita", "Descripción de la visita", {
+            obligatorio: true,
+            plantilla:
+              "El día {fecha_visita} se realizó visita técnica de inspección ocular al predio «{predio}», ubicado en el municipio de {municipio}, en compañía de {recibe_visita}, con el fin de verificar en campo la información aportada por {solicitante} dentro del expediente {expediente}.",
+          }),
+          p("descripcion_actividad", "Descripción del proyecto, obra o actividad observada"),
+          {
+            id: "aspectos",
+            etiqueta: "Aspectos verificados en campo",
+            tipo: "tabla",
+            columnas: [col("aspecto", "Aspecto verificado"), col("observacion", "Observación"), col("cumplimiento", "Cumplimiento", "cumplimiento")],
+          },
+          {
+            id: "puntos",
+            etiqueta: "Puntos georreferenciados",
+            tipo: "tabla",
+            columnas: [
+              col("punto", "Punto"),
+              col("norte", "Norte", "numero", { decimales: 0 }),
+              col("este", "Este", "numero", { decimales: 0 }),
+              col("cota", "Cota (m s. n. m.)", "numero", { decimales: 0 }),
+              col("descripcion", "Descripción"),
+            ],
+          },
+        ],
+      },
+      ...seccionesEspecificas,
+      {
+        id: "evaluacion",
+        titulo: "Evaluación ambiental",
+        campos: [p("impactos", "Impactos ambientales identificados"), p("medidas_manejo", "Medidas de manejo, prevención o compensación")],
+      },
+      {
+        id: "concepto",
+        titulo: "Concepto técnico",
+        campos: [
+          sel("viabilidad", "Concepto", ["VIABLE", "NO VIABLE", "REQUIERE INFORMACIÓN ADICIONAL"], { obligatorio: true }),
+          p("concepto_tecnico", "Concepto técnico", {
+            obligatorio: true,
+            plantilla:
+              "De acuerdo con la visita técnica realizada el día {fecha_visita} y la documentación presentada por {solicitante}, identificado(a) con {identificacion}, para el proyecto {nombre_proyecto}, ubicado en el predio «{predio}» del municipio de {municipio}, se considera técnicamente {viabilidad} la solicitud.",
+          }),
+          p("requerimientos", "Requerimientos o información adicional"),
+          chequeo("obligaciones", "Obligaciones y recomendaciones", [
+            "El presente concepto no exime al usuario de tramitar los demás permisos, concesiones o autorizaciones ambientales que se requieran.",
+            "Cualquier modificación de las condiciones verificadas en la visita deberá informarse previamente a la CDMB.",
+            "La CDMB podrá realizar visitas de seguimiento cuando lo considere necesario.",
+            { texto: "Deberá llevar a cabo la inscripción en el Registro Único Ambiental (RUA) conforme a la Resolución 0839 de 2023, dentro de los treinta (30) días calendario siguientes a la notificación." },
+            "Se entiende que toda la información y documentación aportada se considera veraz y está amparada por la presunción de la buena fe; quienes la aportan son responsables penal y administrativamente de su veracidad.",
+          ]),
+        ],
+      },
+    ],
+  };
+}
+
+export const FORMATO_GENERICO: FormatoBase = {
+  codigo: "VT-GENERICO",
+  nombre: "Visita técnica (genérico)",
+  titulo: "CONCEPTO TÉCNICO DE VISITA",
+  version: "1",
+  fechaFormato: "",
+  tramites: [],
+  porDefecto: true,
+  estructura: formatoDeVisita([]),
+};
+
+export const FORMATO_HIDRICO: FormatoBase = {
+  codigo: "VT-HIDRICO",
+  nombre: "Visita técnica — recurso hídrico",
+  titulo: "CONCEPTO TÉCNICO DE VISITA — RECURSO HÍDRICO",
+  version: "1",
+  fechaFormato: "",
+  tramites: ["M-DA-PR33", "M-DA-PR36", "M-DA-PR39", "M-DA-PR66", "M-DA-PR67"],
+  estructura: formatoDeVisita([
+    {
+      id: "recurso_hidrico",
+      titulo: "3. Recurso hídrico",
+      campos: [
+        t("fuente_hidrica", "Fuente o cuerpo de agua", { obligatorio: true }),
+        sel("tipo_fuente", "Tipo de fuente", ["Río", "Quebrada", "Caño", "Nacimiento", "Manantial", "Acuífero (agua subterránea)", "Lago o laguna", "Alcantarillado", "Otro"]),
+        t("cuenca", "Cuenca / subzona hidrográfica", { zona: "subzona_hidrografica", desde: "coord_punto" }),
+        t("microcuenca", "Microcuenca"),
+        { id: "coord_punto", etiqueta: "Coordenadas del punto de interés (captación, ocupación, pozo o descarga)", tipo: "coordenadas", conCota: true, obligatorio: true },
+        n("caudal_aforado", "Caudal aforado", "l/s", { decimales: 3 }),
+        sel("metodo_aforo", "Método de aforo", ["Volumétrico", "Flotador", "Molinete o correntómetro", "Vertedero", "No se realizó"]),
+        p("condiciones_cauce", "Condiciones del cauce, ronda hídrica y cobertura vegetal"),
+        p("obras_hidraulicas", "Obras hidráulicas existentes o proyectadas"),
+        {
+          id: "usuarios_fuente",
+          etiqueta: "Usuarios de la misma fuente",
+          tipo: "tabla",
+          columnas: [col("nombre", "Nombre"), col("expediente", "Expediente"), col("uso", "Uso"), col("cota", "Cota", "numero", { decimales: 0 })],
+        },
+      ],
+    },
+  ]),
+};
+
+export const FORMATO_FLORA: FormatoBase = {
+  codigo: "VT-FLORA",
+  nombre: "Visita técnica — flora y productos forestales",
+  titulo: "CONCEPTO TÉCNICO DE VISITA — FLORA Y PRODUCTOS FORESTALES",
+  version: "1",
+  fechaFormato: "",
+  tramites: ["M-DA-PR58", "M-DA-PR69", "M-DA-PR70"],
+  estructura: formatoDeVisita([
+    {
+      id: "verificacion_forestal",
+      titulo: "3. Verificación forestal",
+      campos: [
+        {
+          id: "especies",
+          etiqueta: "Especies y productos verificados",
+          tipo: "tabla",
+          obligatorio: true,
+          columnas: [
+            col("nombre_comun", "Nombre común"),
+            col("nombre_cientifico", "Nombre científico"),
+            col("cantidad", "Cantidad", "numero", { decimales: 0, total: true }),
+            col("unidad", "Unidad"),
+            col("volumen", "Volumen (m³)", "numero", { decimales: 2, total: true }),
+            col("observacion", "Observación"),
+          ],
+          agrupar: { por: ["nombre_comun", "nombre_cientifico"], sumar: ["cantidad", "volumen"], titulo: "Resumen por especie" },
+        },
+        calc("volumen_total", "Volumen total verificado", "especies.volumen", 2, "m³"),
+        n("area_verificada", "Área de la plantación o del aprovechamiento", "ha", { decimales: 2 }),
+        sel("estado_sanitario", "Estado fitosanitario", ["Bueno", "Regular", "Malo", "No aplica"]),
+        t("cobertura_corine", "Tipo de cobertura (CORINE Land Cover)"),
+        p("procedencia_legal", "Procedencia legal de los productos (salvoconductos, actos administrativos, registro)"),
+        sn("coincide_documentacion", "¿Lo verificado coincide con la documentación aportada?"),
+      ],
+    },
+  ]),
+};
+
+export const FORMATOS_BASE: FormatoBase[] = [FORMATO_FORESTAL, FORMATO_AGUAS, FORMATO_VERTIMIENTOS, FORMATO_HIDRICO, FORMATO_FLORA, FORMATO_GENERICO];

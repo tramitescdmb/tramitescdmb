@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { partesColombia } from "@/lib/planeador";
-import { codigoProcedimiento } from "@/lib/temas-visita";
+import { codigoProcedimiento, pasoPermiteVisita } from "@/lib/temas-visita";
 import { validarEstructura, type DatosPrecarga, type EstructuraFormato } from "@/lib/formato-visita";
 import { FORMATOS_BASE } from "@/lib/formatos-visita-base";
 
@@ -24,11 +24,9 @@ export function estructuraDesdeJson(valor: Prisma.JsonValue | null | undefined):
 
 export async function formatoVigenteParaTramite(codigoTramite: string): Promise<FormatoVigente | null> {
   const codigo = codigoProcedimiento(codigoTramite);
-  const formato = await db.formatoVisita.findFirst({
-    where: { activo: true, tramites: { has: codigo } },
-    orderBy: { updatedAt: "desc" },
-    include: { versiones: { where: { estado: "PUBLICADA" }, orderBy: { numero: "desc" }, take: 1 } },
-  });
+  const incluir = { versiones: { where: { estado: "PUBLICADA" as const }, orderBy: { numero: "desc" as const }, take: 1 } };
+  const propio = await db.formatoVisita.findFirst({ where: { activo: true, tramites: { has: codigo } }, orderBy: { updatedAt: "desc" }, include: incluir });
+  const formato = propio?.versiones[0] ? propio : await db.formatoVisita.findFirst({ where: { activo: true, porDefecto: true }, orderBy: { updatedAt: "desc" }, include: incluir });
   const version = formato?.versiones[0];
   if (!formato || !version) return null;
   return {
@@ -94,6 +92,43 @@ export async function precargaDeVisita(visitaId: string, fechaVisita?: Date): Pr
   return Object.fromEntries(Object.entries(datos).filter(([, x]) => x)) as DatosPrecarga;
 }
 
+export type CoberturaTramite = {
+  codigo: string;
+  nombre: string;
+  pasosVisita: string[];
+  formato: { id: string; nombre: string; codigo: string; propio: boolean; publicado: boolean } | null;
+};
+
+export async function coberturaFormatos(): Promise<CoberturaTramite[]> {
+  const [tipos, formatos] = await Promise.all([
+    db.tramiteTipo.findMany({
+      where: { activo: true },
+      select: { codigo: true, nombre: true, flujos: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true }, orderBy: { numero: "asc" } } } } },
+      orderBy: { codigo: "asc" },
+    }),
+    db.formatoVisita.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, codigo: true, tramites: true, porDefecto: true, _count: { select: { versiones: { where: { estado: "PUBLICADA" } } } } },
+    }),
+  ]);
+  const generico = formatos.find((f) => f.porDefecto);
+  const r: CoberturaTramite[] = [];
+  for (const t of tipos) {
+    const pasos = t.flujos.flatMap((f) => f.pasos).filter((p) => pasoPermiteVisita(p.titulo, p.descripcion));
+    if (pasos.length === 0) continue;
+    const codigo = codigoProcedimiento(t.codigo);
+    const propio = formatos.find((f) => f.tramites.includes(codigo));
+    const f = propio ?? generico;
+    r.push({
+      codigo: t.codigo,
+      nombre: t.nombre,
+      pasosVisita: [...new Set(pasos.map((p) => `${p.numero}. ${p.titulo.charAt(0)}${p.titulo.slice(1).toLowerCase()}`))],
+      formato: f ? { id: f.id, nombre: f.nombre, codigo: f.codigo, propio: !!propio, publicado: f._count.versiones > 0 } : null,
+    });
+  }
+  return r;
+}
+
 export function tramitesEnUso(formatos: { id: string; tramites: string[]; activo: boolean }[], excluirId?: string): Map<string, string> {
   const m = new Map<string, string>();
   for (const f of formatos) if (f.activo && f.id !== excluirId) for (const t of f.tramites) m.set(t, f.id);
@@ -103,7 +138,7 @@ export function tramitesEnUso(formatos: { id: string; tramites: string[]; activo
 export async function sembrarFormatosBase(usuarioId: string): Promise<{ creados: string[]; omitidos: string[] }> {
   const creados: string[] = [];
   const omitidos: string[] = [];
-  const existentes = await db.formatoVisita.findMany({ select: { id: true, codigo: true, tramites: true, activo: true } });
+  const existentes = await db.formatoVisita.findMany({ select: { id: true, codigo: true, tramites: true, activo: true, porDefecto: true } });
   const enUso = tramitesEnUso(existentes);
   for (const base of FORMATOS_BASE) {
     if (existentes.some((f) => f.codigo === base.codigo)) {
@@ -120,6 +155,7 @@ export async function sembrarFormatosBase(usuarioId: string): Promise<{ creados:
         versionDocumento: base.version,
         fechaDocumento: base.fechaFormato || null,
         tramites: base.tramites.filter((t) => !enUso.has(t)),
+        porDefecto: !!base.porDefecto && !existentes.some((f) => f.activo && f.porDefecto),
         creadoPorId: usuarioId,
         versiones: {
           create: {

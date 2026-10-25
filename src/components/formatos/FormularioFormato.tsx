@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cargarCapasZonificacion, zonificarPunto, type ResultadoZonificacion } from "@/lib/zonificacion";
 import { Crosshair, Plus, Trash2, RotateCcw, Info } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import {
@@ -33,6 +34,7 @@ export function FormularioFormato({
   onCambio,
   soloLectura = false,
   faltantes,
+  onZonificar,
 }: {
   estructura: EstructuraFormato;
   respuestas: Respuestas;
@@ -40,6 +42,7 @@ export function FormularioFormato({
   onCambio: (id: string, valor: ValorCampo) => void;
   soloLectura?: boolean;
   faltantes?: Set<string>;
+  onZonificar?: (coordenadasId: string, zona: ResultadoZonificacion) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -60,6 +63,7 @@ export function FormularioFormato({
                     onCambio={onCambio}
                     soloLectura={soloLectura}
                     falta={faltantes?.has(c.id) ?? false}
+                    onZonificar={onZonificar}
                   />
                 </div>
               ))}
@@ -99,6 +103,7 @@ function CampoFormato({
   onCambio,
   soloLectura,
   falta,
+  onZonificar,
 }: {
   campo: Campo;
   estructura: EstructuraFormato;
@@ -107,6 +112,7 @@ function CampoFormato({
   onCambio: (id: string, valor: ValorCampo) => void;
   soloLectura: boolean;
   falta: boolean;
+  onZonificar?: (coordenadasId: string, zona: ResultadoZonificacion) => void;
 }) {
   const v = respuestas[campo.id];
   const str = typeof v === "string" ? v : "";
@@ -117,14 +123,14 @@ function CampoFormato({
       return (
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
-          <input value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} maxLength={1000} className={campoCls + borde} />
+          <input aria-label={campo.etiqueta} value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} maxLength={1000} className={campoCls + borde} />
         </label>
       );
     case "fecha":
       return (
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
-          <input type="date" value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} className={campoCls + borde} />
+          <input aria-label={campo.etiqueta} type="date" value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} className={campoCls + borde} />
         </label>
       );
     case "numero":
@@ -132,7 +138,7 @@ function CampoFormato({
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
           <span className="flex items-center gap-1.5">
-            <input value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} inputMode="decimal" className={campoCls + borde} />
+            <input aria-label={campo.etiqueta} value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} inputMode="decimal" className={campoCls + borde} />
             {campo.unidad && <span className="flex-none text-xs text-stone-500">{campo.unidad}</span>}
           </span>
         </label>
@@ -141,7 +147,7 @@ function CampoFormato({
       return (
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
-          <select value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} className={campoCls + borde}>
+          <select aria-label={campo.etiqueta} value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} className={campoCls + borde}>
             <option value="">Seleccione…</option>
             {(campo.opciones ?? []).map((o) => (
               <option key={o} value={o}>
@@ -205,7 +211,16 @@ function CampoFormato({
         </div>
       );
     case "coordenadas":
-      return <CampoCoordenadas campo={campo} valor={v as ValorCoordenadas | undefined} onCambio={(x) => onCambio(campo.id, x)} soloLectura={soloLectura} falta={falta} />;
+      return (
+        <CampoCoordenadas
+          campo={campo}
+          valor={v as ValorCoordenadas | undefined}
+          onCambio={(x) => onCambio(campo.id, x)}
+          soloLectura={soloLectura}
+          falta={falta}
+          onZonificar={onZonificar ? (z) => onZonificar(campo.id, z) : undefined}
+        />
+      );
     case "lista_chequeo": {
       const val = (v as ValorChequeo | undefined) ?? { marcados: [] };
       return (
@@ -252,14 +267,40 @@ function CampoCoordenadas({
   onCambio,
   soloLectura,
   falta,
+  onZonificar,
 }: {
   campo: Campo;
   valor: ValorCoordenadas | undefined;
   onCambio: (v: ValorCoordenadas) => void;
   soloLectura: boolean;
   falta: boolean;
+  onZonificar?: (z: ResultadoZonificacion) => void;
 }) {
   const v = valor ?? { lat: null, lon: null, cota: "" };
+  const [zona, setZona] = useState<ResultadoZonificacion | null>(null);
+  const avisar = useRef(onZonificar);
+  avisar.current = onZonificar;
+  useEffect(() => {
+    if (v.lat == null || v.lon == null) {
+      setZona(null);
+      return;
+    }
+    let vigente = true;
+    const t = setTimeout(() => {
+      cargarCapasZonificacion()
+        .then((capas) => {
+          if (!vigente || Object.keys(capas).length === 0) return;
+          const z = zonificarPunto(v.lat!, v.lon!, capas);
+          setZona(z);
+          avisar.current?.(z);
+        })
+        .catch(() => null);
+    }, 400);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
+  }, [v.lat, v.lon]);
   const [capturando, setCapturando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latTxt, setLatTxt] = useState(v.lat != null ? String(v.lat) : "");
@@ -354,6 +395,18 @@ function CampoCoordenadas({
             </div>
             {v.precisionM != null && <p className="text-stone-400 sm:col-span-3">Precisión del GPS ±{Math.round(v.precisionM)} m</p>}
           </dl>
+        )}
+        {listo && zona && (
+          <p className="rounded bg-stone-50 px-2 py-1.5 text-[11px] leading-relaxed text-stone-600">
+            {[zona.vereda && `Vereda ${zona.vereda}`, zona.municipio, zona.subzona_hidrografica && `Subzona ${zona.subzona_hidrografica}`].filter(Boolean).join(" · ") || "Fuera de las capas de la jurisdicción"}
+            {(zona.areas_protegidas !== "Ninguna" || zona.aica !== "Ninguna" || zona.paramo !== "No" || zona.bosque_seco === "Sí") && (
+              <span className="mt-0.5 block font-medium text-amber-800">
+                {[zona.areas_protegidas !== "Ninguna" && `Área protegida: ${zona.areas_protegidas}`, zona.aica !== "Ninguna" && `AICA: ${zona.aica}`, zona.paramo !== "No" && `Páramo: ${zona.paramo}`, zona.bosque_seco === "Sí" && "Bosque seco tropical"]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
+          </p>
         )}
       </div>
     </div>

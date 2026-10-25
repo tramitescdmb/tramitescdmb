@@ -35,6 +35,7 @@ export function DocumentoFormato({
   precarga,
   fotos = [],
   enBlanco = false,
+  numeroConcepto = null,
 }: {
   encabezado: EncabezadoFormato;
   estructura: EstructuraFormato;
@@ -42,6 +43,7 @@ export function DocumentoFormato({
   precarga: DatosPrecarga;
   fotos?: { id: string; url: string; pie?: string }[];
   enBlanco?: boolean;
+  numeroConcepto?: string | null;
 }) {
   return (
     <article className="documento-formato mx-auto max-w-[21cm] bg-white text-[12px] leading-snug text-stone-900">
@@ -56,7 +58,7 @@ export function DocumentoFormato({
         <tbody>
           <tr>
             <td className="space-y-4">
-              <p className="text-center text-sm font-bold uppercase">Concepto técnico No. ________ de ____________</p>
+              <p className="text-center text-sm font-bold uppercase">Concepto técnico No. {numeroConcepto ?? "________ de ____________"}</p>
               {estructura.secciones.map((s) => (
                 <section key={s.id} className="break-inside-avoid-page">
                   <h3 className="mb-1 border border-stone-400 bg-stone-100 px-2 py-1 text-center text-[12px] font-bold uppercase">{s.titulo}</h3>

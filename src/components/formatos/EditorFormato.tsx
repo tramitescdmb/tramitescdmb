@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, Plus, Printer, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
+import { ZONAS } from "@/lib/zonificacion";
 import { FormularioFormato } from "@/components/formatos/FormularioFormato";
 import {
   actualizarTextosTipo,
+  aplicarZonificacion,
   idDesdeEtiqueta,
   idsReferenciables,
   PRECARGAS,
@@ -35,6 +37,7 @@ type Meta = {
   fechaDocumento: string;
   tramites: string[];
   activo: boolean;
+  porDefecto: boolean;
 };
 
 type Version = { id: string; numero: number; estado: "BORRADOR" | "PUBLICADA" | "REEMPLAZADA"; nota: string | null; autor: string; fecha: string; visitas: number };
@@ -290,6 +293,7 @@ export function EditorFormato({
                               {c.obligatorio && <span className="text-xs text-red-600">*</span>}
                               <span className="flex-none rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">{TIPOS_CAMPO[c.tipo]}</span>
                               {c.precarga && <span className="hidden flex-none rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700 sm:inline">precargado</span>}
+                              {c.zona && <span className="hidden flex-none rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700 sm:inline">desde el GPS</span>}
                             </button>
                             <button type="button" onClick={() => fijarSeccion(si, { ...s, campos: mover(s.campos, ci, -1) })} disabled={ci === 0} className={botonIcono} aria-label="Subir campo">
                               <ArrowUp className="h-3.5 w-3.5" aria-hidden />
@@ -385,6 +389,7 @@ export function EditorFormato({
               estructura={estructura}
               respuestas={respuestasVista}
               precarga={PRECARGA_EJEMPLO}
+              onZonificar={(coordId, zona) => setVistaRespuestas(aplicarZonificacion(estructura, respuestasVista, coordId, zona, null))}
               onCambio={(id: string, v: ValorCampo) => setVistaRespuestas(actualizarTextosTipo(estructura, respuestasVista, { ...respuestasVista, [id]: v }, PRECARGA_EJEMPLO))}
             />
           )}
@@ -418,6 +423,13 @@ export function EditorFormato({
           <label className="inline-flex items-center gap-2 text-sm text-stone-700">
             <input type="checkbox" checked={meta.activo} onChange={(e) => setMeta({ ...meta, activo: e.target.checked })} className="text-cdmb-600" />
             Formato activo
+          </label>
+          <label className="flex items-start gap-2 text-sm text-stone-700">
+            <input type="checkbox" checked={meta.porDefecto} onChange={(e) => setMeta({ ...meta, porDefecto: e.target.checked })} className="mt-0.5 text-cdmb-600" />
+            <span>
+              Formato genérico
+              <span className="block text-xs text-stone-500">Se usa en todos los trámites con visita técnica que no tienen un formato propio, incluidos los procedimientos que se creen después.</span>
+            </span>
           </label>
           <div>
             <p className="mb-1 text-xs font-medium text-stone-600">Trámites que usan este formato ({meta.tramites.length})</p>
@@ -536,6 +548,7 @@ function EditorCampo({
     onCambio(c);
   };
   const refs = [...idsReferenciables(estructura)].filter((r) => r !== campo.id);
+  const coordenadas = estructura.secciones.flatMap((s) => s.campos).filter((c) => c.tipo === "coordenadas");
   const variables = variablesDisponibles(estructura).filter((v) => v.clave !== campo.id);
 
   return (
@@ -582,6 +595,35 @@ function EditorCampo({
                   {v}
                 </option>
               ))}
+            </select>
+          </label>
+        )}
+        {(campo.tipo === "texto" || campo.tipo === "parrafo") && coordenadas.length > 0 && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
+            Llenar desde el GPS con
+            <select
+              value={campo.zona ? `${campo.desde}|${campo.zona}` : ""}
+              onChange={(e) => {
+                const [desde, zona] = e.target.value.split("|");
+                const c = { ...campo };
+                if (desde && zona) Object.assign(c, { desde, zona });
+                else {
+                  delete c.desde;
+                  delete c.zona;
+                }
+                onCambio(c);
+              }}
+              className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs"
+            >
+              <option value="">— nada —</option>
+              {coordenadas.flatMap((co) =>
+                Object.entries(ZONAS).map(([k, etiqueta]) => (
+                  <option key={`${co.id}|${k}`} value={`${co.id}|${k}`}>
+                    {etiqueta}
+                    {coordenadas.length > 1 ? ` — ${co.etiqueta}` : ""}
+                  </option>
+                ))
+              )}
             </select>
           </label>
         )}

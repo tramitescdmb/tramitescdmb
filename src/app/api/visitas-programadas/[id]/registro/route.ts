@@ -72,9 +72,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (typeof body.formatoVersionId === "string" && body.formatoVersionId) {
     const v = await db.formatoVisitaVersion.findUnique({
       where: { id: body.formatoVersionId },
-      select: { id: true, numero: true, estado: true, estructura: true, formato: { select: { codigo: true, tramites: true } } },
+      select: { id: true, numero: true, estado: true, estructura: true, formato: { select: { codigo: true, tramites: true, porDefecto: true } } },
     });
-    if (!v || v.estado === "BORRADOR" || !v.formato.tramites.includes(codigo)) {
+    if (!v || v.estado === "BORRADOR" || !(v.formato.tramites.includes(codigo) || v.formato.porDefecto)) {
       return NextResponse.json({ error: "El formato de visita ya no corresponde a este trámite. Recargue la página." }, { status: 409 });
     }
     const estructura = estructuraDesdeJson(v.estructura);

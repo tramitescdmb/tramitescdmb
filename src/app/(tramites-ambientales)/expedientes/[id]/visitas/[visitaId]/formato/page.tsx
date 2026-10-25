@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { etiquetaConcepto } from "@/lib/concepto-tecnico";
+import { AsignarNumeroConcepto } from "@/components/formatos/AsignarNumeroConcepto";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estructuraDesdeJson, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { sanearRespuestas } from "@/lib/formato-visita";
@@ -20,12 +22,15 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
     select: {
       id: true,
       expedienteId: true,
+      profesionalId: true,
       expediente: { select: { numero: true, tramiteTipoId: true } },
       visitaTecnica: {
         select: {
           inicioReal: true,
           capturadoEn: true,
           respuestas: true,
+          conceptoNumero: true,
+          conceptoFecha: true,
           fotos: { select: { id: true }, orderBy: { createdAt: "asc" } },
           formatoVersion: { select: { numero: true, estructura: true, formato: { select: { codigo: true, titulo: true, versionDocumento: true, fechaDocumento: true } } } },
         },
@@ -41,6 +46,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
   const estructura = estructuraDesdeJson(vt.formatoVersion.estructura);
   const [precarga, config] = await Promise.all([precargaDeVisita(visita.id, vt.inicioReal ?? vt.capturadoEn), getConfiguracionSitio()]);
   const f = vt.formatoVersion.formato;
+  const puedeAsignar = !vt.conceptoNumero && (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
   return (
     <div className="space-y-3">
@@ -50,7 +56,10 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Hoja de visita · {visita.expediente.numero}
         </Link>
-        <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
+        <span className="flex flex-wrap items-start gap-2">
+          {puedeAsignar && <AsignarNumeroConcepto visitaId={visita.id} />}
+          <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
+        </span>
       </div>
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft print:border-0 print:p-0 print:shadow-none">
         <DocumentoFormato
@@ -58,6 +67,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           estructura={estructura}
           respuestas={sanearRespuestas(estructura, vt.respuestas)}
           precarga={precarga}
+          numeroConcepto={vt.conceptoNumero ? etiquetaConcepto(vt.conceptoNumero, vt.conceptoFecha) : null}
           fotos={vt.fotos.map((foto, i) => ({ id: foto.id, url: `/api/visitas-fotos/${foto.id}`, pie: `Fotografía ${i + 1}` }))}
         />
       </div>

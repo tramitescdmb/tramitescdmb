@@ -2,17 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, X, AlertTriangle, Edit3, Plus, Check, MapPin, ChevronDown } from "lucide-react";
+import { Camera, X, AlertTriangle, Edit3, Plus, Check, MapPin, ChevronDown, CloudOff } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { puntoDentroDeFeatures, cargarJurisdiccionCdmb } from "@/lib/jurisdiccion-cdmb";
-import { comprimirFotoVisitaTecnica } from "@/lib/compresion-cliente";
-import { leerExifFoto } from "@/lib/exif-foto";
-import { subirArchivoDirecto } from "@/lib/uploads-client";
+import { EVENTO_COLA, encolarRegistro, enviarRegistro, guardarFotosBorrador, leerFotosBorrador, listarPendientes, sincronizarPendientes, type RegistroPendiente } from "@/lib/cola-visitas";
 import { filtrarLoteFotosVisita, MAX_FOTOS_VISITA } from "@/lib/visita-tecnica-fotos";
 import { ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
 import { FormularioFormato } from "@/components/formatos/FormularioFormato";
-import { actualizarTextosTipo, camposObligatoriosFaltantes, camposPlanos, campoVacio, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
+import type { ResultadoZonificacion } from "@/lib/zonificacion";
+import { actualizarTextosTipo, aplicarZonificacion, camposObligatoriosFaltantes, camposPlanos, campoVacio, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
 
 type Punto = { lat: number; lon: number; precisionM: number | null; manual: boolean; capturadoEn: string };
 type Tema = { id: string; nombre: string };
@@ -29,6 +28,7 @@ type Borrador = {
   resultado: string;
   formatoVersionId?: string;
   respuestas?: Respuestas;
+  zonas?: Record<string, ResultadoZonificacion>;
 };
 
 export type FormatoParaVisita = { versionId: string; codigo: string; titulo: string; numero: number; estructura: EstructuraFormato };
@@ -65,6 +65,7 @@ export function RegistrarVisitaForm({
   iniciales,
   formato,
   precarga = {},
+  etiquetaCola = "Visita técnica",
 }: {
   visitaId: string;
   expedienteId: string;
@@ -73,6 +74,7 @@ export function RegistrarVisitaForm({
   iniciales: { fechaReal: string; horaInicioReal: string; horaFinReal: string };
   formato?: FormatoParaVisita | null;
   precarga?: DatosPrecarga;
+  etiquetaCola?: string;
 }) {
   const router = useRouter();
   const clave = `hoja-visita:${visitaId}`;
@@ -103,6 +105,8 @@ export function RegistrarVisitaForm({
   const [guardando, setGuardando] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [enCola, setEnCola] = useState<RegistroPendiente | null>(null);
+  const fotosCargadas = useRef(false);
 
   useEffect(() => {
     if (cargado.current) return;
@@ -112,7 +116,26 @@ export function RegistrarVisitaForm({
       setB(previo);
       setRestaurado(true);
     }
-  }, [clave, formato?.versionId]);
+    leerFotosBorrador(visitaId).then((guardadas) => {
+      fotosCargadas.current = true;
+      if (guardadas.length) {
+        setFotos(guardadas);
+        setPrevias(guardadas.map((f) => URL.createObjectURL(f)));
+        setRestaurado(true);
+      }
+    });
+  }, [clave, formato?.versionId, visitaId]);
+
+  useEffect(() => {
+    const revisarCola = () => listarPendientes().then((l) => setEnCola(l.find((x) => x.visitaId === visitaId) ?? null));
+    revisarCola();
+    window.addEventListener(EVENTO_COLA, revisarCola);
+    return () => window.removeEventListener(EVENTO_COLA, revisarCola);
+  }, [visitaId]);
+
+  useEffect(() => {
+    if (fotosCargadas.current) guardarFotosBorrador(visitaId, fotos);
+  }, [visitaId, fotos]);
 
   useEffect(() => {
     if (cargado.current) escribir(clave, b);
@@ -213,43 +236,67 @@ export function RegistrarVisitaForm({
     }
     if (!b.resultado) return setError("Seleccione el resultado de la visita.");
     setGuardando(true);
+    const item: RegistroPendiente = {
+      visitaId,
+      expedienteId,
+      etiqueta: etiquetaCola,
+      cuerpo: { ...b, ...b.punto, capturaManual: b.punto.manual },
+      fotos: [...fotos],
+      creadoEn: new Date().toISOString(),
+    };
     try {
-      const res = await fetch(`/api/visitas-programadas/${visitaId}/registro`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...b, ...b.punto, capturaManual: b.punto.manual }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo registrar la visita.");
-      for (let i = 0; i < fotos.length; i++) {
-        const original = fotos[i]!;
-        setProgreso(`Subiendo foto ${i + 1} de ${fotos.length}…`);
-        const exif = await leerExifFoto(original);
-        const comprimida = await comprimirFotoVisitaTecnica(original);
-        const subida = await subirArchivoDirecto(expedienteId, comprimida);
-        await fetch(`/api/expedientes/${expedienteId}/visitas/${data.id}/fotos`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            storagePath: subida.path,
-            mimeType: subida.mimeType,
-            tamanoBytes: subida.tamanoBytes,
-            nombre: subida.nombre,
-            tomadaEn: exif.tomadaEn?.toISOString() ?? null,
-            latExif: exif.lat,
-            lonExif: exif.lon,
-          }),
-        });
+      const r = await enviarRegistro(item, setProgreso);
+      if (r.estado === "rechazado") {
+        if (item.visitaTecnicaId) {
+          await encolarRegistro({ ...item, ultimoError: r.mensaje });
+          setError(`La visita quedó registrada, pero faltan fotos por subir: ${r.mensaje} Se reintentará automáticamente.`);
+        } else setError(r.mensaje);
+        return;
+      }
+      if (r.estado === "sin_red") {
+        await encolarRegistro(item);
+      } else {
+        await guardarFotosBorrador(visitaId, []);
+        router.refresh();
       }
       borrar(clave);
       for (const url of previas) URL.revokeObjectURL(url);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
     } finally {
       setGuardando(false);
       setProgreso(null);
     }
+  }
+
+  if (enCola) {
+    return (
+      <section className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="flex items-center gap-2 font-semibold">
+          <CloudOff className="h-4 w-4" aria-hidden />
+          Hoja guardada en este dispositivo, pendiente de envío
+        </p>
+        <p className="text-xs">
+          Se registró sin conexión el {new Date(enCola.creadoEn).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}
+          {enCola.fotos.length > 0 && ` con ${enCola.fotos.length} foto(s)`}. Se enviará sola cuando el dispositivo recupere la señal; no cierre la sesión ni borre los datos del navegador.
+        </p>
+        {enCola.ultimoError && <p className="text-xs text-red-700">Último intento: {enCola.ultimoError}</p>}
+        <button
+          type="button"
+          onClick={async () => {
+            setGuardando(true);
+            const r = await sincronizarPendientes();
+            setGuardando(false);
+            if (r.enviados > 0) router.refresh();
+          }}
+          disabled={guardando}
+          className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600 disabled:opacity-60"
+        >
+          {guardando && <Spinner claro />}
+          Enviar ahora
+        </button>
+      </section>
+    );
   }
 
   const chip = (t: { id: string; nombre: string }) => {
@@ -285,7 +332,7 @@ export function RegistrarVisitaForm({
     <div className="space-y-3">
       {restaurado && (
         <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800">
-          Se recuperó el borrador guardado en este dispositivo. Las fotos no se conservan en el borrador.
+          Se recuperó el borrador guardado en este dispositivo, incluidas las fotos.
         </p>
       )}
 
@@ -374,6 +421,13 @@ export function RegistrarVisitaForm({
             respuestas={b.respuestas ?? {}}
             precarga={precarga}
             faltantes={faltantes}
+            onZonificar={(coordId, zona) =>
+              setB((prev) => {
+                const anteriores = prev.respuestas ?? {};
+                const con = aplicarZonificacion(formato.estructura, anteriores, coordId, zona, prev.zonas?.[coordId] ?? null);
+                return { ...prev, zonas: { ...(prev.zonas ?? {}), [coordId]: zona }, respuestas: actualizarTextosTipo(formato.estructura, anteriores, con, precarga) };
+              })
+            }
             onCambio={(id, valor) => {
               setB((prev) => {
                 const anteriores = prev.respuestas ?? {};

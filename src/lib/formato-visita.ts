@@ -1,3 +1,5 @@
+import { ZONAS, type ClaveZona, type ResultadoZonificacion } from "@/lib/zonificacion";
+
 export const TIPOS_CAMPO = {
   texto: "Texto corto",
   parrafo: "Texto largo",
@@ -69,6 +71,8 @@ export type Campo = {
   agrupar?: { por: string[]; sumar: string[]; titulo?: string };
   items?: ItemChequeo[];
   conCota?: boolean;
+  zona?: ClaveZona;
+  desde?: string;
 };
 
 export type Seccion = { id: string; titulo: string; campos: Campo[] };
@@ -477,6 +481,24 @@ export function actualizarTextosTipo(estructura: EstructuraFormato, anteriores: 
   return r;
 }
 
+export function aplicarZonificacion(
+  estructura: EstructuraFormato,
+  respuestas: Respuestas,
+  coordenadasId: string,
+  zona: ResultadoZonificacion,
+  anterior: ResultadoZonificacion | null
+): Respuestas {
+  const r = { ...respuestas };
+  for (const c of camposPlanos(estructura)) {
+    if (!c.zona || c.desde !== coordenadasId) continue;
+    const actual = typeof r[c.id] === "string" ? (r[c.id] as string) : "";
+    const valor = zona[c.zona];
+    if (!valor) continue;
+    if (!actual.trim() || (anterior && actual === anterior[c.zona]) || actual === valor) r[c.id] = valor;
+  }
+  return r;
+}
+
 export function campoVacio(campo: Campo, v: ValorCampo | undefined): boolean {
   if (campo.tipo === "calculado") return false;
   if (campo.tipo === "tabla") return filasConDatos(campo, v).length === 0;
@@ -587,7 +609,9 @@ export function validarEstructura(entrada: unknown): { estructura: EstructuraFor
   }
   const estructura: EstructuraFormato = { secciones: resultado };
   const refs = idsReferenciables(estructura);
+  const coordenadas = new Set(camposPlanos(estructura).filter((c) => c.tipo === "coordenadas").map((c) => c.id));
   for (const c of camposPlanos(estructura)) {
+    if (c.zona && !coordenadas.has(c.desde ?? "")) return { error: `«${c.etiqueta}» toma su valor de unas coordenadas que no existen en el formato.` };
     if (c.tipo === "calculado") {
       const e = validarFormula(c.formula ?? "", refs);
       if (e) return { error: `Cálculo «${c.etiqueta}»: ${e}` };
@@ -644,6 +668,10 @@ function sanearCampo(c: Record<string, unknown>): { campo: Campo } | { error: st
   }
   if (tipo === "calculado") campo.formula = typeof c.formula === "string" ? c.formula.trim().slice(0, 500) : "";
   if (tipo === "coordenadas" && c.conCota === true) campo.conCota = true;
+  if ((tipo === "texto" || tipo === "parrafo") && typeof c.zona === "string" && c.zona in ZONAS && typeof c.desde === "string" && c.desde) {
+    campo.zona = c.zona as ClaveZona;
+    campo.desde = c.desde;
+  }
   if (tipo === "lista_chequeo") {
     const items = (Array.isArray(c.items) ? c.items : [])
       .map((it) => (it && typeof it === "object" ? (it as Record<string, unknown>) : {}))

@@ -894,6 +894,8 @@ model VisitaTecnica {
   resultado          ResultadoVisita?
   formatoVersionId   String?
   respuestas         Json?
+  conceptoNumero     String?          @unique
+  conceptoFecha      DateTime?
 
   formatoVersion   FormatoVisitaVersion? @relation(fields: [formatoVersionId], references: [id])
   expediente       Expediente            @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
@@ -945,6 +947,7 @@ model FormatoVisita {
   versionDocumento String   @default("1")
   fechaDocumento   String?
   tramites         String[] @default([])
+  porDefecto       Boolean  @default(false)
   activo           Boolean  @default(true)
   creadoPorId      String
   createdAt        DateTime @default(now())

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { FileBadge } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { MigaTramites } from "@/components/MigaTramites";
+import { SincronizadorVisitas } from "@/components/planeador/SincronizadorVisitas";
 import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
 import { SIN_PENDIENTES_FIRMA } from "@/lib/calidad-firma";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -52,6 +53,8 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       <div className="encabezado-modulo">
         <MigaTramites />
       </div>
+
+      <SincronizadorVisitas />
 
       {children}
     </div>

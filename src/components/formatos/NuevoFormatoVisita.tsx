@@ -7,7 +7,7 @@ import { Spinner } from "@/components/Spinner";
 
 const campo = "w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
-export function NuevoFormatoVisita({ formatos, sinFormatos }: { formatos: { id: string; nombre: string; codigo: string }[]; sinFormatos: boolean }) {
+export function NuevoFormatoVisita({ formatos, faltanBase }: { formatos: { id: string; nombre: string; codigo: string }[]; faltanBase: string[] }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [codigo, setCodigo] = useState("");
@@ -54,10 +54,10 @@ export function NuevoFormatoVisita({ formatos, sinFormatos }: { formatos: { id: 
           <Plus className="h-4 w-4" aria-hidden />
           Nuevo formato
         </button>
-        {sinFormatos && (
+        {faltanBase.length > 0 && (
           <button type="button" onClick={sembrar} disabled={enviando} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60">
             {enviando ? <Spinner /> : <Download className="h-4 w-4" aria-hidden />}
-            Cargar formatos base (forestal, aguas y vertimientos)
+            Cargar formatos base ({faltanBase.join(", ")})
           </button>
         )}
       </div>

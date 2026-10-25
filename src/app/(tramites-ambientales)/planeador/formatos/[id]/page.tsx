@@ -53,6 +53,7 @@ export default async function EditarFormatoVisitaPage({ params }: { params: Prom
           fechaDocumento: formato.fechaDocumento ?? "",
           tramites: formato.tramites,
           activo: formato.activo,
+          porDefecto: formato.porDefecto,
         }}
         estructuraInicial={estructuraDesdeJson(base?.estructura)}
         hayBorrador={!!borrador}

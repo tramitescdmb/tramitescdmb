@@ -10,6 +10,7 @@ import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeVisita, orde
 import { formatearFechaHora } from "@/lib/fecha";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { RegistrarVisitaForm } from "@/components/planeador/RegistrarVisitaForm";
+import { ModoSinConexion } from "@/components/planeador/ModoSinConexion";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { BandaTablero } from "@/components/tablero";
 
@@ -223,7 +224,9 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
                 }}
                 formato={formato ? { versionId: formato.versionId, codigo: formato.codigo, titulo: formato.titulo, numero: formato.numero, estructura: formato.estructura } : null}
                 precarga={precarga}
+                etiquetaCola={`${visita.expediente.numero} · ${visita.lugar}`}
               />
+              <ModoSinConexion />
               <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3">
                 <span className="text-xs text-stone-500">¿No se pudo realizar?</span>
                 <AccionesVisita visitaId={visita.id} puedeNoRealizada puedeCancelar={false} />
