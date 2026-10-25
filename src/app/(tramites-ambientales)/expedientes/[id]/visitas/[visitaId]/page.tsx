@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarClock, MapPin, User, AlertTriangle, ClipboardCheck, Info } from "lucide-react";
+import { CalendarClock, MapPin, User, AlertTriangle, ClipboardCheck, Info, FileText } from "lucide-react";
+import { formatoVigenteParaTramite, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia, sumarMinutosHora } from "@/lib/planeador";
@@ -37,6 +38,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
       visitaTecnica: {
         include: {
           temas: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } },
+          formatoVersion: { select: { numero: true, formato: { select: { codigo: true, titulo: true } } } },
           fotos: { select: { id: true, tomadaEn: true }, orderBy: { createdAt: "asc" } },
           capturadoPor: { select: { nombre: true } },
         },
@@ -61,7 +63,10 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const pasoVisita = pasos.find((p) => esPasoDeVisita(p.titulo));
   const vt = visita.visitaTecnica;
 
-  const temas = puedeRegistrar && yaLlegoElDia ? await temasDeVisita() : [];
+  const habilitada = visita.estado === "PROGRAMADA" && puedeRegistrar && yaLlegoElDia;
+  const formato = habilitada ? await formatoVigenteParaTramite(visita.expediente.tramiteTipo.codigo) : null;
+  const precarga = formato ? await precargaDeVisita(visita.id, new Date()) : {};
+  const temas = habilitada && !formato ? await temasDeVisita() : [];
   const { sugeridos, otros } = ordenarTemasParaTramite(temas, visita.expediente.tramiteTipo.codigo);
 
   return (
@@ -140,26 +145,41 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
           </section>
 
           <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Temas</p>
-              <div className="flex flex-wrap gap-1.5">
-                {vt.temas.map((t) => (
-                  <span key={t.id} className="rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs text-cdmb-800">
-                    {t.nombre}
-                  </span>
-                ))}
+            {vt.formatoVersion && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cdmb-100 bg-cdmb-50 px-3 py-2">
+                <p className="text-xs text-cdmb-900">
+                  <span className="font-semibold">{vt.formatoVersion.formato.titulo}</span> · {vt.formatoVersion.formato.codigo} · v{vt.formatoVersion.numero}
+                </p>
+                <Link href={`/expedientes/${id}/visitas/${visita.id}/formato`} className="inline-flex items-center gap-1 text-xs font-semibold text-cdmb-700 hover:underline">
+                  <FileText className="h-3.5 w-3.5" aria-hidden />
+                  Ver formato diligenciado
+                </Link>
               </div>
-            </div>
+            )}
+            {vt.temas.length > 0 && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Temas</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {vt.temas.map((t) => (
+                    <span key={t.id} className="rounded-sm bg-cdmb-50 px-2.5 py-1 text-xs text-cdmb-800">
+                      {t.nombre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {vt.atendidoPor && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Atendió la visita</p>
                 <p className="text-stone-800">{vt.atendidoPor}</p>
               </div>
             )}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Hallazgos y observaciones</p>
-              <p className="whitespace-pre-line text-stone-800">{vt.hallazgos ?? vt.nota}</p>
-            </div>
+            {(vt.hallazgos ?? vt.nota) && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Hallazgos y observaciones</p>
+                <p className="whitespace-pre-line text-stone-800">{vt.hallazgos ?? vt.nota}</p>
+              </div>
+            )}
             {vt.recomendaciones && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Recomendaciones o requerimientos</p>
@@ -201,6 +221,8 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
                   horaInicioReal: ahora.hora,
                   horaFinReal: sumarMinutosHora(ahora.hora, Math.round((finEfectivo(visita).getTime() - visita.fechaHora.getTime()) / 60_000)),
                 }}
+                formato={formato ? { versionId: formato.versionId, codigo: formato.codigo, titulo: formato.titulo, numero: formato.numero, estructura: formato.estructura } : null}
+                precarga={precarga}
               />
               <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3">
                 <span className="text-xs text-stone-500">¿No se pudo realizar?</span>

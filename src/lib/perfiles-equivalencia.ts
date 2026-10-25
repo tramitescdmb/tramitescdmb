@@ -95,6 +95,7 @@ export function matrizDesdeReglas(p: PermisosUsuario): Matriz {
     "tramites.firmas": { LEER: puedeAccederFirmasTramite(p) },
     "tramites.firmantes": { ACTUALIZAR: p.esAdmin },
     "tramites.planeador": { ACTUALIZAR: p.esAdmin },
+    "tramites.formatos-visita": { ACTUALIZAR: p.esAdmin },
 
     "sgdea.bandeja": { LEER: puedeAccederCorrespondencia(p) },
     "sgdea.radicacion": { CREAR: puedeRadicar(p), ACTUALIZAR: puedeDespachar(p) },

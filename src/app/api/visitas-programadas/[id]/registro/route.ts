@@ -7,6 +7,9 @@ import { expedienteEnEjecucion, fechaHoraColombia } from "@/lib/planeador";
 import { rangoTexto } from "@/lib/planeador-db";
 import { codigoProcedimiento, normalizarNombreTema } from "@/lib/temas-visita";
 import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
+import type { Prisma } from "@prisma/client";
+import { camposObligatoriosFaltantes, sanearRespuestas, type Respuestas } from "@/lib/formato-visita";
+import { estructuraDesdeJson } from "@/lib/formatos-visita-db";
 
 const RESULTADOS = ["VIABLE", "REQUIERE_INFORMACION", "NO_VIABLE", "EN_ANALISIS"] as const;
 
@@ -60,21 +63,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No se puede registrar una visita que aún no ha ocurrido." }, { status: 400 });
   }
 
-  const hallazgos = texto(body.hallazgos, 10_000);
-  if (!hallazgos) return NextResponse.json({ error: "Describa lo observado en la visita." }, { status: 400 });
   const resultado = RESULTADOS.find((r) => r === body.resultado);
   if (!resultado) return NextResponse.json({ error: "Seleccione el resultado de la visita." }, { status: 400 });
+
+  const codigo = codigoProcedimiento(visita.expediente.tramiteTipo.codigo);
+  let formatoVersion: { id: string; numero: number; codigo: string } | null = null;
+  let respuestas: Respuestas | null = null;
+  if (typeof body.formatoVersionId === "string" && body.formatoVersionId) {
+    const v = await db.formatoVisitaVersion.findUnique({
+      where: { id: body.formatoVersionId },
+      select: { id: true, numero: true, estado: true, estructura: true, formato: { select: { codigo: true, tramites: true } } },
+    });
+    if (!v || v.estado === "BORRADOR" || !v.formato.tramites.includes(codigo)) {
+      return NextResponse.json({ error: "El formato de visita ya no corresponde a este trámite. Recargue la página." }, { status: 409 });
+    }
+    const estructura = estructuraDesdeJson(v.estructura);
+    respuestas = sanearRespuestas(estructura, body.respuestas);
+    const faltan = camposObligatoriosFaltantes(estructura, respuestas);
+    if (faltan.length) return NextResponse.json({ error: `Complete los campos obligatorios del formato: ${faltan.join("; ")}.` }, { status: 400 });
+    formatoVersion = { id: v.id, numero: v.numero, codigo: v.formato.codigo };
+  }
+
+  const hallazgos = texto(body.hallazgos, 10_000);
+  if (!hallazgos && !formatoVersion) return NextResponse.json({ error: "Describa lo observado en la visita." }, { status: 400 });
 
   const temaIds = Array.isArray(body.temaIds) ? body.temaIds.map(String) : [];
   const temasNuevos = Array.isArray(body.temasNuevos)
     ? [...new Set(body.temasNuevos.map((t) => normalizarNombreTema(String(t))).filter((t) => t.length >= 3 && t.length <= 150))]
     : [];
-  if (temaIds.length + temasNuevos.length === 0) {
+  if (temaIds.length + temasNuevos.length === 0 && !formatoVersion) {
     return NextResponse.json({ error: "Seleccione al menos un tema de la visita." }, { status: 400 });
   }
 
   const c = desdeLatLon(lat, lon);
-  const codigo = codigoProcedimiento(visita.expediente.tramiteTipo.codigo);
   const pasoNumero = visita.expediente.pasoActualNumero;
 
   const idsNuevos: string[] = [];
@@ -95,7 +116,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
   const temasValidos = await db.temaVisita.findMany({ where: { id: { in: [...temaIds, ...idsNuevos] } }, select: { id: true, nombre: true } });
-  if (temasValidos.length === 0) return NextResponse.json({ error: "Seleccione al menos un tema de la visita." }, { status: 400 });
+  if (temasValidos.length === 0 && !formatoVersion) return NextResponse.json({ error: "Seleccione al menos un tema de la visita." }, { status: 400 });
+  const recibe = respuestas && typeof respuestas.recibe_visita === "string" ? respuestas.recibe_visita : null;
+  const detalle = formatoVersion ? `formato ${formatoVersion.codigo} v${formatoVersion.numero}` : `temas: ${temasValidos.map((t) => t.nombre).join("; ")}`;
 
   const [visitaTecnica] = await db.$transaction([
     db.visitaTecnica.create({
@@ -117,10 +140,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         visitaProgramadaId: id,
         inicioReal,
         finReal,
-        atendidoPor: texto(body.atendidoPor, 200),
+        atendidoPor: texto(body.atendidoPor, 200) ?? texto(recibe, 200),
         hallazgos,
         recomendaciones: texto(body.recomendaciones, 10_000),
         resultado,
+        formatoVersionId: formatoVersion?.id ?? null,
+        ...(respuestas ? { respuestas: respuestas as unknown as Prisma.InputJsonValue } : {}),
         temas: { connect: temasValidos.map((t) => ({ id: t.id })) },
       },
     }),
@@ -130,7 +155,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         expedienteId: visita.expedienteId,
         tipo: "VISITA_REGISTRADA",
         pasoNumero,
-        descripcion: `${session.nombre} registró la hoja de la visita técnica del ${rangoTexto(inicioReal, finReal)} (temas: ${temasValidos.map((t) => t.nombre).join("; ")}).`,
+        descripcion: `${session.nombre} registró la hoja de la visita técnica del ${rangoTexto(inicioReal, finReal)} (${detalle}).`,
         usuarioId: session.userId,
       },
     }),

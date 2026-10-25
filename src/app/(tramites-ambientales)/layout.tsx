@@ -9,7 +9,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarNoLeidas } from "@/lib/notificaciones";
-import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite, puedeEditarFormatosVisita } from "@/lib/permisos";
 
 export default async function TramitesAmbientalesLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -46,7 +46,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       </div>
 
       <div className="encabezado-modulo">
-        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} esAdmin={session.rol === "ADMIN"} />
+        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
       </div>
 
       <div className="encabezado-modulo">

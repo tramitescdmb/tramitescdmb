@@ -11,7 +11,7 @@ datasource db {
 }
 
 model ConfiguracionSitio {
-  id               String  @id @default("singleton")
+  id               String   @id @default("singleton")
   modulosPorPerfil String[] @default([])
   logoUrl          String?
   logoPath         String?
@@ -142,27 +142,30 @@ model Usuario {
   regimenTributario RegimenTributario?
   granContribuyente Boolean            @default(false)
 
-  cargoAsignaciones     UsuarioCargo[]
-  tramitesAcceso        UsuarioTramiteAcceso[]
-  seccionesAcceso       UsuarioSeccionAcceso[]
-  expedientesCreados    Expediente[]               @relation("CreadoPor")
-  expedientesAsignados  Expediente[]               @relation("ResponsableActual")
-  expedientesAsignacion Expediente[]               @relation("ExpedienteUsuariosAsignados")
-  documentos            ExpedienteDocumento[]      @relation("ExpedienteDocumentoSubidoPor")
-  documentosValidados   ExpedienteDocumento[]      @relation("ExpedienteDocumentoValidadoPor")
-  firmasExpediente      FirmaExpedienteDocumento[] @relation("FirmaExpedienteDocumentoUsuario")
-  eventos               ExpedienteEvento[]
-  registrosAuditoria    RegistroAuditoria[]
-  visitasTecnicas       VisitaTecnica[]
-  visitasProgramadas    VisitaProgramada[]         @relation("VisitaProgramadaProfesional")
-  visitasQueProgramo    VisitaProgramada[]         @relation("VisitaProgramadaPor")
-  temasVisitaCreados    TemaVisita[]               @relation("TemaVisitaCreadoPor")
-  notificaciones        Notificacion[]             @relation("NotificacionUsuario")
-  historialPasswords    HistorialPassword[]
-  historialCargos       HistorialCargo[]           @relation("HistorialCargoUsuario")
-  perfiles              UsuarioPerfil[]            @relation("UsuarioPerfilUsuario")
-  excepcionesPermiso    ExcepcionPermisoUsuario[]  @relation("ExcepcionPermisoUsuario")
-  historialCargosHechos HistorialCargo[]           @relation("HistorialCargoCambiadoPor")
+  cargoAsignaciones          UsuarioCargo[]
+  tramitesAcceso             UsuarioTramiteAcceso[]
+  seccionesAcceso            UsuarioSeccionAcceso[]
+  expedientesCreados         Expediente[]               @relation("CreadoPor")
+  expedientesAsignados       Expediente[]               @relation("ResponsableActual")
+  expedientesAsignacion      Expediente[]               @relation("ExpedienteUsuariosAsignados")
+  documentos                 ExpedienteDocumento[]      @relation("ExpedienteDocumentoSubidoPor")
+  documentosValidados        ExpedienteDocumento[]      @relation("ExpedienteDocumentoValidadoPor")
+  firmasExpediente           FirmaExpedienteDocumento[] @relation("FirmaExpedienteDocumentoUsuario")
+  eventos                    ExpedienteEvento[]
+  registrosAuditoria         RegistroAuditoria[]
+  visitasTecnicas            VisitaTecnica[]
+  visitasProgramadas         VisitaProgramada[]         @relation("VisitaProgramadaProfesional")
+  visitasQueProgramo         VisitaProgramada[]         @relation("VisitaProgramadaPor")
+  temasVisitaCreados         TemaVisita[]               @relation("TemaVisitaCreadoPor")
+  formatosVisitaCreados      FormatoVisita[]            @relation("FormatoVisitaCreadoPor")
+  versionesFormatoCreadas    FormatoVisitaVersion[]     @relation("FormatoVersionCreadoPor")
+  versionesFormatoPublicadas FormatoVisitaVersion[]     @relation("FormatoVersionPublicadaPor")
+  notificaciones             Notificacion[]             @relation("NotificacionUsuario")
+  historialPasswords         HistorialPassword[]
+  historialCargos            HistorialCargo[]           @relation("HistorialCargoUsuario")
+  perfiles                   UsuarioPerfil[]            @relation("UsuarioPerfilUsuario")
+  excepcionesPermiso         ExcepcionPermisoUsuario[]  @relation("ExcepcionPermisoUsuario")
+  historialCargosHechos      HistorialCargo[]           @relation("HistorialCargoCambiadoPor")
 
   dependenciaId                  String?
   rolCorrespondencia             RolCorrespondencia?
@@ -889,12 +892,15 @@ model VisitaTecnica {
   hallazgos          String?          @db.Text
   recomendaciones    String?          @db.Text
   resultado          ResultadoVisita?
+  formatoVersionId   String?
+  respuestas         Json?
 
-  expediente       Expediente          @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  capturadoPor     Usuario             @relation(fields: [capturadoPorId], references: [id])
+  formatoVersion   FormatoVisitaVersion? @relation(fields: [formatoVersionId], references: [id])
+  expediente       Expediente            @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  capturadoPor     Usuario               @relation(fields: [capturadoPorId], references: [id])
   fotos            VisitaTecnicaFoto[]
-  visitaProgramada VisitaProgramada?   @relation(fields: [visitaProgramadaId], references: [id], onDelete: SetNull)
-  temas            TemaVisita[]        @relation("VisitaTecnicaTemas")
+  visitaProgramada VisitaProgramada?     @relation(fields: [visitaProgramadaId], references: [id], onDelete: SetNull)
+  temas            TemaVisita[]          @relation("VisitaTecnicaTemas")
 
   @@index([expedienteId])
 }
@@ -923,6 +929,51 @@ model TemaVisita {
   createdAt      DateTime        @default(now())
   creadoPor      Usuario?        @relation("TemaVisitaCreadoPor", fields: [creadoPorId], references: [id])
   visitas        VisitaTecnica[] @relation("VisitaTecnicaTemas")
+}
+
+enum EstadoVersionFormato {
+  BORRADOR
+  PUBLICADA
+  REEMPLAZADA
+}
+
+model FormatoVisita {
+  id               String   @id @default(cuid())
+  codigo           String   @unique
+  nombre           String
+  titulo           String
+  versionDocumento String   @default("1")
+  fechaDocumento   String?
+  tramites         String[] @default([])
+  activo           Boolean  @default(true)
+  creadoPorId      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  creadoPor Usuario                @relation("FormatoVisitaCreadoPor", fields: [creadoPorId], references: [id])
+  versiones FormatoVisitaVersion[]
+}
+
+model FormatoVisitaVersion {
+  id             String               @id @default(cuid())
+  formatoId      String
+  numero         Int
+  estado         EstadoVersionFormato @default(BORRADOR)
+  estructura     Json
+  nota           String?              @db.Text
+  creadoPorId    String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  publicadaEn    DateTime?
+  publicadaPorId String?
+
+  formato      FormatoVisita   @relation(fields: [formatoId], references: [id], onDelete: Cascade)
+  creadoPor    Usuario         @relation("FormatoVersionCreadoPor", fields: [creadoPorId], references: [id])
+  publicadaPor Usuario?        @relation("FormatoVersionPublicadaPor", fields: [publicadaPorId], references: [id])
+  visitas      VisitaTecnica[]
+
+  @@unique([formatoId, numero])
+  @@index([formatoId, estado])
 }
 
 model VisitaProgramada {

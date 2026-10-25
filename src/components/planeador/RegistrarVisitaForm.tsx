@@ -11,6 +11,8 @@ import { leerExifFoto } from "@/lib/exif-foto";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
 import { filtrarLoteFotosVisita, MAX_FOTOS_VISITA } from "@/lib/visita-tecnica-fotos";
 import { ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
+import { FormularioFormato } from "@/components/formatos/FormularioFormato";
+import { actualizarTextosTipo, camposObligatoriosFaltantes, camposPlanos, campoVacio, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
 
 type Punto = { lat: number; lon: number; precisionM: number | null; manual: boolean; capturadoEn: string };
 type Tema = { id: string; nombre: string };
@@ -25,7 +27,11 @@ type Borrador = {
   hallazgos: string;
   recomendaciones: string;
   resultado: string;
+  formatoVersionId?: string;
+  respuestas?: Respuestas;
 };
+
+export type FormatoParaVisita = { versionId: string; codigo: string; titulo: string; numero: number; estructura: EstructuraFormato };
 
 function leer(clave: string): Borrador | null {
   try {
@@ -57,16 +63,20 @@ export function RegistrarVisitaForm({
   sugeridos,
   otros,
   iniciales,
+  formato,
+  precarga = {},
 }: {
   visitaId: string;
   expedienteId: string;
   sugeridos: Tema[];
   otros: Tema[];
   iniciales: { fechaReal: string; horaInicioReal: string; horaFinReal: string };
+  formato?: FormatoParaVisita | null;
+  precarga?: DatosPrecarga;
 }) {
   const router = useRouter();
   const clave = `hoja-visita:${visitaId}`;
-  const [b, setB] = useState<Borrador>({
+  const [b, setB] = useState<Borrador>(() => ({
     punto: null,
     ...iniciales,
     temaIds: [],
@@ -75,7 +85,9 @@ export function RegistrarVisitaForm({
     hallazgos: "",
     recomendaciones: "",
     resultado: "",
-  });
+    ...(formato ? { formatoVersionId: formato.versionId, respuestas: respuestasIniciales(formato.estructura, precarga) } : {}),
+  }));
+  const [faltantes, setFaltantes] = useState<Set<string>>(new Set());
   const [restaurado, setRestaurado] = useState(false);
   const cargado = useRef(false);
   const [capturando, setCapturando] = useState(false);
@@ -96,11 +108,11 @@ export function RegistrarVisitaForm({
     if (cargado.current) return;
     cargado.current = true;
     const previo = leer(clave);
-    if (previo) {
+    if (previo && (previo.formatoVersionId ?? null) === (formato?.versionId ?? null)) {
       setB(previo);
       setRestaurado(true);
     }
-  }, [clave]);
+  }, [clave, formato?.versionId]);
 
   useEffect(() => {
     if (cargado.current) escribir(clave, b);
@@ -190,8 +202,15 @@ export function RegistrarVisitaForm({
   async function guardar() {
     setError(null);
     if (!b.punto) return setError("Capture el punto de la visita.");
-    if (b.temaIds.length + b.temasNuevos.length === 0) return setError("Seleccione al menos un tema de la visita.");
-    if (!b.hallazgos.trim()) return setError("Describa lo observado en la visita.");
+    if (formato) {
+      const respuestas = b.respuestas ?? {};
+      const vacios = camposPlanos(formato.estructura).filter((c) => c.obligatorio && campoVacio(c, respuestas[c.id]));
+      setFaltantes(new Set(vacios.map((c) => c.id)));
+      if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(formato.estructura, respuestas).join("; ")}.`);
+    } else {
+      if (b.temaIds.length + b.temasNuevos.length === 0) return setError("Seleccione al menos un tema de la visita.");
+      if (!b.hallazgos.trim()) return setError("Describa lo observado en la visita.");
+    }
     if (!b.resultado) return setError("Seleccione el resultado de la visita.");
     setGuardando(true);
     try {
@@ -345,6 +364,27 @@ export function RegistrarVisitaForm({
         </div>
       )}
 
+      {formato ? (
+        <div className="space-y-2">
+          <p className="rounded-xl border border-cdmb-100 bg-cdmb-50 px-3 py-2 text-xs text-cdmb-900">
+            <span className="font-semibold">{formato.titulo}</span> · {formato.codigo} · v{formato.numero}. Los datos del expediente vienen precargados y los cálculos se hacen solos.
+          </p>
+          <FormularioFormato
+            estructura={formato.estructura}
+            respuestas={b.respuestas ?? {}}
+            precarga={precarga}
+            faltantes={faltantes}
+            onCambio={(id, valor) => {
+              setB((prev) => {
+                const anteriores = prev.respuestas ?? {};
+                return { ...prev, respuestas: actualizarTextosTipo(formato.estructura, anteriores, { ...anteriores, [id]: valor }, precarga) };
+              });
+              if (faltantes.has(id)) setFaltantes((f) => new Set([...f].filter((x) => x !== id)));
+            }}
+          />
+        </div>
+      ) : (
+        <>
       {seccion(
         3,
         "Temas de la visita",
@@ -410,9 +450,11 @@ export function RegistrarVisitaForm({
           </label>
         </div>
       )}
+        </>
+      )}
 
       {seccion(
-        5,
+        formato ? 3 : 5,
         "Resultado de la visita",
         <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {RESULTADOS.map((r) => (
@@ -430,7 +472,7 @@ export function RegistrarVisitaForm({
       )}
 
       {seccion(
-        6,
+        formato ? 4 : 6,
         `Registro fotográfico (${fotos.length}/${MAX_FOTOS_VISITA})`,
         <div className="space-y-2">
           {previas.length > 0 && (

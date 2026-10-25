@@ -63,6 +63,13 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
     acciones: ["ACTUALIZAR"],
     porCargo: "Coordinador(a) de Evaluación y Subdirector(a) SEYCA.",
   },
+  {
+    clave: "tramites.formatos-visita",
+    modulo: "TRAMITES",
+    nombre: "Diseñar los formatos de visita técnica",
+    acciones: ["ACTUALIZAR"],
+    porCargo: "Subdirector(a) SEYCA.",
+  },
 
   { clave: "sgdea.bandeja", modulo: "SGDEA", nombre: "Bandeja de radicados", acciones: ["LEER"] },
   {

@@ -743,6 +743,13 @@ export function puedePlanearVisitas(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || CARGOS_PLANEADOR.some((c) => permisos.cargos.has(c));
 }
 
+export const CARGO_SUBDIRECTOR_SEYCA = "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)";
+
+export function puedeEditarFormatosVisita(permisos: PermisosUsuario): boolean {
+  if (tramitesPorPerfil(permisos) && tramitesPermite(permisos, "tramites.formatos-visita", "ACTUALIZAR")) return true;
+  return permisos.esAdmin || permisos.cargos.has(CARGO_SUBDIRECTOR_SEYCA);
+}
+
 export function filtroContratistasVisibles(permisos: PermisosUsuario): Prisma.ContratistaWhereInput {
   if (puedeGestionarContratistas(permisos)) return {};
   const propios = [...permisos.asignadoExpedientes, ...permisos.supervisaExpedientes];

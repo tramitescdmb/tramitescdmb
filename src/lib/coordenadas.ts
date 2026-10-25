@@ -4,6 +4,13 @@ const PLANAS = "+proj=tmerc +lat_0=4 +lon_0=-73 +k=0.9992 +x_0=5000000 +y_0=2000
 
 const CARTESIANAS = "+proj=geocent +ellps=GRS80 +units=m +no_defs";
 
+const MAGNA_BOGOTA = "+proj=tmerc +lat_0=4.596200416666666 +lon_0=-74.07750791666666 +k=1 +x_0=1000000 +y_0=1000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
+
+export function planasOrigenBogota(lat: number, lon: number): { norte: number; este: number } {
+  const [este, norte] = proj4("WGS84", MAGNA_BOGOTA, [lon, lat]);
+  return { norte: round(norte), este: round(este) };
+}
+
 export type CoordenadasCompletas = {
   lat: number;
   lon: number;

@@ -11,6 +11,7 @@ export function TramitesTabs({
   alertasPlaneador = 0,
   avisosBuzon = 0,
   esAdmin = false,
+  editaFormatos = false,
 }: {
   mostrarSolicitantes?: boolean;
   mostrarFirmas?: boolean;
@@ -18,6 +19,7 @@ export function TramitesTabs({
   alertasPlaneador?: number;
   avisosBuzon?: number;
   esAdmin?: boolean;
+  editaFormatos?: boolean;
 }) {
   const insigniaFirmas = {
     valor: pendientesFirma.total,
@@ -57,6 +59,7 @@ export function TramitesTabs({
           label: "Buzón de visitas",
           insignia: { valor: avisosBuzon, alerta: avisosBuzon > 0, titulo: `${avisosBuzon} aviso(s) sin leer` },
         },
+        ...(editaFormatos ? [{ href: "/planeador/formatos", label: "Formatos de visita", prefijo: true, separador: true }] : []),
       ],
     },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),
