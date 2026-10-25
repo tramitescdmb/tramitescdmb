@@ -1,9 +1,11 @@
 import type { Prisma, EstadoExpediente } from "@prisma/client";
 import { db } from "@/lib/db";
+import { generarNumeroTramite } from "@/lib/consecutivos";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 
 export type FiltrosExpedientes = {
   tramiteIdsPermitidos: string[] | null;
+  expedienteIdsAsignados?: string[];
   estado?: string;
   tramite?: string;
   tramites?: string[];
@@ -19,7 +21,13 @@ export type FiltrosExpedientes = {
 // (/mineria): así se garantiza, por construcción, que todos cuenten exactamente lo mismo.
 export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.ExpedienteWhereInput {
   const filtros: Prisma.ExpedienteWhereInput[] = [];
-  if (f.tramiteIdsPermitidos) filtros.push({ tramiteTipoId: { in: f.tramiteIdsPermitidos } });
+  if (f.tramiteIdsPermitidos) {
+    filtros.push(
+      f.expedienteIdsAsignados?.length
+        ? { OR: [{ tramiteTipoId: { in: f.tramiteIdsPermitidos } }, { id: { in: f.expedienteIdsAsignados } }] }
+        : { tramiteTipoId: { in: f.tramiteIdsPermitidos } }
+    );
+  }
   if (f.estado === "EN_CURSO") filtros.push({ estado: { in: ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"] } });
   else if (f.estado === "NEGADOS") filtros.push({ estado: { in: ["NEGADO", "RECHAZADO"] } });
   else if (f.estado) filtros.push({ estado: f.estado as EstadoExpediente });
@@ -58,14 +66,6 @@ export async function aniosConRadicacion(): Promise<number[]> {
   return filas.map((f) => f.anio);
 }
 
-export async function generarNumeroExpediente(tramiteCodigo: string, tramiteTipoId: string) {
-  const anio = new Date().getFullYear();
-  const inicioAnio = new Date(`${anio}-01-01T00:00:00.000Z`);
-
-  const count = await db.expediente.count({
-    where: { tramiteTipoId, createdAt: { gte: inicioAnio } },
-  });
-
-  const consecutivo = String(count + 1).padStart(4, "0");
-  return `${tramiteCodigo}-${anio}-${consecutivo}`;
+export async function generarNumeroExpediente(tramiteCodigo: string) {
+  return generarNumeroTramite(tramiteCodigo);
 }

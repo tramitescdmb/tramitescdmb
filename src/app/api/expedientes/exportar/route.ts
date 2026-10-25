@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   const soloMios = asignados === "mi";
   const where = construirWhereExpedientes({
     tramiteIdsPermitidos,
+    expedienteIdsAsignados: !permisos.esAdmin ? Array.from(permisos.expedientesTramite ?? []) : undefined,
     estado,
     tramite,
     municipio,

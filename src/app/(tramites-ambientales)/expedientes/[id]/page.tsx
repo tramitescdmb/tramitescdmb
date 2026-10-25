@@ -14,7 +14,7 @@ import { ProgresoExpediente, pasosParaAvance } from "@/components/ProgresoExpedi
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import {
   obtenerPermisosUsuario,
-  puedeAccederTramite,
+  puedeVerExpedienteTramite,
   puedeEditarTramite,
   puedeAsignarFirmantesDocumentoTramite,
   puedeValidarDocumentoTramite,
@@ -24,6 +24,7 @@ import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsignadoTramiteForm";
+import { esContratista } from "@/lib/jerarquia-firma";
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
@@ -159,6 +160,9 @@ export default async function ExpedienteDetallePage({
         nombre: true,
         cargoAsignaciones: { select: { encargo: true, cargo: { select: { nombre: true } } } },
         dependencia: { select: { nombre: true } },
+        contratista: { select: { id: true } },
+        rolesContratacion: true,
+        denominacionEmpleo: true,
       },
     }),
     db.cargo.findMany({ orderBy: { orden: "asc" } }),
@@ -175,7 +179,7 @@ export default async function ExpedienteDetallePage({
   let planificador = false;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
-    if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) notFound();
+    if (!puedeVerExpedienteTramite(permisos, expediente)) notFound();
     puedeEditarPorRol = puedeEditarTramite(permisos, expediente.tramiteTipoId);
     puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
@@ -757,6 +761,7 @@ export default async function ExpedienteDetallePage({
                           nombre: u.nombre,
                           cargos: u.cargoAsignaciones.map((uc) => ({ nombre: uc.cargo.nombre, encargo: uc.encargo })),
                           dependenciaNombre: u.dependencia?.nombre ?? null,
+                          contratista: Boolean(u.contratista) || esContratista(u),
                         }))}
                         cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
                         usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}

@@ -7,13 +7,22 @@ import { Spinner } from "@/components/Spinner";
 
 const campo = "w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 
-export function NuevoFormatoVisita({ formatos, faltanBase }: { formatos: { id: string; nombre: string; codigo: string }[]; faltanBase: string[] }) {
+export function NuevoFormatoVisita({
+  formatos,
+  faltanBase,
+  tramitesLibres,
+}: {
+  formatos: { id: string; nombre: string; codigo: string }[];
+  faltanBase: string[];
+  tramitesLibres: { codigo: string; nombre: string }[];
+}) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [nombre, setNombre] = useState("");
   const [titulo, setTitulo] = useState("");
   const [copiarDe, setCopiarDe] = useState("");
+  const [tramites, setTramites] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -35,7 +44,7 @@ export function NuevoFormatoVisita({ formatos, faltanBase }: { formatos: { id: s
   }
 
   async function crear() {
-    const data = await enviar({ codigo, nombre, titulo, copiarDe: copiarDe || undefined });
+    const data = await enviar({ codigo, nombre, titulo, copiarDe: copiarDe || undefined, tramites });
     if (data?.id) router.push(`/planeador/formatos/${data.id}`);
   }
 
@@ -87,6 +96,28 @@ export function NuevoFormatoVisita({ formatos, faltanBase }: { formatos: { id: s
               ))}
             </select>
           </label>
+          <div className="text-xs text-stone-600 sm:col-span-2">
+            Trámites que usarán este formato ({tramites.length})
+            {tramitesLibres.length === 0 ? (
+              <p className="mt-0.5 text-stone-400">Todos los trámites con visita ya tienen un formato propio.</p>
+            ) : (
+              <div className="mt-0.5 max-h-48 space-y-0.5 overflow-y-auto rounded-md border border-stone-200 p-1.5">
+                {tramitesLibres.map((t) => (
+                  <label key={t.codigo} className="flex items-start gap-2 rounded px-1.5 py-1 text-stone-700 hover:bg-stone-50">
+                    <input
+                      type="checkbox"
+                      checked={tramites.includes(t.codigo)}
+                      onChange={() => setTramites(tramites.includes(t.codigo) ? tramites.filter((x) => x !== t.codigo) : [...tramites, t.codigo])}
+                      className="mt-0.5 text-cdmb-600"
+                    />
+                    <span>
+                      <span className="font-mono text-[11px] text-stone-400">{t.codigo}</span> {t.nombre}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="sm:col-span-2">
             <button type="button" onClick={crear} disabled={enviando} className="inline-flex items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-60">
               {enviando && <Spinner claro />}

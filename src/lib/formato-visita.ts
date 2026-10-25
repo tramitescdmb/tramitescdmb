@@ -11,6 +11,7 @@ export const TIPOS_CAMPO = {
   coordenadas: "Coordenadas (GPS)",
   tabla: "Tabla",
   lista_chequeo: "Lista de chequeo (textos tipo)",
+  fotos: "Registro fotográfico",
 } as const;
 export type TipoCampo = keyof typeof TIPOS_CAMPO;
 
@@ -73,6 +74,7 @@ export type Campo = {
   conCota?: boolean;
   zona?: ClaveZona;
   desde?: string;
+  multiple?: boolean;
 };
 
 export type Seccion = { id: string; titulo: string; campos: Campo[] };
@@ -409,6 +411,7 @@ export function formatearValorCampo(estructura: EstructuraFormato, respuestas: R
     case "fecha":
       return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? fechaLarga(v) : typeof v === "string" ? v : "";
     case "texto":
+      return typeof v === "string" ? (campo.multiple ? valoresMultiples(v).join(", ") : v) : "";
     case "parrafo":
     case "seleccion":
     case "si_no":
@@ -416,6 +419,10 @@ export function formatearValorCampo(estructura: EstructuraFormato, respuestas: R
     default:
       return "";
   }
+}
+
+export function valoresMultiples(v: unknown): string[] {
+  return typeof v === "string" ? v.split("\n").map((x) => x.trim()).filter(Boolean) : [];
 }
 
 function decimalesDe(s: string): number {
@@ -500,7 +507,8 @@ export function aplicarZonificacion(
 }
 
 export function campoVacio(campo: Campo, v: ValorCampo | undefined): boolean {
-  if (campo.tipo === "calculado") return false;
+  if (campo.tipo === "calculado" || campo.tipo === "fotos") return false;
+  if (campo.multiple) return valoresMultiples(v).length === 0;
   if (campo.tipo === "tabla") return filasConDatos(campo, v).length === 0;
   if (campo.tipo === "coordenadas") {
     const c = v as ValorCoordenadas | undefined;
@@ -526,7 +534,7 @@ export function sanearRespuestas(estructura: EstructuraFormato, entrada: unknown
   const r: Respuestas = {};
   for (const c of camposPlanos(estructura)) {
     const v = crudo[c.id];
-    if (c.tipo === "calculado" || v == null) continue;
+    if (c.tipo === "calculado" || c.tipo === "fotos" || v == null) continue;
     if (c.tipo === "tabla") {
       if (!Array.isArray(v)) continue;
       const cols = c.columnas ?? [];
@@ -610,6 +618,7 @@ export function validarEstructura(entrada: unknown): { estructura: EstructuraFor
   const estructura: EstructuraFormato = { secciones: resultado };
   const refs = idsReferenciables(estructura);
   const coordenadas = new Set(camposPlanos(estructura).filter((c) => c.tipo === "coordenadas").map((c) => c.id));
+  if (camposPlanos(estructura).filter((c) => c.tipo === "fotos").length > 1) return { error: "El formato solo puede tener un campo de registro fotográfico." };
   for (const c of camposPlanos(estructura)) {
     if (c.zona && !coordenadas.has(c.desde ?? "")) return { error: `«${c.etiqueta}» toma su valor de unas coordenadas que no existen en el formato.` };
     if (c.tipo === "calculado") {
@@ -646,7 +655,8 @@ function sanearCampo(c: Record<string, unknown>): { campo: Campo } | { error: st
   if (!ID_VALIDO.test(id)) return { error: `identificador no válido: «${id}» (solo minúsculas, números y guion bajo).` };
   if (!(tipo in TIPOS_CAMPO)) return { error: `tipo de campo desconocido en «${etiqueta}».` };
   const campo: Campo = { id, etiqueta, tipo };
-  if (c.obligatorio === true && tipo !== "calculado") campo.obligatorio = true;
+  if (c.obligatorio === true && tipo !== "calculado" && tipo !== "fotos") campo.obligatorio = true;
+  if (tipo === "texto" && c.multiple === true) campo.multiple = true;
   const ayuda = texto(c.ayuda, 500);
   if (ayuda) campo.ayuda = ayuda;
   if ((tipo === "texto" || tipo === "fecha" || tipo === "numero" || tipo === "parrafo") && typeof c.precarga === "string" && c.precarga in PRECARGAS) {

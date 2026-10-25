@@ -8,6 +8,7 @@ import { formatearFechaHora } from "@/lib/fecha";
 import { NuevoFormatoVisita } from "@/components/formatos/NuevoFormatoVisita";
 import { ConsecutivoConceptos } from "@/components/formatos/ConsecutivoConceptos";
 import { coberturaFormatos } from "@/lib/formatos-visita-db";
+import { codigoProcedimiento } from "@/lib/temas-visita";
 import { FORMATOS_BASE } from "@/lib/formatos-visita-base";
 import { siguienteConcepto } from "@/lib/concepto-tecnico";
 import { partesColombia } from "@/lib/planeador";
@@ -48,7 +49,11 @@ export default async function FormatosVisitaPage() {
       </BandaTablero>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <NuevoFormatoVisita formatos={formatos.map((f) => ({ id: f.id, nombre: f.nombre, codigo: f.codigo }))} faltanBase={faltanBase} />
+        <NuevoFormatoVisita
+          formatos={formatos.map((f) => ({ id: f.id, nombre: f.nombre, codigo: f.codigo }))}
+          faltanBase={faltanBase}
+          tramitesLibres={cobertura.filter((c) => !c.formato?.propio).map((c) => ({ codigo: codigoProcedimiento(c.codigo), nombre: c.nombre }))}
+        />
         <ConsecutivoConceptos anio={anio} siguiente={siguiente} />
       </div>
 

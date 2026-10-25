@@ -29,6 +29,7 @@ type Borrador = {
   formatoVersionId?: string;
   respuestas?: Respuestas;
   zonas?: Record<string, ResultadoZonificacion>;
+  piesFotos?: string[];
 };
 
 export type FormatoParaVisita = { versionId: string; codigo: string; titulo: string; numero: number; estructura: EstructuraFormato };
@@ -220,7 +221,50 @@ export function RegistrarVisitaForm({
     URL.revokeObjectURL(previas[i]!);
     setFotos((f) => f.filter((_, idx) => idx !== i));
     setPrevias((p) => p.filter((_, idx) => idx !== i));
+    setB((prev) => ({ ...prev, piesFotos: (prev.piesFotos ?? []).filter((_, idx) => idx !== i) }));
   }
+
+  const conCampoFotos = Boolean(formato && camposPlanos(formato.estructura).some((c) => c.tipo === "fotos"));
+  const bloqueFotos = (
+    <div className="space-y-2">
+      {previas.length > 0 && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {previas.map((url, i) => (
+            <div key={url} className="flex gap-2 rounded-md border border-stone-200 p-1.5">
+              <div className="relative h-20 w-20 flex-none overflow-hidden rounded">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+                <button type="button" onClick={() => quitarFoto(i)} aria-label={`Quitar foto ${i + 1}`} className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white">
+                  <X className="h-3 w-3" aria-hidden />
+                </button>
+              </div>
+              <textarea
+                value={b.piesFotos?.[i] ?? ""}
+                onChange={(e) => {
+                  const pies = [...(b.piesFotos ?? [])];
+                  pies[i] = e.target.value.slice(0, 200);
+                  fijar("piesFotos", pies);
+                }}
+                rows={3}
+                aria-label={`Pie de la foto ${i + 1}`}
+                placeholder={`Fotografía ${i + 1}: describa lo que se observa`}
+                className="min-w-0 flex-1 resize-none rounded border border-stone-200 px-2 py-1 text-xs focus:border-vivo-500 focus:outline-none"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      {fotos.length < MAX_FOTOS_VISITA && (
+        <label className="flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
+          <Camera className="h-4 w-4" aria-hidden />
+          Tomar o agregar fotos ({fotos.length}/{MAX_FOTOS_VISITA})
+          <input type="file" accept="image/jpeg,image/png" capture="environment" multiple className="hidden" onChange={(e) => agregarFotos(e.target.files)} />
+        </label>
+      )}
+      <p className="text-[11px] text-stone-400">Máximo {MAX_FOTOS_VISITA} fotos de hasta 2 MB cada una; se comprimen automáticamente.</p>
+      {errorFotos && <p className="text-xs text-red-600">{errorFotos}</p>}
+    </div>
+  );
 
   async function guardar() {
     setError(null);
@@ -242,6 +286,7 @@ export function RegistrarVisitaForm({
       etiqueta: etiquetaCola,
       cuerpo: { ...b, ...b.punto, capturaManual: b.punto.manual },
       fotos: [...fotos],
+      pies: fotos.map((_, i) => b.piesFotos?.[i]?.trim() ?? ""),
       creadoEn: new Date().toISOString(),
     };
     try {
@@ -421,6 +466,7 @@ export function RegistrarVisitaForm({
             respuestas={b.respuestas ?? {}}
             precarga={precarga}
             faltantes={faltantes}
+            renderFotos={() => bloqueFotos}
             onZonificar={(coordId, zona) =>
               setB((prev) => {
                 const anteriores = prev.respuestas ?? {};
@@ -525,34 +571,7 @@ export function RegistrarVisitaForm({
         </div>
       )}
 
-      {seccion(
-        formato ? 4 : 6,
-        `Registro fotográfico (${fotos.length}/${MAX_FOTOS_VISITA})`,
-        <div className="space-y-2">
-          {previas.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {previas.map((url, i) => (
-                <div key={url} className="relative h-20 w-20 overflow-hidden rounded-md border border-stone-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => quitarFoto(i)} aria-label={`Quitar foto ${i + 1}`} className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white">
-                    <X className="h-3 w-3" aria-hidden />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {fotos.length < MAX_FOTOS_VISITA && (
-            <label className="flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-stone-300 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
-              <Camera className="h-4 w-4" aria-hidden />
-              Tomar o agregar fotos
-              <input type="file" accept="image/jpeg,image/png" capture="environment" multiple className="hidden" onChange={(e) => agregarFotos(e.target.files)} />
-            </label>
-          )}
-          {errorFotos && <p className="text-xs text-red-600">{errorFotos}</p>}
-        </div>,
-        true
-      )}
+      {!conCampoFotos && seccion(formato ? 4 : 6, `Registro fotográfico (${fotos.length}/${MAX_FOTOS_VISITA})`, bloqueFotos, true)}
 
       {error && (
         <p className="flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">

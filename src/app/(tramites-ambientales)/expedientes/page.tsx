@@ -43,6 +43,7 @@ export default async function ExpedientesPage({
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const tramites = permisos ? todosLosTramites.filter((t) => puedeAccederTramite(permisos, t.id)) : todosLosTramites;
   const tramiteIdsPermitidos = permisos && !permisos.esAdmin ? Array.from(permisos.tramites.keys()) : null;
+  const expedienteIdsAsignados = permisos && !permisos.esAdmin ? Array.from(permisos.expedientesTramite ?? []) : undefined;
 
   const busqueda = q?.trim();
   const pagina = Math.max(1, Number(pageParam) || 1);
@@ -51,6 +52,7 @@ export default async function ExpedientesPage({
 
   const where = construirWhereExpedientes({
     tramiteIdsPermitidos,
+    expedienteIdsAsignados,
     estado,
     tramite,
     municipio,
@@ -63,6 +65,7 @@ export default async function ExpedientesPage({
 
   const whereSinEstado = construirWhereExpedientes({
     tramiteIdsPermitidos,
+    expedienteIdsAsignados,
     tramite,
     municipio,
     rango,

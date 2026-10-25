@@ -158,6 +158,8 @@ model Usuario {
   visitasQueProgramo         VisitaProgramada[]         @relation("VisitaProgramadaPor")
   temasVisitaCreados         TemaVisita[]               @relation("TemaVisitaCreadoPor")
   formatosVisitaCreados      FormatoVisita[]            @relation("FormatoVisitaCreadoPor")
+  participacionesVisita      ParticipanteVisita[]       @relation("ParticipanteVisitaUsuario")
+  visitasTecnicasFinalizadas VisitaTecnica[]            @relation("VisitaTecnicaFinalizadaPor")
   versionesFormatoCreadas    FormatoVisitaVersion[]     @relation("FormatoVersionCreadoPor")
   versionesFormatoPublicadas FormatoVisitaVersion[]     @relation("FormatoVersionPublicadaPor")
   notificaciones             Notificacion[]             @relation("NotificacionUsuario")
@@ -773,6 +775,7 @@ model ExpedienteDocumento {
   firmas           FirmaExpedienteDocumento[]
   solicitudesFirma SolicitudFirma[]
   avisosRechazo    AvisoRechazoDocumento[]
+  visitaConcepto   VisitaTecnica?                @relation("ConceptoVisitaDocumento")
 
   @@index([expedienteId])
   @@index([requisitoId])
@@ -885,17 +888,22 @@ model VisitaTecnica {
   capturadoEn       DateTime @default(now())
   createdAt         DateTime @default(now())
 
-  visitaProgramadaId String?          @unique
-  inicioReal         DateTime?
-  finReal            DateTime?
-  atendidoPor        String?
-  hallazgos          String?          @db.Text
-  recomendaciones    String?          @db.Text
-  resultado          ResultadoVisita?
-  formatoVersionId   String?
-  respuestas         Json?
-  conceptoNumero     String?          @unique
-  conceptoFecha      DateTime?
+  visitaProgramadaId  String?              @unique
+  inicioReal          DateTime?
+  finReal             DateTime?
+  atendidoPor         String?
+  hallazgos           String?              @db.Text
+  recomendaciones     String?              @db.Text
+  resultado           ResultadoVisita?
+  formatoVersionId    String?
+  respuestas          Json?
+  conceptoNumero      String?              @unique
+  conceptoFecha       DateTime?
+  finalizadaEn        DateTime?
+  finalizadaPorId     String?
+  documentoConceptoId String?              @unique
+  documentoConcepto   ExpedienteDocumento? @relation("ConceptoVisitaDocumento", fields: [documentoConceptoId], references: [id], onDelete: SetNull)
+  finalizadaPor       Usuario?             @relation("VisitaTecnicaFinalizadaPor", fields: [finalizadaPorId], references: [id])
 
   formatoVersion   FormatoVisitaVersion? @relation(fields: [formatoVersionId], references: [id])
   expediente       Expediente            @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
@@ -931,6 +939,28 @@ model TemaVisita {
   createdAt      DateTime        @default(now())
   creadoPor      Usuario?        @relation("TemaVisitaCreadoPor", fields: [creadoPorId], references: [id])
   visitas        VisitaTecnica[] @relation("VisitaTecnicaTemas")
+}
+
+enum RolParticipanteVisita {
+  ELABORA
+  REVISA_TECNICO
+  REVISA_JURIDICO
+  VISTO_BUENO
+  APRUEBA
+}
+
+model ParticipanteVisita {
+  id        String                @id @default(cuid())
+  visitaId  String
+  usuarioId String
+  rol       RolParticipanteVisita
+  createdAt DateTime              @default(now())
+
+  visita  VisitaProgramada @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+  usuario Usuario          @relation("ParticipanteVisitaUsuario", fields: [usuarioId], references: [id])
+
+  @@unique([visitaId, usuarioId])
+  @@index([usuarioId])
 }
 
 enum EstadoVersionFormato {
@@ -993,10 +1023,11 @@ model VisitaProgramada {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
-  expediente    Expediente     @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
-  profesional   Usuario        @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
-  programadaPor Usuario        @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
+  expediente    Expediente           @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  profesional   Usuario              @relation("VisitaProgramadaProfesional", fields: [profesionalId], references: [id])
+  programadaPor Usuario              @relation("VisitaProgramadaPor", fields: [programadaPorId], references: [id])
   visitaTecnica VisitaTecnica?
+  participantes ParticipanteVisita[]
 
   @@index([fechaHora])
   @@index([profesionalId, fechaHora])
@@ -1044,6 +1075,7 @@ model VisitaTecnicaFoto {
   tomadaEn    DateTime?
   latExif     Float?
   lonExif     Float?
+  pie         String?
   createdAt   DateTime  @default(now())
 
   visita VisitaTecnica @relation(fields: [visitaId], references: [id], onDelete: Cascade)

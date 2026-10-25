@@ -4,7 +4,7 @@ import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteTramite } from "@/lib/permisos";
 import { etiquetaFormatoFirma } from "@/lib/firma-proveedor";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { ordenarPorCalidad, rotuloCalidadFirma, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
@@ -27,6 +27,7 @@ export default async function FichaFirmaExpedienteTramitePage({
   const expediente = await db.expediente.findUnique({
     where: { id },
     select: {
+      id: true,
       numero: true,
       tramiteTipoId: true,
       tramiteTipo: { select: { nombre: true } },
@@ -77,7 +78,7 @@ export default async function FichaFirmaExpedienteTramitePage({
     },
   });
   if (!expediente) notFound();
-  if (!puedeAccederTramite(permisos, expediente.tramiteTipoId)) redirect("/expedientes");
+  if (!puedeVerExpedienteTramite(permisos, expediente)) redirect("/expedientes");
 
   return (
     <section className="mx-auto max-w-3xl space-y-4">

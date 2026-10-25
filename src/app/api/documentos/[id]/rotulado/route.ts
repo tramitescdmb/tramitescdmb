@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteTramite } from "@/lib/permisos";
 import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
 import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 import { descargarDocumento } from "@/lib/storage";
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (
-    !puedeAccederTramite(permisos, doc.expediente.tramiteTipoId) &&
+    !puedeVerExpedienteTramite(permisos, doc.expediente) &&
     !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id)) &&
     !(await accesoDesdeArchivoSgdea({
       permisos,

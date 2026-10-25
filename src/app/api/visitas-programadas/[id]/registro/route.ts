@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!puedePlanearVisitas(permisos) && session.userId !== visita.profesionalId) {
     return NextResponse.json({ error: "Solo el profesional asignado a la visita o quien planea las visitas puede registrarla." }, { status: 403 });
   }
-  if (!(await puedeEditarExpediente(session.userId, visita.expedienteId))) {
+  if (session.userId !== visita.profesionalId && !(await puedeEditarExpediente(session.userId, visita.expedienteId))) {
     return NextResponse.json({ error: "Su acceso a este trámite es de solo lectura." }, { status: 403 });
   }
   if (!expedienteEnEjecucion(visita.expediente)) {

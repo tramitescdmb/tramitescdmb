@@ -34,7 +34,7 @@ export default async function PlaneadorPage({ searchParams }: { searchParams: Pr
 
   const [visitas, profesionales, expedientes] = await Promise.all([
     db.visitaProgramada.findMany({
-      where: { fechaHora: { gte: desde, lt: hasta }, ...(planificador ? {} : { profesionalId: session.userId }) },
+      where: { fechaHora: { gte: desde, lt: hasta }, ...(planificador ? {} : { OR: [{ profesionalId: session.userId }, { participantes: { some: { usuarioId: session.userId } } }] }) },
       orderBy: { fechaHora: "asc" },
       include: {
         profesional: { select: { nombre: true } },
@@ -100,7 +100,7 @@ export default async function PlaneadorPage({ searchParams }: { searchParams: Pr
         tramite: v.expediente.tramiteTipo.nombre,
         municipio: v.expediente.municipio,
         enEjecucion: expedienteEnEjecucion(v.expediente),
-        puedeAbrir: permisos.esAdmin || permisos.tramites.has(v.expediente.tramiteTipoId),
+        puedeAbrir: permisos.esAdmin || permisos.tramites.has(v.expediente.tramiteTipoId) || Boolean(permisos.expedientesTramite?.has(v.expedienteId)),
         asignados: v.expediente.usuariosAsignados,
       },
     };

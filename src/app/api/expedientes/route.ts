@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
   }
 
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
-  const numero = await generarNumeroExpediente(tramite.codigo, tramite.id);
+  const numero = await generarNumeroExpediente(tramite.codigo);
 
   function calcularUbicacion(prefijo: string, punto?: { lat: number | null; lon: number | null }) {
     const datos: Record<string, number | null> = {

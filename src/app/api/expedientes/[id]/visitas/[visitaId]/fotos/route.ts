@@ -9,15 +9,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id, visitaId } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  if (!(await puedeEditarExpediente(session.userId, id))) {
-    return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
-  }
   if (await tramiteCerrado(id)) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
-  const visita = await db.visitaTecnica.findUnique({ where: { id: visitaId }, select: { expedienteId: true, _count: { select: { fotos: true } } } });
+  const visita = await db.visitaTecnica.findUnique({
+    where: { id: visitaId },
+    select: { expedienteId: true, finalizadaEn: true, visitaProgramada: { select: { profesionalId: true } }, _count: { select: { fotos: true } } },
+  });
   if (!visita || visita.expedienteId !== id) {
     return NextResponse.json({ error: "La visita técnica indicada no existe." }, { status: 404 });
   }
+  if (visita.visitaProgramada?.profesionalId !== session.userId && !(await puedeEditarExpediente(session.userId, id))) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
+  }
+  if (visita.finalizadaEn) return NextResponse.json({ error: "El concepto técnico ya fue finalizado y enviado a firma." }, { status: 409 });
   if (visita._count.fotos >= MAX_FOTOS_VISITA) {
     return NextResponse.json({ error: mensajeDemasiadasFotos() }, { status: 400 });
   }
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const tomadaEn = body.tomadaEn ? new Date(body.tomadaEn) : null;
   const latExif = body.latExif != null ? Number(body.latExif) : null;
   const lonExif = body.lonExif != null ? Number(body.lonExif) : null;
+  const pie = typeof body.pie === "string" && body.pie.trim() ? body.pie.trim().slice(0, 200) : null;
 
   if (!storagePath || !mimeType || !Number.isFinite(tamanoBytes)) {
     return NextResponse.json({ error: "Faltan datos del archivo subido." }, { status: 400 });
@@ -49,6 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       tomadaEn: tomadaEn && !Number.isNaN(tomadaEn.getTime()) ? tomadaEn : null,
       latExif: latExif != null && Number.isFinite(latExif) ? latExif : null,
       lonExif: lonExif != null && Number.isFinite(lonExif) ? lonExif : null,
+      pie,
     },
   });
 

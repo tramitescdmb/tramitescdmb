@@ -627,6 +627,12 @@ function EditorCampo({
             </select>
           </label>
         )}
+        {campo.tipo === "texto" && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
+            <input type="checkbox" checked={!!campo.multiple} onChange={(e) => fijar("multiple", e.target.checked || undefined)} className="text-cdmb-600" />
+            Admite varios valores (botón «Agregar»)
+          </label>
+        )}
         {campo.tipo === "coordenadas" && (
           <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
             <input type="checkbox" checked={!!campo.conCota} onChange={(e) => fijar("conCota", e.target.checked)} className="text-cdmb-600" />

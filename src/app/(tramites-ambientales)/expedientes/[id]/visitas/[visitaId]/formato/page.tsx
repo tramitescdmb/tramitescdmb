@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { etiquetaConcepto } from "@/lib/concepto-tecnico";
 import { AsignarNumeroConcepto } from "@/components/formatos/AsignarNumeroConcepto";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -11,6 +11,9 @@ import { sanearRespuestas } from "@/lib/formato-visita";
 import { DocumentoFormato } from "@/components/formatos/DocumentoFormato";
 import { EstiloImpresionFormato } from "@/components/formatos/EstiloImpresionFormato";
 import { BotonImprimir } from "@/components/BotonImprimir";
+import { FinalizarConcepto } from "@/components/formatos/FinalizarConcepto";
+import { equipoDeVisita, firmantesParaDocumento } from "@/lib/concepto-visita-db";
+import { ETIQUETA_ROL_PARTICIPANTE } from "@/lib/participantes-visita";
 
 export default async function FormatoVisitaDiligenciadoPage({ params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -31,7 +34,9 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           respuestas: true,
           conceptoNumero: true,
           conceptoFecha: true,
-          fotos: { select: { id: true }, orderBy: { createdAt: "asc" } },
+          finalizadaEn: true,
+          documentoConceptoId: true,
+          fotos: { select: { id: true, pie: true }, orderBy: { createdAt: "asc" } },
           formatoVersion: { select: { numero: true, estructura: true, formato: { select: { codigo: true, titulo: true, versionDocumento: true, fechaDocumento: true } } } },
         },
       },
@@ -39,14 +44,18 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
   });
   if (!visita || visita.expedienteId !== id) notFound();
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, visita.expediente.tramiteTipoId)) notFound();
+  if (!puedeVerExpedienteTramite(permisos, { id: visita.expedienteId, tramiteTipoId: visita.expediente.tramiteTipoId })) notFound();
   const vt = visita.visitaTecnica;
   if (!vt?.formatoVersion) notFound();
 
   const estructura = estructuraDesdeJson(vt.formatoVersion.estructura);
   const [precarga, config] = await Promise.all([precargaDeVisita(visita.id, vt.inicioReal ?? vt.capturadoEn), getConfiguracionSitio()]);
   const f = vt.formatoVersion.formato;
-  const puedeAsignar = !vt.conceptoNumero && (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+  const puedeAsignar =
+    !vt.conceptoNumero && (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId) && (session.userId === visita.profesionalId || puedeEditarTramite(permisos, visita.expediente.tramiteTipoId));
+  const { lista, porId } = await equipoDeVisita(visita.id, visita.profesionalId);
+  const firmantesDoc = firmantesParaDocumento(lista, porId);
+  const puedeFinalizar = Boolean(vt.conceptoNumero) && !vt.finalizadaEn && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
   return (
     <div className="space-y-3">
@@ -58,6 +67,19 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
         </Link>
         <span className="flex flex-wrap items-start gap-2">
           {puedeAsignar && <AsignarNumeroConcepto visitaId={visita.id} />}
+          {puedeFinalizar && (
+            <FinalizarConcepto
+              visitaId={visita.id}
+              expedienteId={id}
+              numero={vt.conceptoNumero!}
+              firmantes={lista.map((p) => ({ nombre: porId.get(p.usuarioId)?.nombre ?? "—", rol: ETIQUETA_ROL_PARTICIPANTE[p.rol] }))}
+            />
+          )}
+          {vt.documentoConceptoId && (
+            <a href={`/api/documentos/${vt.documentoConceptoId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              PDF enviado a firma
+            </a>
+          )}
           <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
         </span>
       </div>
@@ -68,7 +90,8 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           respuestas={sanearRespuestas(estructura, vt.respuestas)}
           precarga={precarga}
           numeroConcepto={vt.conceptoNumero ? etiquetaConcepto(vt.conceptoNumero, vt.conceptoFecha) : null}
-          fotos={vt.fotos.map((foto, i) => ({ id: foto.id, url: `/api/visitas-fotos/${foto.id}`, pie: `Fotografía ${i + 1}` }))}
+          fotos={vt.fotos.map((foto) => ({ id: foto.id, url: `/api/visitas-fotos/${foto.id}?directo`, pie: foto.pie ?? undefined }))}
+          firmantes={firmantesDoc}
         />
       </div>
     </div>

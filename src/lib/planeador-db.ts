@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { esContratista } from "@/lib/jerarquia-firma";
 import { fechaHoraColombia, finEfectivo, horaCorta, intervalosSeCruzan } from "@/lib/planeador";
 import { formatearFecha } from "@/lib/fecha";
 import { TEMAS_VISITA_BASE } from "@/lib/temas-visita";
@@ -52,4 +53,32 @@ export async function temasDeVisita() {
 
 export function rangoTexto(inicio: Date, fin: Date | null): string {
   return `${formatearFecha(inicio)} de ${horaCorta(inicio)} a ${horaCorta(finEfectivo({ fechaHora: inicio, fechaHoraFin: fin }))}`;
+}
+
+export async function personasParaEquipo(asignados: string[]) {
+  const usuarios = await db.usuario.findMany({
+    where: { activo: true },
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      contratista: { select: { id: true } },
+      denominacionEmpleo: true,
+      rolesContratacion: true,
+      cargoAsignaciones: { select: { encargo: true, cargo: { select: { nombre: true } } } },
+      dependencia: { select: { nombre: true } },
+    },
+  });
+  const enTramite = new Set(asignados);
+  return usuarios.map((u) => {
+    const contratista = Boolean(u.contratista) || esContratista(u);
+    const cargos = u.cargoAsignaciones.map((c) => (c.encargo ? `${c.cargo.nombre} (E)` : c.cargo.nombre)).join(", ");
+    return {
+      id: u.id,
+      nombre: u.nombre,
+      detalle: [cargos || (contratista ? "Contratista" : ""), u.dependencia?.nombre].filter(Boolean).join(" · "),
+      asignado: enTramite.has(u.id),
+      contratista,
+    };
+  });
 }

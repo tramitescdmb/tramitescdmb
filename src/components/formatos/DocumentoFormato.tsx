@@ -16,6 +16,10 @@ import {
   type ValorCoordenadas,
 } from "@/lib/formato-visita";
 import { desdeLatLon, planasOrigenBogota } from "@/lib/coordenadas";
+import { MapaEstatico } from "@/components/formatos/MapaEstatico";
+
+export type FotoDocumento = { id: string; url: string; pie?: string };
+export type FirmanteDocumento = { titulo: string; nombre: string; cargo: string; oficina?: boolean };
 
 export type EncabezadoFormato = {
   codigo: string;
@@ -36,56 +40,57 @@ export function DocumentoFormato({
   fotos = [],
   enBlanco = false,
   numeroConcepto = null,
+  firmantes,
 }: {
   encabezado: EncabezadoFormato;
   estructura: EstructuraFormato;
   respuestas: Respuestas;
   precarga: DatosPrecarga;
-  fotos?: { id: string; url: string; pie?: string }[];
+  fotos?: FotoDocumento[];
   enBlanco?: boolean;
   numeroConcepto?: string | null;
+  firmantes?: FirmanteDocumento[];
 }) {
+  const fotosEnCampo = estructura.secciones.some((s) => s.campos.some((c) => c.tipo === "fotos"));
   return (
     <article className="documento-formato mx-auto max-w-[21cm] bg-white text-[12px] leading-snug text-stone-900">
       <table className="w-full border-collapse">
         <thead className="table-header-group">
           <tr>
-            <td className="pb-3">
+            <td className="pb-3" data-pdf-encabezado>
               <Encabezado e={encabezado} />
             </td>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td className="space-y-4">
+            <td className="space-y-4" data-pdf-cuerpo>
               <p className="text-center text-sm font-bold uppercase">Concepto técnico No. {numeroConcepto ?? "________ de ____________"}</p>
               {estructura.secciones.map((s) => (
                 <section key={s.id} className="break-inside-avoid-page">
                   <h3 className="mb-1 border border-stone-400 bg-stone-100 px-2 py-1 text-center text-[12px] font-bold uppercase">{s.titulo}</h3>
-                  <BloquesSeccion campos={s.campos} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} />
+                  <BloquesSeccion campos={s.campos} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} fotos={fotos} />
                 </section>
               ))}
 
-              {fotos.length > 0 && (
+              {!fotosEnCampo && fotos.length > 0 && (
                 <section>
                   <h3 className="mb-1 border border-stone-400 bg-stone-100 px-2 py-1 text-center text-[12px] font-bold uppercase">Registro fotográfico</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {fotos.map((f, i) => (
-                      <figure key={f.id} className="break-inside-avoid border border-stone-300 p-1">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={f.url} alt={`Fotografía ${i + 1}`} className="mx-auto max-h-[9cm] w-auto object-contain" />
-                        <figcaption className="mt-1 text-center text-[10px] italic text-stone-600">{f.pie ?? `Fotografía ${i + 1}`}</figcaption>
-                      </figure>
-                    ))}
-                  </div>
+                  <RegistroFotografico fotos={fotos} />
                 </section>
               )}
 
               <section className="break-inside-avoid space-y-3 pt-2">
-                <BloqueFirma titulo="Nombre y firma del responsable" nombre={precarga.funcionario ?? ""} />
-                <BloqueFirma titulo="Nombre y firma revisó aspectos jurídicos" />
-                <BloqueFirma titulo="Nombre y firma revisó aspectos técnicos" />
-                <BloqueFirma titulo="Visto bueno de la coordinación respectiva" oficina />
+                {firmantes && firmantes.length > 0 ? (
+                  firmantes.map((f, i) => <BloqueFirma key={i} titulo={f.titulo} nombre={f.nombre} cargo={f.cargo} oficina={f.oficina} />)
+                ) : (
+                  <>
+                    <BloqueFirma titulo="Nombre y firma del responsable" nombre={precarga.funcionario ?? ""} />
+                    <BloqueFirma titulo="Nombre y firma revisó aspectos jurídicos" />
+                    <BloqueFirma titulo="Nombre y firma revisó aspectos técnicos" />
+                    <BloqueFirma titulo="Visto bueno de la coordinación respectiva" oficina />
+                  </>
+                )}
               </section>
             </td>
           </tr>
@@ -154,6 +159,31 @@ function Encabezado({ e }: { e: EncabezadoFormato }) {
   );
 }
 
+function RegistroFotografico({ fotos }: { fotos: FotoDocumento[] }) {
+  const pares: FotoDocumento[][] = [];
+  for (let i = 0; i < fotos.length; i += 2) pares.push(fotos.slice(i, i + 2));
+  return (
+    <div className="space-y-2">
+      {pares.map((par, k) => (
+        <div key={k} className="grid grid-cols-2 gap-2" data-pdf-bloque>
+          {par.map((f, j) => {
+            const n = k * 2 + j + 1;
+            return (
+              <figure key={f.id} className="break-inside-avoid border border-stone-300 p-1 text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt={`Fotografía ${n}`} className="mx-auto max-h-[9cm] w-auto object-contain" />
+                <figcaption className="mt-1 text-center text-[10px] italic text-stone-600">
+                  <b>Fotografía {n}.</b> {f.pie}
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function esSimple(c: Campo): boolean {
   return ["texto", "numero", "fecha", "seleccion", "si_no", "calculado"].includes(c.tipo);
 }
@@ -164,12 +194,14 @@ function BloquesSeccion({
   respuestas,
   precarga,
   enBlanco,
+  fotos,
 }: {
   campos: Campo[];
   estructura: EstructuraFormato;
   respuestas: Respuestas;
   precarga: DatosPrecarga;
   enBlanco: boolean;
+  fotos: FotoDocumento[];
 }) {
   const bloques: Campo[][] = [];
   for (const c of campos) {
@@ -192,7 +224,7 @@ function BloquesSeccion({
             </tbody>
           </table>
         ) : (
-          <BloqueComplejo key={b[0]!.id} campo={b[0]!} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} />
+          <BloqueComplejo key={b[0]!.id} campo={b[0]!} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} fotos={fotos} />
         )
       )}
     </div>
@@ -205,14 +237,24 @@ function BloqueComplejo({
   respuestas,
   precarga,
   enBlanco,
+  fotos,
 }: {
   campo: Campo;
   estructura: EstructuraFormato;
   respuestas: Respuestas;
   precarga: DatosPrecarga;
   enBlanco: boolean;
+  fotos: FotoDocumento[];
 }) {
   const v = respuestas[campo.id];
+  if (campo.tipo === "fotos") {
+    return (
+      <div>
+        <p className="mb-1 text-[11px] font-bold uppercase">{campo.etiqueta}</p>
+        {fotos.length > 0 ? <RegistroFotografico fotos={fotos} /> : <p className="border border-stone-400 px-2 py-3 text-center text-[10px] text-stone-500">{enBlanco ? "Fotografías de la visita con su pie de foto" : "Sin fotografías"}</p>}
+      </div>
+    );
+  }
   if (campo.tipo === "parrafo") {
     const texto = typeof v === "string" ? v : "";
     return (
@@ -228,6 +270,7 @@ function BloqueComplejo({
     const nac = listo ? desdeLatLon(c.lat!, c.lon!) : null;
     const bog = listo ? planasOrigenBogota(c.lat!, c.lon!) : null;
     return (
+      <div className="space-y-1">
       <table className="w-full border-collapse">
         <tbody>
           <tr>
@@ -262,6 +305,8 @@ function BloqueComplejo({
           )}
         </tbody>
       </table>
+      {listo && <MapaEstatico lat={c.lat!} lon={c.lon!} pie={`Localización del punto: ${aDms(c.lat!, true)} · ${aDms(c.lon!, false)}`} className="mx-auto w-[60%]" />}
+      </div>
     );
   }
   if (campo.tipo === "lista_chequeo") {
@@ -374,9 +419,9 @@ function BloqueComplejo({
   return null;
 }
 
-function BloqueFirma({ titulo, nombre = "", oficina = false }: { titulo: string; nombre?: string; oficina?: boolean }) {
+function BloqueFirma({ titulo, nombre = "", cargo = "", oficina = false }: { titulo: string; nombre?: string; cargo?: string; oficina?: boolean }) {
   return (
-    <div className="break-inside-avoid">
+    <div className="break-inside-avoid" data-pdf-bloque>
       <p className="text-[11px] italic">{titulo}:</p>
       <table className="w-full border-collapse">
         <tbody>
@@ -386,7 +431,7 @@ function BloqueFirma({ titulo, nombre = "", oficina = false }: { titulo: string;
           </tr>
           <tr>
             <td className={`${celda} font-bold italic`}>Cargo:</td>
-            <td className={celda} />
+            <td className={celda}>{cargo}</td>
           </tr>
           <tr>
             <td className={`${celda} h-9 font-bold italic`}>Firma:</td>

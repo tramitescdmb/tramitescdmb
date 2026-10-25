@@ -6,7 +6,9 @@ import { UserCheck, X } from "lucide-react";
 
 export const CARGO_PROFESIONAL_EVALUACION = "Profesional o Técnico de Evaluación";
 
-type UsuarioOpcion = { id: string; nombre: string; cargos: { nombre: string; encargo: boolean }[]; dependenciaNombre: string | null };
+type UsuarioOpcion = { id: string; nombre: string; cargos: { nombre: string; encargo: boolean }[]; dependenciaNombre: string | null; contratista?: boolean };
+
+const FILTRO_CONTRATISTAS = "__contratistas";
 
 function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -39,7 +41,7 @@ export function PersonalAsignadoTramiteForm({
   const filtrados = usuarios.filter(
     (u) =>
       seleccion.has(u.id) ||
-      ((!cargoFiltro || u.cargos.some((c) => c.nombre === cargoFiltro)) && (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""}`).includes(q)))
+      ((!cargoFiltro || (cargoFiltro === FILTRO_CONTRATISTAS ? u.contratista : u.cargos.some((c) => c.nombre === cargoFiltro))) && (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""}`).includes(q)))
   );
   const cargosConUsuarios = cargos.filter((c) => usuarios.some((u) => u.cargos.some((uc) => uc.nombre === c.nombre)));
 
@@ -106,6 +108,7 @@ export function PersonalAsignadoTramiteForm({
                 className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-xs"
               >
                 <option value="">Todos los cargos</option>
+                {usuarios.some((u) => u.contratista) && <option value={FILTRO_CONTRATISTAS}>Contratistas</option>}
                 {cargosConUsuarios.map((c) => (
                   <option key={c.id} value={c.nombre}>
                     {c.nombre}
@@ -137,7 +140,7 @@ export function PersonalAsignadoTramiteForm({
                       {u.nombre}
                       <span className="block truncate text-[11px] text-stone-400">
                         {[u.cargos.map((c) => (c.encargo ? `${c.nombre} (E)` : c.nombre)).join(", "), u.dependenciaNombre].filter(Boolean).join(" · ") ||
-                          "Sin cargo"}
+                          (u.contratista ? "Contratista" : "Sin cargo")}
                       </span>
                     </span>
                   </label>

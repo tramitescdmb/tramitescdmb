@@ -23,6 +23,7 @@ import {
   type ValorCoordenadas,
 } from "@/lib/formato-visita";
 import { desdeLatLon, planasOrigenBogota } from "@/lib/coordenadas";
+import { MapaEstatico } from "@/components/formatos/MapaEstatico";
 
 const campoCls = "w-full rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500 disabled:bg-stone-50 disabled:text-stone-500";
 const celdaCls = "w-full min-w-[5.5rem] rounded border border-stone-200 bg-white px-1.5 py-1 text-xs focus:border-vivo-500 focus:outline-none disabled:bg-stone-50";
@@ -35,6 +36,7 @@ export function FormularioFormato({
   soloLectura = false,
   faltantes,
   onZonificar,
+  renderFotos,
 }: {
   estructura: EstructuraFormato;
   respuestas: Respuestas;
@@ -43,6 +45,7 @@ export function FormularioFormato({
   soloLectura?: boolean;
   faltantes?: Set<string>;
   onZonificar?: (coordenadasId: string, zona: ResultadoZonificacion) => void;
+  renderFotos?: () => React.ReactNode;
 }) {
   return (
     <div className="space-y-3">
@@ -64,6 +67,7 @@ export function FormularioFormato({
                     soloLectura={soloLectura}
                     falta={faltantes?.has(c.id) ?? false}
                     onZonificar={onZonificar}
+                    renderFotos={renderFotos}
                   />
                 </div>
               ))}
@@ -76,7 +80,7 @@ export function FormularioFormato({
 }
 
 function anchoCompleto(c: Campo): boolean {
-  return c.tipo === "parrafo" || c.tipo === "tabla" || c.tipo === "lista_chequeo" || c.tipo === "coordenadas" || c.etiqueta.length > 60;
+  return c.tipo === "parrafo" || c.tipo === "tabla" || c.tipo === "fotos" || c.tipo === "lista_chequeo" || c.tipo === "coordenadas" || c.etiqueta.length > 60;
 }
 
 function Etiqueta({ campo, falta }: { campo: Campo; falta: boolean }) {
@@ -104,6 +108,7 @@ function CampoFormato({
   soloLectura,
   falta,
   onZonificar,
+  renderFotos,
 }: {
   campo: Campo;
   estructura: EstructuraFormato;
@@ -113,6 +118,7 @@ function CampoFormato({
   soloLectura: boolean;
   falta: boolean;
   onZonificar?: (coordenadasId: string, zona: ResultadoZonificacion) => void;
+  renderFotos?: () => React.ReactNode;
 }) {
   const v = respuestas[campo.id];
   const str = typeof v === "string" ? v : "";
@@ -120,6 +126,7 @@ function CampoFormato({
 
   switch (campo.tipo) {
     case "texto":
+      if (campo.multiple) return <CampoMultiple campo={campo} valor={str} onCambio={(x) => onCambio(campo.id, x)} soloLectura={soloLectura} falta={falta} />;
       return (
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
@@ -256,6 +263,17 @@ function CampoFormato({
         </div>
       );
     }
+    case "fotos":
+      return (
+        <div>
+          <Etiqueta campo={campo} falta={false} />
+          {renderFotos ? (
+            renderFotos()
+          ) : (
+            <p className="rounded-md border border-dashed border-stone-300 px-3 py-4 text-center text-xs text-stone-500">Aquí el técnico toma o adjunta las fotos de la visita (máximo 10, de hasta 2 MB cada una) con su pie de foto.</p>
+          )}
+        </div>
+      );
     case "tabla":
       return <CampoTabla campo={campo} valor={Array.isArray(v) ? v : []} onCambio={(x) => onCambio(campo.id, x)} soloLectura={soloLectura} falta={falta} />;
   }
@@ -396,6 +414,7 @@ function CampoCoordenadas({
             {v.precisionM != null && <p className="text-stone-400 sm:col-span-3">Precisión del GPS ±{Math.round(v.precisionM)} m</p>}
           </dl>
         )}
+        {listo && <MapaEstatico lat={v.lat!} lon={v.lon!} className="max-w-md" />}
         {listo && zona && (
           <p className="rounded bg-stone-50 px-2 py-1.5 text-[11px] leading-relaxed text-stone-600">
             {[zona.vereda && `Vereda ${zona.vereda}`, zona.municipio, zona.subzona_hidrografica && `Subzona ${zona.subzona_hidrografica}`].filter(Boolean).join(" · ") || "Fuera de las capas de la jurisdicción"}
@@ -529,5 +548,42 @@ function CeldaCumplimiento({
         </option>
       ))}
     </select>
+  );
+}
+
+function CampoMultiple({ campo, valor, onCambio, soloLectura, falta }: { campo: Campo; valor: string; onCambio: (v: string) => void; soloLectura: boolean; falta: boolean }) {
+  const items = valor.split("\n");
+  const lista = items.length ? items : [""];
+  const fijar = (nuevos: string[]) => onCambio(nuevos.join("\n"));
+  const singular = campo.etiqueta.replace(/s?\s*\(.*\)$/, "").toLowerCase();
+  return (
+    <div>
+      <Etiqueta campo={campo} falta={falta} />
+      <div className="space-y-1.5">
+        {lista.map((it, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <input
+              aria-label={`${campo.etiqueta} ${i + 1}`}
+              value={it}
+              onChange={(e) => fijar(lista.map((x, j) => (j === i ? e.target.value.replace(/\n/g, " ") : x)))}
+              disabled={soloLectura}
+              maxLength={300}
+              className={campoCls + (falta ? " border-red-300 ring-1 ring-red-200" : "")}
+            />
+            {!soloLectura && lista.length > 1 && (
+              <button type="button" onClick={() => fijar(lista.filter((_, j) => j !== i))} aria-label={`Quitar ${i + 1}`} className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600">
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {!soloLectura && (
+        <button type="button" onClick={() => fijar([...lista, ""])} className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Agregar {singular}
+        </button>
+      )}
+    </div>
   );
 }

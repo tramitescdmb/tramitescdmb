@@ -10,6 +10,7 @@ export type RegistroPendiente = {
   etiqueta: string;
   cuerpo: Record<string, unknown>;
   fotos: File[];
+  pies?: string[];
   visitaTecnicaId?: string;
   creadoEn: string;
   ultimoError?: string;
@@ -123,6 +124,7 @@ export async function enviarRegistro(item: RegistroPendiente, onProgreso?: (text
           tomadaEn: exif.tomadaEn?.toISOString() ?? null,
           latExif: exif.lat,
           lonExif: exif.lon,
+          pie: item.pies?.[0] ?? null,
         }),
       });
       if (!r.ok) {
@@ -130,6 +132,7 @@ export async function enviarRegistro(item: RegistroPendiente, onProgreso?: (text
         throw Object.assign(new Error(d.error || "No se pudo guardar una foto."), { status: r.status });
       }
       item.fotos = item.fotos.slice(1);
+      item.pies = item.pies?.slice(1);
     }
     return { estado: "enviado", visitaTecnicaId };
   } catch (e) {

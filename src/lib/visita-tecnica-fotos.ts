@@ -1,6 +1,6 @@
 const EXTENSIONES_FOTO = ["jpg", "jpeg", "png"] as const;
 
-export const MAX_FOTOS_VISITA = 8;
+export const MAX_FOTOS_VISITA = 10;
 export const TAMANO_MAXIMO_FOTO_VISITA_MB = 2;
 export const TAMANO_MAXIMO_FOTO_VISITA_BYTES = TAMANO_MAXIMO_FOTO_VISITA_MB * 1024 * 1024;
 

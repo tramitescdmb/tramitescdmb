@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { CalendarClock, MapPin, User, AlertTriangle, ClipboardCheck, Info, FileText } from "lucide-react";
 import { formatoVigenteParaTramite, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia, sumarMinutosHora } from "@/lib/planeador";
 import { rangoTexto, temasDeVisita } from "@/lib/planeador-db";
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeVisita, ordenarTemasParaTramite, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
@@ -13,6 +13,9 @@ import { RegistrarVisitaForm } from "@/components/planeador/RegistrarVisitaForm"
 import { ModoSinConexion } from "@/components/planeador/ModoSinConexion";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { BandaTablero } from "@/components/tablero";
+import { ParticipantesVisita } from "@/components/planeador/ParticipantesVisita";
+import { participantesEfectivos } from "@/lib/participantes-visita";
+import { personasParaEquipo } from "@/lib/planeador-db";
 
 export default async function HojaVisitaPage({ params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -24,6 +27,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
     include: {
       profesional: { select: { nombre: true } },
       programadaPor: { select: { nombre: true } },
+      participantes: { select: { usuarioId: true, rol: true }, orderBy: { createdAt: "asc" } },
       expediente: {
         select: {
           id: true,
@@ -32,6 +36,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
           archivado: true,
           pasoActualNumero: true,
           tramiteTipoId: true,
+          usuariosAsignados: { select: { id: true } },
           tramiteTipo: { select: { nombre: true, codigo: true } },
           flujo: { select: { pasos: { select: { numero: true, titulo: true }, orderBy: { numero: "asc" } } } },
         },
@@ -40,8 +45,10 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
         include: {
           temas: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } },
           formatoVersion: { select: { numero: true, formato: { select: { codigo: true, titulo: true } } } },
-          fotos: { select: { id: true, tomadaEn: true }, orderBy: { createdAt: "asc" } },
+          fotos: { select: { id: true, tomadaEn: true, pie: true }, orderBy: { createdAt: "asc" } },
           capturadoPor: { select: { nombre: true } },
+          finalizadaPor: { select: { nombre: true } },
+          documentoConcepto: { select: { id: true, nombre: true, solicitudesFirma: { select: { usuarioAsignadoId: true, estado: true, rol: true } } } },
         },
       },
     },
@@ -49,7 +56,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   if (!visita || visita.expedienteId !== id) notFound();
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederTramite(permisos, visita.expediente.tramiteTipoId)) notFound();
+  if (!puedeVerExpedienteTramite(permisos, { id: visita.expedienteId, tramiteTipoId: visita.expediente.tramiteTipoId })) notFound();
   const planificador = puedePlanearVisitas(permisos);
   const esProfesional = session.userId === visita.profesionalId;
   const enEjecucion = expedienteEnEjecucion(visita.expediente);
@@ -57,7 +64,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const programada = partesColombia(visita.fechaHora);
   const yaLlegoElDia = visitaHabilitadaParaRegistro(programada.fecha, ahora.fecha);
   const puedeRegistrar =
-    visita.estado === "PROGRAMADA" && enEjecucion && (planificador || esProfesional) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+    visita.estado === "PROGRAMADA" && enEjecucion && (esProfesional || (planificador && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId)));
 
   const pasos = visita.expediente.flujo.pasos;
   const pasoActual = pasos.find((p) => p.numero === visita.expediente.pasoActualNumero);
@@ -69,6 +76,15 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const precarga = formato ? await precargaDeVisita(visita.id, new Date()) : {};
   const temas = habilitada && !formato ? await temasDeVisita() : [];
   const { sugeridos, otros } = ordenarTemasParaTramite(temas, visita.expediente.tramiteTipo.codigo);
+  const verEquipo = visita.estado !== "CANCELADA" && visita.estado !== "NO_REALIZADA";
+  const equipoEditable = verEquipo && planificador && enEjecucion && !vt?.finalizadaEn;
+  const personas = verEquipo ? await personasParaEquipo(visita.expediente.usuariosAsignados.map((u) => u.id)) : [];
+  const ESTADO_FIRMA: Record<string, string> = { PENDIENTE: "Pendiente", COMPLETADA: "Firmó", RECHAZADA: "Rechazó" };
+  const firmas = vt?.documentoConcepto
+    ? Object.fromEntries(
+        vt.documentoConcepto.solicitudesFirma.map((f) => [f.usuarioAsignadoId, f.estado === "COMPLETADA" && f.rol === "VISTO_BUENO" ? "Dio visto bueno" : ESTADO_FIRMA[f.estado] ?? f.estado])
+      )
+    : undefined;
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -110,6 +126,26 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
         </p>
         {visita.observaciones && <p className="text-xs text-stone-500 sm:col-span-3">Indicaciones: {visita.observaciones}</p>}
       </section>
+
+      {verEquipo && (
+        <ParticipantesVisita
+          visitaId={visita.id}
+          iniciales={participantesEfectivos(visita.participantes, visita.profesionalId)}
+          personas={personas}
+          editable={equipoEditable}
+          firmas={firmas}
+        />
+      )}
+
+      {vt?.finalizadaEn && vt.documentoConcepto && (
+        <p className="flex flex-wrap items-center gap-2 rounded-lg border border-cdmb-100 bg-cdmb-50 px-3 py-2 text-xs text-cdmb-900">
+          <FileText className="h-4 w-4 flex-none" aria-hidden />
+          Concepto finalizado por {vt.finalizadaPor?.nombre} el {formatearFechaHora(vt.finalizadaEn)} y enviado a firma:
+          <a href={`/api/documentos/${vt.documentoConcepto.id}`} target="_blank" rel="noreferrer" className="font-semibold hover:underline">
+            {vt.documentoConcepto.nombre}
+          </a>
+        </p>
+      )}
 
       {visita.estado === "PROGRAMADA" && pasoVisita && pasoActual && pasoActual.numero !== pasoVisita.numero && (
         <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -199,7 +235,8 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
                 {vt.fotos.map((f, i) => (
                   <a key={f.id} href={`/api/visitas-fotos/${f.id}`} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-stone-200">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/api/visitas-fotos/${f.id}`} alt={`Foto ${i + 1} de la visita`} className="aspect-square w-full object-cover" loading="lazy" />
+                    <img src={`/api/visitas-fotos/${f.id}`} alt={f.pie ?? `Foto ${i + 1} de la visita`} className="aspect-square w-full object-cover" loading="lazy" />
+                    {f.pie && <span className="block truncate px-1.5 py-1 text-[11px] text-stone-600">{f.pie}</span>}
                   </a>
                 ))}
               </div>

@@ -25,7 +25,12 @@ export async function buscarGlobal(consulta: string, permisos: PermisosUsuario):
     tareas.push(
       db.expediente
         .findMany({
-          where: construirWhereExpedientes({ tramiteIdsPermitidos: permisos.esAdmin ? null : Array.from(permisos.tramites.keys()), busqueda: q, rango: null }),
+          where: construirWhereExpedientes({
+            tramiteIdsPermitidos: permisos.esAdmin ? null : Array.from(permisos.tramites.keys()),
+            expedienteIdsAsignados: permisos.esAdmin ? undefined : Array.from(permisos.expedientesTramite ?? []),
+            busqueda: q,
+            rango: null,
+          }),
           orderBy: { fechaUltimoMovimiento: "desc" },
           take: POR_GRUPO,
           select: { id: true, numero: true, solicitanteNombre: true, tramiteTipo: { select: { nombre: true } } },

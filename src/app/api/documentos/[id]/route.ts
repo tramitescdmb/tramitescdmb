@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeVerExpedienteTramite } from "@/lib/permisos";
 import { tieneFirmaOSolicitudEnDocumentoTramite } from "@/lib/tramites-firma";
 import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 
@@ -13,13 +13,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const documento = await db.expedienteDocumento.findUnique({
     where: { id },
-    include: { expediente: { select: { tramiteTipoId: true } } },
+    include: { expediente: { select: { id: true, tramiteTipoId: true } } },
   });
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (
-    !puedeAccederTramite(permisos, documento.expediente.tramiteTipoId) &&
+    !puedeVerExpedienteTramite(permisos, documento.expediente) &&
     !(await tieneFirmaOSolicitudEnDocumentoTramite(session.userId, id)) &&
     !(await accesoDesdeArchivoSgdea({
       permisos,

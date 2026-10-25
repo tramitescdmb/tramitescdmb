@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const cargoIds = Array.isArray(body?.cargoIds) ? body.cargoIds.map(String) : [];
 
   const [usuarios, cargos] = await Promise.all([
-    usuarioIds.length ? db.usuario.findMany({ where: { id: { in: usuarioIds }, activo: true }, select: { id: true, nombre: true } }) : [],
+    usuarioIds.length ? db.usuario.findMany({ where: { id: { in: usuarioIds }, activo: true }, select: { id: true, nombre: true, modulosAcceso: true } }) : [],
     cargoIds.length ? db.cargo.findMany({ where: { id: { in: cargoIds } }, select: { id: true, nombre: true } }) : [],
   ]);
 
@@ -47,13 +47,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  await db.expediente.update({
-    where: { id },
-    data: {
-      usuariosAsignados: { set: usuarios.map((u) => ({ id: u.id })) },
-      cargosAsignados: { set: cargos.map((c) => ({ id: c.id })) },
-    },
-  });
+  const sinModulo = usuarios.filter((u) => !u.modulosAcceso.includes("TRAMITES"));
+  await db.$transaction([
+    db.expediente.update({
+      where: { id },
+      data: {
+        usuariosAsignados: { set: usuarios.map((u) => ({ id: u.id })) },
+        cargosAsignados: { set: cargos.map((c) => ({ id: c.id })) },
+      },
+    }),
+    ...sinModulo.map((u) => db.usuario.update({ where: { id: u.id }, data: { modulosAcceso: { push: "TRAMITES" } } })),
+  ]);
 
   const antes = [...expediente.usuariosAsignados.map((u) => u.nombre), ...expediente.cargosAsignados.map((c) => c.nombre)];
   const despues = [...usuarios.map((u) => u.nombre), ...cargos.map((c) => c.nombre)];

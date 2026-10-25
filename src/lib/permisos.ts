@@ -15,6 +15,7 @@ export type PermisosUsuario = {
   contratistaId: string | null;
   supervisaExpedientes: Set<string>;
   asignadoExpedientes: Set<string>;
+  expedientesTramite?: Set<string>;
   cargos: Set<string>;
   /** Nombres de los cargos (de entre `cargos`) que este usuario ejerce en encargo — se muestran con "(E)". */
   cargosEncargo: Set<string>;
@@ -41,6 +42,7 @@ type UsuarioFresco = {
   contratistaId: string | null;
   supervisaExpedientes: string[];
   asignadoExpedientes: string[];
+  expedientesTramite: string[];
   terminosAceptadosEn: Date | null;
   permisosPerfil: { funcionalidad: string; acciones: string[] }[];
   excepciones: { funcionalidad: string; tipo: "CONCEDER" | "QUITAR"; acciones: string[] }[];
@@ -65,6 +67,9 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       contratista: { select: { id: true } },
       supervisionesContrato: { select: { expedienteId: true } },
       asignacionesContrato: { select: { expedienteId: true } },
+      expedientesAsignacion: { select: { id: true } },
+      visitasProgramadas: { where: { estado: { not: "CANCELADA" } }, select: { expedienteId: true } },
+      participacionesVisita: { where: { visita: { estado: { not: "CANCELADA" } } }, select: { visita: { select: { expedienteId: true } } } },
       terminosAceptadosEn: true,
       perfiles: { select: { perfil: { select: { activo: true, permisos: { select: { funcionalidad: true, acciones: true } } } } } },
       excepcionesPermiso: { select: { funcionalidad: true, tipo: true, acciones: true } },
@@ -88,6 +93,11 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
     contratistaId: usuario.contratista?.id ?? null,
     supervisaExpedientes: usuario.supervisionesContrato.map((s) => s.expedienteId),
     asignadoExpedientes: usuario.asignacionesContrato.map((a) => a.expedienteId),
+    expedientesTramite: [
+      ...usuario.expedientesAsignacion.map((e) => e.id),
+      ...usuario.visitasProgramadas.map((v) => v.expedienteId),
+      ...usuario.participacionesVisita.map((p) => p.visita.expedienteId),
+    ],
     terminosAceptadosEn: usuario.terminosAceptadosEn,
     permisosPerfil: usuario.perfiles.filter((up) => up.perfil.activo).flatMap((up) => up.perfil.permisos),
     excepciones: usuario.excepcionesPermiso,
@@ -214,6 +224,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     contratistaId: usuario?.activo && !geconOculto ? usuario.contratistaId : null,
     supervisaExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.supervisaExpedientes : []),
     asignadoExpedientes: new Set(usuario?.activo && !geconOculto ? usuario.asignadoExpedientes : []),
+    expedientesTramite: new Set(usuario?.activo && modulos.has("TRAMITES") ? usuario.expedientesTramite : []),
     cargos: new Set(usuario?.activo ? usuario.cargos : []),
     cargosEncargo: new Set(usuario?.activo ? usuario.cargosEncargo : []),
     modulos,
@@ -240,6 +251,10 @@ export const verificarSesion = cache(async (): Promise<SessionPayload | null> =>
 
 export function puedeAccederTramite(permisos: PermisosUsuario, tramiteTipoId: string): boolean {
   return permisos.esAdmin || permisos.tramites.has(tramiteTipoId);
+}
+
+export function puedeVerExpedienteTramite(permisos: PermisosUsuario, expediente: { id: string; tramiteTipoId: string }): boolean {
+  return puedeAccederTramite(permisos, expediente.tramiteTipoId) || Boolean(permisos.expedientesTramite?.has(expediente.id));
 }
 
 export function puedeEditarTramite(permisos: PermisosUsuario, tramiteTipoId: string): boolean {
@@ -719,6 +734,7 @@ function tieneCargoEspecifico(permisos: PermisosUsuario): boolean {
 }
 
 export function puedeAccederFirmasTramite(permisos: PermisosUsuario): boolean {
+  if ((permisos.expedientesTramite?.size ?? 0) > 0) return true;
   if (tramitesPorPerfil(permisos)) return tramitesPermite(permisos, "tramites.firmas", "LEER") && permisos.tramites.size > 0;
   return permisos.esAdmin || permisos.tramites.size > 0;
 }
