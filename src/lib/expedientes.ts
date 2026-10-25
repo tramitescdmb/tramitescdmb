@@ -48,6 +48,14 @@ export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.Expedie
     filtros.push({
       OR: [
         { usuariosAsignados: { some: { id: f.usuarioId } } },
+        {
+          visitasProgramadas: {
+            some: {
+              estado: { not: "CANCELADA" },
+              OR: [{ profesionalId: f.usuarioId }, { participantes: { some: { usuarioId: f.usuarioId } } }],
+            },
+          },
+        },
         ...(f.cargos && f.cargos.length > 0 ? [{ cargosAsignados: { some: { nombre: { in: f.cargos } } } }] : []),
       ],
     });

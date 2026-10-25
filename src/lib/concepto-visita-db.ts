@@ -40,3 +40,28 @@ export function firmantesParaDocumento(
       };
     });
 }
+
+export async function accesoCorreccionConcepto(
+  visitaId: string,
+  usuarioId: string,
+  planificador: boolean
+): Promise<{ error: string; status: number } | { expedienteId: string; visitaTecnicaId: string; pasoNumero: number; formatoVersionId: string | null }> {
+  const visita = await db.visitaProgramada.findUnique({
+    where: { id: visitaId },
+    select: {
+      profesionalId: true,
+      expedienteId: true,
+      expediente: { select: { archivado: true } },
+      participantes: { where: { usuarioId, rol: "ELABORA" }, select: { id: true } },
+      visitaTecnica: { select: { id: true, pasoNumero: true, formatoVersionId: true, finalizadaEn: true } },
+    },
+  });
+  const vt = visita?.visitaTecnica;
+  if (!visita || !vt) return { error: "La visita no tiene hoja registrada.", status: 404 };
+  if (!planificador && visita.profesionalId !== usuarioId && visita.participantes.length === 0) {
+    return { error: "Solo quien elabora el concepto o quien planea las visitas puede corregirlo.", status: 403 };
+  }
+  if (visita.expediente.archivado) return { error: "El expediente está cerrado y archivado.", status: 409 };
+  if (vt.finalizadaEn) return { error: "El concepto ya se dio por terminado y está en firma; para corregirlo debe reabrirse.", status: 409 };
+  return { expedienteId: visita.expedienteId, visitaTecnicaId: vt.id, pasoNumero: vt.pasoNumero, formatoVersionId: vt.formatoVersionId };
+}

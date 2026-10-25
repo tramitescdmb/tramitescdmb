@@ -10,6 +10,7 @@ import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaci
 import type { Prisma } from "@prisma/client";
 import { camposObligatoriosFaltantes, sanearRespuestas, type Respuestas } from "@/lib/formato-visita";
 import { estructuraDesdeJson } from "@/lib/formatos-visita-db";
+import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
 
 const RESULTADOS = ["VIABLE", "REQUIERE_INFORMACION", "NO_VIABLE", "EN_ANALISIS"] as const;
 
@@ -165,4 +166,44 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await resolverNotificaciones({ clave: `visita:${id}` });
   await sincronizarAvisoVisita(visita.expedienteId);
   return NextResponse.json({ id: visitaTecnica.id, expedienteId: visita.expedienteId });
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const acceso = await accesoCorreccionConcepto(id, session.userId, puedePlanearVisitas(permisos));
+  if ("error" in acceso) return NextResponse.json({ error: acceso.error }, { status: acceso.status });
+  if (!acceso.formatoVersionId) return NextResponse.json({ error: "La visita no se diligenció con un formato." }, { status: 409 });
+
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const version = await db.formatoVisitaVersion.findUnique({ where: { id: acceso.formatoVersionId }, select: { estructura: true } });
+  const estructura = estructuraDesdeJson(version!.estructura);
+  const respuestas = sanearRespuestas(estructura, body?.respuestas);
+  const faltan = camposObligatoriosFaltantes(estructura, respuestas);
+  if (faltan.length) return NextResponse.json({ error: `Complete los campos obligatorios del formato: ${faltan.join("; ")}.` }, { status: 400 });
+  const resultado = RESULTADOS.find((r) => r === body?.resultado);
+  const recibe = typeof respuestas.recibe_visita === "string" ? respuestas.recibe_visita : null;
+
+  await db.$transaction([
+    db.visitaTecnica.update({
+      where: { id: acceso.visitaTecnicaId },
+      data: {
+        respuestas: respuestas as unknown as Prisma.InputJsonValue,
+        ...(resultado ? { resultado } : {}),
+        ...(recibe ? { atendidoPor: recibe.slice(0, 200) } : {}),
+      },
+    }),
+    db.expedienteEvento.create({
+      data: {
+        expedienteId: acceso.expedienteId,
+        tipo: "VISITA_REGISTRADA",
+        pasoNumero: acceso.pasoNumero,
+        descripcion: `${session.nombre} corrigió el formato diligenciado de la visita técnica.`,
+        usuarioId: session.userId,
+      },
+    }),
+  ]);
+  return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { etiquetaConcepto } from "@/lib/concepto-tecnico";
@@ -12,7 +12,8 @@ import { DocumentoFormato } from "@/components/formatos/DocumentoFormato";
 import { EstiloImpresionFormato } from "@/components/formatos/EstiloImpresionFormato";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { FinalizarConcepto } from "@/components/formatos/FinalizarConcepto";
-import { equipoDeVisita, firmantesParaDocumento } from "@/lib/concepto-visita-db";
+import { accesoCorreccionConcepto, equipoDeVisita, firmantesParaDocumento } from "@/lib/concepto-visita-db";
+import { ReabrirConcepto } from "@/components/formatos/ReabrirConcepto";
 import { ETIQUETA_ROL_PARTICIPANTE } from "@/lib/participantes-visita";
 
 export default async function FormatoVisitaDiligenciadoPage({ params }: { params: Promise<{ id: string; visitaId: string }> }) {
@@ -36,6 +37,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           conceptoFecha: true,
           finalizadaEn: true,
           documentoConceptoId: true,
+          documentoConcepto: { select: { solicitudesFirma: { select: { estado: true, rol: true } } } },
           fotos: { select: { id: true, pie: true }, orderBy: { createdAt: "asc" } },
           formatoVersion: { select: { numero: true, estructura: true, formato: { select: { codigo: true, titulo: true, versionDocumento: true, fechaDocumento: true } } } },
         },
@@ -55,6 +57,14 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
     !vt.conceptoNumero && (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId) && (session.userId === visita.profesionalId || puedeEditarTramite(permisos, visita.expediente.tramiteTipoId));
   const { lista, porId } = await equipoDeVisita(visita.id, visita.profesionalId);
   const firmantesDoc = firmantesParaDocumento(lista, porId);
+  const correccion = await accesoCorreccionConcepto(visita.id, session.userId, puedePlanearVisitas(permisos));
+  const puedeCorregir = !("error" in correccion);
+  const firmasConcepto = (vt.documentoConcepto?.solicitudesFirma ?? []).filter((s) => s.rol !== "LECTURA");
+  const puedeReabrir =
+    Boolean(vt.finalizadaEn) &&
+    !(firmasConcepto.length > 0 && firmasConcepto.every((s) => s.estado === "COMPLETADA")) &&
+    puedePlanearVisitas(permisos) &&
+    puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
   const puedeFinalizar = Boolean(vt.conceptoNumero) && !vt.finalizadaEn && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
   return (
@@ -66,6 +76,13 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           Hoja de visita · {visita.expediente.numero}
         </Link>
         <span className="flex flex-wrap items-start gap-2">
+          {puedeCorregir && (
+            <Link href={`/expedientes/${id}/visitas/${visita.id}/formato/corregir`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+              Corregir concepto
+            </Link>
+          )}
+          {puedeReabrir && <ReabrirConcepto visitaId={visita.id} />}
           {puedeAsignar && <AsignarNumeroConcepto visitaId={visita.id} />}
           {puedeFinalizar && (
             <FinalizarConcepto

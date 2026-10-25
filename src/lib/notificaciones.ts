@@ -114,11 +114,26 @@ export async function avisarProfesionalVisita(
       fechaHoraFin: true,
       lugar: true,
       motivoCambio: true,
+      participantes: { select: { usuarioId: true } },
       expediente: { select: { id: true, numero: true, tramiteTipo: { select: { nombre: true } } } },
     },
   });
   if (!v) return;
   const clave = `visita:${v.id}`;
+  const equipo = v.participantes.map((p) => p.usuarioId).filter((u) => u !== v.profesionalId && u !== actorId);
+  if (equipo.length > 0) {
+    const texto = TEXTO_AVISO_PROFESIONAL[tipo];
+    await notificar(equipo, {
+      tipo,
+      clave: `equipo-visita:${v.id}`,
+      titulo: `${texto.titulo} · ${v.expediente.numero}`,
+      mensaje: `Visita del equipo en que participa (${v.expediente.tramiteTipo.nombre}): ${rangoTexto(v.fechaHora, v.fechaHoraFin)}, ${v.lugar}.${
+        tipo === "VISITA_CANCELADA" && v.motivoCambio ? ` Motivo: ${v.motivoCambio}` : ""
+      }`,
+      enlace: tipo === "VISITA_CANCELADA" ? `/planeador` : `/expedientes/${v.expediente.id}/visitas/${v.id}`,
+      expedienteId: v.expediente.id,
+    });
+  }
   if (v.profesionalId === actorId) {
     await resolverNotificaciones({ clave });
     return;

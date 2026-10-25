@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { puedeEditarExpediente } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeEditarExpediente, puedePlanearVisitas } from "@/lib/permisos";
+import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
 import { MAX_FOTOS_VISITA, TAMANO_MAXIMO_FOTO_VISITA_BYTES, mensajeFotoGrande, mensajeDemasiadasFotos } from "@/lib/visita-tecnica-fotos";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 
@@ -13,15 +14,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const visita = await db.visitaTecnica.findUnique({
     where: { id: visitaId },
-    select: { expedienteId: true, finalizadaEn: true, visitaProgramada: { select: { profesionalId: true } }, _count: { select: { fotos: true } } },
+    select: { expedienteId: true, visitaProgramadaId: true, _count: { select: { fotos: true } } },
   });
   if (!visita || visita.expedienteId !== id) {
     return NextResponse.json({ error: "La visita técnica indicada no existe." }, { status: 404 });
   }
-  if (visita.visitaProgramada?.profesionalId !== session.userId && !(await puedeEditarExpediente(session.userId, id))) {
+  if (visita.visitaProgramadaId) {
+    const acceso = await accesoCorreccionConcepto(visita.visitaProgramadaId, session.userId, puedePlanearVisitas(await obtenerPermisosUsuario(session.userId)));
+    if ("error" in acceso) return NextResponse.json({ error: acceso.error }, { status: acceso.status });
+  } else if (!(await puedeEditarExpediente(session.userId, id))) {
     return NextResponse.json({ error: "Su rol de acceso no le permite gestionar este trámite." }, { status: 403 });
   }
-  if (visita.finalizadaEn) return NextResponse.json({ error: "El concepto técnico ya fue finalizado y enviado a firma." }, { status: 409 });
   if (visita._count.fotos >= MAX_FOTOS_VISITA) {
     return NextResponse.json({ error: mensajeDemasiadasFotos() }, { status: 400 });
   }
