@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Inbox, CalendarPlus, CalendarClock, CalendarX, RotateCcw, ClipboardCheck, CheckCircle2 } from "lucide-react";
+import { Inbox, Users, CalendarPlus, CalendarClock, CalendarX, RotateCcw, ClipboardCheck, CheckCircle2 } from "lucide-react";
 import type { TipoNotificacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -13,6 +13,7 @@ const ICONO: Record<TipoNotificacion, { Icono: typeof Inbox; clase: string }> = 
   VISITA_CANCELADA: { Icono: CalendarX, clase: "bg-stone-100 text-stone-500" },
   VISITA_POR_REGISTRAR: { Icono: ClipboardCheck, clase: "bg-red-50 text-red-600" },
   VISITA_NO_REALIZADA: { Icono: RotateCcw, clase: "bg-amber-50 text-amber-600" },
+  EQUIPO_VISITA: { Icono: Users, clase: "bg-emerald-50 text-emerald-600" },
 };
 
 export default async function BuzonVisitasPage() {

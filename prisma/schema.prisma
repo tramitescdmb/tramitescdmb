@@ -1041,6 +1041,7 @@ enum TipoNotificacion {
   VISITA_CANCELADA
   VISITA_POR_REGISTRAR
   VISITA_NO_REALIZADA
+  EQUIPO_VISITA
 }
 
 model Notificacion {
