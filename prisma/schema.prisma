@@ -197,6 +197,7 @@ model Usuario {
   actasEliminacionAprobadas       ActaEliminacion[]       @relation("ActaEliminacionAprobadaPor")
   flujosCreados                   FlujoTrabajo[]          @relation("FlujoCreadoPor")
   instanciasFlujoIniciadas        InstanciaFlujo[]        @relation("InstanciaFlujoIniciadoPor")
+  instanciasFlujoAsignadas        InstanciaFlujo[]        @relation("InstanciaFlujoAsignadoA")
   pasosFlujoEjecutados            PasoEjecutado[]         @relation("PasoEjecutadoResponsable")
 
   contratista                        Contratista?                      @relation("ContratistaUsuario")
@@ -1982,6 +1983,7 @@ model InstanciaFlujo {
   pasoActualId    String?
   pasoActualDesde DateTime?
   iniciadoPorId   String?
+  asignadoAId     String?
   iniciadoEn      DateTime             @default(now())
   finalizadoEn    DateTime?
 
@@ -1989,6 +1991,7 @@ model InstanciaFlujo {
   comunicacion Comunicacion    @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   pasoActual   PasoFlujo?      @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
   iniciadoPor  Usuario?        @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
+  asignadoA    Usuario?        @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
   ejecuciones  PasoEjecutado[]
 
   @@index([comunicacionId])

@@ -5,8 +5,11 @@ import {
   obtenerInstanciasDeComunicacion,
   estadoTerminoPaso,
   describirResponsablePaso,
+  puedeCompletarPaso,
   ETIQUETA_TIPO_PASO,
+  type UsuarioFlujo,
 } from "@/lib/flujos";
+import { db } from "@/lib/db";
 import { flujoAMermaid } from "@/lib/flujos-diagrama";
 import { Flujograma } from "@/components/Flujograma";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
@@ -17,11 +20,13 @@ export async function FlujoTrabajoComunicacion({
   tipo,
   estado,
   puedeOperar,
+  usuario,
 }: {
   comunicacionId: string;
   tipo: TipoComunicacion;
   estado: string;
   puedeOperar: boolean;
+  usuario: UsuarioFlujo;
 }) {
   const [{ comunicacion, instancias }, aplicables, calendario] = await Promise.all([
     obtenerInstanciasDeComunicacion(comunicacionId),
@@ -37,7 +42,35 @@ export async function FlujoTrabajoComunicacion({
       ? estadoTerminoPaso(enCurso.pasoActualDesde, enCurso.pasoActual.slaDiasHabiles, calendario)
       : null;
   const responsable =
-    enCurso?.pasoActual && comunicacion ? describirResponsablePaso(enCurso.pasoActual, comunicacion) : null;
+    enCurso?.pasoActual && comunicacion ? describirResponsablePaso(enCurso.pasoActual, { ...comunicacion, asignadoA: enCurso.asignadoA }) : null;
+  const ultimaEjecucion = enCurso?.ejecuciones.at(-1);
+  const puedeCompletar = Boolean(
+    enCurso?.pasoActual &&
+      comunicacion &&
+      puedeCompletarPaso(
+        enCurso.pasoActual,
+        {
+          asignadoAId: enCurso.asignadoAId,
+          responsableAnteriorId: ultimaEjecucion?.responsable?.id ?? enCurso.iniciadoPorId,
+          comunicacion,
+        },
+        usuario
+      )
+  );
+  const pasosPorId = new Map((enCurso?.flujo.pasos ?? []).map((p) => [p.id, p]));
+  const opciones = (enCurso?.pasoActual?.transiciones ?? []).map((t) => {
+    const destino = pasosPorId.get(t.haciaPasoId);
+    return {
+      ...t,
+      destino,
+      devuelve: Boolean(destino && destino.tipo !== "FIN" && enCurso?.pasoActual && destino.orden < enCurso.pasoActual.orden),
+      manual: destino?.asignacion === "MANUAL" && destino.tipo !== "FIN",
+    };
+  });
+  const necesitaPersona = opciones.some((o) => o.manual) || (enCurso?.pasoActual?.asignacion === "MANUAL" && usuario.esAdminArchivo);
+  const personas = necesitaPersona
+    ? await db.usuario.findMany({ where: { activo: true, modulosAcceso: { has: "SGDEA" } }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } })
+    : [];
 
   return (
     <section id="flujo" className="scroll-mt-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
@@ -112,7 +145,11 @@ export async function FlujoTrabajoComunicacion({
             </ol>
           )}
 
-          {puedeOperar && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
+          {!puedeCompletar && enCurso.pasoActual && enCurso.pasoActual.tipo !== "FIN" && (
+            <p className="border-t border-stone-100 pt-3 text-xs text-stone-500">Este paso lo completa {responsable ?? "su responsable"}.</p>
+          )}
+
+          {puedeCompletar && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
             <form action={accion} method="post" className="space-y-2 border-t border-stone-100 pt-3">
               <input type="hidden" name="accion" value="avanzar" />
               <input type="hidden" name="instanciaId" value={enCurso.id} />
@@ -120,17 +157,54 @@ export async function FlujoTrabajoComunicacion({
                 Completar «{enCurso.pasoActual.nombre}» — ¿qué sigue?
                 <select name="transicionId" required defaultValue="" className="mt-1 block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
                   <option value="" disabled>Elegir…</option>
-                  {enCurso.pasoActual.transiciones.map((t) => (
-                    <option key={t.id} value={t.id}>{t.etiqueta}</option>
+                  {opciones.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.etiqueta}
+                      {t.destino ? ` → ${t.destino.nombre}` : ""}
+                      {t.devuelve ? " (devuelve: requiere motivo)" : ""}
+                      {t.manual ? " (elija a quién)" : ""}
+                    </option>
                   ))}
                 </select>
               </label>
-              <input name="comentario" placeholder="Comentario (opcional)" className="block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm" />
+              {opciones.some((o) => o.manual) && (
+                <label className="block text-xs font-medium text-stone-600">
+                  Asignar el siguiente paso a (solo si se asigna a mano)
+                  <select name="asignarAId" defaultValue="" className="mt-1 block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {personas.map((u) => (
+                      <option key={u.id} value={u.id}>{u.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <input
+                name="comentario"
+                placeholder={opciones.some((o) => o.devuelve) ? "Comentario (obligatorio si devuelve)" : "Comentario (opcional)"}
+                className="block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm"
+              />
               <div className="flex flex-wrap items-center gap-2">
                 <button className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-acento-600">
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden /> Completar paso
                 </button>
               </div>
+            </form>
+          )}
+
+          {usuario.esAdminArchivo && enCurso.pasoActual?.asignacion === "MANUAL" && (
+            <form action={accion} method="post" className="flex flex-wrap items-end gap-2 border-t border-stone-100 pt-3">
+              <input type="hidden" name="accion" value="reasignar" />
+              <input type="hidden" name="instanciaId" value={enCurso.id} />
+              <label className="text-xs">
+                <span className="mb-0.5 block text-stone-500">Reasignar el paso actual</span>
+                <select name="asignarAId" required defaultValue={enCurso.asignadoAId ?? ""} className="rounded-md border border-stone-200 px-2 py-1 text-sm">
+                  <option value="" disabled>Elegir persona…</option>
+                  {personas.map((u) => (
+                    <option key={u.id} value={u.id}>{u.nombre}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">Reasignar</button>
             </form>
           )}
 

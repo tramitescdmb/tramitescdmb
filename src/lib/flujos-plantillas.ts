@@ -161,6 +161,9 @@ export function validarEstructuraFlujo(pasos: {
   tipo: string;
   orden: number;
   transiciones: { haciaPasoId: string }[];
+  asignacion?: string;
+  dependenciaId?: string | null;
+  cargoClave?: string | null;
 }[]): ProblemaFlujo[] {
   const problemas: ProblemaFlujo[] = [];
   if (pasos.length === 0) return [{ mensaje: "El flujo no tiene pasos." }];
@@ -175,6 +178,8 @@ export function validarEstructuraFlujo(pasos: {
       continue;
     }
     if (p.transiciones.length === 0) problemas.push({ paso: p.nombre, mensaje: "El paso no tiene ninguna salida (transición)." });
+    if (p.asignacion === "DEPENDENCIA_FIJA" && !p.dependenciaId) problemas.push({ paso: p.nombre, mensaje: "El responsable es una dependencia fija, pero no se eligió cuál." });
+    if (p.asignacion === "CARGO" && !p.cargoClave) problemas.push({ paso: p.nombre, mensaje: "El responsable es un cargo, pero no se eligió cuál." });
   }
 
   const porId = new Map(pasos.map((p) => [p.id, p]));

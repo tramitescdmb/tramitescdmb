@@ -9,6 +9,7 @@ import { obtenerFlujo, puedeAdministrarFlujos, ETIQUETA_TIPO_PASO, ETIQUETA_ASIG
 import { FlujoLienzo } from "@/components/FlujoLienzoLazy";
 import { FlujoSimulador } from "@/components/FlujoSimulador";
 import { listarDependenciasActivas } from "@/lib/dependencias";
+import { db } from "@/lib/db";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
@@ -34,7 +35,11 @@ export default async function FlujoEditorPage({
   }
 
   const sp = await searchParams;
-  const [flujo, dependencias] = await Promise.all([obtenerFlujo(id), listarDependenciasActivas()]);
+  const [flujo, dependencias, cargos] = await Promise.all([
+    obtenerFlujo(id),
+    listarDependenciasActivas(),
+    db.cargo.findMany({ orderBy: { orden: "asc" }, select: { nombre: true } }),
+  ]);
   if (!flujo) notFound();
 
   const accion = "/api/correspondencia/flujos/" + flujo.id;
@@ -92,7 +97,8 @@ export default async function FlujoEditorPage({
         />
       </div>
 
-      <form action={accion} method="post" className="grid grid-cols-1 gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4 sm:grid-cols-3">
+      <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+      <form action={accion} method="post" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <input type="hidden" name="accion" value="editar" />
         <div className="sm:col-span-2">
           <Field label="Nombre" required><input name="nombre" defaultValue={flujo.nombre} className={inputCls} required /></Field>
@@ -105,8 +111,11 @@ export default async function FlujoEditorPage({
         <div className="sm:col-span-3">
           <Field label="Descripción"><input name="descripcion" defaultValue={flujo.descripcion ?? ""} className={inputCls} /></Field>
         </div>
-        <div className="sm:col-span-3 flex flex-wrap items-center gap-3">
+        <div className="sm:col-span-3">
           <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar datos</button>
+        </div>
+      </form>
+        <div className="flex flex-wrap items-center gap-3 border-t border-stone-100 pt-3">
           <FormBoton accion={accion} name="accion" value={flujo.activo ? "desactivar" : "activar"} disabled={!flujo.activo && flujo.problemas.length > 0}
             className={flujo.activo ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}>
             {flujo.activo ? "Desactivar" : "Activar flujo"}
@@ -123,7 +132,7 @@ export default async function FlujoEditorPage({
             </FormBoton>
           )}
         </div>
-      </form>
+      </div>
 
       <form action={accion} method="post" className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         <input type="hidden" name="accion" value="accesos" />
@@ -243,8 +252,14 @@ export default async function FlujoEditorPage({
                     {dependencias.map((d) => (<option key={d.id} value={d.id}>{d.nombre}</option>))}
                   </select>
                 </Field>
-                <Field label="Clave de cargo" help="Solo si el responsable es «un cargo».">
-                  <input name="cargoClave" defaultValue={paso.cargoClave ?? ""} className={inputCls} placeholder="Ej. JEFE_JURIDICA" />
+                <Field label="Cargo" help="Solo si el responsable es «un cargo»: lo completa cualquier persona con ese cargo.">
+                  <select name="cargoClave" defaultValue={paso.cargoClave ?? ""} className={inputCls}>
+                    <option value="">—</option>
+                    {paso.cargoClave && !cargos.some((c) => c.nombre === paso.cargoClave) && (
+                      <option value={paso.cargoClave}>{paso.cargoClave} (no está en el catálogo)</option>
+                    )}
+                    {cargos.map((c) => (<option key={c.nombre} value={c.nombre}>{c.nombre}</option>))}
+                  </select>
                 </Field>
                 <Field label="Término sugerido (días hábiles)">
                   <input name="slaDiasHabiles" type="number" min={1} defaultValue={paso.slaDiasHabiles ?? ""} className={inputCls} />

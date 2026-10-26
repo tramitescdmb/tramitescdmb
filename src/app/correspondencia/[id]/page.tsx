@@ -42,7 +42,7 @@ import { construirFilasFirmantes } from "@/lib/panel-firmas";
 import { DistribuirForm } from "@/components/DistribuirForm";
 import { ETIQUETA_MEDIO_DESPACHO, motivoBloqueoRespuesta } from "@/lib/correspondencia";
 import { puedeDespachar } from "@/lib/permisos";
-import { puedeOperarFlujos } from "@/lib/flujos";
+import { puedeOperarFlujos, usuarioFlujo } from "@/lib/flujos";
 import { formatearFechaHora as fechaHora } from "@/lib/fecha";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -221,6 +221,7 @@ export default async function CorrespondenciaDetallePage({
   );
   const puedoActuarMiSolicitud = miSolicitudFirma && puedeActuarSolicitud(c.solicitudesFirma, miSolicitudFirma);
   const puedeOperarFlujosUsuario = puedeOperarFlujos(permisos);
+  const usuarioFlujoActual = await usuarioFlujo(session.userId, permisos);
   const distribucionesVigentes = c.distribuciones.filter((d) => d.activa);
   const puedeSubdistribuirUsuario =
     puedeSubdistribuirInternamente(permisos, session.userId, c, distribucionesVigentes) ||
@@ -891,6 +892,7 @@ export default async function CorrespondenciaDetallePage({
               tipo={c.tipo}
               estado={c.estado}
               puedeOperar={puedeOperarFlujosUsuario}
+              usuario={usuarioFlujoActual}
             />
 
               </>

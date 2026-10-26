@@ -61,6 +61,9 @@ export async function obtenerFlujo(id: string) {
       tipo: p.tipo,
       orden: p.orden,
       transiciones: p.transiciones.map((t) => ({ haciaPasoId: t.haciaPasoId })),
+      asignacion: p.asignacion,
+      dependenciaId: p.dependenciaId,
+      cargoClave: p.cargoClave,
     })),
   );
   return { ...flujo, problemas };
@@ -223,10 +226,24 @@ export async function actualizarPaso(
   return db.pasoFlujo.update({ where: { id: pasoId }, data });
 }
 
+async function verificarPasosSinUso(pasoIds: string[]) {
+  if (pasoIds.length === 0) return;
+  const usados = await db.pasoFlujo.findMany({
+    where: { id: { in: pasoIds }, OR: [{ ejecuciones: { some: {} } }, { instanciasAqui: { some: {} } }] },
+    select: { nombre: true },
+  });
+  if (usados.length > 0) {
+    throw new Error(
+      `${usados.map((p) => `«${p.nombre}»`).join(", ")} ya se usó en comunicaciones y no se puede eliminar. Para cambiar la ruta, duplique el flujo y desactive el actual.`
+    );
+  }
+}
+
 export async function eliminarPaso(pasoId: string) {
   const paso = await db.pasoFlujo.findUnique({ where: { id: pasoId }, include: { flujo: { include: { pasos: true } } } });
   if (!paso) return;
   if (paso.flujo.pasos.length <= 1) throw new Error("Un flujo debe tener al menos un paso.");
+  await verificarPasosSinUso([pasoId]);
   await db.pasoFlujo.delete({ where: { id: pasoId } });
   const restantes = await db.pasoFlujo.findMany({ where: { flujoId: paso.flujoId }, orderBy: { orden: "asc" } });
   await Promise.all(restantes.map((p, i) => db.pasoFlujo.update({ where: { id: p.id }, data: { orden: i + 1 } })));
@@ -303,6 +320,7 @@ export async function guardarLienzoFlujo(
   if (flujo.pasos.length - aBorrarPasos.length + idReal.size - idsExistentesEnLienzo.size < 1) {
     throw new Error("El flujo debe quedar con al menos un paso.");
   }
+  await verificarPasosSinUso(aBorrarPasos.map((p) => p.id));
   for (const p of aBorrarPasos) await db.pasoFlujo.delete({ where: { id: p.id } });
 
   for (const n of datos.nodos) {
@@ -386,6 +404,43 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
 
 export type ContextoOperador = { esAdminArchivo: boolean; dependenciaId: string | null };
 
+export type UsuarioFlujo = { usuarioId: string; dependenciaId: string | null; cargos: Set<string>; esAdminArchivo: boolean };
+
+export type PasoResponsable = { asignacion: AsignacionPaso; dependenciaId: string | null; cargoClave: string | null };
+
+export type ContextoResponsable = {
+  asignadoAId: string | null;
+  responsableAnteriorId: string | null;
+  comunicacion: { dependenciaDestinoId: string | null; dependenciaOrigenId: string | null; radicadoPorId: string | null };
+};
+
+export function esResponsablePaso(paso: PasoResponsable, ctx: ContextoResponsable, u: UsuarioFlujo): boolean {
+  switch (paso.asignacion) {
+    case "DEPENDENCIA_COMUNICACION": {
+      const dep = ctx.comunicacion.dependenciaDestinoId ?? ctx.comunicacion.dependenciaOrigenId;
+      return Boolean(dep && u.dependenciaId === dep);
+    }
+    case "DEPENDENCIA_FIJA":
+      return Boolean(paso.dependenciaId && u.dependenciaId === paso.dependenciaId);
+    case "CARGO":
+      return Boolean(paso.cargoClave && u.cargos.has(paso.cargoClave));
+    case "RADICADOR":
+      return ctx.comunicacion.radicadoPorId === u.usuarioId;
+    case "RESPONSABLE_PASO_ANTERIOR":
+      return ctx.responsableAnteriorId === u.usuarioId;
+    case "MANUAL":
+      return ctx.asignadoAId === u.usuarioId;
+  }
+}
+
+export function puedeCompletarPaso(paso: PasoResponsable, ctx: ContextoResponsable, u: UsuarioFlujo): boolean {
+  return u.esAdminArchivo || esResponsablePaso(paso, ctx, u);
+}
+
+export function esDevolucion(desde: { orden: number }, hacia: { orden: number; tipo: TipoPasoFlujo }): boolean {
+  return hacia.tipo !== "FIN" && hacia.orden < desde.orden;
+}
+
 function verificarAccesoFlujo(
   dependenciasOperadoras: string[],
   nombreFlujo: string,
@@ -415,6 +470,9 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
     db.comunicacion.findUnique({
       where: { id: comunicacionId },
       select: {
+        dependenciaDestinoId: true,
+        dependenciaOrigenId: true,
+        radicadoPorId: true,
         dependenciaDestino: { select: { nombre: true } },
         dependenciaOrigen: { select: { nombre: true } },
         radicadoPor: { select: { nombre: true } },
@@ -434,18 +492,20 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
                 orden: true,
                 nombre: true,
                 tipo: true,
+                asignacion: true,
                 transiciones: { select: { desdePasoId: true, haciaPasoId: true, etiqueta: true } },
               },
             },
           },
         },
         iniciadoPor: { select: { nombre: true } },
+        asignadoA: { select: { nombre: true } },
         pasoActual: {
           include: { transiciones: { orderBy: { orden: "asc" } }, dependencia: { select: { nombre: true } } },
         },
         ejecuciones: {
           orderBy: { completadoEn: "asc" },
-          include: { paso: { select: { id: true, nombre: true, tipo: true } }, responsable: { select: { nombre: true } } },
+          include: { paso: { select: { id: true, nombre: true, tipo: true } }, responsable: { select: { id: true, nombre: true } } },
         },
       },
     }),
@@ -479,6 +539,7 @@ export async function iniciarInstancia(
       flujoId,
       comunicacionId,
       iniciadoPorId: usuarioId,
+      asignadoAId: pasoInicial.asignacion === "MANUAL" ? usuarioId : null,
       pasoActualId: pasoInicial.id,
       pasoActualDesde: new Date(),
       estado: pasoInicial.tipo === "FIN" ? "COMPLETADO" : "EN_CURSO",
@@ -499,17 +560,20 @@ export async function iniciarInstancia(
 export async function avanzarInstancia(
   instanciaId: string,
   transicionId: string,
-  usuarioId: string,
+  usuario: UsuarioFlujo,
   comentario: string | null,
   ip?: string | null,
   ctx?: ContextoOperador,
+  asignarAId?: string | null,
 ) {
+  const usuarioId = usuario.usuarioId;
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },
     include: {
       flujo: { select: { nombre: true, dependenciasOperadoras: true } },
-      comunicacion: { select: { id: true, radicado: true } },
+      comunicacion: { select: { id: true, radicado: true, dependenciaDestinoId: true, dependenciaOrigenId: true, radicadoPorId: true } },
       pasoActual: { include: { transiciones: true } },
+      ejecuciones: { orderBy: { completadoEn: "desc" }, take: 1, select: { responsableId: true } },
     },
   });
   if (!instancia) throw new Error("La instancia de flujo no existe.");
@@ -517,53 +581,86 @@ export async function avanzarInstancia(
   verificarAccesoFlujo(instancia.flujo.dependenciasOperadoras, instancia.flujo.nombre, ctx);
   const pasoActual = instancia.pasoActual;
   if (!pasoActual) throw new Error("El flujo no tiene un paso actual.");
+  const contexto: ContextoResponsable = {
+    asignadoAId: instancia.asignadoAId,
+    responsableAnteriorId: instancia.ejecuciones[0]?.responsableId ?? instancia.iniciadoPorId,
+    comunicacion: instancia.comunicacion,
+  };
+  if (!puedeCompletarPaso(pasoActual, contexto, usuario)) {
+    throw new Error("Este paso le corresponde a otra persona o dependencia; solo su responsable o el administrador del archivo pueden completarlo.");
+  }
   const transicion = pasoActual.transiciones.find((t) => t.id === transicionId);
   if (!transicion) throw new Error("Esa opción no corresponde al paso actual.");
   const destino = await db.pasoFlujo.findUnique({ where: { id: transicion.haciaPasoId } });
   if (!destino) throw new Error("El paso destino no existe.");
+  const nota = comentario?.trim() || null;
+  if (esDevolucion(pasoActual, destino) && !nota) throw new Error(`Para devolver a «${destino.nombre}» indique el motivo en el comentario.`);
+
+  let asignadoAId: string | null = null;
+  if (destino.asignacion === "MANUAL" && destino.tipo !== "FIN") {
+    if (!asignarAId) throw new Error(`Elija a quién se asigna el paso «${destino.nombre}».`);
+    const persona = await db.usuario.findUnique({ where: { id: asignarAId }, select: { activo: true } });
+    if (!persona?.activo) throw new Error("La persona elegida no existe o está inactiva.");
+    asignadoAId = asignarAId;
+  }
 
   const cierra = destino.tipo === "FIN";
-  await db.$transaction([
-    db.pasoEjecutado.create({
-      data: {
-        instanciaId,
-        pasoId: pasoActual.id,
-        resultado: transicion.etiqueta,
-        comentario: comentario?.trim() || null,
-        responsableId: usuarioId,
-      },
-    }),
-    db.instanciaFlujo.update({
-      where: { id: instanciaId },
-      data: {
-        pasoActualId: destino.id,
-        pasoActualDesde: new Date(),
-        estado: cierra ? "COMPLETADO" : "EN_CURSO",
-        finalizadoEn: cierra ? new Date() : null,
-      },
-    }),
-  ]);
+  const movido = await db.instanciaFlujo.updateMany({
+    where: { id: instanciaId, estado: "EN_CURSO", pasoActualId: pasoActual.id },
+    data: {
+      pasoActualId: destino.id,
+      pasoActualDesde: new Date(),
+      asignadoAId,
+      estado: cierra ? "COMPLETADO" : "EN_CURSO",
+      finalizadoEn: cierra ? new Date() : null,
+    },
+  });
+  if (movido.count === 0) throw new Error("Otra persona acaba de completar este paso. Recargue la página.");
+  await db.pasoEjecutado.create({
+    data: { instanciaId, pasoId: pasoActual.id, resultado: transicion.etiqueta, comentario: nota, responsableId: usuarioId },
+  });
   await registrarAuditoriaDoc({
     entidad: "Comunicacion",
     entidadId: instancia.comunicacion.id,
     accion: "FLUJO",
     usuarioId,
     ip,
-    detalle: `Flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: «${pasoActual.nombre}» → «${transicion.etiqueta}» → «${destino.nombre}»${cierra ? " (flujo completado)" : ""}`,
+    detalle: `Flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: «${pasoActual.nombre}» → «${transicion.etiqueta}» → «${destino.nombre}»${cierra ? " (flujo completado)" : ""}${nota ? ` — ${nota}` : ""}`,
   });
 }
 
-export async function cancelarInstancia(instanciaId: string, usuarioId: string, motivo: string, ip?: string | null) {
+export async function reasignarPasoManual(instanciaId: string, asignarAId: string, usuarioId: string, ip?: string | null) {
+  const instancia = await db.instanciaFlujo.findUnique({
+    where: { id: instanciaId },
+    include: { flujo: { select: { nombre: true } }, comunicacion: { select: { id: true, radicado: true } }, pasoActual: { select: { nombre: true, asignacion: true } } },
+  });
+  if (!instancia || instancia.estado !== "EN_CURSO" || !instancia.pasoActual) throw new Error("El flujo no está en curso.");
+  if (instancia.pasoActual.asignacion !== "MANUAL") throw new Error("Este paso no se asigna a mano.");
+  const persona = await db.usuario.findUnique({ where: { id: asignarAId }, select: { activo: true, nombre: true } });
+  if (!persona?.activo) throw new Error("La persona elegida no existe o está inactiva.");
+  await db.instanciaFlujo.update({ where: { id: instanciaId }, data: { asignadoAId: asignarAId } });
+  await registrarAuditoriaDoc({
+    entidad: "Comunicacion",
+    entidadId: instancia.comunicacion.id,
+    accion: "FLUJO",
+    usuarioId,
+    ip,
+    detalle: `Flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: asignó el paso «${instancia.pasoActual.nombre}» a ${persona.nombre}`,
+  });
+}
+
+export async function cancelarInstancia(instanciaId: string, usuarioId: string, motivo: string, ip?: string | null, ctx?: ContextoOperador) {
   if (!motivo.trim()) throw new Error("Indique el motivo para cancelar el flujo.");
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },
-    include: { flujo: { select: { nombre: true } }, comunicacion: { select: { id: true, radicado: true } } },
+    include: { flujo: { select: { nombre: true, dependenciasOperadoras: true } }, comunicacion: { select: { id: true, radicado: true } } },
   });
   if (!instancia) throw new Error("La instancia de flujo no existe.");
   if (instancia.estado !== "EN_CURSO") throw new Error("El flujo ya no está en curso.");
+  verificarAccesoFlujo(instancia.flujo.dependenciasOperadoras, instancia.flujo.nombre, ctx);
   await db.instanciaFlujo.update({
     where: { id: instanciaId },
-    data: { estado: "CANCELADO", finalizadoEn: new Date(), pasoActualId: null },
+    data: { estado: "CANCELADO", finalizadoEn: new Date(), pasoActualId: null, asignadoAId: null },
   });
   await registrarAuditoriaDoc({
     entidad: "Comunicacion",
@@ -599,6 +696,7 @@ export function describirResponsablePaso(
     dependenciaDestino?: { nombre: string } | null;
     dependenciaOrigen?: { nombre: string } | null;
     radicadoPor?: { nombre: string } | null;
+    asignadoA?: { nombre: string } | null;
   },
 ): string {
   switch (paso.asignacion) {
@@ -613,7 +711,7 @@ export function describirResponsablePaso(
     case "RESPONSABLE_PASO_ANTERIOR":
       return "Responsable del paso anterior";
     case "MANUAL":
-      return "Se asigna a mano";
+      return comunicacion.asignadoA?.nombre ?? "Se asigna a mano (sin asignar)";
   }
 }
 
@@ -639,4 +737,34 @@ export function puedeOperarFlujos(permisos: PermisosUsuario) {
     puedeDistribuir(permisos) ||
     esJefeDeReparto(permisos)
   );
+}
+
+export async function pasosFlujoACargo(u: UsuarioFlujo) {
+  const enCurso = await db.instanciaFlujo.findMany({
+    where: { estado: "EN_CURSO", pasoActualId: { not: null } },
+    orderBy: { pasoActualDesde: "asc" },
+    take: 500,
+    select: {
+      id: true,
+      asignadoAId: true,
+      iniciadoPorId: true,
+      pasoActualDesde: true,
+      flujo: { select: { nombre: true } },
+      pasoActual: { select: { nombre: true, tipo: true, asignacion: true, dependenciaId: true, cargoClave: true, slaDiasHabiles: true } },
+      comunicacion: { select: { id: true, radicado: true, asunto: true, dependenciaDestinoId: true, dependenciaOrigenId: true, radicadoPorId: true } },
+      ejecuciones: { orderBy: { completadoEn: "desc" }, take: 1, select: { responsableId: true } },
+    },
+  });
+  return enCurso.filter((i) =>
+    esResponsablePaso(
+      i.pasoActual!,
+      { asignadoAId: i.asignadoAId, responsableAnteriorId: i.ejecuciones[0]?.responsableId ?? i.iniciadoPorId, comunicacion: i.comunicacion },
+      u
+    )
+  );
+}
+
+export async function usuarioFlujo(usuarioId: string, permisos: PermisosUsuario): Promise<UsuarioFlujo> {
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { dependenciaId: true } });
+  return { usuarioId, dependenciaId: usuario?.dependenciaId ?? null, cargos: permisos.cargos, esAdminArchivo: puedeAdministrarArchivo(permisos) };
 }

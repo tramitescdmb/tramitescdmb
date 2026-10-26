@@ -4,6 +4,7 @@ import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contar
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
+import { pasosFlujoACargo, usuarioFlujo } from "@/lib/flujos";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 
@@ -16,7 +17,14 @@ export async function GET() {
   const avisos: Aviso[] = [];
 
   if (puedeAccederCorrespondencia(permisos)) {
-    const [memos, firmas] = await Promise.all([contextoMemorandos(session.userId, permisos).then(contarMemorandos), contarPendientesBuzonSgdea(session.userId)]);
+    const [memos, firmas, pasosFlujo] = await Promise.all([
+      contextoMemorandos(session.userId, permisos).then(contarMemorandos),
+      contarPendientesBuzonSgdea(session.userId),
+      usuarioFlujo(session.userId, permisos).then(pasosFlujoACargo).then((l) => l.length),
+    ]);
+    if (pasosFlujo > 0) {
+      avisos.push({ clave: "flujos-sgdea", titulo: `${pasosFlujo} paso(s) de flujo de trabajo a su cargo`, href: "/correspondencia/flujos-a-cargo", alerta: true, cantidad: pasosFlujo, modulo: "SGDEA" });
+    }
     if (memos.porResponder > 0) {
       avisos.push({
         clave: "memos-responder",

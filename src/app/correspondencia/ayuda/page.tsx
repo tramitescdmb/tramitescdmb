@@ -510,6 +510,30 @@ export default async function CorrespondenciaAyudaPage() {
           cancelación quedan en la bitácora como acción «Flujo de trabajo». Aplicar un flujo <strong>no</strong>{" "}
           cambia el estado del radicado ni el documento firmado — es una capa de seguimiento.
         </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-stone-400">Quién completa cada paso</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            Aplicar y cancelar un flujo lo hacen quienes operan flujos. <strong>Completar un paso</strong> lo hace su
+            responsable: una persona de la dependencia de la comunicación o de la dependencia fija, quien tenga el cargo
+            elegido (del catálogo de cargos), quien radicó, quien completó el paso anterior o la persona asignada. El
+            administrador de archivo puede completar cualquier paso.
+          </li>
+          <li>
+            Si el siguiente paso <strong>se asigna a mano</strong>, quien completa el paso actual elige a la persona; el
+            administrador de archivo puede reasignarlo.
+          </li>
+          <li>
+            Volver a un paso anterior (<strong>devolver</strong>) exige escribir el motivo, que queda en el historial del flujo.
+          </li>
+          <li>
+            Cada persona ve sus pasos en <span className="font-mono text-xs">Correspondencia → Pasos de flujo a mi cargo</span>,
+            con el término de cada uno; el número aparece también en el menú y en la campana.
+          </li>
+          <li>
+            Un paso que ya se usó no se puede eliminar del flujo: para cambiar la ruta se duplica el flujo y se desactiva
+            el anterior.
+          </li>
+        </ul>
       </Seccion>
 
       <Seccion n={8} id="roles" icono={Users} titulo="Roles y permisos del módulo">

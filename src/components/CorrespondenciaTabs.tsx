@@ -19,7 +19,7 @@ export type ConteoMemorandos = { porResponder: number; vencidos: number; sinLeer
 
 const NO_BANDEJA = [
   "nueva", "admin", "panel", "plantillas", "disposicion", "expedientes", "reportes",
-  "bitacora", "ayuda", "memorandos", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion", "terceros",
+  "bitacora", "ayuda", "flujos-a-cargo", "memorandos", "calendario-laboral", "fondo", "buzon", "mis-firmas", "rechazos", "matriz-moreq", "manual-demostracion", "terceros",
 ];
 const esRutaBandeja = (p: string) =>
   p === "/correspondencia" ||
@@ -34,11 +34,14 @@ export function CorrespondenciaTabs({
   permitido,
   pendientesFirma,
   memorandos,
+  pasosFlujo = 0,
 }: {
   permitido: Permitido;
   pendientesFirma: ResumenPendientesFirma;
   memorandos: ConteoMemorandos;
+  pasosFlujo?: number;
 }) {
+  const insigniaFlujos = { valor: pasosFlujo, alerta: pasosFlujo > 0, titulo: `${pasosFlujo} paso(s) de flujo de trabajo a su cargo` };
   const insigniaMemorandos =
     memorandos.porResponder > 0
       ? {
@@ -66,8 +69,10 @@ export function CorrespondenciaTabs({
     {
       label: "Correspondencia",
       icon: Inbox,
+      insignia: insigniaFlujos,
       items: [
         { href: "/correspondencia", label: "Bandeja de radicados" },
+        { href: "/correspondencia/flujos-a-cargo", label: "Pasos de flujo a mi cargo", insignia: insigniaFlujos },
         ...(permitido.radicar
           ? [
               { href: "/correspondencia/nueva", label: "Radicar recibida" },

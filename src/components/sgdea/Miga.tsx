@@ -19,6 +19,7 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/correspondencia\/panel\/archivo$/, trail: ["Panel", "Expedientes y archivo"] },
   { re: /^\/correspondencia\/panel\/sistema$/, trail: ["Panel", "Sistema"] },
   { re: /^\/correspondencia\/panel$/, trail: ["Panel", "Pendientes"] },
+  { re: /^\/correspondencia\/flujos-a-cargo/, trail: ["Correspondencia", "Pasos de flujo a mi cargo"] },
   { re: /^\/correspondencia\/nueva\/enviada/, trail: ["Correspondencia", "Radicar enviada"] },
   { re: /^\/correspondencia\/nueva\/interna/, trail: ["Memorandos", "Nuevo memorando"] },
   { re: /^\/correspondencia\/memorandos/, trail: ["Memorandos", "Bandeja de memorandos"] },

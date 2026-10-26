@@ -11,6 +11,7 @@ import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
+import { pasosFlujoACargo, usuarioFlujo } from "@/lib/flujos";
 
 export default async function CorrespondenciaLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -40,9 +41,10 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
     fondoHistorico: fondoHistoricoConfigurado(),
     enviarMemorandos: false,
   };
-  const [pendientesFirma, ctxMemos] = await Promise.all([
+  const [pendientesFirma, ctxMemos, pasosFlujo] = await Promise.all([
     contarPendientesBuzonSgdea(session.userId),
     contextoMemorandos(session.userId, permisos),
+    usuarioFlujo(session.userId, permisos).then(pasosFlujoACargo).then((l) => l.length),
   ]);
   const memorandos = await contarMemorandos(ctxMemos);
   permitido.enviarMemorandos = ctxMemos.firmante;
@@ -102,7 +104,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
       </div>
 
       <div className="encabezado-modulo">
-        <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} memorandos={memorandos} />
+        <CorrespondenciaTabs permitido={permitido} pendientesFirma={pendientesFirma} memorandos={memorandos} pasosFlujo={pasosFlujo} />
       </div>
 
       <div className="encabezado-modulo">
