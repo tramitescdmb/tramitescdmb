@@ -133,7 +133,7 @@ export function CorrespondenciaTabs({
         paraAdmin(permitido, { href: "/correspondencia/calendario-laboral", label: "Calendario laboral", prefijo: true }),
         paraAdmin(permitido, { href: "/correspondencia/bitacora", label: "Bitácora del SGDEA", separador: true }),
         { href: "/correspondencia/matriz-moreq", label: "Matriz de cumplimiento MoReq" },
-        { href: "/correspondencia/manual-demostracion", label: "Manual de demostración" },
+        ...(permitido.administradorSistema ? [{ href: "/correspondencia/manual-demostracion", label: "Manual de demostración" }] : []),
         paraAdminSistema(permitido, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/auditoria", label: "Auditoría de cuentas", prefijo: true, externo: true }),
         paraAdminSistema(permitido, { href: "/admin/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true, externo: true }),

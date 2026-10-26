@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SELECT_CONTRATISTA_ENTIDAD, entidadFirmante } from "@/lib/entidad-firmante";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               sexo: true,
               rolesContratacion: true,
               dependencia: { select: { nombre: true } },
+              contratista: { select: SELECT_CONTRATISTA_ENTIDAD },
             },
           },
         },
@@ -72,6 +74,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               sexo: true,
               rolesContratacion: true,
               dependencia: { select: { nombre: true } },
+              contratista: { select: SELECT_CONTRATISTA_ENTIDAD },
             },
           },
         },
@@ -125,6 +128,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       navegador: navegadorLegible(f.userAgent),
       selloTiempo: textoSelloTiempo({ en: f.selloTiempoEn, fuente: f.selloTiempoFuente, token: f.selloTiempoToken }),
       nivel: nivelFirma(f.usuario),
+      entidad: entidadFirmante(f.usuario),
     })),
     ...doc.solicitudesFirma.map((s) => ({
       nombre: s.usuarioAsignado.nombre,
@@ -138,6 +142,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       hash: "",
       calidad: "VISTO_BUENO",
       cargo: s.cargoAlFirmar ?? cargoDelFirmante(s.usuarioAsignado, "TRAMITES"),
+      entidad: entidadFirmante(s.usuarioAsignado),
       actoAdministrativo: s.actoAdministrativoAlFirmar,
       ip: s.ip,
       navegador: navegadorLegible(s.userAgent),

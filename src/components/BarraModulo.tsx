@@ -62,6 +62,7 @@ export function BarraModulo({
 }) {
   const pathname = usePathname();
   const { expandido } = useMenuModulo();
+  grupos = soloPermitidos(grupos);
   usePublicarMenu({ grupos, esItemActivo });
   const { itemActivo, grupoActivo } = actividadMenu(pathname, esItemActivo);
 
@@ -88,6 +89,13 @@ export function BarraModulo({
       {derecha.length > 0 && <div className="flex flex-wrap items-center gap-1">{derecha}</div>}
     </nav>
   );
+}
+
+export function soloPermitidos(grupos: GrupoMenu[]): GrupoMenu[] {
+  return grupos
+    .filter((g) => !g.bloqueadoPara)
+    .map((g) => (g.items ? { ...g, items: g.items.filter((it) => !it.bloqueadoPara) } : g))
+    .filter((g) => g.href || (g.items ?? []).length > 0);
 }
 
 function claseTab(activo: boolean, bloqueado = false) {

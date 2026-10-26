@@ -40,6 +40,41 @@ export function NuevoUsuarioForm({
   const [cargoEncargoIds, setCargoEncargoIds] = useState<Set<string>>(new Set());
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cedulaConsulta, setCedulaConsulta] = useState("");
+  const [consultando, setConsultando] = useState(false);
+  const [resultadoConsulta, setResultadoConsulta] = useState<{ ok: boolean; texto: string; enlace?: string } | null>(null);
+
+  async function consultarDirectorio() {
+    setConsultando(true);
+    setResultadoConsulta(null);
+    try {
+      const res = await fetch(`/api/usuarios/directorio?documento=${encodeURIComponent(cedulaConsulta)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setResultadoConsulta({ ok: false, texto: data.mensaje || data.error || "No fue posible consultar el directorio activo.", enlace: data.existente ? `/usuarios/${data.existente.id}` : undefined });
+        return;
+      }
+      const p = data.perfil as { nombres?: string; apellidos?: string; email?: string; celular?: string; telefono?: string; direccion?: string; documento?: string; usuarioRed?: string };
+      if (p.usuarioRed) setEmail(p.usuarioRed.toLowerCase());
+      setPersona((prev) => ({
+        ...prev,
+        tipoPersona: "NATURAL",
+        tipoIdentificacion: "CC",
+        identificacion: p.documento ?? cedulaConsulta.replace(/\D/g, ""),
+        nombres: p.nombres ?? prev.nombres,
+        apellidos: p.apellidos ?? prev.apellidos,
+        email: p.email ?? prev.email,
+        celular: p.celular ?? prev.celular,
+        telefono: p.telefono ?? prev.telefono,
+        direccion: p.direccion ?? prev.direccion,
+      }));
+      setResultadoConsulta({ ok: true, texto: "Datos traídos del directorio activo. Revíselos y complete el cargo y los roles." });
+    } catch {
+      setResultadoConsulta({ ok: false, texto: "No fue posible consultar el directorio activo." });
+    } finally {
+      setConsultando(false);
+    }
+  }
 
   const esRed = acceso === "DIRECTORIO_ACTIVO";
 
@@ -136,6 +171,47 @@ export function NuevoUsuarioForm({
             </button>
           ))}
         </div>
+        {esRed && (
+          <div className="max-w-xl rounded-lg border border-cdmb-100 bg-cdmb-50/50 p-3">
+            <label className="block text-sm font-medium text-stone-700">
+              Cédula del funcionario (employeeID)
+              <div className="mt-1 flex gap-2">
+                <input
+                  value={cedulaConsulta}
+                  onChange={(e) => setCedulaConsulta(e.target.value.replace(/[^\d]/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (cedulaConsulta.length >= 5) void consultarDirectorio();
+                    }
+                  }}
+                  inputMode="numeric"
+                  placeholder="Cédula sin puntos"
+                  className={CLASE_CAMPO_PERSONA}
+                />
+                <button
+                  type="button"
+                  onClick={consultarDirectorio}
+                  disabled={consultando || cedulaConsulta.length < 5}
+                  className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
+                >
+                  {consultando ? "Consultando…" : "Consultar en el directorio"}
+                </button>
+              </div>
+            </label>
+            <p className="mt-1 text-xs text-stone-500">Trae del directorio activo el usuario de red, los nombres, el correo y el celular. La contraseña es la del dominio CDMB.</p>
+            {resultadoConsulta && (
+              <p className={`mt-2 rounded-md px-2.5 py-1.5 text-xs ${resultadoConsulta.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
+                {resultadoConsulta.texto}
+                {resultadoConsulta.enlace && (
+                  <a href={resultadoConsulta.enlace} className="ml-1 font-medium underline">
+                    Ver usuario
+                  </a>
+                )}
+              </p>
+            )}
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">

@@ -129,6 +129,7 @@ function Grupo({
   submenu?: React.ReactNode;
   pendientes?: Record<string, { total: number; detalle: string }>;
 }) {
+  const [plegado, setPlegado] = useState<string | null>(null);
   return (
     <div>
       {titulo && !colapsado && (
@@ -136,15 +137,28 @@ function Grupo({
       )}
       <ul>
         {items.map((item) => (
-          <li key={item.href}>
+          <li key={item.href} className="relative">
             <EnlaceNav
               item={item}
               activo={activo(item)}
               colapsado={colapsado}
-              desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD}
+              conSubmenu={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD}
               pendiente={MODULO_DE_ITEM[item.href] ? pendientes[MODULO_DE_ITEM[item.href]!] : undefined}
             />
-            {submenu && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD && submenu}
+            {submenu && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPlegado(plegado === item.href ? null : item.href)}
+                  aria-expanded={plegado !== item.href}
+                  aria-label={plegado === item.href ? `Desplegar el menú de ${item.label}` : `Plegar el menú de ${item.label}`}
+                  className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded text-menu-500 hover:bg-white/10"
+                >
+                  <IconChevronDown className={`h-4 w-4 transition-transform ${plegado === item.href ? "-rotate-90" : ""}`} stroke={1.75} aria-hidden />
+                </button>
+                {plegado !== item.href && submenu}
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -162,13 +176,13 @@ function EnlaceNav({
   item,
   activo,
   colapsado,
-  desplegado,
+  conSubmenu,
   pendiente,
 }: {
   item: Item;
   activo: boolean;
   colapsado: boolean;
-  desplegado?: boolean;
+  conSubmenu?: boolean;
   pendiente?: { total: number; detalle: string };
 }) {
   const Icon = item.icon;
@@ -178,7 +192,7 @@ function EnlaceNav({
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}
       className={`relative flex items-center whitespace-nowrap border-l-[3px] text-[14px] transition-colors ${
-        colapsado ? "justify-center px-0 py-3" : "gap-3 px-[17px] py-2.5"
+        colapsado ? "justify-center px-0 py-3" : `gap-3 py-2.5 pl-[17px] ${conSubmenu ? "pr-11" : "pr-[17px]"}`
       } ${activo ? "border-menu-500 bg-black/20 font-semibold text-menu-500" : "border-transparent text-white/85 hover:bg-white/5 hover:text-white"}`}
     >
       <Icon className="h-5 w-5 flex-none" stroke={1.75} aria-hidden />
@@ -192,7 +206,6 @@ function EnlaceNav({
           {colapsado ? null : pendiente.total}
         </span>
       )}
-      {desplegado && <IconChevronDown className="h-4 w-4 flex-none opacity-80" stroke={1.75} aria-hidden />}
     </Link>
   );
 }

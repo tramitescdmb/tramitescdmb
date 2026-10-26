@@ -366,12 +366,12 @@ export default async function TramitesAyudaPage() {
           Volver al panel
         </Link>
         <div className="flex items-center gap-2">
-          <Link
+          {permisos.esAdmin && <Link
             href="/tramites-ambientales/manual-demostracion"
             className="rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-cdmb-300 hover:text-cdmb-700"
           >
             Manual de demostración
-          </Link>
+          </Link>}
           <BotonImprimir variante="secundario">Imprimir</BotonImprimir>
         </div>
       </div>

@@ -45,6 +45,7 @@ describe("perfil del directorio activo", () => {
       celular: "3001234567",
       documento: "13743584",
       dependencia: "Oficina de Tecnologías",
+      usuarioRed: "luiloz01",
     });
   });
 

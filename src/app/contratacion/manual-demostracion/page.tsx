@@ -19,6 +19,7 @@ export default async function ManualDemostracionGeconPage() {
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
+  if (!permisos.esAdmin) redirect("/");
   const puedeEditar = puedeEditarManualDemostracion(permisos, "GECON");
 
   await asegurarManualDemostracion("GECON");

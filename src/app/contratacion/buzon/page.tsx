@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ResumenBuzonFirmas } from "@/components/ResumenBuzonFirmas";
 import { EsperaTurnoFirma, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 import { redirect } from "next/navigation";
 import { Inbox, PenLine } from "lucide-react";
@@ -27,15 +28,7 @@ export default async function BuzonContratacionPage() {
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
       <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_GECON} />
 
-      {solicitudes.length > 0 && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <strong>
-            Tiene {solicitudes.length} documento{solicitudes.length === 1 ? "" : "s"} pendiente{solicitudes.length === 1 ? "" : "s"} por firmar o revisar
-          </strong>
-          {solicitudes.some((s) => !s.puedeActuar) &&
-            ` (${solicitudes.filter((s) => s.puedeActuar).length} ya puede${solicitudes.filter((s) => s.puedeActuar).length === 1 ? "" : "n"} actuarse ahora).`}
-        </p>
-      )}
+      <ResumenBuzonFirmas solicitudes={solicitudes} />
 
       {solicitudes.length === 0 ? (
         <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/60 p-6 text-center text-sm text-stone-400">

@@ -95,7 +95,7 @@ export function TramitesTabs({
       icon: HelpCircle,
       items: [
         { href: "/tramites-ambientales/ayuda", label: "Guía de referencia" },
-        { href: "/tramites-ambientales/manual-demostracion", label: "Manual de demostración" },
+        ...(esAdmin ? [{ href: "/tramites-ambientales/manual-demostracion", label: "Manual de demostración" }] : []),
       ],
     },
   ];

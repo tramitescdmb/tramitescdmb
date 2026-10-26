@@ -6,6 +6,7 @@ import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { metadatosPdf } from "@/lib/metadatos-pdf";
 import type { DatosFirmaGecon, FirmaRotuloPdf } from "@/lib/pdf-rotulado";
+import { SELECT_CONTRATISTA_ENTIDAD, entidadFirmante } from "@/lib/entidad-firmante";
 
 const SELECT_FIRMANTE = {
   id: true,
@@ -17,7 +18,7 @@ const SELECT_FIRMANTE = {
   sexo: true,
   rolesContratacion: true,
   dependencia: { select: { nombre: true } },
-  contratista: { select: { identificacion: true, contactoEmail: true, tipoPersona: true } },
+  contratista: { select: SELECT_CONTRATISTA_ENTIDAD },
 } satisfies Prisma.UsuarioSelect;
 
 export const SELECT_FIRMAS_DOCUMENTO_GECON = {
@@ -68,6 +69,7 @@ function persona(u: Firmante, supervisores: Set<string>, cargoAlFirmar?: string 
     cargo: cargoAlFirmar ?? cargoDelFirmante(conContexto, "GECON"),
     actoAdministrativo: actoAdministrativo ?? null,
     nivel: nivelFirma(conContexto),
+    entidad: entidadFirmante(u),
   };
 }
 

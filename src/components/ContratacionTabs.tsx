@@ -97,7 +97,7 @@ export function ContratacionTabs({
         entrada(permitido.administradorSistema, SOLO_ADMIN, { href: "/usuarios", label: "Usuarios y roles", prefijo: true, externo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/auditoria", label: "Auditoría de cuentas", prefijo: true }),
         entrada(permitido.gestion, ADMIN_O_JEFE, { href: "/contratacion/seguridad", label: "Seguridad (contraseñas, accesos)", prefijo: true }),
-        { href: "/contratacion/manual-demostracion", label: "Manual de demostración", prefijo: true, separador: true },
+        ...(permitido.administradorSistema ? [{ href: "/contratacion/manual-demostracion", label: "Manual de demostración", prefijo: true, separador: true }] : []),
       ],
     },
   ];

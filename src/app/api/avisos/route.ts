@@ -72,6 +72,10 @@ export async function GET() {
     if (devueltos > 0) {
       avisos.push({ clave: "conceptos-devueltos", titulo: `${devueltos} concepto(s) devuelto(s) para corrección`, href: "/planeador/conceptos", alerta: true, cantidad: devueltos, modulo: "TRAMITES" });
     }
+    if (firmas && firmas.total > firmas.listos) {
+      const n = firmas.total - firmas.listos;
+      avisos.push({ clave: "firmas-tramites-espera", titulo: `${n} firma(s) de trámites en espera de otro firmante`, detalle: "Le llegará el aviso cuando sea su turno", href: "/firmas/buzon", alerta: false, cantidad: n, modulo: "TRAMITES" });
+    }
     if (firmas && firmas.listos > 0) {
       avisos.push({ clave: "firmas-tramites", titulo: `${firmas.listos} documento(s) de trámites para firmar`, href: "/firmas/buzon", alerta: true, cantidad: firmas.listos, modulo: "TRAMITES" });
     }
@@ -94,6 +98,10 @@ export async function GET() {
     ]);
     if (informes > 0) {
       avisos.push({ clave: "informes-gecon", titulo: `${informes} informe(s) de supervisión por radicar`, detalle: "De sus contratos o de los que supervisa", href: "/contratacion/panel#informes", alerta: true, cantidad: informes, modulo: "GECON" });
+    }
+    if (firmas.total > firmas.listos) {
+      const n = firmas.total - firmas.listos;
+      avisos.push({ clave: "firmas-gecon-espera", titulo: `${n} firma(s) de GECON en espera de otro firmante`, detalle: "Le llegará el aviso cuando sea su turno", href: "/contratacion/buzon", alerta: false, cantidad: n, modulo: "GECON" });
     }
     if (firmas.listos > 0) {
       avisos.push({ clave: "firmas-gecon", titulo: `${firmas.listos} documento(s) de GECON para firmar`, href: "/contratacion/mis-firmas", alerta: true, cantidad: firmas.listos, modulo: "GECON" });

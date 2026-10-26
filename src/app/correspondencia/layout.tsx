@@ -92,14 +92,16 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             <ListChecks className="h-3 w-3" aria-hidden />
             Matriz de cumplimiento MoReq
           </Link>
-          <Link
-            prefetch={false}
-            href="/correspondencia/manual-demostracion"
-            className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
-          >
-            <BookOpen className="h-3 w-3" aria-hidden />
-            Manual de demostración
-          </Link>
+          {permisos.esAdmin && (
+            <Link
+              prefetch={false}
+              href="/correspondencia/manual-demostracion"
+              className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline"
+            >
+              <BookOpen className="h-3 w-3" aria-hidden />
+              Manual de demostración
+            </Link>
+          )}
         </div>
       </div>
 

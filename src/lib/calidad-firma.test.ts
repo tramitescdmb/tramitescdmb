@@ -65,7 +65,7 @@ describe("resumen de pendientes por calidad", () => {
     ]);
     expect(r).toEqual({ total: 5, listos: 3, principal: 2, proyecto: 1, reviso: 1, vistoBueno: 1 });
     expect(textoPendientesFirma(r)).toBe(
-      "5 pendientes por firmar o revisar: 2 como firmante principal, 1 como proyectó, 1 como revisó, 1 de visto bueno · 3 ya pueden atenderse"
+      "5 pendientes por firmar o revisar: 2 como firmante principal, 1 como proyectó, 1 como revisó, 1 de visto bueno · 3 en su turno y 2 en espera de otro firmante"
     );
   });
 });

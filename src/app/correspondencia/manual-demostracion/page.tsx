@@ -18,6 +18,7 @@ export default async function ManualDemostracionPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!permisos.esAdmin) redirect("/correspondencia/panel");
   const puedeEditar = puedeAdministrarArchivo(permisos);
 
   await asegurarManualDemostracion("SGDEA");

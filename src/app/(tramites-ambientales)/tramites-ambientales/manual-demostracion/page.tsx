@@ -19,6 +19,7 @@ export default async function ManualDemostracionTramitesPage() {
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!permisos.modulos.has("TRAMITES")) redirect("/");
+  if (!permisos.esAdmin) redirect("/");
   const puedeEditar = puedeEditarManualDemostracion(permisos, "TRAMITES");
 
   await asegurarManualDemostracion("TRAMITES");

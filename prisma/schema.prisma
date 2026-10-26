@@ -129,6 +129,7 @@ model Usuario {
   createdAt               DateTime                 @default(now())
 
   directorioActivo Boolean @default(false)
+  sincronizadoDirectorioEn DateTime?
 
   tipoPersona       TipoPersona        @default(NATURAL)
   nombres           String?

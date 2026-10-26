@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { formatearFechaHora } from "@/lib/fecha";
+import { BotonSincronizarDirectorio } from "@/components/BotonSincronizarDirectorio";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -97,6 +99,7 @@ export default async function EditarUsuarioPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          <BotonSincronizarDirectorio usuarioId={usuario.id} ultima={usuario.sincronizadoDirectorioEn ? formatearFechaHora(usuario.sincronizadoDirectorioEn) : null} />
           <Link
             href={`/usuarios/${usuario.id}/roles`}
             title={rolesAsignados.map((r) => r.perfil.nombre).join(", ") || "Sin roles"}

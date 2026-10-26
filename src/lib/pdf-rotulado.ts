@@ -137,7 +137,12 @@ async function agregarDiligencia(
     const identificacion = textoIdentificacionFirma(f.cedulaONit, f.tipoIdentificacion);
     const evidencia = [f.ip, f.navegador].filter(Boolean).join(" · ");
     seccion(`${ordenadas.length > 1 ? `Firmante ${i + 1} de ${ordenadas.length}` : "Firmante"} · ${etiquetaDe(f)}`, [
-      { etiqueta: "Nombre", valor: identificacion ? `${f.nombre} · ${identificacion}` : f.nombre },
+      ...(f.entidad
+        ? [
+            { etiqueta: "Persona jurídica", valor: `${f.entidad.razonSocial} · NIT ${f.entidad.nit}` },
+            { etiqueta: "Representante legal", valor: f.entidad.documentoRepresentante ? `${f.entidad.representante} · C.C. ${f.entidad.documentoRepresentante}` : f.entidad.representante },
+          ]
+        : [{ etiqueta: "Nombre", valor: identificacion ? `${f.nombre} · ${identificacion}` : f.nombre }]),
       ...(cargo ? [{ etiqueta: "Cargo", valor: cargo }] : []),
       ...(f.actoAdministrativo ? [{ etiqueta: "Acto administrativo", valor: f.actoAdministrativo }] : []),
       ...(f.dependencia ? [{ etiqueta: "Dependencia", valor: f.dependencia }] : []),
@@ -174,7 +179,7 @@ async function agregarDiligencia(
 
   const resumen = (lista: FirmaRotuloPdf[]) => {
     const grupos = new Map<string, string[]>();
-    for (const f of lista) grupos.set(etiquetaDe(f), [...(grupos.get(etiquetaDe(f)) ?? []), f.nombre]);
+    for (const f of lista) grupos.set(etiquetaDe(f), [...(grupos.get(etiquetaDe(f)) ?? []), f.entidad ? `${f.entidad.razonSocial} (rep. legal ${f.entidad.representante})` : f.nombre]);
     return [...grupos.entries()].map(([e, nombres]) => `${e}: ${nombres.join(", ")}`).join("  ·  ");
   };
   const lineasResumenFirmantes = (anchoTexto: number, maxLineas: number): string[] => {
@@ -269,6 +274,7 @@ export type FirmaRotuloPdf = {
   navegador?: string | null;
   selloTiempo?: string | null;
   nivel?: number;
+  entidad?: { razonSocial: string; nit: string; representante: string; documentoRepresentante: string | null } | null;
 };
 
 const limpiarCadenas = limpiarCadenasPdf;

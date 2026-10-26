@@ -22,6 +22,7 @@ export type PerfilDirectorio = {
   documento?: string;
   direccion?: string;
   dependencia?: string;
+  usuarioRed?: string;
 };
 
 export type ResultadoAutenticacion =
@@ -40,6 +41,7 @@ const CLAVES_PERFIL: Record<keyof PerfilDirectorio, string[]> = {
   // geográfica (Santander, etc.), no la dependencia/oficina del funcionario.
   direccion: ["usu_direccion_postal", "streetaddress", "direccion", "address", "postaladdress"],
   dependencia: ["usu_departamento", "physicaldeliveryofficename", "department", "dependencia", "office", "oficina", "ou"],
+  usuarioRed: ["usu_apodo", "samaccountname", "usuario_red", "username"],
 };
 
 /**
@@ -81,7 +83,7 @@ export function extraerPerfil(cuerpo: unknown, usuarioRed?: string): PerfilDirec
       // (displayName/cn = sAMAccountName) — eso no es un nombre real: mejor dejar el campo vacío
       // (y que quede el nombre provisional a partir del usuario, o que un administrador lo escriba
       // a mano una vez) que mostrar el usuario de red como si fuera el nombre de la persona.
-      if (usuarioNormalizado && valor.toLowerCase() === usuarioNormalizado) continue;
+      if (campo !== "usuarioRed" && usuarioNormalizado && valor.toLowerCase() === usuarioNormalizado) continue;
       if (campo === "nombreCompleto" && !/\s/.test(valor)) continue;
       perfil[campo] ??= valor;
     }
@@ -199,4 +201,60 @@ export async function leerTokenDirectorioActivo() {
 export async function borrarTokenDirectorioActivo() {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_TOKEN);
+}
+
+export type ResultadoConsultaDirectorio =
+  | { ok: true; perfil: PerfilDirectorio }
+  | { ok: false; mensaje: string; noDisponible?: boolean };
+
+function rutaConsulta() {
+  return process.env.DIRECTORIO_ACTIVO_CONSULTA_RUTA?.trim().replace(/^\/+/, "") || null;
+}
+
+function credencialesServicio() {
+  const usuario = process.env.DIRECTORIO_ACTIVO_SERVICIO_USUARIO || process.env.SINCA_API_USUARIO;
+  const password = process.env.DIRECTORIO_ACTIVO_SERVICIO_CLAVE || process.env.SINCA_API_PASSWORD;
+  return usuario && password ? { usuario, password } : null;
+}
+
+export function consultaDirectorioDisponible() {
+  return Boolean(baseUrl() && rutaConsulta() && credencialesServicio());
+}
+
+export async function consultarDirectorioPorDocumento(documento: string): Promise<ResultadoConsultaDirectorio> {
+  const doc = documento.replace(/\D/g, "");
+  if (doc.length < 5) return { ok: false, mensaje: "Escriba el número de cédula completo." };
+  const base = baseUrl();
+  const ruta = rutaConsulta();
+  const cred = credencialesServicio();
+  if (!base || !ruta || !cred) {
+    return {
+      ok: false,
+      noDisponible: true,
+      mensaje: "El API EME todavía no ofrece la consulta de funcionarios por cédula (employeeID). Diligencie los datos a mano; la sincronización quedará activa cuando EME publique esa consulta.",
+    };
+  }
+  const login = await autenticarDirectorioActivo(cred.usuario, cred.password);
+  if (!login.ok) return { ok: false, mensaje: `No fue posible conectar con el directorio activo: ${login.mensaje}` };
+  try {
+    const respuesta = await fetch(`${base}/${ruta.replace("{documento}", encodeURIComponent(doc))}`, {
+      headers: { Authorization: `Bearer ${login.token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (respuesta.status === 404) {
+      const cuerpo = await respuesta.json().catch(() => ({}));
+      const recurso = typeof cuerpo?.message === "string" && /recurso no encontrado/i.test(cuerpo.message);
+      return recurso
+        ? { ok: false, noDisponible: true, mensaje: "El API EME no tiene publicada la consulta configurada. Verifique la ruta con EME." }
+        : { ok: false, mensaje: `No hay un funcionario con la cédula ${doc} en el directorio activo.` };
+    }
+    if (!respuesta.ok) return { ok: false, mensaje: `El directorio activo respondió con error (${respuesta.status}).` };
+    const perfil = extraerPerfil(await respuesta.json().catch(() => null));
+    if (!perfil.documento && !perfil.nombres && !perfil.usuarioRed) return { ok: false, mensaje: `No hay un funcionario con la cédula ${doc} en el directorio activo.` };
+    return { ok: true, perfil: { ...perfil, documento: perfil.documento ?? doc } };
+  } catch {
+    return { ok: false, mensaje: "No fue posible consultar el directorio activo. Intente de nuevo." };
+  } finally {
+    await cerrarSesionDirectorioActivo(login.token).catch(() => {});
+  }
 }

@@ -90,6 +90,6 @@ export function textoPendientesFirma(r: ResumenPendientesFirma): string {
     r.vistoBueno ? `${r.vistoBueno} de visto bueno` : null,
   ].filter(Boolean);
   const base = `${r.total} pendiente${r.total === 1 ? "" : "s"} por firmar o revisar`;
-  const turno = r.listos < r.total ? ` · ${r.listos} ya puede${r.listos === 1 ? "" : "n"} atenderse` : "";
+  const turno = r.listos < r.total ? ` · ${r.listos} en su turno y ${r.total - r.listos} en espera de otro firmante` : "";
   return `${base}${partes.length ? `: ${partes.join(", ")}` : ""}${turno}`;
 }
