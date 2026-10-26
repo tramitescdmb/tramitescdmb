@@ -287,6 +287,11 @@ export default async function TramitesAyudaPage() {
           Al firmar se confirma la identidad y se registra un sello de texto con nombre, cargo, fecha y hora, huella del documento y código QR. No se
           usa imagen de rúbrica. Quien rechaza debe indicar el motivo; el rechazo llega a quien cargó o envió el documento.
         </p>
+        <p>
+          En la página del concepto técnico, <strong>Estado de las firmas</strong> indica cuántas faltan y de quién, en qué orden y a quién le
+          corresponde el turno. El equipo de la visita y quien planea pueden pulsar «Recordar a quien tiene el turno»; la persona recibe el aviso
+          en la campana y en su buzón (máximo un recordatorio cada 4 horas).
+        </p>
       </Seccion>
 
       <Seccion n={15} id="verificacion" icono={ShieldCheck} titulo="Verificación de firmas">

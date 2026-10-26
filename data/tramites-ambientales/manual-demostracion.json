@@ -145,9 +145,10 @@
       "En el buzón se abre el documento pendiente.",
       "Se revisa el PDF y se pulsa «Firmar»; se confirma la identidad.",
       "El sistema agrega el sello con nombre, cargo, fecha y hora, huella del documento y código QR.",
-      "Si se rechaza, se escribe el motivo; el aviso llega a quien elaboró y a quien envió a firma."
+      "Si se rechaza, se escribe el motivo; el aviso llega a quien elaboró y a quien envió a firma.",
+      "Quien planea o cualquier miembro del equipo consulta en la página del concepto «Estado de las firmas»: quién firmó y cuándo, a quién le corresponde el turno y quién falta; con «Recordar a quien tiene el turno» le llega el aviso."
     ],
-    "ejemplo": "En el concepto `EV-0001-2026` ya firmaron Luis Alfonso Lozano Camacho, Walid Chakib Halaby Shalaby y Aristivaldo Davila Hernandez; quedan pendientes Jurleth Paola Vásquez Dallos y el visto bueno del Administrador CDMB.",
+    "ejemplo": "En el concepto `EV-0001-2026` firmaron Luis Alfonso Lozano Camacho, Walid Chakib Halaby Shalaby y Aristivaldo Davila Hernandez, y el Administrador CDMB dio el visto bueno; «Estado de las firmas» muestra «Faltan 1 de 5: Jurleth Paola Vásquez Dallos».",
     "detalle": "El orden de firma lo fija el cargo de cada firmante. Cuando todos firman, el equipo recibe el aviso «Concepto firmado».\n\nCualquier persona puede verificar el documento en el Validador de firmas con el código del sello.",
     "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015 (firma electrónica)."
   },

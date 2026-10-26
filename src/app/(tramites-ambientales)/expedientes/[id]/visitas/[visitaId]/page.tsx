@@ -141,9 +141,20 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
         <p className="flex flex-wrap items-center gap-2 rounded-lg border border-cdmb-100 bg-cdmb-50 px-3 py-2 text-xs text-cdmb-900">
           <FileText className="h-4 w-4 flex-none" aria-hidden />
           Concepto finalizado por {vt.finalizadaPor?.nombre} el {formatearFechaHora(vt.finalizadaEn)} y enviado a firma:
-          <a href={`/api/documentos/${vt.documentoConcepto.id}`} target="_blank" rel="noreferrer" className="font-semibold hover:underline">
+          <a href={`/api/documentos/${vt.documentoConcepto.id}/rotulado`} target="_blank" rel="noreferrer" className="font-semibold hover:underline">
             {vt.documentoConcepto.nombre}
           </a>
+          {(() => {
+            const pendientes = vt.documentoConcepto.solicitudesFirma.filter((s) => s.estado === "PENDIENTE" && s.rol !== "LECTURA");
+            const nombres = pendientes.map((s) => personas.find((x) => x.id === s.usuarioAsignadoId)?.nombre ?? "—");
+            return pendientes.length > 0 ? (
+              <Link href={`/expedientes/${id}/visitas/${visita.id}/formato`} className="font-medium text-amber-800 hover:underline">
+                · Faltan {pendientes.length} firma{pendientes.length === 1 ? "" : "s"}: {nombres.join(", ")}
+              </Link>
+            ) : (
+              <span className="font-medium text-emerald-700">· Firmado por todos</span>
+            );
+          })()}
         </p>
       )}
 
