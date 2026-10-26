@@ -33,10 +33,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!visita) return NextResponse.json({ error: "Visita no encontrada." }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedePlanearVisitas(permisos) && session.userId !== visita.profesionalId) {
-    return NextResponse.json({ error: "Solo el profesional asignado a la visita o quien planea las visitas puede registrarla." }, { status: 403 });
+  const elabora =
+    session.userId === visita.profesionalId ||
+    (await db.participanteVisita.count({ where: { visitaId: id, usuarioId: session.userId, rol: "ELABORA" } })) > 0;
+  if (!puedePlanearVisitas(permisos) && !elabora) {
+    return NextResponse.json({ error: "Solo quien realiza la visita o quien planea las visitas puede registrarla." }, { status: 403 });
   }
-  if (session.userId !== visita.profesionalId && !(await puedeEditarExpediente(session.userId, visita.expedienteId))) {
+  if (!elabora && !(await puedeEditarExpediente(session.userId, visita.expedienteId))) {
     return NextResponse.json({ error: "Su acceso a este trámite es de solo lectura." }, { status: 403 });
   }
   if (!expedienteEnEjecucion(visita.expediente)) {

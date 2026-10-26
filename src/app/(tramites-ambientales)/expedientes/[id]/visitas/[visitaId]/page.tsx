@@ -58,7 +58,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeVerExpedienteTramite(permisos, { id: visita.expedienteId, tramiteTipoId: visita.expediente.tramiteTipoId })) notFound();
   const planificador = puedePlanearVisitas(permisos);
-  const esProfesional = session.userId === visita.profesionalId;
+  const esProfesional = session.userId === visita.profesionalId || visita.participantes.some((p) => p.usuarioId === session.userId && p.rol === "ELABORA");
   const enEjecucion = expedienteEnEjecucion(visita.expediente);
   const ahora = partesColombia(new Date());
   const programada = partesColombia(visita.fechaHora);

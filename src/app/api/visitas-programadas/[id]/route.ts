@@ -33,8 +33,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
 
   if (accion === "no_realizada") {
-    if (!planificador && session.userId !== visita.profesionalId) {
-      return NextResponse.json({ error: "Solo el profesional asignado o quien planea las visitas puede reportarla como no realizada." }, { status: 403 });
+    const elabora =
+      session.userId === visita.profesionalId ||
+      (await db.participanteVisita.count({ where: { visitaId: id, usuarioId: session.userId, rol: "ELABORA" } })) > 0;
+    if (!planificador && !elabora) {
+      return NextResponse.json({ error: "Solo quien realiza la visita o quien planea las visitas puede reportarla como no realizada." }, { status: 403 });
     }
     if (!motivo) return NextResponse.json({ error: "Indique por qué no se pudo realizar la visita." }, { status: 400 });
     await db.$transaction([
@@ -94,8 +97,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const cruce = await buscarCruceVisita(datos.profesionalId, datos.fechaHora, datos.fechaHoraFin, id);
       if (cruce) return NextResponse.json({ error: cruce, cruce: true }, { status: 409 });
     }
+    const cambiaProfesional = datos.profesionalId !== visita.profesionalId;
+    const equipo = cambiaProfesional ? await db.participanteVisita.findMany({ where: { visitaId: id }, select: { id: true, usuarioId: true } }) : [];
+    const filaAnterior = equipo.find((p) => p.usuarioId === visita.profesionalId);
+    const nuevoYaEnEquipo = equipo.some((p) => p.usuarioId === datos.profesionalId);
     await db.$transaction([
       db.visitaProgramada.update({ where: { id }, data: datos }),
+      ...(filaAnterior
+        ? [
+            nuevoYaEnEquipo
+              ? db.participanteVisita.delete({ where: { id: filaAnterior.id } })
+              : db.participanteVisita.update({ where: { id: filaAnterior.id }, data: { usuarioId: datos.profesionalId } }),
+          ]
+        : []),
       db.expedienteEvento.create({
         data: {
           expedienteId: visita.expedienteId,

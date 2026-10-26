@@ -198,7 +198,7 @@ export async function contarAlertasVisitasPropias(userId: string): Promise<numbe
   const finManana = new Date(`${sumarDias(hoy, 2)}T00:00:00-05:00`);
   return db.visitaProgramada.count({
     where: {
-      profesionalId: userId,
+      OR: [{ profesionalId: userId }, { participantes: { some: { usuarioId: userId, rol: "ELABORA" } } }],
       estado: "PROGRAMADA",
       fechaHora: { lt: finManana },
       expediente: { archivado: false, estado: { notIn: [...ESTADOS_TERMINALES_EXPEDIENTE] } },
