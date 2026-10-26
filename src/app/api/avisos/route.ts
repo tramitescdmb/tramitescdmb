@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
+import { contarNoLeidas } from "@/lib/notificaciones";
+import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 
@@ -40,6 +43,35 @@ export async function GET() {
         alerta: true,
         cantidad: firmas.listos,
       });
+    }
+  }
+
+  if (permisos.modulos.has("TRAMITES")) {
+    const firmasTramite = puedeAccederFirmasTramite(permisos);
+    const [firmas, rechazos, buzon, visitas] = await Promise.all([
+      firmasTramite ? contarPendientesBuzonTramite(session.userId) : null,
+      firmasTramite ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : 0,
+      contarNoLeidas(session.userId),
+      contarAlertasVisitasPropias(session.userId),
+    ]);
+    if (firmas && firmas.listos > 0) {
+      avisos.push({ clave: "firmas-tramites", titulo: `${firmas.listos} documento(s) de trámites para firmar`, href: "/firmas/buzon", alerta: true, cantidad: firmas.listos });
+    }
+    if (rechazos > 0) {
+      avisos.push({ clave: "rechazos-tramites", titulo: `${rechazos} firma(s) rechazada(s) en trámites`, detalle: "Documentos que usted cargó o envió a firma", href: "/firmas/rechazos", alerta: true, cantidad: rechazos });
+    }
+    if (visitas > 0) {
+      avisos.push({ clave: "visitas-propias", titulo: `${visitas} visita(s) técnica(s) por realizar o registrar`, href: "/planeador", alerta: true, cantidad: visitas });
+    }
+    if (buzon > 0) {
+      avisos.push({ clave: "buzon-planeador", titulo: `${buzon} aviso(s) del planeador sin leer`, href: "/planeador/buzon", alerta: false, cantidad: buzon });
+    }
+  }
+
+  if (permisos.modulos.has("GECON") && puedeAccederContratacion(permisos)) {
+    const firmas = await contarPendientesBuzonContratacion(session.userId);
+    if (firmas.listos > 0) {
+      avisos.push({ clave: "firmas-gecon", titulo: `${firmas.listos} documento(s) de GECON para firmar`, href: "/contratacion/mis-firmas", alerta: true, cantidad: firmas.listos });
     }
   }
 

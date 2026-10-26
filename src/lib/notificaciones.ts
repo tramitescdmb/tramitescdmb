@@ -154,3 +154,40 @@ export async function avisarProfesionalVisita(
 export async function contarNoLeidas(usuarioId: string): Promise<number> {
   return db.notificacion.count({ where: { usuarioId, leidaEn: null, resueltaEn: null } });
 }
+
+export async function avisarConceptoVisita(solicitudId: string, actorId: string, rechazo?: string): Promise<void> {
+  const s = await db.solicitudFirma.findUnique({ where: { id: solicitudId }, select: { documentoExpedienteId: true } });
+  if (!s?.documentoExpedienteId) return;
+  const vt = await db.visitaTecnica.findUnique({
+    where: { documentoConceptoId: s.documentoExpedienteId },
+    select: {
+      conceptoNumero: true,
+      finalizadaPorId: true,
+      expedienteId: true,
+      expediente: { select: { numero: true } },
+      visitaProgramada: { select: { id: true, profesionalId: true, participantes: { where: { rol: "ELABORA" }, select: { usuarioId: true } } } },
+      documentoConcepto: { select: { solicitudesFirma: { where: { rol: { not: "LECTURA" } }, select: { estado: true } } } },
+    },
+  });
+  const v = vt?.visitaProgramada;
+  if (!vt || !v) return;
+  const destinatarios = [v.profesionalId, ...v.participantes.map((p) => p.usuarioId), ...(vt.finalizadaPorId ? [vt.finalizadaPorId] : [])].filter((u) => u !== actorId);
+  const base = { clave: `concepto:${v.id}`, enlace: `/expedientes/${vt.expedienteId}/visitas/${v.id}/formato`, expedienteId: vt.expedienteId };
+  if (rechazo !== undefined) {
+    await notificar(destinatarios, {
+      ...base,
+      tipo: "CONCEPTO_RECHAZADO",
+      titulo: `Concepto ${vt.conceptoNumero} rechazado · ${vt.expediente.numero}`,
+      mensaje: `Se rechazó la firma del concepto técnico: ${rechazo} Quien planea las visitas puede reabrirlo para corrección.`,
+    });
+    return;
+  }
+  const firmas = vt.documentoConcepto?.solicitudesFirma ?? [];
+  if (firmas.length === 0 || firmas.some((f) => f.estado !== "COMPLETADA")) return;
+  await notificar(destinatarios, {
+    ...base,
+    tipo: "CONCEPTO_FIRMADO",
+    titulo: `Concepto ${vt.conceptoNumero} firmado · ${vt.expediente.numero}`,
+    mensaje: "Todas las personas del equipo firmaron o dieron visto bueno al concepto técnico.",
+  });
+}
