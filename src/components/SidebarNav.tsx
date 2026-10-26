@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useMenuModulo } from "@/components/MenuModulo";
 import { SubmenuModulo } from "@/components/SubmenuModulo";
+import { EVENTO_AVISOS, ultimosAvisos } from "@/components/CampanaAvisos";
 import {
   IconHome,
   IconFileCertificate,
@@ -68,6 +70,23 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const { menu } = useMenuModulo();
+  const [pendientes, setPendientes] = useState<Record<string, { total: number; detalle: string }>>({});
+  useEffect(() => {
+    const agrupar = (avisos: { modulo?: string; titulo: string; cantidad: number; alerta: boolean }[]) => {
+      const r: Record<string, { total: number; detalle: string }> = {};
+      for (const a of avisos) {
+        if (!a.modulo || !a.alerta) continue;
+        const x = (r[a.modulo] ??= { total: 0, detalle: "" });
+        x.total += a.cantidad;
+        x.detalle = x.detalle ? `${x.detalle}; ${a.titulo}` : a.titulo;
+      }
+      setPendientes(r);
+    };
+    const recibir = (e: Event) => agrupar((e as CustomEvent<Parameters<typeof agrupar>[0]>).detail ?? []);
+    agrupar(ultimosAvisos());
+    window.addEventListener(EVENTO_AVISOS, recibir);
+    return () => window.removeEventListener(EVENTO_AVISOS, recibir);
+  }, []);
   const activo = (item: Item) => {
     if (item.prefijo) {
       const prefijos = Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo];
@@ -89,7 +108,7 @@ export function SidebarNav({
 
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
-      <Grupo items={principal} activo={activo} colapsado={colapsado} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
+      <Grupo items={principal} activo={activo} colapsado={colapsado} pendientes={pendientes} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>
   );
@@ -101,12 +120,14 @@ function Grupo({
   activo,
   colapsado,
   submenu,
+  pendientes = {},
 }: {
   titulo?: string;
   items: Item[];
   activo: (item: Item) => boolean;
   colapsado: boolean;
   submenu?: React.ReactNode;
+  pendientes?: Record<string, { total: number; detalle: string }>;
 }) {
   return (
     <div>
@@ -116,7 +137,13 @@ function Grupo({
       <ul>
         {items.map((item) => (
           <li key={item.href}>
-            <EnlaceNav item={item} activo={activo(item)} colapsado={colapsado} desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD} />
+            <EnlaceNav
+              item={item}
+              activo={activo(item)}
+              colapsado={colapsado}
+              desplegado={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD}
+              pendiente={MODULO_DE_ITEM[item.href] ? pendientes[MODULO_DE_ITEM[item.href]!] : undefined}
+            />
             {submenu && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD && submenu}
           </li>
         ))}
@@ -125,19 +152,46 @@ function Grupo({
   );
 }
 
-function EnlaceNav({ item, activo, colapsado, desplegado }: { item: Item; activo: boolean; colapsado: boolean; desplegado?: boolean }) {
+const MODULO_DE_ITEM: Record<string, string> = {
+  [ITEM_TRAMITES.href]: "TRAMITES",
+  [ITEM_CORRESPONDENCIA.href]: "SGDEA",
+  [ITEM_CONTRATACION.href]: "GECON",
+};
+
+function EnlaceNav({
+  item,
+  activo,
+  colapsado,
+  desplegado,
+  pendiente,
+}: {
+  item: Item;
+  activo: boolean;
+  colapsado: boolean;
+  desplegado?: boolean;
+  pendiente?: { total: number; detalle: string };
+}) {
   const Icon = item.icon;
   return (
     <Link prefetch={false}
       href={item.href}
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}
-      className={`flex items-center whitespace-nowrap border-l-[3px] text-[14px] transition-colors ${
+      className={`relative flex items-center whitespace-nowrap border-l-[3px] text-[14px] transition-colors ${
         colapsado ? "justify-center px-0 py-3" : "gap-3 px-[17px] py-2.5"
       } ${activo ? "border-menu-500 bg-black/20 font-semibold text-menu-500" : "border-transparent text-white/85 hover:bg-white/5 hover:text-white"}`}
     >
       <Icon className="h-5 w-5 flex-none" stroke={1.75} aria-hidden />
       <span className={colapsado ? "sr-only" : "min-w-0 flex-1 truncate"}>{item.label}</span>
+      {pendiente && pendiente.total > 0 && (
+        <span
+          title={pendiente.detalle}
+          aria-label={pendiente.detalle}
+          className={colapsado ? "absolute ml-5 -mt-5 h-2 w-2 rounded-full bg-red-600" : "flex-none rounded-sm bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"}
+        >
+          {colapsado ? null : pendiente.total}
+        </span>
+      )}
       {desplegado && <IconChevronDown className="h-4 w-4 flex-none opacity-80" stroke={1.75} aria-hidden />}
     </Link>
   );

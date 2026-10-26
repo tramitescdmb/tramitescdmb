@@ -10,10 +10,14 @@ const INICIO_GRUPO: Record<string, string> = {
   Planeador: "/planeador",
   Solicitantes: "/solicitantes",
   Firmas: "/firmas/buzon",
+  Ayuda: "/tramites-ambientales/ayuda",
+  "Manual de demostración": "/tramites-ambientales/manual-demostracion",
 };
 
 const RUTAS: RutaMiga[] = [
   { re: /^\/tramites-ambientales$/, trail: ["Panel"] },
+  { re: /^\/tramites-ambientales\/ayuda/, trail: ["Ayuda"] },
+  { re: /^\/tramites-ambientales\/manual-demostracion/, trail: ["Manual de demostración"] },
   { re: /^\/tramites\/[^/]+\/nuevo/, trail: ["Catálogo de trámites", "Trámite", "Radicar solicitud"] },
   { re: /^\/tramites\/[^/]+/, trail: ["Catálogo de trámites", "Trámite"] },
   { re: /^\/tramites$/, trail: ["Catálogo de trámites"] },

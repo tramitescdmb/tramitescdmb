@@ -4,7 +4,9 @@ import { FileBadge } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { MigaTramites } from "@/components/MigaTramites";
 import { SincronizadorVisitas } from "@/components/planeador/SincronizadorVisitas";
-import { contarPendientesBuzonTramite } from "@/lib/solicitudes-firma";
+import { contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
+import Link from "next/link";
+import { HelpCircle } from "lucide-react";
 import { SIN_PENDIENTES_FIRMA } from "@/lib/calidad-firma";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -31,23 +33,32 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   }
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
-  const [pendientesFirma, alertasPlaneador, avisosBuzon] = await Promise.all([
+  const [pendientesFirma, alertasPlaneador, avisosBuzon, rechazosFirma] = await Promise.all([
     mostrarFirmas ? contarPendientesBuzonTramite(session.userId) : Promise.resolve(SIN_PENDIENTES_FIRMA),
     contarAlertasVisitasPropias(session.userId),
     contarNoLeidas(session.userId),
+    mostrarFirmas ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : Promise.resolve(0),
   ]);
 
   return (
     <div className="space-y-4">
       <div className="encabezado-modulo">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <FileBadge className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
+          <Link
+            href="/tramites-ambientales/ayuda"
+            aria-label="Ayuda — guía de referencia de Trámites ambientales 2.0"
+            className="ml-auto flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
+          >
+            <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+            Ayuda
+          </Link>
         </div>
       </div>
 
       <div className="encabezado-modulo">
-        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
+        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
       </div>
 
       <div className="encabezado-modulo">

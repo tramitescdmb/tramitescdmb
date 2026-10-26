@@ -3,10 +3,11 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederCont
 import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
+import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 
-type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number };
+type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number; modulo: "TRAMITES" | "SGDEA" | "GECON" };
 
 export async function GET() {
   const session = await getSession();
@@ -23,7 +24,7 @@ export async function GET() {
         detalle: memos.vencidos > 0 ? `${memos.vencidos} con plazo vencido` : "Dentro del plazo",
         href: "/correspondencia/memorandos?vista=por-responder",
         alerta: memos.vencidos > 0,
-        cantidad: memos.porResponder,
+        cantidad: memos.porResponder, modulo: "SGDEA",
       });
     }
     if (memos.sinLeer > 0) {
@@ -32,7 +33,7 @@ export async function GET() {
         titulo: `${memos.sinLeer} memorando(s) sin leer`,
         href: "/correspondencia/memorandos?vista=sin-leer",
         alerta: false,
-        cantidad: memos.sinLeer,
+        cantidad: memos.sinLeer, modulo: "SGDEA",
       });
     }
     if (firmas.listos > 0) {
@@ -41,7 +42,7 @@ export async function GET() {
         titulo: `${firmas.listos} documento(s) del SGDEA para firmar`,
         href: "/correspondencia/buzon",
         alerta: true,
-        cantidad: firmas.listos,
+        cantidad: firmas.listos, modulo: "SGDEA",
       });
     }
   }
@@ -55,23 +56,33 @@ export async function GET() {
       contarAlertasVisitasPropias(session.userId),
     ]);
     if (firmas && firmas.listos > 0) {
-      avisos.push({ clave: "firmas-tramites", titulo: `${firmas.listos} documento(s) de trámites para firmar`, href: "/firmas/buzon", alerta: true, cantidad: firmas.listos });
+      avisos.push({ clave: "firmas-tramites", titulo: `${firmas.listos} documento(s) de trámites para firmar`, href: "/firmas/buzon", alerta: true, cantidad: firmas.listos, modulo: "TRAMITES" });
     }
     if (rechazos > 0) {
-      avisos.push({ clave: "rechazos-tramites", titulo: `${rechazos} firma(s) rechazada(s) en trámites`, detalle: "Documentos que usted cargó o envió a firma", href: "/firmas/rechazos", alerta: true, cantidad: rechazos });
+      avisos.push({ clave: "rechazos-tramites", titulo: `${rechazos} firma(s) rechazada(s) en trámites`, detalle: "Documentos que usted cargó o envió a firma", href: "/firmas/rechazos", alerta: true, cantidad: rechazos, modulo: "TRAMITES" });
     }
     if (visitas > 0) {
-      avisos.push({ clave: "visitas-propias", titulo: `${visitas} visita(s) técnica(s) por realizar o registrar`, href: "/planeador", alerta: true, cantidad: visitas });
+      avisos.push({ clave: "visitas-propias", titulo: `${visitas} visita(s) técnica(s) por realizar o registrar`, href: "/planeador", alerta: true, cantidad: visitas, modulo: "TRAMITES" });
     }
     if (buzon > 0) {
-      avisos.push({ clave: "buzon-planeador", titulo: `${buzon} aviso(s) del planeador sin leer`, href: "/planeador/buzon", alerta: false, cantidad: buzon });
+      avisos.push({ clave: "buzon-planeador", titulo: `${buzon} aviso(s) del planeador sin leer`, href: "/planeador/buzon", alerta: false, cantidad: buzon, modulo: "TRAMITES" });
     }
   }
 
   if (permisos.modulos.has("GECON") && puedeAccederContratacion(permisos)) {
-    const firmas = await contarPendientesBuzonContratacion(session.userId);
+    const [firmas, rechazos, informes] = await Promise.all([
+      contarPendientesBuzonContratacion(session.userId),
+      contarRechazosPorAtender(session.userId, false, "documentoContrato"),
+      contarInformesPorRadicarPropios(permisos),
+    ]);
+    if (informes > 0) {
+      avisos.push({ clave: "informes-gecon", titulo: `${informes} informe(s) de supervisión por radicar`, detalle: "De sus contratos o de los que supervisa", href: "/contratacion/panel#informes", alerta: true, cantidad: informes, modulo: "GECON" });
+    }
     if (firmas.listos > 0) {
-      avisos.push({ clave: "firmas-gecon", titulo: `${firmas.listos} documento(s) de GECON para firmar`, href: "/contratacion/mis-firmas", alerta: true, cantidad: firmas.listos });
+      avisos.push({ clave: "firmas-gecon", titulo: `${firmas.listos} documento(s) de GECON para firmar`, href: "/contratacion/mis-firmas", alerta: true, cantidad: firmas.listos, modulo: "GECON" });
+    }
+    if (rechazos > 0) {
+      avisos.push({ clave: "rechazos-gecon", titulo: `${rechazos} firma(s) rechazada(s) en GECON`, detalle: "Documentos que usted cargó", href: "/contratacion/rechazos-firma", alerta: true, cantidad: rechazos, modulo: "GECON" });
     }
   }
 

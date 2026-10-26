@@ -233,3 +233,25 @@ export async function obtenerResumenSistemaContratacion() {
   ]);
   return { expedientes, contratistas, documentosPorValidar, usuariosConRol, eventos };
 }
+
+export async function contarInformesPorRadicarPropios(permisos: PermisosUsuario): Promise<number> {
+  const propios = [
+    ...(permisos.contratistaId ? [{ contratistaId: permisos.contratistaId }] : []),
+    ...(permisos.supervisaExpedientes.size ? [{ id: { in: [...permisos.supervisaExpedientes] } }] : []),
+  ];
+  if (propios.length === 0) return 0;
+  const hoy = hoyColombia();
+  const contratos = await db.expedienteContractual.findMany({
+    where: { OR: propios, eliminado: false, etapaActual: "CONTRACTUAL", cerrado: false, fechaInicio: { not: null }, fechaFinEstimada: { not: null } },
+    take: 200,
+    select: {
+      fechaInicio: true,
+      fechaFinEstimada: true,
+      documentos: { where: { periodoMes: { not: null }, requisito: { codigoFormato: { in: CODIGOS_FORMATO_POR_PERIODOS } } }, select: { periodoMes: true } },
+    },
+  });
+  return contratos.reduce(
+    (n, e) => n + periodosPorRadicar(calcularPeriodosInforme(e.fechaInicio, e.fechaFinEstimada), new Set(e.documentos.map((d) => d.periodoMes!)), hoy).length,
+    0
+  );
+}

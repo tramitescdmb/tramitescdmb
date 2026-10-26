@@ -5,7 +5,8 @@ import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaGecon } from "@/components/MigaGecon";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { contarPendientesBuzonContratacion } from "@/lib/solicitudes-firma";
+import { contarPendientesBuzonContratacion, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
+import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
 import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeVerRegistroContratistas, puedeAdministrarContratacion, puedeAdministrarGecon, puedeAdministrarCatalogoContratacion, puedeCrearExpedienteContractual, puedeVerTableroContratos } from "@/lib/permisos";
 
 export default async function ContratacionLayout({ children }: { children: ReactNode }) {
@@ -13,7 +14,11 @@ export default async function ContratacionLayout({ children }: { children: React
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
-  const pendientesFirma = await contarPendientesBuzonContratacion(session.userId);
+  const [pendientesFirma, rechazosFirma, informesPorRadicar] = await Promise.all([
+    contarPendientesBuzonContratacion(session.userId),
+    contarRechazosPorAtender(session.userId, false, "documentoContrato"),
+    contarInformesPorRadicarPropios(permisos),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -39,6 +44,8 @@ export default async function ContratacionLayout({ children }: { children: React
       <div className="encabezado-modulo">
         <ContratacionTabs
           pendientesFirma={pendientesFirma}
+          rechazosFirma={rechazosFirma}
+          informesPorRadicar={informesPorRadicar}
           permitido={{
             administrar: puedeGestionarContratistas(permisos),
             crearExpediente: puedeCrearExpedienteContractual(permisos),

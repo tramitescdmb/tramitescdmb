@@ -789,6 +789,7 @@ export function puedeEditarContratistaMinimo(permisos: PermisosUsuario, contrati
   return contratista.expedientes.length === 0 || contratista.expedientes.some((e) => permisos.asignadoExpedientes.has(e.id));
 }
 
-export function puedeEditarManualDemostracion(permisos: PermisosUsuario, modulo: "SGDEA" | "GECON"): boolean {
+export function puedeEditarManualDemostracion(permisos: PermisosUsuario, modulo: "SGDEA" | "GECON" | "TRAMITES"): boolean {
+  if (modulo === "TRAMITES") return puedeEditarFormatosVisita(permisos);
   return modulo === "GECON" ? puedeGestionarContratistas(permisos) : puedeAdministrarArchivo(permisos);
 }

@@ -1759,6 +1759,7 @@ model ApartadoManualDemostracion {
 enum ModuloManual {
   SGDEA
   GECON
+  TRAMITES
 }
 
 model ExpedienteDocumental {

@@ -1,0 +1,203 @@
+[
+  {
+    "orden": 1,
+    "etiqueta": "Acceso",
+    "titulo": "Acceso al módulo y alcance por trámite",
+    "tituloIndice": "Acceso y alcance",
+    "ubicacion": "Administración → [Usuarios](/usuarios) → ficha del usuario → «Roles» y pestaña «Trámites 2.0».",
+    "resumen": "Un funcionario nuevo no ve ningún trámite hasta que el administrador le activa el módulo, le asigna roles, cargo(s) y el alcance por tipo de trámite (Ver o Editar).",
+    "pasos": [
+      "En la ficha del usuario se pulsa «Roles» y se marcan los roles de Trámites ambientales 2.0 que correspondan.",
+      "En la pestaña «Trámites 2.0» se asignan el cargo o los cargos del funcionario.",
+      "En la misma pestaña se habilitan los trámites que puede consultar (Ver) o gestionar (Editar).",
+      "Se guarda; el funcionario ve el módulo y los trámites habilitados desde su siguiente ingreso."
+    ],
+    "ejemplo": "Luis Alfonso Lozano Camacho (`luiloz01`) tiene el cargo «Profesional o Técnico de Evaluación» y alcance «Editar» sobre el permiso de ocupación de cauces (M-DA-PR39).",
+    "detalle": "El alcance por trámite define qué expedientes ve; el cargo define qué pasos puede avanzar.\n\nQuien queda en el personal asignado de un expediente o en el equipo de una visita lo consulta completo aunque no tenga alcance sobre ese tipo de trámite.",
+    "fundamento": "Ley 1581 de 2012."
+  },
+  {
+    "orden": 2,
+    "etiqueta": "Radicación",
+    "titulo": "Radicación de una solicitud",
+    "tituloIndice": "Radicación",
+    "ubicacion": "[Catálogo de trámites](/tramites) → trámite → «Radicar solicitud».",
+    "resumen": "Se crea el expediente con el solicitante, el predio y los documentos que exige el procedimiento. El número lo asigna el sistema con el consecutivo propio del trámite.",
+    "pasos": [
+      "En el catálogo se abre el trámite y se revisan sus requisitos y pasos.",
+      "Se pulsa «Radicar solicitud» y se busca el solicitante por NIT o cédula; si no existe, se registra.",
+      "Se diligencian los datos del predio: municipio, dirección, matrícula inmobiliaria, número catastral y ubicación en el mapa.",
+      "Se cargan los documentos requeridos y se radica."
+    ],
+    "ejemplo": "El permiso de ocupación de cauces de Luis Alfonso Lozano Camacho quedó con el número `M-DA-PR39-2026-0002`.",
+    "detalle": "El número tiene la forma código del procedimiento, vigencia y consecutivo. El administrador puede fijar el siguiente número de cada trámite y vigencia en Administración → Consecutivos.",
+    "fundamento": "Decreto 1076 de 2015 · Ley 1437 de 2011, artículos 15 y 17."
+  },
+  {
+    "orden": 3,
+    "etiqueta": "Expediente",
+    "titulo": "Consulta del expediente y avance de pasos",
+    "tituloIndice": "Expediente y pasos",
+    "ubicacion": "[Expedientes](/expedientes) → expediente → pestañas «Paso actual», «Flujo» e «Historia».",
+    "resumen": "El expediente muestra en qué paso va, quién es responsable y todo lo ocurrido. Solo puede avanzar un paso quien tiene el cargo que el procedimiento indica.",
+    "pasos": [
+      "En Expedientes se busca por número, solicitante, NIT o cédula, o se filtra por vigencia, estado y trámite.",
+      "En «Paso actual» se revisa lo que pide el paso y se cargan los documentos que correspondan.",
+      "Quien tiene el cargo responsable pulsa «Avanzar» y deja la observación.",
+      "En «Historia» queda registrado cada avance con la fecha, la hora y la persona."
+    ],
+    "ejemplo": "En `M-DA-PR39-2026-0002`, la pestaña Historia muestra la radicación, la asignación del personal, la visita técnica, el concepto y cada firma.",
+    "detalle": "«Asignados a mí» reúne los expedientes donde la persona está en el personal asignado o en el equipo de una visita.\n\nLos estados Aprobado y Negado solo se registran desde el paso de decisión del procedimiento.",
+    "fundamento": "Procedimientos M-DA-PRxx del Sistema de Gestión de la CDMB."
+  },
+  {
+    "orden": 4,
+    "etiqueta": "Personal",
+    "titulo": "Personal asignado al trámite",
+    "tituloIndice": "Personal asignado",
+    "ubicacion": "Expediente → pestaña «Planeador» → «Editar personal asignado».",
+    "resumen": "El coordinador o el subdirector asignan a las personas que trabajarán el trámite: profesionales, contratistas u otros cargos. Todas pueden consultar el expediente completo.",
+    "pasos": [
+      "En la pestaña Planeador del expediente se pulsa «Editar personal asignado».",
+      "Se filtra por cargo o por «Contratistas» y se marcan las personas.",
+      "Se guarda; a quien no tenía el módulo se le activa automáticamente."
+    ],
+    "ejemplo": "En `M-DA-PR39-2026-0002` se asignaron Walid Chakib Halaby Shalaby y Aristivaldo Davila Hernandez (contratistas), Jurleth Paola Vásquez Dallos y Luis Alfonso Lozano Camacho.",
+    "detalle": "No se puede retirar a una persona que tenga visitas programadas en el expediente; primero se reasignan o cancelan.",
+    "fundamento": ""
+  },
+  {
+    "orden": 5,
+    "etiqueta": "Planeador",
+    "titulo": "Programación de la visita técnica",
+    "tituloIndice": "Programar visita",
+    "ubicacion": "[Planeador](/planeador) → clic en el calendario, o expediente → pestaña «Planeador» → «Programar visita».",
+    "resumen": "La visita se programa con fecha, horario, lugar y profesional. Solo es posible cuando el expediente está en un paso del procedimiento que contempla visita.",
+    "pasos": [
+      "En el calendario se pulsa el día y la hora, o se usa «Programar visita» desde el expediente.",
+      "Se busca el trámite por número, solicitante o predio.",
+      "Se elige el profesional entre el personal asignado, se indica el lugar y las indicaciones.",
+      "Si el profesional ya tiene otra visita a esa hora, el sistema lo advierte."
+    ],
+    "ejemplo": "Visita del predio La Esperanza, vereda San José (Bucaramanga), de 8:00 a 10:30, a cargo de Walid Chakib Halaby Shalaby.",
+    "detalle": "El profesional recibe el aviso en el buzón de visitas y en la campana. Al reprogramar o cancelar se avisa también al equipo.",
+    "fundamento": ""
+  },
+  {
+    "orden": 6,
+    "etiqueta": "Equipo",
+    "titulo": "Equipo de la visita y firmantes",
+    "tituloIndice": "Equipo y firmantes",
+    "ubicacion": "Hoja de visita → «Equipo de la visita y firmantes del concepto» → «Editar equipo».",
+    "resumen": "Quien planea define quiénes participan y con qué rol. Esos roles determinan cómo firma cada persona el concepto técnico.",
+    "pasos": [
+      "En la hoja de visita se pulsa «Editar equipo».",
+      "Se agregan las personas (asignadas al trámite o cualquier otra) y se elige su rol: Elabora, Revisa aspectos técnicos, Revisa aspectos jurídicos, Visto bueno o Aprueba.",
+      "Se guarda; cada persona nueva recibe un aviso."
+    ],
+    "ejemplo": "Elaboran Walid Chakib Halaby Shalaby y Aristivaldo Davila Hernandez; revisa lo jurídico Jurleth Paola Vásquez Dallos; aprueba Luis Alfonso Lozano Camacho y da visto bueno el Administrador CDMB.",
+    "detalle": "Un contratista no puede tener el rol «Aprueba» (firma principal). Máximo cuatro firmas por concepto, sin contar los vistos buenos.",
+    "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015."
+  },
+  {
+    "orden": 7,
+    "etiqueta": "Campo",
+    "titulo": "Registro de la hoja de visita en campo",
+    "tituloIndice": "Hoja de visita",
+    "ubicacion": "[Planeador](/planeador) → visita → «Registrar visita».",
+    "resumen": "El día de la visita el profesional captura el punto con el GPS, diligencia el formato técnico del trámite y toma las fotos. Funciona sin señal si la hoja se abrió antes con conexión.",
+    "pasos": [
+      "Se abre la hoja con señal el día de la visita.",
+      "Se pulsa «Capturar ubicación actual»; el sistema llena la vereda, la subzona hidrográfica y las determinantes ambientales.",
+      "Se diligencia el formato: los datos del expediente vienen precargados y los cálculos se hacen solos. Las matrículas se agregan con «Agregar».",
+      "Se toman o adjuntan hasta 10 fotos de máximo 2 MB, cada una con su pie de foto.",
+      "Se selecciona el resultado y se pulsa «Registrar visita». Sin señal, la hoja queda guardada y se envía sola al recuperarla."
+    ],
+    "ejemplo": "En la visita del predio La Esperanza el punto quedó en la vereda San José, subzona Río Lebrija y otros directos al Magdalena, con tres matrículas: 300-245781, 300-245782 y 300-310455.",
+    "detalle": "El formato que se usa depende del trámite: forestal, aguas, vertimientos, recurso hídrico, flora o el genérico.",
+    "fundamento": "Decreto 1076 de 2015."
+  },
+  {
+    "orden": 8,
+    "etiqueta": "Concepto",
+    "titulo": "Número, corrección y cierre del concepto técnico",
+    "tituloIndice": "Concepto técnico",
+    "ubicacion": "Hoja de visita → «Ver formato diligenciado».",
+    "resumen": "El concepto recibe el consecutivo EV, se corrige si hace falta y, cuando está listo, el coordinador o el subdirector lo dan por terminado: se genera el PDF y va a firma.",
+    "pasos": [
+      "Se pulsa «Asignar número de concepto»; toma el siguiente EV de la vigencia con la fecha del día.",
+      "Si hay errores, «Corregir concepto» permite ajustar el formato, el resultado y las fotos.",
+      "Quien planea pulsa «Dar por terminado y enviar a firma», revisa los firmantes y confirma.",
+      "El PDF queda en los documentos del expediente y cada miembro del equipo recibe su solicitud de firma."
+    ],
+    "ejemplo": "El concepto `EV-0001-2026` del expediente `M-DA-PR39-2026-0002` se envió a firma de cinco personas.",
+    "detalle": "El concepto muestra la tabla de responsables con rol, nombre y cargo; las firmas constan en la hoja de firmas electrónicas del PDF.\n\nSi un firmante rechaza o se detecta un error, «Reabrir para corrección» retira las firmas pendientes y conserva el PDF anterior como versión reemplazada.",
+    "fundamento": "Ley 527 de 1999 · Ley 1437 de 2011."
+  },
+  {
+    "orden": 9,
+    "etiqueta": "Firma",
+    "titulo": "Firma electrónica del concepto",
+    "tituloIndice": "Firma electrónica",
+    "ubicacion": "Firmas → [Buzón de firmas](/firmas/buzon).",
+    "resumen": "Cada firmante ve el documento en su buzón cuando llega su turno, lo revisa y lo firma o lo rechaza con el motivo.",
+    "pasos": [
+      "En el buzón se abre el documento pendiente.",
+      "Se revisa el PDF y se pulsa «Firmar»; se confirma la identidad.",
+      "El sistema agrega el sello con nombre, cargo, fecha y hora, huella del documento y código QR.",
+      "Si se rechaza, se escribe el motivo; el aviso llega a quien elaboró y a quien envió a firma."
+    ],
+    "ejemplo": "En el concepto `EV-0001-2026` ya firmaron Luis Alfonso Lozano Camacho, Walid Chakib Halaby Shalaby y Aristivaldo Davila Hernandez; quedan pendientes Jurleth Paola Vásquez Dallos y el visto bueno del Administrador CDMB.",
+    "detalle": "El orden de firma lo fija el cargo de cada firmante. Cuando todos firman, el equipo recibe el aviso «Concepto firmado».\n\nCualquier persona puede verificar el documento en el Validador de firmas con el código del sello.",
+    "fundamento": "Ley 527 de 1999 · Decreto 1074 de 2015 (firma electrónica)."
+  },
+  {
+    "orden": 10,
+    "etiqueta": "Avisos",
+    "titulo": "Campana, contadores y buzón de visitas",
+    "tituloIndice": "Avisos",
+    "ubicacion": "Campana del encabezado · menú principal · [Buzón de visitas](/planeador/buzon).",
+    "resumen": "Los pendientes de cada persona se ven en la campana, con un número rojo junto a cada módulo del menú principal y en las opciones del menú del módulo.",
+    "pasos": [
+      "La campana lista los pendientes de todos los módulos y lleva directamente a cada uno.",
+      "El menú principal muestra cuántos pendientes hay en cada módulo.",
+      "El Buzón de visitas reúne los avisos de visitas programadas, cambios, equipo y conceptos firmados o rechazados."
+    ],
+    "ejemplo": "Jurleth Paola Vásquez Dallos ve en la campana «1 documento(s) de trámites para firmar» y el número 1 junto a Trámites ambientales 2.0 y a Firmas.",
+    "detalle": "",
+    "fundamento": ""
+  },
+  {
+    "orden": 11,
+    "etiqueta": "Visor",
+    "titulo": "Visor de trámites",
+    "tituloIndice": "Visor de trámites",
+    "ubicacion": "[Visor de trámites](/visor-tramites).",
+    "resumen": "Mapa de los expedientes sobre las capas de la jurisdicción, con filtros, medición de distancias y búsqueda de trámites cercanos a un punto.",
+    "pasos": [
+      "Se filtran los expedientes por trámite y estado.",
+      "Se activan las capas de contexto: municipios, veredas, subzonas, áreas protegidas, páramos y bosque seco.",
+      "Se mide una distancia o se buscan expedientes cercanos a un punto.",
+      "Se descarga la imagen del mapa o el reporte."
+    ],
+    "ejemplo": "",
+    "detalle": "",
+    "fundamento": ""
+  },
+  {
+    "orden": 12,
+    "etiqueta": "Archivo",
+    "titulo": "Cierre y archivo en el SGDEA",
+    "tituloIndice": "Cierre y archivo",
+    "ubicacion": "Expediente → pestaña «Administración».",
+    "resumen": "Al cerrar el expediente queda su ficha de solo lectura en el archivo del SGDEA, clasificada según la Tabla de Retención Documental.",
+    "pasos": [
+      "Se verifica que el expediente terminó su procedimiento.",
+      "En «Administración» se cierra y archiva.",
+      "La ficha queda consultable en el SGDEA y en «Disposición final (TRD)» cuando cumple su tiempo de retención."
+    ],
+    "ejemplo": "",
+    "detalle": "",
+    "fundamento": "Ley 594 de 2000."
+  }
+]

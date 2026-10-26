@@ -26,7 +26,7 @@ function camposDe(a: ApartadoEditable): Campos {
   return { ...a, orden: String(a.orden), pasos: a.pasos.join("\n") };
 }
 
-export function EditarApartadoManual({ apartado, modulo = "SGDEA" }: { apartado: ApartadoEditable; modulo?: "SGDEA" | "GECON" }) {
+export function EditarApartadoManual({ apartado, modulo = "SGDEA" }: { apartado: ApartadoEditable; modulo?: "SGDEA" | "GECON" | "TRAMITES" }) {
   const router = useRouter();
   const nuevo = !apartado.id;
   const [abierto, setAbierto] = useState(false);

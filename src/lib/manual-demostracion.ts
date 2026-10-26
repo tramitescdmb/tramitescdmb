@@ -2,11 +2,16 @@ import { db } from "@/lib/db";
 import type { ModuloManual } from "@prisma/client";
 import semillaSgdea from "../../data/sgdea/manual-demostracion.json";
 import semillaGecon from "../../data/gecon/manual-demostracion.json";
+import semillaTramites from "../../data/tramites-ambientales/manual-demostracion.json";
 
-const SEMILLAS: Record<ModuloManual, DatosApartado[]> = { SGDEA: semillaSgdea as DatosApartado[], GECON: semillaGecon as DatosApartado[] };
+const SEMILLAS: Record<ModuloManual, DatosApartado[]> = {
+  SGDEA: semillaSgdea as DatosApartado[],
+  GECON: semillaGecon as DatosApartado[],
+  TRAMITES: semillaTramites as DatosApartado[],
+};
 
 export function moduloManualValido(v: unknown): ModuloManual {
-  return v === "GECON" ? "GECON" : "SGDEA";
+  return v === "GECON" || v === "TRAMITES" ? v : "SGDEA";
 }
 
 export type DatosApartado = {

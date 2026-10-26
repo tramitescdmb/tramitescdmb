@@ -219,7 +219,7 @@ export default async function PanelPendientesGeconPage({ searchParams }: { searc
 
         <TarjetaTablero
           id="informes"
-          className="lg:col-span-6"
+          className="lg:col-span-12"
           icon={CalendarClock}
           tono="ambar"
           titulo="Informes de supervisión por radicar"

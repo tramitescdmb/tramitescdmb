@@ -23,10 +23,20 @@ const entrada = (ok: boolean, leyenda: string, it: ItemMenu): ItemMenu => (ok ? 
 export function ContratacionTabs({
   permitido,
   pendientesFirma,
+  rechazosFirma = 0,
+  informesPorRadicar = 0,
 }: {
   permitido: PermitidoContratacion;
   pendientesFirma: ResumenPendientesFirma;
+  rechazosFirma?: number;
+  informesPorRadicar?: number;
 }) {
+  const pendientesPanel = pendientesFirma.listos + informesPorRadicar;
+  const insigniaPanel = {
+    valor: pendientesPanel,
+    alerta: pendientesPanel > 0,
+    titulo: [textoPendientesFirma(pendientesFirma), informesPorRadicar > 0 ? `${informesPorRadicar} informe(s) de supervisión por radicar` : ""].filter(Boolean).join("; "),
+  };
   const insigniaFirmas = {
     valor: pendientesFirma.total,
     alerta: pendientesFirma.listos > 0,
@@ -36,11 +46,12 @@ export function ContratacionTabs({
     {
       label: "Panel",
       icon: LayoutDashboard,
+      insignia: insigniaPanel,
       items: [
         {
           href: "/contratacion/panel",
           label: "Pendientes",
-          insignia: { valor: pendientesFirma.listos, alerta: pendientesFirma.listos > 0, titulo: textoPendientesFirma(pendientesFirma) },
+          insignia: insigniaPanel,
         },
         { href: "/contratacion/panel/expedientes", label: "Expedientes por etapa" },
         { href: "/contratacion/panel/indicadores", label: "Indicadores" },
@@ -65,9 +76,13 @@ export function ContratacionTabs({
       items: [
         { href: "/contratacion/buzon", label: "Buzón de firmas", insignia: insigniaFirmas },
         { href: "/contratacion/mis-firmas", label: "Mis firmas" },
-        { href: "/contratacion/rechazos-firma", label: "Rechazos al firmar" },
+        {
+          href: "/contratacion/rechazos-firma",
+          label: "Rechazos al firmar",
+          insignia: { valor: rechazosFirma, alerta: rechazosFirma > 0, titulo: `${rechazosFirma} firma(s) rechazada(s) de documentos que usted cargó` },
+        },
       ],
-      insignia: insigniaFirmas,
+      insignia: { ...insigniaFirmas, valor: insigniaFirmas.valor + rechazosFirma, alerta: insigniaFirmas.alerta || rechazosFirma > 0 },
     },
     {
       label: "Administración",

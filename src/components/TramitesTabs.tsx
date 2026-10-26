@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map, CalendarDays } from "lucide-react";
+import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map, CalendarDays, HelpCircle } from "lucide-react";
 import { BarraModulo, type GrupoMenu } from "@/components/BarraModulo";
 import { SIN_PENDIENTES_FIRMA, textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -10,6 +10,7 @@ export function TramitesTabs({
   pendientesFirma = SIN_PENDIENTES_FIRMA,
   alertasPlaneador = 0,
   avisosBuzon = 0,
+  rechazosFirma = 0,
   esAdmin = false,
   editaFormatos = false,
 }: {
@@ -18,6 +19,7 @@ export function TramitesTabs({
   pendientesFirma?: ResumenPendientesFirma;
   alertasPlaneador?: number;
   avisosBuzon?: number;
+  rechazosFirma?: number;
   esAdmin?: boolean;
   editaFormatos?: boolean;
 }) {
@@ -27,7 +29,7 @@ export function TramitesTabs({
     titulo: textoPendientesFirma(pendientesFirma),
   };
   const grupos: GrupoMenu[] = [
-    { label: "Panel", icon: LayoutDashboard, href: "/tramites-ambientales" },
+    { label: "Panel", icon: LayoutDashboard, href: "/tramites-ambientales", coincide: /^\/tramites-ambientales$/ },
     { label: "Catálogo de trámites", icon: LibraryBig, href: "/tramites" },
     {
       label: "Expedientes",
@@ -68,15 +70,27 @@ export function TramitesTabs({
           {
             label: "Firmas",
             icon: PenLine,
-            insignia: insigniaFirmas,
+            insignia: { ...insigniaFirmas, valor: insigniaFirmas.valor + rechazosFirma, alerta: insigniaFirmas.alerta || rechazosFirma > 0 },
             items: [
               { href: "/firmas/buzon", label: "Buzón de firmas", insignia: insigniaFirmas },
               { href: "/firmas/mis-firmas", label: "Mis firmas" },
-              { href: "/firmas/rechazos", label: "Rechazos al firmar" },
+              {
+                href: "/firmas/rechazos",
+                label: "Rechazos al firmar",
+                insignia: { valor: rechazosFirma, alerta: rechazosFirma > 0, titulo: `${rechazosFirma} firma(s) rechazada(s) de documentos que usted cargó o envió a firma` },
+              },
             ],
           },
         ]
       : []),
+    {
+      label: "Ayuda",
+      icon: HelpCircle,
+      items: [
+        { href: "/tramites-ambientales/ayuda", label: "Guía de referencia" },
+        { href: "/tramites-ambientales/manual-demostracion", label: "Manual de demostración" },
+      ],
+    },
   ];
 
   return (

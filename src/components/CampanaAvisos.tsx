@@ -5,7 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconBell } from "@tabler/icons-react";
 
-type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number };
+type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number; modulo?: string };
+
+export const EVENTO_AVISOS = "avisos-actualizados";
+
+let ultimos: Aviso[] = [];
+
+export function ultimosAvisos(): Aviso[] {
+  return ultimos;
+}
 
 const CADA_MS = 120_000;
 
@@ -18,7 +26,11 @@ export function CampanaAvisos() {
   const cargar = useCallback(async () => {
     try {
       const res = await fetch("/api/avisos", { cache: "no-store" });
-      if (res.ok) setAvisos((await res.json()).avisos ?? []);
+      if (!res.ok) return;
+      const lista: Aviso[] = (await res.json()).avisos ?? [];
+      setAvisos(lista);
+      ultimos = lista;
+      window.dispatchEvent(new CustomEvent(EVENTO_AVISOS, { detail: lista }));
     } catch {}
   }, []);
 
