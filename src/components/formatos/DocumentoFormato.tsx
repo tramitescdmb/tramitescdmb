@@ -19,7 +19,7 @@ import { desdeLatLon, planasOrigenBogota } from "@/lib/coordenadas";
 import { MapaEstatico } from "@/components/formatos/MapaEstatico";
 
 export type FotoDocumento = { id: string; url: string; pie?: string };
-export type FirmanteDocumento = { titulo: string; nombre: string; cargo: string; oficina?: boolean };
+export type FirmanteDocumento = { titulo: string; nombre: string; cargo: string };
 
 export type EncabezadoFormato = {
   codigo: string;
@@ -81,16 +81,18 @@ export function DocumentoFormato({
               )}
 
               <section className="break-inside-avoid space-y-3 pt-2">
-                {firmantes && firmantes.length > 0 ? (
-                  firmantes.map((f, i) => <BloqueFirma key={i} titulo={f.titulo} nombre={f.nombre} cargo={f.cargo} oficina={f.oficina} />)
-                ) : (
-                  <>
-                    <BloqueFirma titulo="Nombre y firma del responsable" nombre={precarga.funcionario ?? ""} />
-                    <BloqueFirma titulo="Nombre y firma revisó aspectos jurídicos" />
-                    <BloqueFirma titulo="Nombre y firma revisó aspectos técnicos" />
-                    <BloqueFirma titulo="Visto bueno de la coordinación respectiva" oficina />
-                  </>
-                )}
+                <TablaResponsables
+                  filas={
+                    firmantes && firmantes.length > 0
+                      ? firmantes
+                      : [
+                          { titulo: "Elaboró", nombre: precarga.funcionario ?? "", cargo: "" },
+                          { titulo: "Revisó aspectos técnicos", nombre: "", cargo: "" },
+                          { titulo: "Revisó aspectos jurídicos", nombre: "", cargo: "" },
+                          { titulo: "Visto bueno de la coordinación", nombre: "", cargo: "" },
+                        ]
+                  }
+                />
               </section>
             </td>
           </tr>
@@ -419,32 +421,31 @@ function BloqueComplejo({
   return null;
 }
 
-function BloqueFirma({ titulo, nombre = "", cargo = "", oficina = false }: { titulo: string; nombre?: string; cargo?: string; oficina?: boolean }) {
+function TablaResponsables({ filas }: { filas: FirmanteDocumento[] }) {
   return (
-    <div className="break-inside-avoid" data-pdf-bloque>
-      <p className="text-[11px] italic">{titulo}:</p>
-      <table className="w-full border-collapse">
-        <tbody>
-          <tr>
-            <td className={`${celda} w-[30%] font-bold italic`}>Nombre:</td>
-            <td className={celda}>{nombre}</td>
+    <table className="w-full border-collapse" data-pdf-bloque>
+      <thead>
+        <tr className="bg-stone-100 text-[11px] uppercase">
+          <th className={`${celda} w-[30%] text-left`}>Responsabilidad</th>
+          <th className={`${celda} text-left`}>Nombre</th>
+          <th className={`${celda} text-left`}>Cargo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map((f, i) => (
+          <tr key={i}>
+            <td className={`${celda} font-bold italic`}>{f.titulo}</td>
+            <td className={celda}>{f.nombre}</td>
+            <td className={celda}>{f.cargo}</td>
           </tr>
-          <tr>
-            <td className={`${celda} font-bold italic`}>Cargo:</td>
-            <td className={celda}>{cargo}</td>
-          </tr>
-          <tr>
-            <td className={`${celda} h-9 font-bold italic`}>Firma:</td>
-            <td className={celda} />
-          </tr>
-          {oficina && (
-            <tr>
-              <td className={`${celda} font-bold italic`}>Oficina responsable:</td>
-              <td className={celda}>Subdirección de Evaluación y Control Ambiental - SEYCA</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+        ))}
+        <tr>
+          <td className={`${celda} font-bold italic`}>Oficina responsable</td>
+          <td className={celda} colSpan={2}>
+            Subdirección de Evaluación y Control Ambiental - SEYCA
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }

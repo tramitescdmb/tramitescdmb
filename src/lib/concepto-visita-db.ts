@@ -36,7 +36,6 @@ export function firmantesParaDocumento(
         titulo: TITULO_BLOQUE_FIRMA[p.rol],
         nombre: persona?.nombre ?? "",
         cargo: persona ? cargoDelFirmante(persona, "TRAMITES") : "",
-        oficina: p.rol === "VISTO_BUENO",
       };
     });
 }

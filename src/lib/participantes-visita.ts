@@ -11,11 +11,11 @@ export const ETIQUETA_ROL_PARTICIPANTE: Record<RolParticipanteVisita, string> = 
 };
 
 export const TITULO_BLOQUE_FIRMA: Record<RolParticipanteVisita, string> = {
-  ELABORA: "Nombre y firma del responsable",
-  REVISA_TECNICO: "Nombre y firma revisó aspectos técnicos",
-  REVISA_JURIDICO: "Nombre y firma revisó aspectos jurídicos",
-  VISTO_BUENO: "Visto bueno de la coordinación respectiva",
-  APRUEBA: "Nombre y firma de quien aprueba",
+  ELABORA: "Elaboró",
+  REVISA_TECNICO: "Revisó aspectos técnicos",
+  REVISA_JURIDICO: "Revisó aspectos jurídicos",
+  VISTO_BUENO: "Visto bueno de la coordinación",
+  APRUEBA: "Aprobó",
 };
 
 export function esRolParticipante(v: unknown): v is RolParticipanteVisita {
