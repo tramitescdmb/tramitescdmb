@@ -29,6 +29,7 @@ const RUTAS: RutaMiga[] = [
   { re: /^\/expedientes$/, trail: ["Expedientes"] },
   { re: /^\/visor-tramites/, trail: ["Visor de trámites"] },
   { re: /^\/planeador\/buzon/, trail: ["Planeador", "Buzón de visitas"] },
+  { re: /^\/planeador\/conceptos/, trail: ["Planeador", "Conceptos en revisión"] },
   { re: /^\/planeador\/formatos\/[^/]+/, trail: ["Planeador", "Formatos de visita", "Formato"] },
   { re: /^\/planeador\/formatos/, trail: ["Planeador", "Formatos de visita"] },
   { re: /^\/planeador/, trail: ["Planeador", "Calendario"] },

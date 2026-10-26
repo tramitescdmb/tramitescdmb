@@ -257,7 +257,9 @@ export default async function TramitesAyudaPage() {
         <Tabla encabezados={["Acción", "Quién", "Efecto"]}>
           <Fila celdas={["Asignar número de concepto", "Profesional de la visita o quien planea", "Toma el siguiente consecutivo EV de la vigencia (EV-0001-2026) con la fecha del día."]} />
           <Fila celdas={["Corregir concepto", "Quien elabora o quien planea", "Permite ajustar el formato, el resultado y las fotos mientras el concepto no se haya dado por terminado."]} />
-          <Fila celdas={["Dar por terminado y enviar a firma", "Coordinador(a), Subdirector(a) o administrador", "Genera el PDF del concepto, lo guarda en los documentos del expediente, lo bloquea y envía la solicitud de firma a cada miembro del equipo según su rol."]} />
+          <Fila celdas={["Enviar a revisión", "Quien elabora", "El concepto queda «En revisión» y quien planea recibe el aviso. Mientras tanto, quien elabora no puede editarlo."]} />
+          <Fila celdas={["Devolver con observaciones", "Coordinador(a), Subdirector(a) o administrador", "El concepto vuelve a quien elabora con las observaciones, que quedan en el historial de revisión."]} />
+          <Fila celdas={["Aprobar y enviar a firma", "Coordinador(a), Subdirector(a) o administrador", "Genera el PDF del concepto, lo guarda en los documentos del expediente, lo bloquea y envía la solicitud de firma a cada miembro del equipo según su rol."]} />
           <Fila celdas={["Reabrir para corrección", "Coordinador(a), Subdirector(a) o administrador", "Retira las firmas pendientes y conserva el PDF anterior como versión reemplazada. Se corrige y se vuelve a enviar. No aplica cuando todos ya firmaron."]} />
         </Tabla>
         <p>

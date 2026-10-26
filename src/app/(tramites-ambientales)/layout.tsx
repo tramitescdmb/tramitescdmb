@@ -12,7 +12,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarNoLeidas } from "@/lib/notificaciones";
-import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite, puedeEditarFormatosVisita } from "@/lib/permisos";
+import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concepto";
+import { obtenerPermisosUsuario, puedeAccederSolicitantes, puedeAccederFirmasTramite, puedeEditarFormatosVisita, puedePlanearVisitas } from "@/lib/permisos";
 
 export default async function TramitesAmbientalesLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -33,11 +34,13 @@ export default async function TramitesAmbientalesLayout({ children }: { children
   }
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
-  const [pendientesFirma, alertasPlaneador, avisosBuzon, rechazosFirma] = await Promise.all([
+  const [pendientesFirma, alertasPlaneador, avisosBuzon, rechazosFirma, porRevisar, devueltos] = await Promise.all([
     mostrarFirmas ? contarPendientesBuzonTramite(session.userId) : Promise.resolve(SIN_PENDIENTES_FIRMA),
     contarAlertasVisitasPropias(session.userId),
     contarNoLeidas(session.userId),
     mostrarFirmas ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : Promise.resolve(0),
+    puedePlanearVisitas(permisos) ? conceptosPorRevisar(permisos).then((l) => l.length) : Promise.resolve(0),
+    conceptosDevueltosA(session.userId).then((l) => l.length),
   ]);
 
   return (
@@ -58,7 +61,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       </div>
 
       <div className="encabezado-modulo">
-        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
+        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} conceptos={porRevisar + devueltos} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
       </div>
 
       <div className="encabezado-modulo">

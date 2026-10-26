@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
 import { pasosFlujoACargo, usuarioFlujo } from "@/lib/flujos";
+import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concepto";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 
@@ -57,12 +58,20 @@ export async function GET() {
 
   if (permisos.modulos.has("TRAMITES")) {
     const firmasTramite = puedeAccederFirmasTramite(permisos);
-    const [firmas, rechazos, buzon, visitas] = await Promise.all([
+    const [firmas, rechazos, buzon, visitas, porRevisar, devueltos] = await Promise.all([
       firmasTramite ? contarPendientesBuzonTramite(session.userId) : null,
       firmasTramite ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : 0,
       contarNoLeidas(session.userId),
       contarAlertasVisitasPropias(session.userId),
+      puedePlanearVisitas(permisos) ? conceptosPorRevisar(permisos).then((l) => l.length) : 0,
+      conceptosDevueltosA(session.userId).then((l) => l.length),
     ]);
+    if (porRevisar > 0) {
+      avisos.push({ clave: "conceptos-revision", titulo: `${porRevisar} concepto(s) técnico(s) por revisar`, href: "/planeador/conceptos", alerta: true, cantidad: porRevisar, modulo: "TRAMITES" });
+    }
+    if (devueltos > 0) {
+      avisos.push({ clave: "conceptos-devueltos", titulo: `${devueltos} concepto(s) devuelto(s) para corrección`, href: "/planeador/conceptos", alerta: true, cantidad: devueltos, modulo: "TRAMITES" });
+    }
     if (firmas && firmas.listos > 0) {
       avisos.push({ clave: "firmas-tramites", titulo: `${firmas.listos} documento(s) de trámites para firmar`, href: "/firmas/buzon", alerta: true, cantidad: firmas.listos, modulo: "TRAMITES" });
     }

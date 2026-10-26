@@ -54,7 +54,7 @@ export function FinalizarConcepto({
     <>
       <button type="button" onClick={() => setAbierto(true)} className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-2 text-sm font-medium text-white hover:bg-acento-600">
         <Send className="h-3.5 w-3.5" aria-hidden />
-        Dar por terminado y enviar a firma
+        Aprobar y enviar a firma
       </button>
       {abierto && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">

@@ -120,15 +120,16 @@
   {
     "orden": 8,
     "etiqueta": "Concepto",
-    "titulo": "Número, corrección y cierre del concepto técnico",
+    "titulo": "Número, revisión y cierre del concepto técnico",
     "tituloIndice": "Concepto técnico",
     "ubicacion": "Hoja de visita → «Ver formato diligenciado».",
-    "resumen": "El concepto recibe el consecutivo EV, se corrige si hace falta y, cuando está listo, el coordinador o el subdirector lo dan por terminado: se genera el PDF y va a firma.",
+    "resumen": "El concepto recibe el consecutivo EV, quien elabora lo envía a revisión, y el coordinador o el subdirector lo devuelve con observaciones o lo aprueba y envía a firma.",
     "pasos": [
       "Se pulsa «Asignar número de concepto»; toma el siguiente EV de la vigencia con la fecha del día.",
       "Si hay errores, «Corregir concepto» permite ajustar el formato, el resultado y las fotos.",
-      "Quien planea pulsa «Dar por terminado y enviar a firma», revisa los firmantes y confirma.",
-      "El PDF queda en los documentos del expediente y cada miembro del equipo recibe su solicitud de firma."
+      "Quien elabora pulsa «Enviar a revisión»; el concepto queda en revisión y quien planea recibe el aviso.",
+      "Quien planea revisa: «Devolver con observaciones» lo regresa a quien elabora; «Aprobar y enviar a firma» genera el PDF y envía las solicitudes de firma.",
+      "La línea de estado muestra Registrado → En revisión → En firma → Firmado, con el historial de observaciones."
     ],
     "ejemplo": "El concepto `EV-0001-2026` del expediente `M-DA-PR39-2026-0002` se envió a firma de cinco personas.",
     "detalle": "El concepto muestra la tabla de responsables con rol, nombre y cargo; las firmas constan en la hoja de firmas electrónicas del PDF.\n\nSi un firmante rechaza o se detecta un error, «Reabrir para corrección» retira las firmas pendientes y conserva el PDF anterior como versión reemplazada.",

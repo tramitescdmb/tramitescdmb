@@ -8,6 +8,8 @@ import { asignarFirmantes } from "@/lib/solicitudes-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { deleteDocumento } from "@/lib/storage";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
+import { puedeFinalizarSegunRevision, registrarRevision } from "@/lib/revision-concepto";
+import { resolverNotificaciones } from "@/lib/notificaciones";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     select: {
       profesionalId: true,
       expedienteId: true,
-      visitaTecnica: { select: { id: true, conceptoNumero: true, conceptoFecha: true, formatoVersionId: true, pasoNumero: true, finalizadaEn: true } },
+      visitaTecnica: { select: { id: true, conceptoNumero: true, conceptoFecha: true, formatoVersionId: true, pasoNumero: true, finalizadaEn: true, estadoRevision: true } },
     },
   });
   const vt = visita?.visitaTecnica;
@@ -32,6 +34,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!vt.formatoVersionId) return NextResponse.json({ error: "La visita no se diligenció con un formato." }, { status: 409 });
   if (!vt.conceptoNumero) return NextResponse.json({ error: "Asigne primero el número del concepto técnico." }, { status: 409 });
   if (vt.finalizadaEn) return NextResponse.json({ error: "El concepto ya fue finalizado." }, { status: 409 });
+  if (!puedeFinalizarSegunRevision(vt.estadoRevision)) {
+    return NextResponse.json({ error: "El concepto fue devuelto con observaciones; quien elabora debe corregirlo y enviarlo de nuevo a revisión." }, { status: 409 });
+  }
 
   const body = (await req.json().catch(() => null)) as { path?: unknown; tamanoBytes?: unknown; hashSha256?: unknown } | null;
   const path = typeof body?.path === "string" ? body.path : "";
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const reservado = await db.visitaTecnica.updateMany({
     where: { id: vt.id, finalizadaEn: null },
-    data: { finalizadaEn: ahora, finalizadaPorId: session.userId, documentoConceptoId: documento.id },
+    data: { finalizadaEn: ahora, finalizadaPorId: session.userId, documentoConceptoId: documento.id, estadoRevision: "APROBADO" },
   });
   if (reservado.count === 0) {
     await db.expedienteDocumento.delete({ where: { id: documento.id } });
@@ -75,13 +80,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await asignarFirmantes({ tipo: "documentoExpediente", id: documento.id }, session.userId, firmantes, ip, userAgent);
   } catch (e) {
-    await db.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null } });
+    await db.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null, estadoRevision: vt.estadoRevision } });
     await db.solicitudFirma.deleteMany({ where: { documentoExpedienteId: documento.id } });
     await db.expedienteDocumento.delete({ where: { id: documento.id } });
     await deleteDocumento(path).catch(() => {});
     return NextResponse.json({ error: e instanceof Error ? e.message : "No se pudieron asignar los firmantes." }, { status: 400 });
   }
 
+  await registrarRevision(vt.id, "APROBACION", session.userId, null);
+  await resolverNotificaciones({ clave: `concepto-revision:${id}` });
   await registrarAuditoriaDoc({
     entidad: "ExpedienteDocumento",
     entidadId: documento.id,

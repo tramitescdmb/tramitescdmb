@@ -14,6 +14,9 @@ import { BotonImprimir } from "@/components/BotonImprimir";
 import { FinalizarConcepto } from "@/components/formatos/FinalizarConcepto";
 import { accesoCorreccionConcepto, equipoDeVisita, firmantesParaDocumento } from "@/lib/concepto-visita-db";
 import { ReabrirConcepto } from "@/components/formatos/ReabrirConcepto";
+import { AccionesRevisionConcepto } from "@/components/formatos/AccionesRevisionConcepto";
+import { LineaEstadoConcepto } from "@/components/formatos/LineaEstadoConcepto";
+import { etapaConcepto, puedeEnviarARevision, puedeFinalizarSegunRevision } from "@/lib/revision-concepto";
 import { RecordarFirmasConcepto } from "@/components/formatos/RecordarFirmasConcepto";
 import { PanelFirmas } from "@/components/PanelFirmas";
 import { construirFilasFirmantes } from "@/lib/panel-firmas";
@@ -40,6 +43,8 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           conceptoNumero: true,
           conceptoFecha: true,
           finalizadaEn: true,
+          estadoRevision: true,
+          revisiones: { orderBy: { createdAt: "asc" }, select: { id: true, accion: true, comentario: true, createdAt: true, usuario: { select: { nombre: true } } } },
           documentoConceptoId: true,
           documentoConcepto: {
             select: {
@@ -85,7 +90,19 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
   const puedeRecordar =
     faltan.some((f) => f.estado === "TURNO" && f.usuarioId !== session.userId) &&
     (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId || lista.some((p) => p.usuarioId === session.userId));
-  const puedeFinalizar = Boolean(vt.conceptoNumero) && !vt.finalizadaEn && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+  const puedeFinalizar =
+    Boolean(vt.conceptoNumero) &&
+    !vt.finalizadaEn &&
+    puedeFinalizarSegunRevision(vt.estadoRevision) &&
+    puedePlanearVisitas(permisos) &&
+    puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+  const etapa = etapaConcepto({
+    estadoRevision: vt.estadoRevision,
+    finalizadaEn: vt.finalizadaEn,
+    firmado: firmasConcepto.length > 0 && firmasConcepto.every((s) => s.estado === "COMPLETADA"),
+  });
+  const puedeEnviarRevision = puedeCorregir && puedeEnviarARevision(vt.estadoRevision, Boolean(vt.finalizadaEn));
+  const puedeDevolverRevision = !vt.finalizadaEn && vt.estadoRevision === "EN_REVISION" && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
   return (
     <div className="space-y-3">
@@ -96,6 +113,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           Hoja de visita · {visita.expediente.numero}
         </Link>
         <span className="flex flex-wrap items-start gap-2">
+          <AccionesRevisionConcepto visitaId={visita.id} puedeEnviar={puedeEnviarRevision} puedeDevolver={puedeDevolverRevision} />
           {puedeCorregir && (
             <Link href={`/expedientes/${id}/visitas/${visita.id}/formato/corregir`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -120,6 +138,8 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
         </span>
       </div>
+      <LineaEstadoConcepto etapa={etapa} revisiones={vt.revisiones} />
+
       {vt.documentoConcepto && (
         <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft print:hidden">
           <div className="mb-2 flex flex-wrap items-center gap-2">

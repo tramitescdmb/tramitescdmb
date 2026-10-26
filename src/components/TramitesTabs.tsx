@@ -11,6 +11,7 @@ export function TramitesTabs({
   alertasPlaneador = 0,
   avisosBuzon = 0,
   rechazosFirma = 0,
+  conceptos = 0,
   esAdmin = false,
   editaFormatos = false,
 }: {
@@ -20,6 +21,7 @@ export function TramitesTabs({
   alertasPlaneador?: number;
   avisosBuzon?: number;
   rechazosFirma?: number;
+  conceptos?: number;
   esAdmin?: boolean;
   editaFormatos?: boolean;
 }) {
@@ -46,8 +48,8 @@ export function TramitesTabs({
       label: "Planeador",
       icon: CalendarDays,
       insignia: {
-        valor: alertasPlaneador + avisosBuzon,
-        alerta: alertasPlaneador + avisosBuzon > 0,
+        valor: alertasPlaneador + avisosBuzon + conceptos,
+        alerta: alertasPlaneador + avisosBuzon + conceptos > 0,
         titulo: `${avisosBuzon} aviso(s) sin leer y ${alertasPlaneador} visita(s) suya(s) para hoy, mañana o pendientes de registrar`,
       },
       items: [
@@ -60,6 +62,11 @@ export function TramitesTabs({
           href: "/planeador/buzon",
           label: "Buzón de visitas",
           insignia: { valor: avisosBuzon, alerta: avisosBuzon > 0, titulo: `${avisosBuzon} aviso(s) sin leer` },
+        },
+        {
+          href: "/planeador/conceptos",
+          label: "Conceptos en revisión",
+          insignia: { valor: conceptos, alerta: conceptos > 0, titulo: `${conceptos} concepto(s) por revisar o devueltos para corrección` },
         },
         ...(editaFormatos ? [{ href: "/planeador/formatos", label: "Formatos de visita", prefijo: true, separador: true }] : []),
       ],

@@ -160,6 +160,7 @@ model Usuario {
   formatosVisitaCreados      FormatoVisita[]            @relation("FormatoVisitaCreadoPor")
   participacionesVisita      ParticipanteVisita[]       @relation("ParticipanteVisitaUsuario")
   visitasTecnicasFinalizadas VisitaTecnica[]            @relation("VisitaTecnicaFinalizadaPor")
+  revisionesConcepto         RevisionConcepto[]         @relation("RevisionConceptoUsuario")
   versionesFormatoCreadas    FormatoVisitaVersion[]     @relation("FormatoVersionCreadoPor")
   versionesFormatoPublicadas FormatoVisitaVersion[]     @relation("FormatoVersionPublicadaPor")
   notificaciones             Notificacion[]             @relation("NotificacionUsuario")
@@ -905,6 +906,8 @@ model VisitaTecnica {
   documentoConceptoId String?              @unique
   documentoConcepto   ExpedienteDocumento? @relation("ConceptoVisitaDocumento", fields: [documentoConceptoId], references: [id], onDelete: SetNull)
   finalizadaPor       Usuario?             @relation("VisitaTecnicaFinalizadaPor", fields: [finalizadaPorId], references: [id])
+  estadoRevision      EstadoRevisionConcepto @default(BORRADOR)
+  revisiones          RevisionConcepto[]
 
   formatoVersion   FormatoVisitaVersion? @relation(fields: [formatoVersionId], references: [id])
   expediente       Expediente            @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
@@ -940,6 +943,34 @@ model TemaVisita {
   createdAt      DateTime        @default(now())
   creadoPor      Usuario?        @relation("TemaVisitaCreadoPor", fields: [creadoPorId], references: [id])
   visitas        VisitaTecnica[] @relation("VisitaTecnicaTemas")
+}
+
+enum EstadoRevisionConcepto {
+  BORRADOR
+  EN_REVISION
+  DEVUELTO
+  APROBADO
+}
+
+enum AccionRevisionConcepto {
+  ENVIO
+  DEVOLUCION
+  APROBACION
+  REAPERTURA
+}
+
+model RevisionConcepto {
+  id              String                 @id @default(cuid())
+  visitaTecnicaId String
+  accion          AccionRevisionConcepto
+  comentario      String?                @db.Text
+  usuarioId       String
+  createdAt       DateTime               @default(now())
+
+  visitaTecnica VisitaTecnica @relation(fields: [visitaTecnicaId], references: [id], onDelete: Cascade)
+  usuario       Usuario       @relation("RevisionConceptoUsuario", fields: [usuarioId], references: [id])
+
+  @@index([visitaTecnicaId])
 }
 
 enum RolParticipanteVisita {
@@ -1046,6 +1077,8 @@ enum TipoNotificacion {
   CONCEPTO_FIRMADO
   CONCEPTO_RECHAZADO
   FIRMA_RECORDADA
+  CONCEPTO_EN_REVISION
+  CONCEPTO_DEVUELTO
 }
 
 model Notificacion {

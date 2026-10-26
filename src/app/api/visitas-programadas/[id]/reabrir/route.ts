@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeEditarExpediente, puedePlanearVisitas } from "@/lib/permisos";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
+import { notificar } from "@/lib/notificaciones";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,7 +47,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { id: doc.id },
       data: { nombre: doc.nombre.replace(/\.pdf$/i, " (versión reemplazada).pdf"), requiereFirma: false, estadoValidacion: "RECHAZADO" },
     }),
-    db.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null } }),
+    db.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null, estadoRevision: "DEVUELTO" } }),
+    db.revisionConcepto.create({ data: { visitaTecnicaId: vt.id, accion: "REAPERTURA", usuarioId: session.userId, comentario: motivo } }),
     db.expedienteEvento.create({
       data: {
         expedienteId: visita.expedienteId,
@@ -57,5 +59,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     }),
   ]);
+  const v = await db.visitaProgramada.findUnique({
+    where: { id },
+    select: { profesionalId: true, participantes: { where: { rol: "ELABORA" }, select: { usuarioId: true } }, expediente: { select: { numero: true } } },
+  });
+  if (v) {
+    await notificar(
+      [...new Set([v.profesionalId, ...v.participantes.map((p) => p.usuarioId)])].filter((u) => u !== session.userId),
+      {
+        tipo: "CONCEPTO_DEVUELTO",
+        clave: `concepto-devuelto:${id}`,
+        titulo: `Concepto reabierto para corrección · ${v.expediente.numero}`,
+        mensaje: `${session.nombre} reabrió el concepto técnico: ${motivo}`,
+        enlace: `/expedientes/${visita.expedienteId}/visitas/${id}/formato`,
+        expedienteId: visita.expedienteId,
+      }
+    );
+  }
   return NextResponse.json({ ok: true });
 }
