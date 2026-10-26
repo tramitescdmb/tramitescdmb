@@ -191,7 +191,11 @@ export default async function TramitesAyudaPage() {
           puede avanzar cualquier persona con alcance «Editar». Los estados <Chip tono="emerald">Aprobado</Chip> y <Chip tono="red">Negado</Chip> solo se
           registran desde el paso de decisión del procedimiento.
         </p>
-        <p>El cambio manual de estado está reservado al administrador del sistema y queda en la historia del expediente.</p>
+        <p>
+          El cambio manual de estado está reservado al administrador del sistema y queda en la historia del expediente. El administrador
+          también puede <strong>devolver el expediente a un paso anterior</strong> (pestaña «Paso actual» → «Devolver a un paso anterior»),
+          indicando el motivo; no aplica si el expediente ya tiene un estado final.
+        </p>
       </Seccion>
 
       <Seccion n={7} id="documentos" icono={FileCheck2} titulo="Documentos y validación">

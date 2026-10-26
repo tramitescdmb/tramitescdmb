@@ -8,12 +8,14 @@ function comoEstructura(p: PlantillaFlujo) {
     nombre: paso.nombre,
     tipo: paso.tipo,
     orden: i + 1,
-    transiciones: (paso.transiciones ?? []).map((t) => ({ haciaPasoId: idPorClave.get(t.hacia)! })),
+    transiciones: (paso.transiciones ?? []).map((t) => ({ haciaPasoId: idPorClave.get(t.hacia)!, etiqueta: t.etiqueta })),
+    asignacion: paso.asignacion,
+    cargoClave: paso.cargoClave ?? null,
   }));
 }
 
 describe("validarEstructuraFlujo", () => {
-  it("las 4 plantillas precargadas no tienen problemas estructurales", () => {
+  it("las plantillas precargadas no tienen problemas estructurales", () => {
     for (const plantilla of PLANTILLAS_FLUJO) {
       const problemas = validarEstructuraFlujo(comoEstructura(plantilla));
       expect(problemas, `${plantilla.nombre}: ${problemas.map((x) => x.mensaje).join(" ")}`).toEqual([]);

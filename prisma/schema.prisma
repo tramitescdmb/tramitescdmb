@@ -1897,6 +1897,7 @@ enum TipoPasoFlujo {
   TAREA
   REVISION
   DECISION
+  FIRMA
   FIN
 }
 
@@ -1922,6 +1923,7 @@ model FlujoTrabajo {
   aplicaA                TipoComunicacion?
   activo                 Boolean           @default(true)
   esPlantilla            Boolean           @default(false)
+  inicioAutomatico       Boolean           @default(false)
   dependenciasOperadoras String[]          @default([])
   creadoPorId            String?
   createdAt              DateTime          @default(now())

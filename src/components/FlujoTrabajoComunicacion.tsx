@@ -6,10 +6,12 @@ import {
   estadoTerminoPaso,
   describirResponsablePaso,
   puedeCompletarPaso,
+  estadoFirmasDeComunicacion,
   ETIQUETA_TIPO_PASO,
   type UsuarioFlujo,
 } from "@/lib/flujos";
 import { db } from "@/lib/db";
+import { BuscadorPersona } from "@/components/BuscadorPersona";
 import { flujoAMermaid } from "@/lib/flujos-diagrama";
 import { Flujograma } from "@/components/Flujograma";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
@@ -57,6 +59,8 @@ export async function FlujoTrabajoComunicacion({
         usuario
       )
   );
+  const esPasoFirma = enCurso?.pasoActual?.tipo === "FIRMA";
+  const firmas = esPasoFirma ? await estadoFirmasDeComunicacion(comunicacionId) : null;
   const pasosPorId = new Map((enCurso?.flujo.pasos ?? []).map((p) => [p.id, p]));
   const opciones = (enCurso?.pasoActual?.transiciones ?? []).map((t) => {
     const destino = pasosPorId.get(t.haciaPasoId);
@@ -69,7 +73,7 @@ export async function FlujoTrabajoComunicacion({
   });
   const necesitaPersona = opciones.some((o) => o.manual) || (enCurso?.pasoActual?.asignacion === "MANUAL" && usuario.esAdminArchivo);
   const personas = necesitaPersona
-    ? await db.usuario.findMany({ where: { activo: true, modulosAcceso: { has: "SGDEA" } }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } })
+    ? await db.usuario.findMany({ where: { activo: true, modulosAcceso: { has: "SGDEA" } }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, dependencia: { select: { nombre: true } } } }).then((l) => l.map((u) => ({ id: u.id, nombre: u.nombre, detalle: u.dependencia?.nombre ?? null })))
     : [];
 
   return (
@@ -125,6 +129,16 @@ export async function FlujoTrabajoComunicacion({
             </div>
           )}
 
+          {firmas && (
+            <p className="rounded-md border border-cdmb-100 bg-cdmb-50 px-3 py-2 text-xs text-cdmb-900">
+              {firmas.estado === "SIN_FIRMANTES"
+                ? "Paso de firma: asigne los firmantes del documento en la sección de firmas. El flujo avanza solo cuando el documento quede firmado."
+                : firmas.estado === "PENDIENTE"
+                  ? `Esperando firmas: ${firmas.completadas} de ${firmas.total}. El flujo avanza solo cuando todos firmen; si alguien rechaza, toma la salida de rechazo.`
+                  : "Las firmas ya están completas; el flujo avanzará en la próxima actualización."}
+            </p>
+          )}
+
           {enCurso.pasoActual?.instrucciones && (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">{enCurso.pasoActual.instrucciones}</p>
           )}
@@ -145,16 +159,16 @@ export async function FlujoTrabajoComunicacion({
             </ol>
           )}
 
-          {!puedeCompletar && enCurso.pasoActual && enCurso.pasoActual.tipo !== "FIN" && (
+          {!puedeCompletar && !esPasoFirma && enCurso.pasoActual && enCurso.pasoActual.tipo !== "FIN" && (
             <p className="border-t border-stone-100 pt-3 text-xs text-stone-500">Este paso lo completa {responsable ?? "su responsable"}.</p>
           )}
 
-          {puedeCompletar && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
+          {puedeCompletar && (!esPasoFirma || usuario.esAdminArchivo) && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
             <form action={accion} method="post" className="space-y-2 border-t border-stone-100 pt-3">
               <input type="hidden" name="accion" value="avanzar" />
               <input type="hidden" name="instanciaId" value={enCurso.id} />
               <label className="block text-xs font-medium text-stone-600">
-                Completar «{enCurso.pasoActual.nombre}» — ¿qué sigue?
+                {esPasoFirma ? `Avanzar manualmente «${enCurso.pasoActual.nombre}» (solo administración del archivo)` : `Completar «${enCurso.pasoActual.nombre}» — ¿qué sigue?`}
                 <select name="transicionId" required defaultValue="" className="mt-1 block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
                   <option value="" disabled>Elegir…</option>
                   {opciones.map((t) => (
@@ -170,12 +184,9 @@ export async function FlujoTrabajoComunicacion({
               {opciones.some((o) => o.manual) && (
                 <label className="block text-xs font-medium text-stone-600">
                   Asignar el siguiente paso a (solo si se asigna a mano)
-                  <select name="asignarAId" defaultValue="" className="mt-1 block w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm">
-                    <option value="">—</option>
-                    {personas.map((u) => (
-                      <option key={u.id} value={u.id}>{u.nombre}</option>
-                    ))}
-                  </select>
+                  <div className="mt-1">
+                    <BuscadorPersona name="asignarAId" personas={personas} />
+                  </div>
                 </label>
               )}
               <input
@@ -197,12 +208,7 @@ export async function FlujoTrabajoComunicacion({
               <input type="hidden" name="instanciaId" value={enCurso.id} />
               <label className="text-xs">
                 <span className="mb-0.5 block text-stone-500">Reasignar el paso actual</span>
-                <select name="asignarAId" required defaultValue={enCurso.asignadoAId ?? ""} className="rounded-md border border-stone-200 px-2 py-1 text-sm">
-                  <option value="" disabled>Elegir persona…</option>
-                  {personas.map((u) => (
-                    <option key={u.id} value={u.id}>{u.nombre}</option>
-                  ))}
-                </select>
+                <BuscadorPersona name="asignarAId" personas={personas} inicial={enCurso.asignadoAId} requerido />
               </label>
               <button className="rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">Reasignar</button>
             </form>

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
+import { solicitudesVigentes } from "@/lib/estado-firmas";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { esJefeDeReparto, puedeAdministrarArchivo, puedeDistribuir } from "@/lib/permisos";
 
@@ -10,6 +11,7 @@ export const ETIQUETA_TIPO_PASO: Record<TipoPasoFlujo, string> = {
   TAREA: "Tarea",
   REVISION: "Revisión",
   DECISION: "Decisión",
+  FIRMA: "Firma electrónica",
   FIN: "Fin",
 };
 
@@ -60,7 +62,7 @@ export async function obtenerFlujo(id: string) {
       nombre: p.nombre,
       tipo: p.tipo,
       orden: p.orden,
-      transiciones: p.transiciones.map((t) => ({ haciaPasoId: t.haciaPasoId })),
+      transiciones: p.transiciones.map((t) => ({ haciaPasoId: t.haciaPasoId, etiqueta: t.etiqueta })),
       asignacion: p.asignacion,
       dependenciaId: p.dependenciaId,
       cargoClave: p.cargoClave,
@@ -98,9 +100,21 @@ export async function crearFlujo(
   return flujo;
 }
 
+async function verificarUnicoAutomatico(id: string, aplicaA: TipoComunicacion | null) {
+  const otro = await db.flujoTrabajo.findFirst({
+    where: { id: { not: id }, activo: true, inicioAutomatico: true, aplicaA },
+    select: { nombre: true },
+  });
+  if (otro) {
+    throw new Error(
+      `Ya hay un flujo automático activo para ${aplicaA ? ETIQUETA_APLICA_A[aplicaA]!.toLowerCase() : "cualquier tipo"}: «${otro.nombre}». Desactive su inicio automático primero.`
+    );
+  }
+}
+
 export async function actualizarFlujo(
   id: string,
-  campos: { nombre?: string; descripcion?: string | null; aplicaA?: TipoComunicacion | null },
+  campos: { nombre?: string; descripcion?: string | null; aplicaA?: TipoComunicacion | null; inicioAutomatico?: boolean },
 ) {
   const data: Record<string, unknown> = {};
   if (campos.nombre !== undefined) {
@@ -110,6 +124,10 @@ export async function actualizarFlujo(
   }
   if (campos.descripcion !== undefined) data.descripcion = campos.descripcion?.trim() || null;
   if (campos.aplicaA !== undefined) data.aplicaA = campos.aplicaA ?? null;
+  if (campos.inicioAutomatico !== undefined) data.inicioAutomatico = campos.inicioAutomatico;
+  const actual = await db.flujoTrabajo.findUnique({ where: { id }, select: { activo: true, aplicaA: true, inicioAutomatico: true } });
+  const automatico = campos.inicioAutomatico ?? actual?.inicioAutomatico;
+  if (actual?.activo && automatico) await verificarUnicoAutomatico(id, campos.aplicaA !== undefined ? campos.aplicaA ?? null : actual.aplicaA);
   return db.flujoTrabajo.update({ where: { id }, data });
 }
 
@@ -120,6 +138,7 @@ export async function cambiarEstadoFlujo(id: string, activo: boolean) {
     if (flujo.problemas.length > 0) {
       throw new Error(`No se puede activar: ${flujo.problemas.map((p) => p.mensaje).join(" ")}`);
     }
+    if (flujo.inicioAutomatico) await verificarUnicoAutomatico(id, flujo.aplicaA);
   }
   return db.flujoTrabajo.update({ where: { id }, data: { activo } });
 }
@@ -372,6 +391,7 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
             nombre: p.nombre,
             tipo: p.tipo,
             asignacion: p.asignacion,
+            cargoClave: p.cargoClave ?? null,
             slaDiasHabiles: p.slaDiasHabiles ?? null,
             instrucciones: p.instrucciones ?? null,
             posX: 140 + (i % 2) * 40,
@@ -516,7 +536,7 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
 export async function iniciarInstancia(
   comunicacionId: string,
   flujoId: string,
-  usuarioId: string,
+  usuarioId: string | null,
   ip?: string | null,
   ctx?: ContextoOperador,
 ) {
@@ -554,6 +574,7 @@ export async function iniciarInstancia(
     ip,
     detalle: `Inició el flujo «${flujo.nombre}» sobre ${comunicacion.radicado} — paso inicial: «${pasoInicial.nombre}»`,
   });
+  await sincronizarFlujoPorFirmas(comunicacionId, usuarioId);
   return instancia;
 }
 
@@ -586,6 +607,9 @@ export async function avanzarInstancia(
     responsableAnteriorId: instancia.ejecuciones[0]?.responsableId ?? instancia.iniciadoPorId,
     comunicacion: instancia.comunicacion,
   };
+  if (pasoActual.tipo === "FIRMA" && !usuario.esAdminArchivo) {
+    throw new Error("Este paso avanza solo cuando el documento queda firmado (o se rechaza la firma).");
+  }
   if (!puedeCompletarPaso(pasoActual, contexto, usuario)) {
     throw new Error("Este paso le corresponde a otra persona o dependencia; solo su responsable o el administrador del archivo pueden completarlo.");
   }
@@ -627,6 +651,7 @@ export async function avanzarInstancia(
     ip,
     detalle: `Flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: «${pasoActual.nombre}» → «${transicion.etiqueta}» → «${destino.nombre}»${cierra ? " (flujo completado)" : ""}${nota ? ` — ${nota}` : ""}`,
   });
+  if (!cierra) await sincronizarFlujoPorFirmas(instancia.comunicacion.id, usuarioId);
 }
 
 export async function reasignarPasoManual(instanciaId: string, asignarAId: string, usuarioId: string, ip?: string | null) {
@@ -755,16 +780,112 @@ export async function pasosFlujoACargo(u: UsuarioFlujo) {
       ejecuciones: { orderBy: { completadoEn: "desc" }, take: 1, select: { responsableId: true } },
     },
   });
-  return enCurso.filter((i) =>
+  const propios = enCurso.filter((i) =>
     esResponsablePaso(
       i.pasoActual!,
       { asignadoAId: i.asignadoAId, responsableAnteriorId: i.ejecuciones[0]?.responsableId ?? i.iniciadoPorId, comunicacion: i.comunicacion },
       u
     )
   );
+  const resultado: typeof propios = [];
+  for (const i of propios) {
+    if (i.pasoActual!.tipo !== "FIRMA" || (await estadoFirmasDeComunicacion(i.comunicacion.id)).estado === "SIN_FIRMANTES") resultado.push(i);
+  }
+  return resultado;
 }
 
 export async function usuarioFlujo(usuarioId: string, permisos: PermisosUsuario): Promise<UsuarioFlujo> {
   const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { dependenciaId: true } });
   return { usuarioId, dependenciaId: usuario?.dependenciaId ?? null, cargos: permisos.cargos, esAdminArchivo: puedeAdministrarArchivo(permisos) };
+}
+
+const PATRON_SALIDA_RECHAZO = /rechaz|devolv|no aprueb|corregir/i;
+
+export function esSalidaRechazo(etiqueta: string): boolean {
+  return PATRON_SALIDA_RECHAZO.test(etiqueta);
+}
+
+export type EstadoFirmasComunicacion =
+  | { estado: "SIN_FIRMANTES" }
+  | { estado: "PENDIENTE"; completadas: number; total: number }
+  | { estado: "FIRMADO" }
+  | { estado: "RECHAZADO"; motivo: string | null };
+
+export function evaluarFirmasComunicacion(
+  solicitudes: { rol: string; estado: "PENDIENTE" | "COMPLETADA" | "RECHAZADA"; asignadoEn: Date; completadoEn: Date | null; comentario?: string | null }[],
+  firmas: number
+): EstadoFirmasComunicacion {
+  const vigentes = solicitudesVigentes(solicitudes.filter((s) => s.rol !== "LECTURA"));
+  const rechazo = vigentes.find((s) => s.estado === "RECHAZADA");
+  if (rechazo) return { estado: "RECHAZADO", motivo: rechazo.comentario ?? null };
+  if (vigentes.length === 0) return firmas > 0 ? { estado: "FIRMADO" } : { estado: "SIN_FIRMANTES" };
+  const completadas = vigentes.filter((s) => s.estado === "COMPLETADA").length;
+  if (completadas === vigentes.length) return { estado: "FIRMADO" };
+  return { estado: "PENDIENTE", completadas, total: vigentes.length };
+}
+
+export async function estadoFirmasDeComunicacion(comunicacionId: string): Promise<EstadoFirmasComunicacion> {
+  const [solicitudes, firmas] = await Promise.all([
+    db.solicitudFirma.findMany({ where: { comunicacionId }, select: { rol: true, estado: true, asignadoEn: true, completadoEn: true, comentario: true } }),
+    db.firma.count({ where: { comunicacionId } }),
+  ]);
+  return evaluarFirmasComunicacion(solicitudes, firmas);
+}
+
+export async function sincronizarFlujoPorFirmas(comunicacionId: string, actorId: string | null): Promise<void> {
+  for (let vuelta = 0; vuelta < 5; vuelta++) {
+    const instancia = await db.instanciaFlujo.findFirst({
+      where: { comunicacionId, estado: "EN_CURSO", pasoActual: { tipo: "FIRMA" } },
+      include: {
+        flujo: { select: { nombre: true } },
+        comunicacion: { select: { radicado: true } },
+        pasoActual: { include: { transiciones: { orderBy: { orden: "asc" }, include: { hacia: true } } } },
+      },
+    });
+    const paso = instancia?.pasoActual;
+    if (!instancia || !paso) return;
+    const firmas = await estadoFirmasDeComunicacion(comunicacionId);
+    if (firmas.estado !== "FIRMADO" && firmas.estado !== "RECHAZADO") return;
+    const rechazo = firmas.estado === "RECHAZADO";
+    const transicion = rechazo
+      ? paso.transiciones.find((t) => esSalidaRechazo(t.etiqueta))
+      : paso.transiciones.find((t) => !esSalidaRechazo(t.etiqueta)) ?? paso.transiciones[0];
+    if (!transicion) return;
+    const destino = transicion.hacia;
+    const cierra = destino.tipo === "FIN";
+    const movido = await db.instanciaFlujo.updateMany({
+      where: { id: instancia.id, estado: "EN_CURSO", pasoActualId: paso.id },
+      data: {
+        pasoActualId: destino.id,
+        pasoActualDesde: new Date(),
+        asignadoAId: destino.asignacion === "MANUAL" ? instancia.iniciadoPorId : null,
+        estado: cierra ? "COMPLETADO" : "EN_CURSO",
+        finalizadoEn: cierra ? new Date() : null,
+      },
+    });
+    if (movido.count === 0) return;
+    const comentario = rechazo ? `Firma rechazada${firmas.motivo ? `: ${firmas.motivo}` : "."}` : "Avance automático: el documento quedó firmado.";
+    await db.pasoEjecutado.create({ data: { instanciaId: instancia.id, pasoId: paso.id, resultado: transicion.etiqueta, comentario, responsableId: actorId } });
+    await registrarAuditoriaDoc({
+      entidad: "Comunicacion",
+      entidadId: comunicacionId,
+      accion: "FLUJO",
+      usuarioId: actorId,
+      detalle: `Flujo «${instancia.flujo.nombre}» en ${instancia.comunicacion.radicado}: «${paso.nombre}» → «${transicion.etiqueta}» → «${destino.nombre}» (${comentario})`,
+    });
+    if (cierra) return;
+  }
+}
+
+export async function iniciarFlujoAutomatico(comunicacionId: string, usuarioId: string | null): Promise<void> {
+  const comunicacion = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { tipo: true } });
+  if (!comunicacion) return;
+  const candidatos = await db.flujoTrabajo.findMany({
+    where: { activo: true, inicioAutomatico: true, OR: [{ aplicaA: comunicacion.tipo }, { aplicaA: null }] },
+    select: { id: true, aplicaA: true },
+  });
+  const flujo = candidatos.find((f) => f.aplicaA === comunicacion.tipo) ?? candidatos[0];
+  if (!flujo) return;
+  if (await db.instanciaFlujo.count({ where: { comunicacionId, estado: "EN_CURSO" } })) return;
+  await iniciarInstancia(comunicacionId, flujo.id, usuarioId);
 }

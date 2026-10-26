@@ -2,7 +2,7 @@ export type PasoDiagrama = {
   id: string;
   orden: number;
   nombre: string;
-  tipo: "TAREA" | "REVISION" | "DECISION" | "FIN";
+  tipo: "TAREA" | "REVISION" | "DECISION" | "FIRMA" | "FIN";
 };
 
 export type TransicionDiagrama = {
@@ -24,6 +24,8 @@ function nodo(paso: PasoDiagrama): string {
       return `${id}{${txt}}`;
     case "REVISION":
       return `${id}{{${txt}}}`;
+    case "FIRMA":
+      return `${id}[/${txt}/]`;
     case "FIN":
       return `${id}([${txt}])`;
     default:

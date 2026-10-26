@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sincronizarFlujoPorFirmas } from "@/lib/flujos";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeFirmar, puedeFirmarComunicacionDirecto } from "@/lib/permisos";
@@ -64,5 +65,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     detalle: `Firmó ${comunicacion.radicado}`,
   }).catch((err) => console.error("registrarAuditoriaDoc (firmar) falló:", err));
 
+  await sincronizarFlujoPorFirmas(id, session.userId).catch((e) => console.error("sincronizarFlujoPorFirmas falló:", e));
   return responder(true, "Su firma quedó registrada.");
 }

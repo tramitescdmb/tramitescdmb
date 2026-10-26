@@ -16,6 +16,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
+import { iniciarFlujoAutomatico } from "@/lib/flujos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -164,6 +165,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
+    await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
   });
 }
@@ -468,6 +470,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
+    await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
   });
 }
@@ -534,6 +537,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
+    await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
   });
 }

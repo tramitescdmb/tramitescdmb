@@ -533,6 +533,20 @@ export default async function CorrespondenciaAyudaPage() {
             Un paso que ya se usó no se puede eliminar del flujo: para cambiar la ruta se duplica el flujo y se desactiva
             el anterior.
           </li>
+          <li>
+            Un paso de tipo <strong>Firma electrónica</strong> no se completa a mano: el flujo avanza solo cuando todos los
+            firmantes del documento firman, o toma la salida de rechazo («Rechazado» o «Devolver») si alguien rechaza, con el
+            motivo en el historial. Si el documento ya estaba firmado al llegar al paso, avanza de inmediato.
+          </li>
+          <li>
+            Un flujo con <strong>inicio automático</strong> se aplica solo a cada comunicación nueva de su tipo al radicarla,
+            incluidas las PQRSD del formulario público. Solo puede haber uno automático activo por tipo.
+          </li>
+          <li>
+            Crear, modificar, activar y desactivar flujos es exclusivo del administrador del sistema y del administrador de
+            archivo. Hay plantillas listas para PQRSD, derecho de petición con revisión jurídica, acceso a información pública,
+            traslado por competencia, requerimientos de entes de control, oficios con firma, notificación de actos y memorandos.
+          </li>
         </ul>
       </Seccion>
 

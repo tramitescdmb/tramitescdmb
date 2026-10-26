@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sincronizarFlujoPorFirmas } from "@/lib/flujos";
 import { headers } from "next/headers";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeFirmar } from "@/lib/permisos";
@@ -21,6 +22,7 @@ export async function POST(req: NextRequest) {
   const { ip, userAgent } = datosPeticion(await headers());
   try {
     const { firmadas, omitidas } = await firmarEnLote(ids, session.userId, ip);
+    for (const cid of ids) await sincronizarFlujoPorFirmas(cid, session.userId).catch((e) => console.error("sincronizarFlujoPorFirmas falló:", e));
     if (firmadas.length > 0) {
       await registrarAuditoriaDoc({
         entidad: "Comunicacion",

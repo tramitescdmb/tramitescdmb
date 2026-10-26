@@ -2,7 +2,7 @@ type PasoBpmn = {
   id: string;
   orden: number;
   nombre: string;
-  tipo: "TAREA" | "REVISION" | "DECISION" | "FIN";
+  tipo: "TAREA" | "REVISION" | "DECISION" | "FIRMA" | "FIN";
   posX: number | null;
   posY: number | null;
   transiciones: { haciaPasoId: string; etiqueta: string }[];

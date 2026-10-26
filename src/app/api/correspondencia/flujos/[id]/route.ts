@@ -20,7 +20,7 @@ import {
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
 const TIPOS: TipoComunicacion[] = ["RECIBIDA", "ENVIADA", "INTERNA"];
-const TIPOS_PASO: TipoPasoFlujo[] = ["TAREA", "REVISION", "DECISION", "FIN"];
+const TIPOS_PASO: TipoPasoFlujo[] = ["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"];
 const ASIGNACIONES: AsignacionPaso[] = [
   "DEPENDENCIA_COMUNICACION",
   "DEPENDENCIA_FIJA",
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           nombre: String(form.get("nombre") || ""),
           descripcion: String(form.get("descripcion") || ""),
           aplicaA: TIPOS.includes(aplicaARaw as TipoComunicacion) ? (aplicaARaw as TipoComunicacion) : null,
+          inicioAutomatico: form.get("inicioAutomatico") === "on",
         });
         detalle.searchParams.set("ok", "Flujo actualizado.");
         return NextResponse.redirect(detalle, { status: 303 });

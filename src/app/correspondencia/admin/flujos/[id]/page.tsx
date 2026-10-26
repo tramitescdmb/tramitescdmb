@@ -15,7 +15,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { TituloSeccion } from "@/components/sgdea/ui";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
-const TIPOS_PASO = ["TAREA", "REVISION", "DECISION", "FIN"] as const;
+const TIPOS_PASO = ["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"] as const;
 const ASIGNACIONES = ["DEPENDENCIA_COMUNICACION", "DEPENDENCIA_FIJA", "CARGO", "RADICADOR", "RESPONSABLE_PASO_ANTERIOR", "MANUAL"] as const;
 
 export default async function FlujoEditorPage({
@@ -111,6 +111,15 @@ export default async function FlujoEditorPage({
         <div className="sm:col-span-3">
           <Field label="Descripción"><input name="descripcion" defaultValue={flujo.descripcion ?? ""} className={inputCls} /></Field>
         </div>
+        <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-3">
+          <input type="checkbox" name="inicioAutomatico" defaultChecked={flujo.inicioAutomatico} className="mt-0.5 rounded border-stone-300" />
+          <span>
+            Iniciar automáticamente al radicar
+            <span className="block text-xs text-stone-500">
+              Mientras esté activo, se aplica solo a cada comunicación nueva del tipo indicado en «Aplica a». Solo puede haber un flujo automático activo por tipo.
+            </span>
+          </span>
+        </label>
         <div className="sm:col-span-3">
           <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar datos</button>
         </div>

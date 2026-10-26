@@ -735,6 +735,32 @@ export default async function ExpedienteDetallePage({
                         Último paso. Defina el estado final en Administración.
                       </p>
                     )}
+                    {session?.rol === "ADMIN" && !cerrado && pasoActual.numero > (expediente.flujo.pasos[0]?.numero ?? 1) && (
+                      <details className="mt-3 rounded-md border border-stone-200 bg-stone-50/60 px-3 py-2">
+                        <summary className="cursor-pointer text-xs font-medium text-stone-600">Devolver a un paso anterior (administrador)</summary>
+                        <form action={`/api/expedientes/${expediente.id}/retroceder`} method="post" className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,16rem)_1fr_auto] sm:items-end">
+                          <label className="text-xs text-stone-600">
+                            Paso
+                            <select name="pasoNumero" defaultValue={expediente.flujo.pasos.filter((p) => p.numero < pasoActual.numero).at(-1)?.numero} className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm">
+                              {expediente.flujo.pasos
+                                .filter((p) => p.numero < pasoActual.numero)
+                                .map((p) => (
+                                  <option key={p.numero} value={p.numero}>
+                                    {p.numero}. {p.titulo}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                          <label className="text-xs text-stone-600">
+                            Motivo
+                            <input name="motivo" required maxLength={500} placeholder="Por qué se devuelve" className="mt-0.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm" />
+                          </label>
+                          <button type="submit" className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                            Devolver
+                          </button>
+                        </form>
+                      </details>
+                    )}
                   </div>
                 </section>
               ) : (

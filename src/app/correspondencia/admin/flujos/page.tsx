@@ -99,6 +99,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
                   )}
                   {f.nombre}
                   {f.esPlantilla && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Plantilla</span>}
+                  {f.inicioAutomatico && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">Inicio automático</span>}
                   <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${f.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
                     {f.activo ? "Activo" : "Inactivo"}
                   </span>

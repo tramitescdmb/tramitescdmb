@@ -31,18 +31,24 @@ export function PersonalAsignadoTramiteForm({
   const [abierto, setAbierto] = useState(false);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuariosIniciales));
   const [cargosSel, setCargosSel] = useState<Set<string>>(new Set(cargosIniciales));
-  const hayProfesionales = usuarios.some((u) => u.cargos.some((c) => c.nombre === CARGO_PROFESIONAL_EVALUACION));
-  const [cargoFiltro, setCargoFiltro] = useState(hayProfesionales ? CARGO_PROFESIONAL_EVALUACION : "");
+  const [cargoFiltro, setCargoFiltro] = useState("");
   const [filtro, setFiltro] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const q = normalizar(filtro.trim());
-  const filtrados = usuarios.filter(
-    (u) =>
-      seleccion.has(u.id) ||
-      ((!cargoFiltro || (cargoFiltro === FILTRO_CONTRATISTAS ? u.contratista : u.cargos.some((c) => c.nombre === cargoFiltro))) && (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""}`).includes(q)))
-  );
+  const buscando = q.length >= 2 || Boolean(cargoFiltro);
+  const coincidentes = buscando
+    ? usuarios.filter(
+        (u) =>
+          !seleccion.has(u.id) &&
+          (!cargoFiltro || (cargoFiltro === FILTRO_CONTRATISTAS ? u.contratista : u.cargos.some((c) => c.nombre === cargoFiltro))) &&
+          (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""} ${u.cargos.map((c) => c.nombre).join(" ")}`).includes(q))
+      )
+    : [];
+  const MAX_RESULTADOS = 30;
+  const filtrados = coincidentes.slice(0, MAX_RESULTADOS);
+  const seleccionados = usuarios.filter((u) => seleccion.has(u.id));
   const cargosConUsuarios = cargos.filter((c) => usuarios.some((u) => u.cargos.some((uc) => uc.nombre === c.nombre)));
 
   function alternar(conjunto: Set<string>, fijar: (s: Set<string>) => void, id: string) {
@@ -100,6 +106,24 @@ export function PersonalAsignadoTramiteForm({
               </button>
             </div>
 
+            <div className="mb-2">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">Asignados ({seleccionados.length})</p>
+              {seleccionados.length === 0 ? (
+                <p className="text-xs text-stone-400">Nadie asignado todavía.</p>
+              ) : (
+                <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+                  {seleccionados.map((u) => (
+                    <span key={u.id} className="inline-flex items-center gap-1 rounded-sm bg-cdmb-50 px-2 py-0.5 text-xs text-cdmb-800">
+                      {u.nombre}
+                      <button type="button" onClick={() => alternar(seleccion, setSeleccion, u.id)} aria-label={`Quitar a ${u.nombre}`} className="rounded-full text-cdmb-600 hover:bg-cdmb-100">
+                        <X className="h-3 w-3" aria-hidden />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <select
                 value={cargoFiltro}
@@ -119,14 +143,17 @@ export function PersonalAsignadoTramiteForm({
                 type="search"
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
-                placeholder="Buscar por nombre…"
+                placeholder="Buscar por nombre, cargo o dependencia…"
+                autoFocus
                 className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-xs"
               />
             </div>
 
             <div className="max-h-60 space-y-0.5 overflow-y-auto rounded-md border border-stone-100 p-1">
-              {filtrados.length === 0 ? (
-                <p className="px-1 py-2 text-xs text-stone-400">Ningún usuario coincide con el filtro.</p>
+              {!buscando ? (
+                <p className="px-1 py-2 text-xs text-stone-400">Escriba al menos dos letras o elija un cargo para buscar.</p>
+              ) : filtrados.length === 0 ? (
+                <p className="px-1 py-2 text-xs text-stone-400">Ninguna persona coincide con la búsqueda.</p>
               ) : (
                 filtrados.map((u) => (
                   <label key={u.id} className="flex items-start gap-2 rounded px-1 py-1 text-sm text-stone-700 hover:bg-stone-50">
@@ -145,6 +172,11 @@ export function PersonalAsignadoTramiteForm({
                     </span>
                   </label>
                 ))
+              )}
+              {coincidentes.length > filtrados.length && (
+                <p className="px-1 py-1.5 text-[11px] text-stone-400">
+                  Se muestran {filtrados.length} de {coincidentes.length}; afine la búsqueda para ver las demás.
+                </p>
               )}
             </div>
 

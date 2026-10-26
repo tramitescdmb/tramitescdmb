@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esDevolucion, esResponsablePaso, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
+import { esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
 import { validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 
 const ctx: ContextoResponsable = {
@@ -49,5 +49,34 @@ describe("responsable de un paso de flujo", () => {
       { id: "b", nombre: "Fin", tipo: "FIN", orden: 2, transiciones: [] },
     ]);
     expect(problemas.map((p) => p.mensaje).join(" ")).toMatch(/no se eligió cuál/);
+  });
+});
+
+describe("paso de firma del flujo", () => {
+  const sol = (estado: "PENDIENTE" | "COMPLETADA" | "RECHAZADA", min: number, comentario: string | null = null) => ({
+    rol: "FIRMA",
+    estado,
+    asignadoEn: new Date(2026, 0, 1, 8, min),
+    completadoEn: estado === "PENDIENTE" ? null : new Date(2026, 0, 1, 9, min),
+    comentario,
+  });
+
+  it("sin firmantes, pendiente, firmado y rechazado", () => {
+    expect(evaluarFirmasComunicacion([], 0).estado).toBe("SIN_FIRMANTES");
+    expect(evaluarFirmasComunicacion([], 1).estado).toBe("FIRMADO");
+    expect(evaluarFirmasComunicacion([sol("COMPLETADA", 1), sol("PENDIENTE", 2)], 1)).toEqual({ estado: "PENDIENTE", completadas: 1, total: 2 });
+    expect(evaluarFirmasComunicacion([sol("COMPLETADA", 1), sol("COMPLETADA", 2)], 2).estado).toBe("FIRMADO");
+    expect(evaluarFirmasComunicacion([sol("RECHAZADA", 1, "Cambiar el destinatario")], 0)).toEqual({ estado: "RECHAZADO", motivo: "Cambiar el destinatario" });
+  });
+
+  it("un rechazo ya atendido con una nueva asignación no cuenta", () => {
+    const nueva = { ...sol("COMPLETADA", 30), asignadoEn: new Date(2026, 0, 1, 10, 0), completadoEn: new Date(2026, 0, 1, 11, 0) };
+    expect(evaluarFirmasComunicacion([sol("RECHAZADA", 1, "x"), nueva], 1).estado).toBe("FIRMADO");
+  });
+
+  it("reconoce la salida de rechazo por su etiqueta", () => {
+    expect(esSalidaRechazo("Rechazado")).toBe(true);
+    expect(esSalidaRechazo("Devolver con observaciones")).toBe(true);
+    expect(esSalidaRechazo("Firmado")).toBe(false);
   });
 });

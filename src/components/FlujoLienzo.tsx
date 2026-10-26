@@ -23,12 +23,13 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Plus, Save, Trash2, RotateCcw } from "lucide-react";
 
-type Tipo = "TAREA" | "REVISION" | "DECISION" | "FIN";
-const ETIQUETA_TIPO: Record<Tipo, string> = { TAREA: "Tarea", REVISION: "Revisión", DECISION: "Decisión", FIN: "Fin" };
+type Tipo = "TAREA" | "REVISION" | "DECISION" | "FIRMA" | "FIN";
+const ETIQUETA_TIPO: Record<Tipo, string> = { TAREA: "Tarea", REVISION: "Revisión", DECISION: "Decisión", FIRMA: "Firma electrónica", FIN: "Fin" };
 const BORDE_TIPO: Record<Tipo, string> = {
   TAREA: "border-blue-300",
   REVISION: "border-amber-300",
   DECISION: "border-purple-300",
+  FIRMA: "border-cdmb-400",
   FIN: "border-emerald-400",
 };
 
@@ -176,7 +177,7 @@ function Editor({
     <div className="rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-2">
         <span className="text-xs font-medium text-stone-500">Agregar:</span>
-        {(["TAREA", "REVISION", "DECISION", "FIN"] as Tipo[]).map((t) => (
+        {(["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"] as Tipo[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -240,7 +241,7 @@ function Editor({
                   onChange={(e) => editarNodo(nodoSel.id, { tipo: e.target.value as Tipo })}
                   className="w-full rounded-md border border-stone-200 bg-white px-2 py-1"
                 >
-                  {(["TAREA", "REVISION", "DECISION", "FIN"] as Tipo[]).map((t) => (
+                  {(["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"] as Tipo[]).map((t) => (
                     <option key={t} value={t}>{ETIQUETA_TIPO[t]}</option>
                   ))}
                 </select>
