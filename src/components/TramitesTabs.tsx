@@ -14,7 +14,6 @@ export function TramitesTabs({
   conceptos = 0,
   esAdmin = false,
   editaFormatos = false,
-  crearExpediente = false,
 }: {
   mostrarSolicitantes?: boolean;
   mostrarFirmas?: boolean;
@@ -25,7 +24,6 @@ export function TramitesTabs({
   conceptos?: number;
   esAdmin?: boolean;
   editaFormatos?: boolean;
-  crearExpediente?: boolean;
 }) {
   const insigniaFirmas = {
     valor: pendientesFirma.total,
@@ -41,7 +39,6 @@ export function TramitesTabs({
       items: [
         { href: "/expedientes", label: "Expedientes" },
         { href: "/expedientes?asignados=mi", label: "Asignados a mí" },
-        ...(crearExpediente ? [{ href: "/expedientes/nuevo", label: "Nuevo expediente" }] : []),
         { href: "/expedientes/disposicion", label: "Disposición final (TRD)", prefijo: true, separador: true },
         ...(esAdmin ? [{ href: "/expedientes/clasificacion-trd", label: "Clasificación TRD", prefijo: true }] : []),
       ],
@@ -110,7 +107,7 @@ export function TramitesTabs({
       esItemActivo={(it, pathname) => {
         const ruta = it.href.split("?")[0]!;
         if (ruta === "/planeador") return pathname === "/planeador";
-        if (ruta === "/expedientes") return pathname === "/expedientes" || /^\/expedientes\/(?!disposicion|clasificacion-trd|nuevo$)[^/]+/.test(pathname);
+        if (ruta === "/expedientes") return pathname === "/expedientes" || /^\/expedientes\/(?!disposicion|clasificacion-trd)[^/]+/.test(pathname);
         return pathname === ruta || pathname.startsWith(ruta + "/");
       }}
     />

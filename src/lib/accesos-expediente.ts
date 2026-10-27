@@ -27,7 +27,7 @@ export function accesosExpediente(permisos: PermisosUsuario, modulo: ModuloAcces
   if (modulo === "TRAMITES") {
     if (!permisos.modulos.has("TRAMITES")) return { nuevos: [], listado: null };
     return {
-      nuevos: puedeCrearExpedienteTramite(permisos) ? [{ href: "/expedientes/nuevo", label: "Nuevo expediente" }] : [],
+      nuevos: puedeCrearExpedienteTramite(permisos) ? [{ href: "/tramites", label: "Nuevo trámite ambiental" }] : [],
       listado: { href: "/expedientes", label: "Todos los expedientes" },
     };
   }

@@ -67,7 +67,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       </div>
 
       <div className="encabezado-modulo">
-        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} conceptos={porRevisar + devueltos} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} crearExpediente={accesos.nuevos.length > 0} />
+        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} conceptos={porRevisar + devueltos} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
       </div>
 
       <div className="encabezado-modulo">
