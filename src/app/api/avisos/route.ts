@@ -45,6 +45,10 @@ export async function GET() {
         cantidad: memos.sinLeer, modulo: "SGDEA",
       });
     }
+    if (firmas.total > firmas.listos) {
+      const n = firmas.total - firmas.listos;
+      avisos.push({ clave: "firmas-sgdea-espera", titulo: `${n} firma(s) del SGDEA en espera de otro firmante`, detalle: "Le llegará el aviso cuando sea su turno", href: "/correspondencia/buzon", alerta: false, cantidad: n, modulo: "SGDEA" });
+    }
     if (firmas.listos > 0) {
       avisos.push({
         clave: "firmas-sgdea",

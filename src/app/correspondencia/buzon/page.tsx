@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ResumenBuzonFirmas } from "@/components/ResumenBuzonFirmas";
 import { EsperaTurnoFirma, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 import { redirect } from "next/navigation";
 import { Inbox, PenLine, Clock, Mail, FileText } from "lucide-react";
@@ -28,6 +29,8 @@ export default async function BuzonCorrespondenciaPage() {
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
       <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_SGDEA} />
+
+      <ResumenBuzonFirmas solicitudes={solicitudes} />
 
       {solicitudes.length === 0 ? (
         <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/60 p-6 text-center text-sm text-stone-400">

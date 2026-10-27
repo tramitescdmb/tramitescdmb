@@ -1,5 +1,11 @@
 import { db } from "@/lib/db";
-import { consultaDirectorioDisponible, consultarDirectorioPorDocumento, type PerfilDirectorio } from "@/lib/directorio-activo";
+import {
+  abrirSesionServicioDirectorio,
+  cerrarSesionDirectorioActivo,
+  consultaDirectorioDisponible,
+  consultarDirectorioPorDocumento,
+  type PerfilDirectorio,
+} from "@/lib/directorio-activo";
 import { autovincularPerfilesPorDocumento, sincronizarContratistaDeUsuario } from "@/lib/contratacion";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
@@ -66,29 +72,59 @@ export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promis
   return { ok: true, mensaje: cambios.length ? `Actualizado desde el directorio activo: ${cambios.join(", ")}.` : "Los datos ya coinciden con el directorio activo." };
 }
 
-export async function sincronizarDirectorioNocturno(): Promise<{ disponible: boolean; revisados: number; actualizados: number; creados: number; vinculados: number }> {
-  if (!consultaDirectorioDisponible()) return { disponible: false, revisados: 0, actualizados: 0, creados: 0, vinculados: 0 };
-  const espera = () => new Promise((r) => setTimeout(r, 300));
-  let revisados = 0;
-  let actualizados = 0;
-  let creados = 0;
+type ResultadoSincronizacion = { disponible: boolean; revisados: number; actualizados: number; creados: number; vinculados: number; incompleto?: boolean };
 
+export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincronizacion> {
+  const vacio = { disponible: false, revisados: 0, actualizados: 0, creados: 0, vinculados: 0 };
+  if (!consultaDirectorioDisponible()) return vacio;
+  const sesion = await abrirSesionServicioDirectorio();
+  if (!sesion.ok) return vacio;
+  const limite = Date.now() + 240_000;
+  const espera = () => new Promise((r) => setTimeout(r, 300));
+  const conteo = { revisados: 0, actualizados: 0, creados: 0, incompleto: false };
+  try {
+    await refrescarUsuarios(sesion.token, limite, espera, conteo);
+    if (!conteo.incompleto) await crearUsuariosDeContratistas(sesion.token, limite, espera, conteo);
+  } finally {
+    await cerrarSesionDirectorioActivo(sesion.token).catch(() => {});
+  }
+  const vinculados = await autovincularPerfilesPorDocumento();
+  return { disponible: true, ...conteo, vinculados };
+}
+
+type Conteo = { revisados: number; actualizados: number; creados: number; incompleto: boolean };
+
+async function refrescarUsuarios(token: string, limite: number, espera: () => Promise<unknown>, conteo: Conteo) {
   const usuarios = await db.usuario.findMany({
     where: { activo: true, cedulaONit: { not: null }, OR: [{ directorioActivo: true }, { contratista: { isNot: null } }] },
     select: { id: true, cedulaONit: true },
+    orderBy: { sincronizadoDirectorioEn: { sort: "asc", nulls: "first" } },
   });
   for (const u of usuarios) {
-    const r = await consultarDirectorioPorDocumento(u.cedulaONit!);
-    revisados++;
-    if (r.ok && (await actualizarUsuarioDesdeDirectorio(u.id, r.perfil)).length) actualizados++;
+    if (Date.now() > limite) {
+      conteo.incompleto = true;
+      return;
+    }
+    const r = await consultarDirectorioPorDocumento(u.cedulaONit!, token);
+    conteo.revisados++;
+    if (r.ok) {
+      if ((await actualizarUsuarioDesdeDirectorio(u.id, r.perfil)).length) conteo.actualizados++;
+      else await db.usuario.update({ where: { id: u.id }, data: { sincronizadoDirectorioEn: new Date() } });
+    }
     await espera();
   }
+}
 
+async function crearUsuariosDeContratistas(token: string, limite: number, espera: () => Promise<unknown>, conteo: Conteo) {
   const pendientes = await db.contratista.findMany({ where: { usuarioId: null, tipoPersona: "NATURAL" }, select: { identificacion: true } });
   for (const c of pendientes) {
+    if (Date.now() > limite) {
+      conteo.incompleto = true;
+      return;
+    }
     if (await db.usuario.findFirst({ where: { cedulaONit: c.identificacion }, select: { id: true } })) continue;
-    const r = await consultarDirectorioPorDocumento(c.identificacion);
-    revisados++;
+    const r = await consultarDirectorioPorDocumento(c.identificacion, token);
+    conteo.revisados++;
     await espera();
     if (!r.ok || !r.perfil.usuarioRed) continue;
     const email = r.perfil.usuarioRed.trim().toLowerCase();
@@ -109,8 +145,6 @@ export async function sincronizarDirectorioNocturno(): Promise<{ disponible: boo
         sincronizadoDirectorioEn: new Date(),
       },
     });
-    creados++;
+    conteo.creados++;
   }
-  const vinculados = await autovincularPerfilesPorDocumento();
-  return { disponible: true, revisados, actualizados, creados, vinculados };
 }

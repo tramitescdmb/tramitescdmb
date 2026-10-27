@@ -221,24 +221,34 @@ export function consultaDirectorioDisponible() {
   return Boolean(baseUrl() && rutaConsulta() && credencialesServicio());
 }
 
-export async function consultarDirectorioPorDocumento(documento: string): Promise<ResultadoConsultaDirectorio> {
+export async function abrirSesionServicioDirectorio(): Promise<{ ok: true; token: string } | { ok: false; mensaje: string }> {
+  const cred = credencialesServicio();
+  if (!cred) return { ok: false, mensaje: "Faltan las credenciales de servicio del directorio activo." };
+  const login = await autenticarDirectorioActivo(cred.usuario, cred.password);
+  return login.ok ? { ok: true, token: login.token } : { ok: false, mensaje: `No fue posible conectar con el directorio activo: ${login.mensaje}` };
+}
+
+export async function consultarDirectorioPorDocumento(documento: string, tokenServicio?: string): Promise<ResultadoConsultaDirectorio> {
   const doc = documento.replace(/\D/g, "");
   if (doc.length < 5) return { ok: false, mensaje: "Escriba el número de cédula completo." };
   const base = baseUrl();
   const ruta = rutaConsulta();
-  const cred = credencialesServicio();
-  if (!base || !ruta || !cred) {
+  if (!base || !ruta || !credencialesServicio()) {
     return {
       ok: false,
       noDisponible: true,
       mensaje: "El API EME todavía no ofrece la consulta de funcionarios por cédula (employeeID). Diligencie los datos a mano; la sincronización quedará activa cuando EME publique esa consulta.",
     };
   }
-  const login = await autenticarDirectorioActivo(cred.usuario, cred.password);
-  if (!login.ok) return { ok: false, mensaje: `No fue posible conectar con el directorio activo: ${login.mensaje}` };
+  let token = tokenServicio;
+  if (!token) {
+    const sesion = await abrirSesionServicioDirectorio();
+    if (!sesion.ok) return { ok: false, mensaje: sesion.mensaje };
+    token = sesion.token;
+  }
   try {
     const respuesta = await fetch(`${base}/${ruta.replace("{documento}", encodeURIComponent(doc))}`, {
-      headers: { Authorization: `Bearer ${login.token}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
     });
     if (respuesta.status === 404) {
@@ -255,6 +265,6 @@ export async function consultarDirectorioPorDocumento(documento: string): Promis
   } catch {
     return { ok: false, mensaje: "No fue posible consultar el directorio activo. Intente de nuevo." };
   } finally {
-    await cerrarSesionDirectorioActivo(login.token).catch(() => {});
+    if (!tokenServicio) await cerrarSesionDirectorioActivo(token).catch(() => {});
   }
 }
