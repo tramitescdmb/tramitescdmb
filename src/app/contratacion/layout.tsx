@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Briefcase, ShieldCheck, HelpCircle } from "lucide-react";
 import { ContratacionTabs } from "@/components/ContratacionTabs";
 import { MigaGecon } from "@/components/MigaGecon";
+import { AccesosRapidosExpediente } from "@/components/AccesosRapidosExpediente";
+import { accesosExpediente } from "@/lib/accesos-expediente";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
@@ -14,6 +16,7 @@ export default async function ContratacionLayout({ children }: { children: React
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   if (!puedeAccederContratacion(permisos)) redirect("/");
+  const accesos = accesosExpediente(permisos, "GECON");
   const [pendientesFirma, rechazosFirma, informesPorRadicar] = await Promise.all([
     contarPendientesBuzonContratacion(session.userId),
     contarRechazosPorAtender(session.userId, false, "documentoContrato"),
@@ -30,10 +33,13 @@ export default async function ContratacionLayout({ children }: { children: React
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Manejador de expedientes digitales
           </span>
+          <div className="ml-auto">
+            <AccesosRapidosExpediente nuevos={accesos.nuevos} listados={accesos.listado ? [accesos.listado] : []} />
+          </div>
           <Link
             href="/contratacion/ayuda"
             aria-label="Ayuda — guía de referencia de GECON"
-            className="ml-auto flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
+            className="flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
           >
             <HelpCircle className="h-3.5 w-3.5" aria-hidden />
             Ayuda

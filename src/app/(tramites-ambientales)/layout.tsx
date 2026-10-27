@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { FileBadge } from "lucide-react";
 import { TramitesTabs } from "@/components/TramitesTabs";
 import { MigaTramites } from "@/components/MigaTramites";
+import { AccesosRapidosExpediente } from "@/components/AccesosRapidosExpediente";
+import { accesosExpediente } from "@/lib/accesos-expediente";
 import { SincronizadorVisitas } from "@/components/planeador/SincronizadorVisitas";
 import { contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import Link from "next/link";
@@ -32,6 +34,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       </div>
     );
   }
+  const accesos = accesosExpediente(permisos, "TRAMITES");
   const mostrarSolicitantes = puedeAccederSolicitantes(permisos);
   const mostrarFirmas = puedeAccederFirmasTramite(permisos);
   const [pendientesFirma, alertasPlaneador, avisosBuzon, rechazosFirma, porRevisar, devueltos] = await Promise.all([
@@ -49,10 +52,13 @@ export default async function TramitesAmbientalesLayout({ children }: { children
         <div className="flex flex-wrap items-center gap-2">
           <FileBadge className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
+          <div className="ml-auto">
+            <AccesosRapidosExpediente nuevos={accesos.nuevos} listados={accesos.listado ? [accesos.listado] : []} />
+          </div>
           <Link
             href="/tramites-ambientales/ayuda"
             aria-label="Ayuda — guía de referencia de Trámites ambientales 2.0"
-            className="ml-auto flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
+            className="flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
           >
             <HelpCircle className="h-3.5 w-3.5" aria-hidden />
             Ayuda
@@ -61,7 +67,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
       </div>
 
       <div className="encabezado-modulo">
-        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} conceptos={porRevisar + devueltos} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} />
+        <TramitesTabs mostrarSolicitantes={mostrarSolicitantes} mostrarFirmas={mostrarFirmas} pendientesFirma={pendientesFirma} alertasPlaneador={alertasPlaneador} avisosBuzon={avisosBuzon} rechazosFirma={rechazosFirma} conceptos={porRevisar + devueltos} esAdmin={session.rol === "ADMIN"} editaFormatos={puedeEditarFormatosVisita(permisos)} crearExpediente={accesos.nuevos.length > 0} />
       </div>
 
       <div className="encabezado-modulo">

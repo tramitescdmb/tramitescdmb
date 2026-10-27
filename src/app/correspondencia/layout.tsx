@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Mail, ShieldCheck, ExternalLink, HelpCircle, ListChecks, BookOpen } from "lucide-react";
 import { CorrespondenciaTabs } from "@/components/CorrespondenciaTabs";
 import { MigaSgdea } from "@/components/sgdea/Miga";
+import { AccesosRapidosExpediente } from "@/components/AccesosRapidosExpediente";
+import { accesosExpediente } from "@/lib/accesos-expediente";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeRadicar, puedeDistribuir, puedeAdministrarArchivo } from "@/lib/permisos";
 import { fondoHistoricoConfigurado } from "@/lib/fondo-historico";
@@ -48,6 +50,7 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
   ]);
   const memorandos = await contarMemorandos(ctxMemos);
   permitido.enviarMemorandos = ctxMemos.firmante;
+  const accesos = accesosExpediente(permisos, "SGDEA");
 
   return (
     <div className="space-y-4">
@@ -65,10 +68,16 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Radicado inalterable
           </span>
+          <div className="ml-auto">
+            <AccesosRapidosExpediente
+              nuevos={[...accesos.nuevos, ...(ctxMemos.firmante ? [{ href: "/correspondencia/nueva/interna", label: "Nuevo memorando" }] : [])]}
+              listados={accesos.listado ? [accesos.listado] : []}
+            />
+          </div>
           <Link
             href="/correspondencia/ayuda"
             aria-label="Ayuda — documento de referencia técnica del SGDEA"
-            className="ml-auto flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
+            className="flex flex-none items-center gap-1.5 rounded-md border border-cdmb-200 bg-white px-2.5 py-1 text-xs font-semibold text-cdmb-700 shadow-sm transition hover:border-cdmb-400 hover:bg-cdmb-50"
           >
             <HelpCircle className="h-3.5 w-3.5" aria-hidden />
             Ayuda
