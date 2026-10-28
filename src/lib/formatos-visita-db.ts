@@ -22,10 +22,13 @@ export function estructuraDesdeJson(valor: Prisma.JsonValue | null | undefined):
   return "error" in r ? { secciones: [] } : r.estructura;
 }
 
-export async function formatoVigenteParaTramite(codigoTramite: string): Promise<FormatoVigente | null> {
+export async function formatoVigenteParaTramite(codigoTramite: string, formatoDelPasoId?: string | null): Promise<FormatoVigente | null> {
   const codigo = codigoProcedimiento(codigoTramite);
   const incluir = { versiones: { where: { estado: "PUBLICADA" as const }, orderBy: { numero: "desc" as const }, take: 1 } };
-  const propio = await db.formatoVisita.findFirst({ where: { activo: true, tramites: { has: codigo } }, orderBy: { updatedAt: "desc" }, include: incluir });
+  const delPaso = formatoDelPasoId ? await db.formatoVisita.findFirst({ where: { id: formatoDelPasoId, activo: true }, include: incluir }) : null;
+  const propio = delPaso?.versiones[0]
+    ? delPaso
+    : await db.formatoVisita.findFirst({ where: { activo: true, tramites: { has: codigo } }, orderBy: { updatedAt: "desc" }, include: incluir });
   const formato = propio?.versiones[0] ? propio : await db.formatoVisita.findFirst({ where: { activo: true, porDefecto: true }, orderBy: { updatedAt: "desc" }, include: incluir });
   const version = formato?.versiones[0];
   if (!formato || !version) return null;
@@ -103,7 +106,11 @@ export async function coberturaFormatos(): Promise<CoberturaTramite[]> {
   const [tipos, formatos] = await Promise.all([
     db.tramiteTipo.findMany({
       where: { activo: true },
-      select: { codigo: true, nombre: true, flujos: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true }, orderBy: { numero: "asc" } } } } },
+      select: {
+        codigo: true,
+        nombre: true,
+        flujos: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true, tipoActividad: true, formatoVisitaId: true }, orderBy: { numero: "asc" } } } },
+      },
       orderBy: { codigo: "asc" },
     }),
     db.formatoVisita.findMany({
@@ -114,10 +121,11 @@ export async function coberturaFormatos(): Promise<CoberturaTramite[]> {
   const generico = formatos.find((f) => f.porDefecto);
   const r: CoberturaTramite[] = [];
   for (const t of tipos) {
-    const pasos = t.flujos.flatMap((f) => f.pasos).filter((p) => pasoPermiteVisita(p.titulo, p.descripcion));
+    const pasos = t.flujos.flatMap((f) => f.pasos).filter((p) => pasoPermiteVisita(p.titulo, p.descripcion, p.tipoActividad));
     if (pasos.length === 0) continue;
     const codigo = codigoProcedimiento(t.codigo);
-    const propio = formatos.find((f) => f.tramites.includes(codigo));
+    const idDelPaso = pasos.find((p) => p.formatoVisitaId)?.formatoVisitaId;
+    const propio = formatos.find((f) => f.id === idDelPaso) ?? formatos.find((f) => f.tramites.includes(codigo));
     const f = propio ?? generico;
     r.push({
       codigo: t.codigo,

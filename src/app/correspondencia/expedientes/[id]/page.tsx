@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree } from "lucide-react";
@@ -175,6 +176,7 @@ export default async function ExpedienteDetallePage({
   return (
     <ProveedorUsuariosFirma usuarios={opcionesFirmantes}>
     <div className="space-y-4">
+      <RegistrarReciente href={`/correspondencia/expedientes/${expediente.id}`} titulo={expediente.numero} detalle={expediente.asunto} modulo="SGDEA" />
       <div className="flex items-center justify-between">
         <Link href="/correspondencia/expedientes" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
           <ArrowLeft className="h-4 w-4" aria-hidden />

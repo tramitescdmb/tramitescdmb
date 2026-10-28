@@ -1,3 +1,5 @@
+import type { TipoActividadPaso } from "@prisma/client";
+
 export const TEMAS_VISITA_BASE: { nombre: string; codigos: string[] }[] = [
   { nombre: "Inspección ocular del predio o sitio del proyecto", codigos: [] },
   { nombre: "Georreferenciación del predio y de los puntos de interés", codigos: [] },
@@ -70,21 +72,51 @@ export function esPasoDeProgramarVisita(titulo: string): boolean {
   return /visita/i.test(titulo) && /(programar|asignar)/i.test(titulo);
 }
 
-export function pasoPermiteVisita(titulo: string, descripcion?: string | null): boolean {
+export function pasoPermiteVisita(titulo: string, descripcion?: string | null, tipoActividad?: TipoActividadPaso | null): boolean {
+  if (tipoActividad) return tipoActividad === "VISITA_TECNICA" || tipoActividad === "PROGRAMAR_VISITA";
   if (esPasoDeVisita(titulo) || esPasoDeProgramarVisita(titulo)) return true;
   const d = (descripcion ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   return /realizara visitas? de verificacion|se procede a programar la visita|para programacion de visita/.test(d);
 }
 
+export function esPasoDeRealizarVisita(paso: { titulo: string; tipoActividad?: TipoActividadPaso | null }): boolean {
+  return paso.tipoActividad ? paso.tipoActividad === "VISITA_TECNICA" : esPasoDeVisita(paso.titulo);
+}
+
+export const ETIQUETA_TIPO_ACTIVIDAD: Record<TipoActividadPaso, string> = {
+  VISITA_TECNICA: "Visita técnica",
+  PROGRAMAR_VISITA: "Programar visita",
+  CONCEPTO_TECNICO: "Concepto técnico",
+  NOTIFICACION: "Notificación",
+  FIRMA: "Firma",
+  DECISION: "Decisión",
+  OTRA: "Otra actividad",
+};
+
+export function tipoActividadDetectado(paso: { titulo: string; descripcion?: string | null; esDecision?: boolean }): TipoActividadPaso {
+  const t = paso.titulo.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  if (esPasoDeProgramarVisita(paso.titulo)) return "PROGRAMAR_VISITA";
+  if (pasoPermiteVisita(paso.titulo, paso.descripcion)) return "VISITA_TECNICA";
+  if (/concepto tecnico/.test(t) && !/revis|visto bueno|aprob/.test(t)) return "CONCEPTO_TECNICO";
+  if (/notific|comunica|publica/.test(t)) return "NOTIFICACION";
+  if (/firma/.test(t)) return "FIRMA";
+  if (paso.esDecision) return "DECISION";
+  return "OTRA";
+}
+
+export function tipoActividadEfectivo(paso: { titulo: string; descripcion?: string | null; esDecision?: boolean; tipoActividad?: TipoActividadPaso | null }): TipoActividadPaso {
+  return paso.tipoActividad ?? tipoActividadDetectado(paso);
+}
+
 export type EstadoPasoVisita = { permite: boolean; motivo: string | null; motivoCorto: string | null };
 
 export function evaluarPasoParaVisita(
-  pasos: { numero: number; titulo: string; descripcion?: string | null }[],
+  pasos: { numero: number; titulo: string; descripcion?: string | null; tipoActividad?: TipoActividadPaso | null }[],
   pasoActualNumero: number
 ): EstadoPasoVisita {
   const actual = pasos.find((p) => p.numero === pasoActualNumero);
-  if (actual && pasoPermiteVisita(actual.titulo, actual.descripcion)) return { permite: true, motivo: null, motivoCorto: null };
-  const pasosVisita = pasos.filter((p) => pasoPermiteVisita(p.titulo, p.descripcion));
+  if (actual && pasoPermiteVisita(actual.titulo, actual.descripcion, actual.tipoActividad)) return { permite: true, motivo: null, motivoCorto: null };
+  const pasosVisita = pasos.filter((p) => pasoPermiteVisita(p.titulo, p.descripcion, p.tipoActividad));
   const donde = actual ? `El trámite está en el paso ${actual.numero} (${actual.titulo.toLowerCase()}).` : "El trámite no tiene un paso activo.";
   const enPaso = actual ? `Está en el paso ${actual.numero}` : "Sin paso activo";
   if (pasosVisita.length === 0) {

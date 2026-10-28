@@ -108,6 +108,9 @@ export default async function FormatosVisitaPage() {
       <details className="group rounded-2xl border border-stone-200 bg-white shadow-soft" open>
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
           <span className="font-semibold text-stone-900">Trámites con visita técnica</span>
+          <Link href="/planeador/actividades" className="text-xs font-medium text-cdmb-700 hover:underline">
+            Asignar formato por paso
+          </Link>
           <span className="text-xs text-stone-500">
             {cobertura.length} procedimientos · {propios} con formato propio · {cobertura.length - propios - sinFormato} con el genérico
             {sinFormato > 0 && <span className="text-amber-700"> · {sinFormato} sin formato</span>}

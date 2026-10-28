@@ -34,7 +34,7 @@ export default async function ContratacionLayout({ children }: { children: React
             Manejador de expedientes digitales
           </span>
           <div className="ml-auto">
-            <AccesosRapidosExpediente nuevos={accesos.nuevos} listados={accesos.listado ? [accesos.listado] : []} />
+            <AccesosRapidosExpediente {...accesos} />
           </div>
           <Link
             href="/contratacion/ayuda"

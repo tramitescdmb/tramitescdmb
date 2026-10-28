@@ -2,10 +2,10 @@ import { Paginador } from "@/components/Paginador";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Briefcase, Plus, Table2, FolderOpen, X } from "lucide-react";
+import { Briefcase, Table2, FolderOpen, X } from "lucide-react";
 import { hrefLista } from "@/lib/tableros";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas, puedeCrearExpedienteContractual } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { listarExpedientesContractuales, construirWhereExpedienteContractual, vigenciaPorDefecto, aniosDeExpedientes, usaSelectorDeVigencia, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { MosaicosFiltro } from "@/components/MosaicosFiltro";
 import { SelectorAnios } from "@/components/SelectorAnios";
@@ -19,7 +19,7 @@ import { BotonExportar } from "@/components/BotonExportar";
 export default async function ExpedientesContratacionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; contratista?: string; etapa?: string; dependenciaId?: string; vigencia?: string; page?: string; vista?: string }>;
+  searchParams: Promise<{ q?: string; contratista?: string; etapa?: string; dependenciaId?: string; vigencia?: string; asignados?: string; page?: string; vista?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -56,24 +56,16 @@ export default async function ExpedientesContratacionPage({
 
   return (
     <section className="space-y-4">
-      <TituloSeccion
-        icon={Briefcase}
-        contador={total}
-        accion={
-          puedeCrearExpedienteContractual(permisos) ? (
-            <Link
-              href="/contratacion/expedientes/nuevo"
-              className="flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-acento-600"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden />
-              Nuevo expediente
-            </Link>
-          ) : undefined
-        }
-      >
+      <TituloSeccion icon={Briefcase} contador={total}>
         Expedientes contractuales
       </TituloSeccion>
 
+      {sp.asignados === "mi" && (
+        <Link href={hrefLista("/contratacion/expedientes", { ...sp, asignados: undefined, page: undefined })} className="inline-flex w-fit items-center gap-1.5 rounded-sm bg-stone-100 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200">
+          A mi cargo
+          <X className="h-3 w-3" aria-hidden />
+        </Link>
+      )}
       {sp.contratista === "sin" && (
         <Link href={hrefLista("/contratacion/expedientes", { ...sp, contratista: undefined, page: undefined })} className="inline-flex w-fit items-center gap-1.5 rounded-sm bg-stone-100 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200">
           Sin contratista asignado
@@ -132,6 +124,7 @@ export default async function ExpedientesContratacionPage({
           ))}
         </select>
         {sp.vigencia && <input type="hidden" name="vigencia" value={sp.vigencia} />}
+        {sp.asignados === "mi" && <input type="hidden" name="asignados" value="mi" />}
         <button type="submit" className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">
           Filtrar
         </button>

@@ -1,8 +1,8 @@
-import type { TipoNotificacion } from "@prisma/client";
+import type { TipoActividadPaso, TipoNotificacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { CARGOS_PLANEADOR } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
-import { pasoPermiteVisita } from "@/lib/temas-visita";
+import { pasoPermiteVisita, tipoActividadEfectivo } from "@/lib/temas-visita";
 import { rangoTexto } from "@/lib/planeador-db";
 
 type DatosNotificacion = { tipo: TipoNotificacion; clave: string; titulo: string; mensaje: string; enlace: string; expedienteId?: string };
@@ -60,9 +60,10 @@ export async function sincronizarAvisoVisita(expedienteId: string): Promise<void
       pasoActualNumero: true,
       tramiteTipoId: true,
       tramiteTipo: { select: { nombre: true } },
-      flujo: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true } } } },
+      flujo: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true, esDecision: true, tipoActividad: true } } } },
       visitasProgramadas: { select: { estado: true, fechaHora: true }, orderBy: { fechaHora: "desc" } },
       visitasTecnicas: { select: { pasoNumero: true } },
+      usuariosAsignados: { select: { id: true } },
     },
   });
   if (!e) return;
@@ -70,10 +71,11 @@ export async function sincronizarAvisoVisita(expedienteId: string): Promise<void
   const prefijo = `visita-sin-programar:${e.id}:`;
   const clave = `${prefijo}${e.pasoActualNumero}`;
   const paso = e.flujo.pasos.find((p) => p.numero === e.pasoActualNumero);
+  await sincronizarAvisoConcepto(e, paso);
   const requiere =
     expedienteEnEjecucion(e) &&
     !!paso &&
-    pasoPermiteVisita(paso.titulo, paso.descripcion) &&
+    pasoPermiteVisita(paso.titulo, paso.descripcion, paso.tipoActividad) &&
     !e.visitasProgramadas.some((v) => v.estado === "PROGRAMADA") &&
     !e.visitasTecnicas.some((v) => v.pasoNumero === e.pasoActualNumero);
 
@@ -94,6 +96,37 @@ export async function sincronizarAvisoVisita(expedienteId: string): Promise<void
     enlace: `/expedientes/${e.id}#planeador`,
     expedienteId: e.id,
   });
+}
+
+async function sincronizarAvisoConcepto(
+  e: { id: string; numero: string; estado: string; archivado: boolean; tramiteTipo: { nombre: string }; usuariosAsignados: { id: string }[] },
+  paso: { numero: number; titulo: string; descripcion: string; esDecision: boolean; tipoActividad: TipoActividadPaso | null } | undefined
+) {
+  const prefijo = `concepto-por-elaborar:${e.id}:`;
+  if (!paso || !expedienteEnEjecucion(e) || tipoActividadEfectivo(paso) !== "CONCEPTO_TECNICO" || e.usuariosAsignados.length === 0) {
+    await resolverNotificaciones({ claveEmpiezaPor: prefijo });
+    return;
+  }
+  const clave = `${prefijo}${paso.numero}`;
+  await resolverNotificaciones({ claveEmpiezaPor: prefijo, excepto: clave });
+  await db.notificacion.updateMany({
+    where: { clave, resueltaEn: null, usuarioId: { notIn: e.usuariosAsignados.map((u) => u.id) } },
+    data: { resueltaEn: new Date() },
+  });
+  const yaAvisados = await db.notificacion.findMany({ where: { clave, resueltaEn: null }, select: { usuarioId: true } });
+  const nuevos = e.usuariosAsignados.filter((u) => !yaAvisados.some((n) => n.usuarioId === u.id));
+  if (nuevos.length === 0) return;
+  await notificar(
+    nuevos.map((u) => u.id),
+    {
+      tipo: "CONCEPTO_POR_ELABORAR",
+      clave,
+      titulo: `Elaborar concepto técnico · ${e.numero}`,
+      mensaje: `El trámite ${e.tramiteTipo.nombre} llegó al paso ${paso.numero} (${paso.titulo.toLowerCase()}). Le corresponde elaborar el concepto técnico.`,
+      enlace: `/expedientes/${e.id}`,
+      expedienteId: e.id,
+    }
+  );
 }
 
 const TEXTO_AVISO_PROFESIONAL: Record<"VISITA_PROGRAMADA" | "VISITA_REPROGRAMADA" | "VISITA_CANCELADA", { titulo: string; verbo: string }> = {

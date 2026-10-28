@@ -24,6 +24,7 @@ import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { EliminarDocumentoBoton } from "@/components/EliminarDocumentoBoton";
 import { PersonalAsignadoTramiteForm } from "@/components/planeador/PersonalAsignadoTramiteForm";
+import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { esContratista } from "@/lib/jerarquia-firma";
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
@@ -355,6 +356,7 @@ export default async function ExpedienteDetallePage({
 
   return (
     <div className="space-y-4">
+      <RegistrarReciente href={`/expedientes/${expediente.id}`} titulo={expediente.numero} detalle={[expediente.tramiteTipo.nombre, expediente.solicitanteNombre].filter(Boolean).join(" · ")} modulo="Trámites 2.0" />
       <BandaTablero>
         <div className="flex flex-wrap items-center gap-3">
           <Link

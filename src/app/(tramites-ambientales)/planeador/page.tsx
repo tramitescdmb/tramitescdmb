@@ -150,7 +150,7 @@ async function expedientesEnEjecucion(tramitesPermitidos: string[] | null): Prom
   });
   const flujoIds = [...new Set(expedientes.map((e) => e.flujoId))];
   const pasos = flujoIds.length
-    ? await db.pasoDefinicion.findMany({ where: { flujoId: { in: flujoIds } }, select: { flujoId: true, numero: true, titulo: true, descripcion: true } })
+    ? await db.pasoDefinicion.findMany({ where: { flujoId: { in: flujoIds } }, select: { flujoId: true, numero: true, titulo: true, descripcion: true, tipoActividad: true } })
     : [];
   return expedientes.map((e) => {
     const paso = evaluarPasoParaVisita(

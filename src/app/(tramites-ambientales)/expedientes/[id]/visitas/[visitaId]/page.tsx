@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia, sumarMinutosHora } from "@/lib/planeador";
 import { rangoTexto, temasDeVisita } from "@/lib/planeador-db";
-import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeVisita, ordenarTemasParaTramite, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
+import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeRealizarVisita, ordenarTemasParaTramite, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { formatearFechaHora } from "@/lib/fecha";
 import { MapaSoloLectura } from "@/components/MapaSoloLectura";
 import { RegistrarVisitaForm } from "@/components/planeador/RegistrarVisitaForm";
@@ -38,7 +38,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
           tramiteTipoId: true,
           usuariosAsignados: { select: { id: true } },
           tramiteTipo: { select: { nombre: true, codigo: true } },
-          flujo: { select: { pasos: { select: { numero: true, titulo: true }, orderBy: { numero: "asc" } } } },
+          flujo: { select: { pasos: { select: { numero: true, titulo: true, tipoActividad: true, formatoVisitaId: true }, orderBy: { numero: "asc" } } } },
         },
       },
       visitaTecnica: {
@@ -68,11 +68,12 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
 
   const pasos = visita.expediente.flujo.pasos;
   const pasoActual = pasos.find((p) => p.numero === visita.expediente.pasoActualNumero);
-  const pasoVisita = pasos.find((p) => esPasoDeVisita(p.titulo));
+  const pasoVisita = pasos.find((p) => esPasoDeRealizarVisita(p));
   const vt = visita.visitaTecnica;
 
   const habilitada = visita.estado === "PROGRAMADA" && puedeRegistrar && yaLlegoElDia;
-  const formato = habilitada ? await formatoVigenteParaTramite(visita.expediente.tramiteTipo.codigo) : null;
+  const formatoDelPaso = (pasoActual && esPasoDeRealizarVisita(pasoActual) ? pasoActual.formatoVisitaId : null) ?? pasoVisita?.formatoVisitaId ?? null;
+  const formato = habilitada ? await formatoVigenteParaTramite(visita.expediente.tramiteTipo.codigo, formatoDelPaso) : null;
   const precarga = formato ? await precargaDeVisita(visita.id, new Date()) : {};
   const temas = habilitada && !formato ? await temasDeVisita() : [];
   const { sugeridos, otros } = ordenarTemasParaTramite(temas, visita.expediente.tramiteTipo.codigo);

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       estado: true,
       archivado: true,
       pasoActualNumero: true,
-      flujo: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true } } } },
+      flujo: { select: { pasos: { select: { numero: true, titulo: true, descripcion: true, tipoActividad: true } } } },
       usuariosAsignados: { select: { id: true, nombre: true } },
     },
   });

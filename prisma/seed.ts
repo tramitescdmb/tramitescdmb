@@ -120,6 +120,14 @@ async function seedTramites() {
       continue;
     }
 
+    const configuracionPasos = new Map(
+      (
+        await db.pasoDefinicion.findMany({
+          where: { flujo: { tramiteTipoId: tramite.id }, OR: [{ tipoActividad: { not: null } }, { formatoVisitaId: { not: null } }] },
+          select: { numero: true, tipoActividad: true, formatoVisitaId: true, flujo: { select: { codigo: true } } },
+        })
+      ).map((p) => [`${p.flujo.codigo}:${p.numero}`, { tipoActividad: p.tipoActividad, formatoVisitaId: p.formatoVisitaId }])
+    );
     await db.pasoDefinicion.deleteMany({ where: { flujo: { tramiteTipoId: tramite.id } } });
     await db.flujo.deleteMany({ where: { tramiteTipoId: tramite.id } });
 
@@ -149,6 +157,7 @@ async function seedTramites() {
           tiempoDias: p.tiempoDias,
           esDecision: p.esDecision,
           opciones: p.opciones ?? undefined,
+          ...configuracionPasos.get(`${f.codigo}:${p.numero}`),
         })),
       });
     }

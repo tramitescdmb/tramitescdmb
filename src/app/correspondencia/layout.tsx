@@ -71,7 +71,8 @@ export default async function CorrespondenciaLayout({ children }: { children: Re
           <div className="ml-auto">
             <AccesosRapidosExpediente
               nuevos={[...accesos.nuevos, ...(ctxMemos.firmante ? [{ href: "/correspondencia/nueva/interna", label: "Nuevo memorando" }] : [])]}
-              listados={accesos.listado ? [accesos.listado] : []}
+              listados={accesos.listados}
+              propio={accesos.propio}
             />
           </div>
           <Link

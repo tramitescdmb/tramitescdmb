@@ -10,25 +10,29 @@ export type ModuloAcceso = "GECON" | "TRAMITES" | "SGDEA";
 
 export type EnlaceAcceso = { href: string; label: string };
 
-export type AccesosExpediente = { nuevos: EnlaceAcceso[]; listado: EnlaceAcceso | null };
+export type AccesosRapidos = { nuevos: EnlaceAcceso[]; listados: EnlaceAcceso[]; propio?: EnlaceAcceso | null };
+
+const SIN_ACCESOS: AccesosRapidos = { nuevos: [], listados: [] };
 
 export function puedeCrearExpedienteTramite(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || [...permisos.tramites.values()].some((nivel) => nivel === "EDITAR");
 }
 
-export function accesosExpediente(permisos: PermisosUsuario, modulo: ModuloAcceso): AccesosExpediente {
+export function accesosExpediente(permisos: PermisosUsuario, modulo: ModuloAcceso): AccesosRapidos {
   if (modulo === "GECON") {
-    if (!puedeAccederContratacion(permisos)) return { nuevos: [], listado: null };
+    if (!puedeAccederContratacion(permisos)) return SIN_ACCESOS;
     return {
       nuevos: puedeCrearExpedienteContractual(permisos) ? [{ href: "/contratacion/expedientes/nuevo", label: "Nuevo expediente" }] : [],
-      listado: { href: "/contratacion/expedientes", label: "Todos los expedientes" },
+      listados: [{ href: "/contratacion/expedientes", label: "Todos los expedientes" }],
+      propio: { href: "/contratacion/expedientes?asignados=mi&vigencia=todas", label: "A mi cargo" },
     };
   }
   if (modulo === "TRAMITES") {
-    if (!permisos.modulos.has("TRAMITES")) return { nuevos: [], listado: null };
+    if (!permisos.modulos.has("TRAMITES")) return SIN_ACCESOS;
     return {
       nuevos: puedeCrearExpedienteTramite(permisos) ? [{ href: "/tramites", label: "Nuevo trámite ambiental" }] : [],
-      listado: { href: "/expedientes", label: "Todos los expedientes" },
+      listados: [{ href: "/expedientes", label: "Todos los expedientes" }],
+      propio: { href: "/expedientes?asignados=mi", label: "Asignados a mí" },
     };
   }
   const archivo = puedeAccederCorrespondencia(permisos);
@@ -43,17 +47,12 @@ export function accesosExpediente(permisos: PermisosUsuario, modulo: ModuloAcces
           ]
         : []),
     ],
-    listado: archivo ? { href: "/correspondencia/expedientes", label: "Todos los expedientes" } : null,
+    listados: archivo ? [{ href: "/correspondencia/expedientes", label: "Todos los expedientes" }] : [],
+    propio: archivo ? { href: "/correspondencia/flujos-a-cargo", label: "A mi cargo" } : null,
   };
 }
 
 const NOMBRE_MODULO: Record<ModuloAcceso, string> = { GECON: "GECON", TRAMITES: "Trámites 2.0", SGDEA: "SGDEA" };
-
-export type AccesosRapidos = { nuevos: EnlaceAcceso[]; listados: EnlaceAcceso[] };
-
-export function accesosDeModulo(a: AccesosExpediente): AccesosRapidos {
-  return { nuevos: a.nuevos, listados: a.listado ? [a.listado] : [] };
-}
 
 export function accesosExpedienteTodos(permisos: PermisosUsuario): AccesosRapidos {
   const modulos: ModuloAcceso[] = ["TRAMITES", "GECON", "SGDEA"];
@@ -62,7 +61,7 @@ export function accesosExpedienteTodos(permisos: PermisosUsuario): AccesosRapido
   for (const m of modulos) {
     const a = accesosExpediente(permisos, m);
     for (const n of a.nuevos) nuevos.push({ href: n.href, label: `${NOMBRE_MODULO[m]} · ${n.label}` });
-    if (a.listado) listados.push({ href: a.listado.href, label: `Expedientes de ${NOMBRE_MODULO[m]}` });
+    for (const l of a.listados) listados.push({ href: l.href, label: `Expedientes de ${NOMBRE_MODULO[m]}` });
   }
   return { nuevos, listados };
 }

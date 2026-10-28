@@ -1,6 +1,7 @@
 import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import Link from "next/link";
+import { RegistrarReciente } from "@/components/RegistrarReciente";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -532,6 +533,12 @@ export default async function DetalleExpedienteContractualPage({
   return (
     <ProveedorUsuariosFirma usuarios={usuariosOpciones}>
     <section className="space-y-5">
+      <RegistrarReciente
+        href={`/contratacion/expedientes/${id}`}
+        titulo={expediente.numeroContrato ? `Contrato N.° ${expediente.numeroContrato}` : expediente.numero}
+        detalle={[expediente.numero, expediente.contratista?.nombreORazonSocial].filter(Boolean).join(" · ")}
+        modulo="GECON"
+      />
       <TituloSeccion icon={Briefcase}>
         <span className="font-mono text-base">{expediente.codigoProceso ?? expediente.numero}</span>
         {expediente.numeroContrato && <span className="ml-2 text-base font-normal text-stone-500">Contrato N.° {expediente.numeroContrato}</span>}

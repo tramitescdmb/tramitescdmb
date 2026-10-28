@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -69,6 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await db.expedienteEvento.create({
     data: { expedienteId: id, tipo: "ASIGNACION_CAMBIADA", descripcion, usuarioId: session.userId },
   });
+
+  await sincronizarAvisoVisita(id);
 
   return NextResponse.json({ ok: true });
 }

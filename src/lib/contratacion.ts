@@ -1343,6 +1343,7 @@ export type FiltrosContratacion = {
   contratistaId?: string;
   dependenciaId?: string;
   vigencia?: string;
+  asignados?: string;
   page?: string;
   vista?: string;
 };
@@ -1417,6 +1418,15 @@ export function construirWhereExpedienteContractual(
     and.push({ OR: [{ fechaSuscripcion: rango }, { fechaSuscripcion: null, createdAt: rango }] });
   }
   if (f.contratistaId) and.push({ contratistaId: f.contratistaId });
+  if (f.asignados === "mi") {
+    and.push({
+      OR: [
+        { id: { in: Array.from(permisos.asignadoExpedientes) } },
+        { id: { in: Array.from(permisos.supervisaExpedientes) } },
+        ...(permisos.contratistaId ? [{ contratistaId: permisos.contratistaId }] : []),
+      ],
+    });
+  }
   if (f.q?.trim()) {
     const q = f.q.trim();
     and.push({

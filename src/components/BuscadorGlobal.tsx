@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { IconSearch, IconLoader2 } from "@tabler/icons-react";
 import type { GrupoBusqueda } from "@/lib/busqueda-global";
+import { EVENTO_RECIENTES, leerRecientes, type Reciente } from "@/lib/recientes";
 
 export function BuscadorGlobal() {
   const router = useRouter();
@@ -17,12 +18,23 @@ export function BuscadorGlobal() {
   const contenedor = useRef<HTMLDivElement>(null);
   const listaId = useId();
 
-  const planos = grupos.flatMap((g) => g.resultados.map((r) => ({ ...r, grupo: g.modulo })));
+  const [recientes, setRecientes] = useState<Reciente[]>([]);
+  const sinTermino = q.trim().length < 2;
+  const planos = sinTermino
+    ? recientes.map((r) => ({ href: r.href, titulo: r.titulo, detalle: r.detalle, grupo: r.modulo }))
+    : grupos.flatMap((g) => g.resultados.map((r) => ({ ...r, grupo: g.modulo })));
 
   useEffect(() => {
     setAbierto(false);
     setQ("");
   }, [pathname]);
+
+  useEffect(() => {
+    const cargar = () => setRecientes(leerRecientes());
+    cargar();
+    window.addEventListener(EVENTO_RECIENTES, cargar);
+    return () => window.removeEventListener(EVENTO_RECIENTES, cargar);
+  }, []);
 
   useEffect(() => {
     const termino = q.trim();
@@ -55,9 +67,11 @@ export function BuscadorGlobal() {
     function atajo(e: KeyboardEvent) {
       const destino = e.target as HTMLElement;
       const escribiendo = destino.closest("input, textarea, select, [contenteditable=true]");
-      if (e.key === "/" && !escribiendo) {
+      if ((e.key === "/" && !escribiendo) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) {
         e.preventDefault();
         input.current?.focus();
+        input.current?.select();
+        setAbierto(true);
       }
     }
     function fuera(e: MouseEvent) {
@@ -80,7 +94,7 @@ export function BuscadorGlobal() {
       e.preventDefault();
       setIndice((i) => Math.max(i - 1, -1));
     } else if (e.key === "Enter") {
-      const elegido = planos[indice] ?? planos[0];
+      const elegido = planos[indice] ?? (sinTermino ? undefined : planos[0]);
       if (elegido) {
         e.preventDefault();
         router.push(elegido.href);
@@ -91,7 +105,8 @@ export function BuscadorGlobal() {
     }
   }
 
-  const mostrar = abierto && q.trim().length >= 2;
+  const mostrarRecientes = abierto && sinTermino && recientes.length > 0;
+  const mostrar = (abierto && !sinTermino) || mostrarRecientes;
   let posicion = -1;
 
   return (
@@ -108,6 +123,7 @@ export function BuscadorGlobal() {
           onFocus={() => setAbierto(true)}
           onKeyDown={alTeclado}
           placeholder="Buscar expediente, contrato, radicado o solicitante…"
+          title="Atajo: Ctrl+K"
           aria-label="Búsqueda global"
           aria-expanded={mostrar}
           aria-controls={listaId}
@@ -122,8 +138,26 @@ export function BuscadorGlobal() {
 
       {mostrar && (
         <div id={listaId} role="listbox" className="absolute left-0 right-0 top-full z-40 mt-1 max-h-[70vh] overflow-y-auto rounded-md border border-stone-200 bg-white shadow-soft-lg">
-          {!cargando && grupos.length === 0 && <p className="px-4 py-6 text-center text-sm text-stone-400">Sin resultados para «{q.trim()}».</p>}
-          {grupos.map((g) => (
+          {mostrarRecientes && (
+            <div>
+              <p className="bg-stone-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-stone-500">Abiertos recientemente</p>
+              <ul>
+                {recientes.map((r, i) => (
+                  <li key={r.href} role="option" aria-selected={i === indice}>
+                    <a href={r.href} className={`flex items-center gap-3 px-4 py-2 text-sm ${i === indice ? "bg-cdmb-50" : "hover:bg-stone-50"}`}>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-stone-800">{r.titulo}</span>
+                        {r.detalle && <span className="block truncate text-xs text-stone-500">{r.detalle}</span>}
+                      </span>
+                      <span className="flex-none text-[11px] text-stone-400">{r.modulo}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!sinTermino && !cargando && grupos.length === 0 && <p className="px-4 py-6 text-center text-sm text-stone-400">Sin resultados para «{q.trim()}».</p>}
+          {!sinTermino && grupos.map((g) => (
             <div key={g.modulo} className="border-b border-stone-100 last:border-b-0">
               <p className="flex items-center justify-between bg-stone-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                 {g.titulo}

@@ -278,6 +278,12 @@ export default async function TramitesAyudaPage() {
           Un formato se vincula a uno o varios trámites que aún no tengan formato propio. El formato genérico cubre los trámites con visita que no
           tienen uno propio, incluidos los procedimientos que se creen después.
         </p>
+        <p>
+          En Planeador → Actividades por paso se define qué actividad corresponde a cada paso de un trámite (visita técnica, programar visita, concepto
+          técnico, notificación, firma, decisión u otra) y, en los pasos de visita, el formato que se debe diligenciar; ese formato prima sobre el del
+          trámite. Los pasos sin definir se clasifican por su título. Cuando un expediente llega a un paso de visita, el planificador recibe el aviso
+          para programarla; cuando llega a un paso de concepto técnico, el personal asignado recibe el aviso para elaborarlo.
+        </p>
       </Seccion>
     </>
   );
@@ -342,6 +348,7 @@ export default async function TramitesAyudaPage() {
         <Tabla encabezados={["Opción", "Quién la usa", "Para qué"]}>
           <Fila celdas={["Expedientes → Clasificación TRD", "Administrador del sistema", "Asignar la subserie documental de cada trámite."]} />
           <Fila celdas={["Planeador → Formatos de visita", "Subdirector(a) SEYCA o administrador", "Diseñar y publicar los formatos técnicos."]} />
+          <Fila celdas={["Planeador → Actividades por paso", "Subdirector(a) SEYCA o administrador", "Definir la actividad de cada paso y el formato de visita que aplica."]} />
           <Fila celdas={["Administración → Consecutivos", "Administrador del sistema", "Fijar el siguiente número de expedientes, conceptos EV y demás series por vigencia."]} />
           <Fila celdas={["Administración → Usuarios y Roles", "Administrador del sistema", "Módulos, roles, cargos y alcance por trámite de cada usuario."]} />
           <Fila celdas={["Ayuda → Manual de demostración", "Todos; edición: Subdirector(a) SEYCA o administrador", "Recorrido del módulo con un expediente de ejemplo."]} />

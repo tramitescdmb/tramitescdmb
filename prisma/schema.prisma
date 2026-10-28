@@ -128,7 +128,7 @@ model Usuario {
   estadoCuenta            EstadoCuenta             @default(HABILITADA)
   createdAt               DateTime                 @default(now())
 
-  directorioActivo Boolean @default(false)
+  directorioActivo         Boolean   @default(false)
   sincronizadoDirectorioEn DateTime?
 
   tipoPersona       TipoPersona        @default(NATURAL)
@@ -529,21 +529,34 @@ model Flujo {
 }
 
 model PasoDefinicion {
-  id           String   @id @default(cuid())
-  flujoId      String
-  numero       Int
-  titulo       String
-  descripcion  String   @db.Text
-  responsables String[]
-  documentos   String[]
-  tiempo       String?
-  tiempoDias   Int?
-  esDecision   Boolean  @default(false)
-  opciones     Json?
+  id              String             @id @default(cuid())
+  flujoId         String
+  numero          Int
+  titulo          String
+  descripcion     String             @db.Text
+  responsables    String[]
+  documentos      String[]
+  tiempo          String?
+  tiempoDias      Int?
+  esDecision      Boolean            @default(false)
+  opciones        Json?
+  tipoActividad   TipoActividadPaso?
+  formatoVisitaId String?
 
-  flujo Flujo @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+  flujo         Flujo          @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+  formatoVisita FormatoVisita? @relation(fields: [formatoVisitaId], references: [id], onDelete: SetNull)
 
   @@unique([flujoId, numero])
+}
+
+enum TipoActividadPaso {
+  VISITA_TECNICA
+  PROGRAMAR_VISITA
+  CONCEPTO_TECNICO
+  NOTIFICACION
+  FIRMA
+  DECISION
+  OTRA
 }
 
 enum EstadoExpediente {
@@ -891,22 +904,22 @@ model VisitaTecnica {
   capturadoEn       DateTime @default(now())
   createdAt         DateTime @default(now())
 
-  visitaProgramadaId  String?              @unique
+  visitaProgramadaId  String?                @unique
   inicioReal          DateTime?
   finReal             DateTime?
   atendidoPor         String?
-  hallazgos           String?              @db.Text
-  recomendaciones     String?              @db.Text
+  hallazgos           String?                @db.Text
+  recomendaciones     String?                @db.Text
   resultado           ResultadoVisita?
   formatoVersionId    String?
   respuestas          Json?
-  conceptoNumero      String?              @unique
+  conceptoNumero      String?                @unique
   conceptoFecha       DateTime?
   finalizadaEn        DateTime?
   finalizadaPorId     String?
-  documentoConceptoId String?              @unique
-  documentoConcepto   ExpedienteDocumento? @relation("ConceptoVisitaDocumento", fields: [documentoConceptoId], references: [id], onDelete: SetNull)
-  finalizadaPor       Usuario?             @relation("VisitaTecnicaFinalizadaPor", fields: [finalizadaPorId], references: [id])
+  documentoConceptoId String?                @unique
+  documentoConcepto   ExpedienteDocumento?   @relation("ConceptoVisitaDocumento", fields: [documentoConceptoId], references: [id], onDelete: SetNull)
+  finalizadaPor       Usuario?               @relation("VisitaTecnicaFinalizadaPor", fields: [finalizadaPorId], references: [id])
   estadoRevision      EstadoRevisionConcepto @default(BORRADOR)
   revisiones          RevisionConcepto[]
 
@@ -1018,6 +1031,7 @@ model FormatoVisita {
 
   creadoPor Usuario                @relation("FormatoVisitaCreadoPor", fields: [creadoPorId], references: [id])
   versiones FormatoVisitaVersion[]
+  pasos     PasoDefinicion[]
 }
 
 model FormatoVisitaVersion {
@@ -1080,6 +1094,7 @@ enum TipoNotificacion {
   FIRMA_RECORDADA
   CONCEPTO_EN_REVISION
   CONCEPTO_DEVUELTO
+  CONCEPTO_POR_ELABORAR
 }
 
 model Notificacion {

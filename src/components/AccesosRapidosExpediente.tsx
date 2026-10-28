@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, FolderOpen, Plus } from "lucide-react";
+import { ChevronDown, FolderOpen, Plus, UserCheck } from "lucide-react";
 import type { EnlaceAcceso } from "@/lib/accesos-expediente";
 
 const PRIMARIO = "inline-flex flex-none items-center gap-1.5 rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cdmb-700";
@@ -52,10 +52,16 @@ function Desplegable({ boton, enlaces, clase, Icono }: { boton: string; enlaces:
   );
 }
 
-export function AccesosRapidosExpediente({ nuevos, listados }: { nuevos: EnlaceAcceso[]; listados: EnlaceAcceso[] }) {
+export function AccesosRapidosExpediente({ nuevos, listados, propio }: { nuevos: EnlaceAcceso[]; listados: EnlaceAcceso[]; propio?: EnlaceAcceso | null }) {
   if (nuevos.length === 0 && listados.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {propio && (
+        <Link prefetch={false} href={propio.href} className={SECUNDARIO}>
+          <UserCheck className="h-4 w-4 text-cdmb-600" aria-hidden />
+          {propio.label}
+        </Link>
+      )}
       {listados.length === 1 && (
         <Link prefetch={false} href={listados[0]!.href} className={SECUNDARIO}>
           <FolderOpen className="h-4 w-4 text-cdmb-600" aria-hidden />

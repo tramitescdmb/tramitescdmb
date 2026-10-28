@@ -68,7 +68,12 @@ export function TramitesTabs({
           label: "Conceptos en revisión",
           insignia: { valor: conceptos, alerta: conceptos > 0, titulo: `${conceptos} concepto(s) por revisar o devueltos para corrección` },
         },
-        ...(editaFormatos ? [{ href: "/planeador/formatos", label: "Formatos de visita", prefijo: true, separador: true }] : []),
+        ...(editaFormatos
+          ? [
+              { href: "/planeador/formatos", label: "Formatos de visita", prefijo: true, separador: true },
+              { href: "/planeador/actividades", label: "Actividades por paso", prefijo: true },
+            ]
+          : []),
       ],
     },
     ...(mostrarSolicitantes ? [{ label: "Solicitantes", icon: Users, href: "/solicitantes" }] : []),

@@ -53,7 +53,7 @@ export default async function TramitesAmbientalesLayout({ children }: { children
           <FileBadge className="h-6 w-6 flex-none text-cdmb-600" aria-hidden />
           <h1 className="text-xl font-semibold text-stone-900">Trámites ambientales 2.0</h1>
           <div className="ml-auto">
-            <AccesosRapidosExpediente nuevos={accesos.nuevos} listados={accesos.listado ? [accesos.listado] : []} />
+            <AccesosRapidosExpediente {...accesos} />
           </div>
           <Link
             href="/tramites-ambientales/ayuda"

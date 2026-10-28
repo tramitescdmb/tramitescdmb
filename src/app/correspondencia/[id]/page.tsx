@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { contextoMemorandos, marcarMemorandoLeido, memorandoPendienteDe } from "@/lib/memorandos";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
@@ -341,6 +342,7 @@ export default async function CorrespondenciaDetallePage({
 
   return (
     <div className="space-y-4">
+      <RegistrarReciente href={`/correspondencia/${c.id}`} titulo={c.radicado ?? "Comunicación sin radicar"} detalle={c.asunto} modulo="SGDEA" />
       <Link href="/correspondencia" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Volver a la bandeja

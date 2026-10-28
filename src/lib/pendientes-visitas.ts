@@ -1,3 +1,4 @@
+import type { TipoActividadPaso } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { finEfectivo, horaCorta, partesColombia, sumarDias } from "@/lib/planeador";
@@ -23,6 +24,7 @@ export type ExpedienteAlerta = {
   pasoActualNumero: number;
   pasoTitulo: string | null;
   pasoDescripcion?: string | null;
+  pasoTipoActividad?: TipoActividadPaso | null;
   visitas: { estado: string; inicio: Date }[];
   pasosConHoja: number[];
 };
@@ -98,7 +100,7 @@ export function clasificarVisitas({
         continue;
       }
       const titulo = e.pasoTitulo ?? "";
-      const enPasoDeVisita = pasoPermiteVisita(titulo, e.pasoDescripcion);
+      const enPasoDeVisita = pasoPermiteVisita(titulo, e.pasoDescripcion, e.pasoTipoActividad);
       if (enPasoDeVisita && !e.pasosConHoja.includes(e.pasoActualNumero) && ultima?.estado !== "REALIZADA") {
         sinProgramar.push({ ...base, texto: `Paso ${e.pasoActualNumero}: ${titulo}` });
       }
@@ -159,7 +161,7 @@ export async function getPendientesVisitas(opts: { userId: string; planificador:
   const pasos = expedientes.length
     ? await db.pasoDefinicion.findMany({
         where: { OR: expedientes.map((e) => ({ flujoId: e.flujoId, numero: e.pasoActualNumero })) },
-        select: { flujoId: true, numero: true, titulo: true, descripcion: true },
+        select: { flujoId: true, numero: true, titulo: true, descripcion: true, tipoActividad: true },
       })
     : [];
   const pasoDe = (e: { flujoId: string; pasoActualNumero: number }) => pasos.find((p) => p.flujoId === e.flujoId && p.numero === e.pasoActualNumero);
@@ -187,6 +189,7 @@ export async function getPendientesVisitas(opts: { userId: string; planificador:
       pasoActualNumero: e.pasoActualNumero,
       pasoTitulo: pasoDe(e)?.titulo ?? null,
       pasoDescripcion: pasoDe(e)?.descripcion ?? null,
+      pasoTipoActividad: pasoDe(e)?.tipoActividad ?? null,
       visitas: e.visitasProgramadas.map((v) => ({ estado: v.estado, inicio: v.fechaHora })),
       pasosConHoja: e.visitasTecnicas.map((v) => v.pasoNumero),
     })),

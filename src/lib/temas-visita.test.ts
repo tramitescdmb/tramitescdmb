@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TEMAS_VISITA_BASE, documentoCubiertoPorVisita, esPasoDeProgramarVisita, esPasoDeVisita, normalizarNombreTema, ordenarTemasParaTramite, pasoPermiteVisita, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "./temas-visita";
+import { TEMAS_VISITA_BASE, documentoCubiertoPorVisita, esPasoDeProgramarVisita, esPasoDeVisita, normalizarNombreTema, ordenarTemasParaTramite, pasoPermiteVisita, evaluarPasoParaVisita, visitaHabilitadaParaRegistro, esPasoDeRealizarVisita, tipoActividadDetectado, tipoActividadEfectivo } from "./temas-visita";
 
 describe("temas de visita", () => {
   it("no repite nombres en el catálogo base", () => {
@@ -59,5 +59,24 @@ describe("temas de visita", () => {
     expect(documentoCubiertoPorVisita("Registro fotográfico", { conFotos: false })).toBe(false);
     expect(documentoCubiertoPorVisita("Registro fotográfico", { conFotos: true })).toBe(true);
     expect(documentoCubiertoPorVisita("Concepto Técnico", { conFotos: true })).toBe(false);
+  });
+
+  it("la actividad definida en el paso manda sobre el título", () => {
+    expect(pasoPermiteVisita("ELABORAR AUTO DE INICIO", null, "VISITA_TECNICA")).toBe(true);
+    expect(pasoPermiteVisita("REALIZAR VISITA TÉCNICA", null, "CONCEPTO_TECNICO")).toBe(false);
+    expect(pasoPermiteVisita("REALIZAR VISITA TÉCNICA", null, null)).toBe(true);
+    expect(esPasoDeRealizarVisita({ titulo: "PROGRAMAR LA VISITA", tipoActividad: "VISITA_TECNICA" })).toBe(true);
+    expect(esPasoDeRealizarVisita({ titulo: "REALIZAR VISITA TÉCNICA", tipoActividad: "OTRA" })).toBe(false);
+    expect(evaluarPasoParaVisita([{ numero: 3, titulo: "ELABORAR AUTO", tipoActividad: "VISITA_TECNICA" }], 3).permite).toBe(true);
+  });
+
+  it("detecta la actividad por el título cuando no está definida", () => {
+    expect(tipoActividadDetectado({ titulo: "NOTIFICAR EL AUTO DE TRÁMITE Y PROGRAMAR LA VISITA" })).toBe("PROGRAMAR_VISITA");
+    expect(tipoActividadDetectado({ titulo: "REALIZAR VISITA TÉCNICA Y ELABORAR CONCEPTO TÉCNICO" })).toBe("VISITA_TECNICA");
+    expect(tipoActividadDetectado({ titulo: "ELABORAR CONCEPTO TÉCNICO" })).toBe("CONCEPTO_TECNICO");
+    expect(tipoActividadDetectado({ titulo: "REVISAR Y DAR VISTO BUENO AL CONCEPTO TÉCNICO" })).toBe("OTRA");
+    expect(tipoActividadDetectado({ titulo: "NOTIFICAR LA RESOLUCIÓN" })).toBe("NOTIFICACION");
+    expect(tipoActividadDetectado({ titulo: "VERIFICAR REQUISITOS", esDecision: true })).toBe("DECISION");
+    expect(tipoActividadEfectivo({ titulo: "ELABORAR CONCEPTO TÉCNICO", tipoActividad: "OTRA" })).toBe("OTRA");
   });
 });
